@@ -1,0 +1,9 @@
+.tmp/
+.vs/
+.*/
+*.opensdf
+*.sdf
+*.suo
+*.user
+x64/
+Win32/
