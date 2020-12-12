@@ -32,7 +32,7 @@ void Patch(HMODULE mod)
                 {
                     DWORD oldProtect = 0;
                     VirtualProtect(pMemoryItor, 8, PAGE_EXECUTE_WRITECOPY, &oldProtect);
-                    *pMemoryItor = 0x74;
+                    *pMemoryItor = 0xEB;
                     VirtualProtect(pMemoryItor, 8, oldProtect, nullptr);
 
                     return;
