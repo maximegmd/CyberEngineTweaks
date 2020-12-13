@@ -3,56 +3,70 @@
 #include <cstdint>
 #include <windows.h>
 #include <DbgHelp.h>
-#include <xutility>
-#include <sstream>
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/rotating_file_sink.h>
+#include <array>
+#include <filesystem>
+
+
+#include "Image.h"
 #pragma comment( lib, "dbghelp.lib" )
 #pragma comment(linker, "/DLL")
 
-void Patch(HMODULE mod)
+void PatchAmd(Image* apImage);
+void HotPatchFix(Image* apImage);
+
+void Initialize()
 {
-    IMAGE_NT_HEADERS* pHeader = ImageNtHeader(mod);
-    auto* pSectionHeaders = (IMAGE_SECTION_HEADER*)(pHeader + 1);
+    std::error_code ec;
+    std::filesystem::create_directory("performance_overhaul", ec);
 
-    uint8_t* pImageBase = reinterpret_cast<uint8_t*>(mod);
+    auto rotatingLogger = std::make_shared<spdlog::sinks::rotating_file_sink_mt>("performance_overhaul/performance_overhaul.log", 1048576 * 5, 3);
 
-    for (auto count = 0u; count < pHeader->FileHeader.NumberOfSections; ++count)
+    auto logger = std::make_shared<spdlog::logger>("", spdlog::sinks_init_list{ rotatingLogger });
+    set_default_logger(logger);
+
+    Image image;
+    PatchAmd(&image);
+    HotPatchFix(&image);
+
+    logger->flush();
+}
+
+void PatchAmd(Image* apImage)
+{
+    const uint8_t payload[] = {
+        0x75, 0x30, 0x33, 0xC9, 0xB8, 0x01, 0x00, 0x00, 0x00, 0x0F, 0xA2, 0x8B, 0xC8, 0xC1, 0xF9, 0x08
+    };
+
+    auto* pMemoryItor = apImage->pTextStart;
+    auto* pEnd = apImage->pTextEnd;
+
+    while(pMemoryItor + std::size(payload) < pEnd)
     {
-        if (memcmp(pSectionHeaders->Name, ".text", 5) == 0)
+        if(memcmp(pMemoryItor, payload, std::size(payload)) == 0)
         {
-            auto* pMemoryItor = pImageBase + pSectionHeaders->VirtualAddress;
-            auto* pEnd = pImageBase + pSectionHeaders->VirtualAddress + pSectionHeaders->Misc.VirtualSize;
+            DWORD oldProtect = 0;
+            VirtualProtect(pMemoryItor, 8, PAGE_EXECUTE_WRITECOPY, &oldProtect);
+            *pMemoryItor = 0xEB;
+            VirtualProtect(pMemoryItor, 8, oldProtect, nullptr);
 
-            const uint8_t payload[] = {
-                0x75, 0x30, 0x33, 0xC9, 0xB8, 0x01, 0x00, 0x00, 0x00, 0x0F, 0xA2, 0x8B, 0xC8, 0xC1, 0xF9, 0x08
-            };
-
-            while(pMemoryItor + std::size(payload) < pEnd)
-            {
-                if(memcmp(pMemoryItor, payload, std::size(payload)) == 0)
-                {
-                    DWORD oldProtect = 0;
-                    VirtualProtect(pMemoryItor, 8, PAGE_EXECUTE_WRITECOPY, &oldProtect);
-                    *pMemoryItor = 0xEB;
-                    VirtualProtect(pMemoryItor, 8, oldProtect, nullptr);
-
-                    return;
-                }
-
-                pMemoryItor++;
-            }
+            spdlog::info("\tAMD SMT Patch: success");
 
             return;
         }
 
-        ++pSectionHeaders;
+        pMemoryItor++;
     }
+
+    spdlog::warn("\tAMD SMT Patch: failed");
 }
 
 
 BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID) {
     switch(ul_reason_for_call) {
     case DLL_PROCESS_ATTACH:
-        Patch(GetModuleHandleA(0));
+        Initialize();
         break;
 
     case DLL_PROCESS_DETACH:
