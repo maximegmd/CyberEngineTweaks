@@ -6,6 +6,12 @@ This plugin fixes some Cyberpunk 2077 issues.
 
 Currently it only fixes the AMD performance issues due to an OpenGPU condition.
 
+## Usage
+
+Unzip the content of the release.zip in bin/x64.
+
+In case you want to build this yourself follow the file structure of the latest release.
+
 ## Special Thanks
 
 * [pseudo-version-dll](https://github.com/t-mat/pseudo-version-dll)
