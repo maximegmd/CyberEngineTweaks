@@ -16,7 +16,7 @@
 void PatchAmd(Image* apImage);
 void HotPatchFix(Image* apImage);
 void StringInitializerFix(Image* apImage);
-
+void PatchSpin(Image* apImage);
 
 void Initialize()
 {
@@ -31,6 +31,7 @@ void Initialize()
     Image image;
     PatchAmd(&image);
     //StringInitializerFix(&image);
+    //PatchSpin(&image);
     HotPatchFix(&image);
 
     logger->flush();
@@ -92,7 +93,7 @@ void PatchAvx(Image* apImage)
     }
 
     spdlog::warn("\tAVX Patch: failed");
-   
+
 }
 
 BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID) {
