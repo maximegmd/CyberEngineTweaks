@@ -4,7 +4,16 @@
 
 This plugin fixes some Cyberpunk 2077 issues.
 
-Currently it only fixes the AMD performance issues due to an OpenGPU condition.
+### Current fixes
+
+* AMD SMT (performance increase on AMD CPUs)
+* Trampoline removal (performance increase on any CPU)
+
+### Upcoming
+
+* Memory allocation performance
+* Skip conditions that never fail
+* Probably some pattern conversion to SIMD
 
 ## Usage
 
