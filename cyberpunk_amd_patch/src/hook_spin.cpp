@@ -1,7 +1,6 @@
 #include <windows.h>
 
 #include "Image.h"
-#include <utility>
 #include <cstring>
 #include <spdlog/spdlog.h>
 
@@ -55,9 +54,13 @@ void PatchSpin(Image* apImage)
     auto addr = (uint8_t*)(0x2AEEC70 + apImage->base_address);
     DWORD oldProtect = 0;
     VirtualProtect(addr, 32, PAGE_EXECUTE_WRITECOPY, &oldProtect);
+
+    // mov rax, HookSpin
     addr[0] = 0x48;
     addr[1] = 0xB8;
     std::memcpy(addr + 2, &pFuncPtr, 8);
+
+    // jmp rax
     addr[10] = 0xFF;
     addr[11] = 0xE0;
     VirtualProtect(addr, 32, oldProtect, nullptr);

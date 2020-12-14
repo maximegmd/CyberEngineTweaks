@@ -4,37 +4,37 @@
 #include <windows.h>
 #include <DbgHelp.h>
 #include <spdlog/spdlog.h>
-#include <spdlog/sinks/rotating_file_sink.h>
-#include <array>
 #include <filesystem>
 
 
 #include "Image.h"
+#include "Options.h"
+
 #pragma comment( lib, "dbghelp.lib" )
 #pragma comment(linker, "/DLL")
 
 void PatchAmd(Image* apImage);
+void PatchAvx(Image* apImage);
 void HotPatchFix(Image* apImage);
 void StringInitializerFix(Image* apImage);
 void PatchSpin(Image* apImage);
 
-void Initialize()
+void Initialize(HMODULE mod)
 {
-    std::error_code ec;
-    std::filesystem::create_directory("performance_overhaul", ec);
-
-    auto rotatingLogger = std::make_shared<spdlog::sinks::rotating_file_sink_mt>("performance_overhaul/performance_overhaul.log", 1048576 * 5, 3);
-
-    auto logger = std::make_shared<spdlog::logger>("", spdlog::sinks_init_list{ rotatingLogger });
-    set_default_logger(logger);
+    Options options(mod);
 
     Image image;
-    PatchAmd(&image);
-    //StringInitializerFix(&image);
-    //PatchSpin(&image);
-    HotPatchFix(&image);
 
-    logger->flush();
+    if(options.PatchSMT)
+        PatchAmd(&image);
+
+    if(options.PatchSpectre)
+        HotPatchFix(&image);
+
+    if (options.PatchAVX)
+        PatchAvx(&image);
+
+    spdlog::default_logger()->flush();
 }
 
 void PatchAmd(Image* apImage)
@@ -99,7 +99,7 @@ void PatchAvx(Image* apImage)
 BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID) {
     switch(ul_reason_for_call) {
     case DLL_PROCESS_ATTACH:
-        Initialize();
+        Initialize(mod);
         break;
 
     case DLL_PROCESS_DETACH:
