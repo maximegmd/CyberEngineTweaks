@@ -46,7 +46,7 @@ uint64_t GetGPUMemory()
 
 void RegisterPoolOptions(void* apThis, const char* acpName, uint64_t aSize)
 {
-    const uint64_t kScaler = 1000 * 1000 * 1000;
+    const uint64_t kScaler = 1024 * 1024 * 1024;
 
     if (strcmp(acpName, "PoolCPU") == 0)
     {
@@ -59,7 +59,7 @@ void RegisterPoolOptions(void* apThis, const char* acpName, uint64_t aSize)
             const auto gigsInstalled = statex.ullTotalPhys / kScaler;
             aSize = (gigsInstalled - 4) * kScaler;
 
-            spdlog::info("\t\tDetected RAM: {}GB, using {}GB", gigsInstalled, aSize / kScaler);
+            spdlog::info("\t\tDetected RAM: {}GB, using {}GB", gigsInstalled, float(aSize) / kScaler);
         }
     }
     else if (strcmp(acpName, "PoolGPU") == 0)
@@ -69,7 +69,7 @@ void RegisterPoolOptions(void* apThis, const char* acpName, uint64_t aSize)
         const auto detectedGpuMemory = std::max(returnedGpuMemory, defaultMemory);
         aSize = std::max(aSize, detectedGpuMemory);
 
-        spdlog::info("\t\tUsing {}GB of VRAM", aSize / kScaler);
+        spdlog::info("\t\tUsing {}GB of VRAM", float(aSize) / kScaler);
     }
 
     RealRegisterPoolOptions(apThis, acpName, aSize);

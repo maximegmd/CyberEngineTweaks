@@ -33,6 +33,7 @@ Options::Options(HMODULE aModule)
         this->PatchSpectre = config.value("spectre", this->PatchSpectre);
         this->PatchMemoryPool = config.value("memory_pool", this->PatchMemoryPool);
         this->PatchVirtualInput = config.value("virtual_input", this->PatchVirtualInput);
+        this->PatchUnlockMenu = config.value("unlock_menu", this->PatchUnlockMenu);
     }
 
     nlohmann::json config;
@@ -41,6 +42,7 @@ Options::Options(HMODULE aModule)
     config["spectre"] = this->PatchSpectre;
     config["memory_pool"] = this->PatchMemoryPool;
     config["virtual_input"] = this->PatchVirtualInput;
+    config["unlock_menu"] = this->PatchUnlockMenu;
 
     std::ofstream o(configPath);
     o << config.dump(4) << std::endl;

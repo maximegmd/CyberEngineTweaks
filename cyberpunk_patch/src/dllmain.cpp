@@ -11,6 +11,7 @@
 #pragma comment(linker, "/DLL")
 
 void PoolPatch(Image* apImage);
+void UnlockMenuPatch(Image* apImage);
 void VirtualInputPatch(Image* apImage);
 void SmtAmdPatch(Image* apImage);
 void PatchAvx(Image* apImage);
@@ -38,6 +39,9 @@ void Initialize(HMODULE mod)
 
     if (options.PatchVirtualInput)
         VirtualInputPatch(&image);
+
+    if (options.PatchUnlockMenu)
+        UnlockMenuPatch(&image);
 
     spdlog::default_logger()->flush();
 }
