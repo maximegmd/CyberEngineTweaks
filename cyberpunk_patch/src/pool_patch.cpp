@@ -45,7 +45,7 @@ uint64_t GetGPUMemory()
     return adapterDesc.DedicatedVideoMemory;
 }
 
-void RegisterPoolOptions(void* apThis, const char* acpName, uint64_t aSize, HMODULE mod)
+void RegisterPoolOptions(void* apThis, const char* acpName, uint64_t aSize, Options options)
 {
     const uint64_t kScaler = 1024 * 1024 * 1024;
     if (strcmp(acpName, "PoolCPU") == 0)
@@ -57,7 +57,6 @@ void RegisterPoolOptions(void* apThis, const char* acpName, uint64_t aSize, HMOD
         if (statex.ullTotalPhys)
         {
             const auto gigsInstalled = statex.ullTotalPhys / kScaler;
-            Options options(mod);
             if (options.PatchTrueMemory == true)
             {
                 aSize = gigsInstalled * kScaler;
