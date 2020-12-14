@@ -14,6 +14,7 @@
 #pragma comment(linker, "/DLL")
 
 void PoolPatch(Image* apImage);
+void VirtualInputFix(Image* apImage);
 void PatchAmd(Image* apImage);
 void PatchAvx(Image* apImage);
 void HotPatchFix(Image* apImage);
@@ -37,6 +38,9 @@ void Initialize(HMODULE mod)
 
     if(options.PatchMemoryPool)
         PoolPatch(&image);
+
+    if (options.PatchVirtualInput)
+        VirtualInputFix(&image);
 
     spdlog::default_logger()->flush();
 }
