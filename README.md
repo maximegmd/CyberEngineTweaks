@@ -15,11 +15,9 @@ This plugin fixes some Cyberpunk 2077 issues.
 * Skip conditions that never fail
 * Probably some pattern conversion to SIMD
 
-## Usage
+## Usage and configuration
 
-Unzip the content of the release.zip in bin/x64.
-
-In case you want to build this yourself follow the file structure of the latest release.
+[Read the wiki](https://github.com/yamashi/PerformanceOverhaulCyberpunk/wiki)
 
 ## Special Thanks
 
