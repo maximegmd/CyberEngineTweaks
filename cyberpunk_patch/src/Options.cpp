@@ -19,6 +19,7 @@ Options::Options(HMODULE aModule)
     const auto rotatingLogger = std::make_shared<spdlog::sinks::rotating_file_sink_mt>((Path / "performance_overhaul.log").string(), 1048576 * 5, 3);
 
     const auto logger = std::make_shared<spdlog::logger>("", spdlog::sinks_init_list{ rotatingLogger });
+    logger->flush_on(spdlog::level::debug);
     set_default_logger(logger);
 
     const auto configPath = Path / "config.json";

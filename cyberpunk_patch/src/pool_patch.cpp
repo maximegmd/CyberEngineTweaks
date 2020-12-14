@@ -46,6 +46,8 @@ uint64_t GetGPUMemory()
 
 void RegisterPoolOptions(void* apThis, const char* acpName, uint64_t aSize)
 {
+    const uint64_t kScaler = 1000 * 1000 * 1000;
+
     if (strcmp(acpName, "PoolCPU") == 0)
     {
         MEMORYSTATUSEX statex;
@@ -54,20 +56,20 @@ void RegisterPoolOptions(void* apThis, const char* acpName, uint64_t aSize)
 
         if (statex.ullTotalPhys)
         {
-            const auto gigsInstalled = statex.ullTotalPhys >> 30;
-            aSize = (gigsInstalled - 4) << 30;
+            const auto gigsInstalled = statex.ullTotalPhys / kScaler;
+            aSize = (gigsInstalled - 4) * kScaler;
 
-            spdlog::info("\t\tDetected RAM: {}GB, using {}GB", gigsInstalled, aSize >> 30);
+            spdlog::info("\t\tDetected RAM: {}GB, using {}GB", gigsInstalled, aSize / kScaler);
         }
     }
     else if (strcmp(acpName, "PoolGPU") == 0)
     {
         const auto returnedGpuMemory = GetGPUMemory();
-        const auto fourGigs = 2ull << 30; // Assume at least 2 gigs of vram is available when we don't know
-        const auto detectedGpuMemory = std::max(returnedGpuMemory, fourGigs);
+        const auto defaultMemory = 2ull * kScaler; // Assume at least 2 gigs of vram is available when we don't know
+        const auto detectedGpuMemory = std::max(returnedGpuMemory, defaultMemory);
         aSize = std::max(aSize, detectedGpuMemory);
 
-        spdlog::info("\t\tUsing {}GB of VRAM", aSize >> 30);
+        spdlog::info("\t\tUsing {}GB of VRAM", aSize / kScaler);
     }
 
     RealRegisterPoolOptions(apThis, acpName, aSize);
