@@ -6,8 +6,7 @@ This plugin fixes some Cyberpunk 2077 issues.
 
 ### Current fixes
 
-* AMD SMT (performance increase on AMD CPUs)
-* Trampoline removal (performance increase on any CPU)
+[Read the wiki](https://github.com/yamashi/PerformanceOverhaulCyberpunk/wiki)
 
 ### Upcoming
 
