@@ -1,9 +1,48 @@
 #include "Image.h"
 #include <spdlog/spdlog.h>
 #include <mhook-lib/mhook.h>
+#include <d3d11.h>
+#include <atlbase.h>
 
 using TRegisterPoolOptions = void(void*, const char*, uint64_t);
 TRegisterPoolOptions* RealRegisterPoolOptions = nullptr;
+
+uint64_t GetGPUMemory()
+{
+    const auto createDeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+
+    CComPtr<ID3D11Device> device;
+    CComPtr<ID3D11DeviceContext> context;
+
+    D3D_FEATURE_LEVEL featureLevels[] =
+    {
+        D3D_FEATURE_LEVEL_11_0,
+        D3D_FEATURE_LEVEL_10_1,
+        D3D_FEATURE_LEVEL_10_0,
+    };
+
+    D3D_FEATURE_LEVEL level = D3D_FEATURE_LEVEL_10_0;
+
+    auto result = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, createDeviceFlags, featureLevels, std::size(featureLevels),
+        D3D11_SDK_VERSION, &device, &level, &context);
+
+    if (!device)
+        return 0;
+
+    CComQIPtr<IDXGIDevice> dxgiDevice = device.p;
+    if (!dxgiDevice)
+        return 0;
+
+    CComPtr<IDXGIAdapter> adapter;
+    if(FAILED(dxgiDevice->GetAdapter(&adapter)))
+        return 0;
+
+    DXGI_ADAPTER_DESC adapterDesc;
+    if(FAILED(adapter->GetDesc(&adapterDesc)))
+        return 0;
+
+    return adapterDesc.DedicatedVideoMemory;
+}
 
 void RegisterPoolOptions(void* apThis, const char* acpName, uint64_t aSize)
 {
@@ -23,8 +62,10 @@ void RegisterPoolOptions(void* apThis, const char* acpName, uint64_t aSize)
     }
     else if (strcmp(acpName, "PoolGPU") == 0)
     {
-        const auto fourGigs = 4ull << 30; // Assume at least 4 gigs of vram is available
-        aSize = aSize > fourGigs ? aSize : fourGigs;
+        const auto returnedGpuMemory = GetGPUMemory();
+        const auto fourGigs = 2ull << 30; // Assume at least 2 gigs of vram is available when we don't know
+        const auto detectedGpuMemory = std::max(returnedGpuMemory, fourGigs);
+        aSize = std::max(aSize, detectedGpuMemory);
 
         spdlog::info("\t\tUsing {}GB of VRAM", aSize >> 30);
     }
