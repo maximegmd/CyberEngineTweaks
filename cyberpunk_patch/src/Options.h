@@ -13,6 +13,6 @@ struct Options
 	bool PatchAVX{ false };
 	bool PatchVirtualInput{ true };
 	bool PatchMemoryPool{ true };
-	bool PatchUnlockMenu{ true };
+	bool PatchUnlockMenu{ false };
 	std::filesystem::path Path;
 };
