@@ -41,7 +41,7 @@ void HookSpin(Mutex* apMutex)
     }
 }
 
-void PatchSpin(Image* apImage)
+void SpinLockPatch(Image* apImage)
 {
     if (apImage->version != Image::MakeVersion(1, 4))
     {

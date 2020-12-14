@@ -13,7 +13,7 @@ struct StringInit
     uintptr_t byte_offset;
 };
 
-void StringInitializerFix(Image* apImage)
+void StringInitializerPatch(Image* apImage)
 {
     StringInit string_initializer[] = {
     { 0x2f2a3b8 ,  0x41D0639AC24CBB6A ,  0x3829b08 },

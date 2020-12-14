@@ -1,7 +1,7 @@
 #include "Image.h"
 #include <spdlog/spdlog.h>
 
-void VirtualInputFix(Image* apImage)
+void VirtualInputPatch(Image* apImage)
 {
     const uint8_t payload[] = {
          0x8B, 0x44, 0x24, 0x54, 0x85, 0xC0, 0x75, 0x26

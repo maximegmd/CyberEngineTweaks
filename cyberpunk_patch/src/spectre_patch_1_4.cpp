@@ -4,7 +4,7 @@
 #include <utility>
 #include <cstring>
 
-void HotPatchFix_1_4(Image* apImage)
+void SpectrePatch_1_4(Image* apImage)
 {
     std::pair<int64_t, int64_t> arr[] = {
         { 0x1ad204 ,  0x1ae000 },

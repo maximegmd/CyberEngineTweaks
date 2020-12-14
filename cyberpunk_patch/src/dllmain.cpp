@@ -1,11 +1,8 @@
 #include <SDKDDKVer.h>
 #define WIN32_LEAN_AND_MEAN
-#include <cstdint>
 #include <windows.h>
 #include <DbgHelp.h>
 #include <spdlog/spdlog.h>
-#include <filesystem>
-
 
 #include "Image.h"
 #include "Options.h"
@@ -14,12 +11,12 @@
 #pragma comment(linker, "/DLL")
 
 void PoolPatch(Image* apImage);
-void VirtualInputFix(Image* apImage);
-void PatchAmd(Image* apImage);
+void VirtualInputPatch(Image* apImage);
+void SmtAmdPatch(Image* apImage);
 void PatchAvx(Image* apImage);
-void HotPatchFix(Image* apImage);
-void StringInitializerFix(Image* apImage);
-void PatchSpin(Image* apImage);
+void SpectrePatch(Image* apImage);
+void StringInitializerPatch(Image* apImage);
+void SpinLockPatch(Image* apImage);
 
 void Initialize(HMODULE mod)
 {
@@ -28,10 +25,10 @@ void Initialize(HMODULE mod)
     Image image;
 
     if(options.PatchSMT)
-        PatchAmd(&image);
+        SmtAmdPatch(&image);
 
     if(options.PatchSpectre)
-        HotPatchFix(&image);
+        SpectrePatch(&image);
 
     if (options.PatchAVX)
         PatchAvx(&image);
@@ -40,68 +37,9 @@ void Initialize(HMODULE mod)
         PoolPatch(&image);
 
     if (options.PatchVirtualInput)
-        VirtualInputFix(&image);
+        VirtualInputPatch(&image);
 
     spdlog::default_logger()->flush();
-}
-
-void PatchAmd(Image* apImage)
-{
-    const uint8_t payload[] = {
-        0x75, 0x30, 0x33, 0xC9, 0xB8, 0x01, 0x00, 0x00, 0x00, 0x0F, 0xA2, 0x8B, 0xC8, 0xC1, 0xF9, 0x08
-    };
-
-    auto* pMemoryItor = apImage->pTextStart;
-    auto* pEnd = apImage->pTextEnd;
-
-    while(pMemoryItor + std::size(payload) < pEnd)
-    {
-        if(memcmp(pMemoryItor, payload, std::size(payload)) == 0)
-        {
-            DWORD oldProtect = 0;
-            VirtualProtect(pMemoryItor, 8, PAGE_EXECUTE_WRITECOPY, &oldProtect);
-            *pMemoryItor = 0xEB;
-            VirtualProtect(pMemoryItor, 8, oldProtect, nullptr);
-
-            spdlog::info("\tAMD SMT Patch: success");
-
-            return;
-        }
-
-        pMemoryItor++;
-    }
-
-    spdlog::warn("\tAMD SMT Patch: failed");
-}
-
-void PatchAvx(Image* apImage)
-{
-    const uint8_t payload[] = {
-         0x55, 0x48, 0x81 , 0xec , 0xa0 , 0x00 , 0x00 , 0x00 , 0x0f , 0x29 , 0x70 , 0xe8
-    };
-
-    auto* pMemoryItor = apImage->pTextStart;
-    auto* pEnd = apImage->pTextEnd;
-
-    while (pMemoryItor + std::size(payload) < pEnd)
-    {
-        if (memcmp(pMemoryItor, payload, std::size(payload)) == 0)
-        {
-            DWORD oldProtect = 0;
-            VirtualProtect(pMemoryItor, 8, PAGE_EXECUTE_WRITECOPY, &oldProtect);
-            *pMemoryItor = 0xC3;
-            VirtualProtect(pMemoryItor, 8, oldProtect, nullptr);
-
-            spdlog::info("\tAVX Patch: success");
-
-            return;
-        }
-
-        pMemoryItor++;
-    }
-
-    spdlog::warn("\tAVX Patch: failed");
-
 }
 
 BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID) {
