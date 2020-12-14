@@ -45,7 +45,7 @@ uint64_t GetGPUMemory()
     return adapterDesc.DedicatedVideoMemory;
 }
 
-void RegisterPoolOptions(void* apThis, const char* acpName, uint64_t aSize)
+void RegisterPoolOptions(void* apThis, const char* acpName, uint64_t aSize, HMODULE mod)
 {
     const uint64_t kScaler = 1024 * 1024 * 1024;
     if (strcmp(acpName, "PoolCPU") == 0)
@@ -57,11 +57,11 @@ void RegisterPoolOptions(void* apThis, const char* acpName, uint64_t aSize)
         if (statex.ullTotalPhys)
         {
             const auto gigsInstalled = statex.ullTotalPhys / kScaler;
-            HMODULE AModule;
-            Options options(AModule);
+            Options options(mod);
             if (options.PatchTrueMemory == true)
             {
                 aSize = gigsInstalled * kScaler;
+                spdlog::info("\tWarning: True Ram Detected. This can significantly increase the chance of crashing but may also improve performance");
                 spdlog::info("\t\tDetected True RAM: {}GB, using {}GB", gigsInstalled, float(aSize) / kScaler);
             }
             else if (options.PatchTrueMemory == false){
