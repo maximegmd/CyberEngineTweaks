@@ -3,6 +3,7 @@
 #include <mhook-lib/mhook.h>
 #include <d3d11.h>
 #include <atlbase.h>
+#include <Options.h>
 
 using TRegisterPoolOptions = void(void*, const char*, uint64_t);
 TRegisterPoolOptions* RealRegisterPoolOptions = nullptr;
@@ -47,7 +48,6 @@ uint64_t GetGPUMemory()
 void RegisterPoolOptions(void* apThis, const char* acpName, uint64_t aSize)
 {
     const uint64_t kScaler = 1024 * 1024 * 1024;
-
     if (strcmp(acpName, "PoolCPU") == 0)
     {
         MEMORYSTATUSEX statex;
@@ -57,9 +57,17 @@ void RegisterPoolOptions(void* apThis, const char* acpName, uint64_t aSize)
         if (statex.ullTotalPhys)
         {
             const auto gigsInstalled = statex.ullTotalPhys / kScaler;
-            aSize = (gigsInstalled - 4) * kScaler;
-
-            spdlog::info("\t\tDetected RAM: {}GB, using {}GB", gigsInstalled, float(aSize) / kScaler);
+            HMODULE AModule;
+            Options options(AModule);
+            if (options.PatchTrueMemory == true)
+            {
+                aSize = gigsInstalled * kScaler;
+                spdlog::info("\t\tDetected True RAM: {}GB, using {}GB", gigsInstalled, float(aSize) / kScaler);
+            }
+            else if (options.PatchTrueMemory == false){
+                aSize = (gigsInstalled - 4) * kScaler;
+                spdlog::info("\t\tDetected RAM: {}GB, using {}GB", gigsInstalled, float(aSize) / kScaler);
+            }
         }
     }
     else if (strcmp(acpName, "PoolGPU") == 0)

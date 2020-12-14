@@ -32,6 +32,7 @@ Options::Options(HMODULE aModule)
         this->PatchSMT = config.value("smt", this->PatchSMT);
         this->PatchSpectre = config.value("spectre", this->PatchSpectre);
         this->PatchMemoryPool = config.value("memory_pool", this->PatchMemoryPool);
+        this->PatchTrueMemory = config.value("true_memory", this->PatchTrueMemory);
         this->PatchVirtualInput = config.value("virtual_input", this->PatchVirtualInput);
         this->PatchUnlockMenu = config.value("unlock_menu", this->PatchUnlockMenu);
     }
@@ -41,6 +42,7 @@ Options::Options(HMODULE aModule)
     config["smt"] = this->PatchSMT;
     config["spectre"] = this->PatchSpectre;
     config["memory_pool"] = this->PatchMemoryPool;
+    config["true_memory"] = this->PatchTrueMemory;
     config["virtual_input"] = this->PatchVirtualInput;
     config["unlock_menu"] = this->PatchUnlockMenu;
 
