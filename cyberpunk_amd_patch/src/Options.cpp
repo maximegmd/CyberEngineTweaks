@@ -30,15 +30,15 @@ Options::Options(HMODULE aModule)
         this->PatchAVX = config.value("avx", this->PatchAVX);
         this->PatchSMT = config.value("smt", this->PatchSMT);
         this->PatchSpectre = config.value("spectre", this->PatchSpectre);
+        this->PatchMemoryPool = config.value("memory_pool", true);
     }
-    else
-    {
-        nlohmann::json config;
-        config["avx"] = this->PatchAVX;
-        config["smt"] = this->PatchSMT;
-        config["spectre"] = this->PatchSpectre;
 
-        std::ofstream o(configPath);
-        o << config.dump(4) << std::endl;
-    }
+    nlohmann::json config;
+    config["avx"] = this->PatchAVX;
+    config["smt"] = this->PatchSMT;
+    config["spectre"] = this->PatchSpectre;
+    config["memory_pool"] = this->PatchMemoryPool;
+
+    std::ofstream o(configPath);
+    o << config.dump(4) << std::endl;
 }

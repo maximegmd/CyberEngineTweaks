@@ -13,6 +13,7 @@
 #pragma comment( lib, "dbghelp.lib" )
 #pragma comment(linker, "/DLL")
 
+void PoolPatch(Image* apImage);
 void PatchAmd(Image* apImage);
 void PatchAvx(Image* apImage);
 void HotPatchFix(Image* apImage);
@@ -33,6 +34,9 @@ void Initialize(HMODULE mod)
 
     if (options.PatchAVX)
         PatchAvx(&image);
+
+    if(options.PatchMemoryPool)
+        PoolPatch(&image);
 
     spdlog::default_logger()->flush();
 }

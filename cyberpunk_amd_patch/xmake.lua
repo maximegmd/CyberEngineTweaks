@@ -1,6 +1,6 @@
 set_languages("cxx17")
 
-add_requires("zlib", "spdlog", "nlohmann_json")
+add_requires("zlib", "spdlog", "nlohmann_json", "mhook")
 
 add_rules("mode.debug", "mode.release")
 add_cxflags("-flto")
@@ -14,4 +14,4 @@ target("performance_overhaul")
     add_files("src/**.cpp")
     add_includedirs("src/")
     add_syslinks("User32")
-    add_packages("zlib", "spdlog", "nlohmann_json")
+    add_packages("zlib", "spdlog", "nlohmann_json", "mhook")

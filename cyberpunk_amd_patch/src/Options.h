@@ -11,5 +11,6 @@ struct Options
 	bool PatchSpectre { true };
 	bool PatchSMT{ true };
 	bool PatchAVX{ false };
+	bool PatchMemoryPool{ true };
 	std::filesystem::path Path;
 };
