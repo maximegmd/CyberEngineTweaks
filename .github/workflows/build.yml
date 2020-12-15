@@ -1,0 +1,51 @@
+name: Build
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest]
+        arch: [x64]
+        mode: [release]
+
+    runs-on: ${{ matrix.os }}
+    if: "!contains(github.event.head_commit.message, 'ci skip')"
+
+    steps:
+    - uses: actions/checkout@v2
+
+    # Install xmake
+    - name: Setup xmake
+      uses: xmake-io/github-action-setup-xmake@v1
+
+    # Update xmake repository (in order to have the file that will be cached)
+    - name: Update xmake repository
+      run: xmake.exe repo --update
+
+    # Cache xmake dependencies
+    - uses: actions/cache@v2
+      with:
+        path: C:\Users\runneradmin\AppData\Local\.xmake\packages
+        key: ${{ runner.os }}-${{ matrix.arch }}-${{ matrix.mode }}-${{ hashFiles('xmake.lua') }}-${{ hashFiles('C:\Users\runneradmin\AppData\Local\.xmake\xmake.conf') }}-${{ hashFiles('C:\Users\runneradmin\AppData\Local\.xmake\repositories\**') }}
+
+    # Setup compilation mode and install project dependencies
+    - name: Configure xmake and install dependencies
+      run: xmake.exe config --arch=${{ matrix.arch }} --mode=${{ matrix.mode }} --yes --verbose
+
+    # Build the game
+    - name: Build
+      run: xmake.exe
+
+    # Install the result files
+    - name: Create package
+      run: xmake.exe install -vo package
+
+    # Upload artifacts
+    - uses: actions/upload-artifact@v2
+      with:
+        name: ${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.mode }}
+        path: package/bin
