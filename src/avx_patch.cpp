@@ -18,7 +18,10 @@ bool IsAVXSupported()
         __cpuidex(cpui.data(), 1, 0);
         std::bitset<32> ecx = cpui[2];
 
-        return ecx[28];
+        if(ecx[27] && ecx[28])
+        {
+            return (_xgetbv(_XCR_XFEATURE_ENABLED_MASK) & 6) == 6;
+        }
     }
 
     return false;
