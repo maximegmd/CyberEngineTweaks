@@ -8,6 +8,8 @@ struct Options
 {
 	Options(HMODULE aModule);
 
+	bool IsCyberpunk2077() const noexcept;
+
 	bool PatchSpectre { true };
 	bool PatchSMT{ true };
 	bool PatchAVX{ false };
@@ -15,4 +17,5 @@ struct Options
 	bool PatchMemoryPool{ true };
 	bool PatchUnlockMenu{ false };
 	std::filesystem::path Path;
+	std::string ExeName;
 };

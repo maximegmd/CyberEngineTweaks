@@ -4,11 +4,14 @@
 #include "REDString.h"
 
 
-void HookIsFinal(void* a, uint64_t* b, char* c)
+using ScriptExecutionPointer = uint64_t;
+
+void HookIsFinal(void* a, ScriptExecutionPointer* apExecutionPointer, uint8_t* apReturnValue, void* d)
 {
-    (*b)++;
-    if (c)
-        *c = 0;
+    (*apExecutionPointer)++;
+
+    if (apReturnValue)
+        *apReturnValue = 0;
 }
 
 using TRegisterScriptFunction = void(void* a, uint64_t hash, uint64_t hash2, void* func);

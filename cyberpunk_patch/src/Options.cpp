@@ -10,6 +10,14 @@ Options::Options(HMODULE aModule)
     GetModuleFileNameA(aModule, path, std::size(path) - 1);
 
     Path = path;
+
+    char parentPath[2048 + 1] = { 0 };
+    GetModuleFileNameA(GetModuleHandleA(nullptr), parentPath, std::size(parentPath) - 1);
+
+    ExeName = std::filesystem::path(parentPath).filename().string();
+    if (!IsCyberpunk2077())
+        return;
+
     Path = Path.parent_path().parent_path();
     Path /= "performance_overhaul/";
 
@@ -46,4 +54,9 @@ Options::Options(HMODULE aModule)
 
     std::ofstream o(configPath);
     o << config.dump(4) << std::endl;
+}
+
+bool Options::IsCyberpunk2077() const noexcept
+{
+    return ExeName == "Cyberpunk2077.exe";
 }
