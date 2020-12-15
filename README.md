@@ -24,6 +24,7 @@ This plugin fixes some Cyberpunk 2077 issues and adds some features.
 ## Usage and configuration
 
 [Read the wiki](https://github.com/yamashi/PerformanceOverhaulCyberpunk/wiki)
+[Usage with Proton](PROTON.md]
 
 ## Credits
 
