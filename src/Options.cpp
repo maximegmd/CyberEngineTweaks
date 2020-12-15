@@ -21,12 +21,13 @@ Options::Options(HMODULE aModule)
         return;
 
     Path = Path.parent_path().parent_path();
-    Path /= "performance_overhaul/";
+    Path /= "plugins";
+    Path /= "cyber_engine_tweaks/";
 
     std::error_code ec;
     create_directories(Path, ec);
 
-    const auto rotatingLogger = std::make_shared<spdlog::sinks::rotating_file_sink_mt>((Path / "performance_overhaul.log").string(), 1048576 * 5, 3);
+    const auto rotatingLogger = std::make_shared<spdlog::sinks::rotating_file_sink_mt>((Path / "cyber_engine_tweaks.log").string(), 1048576 * 5, 3);
 
     const auto logger = std::make_shared<spdlog::logger>("", spdlog::sinks_init_list{ rotatingLogger });
     logger->flush_on(spdlog::level::debug);
