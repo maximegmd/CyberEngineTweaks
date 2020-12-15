@@ -3,12 +3,35 @@
 #include <cstdint>
 #include <windows.h>
 #include <DbgHelp.h>
+#include <bitset>
 #include <spdlog/spdlog.h>
 
 #include "Image.h"
 
+bool IsAVXSupported()
+{
+    std::array<int, 4> cpui;
+    __cpuid(cpui.data(), 0);
+
+    if(cpui[0] >= 1)
+    {
+        __cpuidex(cpui.data(), 1, 0);
+        std::bitset<32> ecx = cpui[2];
+
+        return ecx[28];
+    }
+
+    return false;
+}
+
 void PatchAvx(Image* apImage)
 {
+    if(IsAVXSupported())
+    {
+        spdlog::info("\tAVX Patch: skip, cpu has AVX support");
+        return;
+    }
+
     const uint8_t payload[] = {
          0x55, 0x48, 0x81 , 0xec , 0xa0 , 0x00 , 0x00 , 0x00 , 0x0f , 0x29 , 0x70 , 0xe8
     };

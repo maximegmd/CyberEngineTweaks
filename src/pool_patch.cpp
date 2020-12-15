@@ -3,6 +3,7 @@
 #include <mhook-lib/mhook.h>
 #include <d3d11.h>
 #include <atlbase.h>
+#include "Options.h"
 
 using TRegisterPoolOptions = void(void*, const char*, uint64_t);
 TRegisterPoolOptions* RealRegisterPoolOptions = nullptr;
@@ -48,6 +49,8 @@ void RegisterPoolOptions(void* apThis, const char* acpName, uint64_t aSize)
 {
     const uint64_t kScaler = 1024 * 1024 * 1024;
 
+    const auto& options = Options::Get();
+
     if (strcmp(acpName, "PoolCPU") == 0)
     {
         MEMORYSTATUSEX statex;
@@ -57,19 +60,19 @@ void RegisterPoolOptions(void* apThis, const char* acpName, uint64_t aSize)
         if (statex.ullTotalPhys)
         {
             const auto gigsInstalled = statex.ullTotalPhys / kScaler;
-            aSize = (gigsInstalled - 4) * kScaler;
+            aSize = (gigsInstalled * options.CPUMemoryPoolFraction) * kScaler;
 
-            spdlog::info("\t\tDetected RAM: {}GB, using {}GB", gigsInstalled, float(aSize) / kScaler);
+            spdlog::info("\tCPU RAM: {}GB, using {:.2}GB, fraction: {}", gigsInstalled, float(aSize) / kScaler, options.CPUMemoryPoolFraction);
         }
     }
     else if (strcmp(acpName, "PoolGPU") == 0)
     {
-        const auto returnedGpuMemory = GetGPUMemory();
-        const auto defaultMemory = 2ull * kScaler; // Assume at least 2 gigs of vram is available when we don't know
+        const auto returnedGpuMemory = static_cast<uint64_t>(GetGPUMemory() * double(options.GPUMemoryPoolFraction));
+        const auto defaultMemory = 512ull * 1024 * 1024; // Assume at least 512MB of vram is available when we don't know
         const auto detectedGpuMemory = std::max(returnedGpuMemory, defaultMemory);
         aSize = std::max(aSize, detectedGpuMemory);
 
-        spdlog::info("\t\tUsing {}GB of VRAM", float(aSize) / kScaler);
+        spdlog::info("\tGPU VRAM: {:.2}GB, using {:.2}GB, fraction: {}", float(detectedGpuMemory) / kScaler, float(aSize) / kScaler, options.GPUMemoryPoolFraction);
     }
 
     RealRegisterPoolOptions(apThis, acpName, aSize);

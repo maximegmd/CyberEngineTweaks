@@ -6,16 +6,23 @@
 struct Image;
 struct Options
 {
-	Options(HMODULE aModule);
-
+	static void Initialize(HMODULE aModule);
+	static Options& Get();
+	
 	bool IsCyberpunk2077() const noexcept;
 
 	bool PatchSpectre { true };
 	bool PatchSMT{ true };
-	bool PatchAVX{ false };
+	bool PatchAVX{ true };
 	bool PatchVirtualInput{ true };
 	bool PatchMemoryPool{ true };
 	bool PatchUnlockMenu{ false };
+	float CPUMemoryPoolFraction{ 0.5f };
+	float GPUMemoryPoolFraction{ 1.f };
 	std::filesystem::path Path;
 	std::string ExeName;
+
+private:
+
+	Options(HMODULE aModule);
 };

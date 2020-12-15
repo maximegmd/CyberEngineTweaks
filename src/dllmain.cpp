@@ -21,7 +21,8 @@ void SpinLockPatch(Image* apImage);
 
 void Initialize(HMODULE mod)
 {
-    const Options options(mod);
+    Options::Initialize(mod);
+    const auto& options = Options::Get();
 
     if (!options.IsCyberpunk2077())
         return;

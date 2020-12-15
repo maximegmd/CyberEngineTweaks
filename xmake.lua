@@ -9,7 +9,7 @@ add_cxflags("/Ot", "/GL", "/Ob2", "/Oi", "/GS-")
 
 set_optimize("fastest")
 
-target("performance_overhaul")
+target("cyber_engine_tweaks")
     set_kind("shared")
     set_filename("cyber_engine_tweaks.asi")
     add_files("src/**.cpp")
