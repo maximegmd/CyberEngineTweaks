@@ -25,6 +25,8 @@ This plugin fixes some Cyberpunk 2077 issues and adds some features.
 
 [Read the wiki](https://github.com/yamashi/PerformanceOverhaulCyberpunk/wiki)
 
+[Usage with Proton](PROTON.md)
+
 ## Credits
 
 * [UnhingedDoork](https://www.reddit.com/r/Amd/comments/kbp0np/cyberpunk_2077_seems_to_ignore_smt_and_mostly/gfjf1vo/?utm_source=reddit&utm_medium=web2x&context=3)
