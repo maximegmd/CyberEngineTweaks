@@ -6,35 +6,31 @@ Building instructions for the plugin.
 ### Requirements
 - [Visual Studio 2019](https://visualstudio.microsoft.com/downloads/)
 - [xmake](https://github.com/xmake-io/xmake/releases)
-- [CMake](https://cmake.org/download/)
 
-### version.dll
-1. Open "..\version.sln" in Visual Studio
-2. Configure it for a x64 release
-3. Build (CTRL + B)
-
-### performance_overhaul.dll
-1. Navigate to the `..\cyberpunk_patch` folder in cmd
-2. cmd: `xmake project -k vsxmake`
-
-It may be necessary to repeat this command if the mhook installation fails.
-
-3. Open `..\cyberpunk_patch\vsxmake2019\cyberpunk_patch.sln` in Visual Studio
-4. Configure it for a x64 release
-5. Build (CTRL + B)
-
-It may be necessary to manually install `mhook` at this point if Visual Studio can not find it.
-
-6. Navigate to the `..\cyberpunk_patch\vsxmake2019` folder in cmd *Optional*
-7. cmd: `xmake config -P . -p windows -m release -a x64 -o "build"` *Optional*
-8. Repeat Build (CTRL + B) *Optional*
+1. Navigate to the repository using a command prompt.
+2. cmd: `xmake -y`
+3. The files should be in `build\windows\x64\release`
 
 ### Install
-The compiled .dll files can be found at:
-- `..\x64\Release\version.dll`
-- `..\cyberpunk_patch\build\windows\x64\release\performance_overhaul.dll`
 
-They should be copied to the game's install folder:
-- `<cyberpunk install path>\bin\x64\version.dll`
-- `<cyberpunk install path>\bin\x64\Cyberpunk2077.exe.plugins\performance_overhaul.dll`
-- `<cyberpunk install path>\bin\x64\performance_overhaul\config.json`
+1. Copy `build\windows\x64\release\cyber_engine_tweaks.asi` to `<cyberpunk install path>\bin\x64\plugins\cyber_engine_tweaks.asi`
+
+#### ASI Loader
+
+1. Download  Ultimate-ASI-Loader_x64.zip from [ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader/releases/latest)
+2. Put the dinput8.dll in `<cyberpunk install path>\bin\x64\`
+3. Rename `dinput8.dll` as `version.dll`, you should have `<cyberpunk install path>\bin\x64\version.dll`
+4. Create a `global.ini` file in `<cyberpunk install path>\bin\x64\`
+5. Paste the following lines in `global.ini`, save and you are all set!
+
+```
+[GlobalSets]
+LoadPlugins=1
+LoadFromScriptsOnly=1
+DontLoadFromDllMain=0
+FindModule=0
+UseD3D8to9=0
+DisableCrashDumps=0
+Direct3D8DisableMaximizedWindowedModeShim=0
+```
+
