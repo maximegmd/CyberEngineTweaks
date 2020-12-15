@@ -1,12 +1,19 @@
-# Cyberpunk Patch
+# Cyber Engine Tweaks
 
 ## What's this?
 
-This plugin fixes some Cyberpunk 2077 issues.
+This plugin fixes some Cyberpunk 2077 issues and adds some features.
 
 ### Current fixes
 
-[Read the wiki](https://github.com/yamashi/PerformanceOverhaulCyberpunk/wiki)
+| Patches      | Description     |
+| :------------- | :------------------------------ | 
+| AMD SMT  | Improves performance on AMD CPUs by enabling all cores. |
+| AVX | Fixes a crash when playing the game with a CPU that does not support AVX |
+| Debug Menu   | Enables the debug menus in game so you can ~~cheat~~, investigate...  |
+| Pools | Improves memory usage, can improve performance on some configurations. |
+| Spectre | Removes spectre mitigation to improve performance on all configurations. |
+| Steam Input | Enables the use of more gamepads (such as the Steam gamepad) |
 
 ### Upcoming
 
