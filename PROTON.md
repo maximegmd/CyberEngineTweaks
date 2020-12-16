@@ -24,7 +24,7 @@ Run `protontricks 1091500 --gui`, you may get an error saying "You are using a 6
 
 Choose the option 'Select the default wineprefix', then 'Install a Windows DLL or component'. Tick`vcrun2019` and press ok. Go through the steps to install that runtime when the window opens. It's pretty simple (just click next really).
 
-The options menu for protontricks will show up again, this time select 'Run winecfg'. In the window that opens, select the 'Libraries' tab. In the dropdown on 'New override for library', select `version`. Click `apply`, then `ok`.
+The options menu for protontricks will show up again, this time select 'Run winecfg'. In the window that opens, select the 'Libraries' tab. In the dropdown on 'New override for library', select `version`. Click `Add`, then `Apply` and `Ok`.
 
 
 
