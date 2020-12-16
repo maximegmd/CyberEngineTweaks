@@ -18,6 +18,8 @@ void PatchAvx(Image* apImage);
 void SpectrePatch(Image* apImage);
 void StringInitializerPatch(Image* apImage);
 void SpinLockPatch(Image* apImage);
+void StartScreenPatch(Image* apImage);
+void RemovePedsPatch(Image* apImage);
 
 void Initialize(HMODULE mod)
 {
@@ -46,6 +48,12 @@ void Initialize(HMODULE mod)
 
     if (options.PatchUnlockMenu)
         UnlockMenuPatch(&image);
+
+    if(options.PatchSkipStartMenu)
+        StartScreenPatch(&image);
+
+    if(options.PatchRemovePedestrians)
+        RemovePedsPatch(&image);
 
     spdlog::default_logger()->flush();
 }

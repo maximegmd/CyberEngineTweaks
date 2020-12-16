@@ -17,6 +17,8 @@ struct Options
 	bool PatchVirtualInput{ true };
 	bool PatchMemoryPool{ true };
 	bool PatchUnlockMenu{ false };
+	bool PatchRemovePedestrians{ false };
+	bool PatchSkipStartMenu{ true };
 	float CPUMemoryPoolFraction{ 0.5f };
 	float GPUMemoryPoolFraction{ 1.f };
 	std::filesystem::path Path;

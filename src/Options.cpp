@@ -47,6 +47,8 @@ Options::Options(HMODULE aModule)
         this->PatchUnlockMenu = config.value("unlock_menu", this->PatchUnlockMenu);
         this->CPUMemoryPoolFraction = config.value("cpu_memory_pool_fraction", this->CPUMemoryPoolFraction);
         this->GPUMemoryPoolFraction = config.value("gpu_memory_pool_fraction", this->GPUMemoryPoolFraction);
+        this->PatchRemovePedestrians = config.value("remove_pedestrians", this->PatchRemovePedestrians);
+        this->PatchSkipStartMenu = config.value("skip_start_menu", this->PatchSkipStartMenu);
     }
 
     nlohmann::json config;
@@ -58,6 +60,8 @@ Options::Options(HMODULE aModule)
     config["unlock_menu"] = this->PatchUnlockMenu;
     config["cpu_memory_pool_fraction"] = this->CPUMemoryPoolFraction;
     config["gpu_memory_pool_fraction"] = this->GPUMemoryPoolFraction;
+    config["remove_pedestrians"] = this->PatchRemovePedestrians;
+    config["skip_start_menu"] = this->PatchSkipStartMenu;
 
     std::ofstream o(configPath);
     o << config.dump(4) << std::endl;
