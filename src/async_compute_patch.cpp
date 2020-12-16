@@ -23,7 +23,7 @@ struct GameProperty
 static_assert(offsetof(GameProperty, kind) == 0x28);
 static_assert(offsetof(GameProperty, pBoolean) == 0x30);
 
-bool HookGamePropertySetBoolean(GameProperty* apThis, uint8_t* apVariable, uint8_t aKind)
+bool HookGamePropertyGetBoolean(GameProperty* apThis, uint8_t* apVariable, uint8_t aKind)
 {
     auto* pLocation = apThis->pBoolean;
     if (!pLocation)
@@ -52,7 +52,7 @@ void AsyncComputePatch(Image* apImage)
         DWORD oldProtect = 0;
         VirtualProtect(pLocation, 32, PAGE_EXECUTE_WRITECOPY, &oldProtect);
 
-        void* pAddress = &HookGamePropertySetBoolean;
+        void* pAddress = &HookGamePropertyGetBoolean;
 
         // mov rax, HookSpin
         pLocation[0] = 0x48;
