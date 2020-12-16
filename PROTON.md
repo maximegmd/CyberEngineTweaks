@@ -30,6 +30,17 @@ The options menu for protontricks will show up again, this time select 'Run wine
 
 You can now exit out of protontricks and start your game. Check to see if the log exists after you run the game. If it's there, you've successfully installed the mod. 
 
+## Setting up the mod with Winetricks
+
+For users running on the Gog version of the game, via launcher like Lutris, minigalaxy or gamehub, those running from the direct Gog galaxy Windows application through Wine, or those directly using the Game libraries, Protontricks won´t be helpful in your case, as protontricks will notice that you don´t have the game on Steam.
+
+Instead, use winetricks in which protontricks is derivated from. 
+
+Either run winetricks in itself if you use your default prefix, or from your custom prefix via : `WINEPREFIX=<Location of your WinePrefix directory> winetricks --gui` via the terminal.
+
+From now on, you can follow the Setting up the mod with ProtonTricks instructions. If you want to verify in winetricks has correctly taken in account your custom Wine directory, click on `Browse files` to see if it brings you to the designated folder.
+
+
 ## Thanks to
 
 - [@bundyo](https://github.com/bundyo)
