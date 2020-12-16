@@ -4,6 +4,7 @@
 #include <d3d11.h>
 #include <atlbase.h>
 #include "Options.h"
+#include "Pattern.h"
 
 using TRegisterPoolOptions = void(void*, const char*, uint64_t);
 TRegisterPoolOptions* RealRegisterPoolOptions = nullptr;
@@ -80,8 +81,8 @@ void RegisterPoolOptions(void* apThis, const char* acpName, uint64_t aSize)
 
 void PoolPatch(Image* apImage)
 {
-    if (apImage->version == Image::MakeVersion(1, 4))
-        RealRegisterPoolOptions = reinterpret_cast<TRegisterPoolOptions*>(0x1AD0F0 + apImage->base_address);
+    RealRegisterPoolOptions = reinterpret_cast<TRegisterPoolOptions*>(FindSignature(apImage->pTextStart, apImage->pTextEnd,
+        { 0x48,0x89,0x5C,0x24,0x08,0x48,0x89,0x74,0x24,0x10,0x57,0x48,0x83,0xEC,0x20,0x49,0x8B,0xD8,0x48,0x8B,0xFA,0x8B,0xF1,0xE8, 0xCC, 0xCC, 0xCC, 0xCC,0x48 ,0x8B ,0xC8 ,0x4C }));
 
     if (RealRegisterPoolOptions)
     {

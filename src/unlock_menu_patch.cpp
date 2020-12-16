@@ -2,7 +2,7 @@
 #include <spdlog/spdlog.h>
 #include <mhook-lib/mhook.h>
 #include "REDString.h"
-
+#include "Pattern.h"
 
 using ScriptExecutionPointer = uint64_t;
 
@@ -27,9 +27,25 @@ void HookRegisterScriptFunction(void* a, uint64_t hash, uint64_t hash2, void* fu
 
 void UnlockMenuPatch(Image* apImage)
 {
-    if (apImage->version == Image::MakeVersion(1, 4))
+    const auto pChecksumLocation = FindSignature(apImage->pTextStart, apImage->pTextEnd, { 0x48, 0xBB, 0x87, 0xC9, 0xB1, 0x63, 0x33, 0x01, 0x15, 0x75 });
+    uint8_t* pCallLocation = nullptr;
+    if(pChecksumLocation)
     {
-        RealRegisterScriptFunction = reinterpret_cast<TRegisterScriptFunction*>(apImage->base_address + 0x224C70);
+        pCallLocation = FindSignature(pChecksumLocation, pChecksumLocation + 512, { 0x48, 0x8D, 0x0D, 0xCC, 0xCC, 0xCC, 0xCC, 0xE8, 0xCC, 0xCC, 0xCC, 0xCC, 0x48, 0x8D, 0x0D });
+        if(pCallLocation)
+        {
+            pCallLocation += 8;
+        }
+    }
+
+    if (pCallLocation)
+    {
+        DWORD oldProtect = 0;
+        VirtualProtect(pCallLocation, 32, PAGE_EXECUTE_WRITECOPY, &oldProtect);
+        uint32_t offset = *(uint32_t*)(pCallLocation) + 4;       
+        VirtualProtect(pCallLocation, 32, oldProtect, nullptr);
+
+        RealRegisterScriptFunction =  reinterpret_cast<TRegisterScriptFunction*>(pCallLocation + offset);
     }
     else
     {
