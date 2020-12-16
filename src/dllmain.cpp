@@ -20,6 +20,7 @@ void StringInitializerPatch(Image* apImage);
 void SpinLockPatch(Image* apImage);
 void StartScreenPatch(Image* apImage);
 void RemovePedsPatch(Image* apImage);
+void AsyncComputePatch(Image* apImage);
 
 void Initialize(HMODULE mod)
 {
@@ -54,6 +55,9 @@ void Initialize(HMODULE mod)
 
     if(options.PatchRemovePedestrians)
         RemovePedsPatch(&image);
+
+    if(options.PatchAsyncCompute)
+        AsyncComputePatch(&image);
 
     spdlog::default_logger()->flush();
 }

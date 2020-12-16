@@ -49,6 +49,7 @@ Options::Options(HMODULE aModule)
         this->GPUMemoryPoolFraction = config.value("gpu_memory_pool_fraction", this->GPUMemoryPoolFraction);
         this->PatchRemovePedestrians = config.value("remove_pedestrians", this->PatchRemovePedestrians);
         this->PatchSkipStartMenu = config.value("skip_start_menu", this->PatchSkipStartMenu);
+        this->PatchAsyncCompute = config.value("disable_async_compute", this->PatchAsyncCompute);
     }
 
     nlohmann::json config;
@@ -62,6 +63,7 @@ Options::Options(HMODULE aModule)
     config["gpu_memory_pool_fraction"] = this->GPUMemoryPoolFraction;
     config["remove_pedestrians"] = this->PatchRemovePedestrians;
     config["skip_start_menu"] = this->PatchSkipStartMenu;
+    config["disable_async_compute"] = this->PatchAsyncCompute;
 
     std::ofstream o(configPath);
     o << config.dump(4) << std::endl;
