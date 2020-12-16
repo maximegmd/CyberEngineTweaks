@@ -50,6 +50,7 @@ Options::Options(HMODULE aModule)
         this->PatchRemovePedestrians = config.value("remove_pedestrians", this->PatchRemovePedestrians);
         this->PatchSkipStartMenu = config.value("skip_start_menu", this->PatchSkipStartMenu);
         this->PatchAsyncCompute = config.value("disable_async_compute", this->PatchAsyncCompute);
+        this->PatchAntialiasing = config.value("disable_antialiasing", this->PatchAntialiasing);
     }
 
     nlohmann::json config;
@@ -64,6 +65,7 @@ Options::Options(HMODULE aModule)
     config["remove_pedestrians"] = this->PatchRemovePedestrians;
     config["skip_start_menu"] = this->PatchSkipStartMenu;
     config["disable_async_compute"] = this->PatchAsyncCompute;
+    config["disable_antialiasing"] = this->PatchAntialiasing;
 
     std::ofstream o(configPath);
     o << config.dump(4) << std::endl;

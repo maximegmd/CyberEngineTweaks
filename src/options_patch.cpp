@@ -25,24 +25,28 @@ static_assert(offsetof(GameProperty, pBoolean) == 0x30);
 
 bool HookGamePropertyGetBoolean(GameProperty* apThis, uint8_t* apVariable, uint8_t aKind)
 {
-    auto* pLocation = apThis->pBoolean;
-    if (!pLocation)
+    auto* pVariable = apThis->pBoolean;
+    if (!pVariable)
         return false;
 
-    if (strcmp(apThis->pCategory, "Rendering/AsyncCompute") == 0)
+    if (Options::Get().PatchAsyncCompute && strcmp(apThis->pCategory, "Rendering/AsyncCompute") == 0)
     {
-        *pLocation = false;
+        *pVariable = false;
+    }
+    else if (Options::Get().PatchAntialiasing && strcmp(apThis->pName, "Antialiasing") == 0)
+    {
+        *pVariable = false;
     }
 
     if (aKind != apThis->kind)
         return false;
 
-    *apVariable = *pLocation;
+    *apVariable = *pVariable;
 
     return true;
 }
 
-void AsyncComputePatch(Image* apImage)
+void OptionsPatch(Image* apImage)
 {
     uint8_t* pLocation = FindSignature(apImage->pTextStart, apImage->pTextEnd,
         { 0x44, 0x3A, 0x41, 0x28, 0x75, 0x11, 0x48, 0x8B, 0x41, 0x30, 0x48, 0x85, 0xC0 });
@@ -64,8 +68,8 @@ void AsyncComputePatch(Image* apImage)
         pLocation[11] = 0xE0;
         VirtualProtect(pLocation, 32, oldProtect, nullptr);
         
-        spdlog::info("\tAsync compute patch: success");
+        spdlog::info("\tHidden options patch: success");
     }
     else
-        spdlog::info("\tAsync compute patch: failed");
+        spdlog::info("\tHidden options patch: failed");
 }

@@ -19,6 +19,7 @@ struct Options
 	bool PatchUnlockMenu{ false };
 	bool PatchRemovePedestrians{ false };
 	bool PatchAsyncCompute{ false };
+	bool PatchAntialiasing{ false };
 	bool PatchSkipStartMenu{ true };
 	float CPUMemoryPoolFraction{ 0.5f };
 	float GPUMemoryPoolFraction{ 1.f };
