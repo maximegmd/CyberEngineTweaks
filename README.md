@@ -14,6 +14,8 @@ This plugin fixes some Cyberpunk 2077 issues and adds some features.
 | Pools | Improves memory usage, can improve performance on some configurations. |
 | Spectre | Removes spectre mitigation to improve performance on all configurations. |
 | Steam Input | Enables the use of more gamepads (such as the Steam gamepad) |
+| Skip start menu | Skips the menu asking you to press space bar to continue (Breaching...) |
+| Remove pedestrians and traffic | Removes most of the pedestrians and traffic |
 
 ### Upcoming
 
