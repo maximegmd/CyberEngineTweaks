@@ -16,6 +16,8 @@ This plugin fixes some Cyberpunk 2077 issues and adds some features.
 | Steam Input | Enables the use of more gamepads (such as the Steam gamepad) |
 | Skip start menu | Skips the menu asking you to press space bar to continue (Breaching...) |
 | Remove pedestrians and traffic | Removes most of the pedestrians and traffic |
+| Disable Async Compute | Disables async compute, this can give a boost on older GPUs ( nvidia 10xx series for example)|
+| Disable Antialiasing TAA | Disables antialiasing, not recommended but you do what you want! |
 
 ### Upcoming
 
