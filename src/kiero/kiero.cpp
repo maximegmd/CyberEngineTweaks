@@ -374,21 +374,21 @@ kiero::Status::Enum kiero::init(RenderType::Enum _renderType)
 					return Status::ModuleNotFoundError;
 				}
 
-				void* CreateDXGIFactory;
-				if ((CreateDXGIFactory = ::GetProcAddress(libDXGI, "CreateDXGIFactory")) == NULL)
-				{
-					::DestroyWindow(window);
-					::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
-					return Status::UnknownError;
-				}
+                void* CreateDXGIFactory;
+                if ((CreateDXGIFactory = ::GetProcAddress(libDXGI, "CreateDXGIFactory")) == NULL)
+                {
+                    ::DestroyWindow(window);
+                    ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
+                    return Status::UnknownError;
+                }
 
-				IDXGIFactory* factory;
-				if (((long(__stdcall*)(const IID&, void**))(CreateDXGIFactory))(__uuidof(IDXGIFactory), (void**)&factory) < 0)
-				{
-					::DestroyWindow(window);
-					::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
-					return Status::UnknownError;
-				}
+                IDXGIFactory* factory;
+                if (((long(__stdcall*)(const IID&, void**))(CreateDXGIFactory))(__uuidof(IDXGIFactory), (void**)&factory) < 0)
+                {
+                    ::DestroyWindow(window);
+                    ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
+                    return Status::UnknownError;
+                }
 
 				IDXGIAdapter* adapter;
 				if (factory->EnumAdapters(0, &adapter) == DXGI_ERROR_NOT_FOUND)
@@ -398,21 +398,21 @@ kiero::Status::Enum kiero::init(RenderType::Enum _renderType)
 					return Status::UnknownError;
 				}
 
-				void* D3D12CreateDevice;
-				if ((D3D12CreateDevice = ::GetProcAddress(libD3D12, "D3D12CreateDevice")) == NULL)
-				{
-					::DestroyWindow(window);
-					::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
-					return Status::UnknownError;
-				}
+                void* D3D12CreateDevice;
+                if ((D3D12CreateDevice = ::GetProcAddress(libD3D12, "D3D12CreateDevice")) == NULL)
+                {
+                    ::DestroyWindow(window);
+                    ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
+                    return Status::UnknownError;
+                }
 
-				ID3D12Device* device;
-				if (((long(__stdcall*)(IUnknown*, D3D_FEATURE_LEVEL, const IID&, void**))(D3D12CreateDevice))(adapter, D3D_FEATURE_LEVEL_11_0, __uuidof(ID3D12Device), (void**)&device) < 0)
-				{
-					::DestroyWindow(window);
-					::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
-					return Status::UnknownError;
-				}
+                ID3D12Device* device;
+                if (((long(__stdcall*)(IUnknown*, D3D_FEATURE_LEVEL, const IID&, void**))(D3D12CreateDevice))(adapter, D3D_FEATURE_LEVEL_11_0, __uuidof(ID3D12Device), (void**)&device) < 0)
+                {
+                    ::DestroyWindow(window);
+                    ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
+                    return Status::UnknownError;
+                }
 
 				D3D12_COMMAND_QUEUE_DESC queueDesc;
 				queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
