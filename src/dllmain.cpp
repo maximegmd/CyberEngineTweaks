@@ -4,6 +4,7 @@
 #include <DbgHelp.h>
 #include <spdlog/spdlog.h>
 #include <kiero/kiero.h>
+#include <MinHook.h>
 
 #include "Image.h"
 #include "Options.h"
@@ -34,11 +35,6 @@ void Initialize(HMODULE mod)
 
     Image image;
 
-    if (!kiero::init(kiero::RenderType::D3D12))
-    {
-        
-    }
-
     if(options.PatchSMT)
         SmtAmdPatch(&image);
 
@@ -68,6 +64,8 @@ void Initialize(HMODULE mod)
 
     if (options.DumpGameOptions)
         OptionsInitPatch(&image);
+
+    MH_EnableHook(MH_ALL_HOOKS);
 
     spdlog::default_logger()->flush();
 }
