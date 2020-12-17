@@ -37,6 +37,10 @@ bool HookGamePropertyGetBoolean(GameProperty* apThis, uint8_t* apVariable, uint8
     {
         *pVariable = false;
     }
+    else if (Options::Get().PatchAntialiasing && strcmp(apThis->pName, "ScreenSpaceReflection") == 0)
+    {
+        *pVariable = false;
+    }
 
     if (aKind != apThis->kind)
         return false;
