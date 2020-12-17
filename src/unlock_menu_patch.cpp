@@ -1,6 +1,6 @@
 #include "Image.h"
 #include <spdlog/spdlog.h>
-#include <mhook-lib/mhook.h>
+#include <MinHook.h>
 #include "REDString.h"
 #include "Pattern.h"
 
@@ -53,6 +53,6 @@ void UnlockMenuPatch(Image* apImage)
         return;
     }
 
-    Mhook_SetHook(reinterpret_cast<void**>(&RealRegisterScriptFunction), &HookRegisterScriptFunction);
+    MH_CreateHook(RealRegisterScriptFunction, &HookRegisterScriptFunction, reinterpret_cast<void**>(&RealRegisterScriptFunction));
     spdlog::info("\tUnlock menu patch: success");
 }

@@ -1,6 +1,6 @@
 #include "Image.h"
 #include <spdlog/spdlog.h>
-#include <mhook-lib/mhook.h>
+#include <MinHook.h>
 #include <d3d11.h>
 #include <atlbase.h>
 #include "Options.h"
@@ -86,7 +86,7 @@ void PoolPatch(Image* apImage)
 
     if (RealRegisterPoolOptions)
     {
-        auto result = Mhook_SetHook(reinterpret_cast<PVOID*>(&RealRegisterPoolOptions), &RegisterPoolOptions);
+        const auto result = MH_CreateHook(RealRegisterPoolOptions, &RegisterPoolOptions, reinterpret_cast<void**>(&RealRegisterPoolOptions));
         spdlog::info("\tPool patch: {}", result ? "success":"error");
     }
     else

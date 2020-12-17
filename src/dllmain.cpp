@@ -3,6 +3,7 @@
 #include <windows.h>
 #include <DbgHelp.h>
 #include <spdlog/spdlog.h>
+#include <kiero/kiero.h>
 
 #include "Image.h"
 #include "Options.h"
@@ -31,6 +32,11 @@ void Initialize(HMODULE mod)
         return;
 
     Image image;
+
+    if (!kiero::init(kiero::RenderType::D3D12))
+    {
+        
+    }
 
     if(options.PatchSMT)
         SmtAmdPatch(&image);
@@ -62,6 +68,11 @@ void Initialize(HMODULE mod)
     spdlog::default_logger()->flush();
 }
 
+void Shutdown()
+{
+    kiero::shutdown();
+}
+
 BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID) {
     switch(ul_reason_for_call) {
     case DLL_PROCESS_ATTACH:
@@ -69,6 +80,8 @@ BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID) {
         break;
 
     case DLL_PROCESS_DETACH:
+        Shutdown();
+        break;
     case DLL_THREAD_ATTACH:
     case DLL_THREAD_DETACH:
     default:
