@@ -51,6 +51,7 @@ Options::Options(HMODULE aModule)
         this->PatchSkipStartMenu = config.value("skip_start_menu", this->PatchSkipStartMenu);
         this->PatchAsyncCompute = config.value("disable_async_compute", this->PatchAsyncCompute);
         this->PatchAntialiasing = config.value("disable_antialiasing", this->PatchAntialiasing);
+        this->DumpGameOptions = config.value("dump_game_options", this->DumpGameOptions);
     }
 
     nlohmann::json config;
@@ -66,6 +67,7 @@ Options::Options(HMODULE aModule)
     config["skip_start_menu"] = this->PatchSkipStartMenu;
     config["disable_async_compute"] = this->PatchAsyncCompute;
     config["disable_antialiasing"] = this->PatchAntialiasing;
+    config["dump_game_options"] = this->DumpGameOptions;
 
     std::ofstream o(configPath);
     o << config.dump(4) << std::endl;
