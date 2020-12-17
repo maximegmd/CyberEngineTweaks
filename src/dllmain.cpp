@@ -22,6 +22,7 @@ void SpinLockPatch(Image* apImage);
 void StartScreenPatch(Image* apImage);
 void RemovePedsPatch(Image* apImage);
 void OptionsPatch(Image* apImage);
+void OptionsInitPatch(Image* apImage);
 
 void Initialize(HMODULE mod)
 {
@@ -64,6 +65,9 @@ void Initialize(HMODULE mod)
 
     if(options.PatchAsyncCompute || options.PatchAntialiasing)
         OptionsPatch(&image);
+
+    if (options.DumpGameOptions)
+        OptionsInitPatch(&image);
 
     spdlog::default_logger()->flush();
 }
