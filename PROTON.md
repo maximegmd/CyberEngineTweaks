@@ -30,6 +30,18 @@ The options menu for protontricks will show up again, this time select 'Run wine
 
 You can now exit out of protontricks and start your game. Check to see if the log exists after you run the game. If it's there, you've successfully installed the mod. 
 
+## Setting up the mod with proton as non-Steam Game
+
+Search for the game APPID with:
+$ protontricks -s name_of_the_game_on_your_steam_lib
+like:
+$ protontricks -s Cyberpunk 2077
+
+copy the APPID from the terminal then run:
+$ protontricks "APPID"  --gui
+
+From now on, you can follow the Setting up the mod with ProtonTricks instructions.
+
 ## Setting up the mod with Winetricks
 
 For users running on the Gog version of the game, via launcher like Lutris, minigalaxy or gamehub, those running from the direct Gog galaxy Windows application through Wine, or those directly using the Game libraries, Protontricks won´t be helpful in your case, as protontricks will notice that you don´t have the game on Steam.
