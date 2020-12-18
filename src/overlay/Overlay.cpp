@@ -194,6 +194,56 @@ void Overlay::InitializeD3D12(IDXGISwapChain3* pSwapChain)
     }
 }
 
+
+struct REDString
+{
+    uint8_t pad[0x20];
+};
+
+using TConsoleExecute = bool(void* a1, char* apCommand, void* a3);
+using TStringCtor = void(REDString*, uintptr_t);
+TStringCtor* RealStringCtor = (TStringCtor*)0x1401B7830;
+
+struct Result
+{
+    struct Unk28
+    {
+        uintptr_t vtbl{ 0x142F2B150 };
+        uintptr_t unk8{ 0 };
+    };
+
+    Result()
+    {
+        RealStringCtor(&someStr, 0x142F2A4FD);
+    }
+
+    REDString someStr;
+    uint32_t number{ 7 };
+    Unk28 unk28;
+    int number2{ 0 };
+    uint8_t pad[0x1000]; // we don't know
+};
+
+struct Console
+{
+    static Console* Get()
+    {
+        static Console** Singleton = (Console**)((uintptr_t)GetModuleHandleA(nullptr) + 0x406B050);
+        return *Singleton;
+    }
+
+    virtual ~Console();
+    virtual void sub_01();
+    virtual void sub_02();
+    virtual void sub_03();
+    virtual void sub_04();
+    virtual void sub_05();
+    virtual void sub_06();
+    virtual void sub_07();
+    virtual void sub_08();
+    virtual bool Execute(const char* apCommand, Result* output);
+};
+
 void Overlay::Render(IDXGISwapChain3* pSwapChain)
 {
     ImGui_ImplDX12_NewFrame();
@@ -208,12 +258,26 @@ void Overlay::Render(IDXGISwapChain3* pSwapChain)
     ImGui::PushItemWidth(600.f);
     ImGui::PushItemWidth(-140);
 
+    static char command[512] = { 0 };
+    ImGui::InputText("Console", command, std::size(command));
+    if(ImGui::Button("Execute"))
+    {
+        Result result;
+
+        Console::Get()->Execute(command, &result);
+
+        spdlog::info("Output {}", *(char**)result.unk28.vtbl);
+    }
+
     if (ImGui::CollapsingHeader("MENU"))
     {
         if (ImGui::TreeNode("SUB MENU"))
         {
             ImGui::Text("Text Test");
-            if (ImGui::Button("Button Test")) {}
+            if (ImGui::Button("Button Test"))
+            {
+                
+            }
             ImGui::Checkbox("CheckBox Test", &no_titlebar);
             ImGui::SliderFloat("Slider Test", &test, 1.0f, 100.0f);
 
