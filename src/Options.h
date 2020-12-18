@@ -2,8 +2,8 @@
 
 #include <windows.h>
 #include <filesystem>
+#include "Image.h"
 
-struct Image;
 struct Options
 {
 	static void Initialize(HMODULE aModule);
@@ -26,6 +26,7 @@ struct Options
 	float GPUMemoryPoolFraction{ 1.f };
 	std::filesystem::path Path;
 	std::string ExeName;
+	Image GameImage;
 
 private:
 

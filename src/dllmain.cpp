@@ -4,7 +4,9 @@
 #include <DbgHelp.h>
 #include <spdlog/spdlog.h>
 #include <kiero/kiero.h>
+#include <overlay/Overlay.h>
 #include <MinHook.h>
+#include <thread>
 
 #include "Image.h"
 #include "Options.h"
@@ -27,6 +29,8 @@ void OptionsInitPatch(Image* apImage);
 
 void Initialize(HMODULE mod)
 {
+    MH_Initialize();
+
     Options::Initialize(mod);
     const auto& options = Options::Get();
 
@@ -65,7 +69,20 @@ void Initialize(HMODULE mod)
     if (options.DumpGameOptions)
         OptionsInitPatch(&image);
 
+    Overlay::Initialize(&image);
+
     MH_EnableHook(MH_ALL_HOOKS);
+
+    std::thread t([]()
+        {
+            if (kiero::init(kiero::RenderType::D3D12) != kiero::Status::Success)
+            {
+                spdlog::error("Kiero failed!");
+            }
+            else
+                Overlay::Get().Hook();
+        });
+    t.detach();
 
     spdlog::default_logger()->flush();
 }
