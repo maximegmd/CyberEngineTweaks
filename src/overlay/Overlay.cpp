@@ -264,10 +264,10 @@ void Overlay::Render(IDXGISwapChain3* pSwapChain)
             ImGui::Selectable(item.c_str());
 
         if (result)
-            ImGui::ListBoxFooter();
-
-        ImGui::End();
+            ImGui::ListBoxFooter();       
     }
+
+    ImGui::End();
 
     ImGui::Render();
 
