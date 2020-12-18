@@ -7,6 +7,7 @@
 #include <imgui.h>
 #include <memory>
 #include <MinHook.h>
+#include <Options.h>
 #include <Pattern.h>
 #include <kiero/kiero.h>
 #include <spdlog/spdlog.h>
@@ -39,21 +40,6 @@ Overlay& Overlay::Get()
 void Overlay::EarlyHooks(Image* apImage)
 {
     uint8_t* pLocation = FindSignature(apImage->pTextStart, apImage->pTextEnd, {
-        0x48, 0x83, 0xEC, 0x38, 0x48, 0x8B, 0xCA, 0x44, 0x89, 0x44, 0x24,
-        0x20, 0x48, 0x8D, 0x54, 0x24
-    });
-
-    if (pLocation)
-    {
-       if(MH_CreateHook(pLocation, &SetMousePosition, nullptr) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-       {
-           spdlog::error("\tCould not hook mouse center function!");
-       }
-       else
-           spdlog::info("\tHook mouse center function!");
-    }
-
-    pLocation = FindSignature(apImage->pTextStart, apImage->pTextEnd, {
         0x48, 0x89, 0x5C, 0x24, 0x08, 0x57, 0x48, 0x83, 0xEC, 0x30, 0x48, 0x8B,
         0x99, 0x68, 0x01, 0x00, 0x00, 0x48, 0x8B, 0xF9, 0xFF });
 
@@ -66,8 +52,6 @@ void Overlay::EarlyHooks(Image* apImage)
         else
             spdlog::info("\tHook mouse clip function!");
     }
-
-    
 }
 
 BOOL CALLBACK EnumWindowsProcMy(HWND hwnd, LPARAM lParam)
@@ -109,7 +93,7 @@ LRESULT APIENTRY WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         break;
     }
 
-    if(s_pOverlay->IsEnabled() && uMsg != WM_PAINT && uMsg != WM_ACTIVATE && uMsg != WM_QUIT)
+    if(s_pOverlay->IsEnabled() && uMsg != WM_PAINT && uMsg != WM_ACTIVATE && uMsg != WM_QUIT && uMsg != WM_CLOSE) 
     {
         return true;
     }
@@ -136,8 +120,6 @@ void Overlay::InitializeD3D12(IDXGISwapChain3* pSwapChain)
         io.Fonts->AddFontDefault();
         io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
         io.IniFilename = NULL;
-
-        //CreateEvent(nullptr, false, false, nullptr);
 
         DXGI_SWAP_CHAIN_DESC sdesc;
         pSwapChain->GetDesc(&sdesc);
@@ -197,24 +179,27 @@ void Overlay::InitializeD3D12(IDXGISwapChain3* pSwapChain)
 
 struct REDString
 {
-    uint8_t pad[0x20];
+    char** str;
+    uint8_t pad8[0x14 - 0x8];
+    uint32_t someHash{ 0x40000000 };
+    uint8_t pad18[0x20 - 0x18];
 };
 
 using TConsoleExecute = bool(void* a1, char* apCommand, void* a3);
 using TStringCtor = void(REDString*, uintptr_t);
-TStringCtor* RealStringCtor = (TStringCtor*)0x1401B7830;
+TStringCtor* RealStringCtor = (TStringCtor*)(0x1B7830 + (uintptr_t)GetModuleHandleA(nullptr));
 
 struct Result
 {
     struct Unk28
     {
-        uintptr_t vtbl{ 0x142F2B150 };
+        uintptr_t vtbl{ 0x2F2B150 + (uintptr_t)GetModuleHandleA(nullptr) };
         uintptr_t unk8{ 0 };
     };
 
     Result()
     {
-        RealStringCtor(&someStr, 0x142F2A4FD);
+        RealStringCtor(&someStr, 0x2F2A4FD + (uintptr_t)GetModuleHandleA(nullptr));
     }
 
     REDString someStr;
@@ -241,51 +226,48 @@ struct Console
     virtual void sub_06();
     virtual void sub_07();
     virtual void sub_08();
-    virtual bool Execute(const char* apCommand, Result* output);
+    virtual bool Execute(REDString* apCommand, Result* output);
 };
 
 void Overlay::Render(IDXGISwapChain3* pSwapChain)
 {
+    if (!IsEnabled())
+        return;
+
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
 
-    ImGui::Begin("ImGui Menu");
+    ImGui::Begin("Cyber Engine Tweaks");
 
-    static bool no_titlebar = false;
-    float test = 0.f;
-
-    ImGui::PushItemWidth(600.f);
-    ImGui::PushItemWidth(-140);
-
-    static char command[512] = { 0 };
-    ImGui::InputText("Console", command, std::size(command));
-    if(ImGui::Button("Execute"))
+    if (Options::Get().GameImage.version == Image::MakeVersion(1, 4))
     {
-        Result result;
+        ImGui::PushItemWidth(600.f);
 
-        Console::Get()->Execute(command, &result);
+        static std::vector<std::string> s_consoleResult;
+        static char command[512] = { 0 };
 
-        spdlog::info("Output {}", *(char**)result.unk28.vtbl);
-    }
-
-    if (ImGui::CollapsingHeader("MENU"))
-    {
-        if (ImGui::TreeNode("SUB MENU"))
+        ImGui::InputText("Console", command, std::size(command));
+        if (ImGui::Button("Execute"))
         {
-            ImGui::Text("Text Test");
-            if (ImGui::Button("Button Test"))
-            {
-                
-            }
-            ImGui::Checkbox("CheckBox Test", &no_titlebar);
-            ImGui::SliderFloat("Slider Test", &test, 1.0f, 100.0f);
+            Result result;
 
-            ImGui::TreePop();
+            REDString redCommand;
+            redCommand.str = (char**)&command;
+            Console::Get()->Execute(&redCommand, &result);
+
+            s_consoleResult.push_back(*(char**)result.unk28.vtbl);
         }
-    }
 
-    ImGui::End();
+        const auto result = ImGui::ListBoxHeader("List", s_consoleResult.size(), 15);
+        for (auto& item : s_consoleResult)
+            ImGui::Selectable(item.c_str());
+
+        if (result)
+            ImGui::ListBoxFooter();
+
+        ImGui::End();
+    }
 
     ImGui::Render();
 
@@ -333,18 +315,6 @@ long Overlay::PresentD3D12(IDXGISwapChain3* pSwapChain, UINT SyncInterval, UINT 
     return s_pOverlay->m_realPresentD3D12(pSwapChain, SyncInterval, Flags);
 }
 
-BOOL Overlay::SetMousePosition(void* apThis, HWND Wnd, long X, long Y)
-{
-    if(s_pOverlay->IsEnabled())
-        return TRUE;
-
-    POINT point;
-    point.x = X;
-    point.y = Y;
-    ClientToScreen(Wnd, &point);
-    return SetCursorPos(point.x, point.y);
-}
-
 struct SomeStruct
 {
     uint8_t pad0[0x140];
@@ -376,6 +346,7 @@ BOOL Overlay::ClipToCenter(SomeStruct* apThis)
         rect.bottom = (rect.bottom + rect.top) / 2;
         rect.top = rect.bottom;
         apThis->isClipped = true;
+        ShowCursor(FALSE);
         return ClipCursor(&rect);
     }
 
@@ -406,9 +377,15 @@ void Overlay::Toggle()
 
     m_enabled = !m_enabled;
 
-    ShowCursor(m_enabled);
+    while(true)
+    {
+        if (m_enabled && ShowCursor(TRUE) >= 0)
+            break;
+        if (!m_enabled && ShowCursor(FALSE) < 0)
+            break;
+    }
 
-    Singleton* pSingleton = *(Singleton**)(0x40689D8ull + (uintptr_t)GetModuleHandleA(nullptr));
+    Singleton* pSingleton = *(Singleton**)(0x40689D8 + (uintptr_t)GetModuleHandleA(nullptr));
     ClipToCenter(pSingleton->pSomeStruct);
 }
 
