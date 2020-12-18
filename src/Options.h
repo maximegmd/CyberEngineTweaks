@@ -22,6 +22,7 @@ struct Options
 	bool PatchAntialiasing{ false };
 	bool PatchSkipStartMenu{ true };
 	bool DumpGameOptions{ false };
+	bool Console{ true };
 	float CPUMemoryPoolFraction{ 0.5f };
 	float GPUMemoryPoolFraction{ 1.f };
 	std::filesystem::path Path;

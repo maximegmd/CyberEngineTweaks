@@ -69,20 +69,24 @@ void Initialize(HMODULE mod)
     if (options.DumpGameOptions)
         OptionsInitPatch(&image);
 
-    Overlay::Initialize(&image);
+    if(options.Console)
+        Overlay::Initialize(&image);
 
     MH_EnableHook(MH_ALL_HOOKS);
 
-    std::thread t([]()
-        {
-            if (kiero::init(kiero::RenderType::D3D12) != kiero::Status::Success)
+    if (options.Console)
+    {
+        std::thread t([]()
             {
-                spdlog::error("Kiero failed!");
-            }
-            else
-                Overlay::Get().Hook();
-        });
-    t.detach();
+                if (kiero::init(kiero::RenderType::D3D12) != kiero::Status::Success)
+                {
+                    spdlog::error("Kiero failed!");
+                }
+                else
+                    Overlay::Get().Hook();
+            });
+        t.detach();
+    }
 
     spdlog::default_logger()->flush();
 }

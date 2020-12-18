@@ -87,7 +87,7 @@ void PoolPatch(Image* apImage)
     if (RealRegisterPoolOptions)
     {
         const auto result = MH_CreateHook(RealRegisterPoolOptions, &RegisterPoolOptions, reinterpret_cast<void**>(&RealRegisterPoolOptions));
-        spdlog::info("\tPool patch: {}", result ? "success":"error");
+        spdlog::info("\tPool patch: {}", result == MH_OK ? "success":"error");
     }
     else
         spdlog::info("\tPool patch: failed");

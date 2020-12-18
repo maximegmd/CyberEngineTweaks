@@ -52,6 +52,7 @@ Options::Options(HMODULE aModule)
         this->PatchAsyncCompute = config.value("disable_async_compute", this->PatchAsyncCompute);
         this->PatchAntialiasing = config.value("disable_antialiasing", this->PatchAntialiasing);
         this->DumpGameOptions = config.value("dump_game_options", this->DumpGameOptions);
+        this->Console = config.value("console", this->Console);
     }
 
     nlohmann::json config;
@@ -68,6 +69,7 @@ Options::Options(HMODULE aModule)
     config["disable_async_compute"] = this->PatchAsyncCompute;
     config["disable_antialiasing"] = this->PatchAntialiasing;
     config["dump_game_options"] = this->DumpGameOptions;
+    config["console"] = this->Console;
 
     std::ofstream o(configPath);
     o << config.dump(4) << std::endl;
