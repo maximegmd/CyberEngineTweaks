@@ -93,7 +93,7 @@ LRESULT APIENTRY WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         break;
     }
 
-    if(s_pOverlay->IsEnabled() && uMsg != WM_PAINT && uMsg != WM_ACTIVATE && uMsg != WM_QUIT && uMsg != WM_CLOSE) 
+    if(s_pOverlay->IsEnabled() && uMsg != WM_PAINT && uMsg != WM_ACTIVATE && uMsg != WM_QUIT && uMsg != WM_CLOSE && uMsg != WM_DESTROY) 
     {
         return true;
     }
@@ -247,8 +247,8 @@ void Overlay::Render(IDXGISwapChain3* pSwapChain)
         static std::vector<std::string> s_consoleResult;
         static char command[512] = { 0 };
 
-        ImGui::InputText("Console", command, std::size(command));
-        if (ImGui::Button("Execute"))
+        auto execute = ImGui::InputText("Console", command, std::size(command), ImGuiInputTextFlags_EnterReturnsTrue);
+        if (ImGui::Button("Execute") || execute)
         {
             Result result;
 
