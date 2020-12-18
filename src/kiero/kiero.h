@@ -73,6 +73,7 @@ namespace kiero
 
 	RenderType::Enum getRenderType();
 	uint150_t* getMethodsTable();
+	uintptr_t getCommandQueueOffset();
 }
 
 #endif // __KIERO_H__

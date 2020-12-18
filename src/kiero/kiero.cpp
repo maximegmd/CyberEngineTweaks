@@ -1,6 +1,7 @@
 #include "kiero.h"
 #include <Windows.h>
 #include <assert.h>
+#include <spdlog/spdlog.h>
 
 #if KIERO_INCLUDE_D3D9
 # include <d3d9.h>
@@ -44,6 +45,7 @@
 
 static kiero::RenderType::Enum g_renderType = kiero::RenderType::None;
 static uint150_t* g_methodsTable = NULL;
+static uintptr_t g_commandQueueOffset = 0;
 
 kiero::Status::Enum kiero::init(RenderType::Enum _renderType)
 {
@@ -478,6 +480,13 @@ kiero::Status::Enum kiero::init(RenderType::Enum _renderType)
 					return Status::UnknownError;
 				}
 
+                auto valueToFind = reinterpret_cast<uintptr_t>(commandQueue);
+                auto* swapChainPtr = reinterpret_cast<uintptr_t*>(swapChain);
+
+                auto addr = std::find(swapChainPtr, swapChainPtr + 512, valueToFind);
+
+                g_commandQueueOffset = reinterpret_cast<uintptr_t>(addr) - reinterpret_cast<uintptr_t>(swapChainPtr);
+
 				g_methodsTable = (uint150_t*)::calloc(150, sizeof(uint150_t));
 				::memcpy(g_methodsTable, *(uint150_t**)device, 44 * sizeof(uint150_t));
 				::memcpy(g_methodsTable + 44, *(uint150_t**)commandQueue, 19 * sizeof(uint150_t));
@@ -724,4 +733,10 @@ kiero::RenderType::Enum kiero::getRenderType()
 uint150_t* kiero::getMethodsTable()
 {
 	return g_methodsTable;
-} 
+}
+
+uintptr_t kiero::getCommandQueueOffset()
+{
+    return g_commandQueueOffset;
+}
+

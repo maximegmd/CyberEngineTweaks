@@ -4,11 +4,8 @@
 #include <dxgi.h>
 #include <dxgi1_4.h>
 #include <windows.h>
+#include <vector>
 
-using TExecuteCommandListsD3D12 = void(ID3D12CommandQueue*, UINT, ID3D12CommandList**);
-using TSignalD3D12 = HRESULT(ID3D12CommandQueue*, ID3D12Fence*, UINT64);
-using TDrawInstancedD3D12 = void(ID3D12GraphicsCommandList* dCommandList, UINT VertexCountPerInstance, UINT InstanceCount, UINT StartVertexLocation, UINT StartInstanceLocation);
-using TDrawIndexedInstancedD3D12 = void(ID3D12GraphicsCommandList* dCommandList, UINT IndexCount, UINT InstanceCount, UINT StartIndex, INT BaseVertex);
 using TPresentD3D12 = long(IDXGISwapChain3* pSwapChain, UINT SyncInterval, UINT Flags);
 
 struct Overlay
@@ -20,21 +17,27 @@ struct Overlay
 
 protected:
 
-	void Hook();
+	struct FrameContext
+	{
+		ID3D12Resource* MainRenderTargetResource = nullptr;
+		D3D12_CPU_DESCRIPTOR_HANDLE MainRenderTargetDescriptor;
+		ID3D12Resource* BackBuffer = nullptr;
+		ID3D12CommandAllocator* CommandAllocator = nullptr;
+	};
 
-	static void ExecuteCommandListsD3D12(ID3D12CommandQueue*, UINT, ID3D12CommandList**);
-	static HRESULT SignalD3D12(ID3D12CommandQueue*, ID3D12Fence*, UINT64);
-	static void DrawInstancedD3D12(ID3D12GraphicsCommandList* dCommandList, UINT VertexCountPerInstance, UINT InstanceCount, UINT StartVertexLocation, UINT StartInstanceLocation);
-	static void DrawIndexedInstancedD3D12(ID3D12GraphicsCommandList* dCommandList, UINT IndexCount, UINT InstanceCount, UINT StartIndex, INT BaseVertex);
+	void Hook();
+	void InitializeD3D12(IDXGISwapChain3* pSwapChain);
+	void Render(IDXGISwapChain3* pSwapChain);
+
 	static long PresentD3D12(IDXGISwapChain3* pSwapChain, UINT SyncInterval, UINT Flags);
 	
 private:
 
 	Overlay();
 	
-	TExecuteCommandListsD3D12* m_realExecuteCommandListsD3D12{ nullptr };
-	TSignalD3D12* m_realSignalD3D12{ nullptr };
-	TDrawInstancedD3D12* m_realDrawInstancedD3D12{ nullptr };
-	TDrawIndexedInstancedD3D12* m_realDrawIndexedInstancedD3D12{ nullptr };
 	TPresentD3D12* m_realPresentD3D12{ nullptr };
+	std::vector<FrameContext> m_frameContexts;
+	ID3D12DescriptorHeap* m_pd3dRtvDescHeap = nullptr;
+	ID3D12DescriptorHeap* m_pd3dSrvDescHeap;
+	ID3D12GraphicsCommandList* m_pd3dCommandList;
 };
