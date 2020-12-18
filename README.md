@@ -18,6 +18,7 @@ This plugin fixes some Cyberpunk 2077 issues and adds some features.
 | Remove pedestrians and traffic | Removes most of the pedestrians and traffic |
 | Disable Async Compute | Disables async compute, this can give a boost on older GPUs ( nvidia 10xx series for example)|
 | Disable Antialiasing TAA | Disables antialiasing, not recommended but you do what you want! |
+| Imgui overlay | Adds an overlay to draw whatever UI you want on top of the game |
 
 ### Upcoming
 
