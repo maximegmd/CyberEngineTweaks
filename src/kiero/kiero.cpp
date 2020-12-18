@@ -495,7 +495,6 @@ kiero::Status::Enum kiero::init(RenderType::Enum _renderType)
 				::memcpy(g_methodsTable + 44 + 19 + 9 + 60, *(uint150_t**)swapChain, 18 * sizeof(uint150_t));
 
 #if KIERO_USE_MINHOOK
-				MH_Initialize();
 #endif
 
 				device->Release();

@@ -6,14 +6,27 @@
 #include <windows.h>
 #include <vector>
 
-using TPresentD3D12 = long(IDXGISwapChain3* pSwapChain, UINT SyncInterval, UINT Flags);
+struct SomeStruct;
 
+
+using TPresentD3D12 = long(IDXGISwapChain3* pSwapChain, UINT SyncInterval, UINT Flags);
+using TSetMousePosition = BOOL(void* apThis, HWND Wnd, long X, long Y);
+using TClipToCenter = HWND(SomeStruct* apThis);
+
+struct Image;
 struct Overlay
 {
-	static void Initialize();
+	static void Initialize(Image* apImage);
 	static void Shutdown();
+	static Overlay& Get();
 
 	~Overlay();
+
+	void EarlyHooks(Image* apImage);
+	void Hook();
+
+	void Toggle();
+	bool IsEnabled();
 
 protected:
 
@@ -25,11 +38,12 @@ protected:
 		ID3D12CommandAllocator* CommandAllocator = nullptr;
 	};
 
-	void Hook();
 	void InitializeD3D12(IDXGISwapChain3* pSwapChain);
 	void Render(IDXGISwapChain3* pSwapChain);
 
 	static long PresentD3D12(IDXGISwapChain3* pSwapChain, UINT SyncInterval, UINT Flags);
+	static BOOL SetMousePosition(void* apThis, HWND Wnd, long X, long Y);
+	static BOOL ClipToCenter(SomeStruct* apThis);
 	
 private:
 
@@ -40,4 +54,7 @@ private:
 	ID3D12DescriptorHeap* m_pd3dRtvDescHeap = nullptr;
 	ID3D12DescriptorHeap* m_pd3dSrvDescHeap;
 	ID3D12GraphicsCommandList* m_pd3dCommandList;
+	TClipToCenter* m_realClipToCenter{nullptr};
+	HWND m_hwnd;
+	bool m_enabled{ false };
 };

@@ -28,6 +28,8 @@ void OptionsPatch(Image* apImage);
 
 void Initialize(HMODULE mod)
 {
+    MH_Initialize();
+
     Options::Initialize(mod);
     const auto& options = Options::Get();
 
@@ -63,6 +65,8 @@ void Initialize(HMODULE mod)
     if(options.PatchAsyncCompute || options.PatchAntialiasing)
         OptionsPatch(&image);
 
+    Overlay::Initialize(&image);
+
     MH_EnableHook(MH_ALL_HOOKS);
 
     std::thread t([]()
@@ -72,7 +76,7 @@ void Initialize(HMODULE mod)
                 spdlog::error("Kiero failed!");
             }
             else
-                Overlay::Initialize();
+                Overlay::Get().Hook();
         });
     t.detach();
 
