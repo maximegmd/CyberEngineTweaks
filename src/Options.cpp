@@ -57,6 +57,7 @@ Options::Options(HMODULE aModule)
 
         this->DumpGameOptions = config.value("dump_game_options", this->DumpGameOptions);
         this->Console = config.value("console", this->Console);
+		this->ConsoleKey = config.value("console_key", this->ConsoleKey);
 
         // check old config names
         if (config.value("unlock_menu", false))
@@ -78,6 +79,7 @@ Options::Options(HMODULE aModule)
     config["disable_antialiasing"] = this->PatchAntialiasing;
     config["dump_game_options"] = this->DumpGameOptions;
     config["console"] = this->Console;
+    config["console_key"] = this->ConsoleKey;
     config["disable_intro_movies"] = this->PatchDisableIntroMovies;
     config["disable_vignette"] = this->PatchDisableVignette;
     config["disable_boundary_teleport"] = this->PatchDisableBoundaryTeleport;
