@@ -55,7 +55,7 @@ void Initialize(HMODULE mod)
     if (options.PatchVirtualInput)
         VirtualInputPatch(&image);
 
-    if (options.PatchUnlockMenu)
+    if (options.PatchEnableDebug)
         UnlockMenuPatch(&image);
 
     if(options.PatchSkipStartMenu)

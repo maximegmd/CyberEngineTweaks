@@ -44,7 +44,7 @@ Options::Options(HMODULE aModule)
         this->PatchSpectre = config.value("spectre", this->PatchSpectre);
         this->PatchMemoryPool = config.value("memory_pool", this->PatchMemoryPool);
         this->PatchVirtualInput = config.value("virtual_input", this->PatchVirtualInput);
-        this->PatchUnlockMenu = config.value("unlock_menu", this->PatchUnlockMenu);
+        this->PatchEnableDebug = config.value("enable_debug", this->PatchEnableDebug);
         this->CPUMemoryPoolFraction = config.value("cpu_memory_pool_fraction", this->CPUMemoryPoolFraction);
         this->GPUMemoryPoolFraction = config.value("gpu_memory_pool_fraction", this->GPUMemoryPoolFraction);
         this->PatchRemovePedestrians = config.value("remove_pedestrians", this->PatchRemovePedestrians);
@@ -54,6 +54,10 @@ Options::Options(HMODULE aModule)
         this->DumpGameOptions = config.value("dump_game_options", this->DumpGameOptions);
         this->Console = config.value("console", this->Console);
         this->DisableIntroMovies = config.value("disable_intro_movies", this->DisableIntroMovies);
+
+        // check old config names
+        if (config.value("unlock_menu", false))
+            this->PatchEnableDebug = true;
     }
 
     nlohmann::json config;
@@ -62,7 +66,7 @@ Options::Options(HMODULE aModule)
     config["spectre"] = this->PatchSpectre;
     config["memory_pool"] = this->PatchMemoryPool;
     config["virtual_input"] = this->PatchVirtualInput;
-    config["unlock_menu"] = this->PatchUnlockMenu;
+    config["enable_debug"] = this->PatchEnableDebug;
     config["cpu_memory_pool_fraction"] = this->CPUMemoryPoolFraction;
     config["gpu_memory_pool_fraction"] = this->GPUMemoryPoolFraction;
     config["remove_pedestrians"] = this->PatchRemovePedestrians;

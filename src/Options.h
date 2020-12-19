@@ -16,7 +16,7 @@ struct Options
 	bool PatchAVX{ true };
 	bool PatchVirtualInput{ true };
 	bool PatchMemoryPool{ true };
-	bool PatchUnlockMenu{ false };
+	bool PatchEnableDebug{ false };
 	bool PatchRemovePedestrians{ false };
 	bool PatchAsyncCompute{ false };
 	bool PatchAntialiasing{ false };
