@@ -15,7 +15,7 @@
 #pragma comment(linker, "/DLL")
 
 void PoolPatch(Image* apImage);
-void UnlockMenuPatch(Image* apImage);
+void EnableDebugPatch(Image* apImage);
 void VirtualInputPatch(Image* apImage);
 void SmtAmdPatch(Image* apImage);
 void PatchAvx(Image* apImage);
@@ -27,6 +27,8 @@ void RemovePedsPatch(Image* apImage);
 void OptionsPatch(Image* apImage);
 void OptionsInitPatch(Image* apImage);
 void DisableIntroMoviesPatch(Image* apImage);
+void DisableVignettePatch(Image* apImage);
+void DisableBoundaryTeleportPatch(Image* apImage);
 
 void Initialize(HMODULE mod)
 {
@@ -55,8 +57,8 @@ void Initialize(HMODULE mod)
     if (options.PatchVirtualInput)
         VirtualInputPatch(&image);
 
-    if (options.PatchUnlockMenu)
-        UnlockMenuPatch(&image);
+    if (options.PatchEnableDebug)
+        EnableDebugPatch(&image);
 
     if(options.PatchSkipStartMenu)
         StartScreenPatch(&image);
@@ -67,14 +69,20 @@ void Initialize(HMODULE mod)
     if(options.PatchAsyncCompute || options.PatchAntialiasing)
         OptionsPatch(&image);
 
+    if (options.PatchDisableIntroMovies)
+        DisableIntroMoviesPatch(&image);
+
+    if (options.PatchDisableVignette)
+        DisableVignettePatch(&image);
+
+    if (options.PatchDisableBoundaryTeleport)
+        DisableBoundaryTeleportPatch(&image);
+
     if (options.DumpGameOptions)
         OptionsInitPatch(&image);
 
     if(options.Console)
         Overlay::Initialize(&image);
-
-    if (options.DisableIntroMovies)
-        DisableIntroMoviesPatch(&image);
 
     MH_EnableHook(MH_ALL_HOOKS);
 
