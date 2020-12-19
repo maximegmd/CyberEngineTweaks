@@ -51,9 +51,11 @@ Options::Options(HMODULE aModule)
         this->PatchSkipStartMenu = config.value("skip_start_menu", this->PatchSkipStartMenu);
         this->PatchAsyncCompute = config.value("disable_async_compute", this->PatchAsyncCompute);
         this->PatchAntialiasing = config.value("disable_antialiasing", this->PatchAntialiasing);
+        this->PatchDisableIntroMovies = config.value("disable_intro_movies", this->PatchDisableIntroMovies);
+        this->PatchDisableVignette = config.value("disable_vignette", this->PatchDisableVignette);
+
         this->DumpGameOptions = config.value("dump_game_options", this->DumpGameOptions);
         this->Console = config.value("console", this->Console);
-        this->DisableIntroMovies = config.value("disable_intro_movies", this->DisableIntroMovies);
 
         // check old config names
         if (config.value("unlock_menu", false))
@@ -75,7 +77,8 @@ Options::Options(HMODULE aModule)
     config["disable_antialiasing"] = this->PatchAntialiasing;
     config["dump_game_options"] = this->DumpGameOptions;
     config["console"] = this->Console;
-    config["disable_intro_movies"] = this->DisableIntroMovies;
+    config["disable_intro_movies"] = this->PatchDisableIntroMovies;
+    config["disable_vignette"] = this->PatchDisableVignette;
 
     std::ofstream o(configPath);
     o << config.dump(4) << std::endl;

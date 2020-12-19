@@ -27,6 +27,7 @@ void RemovePedsPatch(Image* apImage);
 void OptionsPatch(Image* apImage);
 void OptionsInitPatch(Image* apImage);
 void DisableIntroMoviesPatch(Image* apImage);
+void DisableVignettePatch(Image* apImage);
 
 void Initialize(HMODULE mod)
 {
@@ -67,14 +68,17 @@ void Initialize(HMODULE mod)
     if(options.PatchAsyncCompute || options.PatchAntialiasing)
         OptionsPatch(&image);
 
+    if (options.PatchDisableIntroMovies)
+        DisableIntroMoviesPatch(&image);
+
+    if (options.PatchDisableVignette)
+        DisableVignettePatch(&image);
+
     if (options.DumpGameOptions)
         OptionsInitPatch(&image);
 
     if(options.Console)
         Overlay::Initialize(&image);
-
-    if (options.DisableIntroMovies)
-        DisableIntroMoviesPatch(&image);
 
     MH_EnableHook(MH_ALL_HOOKS);
 
