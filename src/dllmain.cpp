@@ -26,6 +26,7 @@ void StartScreenPatch(Image* apImage);
 void RemovePedsPatch(Image* apImage);
 void OptionsPatch(Image* apImage);
 void OptionsInitPatch(Image* apImage);
+void DisableIntroMoviesPatch(Image* apImage);
 
 void Initialize(HMODULE mod)
 {
@@ -71,6 +72,9 @@ void Initialize(HMODULE mod)
 
     if(options.Console)
         Overlay::Initialize(&image);
+
+    if (options.DisableIntroMovies)
+        DisableIntroMoviesPatch(&image);
 
     MH_EnableHook(MH_ALL_HOOKS);
 

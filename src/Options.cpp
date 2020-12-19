@@ -53,6 +53,7 @@ Options::Options(HMODULE aModule)
         this->PatchAntialiasing = config.value("disable_antialiasing", this->PatchAntialiasing);
         this->DumpGameOptions = config.value("dump_game_options", this->DumpGameOptions);
         this->Console = config.value("console", this->Console);
+        this->DisableIntroMovies = config.value("disable_intro_movies", this->DisableIntroMovies);
     }
 
     nlohmann::json config;
@@ -70,6 +71,7 @@ Options::Options(HMODULE aModule)
     config["disable_antialiasing"] = this->PatchAntialiasing;
     config["dump_game_options"] = this->DumpGameOptions;
     config["console"] = this->Console;
+    config["disable_intro_movies"] = this->DisableIntroMovies;
 
     std::ofstream o(configPath);
     o << config.dump(4) << std::endl;
