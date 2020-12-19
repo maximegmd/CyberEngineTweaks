@@ -14,6 +14,28 @@
 
 #include "imgui_impl_dx12.h"
 #include "imgui_impl_win32.h"
+#include "REDString.h"
+#include "reverse/Engine.h"
+#include "reverse/RTTI.h"
+
+static inline void ltrim(std::string& s) {
+    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
+        return !std::isspace(ch);
+        }));
+}
+
+// trim from end (in place)
+static inline void rtrim(std::string& s) {
+    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
+        return !std::isspace(ch);
+        }).base(), s.end());
+}
+
+// trim from both ends (in place)
+static inline void trim(std::string& s) {
+    ltrim(s);
+    rtrim(s);
+}
 
 
 static std::shared_ptr<Overlay> s_pOverlay;
@@ -176,19 +198,6 @@ void Overlay::InitializeD3D12(IDXGISwapChain3* pSwapChain)
     }
 }
 
-
-struct REDString
-{
-    char** str;
-    uint8_t pad8[0x14 - 0x8];
-    uint32_t someHash{ 0x40000000 };
-    uint8_t pad18[0x20 - 0x18];
-};
-
-using TConsoleExecute = bool(void* a1, char* apCommand, void* a3);
-using TStringCtor = void(REDString*, uintptr_t);
-TStringCtor* RealStringCtor = (TStringCtor*)(0x1B7830 + (uintptr_t)GetModuleHandleA(nullptr));
-
 struct Result
 {
     struct Unk28
@@ -197,37 +206,26 @@ struct Result
         uintptr_t unk8{ 0 };
     };
 
-    Result()
-    {
-        RealStringCtor(&someStr, 0x2F2A4FD + (uintptr_t)GetModuleHandleA(nullptr));
-    }
-
     REDString someStr;
-    uint32_t number{ 7 };
+    uint32_t code{ 7 };
     Unk28 unk28;
     int number2{ 0 };
     uint8_t pad[0x1000]; // we don't know
 };
 
-struct Console
-{
-    static Console* Get()
-    {
-        static Console** Singleton = (Console**)((uintptr_t)GetModuleHandleA(nullptr) + 0x406B050);
-        return *Singleton;
-    }
+static_assert(offsetof(Result, code) == 0x20);
+static_assert(offsetof(Result, unk28) == 0x28);
 
-    virtual ~Console();
-    virtual void sub_01();
-    virtual void sub_02();
-    virtual void sub_03();
-    virtual void sub_04();
-    virtual void sub_05();
-    virtual void sub_06();
-    virtual void sub_07();
-    virtual void sub_08();
-    virtual bool Execute(REDString* apCommand, Result* output);
+struct ScriptArgs
+{
+    REDString* args;
+    uint32_t pad8;
+    uint32_t argCount;
+    uint8_t pad[0x100];
 };
+
+using TExec = bool(void* apThis, ScriptArgs* apArgs, Result* apResult, uintptr_t apScriptable);
+auto* RealExec = (TExec*)(0x25FB960 + (uintptr_t)GetModuleHandleA(nullptr));
 
 void Overlay::Render(IDXGISwapChain3* pSwapChain)
 {
@@ -250,13 +248,46 @@ void Overlay::Render(IDXGISwapChain3* pSwapChain)
         auto execute = ImGui::InputText("Console", command, std::size(command), ImGuiInputTextFlags_EnterReturnsTrue);
         if (ImGui::Button("Execute") || execute)
         {
+            std::string cmd = command;
+            auto argsStart = cmd.find_first_of("(");
+            auto argsEnd = cmd.find_first_of(")");
+
+            auto funcName = cmd.substr(0, argsStart);
+
+            std::string s = cmd.substr(argsStart + 1, argsEnd - argsStart - 1);
+            std::string delimiter = ",";
+
+            std::vector<REDString> redArgs;
+            redArgs.reserve(100);
+            redArgs.push_back(funcName.c_str());
+
+            size_t pos = 0;
+            std::string token;
+            while ((pos = s.find(delimiter)) != std::string::npos) {
+                token = s.substr(0, pos);
+                trim(token);
+                redArgs.push_back(token.c_str());
+                s.erase(0, pos + delimiter.length());
+            }
+            trim(s);
+            redArgs.push_back(s.c_str());
+
+            auto type = CRTTISystem::Get()->GetType<CClass>(REDString::Hash("cpPlayerSystem"));
+            auto engine = CGameEngine::Get();
+            auto unk10 = engine->framework->unk10;
+
+            auto scriptable = unk10->GetTypeInstance(type);
+            
+            ScriptArgs args;
+            args.args = redArgs.data();
+            args.argCount = redArgs.size();
+
             Result result;
 
-            REDString redCommand;
-            redCommand.str = (char**)&command;
-            Console::Get()->Execute(&redCommand, &result);
-
-            s_consoleResult.push_back(*(char**)result.unk28.vtbl);
+            if(!RealExec(0, &args, &result, scriptable))
+                s_consoleResult.push_back(std::string("Error ") + ((REDString*)result.unk28.vtbl)->ToString());
+            else
+                s_consoleResult.push_back(cmd + std::string(" - success!"));
         }
 
         const auto result = ImGui::ListBoxHeader("List", s_consoleResult.size(), 15);
