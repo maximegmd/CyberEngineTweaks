@@ -245,6 +245,13 @@ void Overlay::Render(IDXGISwapChain3* pSwapChain)
         static std::vector<std::string> s_consoleResult;
         static char command[512] = { 0 };
 
+        const auto result = ImGui::ListBoxHeader("List", s_consoleResult.size(), 15);
+        for (auto& item : s_consoleResult)
+            ImGui::Selectable(item.c_str());
+
+        if (result)
+            ImGui::ListBoxFooter();
+
         auto execute = ImGui::InputText("Console", command, std::size(command), ImGuiInputTextFlags_EnterReturnsTrue);
         if (ImGui::Button("Execute") || execute)
         {
@@ -289,13 +296,6 @@ void Overlay::Render(IDXGISwapChain3* pSwapChain)
             else
                 s_consoleResult.push_back(cmd + std::string(" - success!"));
         }
-
-        const auto result = ImGui::ListBoxHeader("List", s_consoleResult.size(), 15);
-        for (auto& item : s_consoleResult)
-            ImGui::Selectable(item.c_str());
-
-        if (result)
-            ImGui::ListBoxFooter();       
     }
 
     ImGui::End();
