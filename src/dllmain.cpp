@@ -15,7 +15,7 @@
 #pragma comment(linker, "/DLL")
 
 void PoolPatch(Image* apImage);
-void UnlockMenuPatch(Image* apImage);
+void EnableDebugPatch(Image* apImage);
 void VirtualInputPatch(Image* apImage);
 void SmtAmdPatch(Image* apImage);
 void PatchAvx(Image* apImage);
@@ -58,7 +58,7 @@ void Initialize(HMODULE mod)
         VirtualInputPatch(&image);
 
     if (options.PatchEnableDebug)
-        UnlockMenuPatch(&image);
+        EnableDebugPatch(&image);
 
     if(options.PatchSkipStartMenu)
         StartScreenPatch(&image);
