@@ -1,24 +1,13 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 struct REDString
 {
-    REDString()
-    {
-        using TStringCtor = void(REDString*, uintptr_t);
-        TStringCtor* RealStringCtor = (TStringCtor*)(0x1B7830 + (uintptr_t)GetModuleHandleA(nullptr));
-
-        RealStringCtor(this, 0x2F2A4FD + (uintptr_t)GetModuleHandleA(nullptr));
-    }
-
-    REDString(const char* acpData)
-    {
-        using TRedStringCtor = REDString * (REDString*, const char* acpData);
-        auto* Ctor = (TRedStringCtor*)(0x1B7830 + +(uintptr_t)GetModuleHandleA(nullptr));
-
-        Ctor(this, acpData);
-    }
+    REDString();
+    REDString(const char* acpData);
+    void Destroy();
 
     char* ToString()
     {

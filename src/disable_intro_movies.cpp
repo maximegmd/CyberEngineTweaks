@@ -1,9 +1,8 @@
-#include <windows.h>
 #include <MinHook.h>
 #include "Image.h"
 #include <spdlog/spdlog.h>
-#include "REDString.h"
 #include "Pattern.h"
+#include "reverse/REDString.h"
 
 using TInitScriptMemberVariable = void*(void* a1, void* a2, uint64_t a3, uint64_t nameHash, void* a5, void* a6, void* a7);
 TInitScriptMemberVariable* RealInitScriptMemberVariable = nullptr;

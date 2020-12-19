@@ -1,7 +1,6 @@
 #include <windows.h>
 #include "Image.h"
 #include <spdlog/spdlog.h>
-#include "REDString.h"
 #include "Pattern.h"
 
 void DisableVignettePatch(Image* apImage)

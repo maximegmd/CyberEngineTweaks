@@ -1,8 +1,8 @@
 #include "Image.h"
 #include <spdlog/spdlog.h>
 #include <MinHook.h>
-#include "REDString.h"
 #include "Pattern.h"
+#include "reverse/REDString.h"
 
 using ScriptExecutionPointer = uint64_t;
 
