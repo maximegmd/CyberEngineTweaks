@@ -16,11 +16,15 @@ struct Options
 	bool PatchAVX{ true };
 	bool PatchVirtualInput{ true };
 	bool PatchMemoryPool{ true };
-	bool PatchUnlockMenu{ false };
+	bool PatchEnableDebug{ false };
 	bool PatchRemovePedestrians{ false };
 	bool PatchAsyncCompute{ false };
 	bool PatchAntialiasing{ false };
 	bool PatchSkipStartMenu{ true };
+	bool PatchDisableIntroMovies{ false };
+	bool PatchDisableVignette{ false };
+	bool PatchDisableBoundaryTeleport{ false };
+
 	bool DumpGameOptions{ false };
 	bool Console{ true };
 	float CPUMemoryPoolFraction{ 0.5f };

@@ -2,7 +2,7 @@
 
 ---
 
-This is a basic guide to using the mod within Proton (aka linux).
+This is a basic guide to using the mod within Proton (aka Linux).
 
 Please make sure your game works in proton _first_, before installing this mod.
 
@@ -12,7 +12,7 @@ Please make sure your game works in proton _first_, before installing this mod.
 
 While this isn't a required step, it's useful for performance.
 
-Right click the game in steam and select 'Properties'. Go to the 'Compatibility' tab and tick 'Force the use of a specific Steam Play compatibility tool'. 
+Right click the game in Steam and select 'Properties'. Go to the 'Compatibility' tab and tick 'Force the use of a specific Steam Play compatibility tool'. 
 
 In the dropdown, select 'Proton Experimental'.
 
@@ -20,43 +20,45 @@ In the dropdown, select 'Proton Experimental'.
 
 First, follow the steps to install the mod. These are in the [wiki](https://github.com/yamashi/PerformanceOverhaulCyberpunk/wiki). 
 
-Run `protontricks 1091500 --gui`, you may get an error saying "You are using a 64 bit WINEPREFIX", you can ignore this. Press 'ok' when this error appears.
+Run `protontricks 1091500 --gui`, you may get an error saying "You are using a 64 bit WINEPREFIX", you can ignore this. Press 'Ok' when this error appears.
 
-Choose the option 'Select the default wineprefix', then 'Install a Windows DLL or component'. Tick`vcrun2019` and press ok. Go through the steps to install that runtime when the window opens. It's pretty simple (just click next really).
+Choose the option 'Select the default wineprefix', then 'Install a Windows DLL or component'. Tick `vcrun2019` and press Ok. Go through the steps to install that runtime when the window opens. It's pretty simple (just click next really).
 
-The options menu for protontricks will show up again, this time select 'Run winecfg'. In the window that opens, select the 'Libraries' tab. In the dropdown on 'New override for library', select `version`. Click `Add`, then `Apply` and `Ok`.
+The options menu for Protontricks will show up again, this time select 'Run winecfg'. In the window that opens, select the 'Libraries' tab. In the dropdown on 'New override for library', select `version`. Click `Add`, then `Apply` and `Ok`.
 
 
 
-You can now exit out of protontricks and start your game. Check to see if the log exists after you run the game. If it's there, you've successfully installed the mod. 
+You can now exit out of Protontricks and start your game. Check to see if the log exists after you run the game. If it's there, you've successfully installed the mod. 
 
 ## Setting up the mod with proton as non-Steam Game
 
 Search for the game APPID with:
-$ protontricks -s name_of_the_game_on_your_steam_lib
+`$ protontricks -s name_of_the_game_on_your_steam_lib`
+
 like:
-$ protontricks -s Cyberpunk 2077
+
+`$ protontricks -s Cyberpunk 2077`
 
 copy the APPID from the terminal then run:
-$ protontricks "APPID"  --gui
+
+`$ protontricks "APPID" --gui`
 
 From now on, you can follow the Setting up the mod with ProtonTricks instructions.
 
 ## Setting up the mod with Winetricks
 
-For users running on the Gog version of the game, via launcher like Lutris, minigalaxy or gamehub, those running from the direct Gog galaxy Windows application through Wine, or those directly using the Game libraries, Protontricks won´t be helpful in your case, as protontricks will notice that you don´t have the game on Steam.
+For users running on the GOG version of the game, via launcher like [Lutris](https://lutris.net/), [Minigalaxy](https://github.com/sharkwouter/minigalaxy) or [GameHub](https://github.com/tkashkin/GameHub), those running from the direct GOG Galaxy Windows application through Wine, or those directly using the Game libraries, Protontricks won´t be helpful in your case, as Protontricks will notice that you don´t have the game on Steam.
 
-Instead, use winetricks in which protontricks is derivated from. 
+Instead, use Winetricks in which Protontricks is derivated from. 
 
-Either run winetricks in itself if you use your default prefix, or from your custom prefix via : `WINEPREFIX=<Location of your WinePrefix directory> winetricks --gui` via the terminal.
+Either run Winetricks in itself if you use your default prefix, or from your custom prefix via: `WINEPREFIX=<Location of your WinePrefix directory> winetricks --gui` via the terminal.
 
-From now on, you can follow the Setting up the mod with ProtonTricks instructions. If you want to verify in winetricks has correctly taken in account your custom Wine directory, click on `Browse files` to see if it brings you to the designated folder.
+From now on, you can follow the Setting up the mod with ProtonTricks instructions. If you want to verify in Winetricks has correctly taken in account your custom Wine directory, click on `Browse files` to see if it brings you to the designated folder.
 
 
 ## Thanks to
 
 - [@bundyo](https://github.com/bundyo)
 
-- @okamidash (Author)
-
+- [@okamidash (Author)](https://github.com/okamidash)
 
