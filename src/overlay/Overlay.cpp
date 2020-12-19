@@ -15,7 +15,6 @@
 #include "imgui_impl_dx12.h"
 #include "imgui_impl_win32.h"
 
-
 static std::shared_ptr<Overlay> s_pOverlay;
 
 void Overlay::Initialize(Image* apImage)
@@ -83,12 +82,9 @@ LRESULT APIENTRY WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     switch (uMsg)
     {
     case WM_KEYDOWN:
-        switch (wParam)
-        {
-        case VK_END:
+        if (wParam == Options::Get().ConsoleKey)
             s_pOverlay->Toggle();
-            break;
-        }
+		break;
     default:
         break;
     }
