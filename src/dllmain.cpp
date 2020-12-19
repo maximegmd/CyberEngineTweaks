@@ -28,6 +28,7 @@ void OptionsPatch(Image* apImage);
 void OptionsInitPatch(Image* apImage);
 void DisableIntroMoviesPatch(Image* apImage);
 void DisableVignettePatch(Image* apImage);
+void DisableBoundaryTeleportPatch(Image* apImage);
 
 void Initialize(HMODULE mod)
 {
@@ -73,6 +74,9 @@ void Initialize(HMODULE mod)
 
     if (options.PatchDisableVignette)
         DisableVignettePatch(&image);
+
+    if (options.PatchDisableBoundaryTeleport)
+        DisableBoundaryTeleportPatch(&image);
 
     if (options.DumpGameOptions)
         OptionsInitPatch(&image);

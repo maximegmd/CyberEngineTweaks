@@ -53,6 +53,7 @@ Options::Options(HMODULE aModule)
         this->PatchAntialiasing = config.value("disable_antialiasing", this->PatchAntialiasing);
         this->PatchDisableIntroMovies = config.value("disable_intro_movies", this->PatchDisableIntroMovies);
         this->PatchDisableVignette = config.value("disable_vignette", this->PatchDisableVignette);
+        this->PatchDisableBoundaryTeleport = config.value("disable_boundary_teleport", this->PatchDisableBoundaryTeleport);
 
         this->DumpGameOptions = config.value("dump_game_options", this->DumpGameOptions);
         this->Console = config.value("console", this->Console);
@@ -79,6 +80,7 @@ Options::Options(HMODULE aModule)
     config["console"] = this->Console;
     config["disable_intro_movies"] = this->PatchDisableIntroMovies;
     config["disable_vignette"] = this->PatchDisableVignette;
+    config["disable_boundary_teleport"] = this->PatchDisableBoundaryTeleport;
 
     std::ofstream o(configPath);
     o << config.dump(4) << std::endl;

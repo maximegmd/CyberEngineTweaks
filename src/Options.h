@@ -23,6 +23,7 @@ struct Options
 	bool PatchSkipStartMenu{ true };
 	bool PatchDisableIntroMovies{ false };
 	bool PatchDisableVignette{ false };
+	bool PatchDisableBoundaryTeleport{ false };
 
 	bool DumpGameOptions{ false };
 	bool Console{ true };
