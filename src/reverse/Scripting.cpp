@@ -10,9 +10,6 @@
 #include "RTTI.h"
 #include "Utils.h"
 
-using TExec = bool(void* apThis, ScriptArgs* apArgs, Result* apResult, uintptr_t apScriptable);
-auto* RealExec = (TExec*)(0x25FB960 + reinterpret_cast<uintptr_t>(GetModuleHandleA(nullptr)));
-
 struct Unk523
 {
     int64_t unk0;
@@ -160,7 +157,7 @@ bool Scripting::Execute(const std::string& aCommand, std::string& aReturnMessage
         int aArgsCount, __int64 a5, __int64* a6);
     ctor_t ctor = (ctor_t)(ctorOffset + (uintptr_t)GetModuleHandle(nullptr));
 
-    Result result;
+    //Result result;
 
     ctor(&stack, scriptable, args, 3, 0, 0);
 
