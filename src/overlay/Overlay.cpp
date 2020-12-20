@@ -44,41 +44,68 @@ void Overlay::DrawImgui(IDXGISwapChain3* apSwapChain)
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
 
+    ImGui::SetNextWindowSize(ImVec2(600.f, ImGui::GetFrameHeight() * 15.f + ImGui::GetFrameHeightWithSpacing()), ImGuiCond_FirstUseEver);
+
     ImGui::Begin("Cyber Engine Tweaks");
 
     if (Options::Get().GameImage.version == Image::MakeVersion(1, 4) ||
         Options::Get().GameImage.version == Image::MakeVersion(1, 5))
     {
-        ImGui::PushItemWidth(600.f);
+        ImGui::Checkbox("Clear Input", &m_inputClear);
+        ImGui::SameLine();
+        if (ImGui::Button("Clear Output"))
+        {
+            std::lock_guard<std::recursive_mutex> _{ m_outputLock };
+            m_outputLines.clear();
+        }
+        ImGui::SameLine();
+        ImGui::Checkbox("Scroll Output", &m_outputShouldScroll);
 
         static char command[512] = { 0 };
 
         {
             std::lock_guard<std::recursive_mutex> _{ m_outputLock };
 
-            const auto result = ImGui::ListBoxHeader("", m_outputLines.size(), 15);
+            ImVec2 listboxSize = ImGui::GetContentRegionAvail();
+            listboxSize.y -= ImGui::GetFrameHeightWithSpacing();
+            const auto result = ImGui::ListBoxHeader("", listboxSize);
             for (auto& item : m_outputLines)
-                ImGui::Selectable(item.c_str());
-
+                if (ImGui::Selectable(item.c_str()))
+                    std::strncpy(command, item.c_str(), sizeof(command) - 1);
+            if (m_outputScroll)
+            {
+                if (m_outputShouldScroll)
+                    ImGui::SetScrollHereY();
+                m_outputScroll = false;
+            }
             if (result)
                 ImGui::ListBoxFooter();
         }
 
+        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
         const auto execute = ImGui::InputText("", command, std::size(command), ImGuiInputTextFlags_EnterReturnsTrue);
+        ImGui::SetItemDefaultFocus();
         if (execute)
         {
             std::string returnMessage;
 
+            {
+                std::lock_guard<std::recursive_mutex> _{ m_outputLock };
+                m_outputLines.push_back(std::string(command));
+                m_outputScroll = true;
+            }
+
             if (!Scripting::Execute(command, returnMessage))
             {
                 std::lock_guard<std::recursive_mutex> _{ m_outputLock };
-                m_outputLines.push_back(std::string("Error ") + returnMessage);
+                m_outputLines.push_back(std::string("Error: ") + returnMessage);
+                m_outputScroll = true;
             }
-            else
-            {
-                std::lock_guard<std::recursive_mutex> _{ m_outputLock };
-                m_outputLines.push_back(std::string(command) + std::string(" - success!"));
-            }
+
+            if (m_inputClear)
+                std::memset(command, 0, sizeof(command));
+
+            ImGui::SetKeyboardFocusHere();
         }
     }
 
@@ -89,22 +116,41 @@ void Overlay::DrawImgui(IDXGISwapChain3* apSwapChain)
 
 LRESULT APIENTRY Overlay::WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    if (ImGui_ImplWin32_WndProcHandler(hwnd, uMsg, wParam, lParam))
-        return true;
+    if (uMsg == WM_KEYDOWN && wParam == Options::Get().ConsoleKey)
+    {
+        s_pOverlay->Toggle();
+        return 0;
+    }
 
     switch (uMsg)
     {
     case WM_KEYDOWN:
+    case WM_SYSKEYDOWN:
+    case WM_KEYUP:
+    case WM_SYSKEYUP:
         if (wParam == Options::Get().ConsoleKey)
-            s_pOverlay->Toggle();
-		break;
-    default:
-        break;
+            return 0;
+    case WM_CHAR:
+        if (Options::Get().ConsoleChar && wParam == Options::Get().ConsoleChar)
+            return 0;
     }
 
-    if(s_pOverlay->IsEnabled() && uMsg != WM_PAINT && uMsg != WM_ACTIVATE && uMsg != WM_QUIT && uMsg != WM_CLOSE && uMsg != WM_DESTROY)
+    if (ImGui_ImplWin32_WndProcHandler(hwnd, uMsg, wParam, lParam))
+        return 1;
+
+    if (s_pOverlay->IsEnabled())
     {
-        return true;
+        // ignore mouse & keyboard events
+        if ((uMsg >= WM_MOUSEFIRST && uMsg <= WM_MOUSELAST) ||
+            (uMsg >= WM_KEYFIRST && uMsg <= WM_KEYLAST))
+            return 0;
+
+        // ignore specific messages
+        switch (uMsg)
+        {
+        case WM_INPUT:
+            return 0;
+        }
     }
 
     return CallWindowProc(s_pOverlay->m_wndProc, hwnd, uMsg, wParam, lParam);
@@ -132,6 +178,7 @@ void* Overlay::Log(uintptr_t apThis, uint8_t** apStack)
 
     std::lock_guard<std::recursive_mutex> _{ Get().m_outputLock };
     Get().m_outputLines.emplace_back(result.ToString());
+    Get().m_outputScroll = true;
 
     result.Destroy();
 

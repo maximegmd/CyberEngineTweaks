@@ -66,4 +66,7 @@ private:
 	
 	std::recursive_mutex m_outputLock;
 	std::vector<std::string> m_outputLines;
+	bool m_outputShouldScroll{ true };
+	bool m_outputScroll{ false };
+	bool m_inputClear{ true };
 };
