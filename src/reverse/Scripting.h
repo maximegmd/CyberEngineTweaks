@@ -14,7 +14,6 @@ struct Scripting
     static Scripting& Get();
 	
     bool ExecuteLua(const std::string& aCommand);
-    static bool Execute(const std::string& aCommand, std::string& aReturnMessage);
 	
 protected:
 
