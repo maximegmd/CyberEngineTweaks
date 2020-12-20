@@ -83,6 +83,11 @@ bool Scripting::Execute(const std::string& aCommand, std::string& aReturnMessage
     auto* unk10 = engine->framework->unk10;
 
     auto func = CRTTISystem::Get()->GetGlobalFunction(REDString::Hash(funcName.c_str()));
+    if (!func || func->flags & 1)
+    {
+        aReturnMessage = "Function : " + funcName + " not found or is not a global.";
+        return false;
+    }
 
     const auto scriptable = unk10->GetTypeInstance(type);
 

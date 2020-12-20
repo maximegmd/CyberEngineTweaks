@@ -34,7 +34,11 @@ struct CRTTIBaseType
 };
 
 struct CClassFunction;
-struct CBaseFunction;
+struct CBaseFunction
+{
+    uint8_t pad0[0x78];
+    int32_t flags;
+};
 
 struct CClass : CRTTIBaseType
 {
