@@ -37,7 +37,7 @@ bool Scripting::Execute(const std::string& aCommand, std::string& aReturnMessage
     const auto argsStart = aCommand.find_first_of('(');
     const auto argsEnd = aCommand.find_first_of(')');
 
-    const auto funcName = aCommand.substr(0, argsStart);
+    auto funcName = aCommand.substr(0, argsStart);
     trim(funcName);
 
     std::string s = aCommand.substr(argsStart + 1, argsEnd - argsStart - 1);
