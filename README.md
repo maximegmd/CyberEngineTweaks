@@ -4,6 +4,8 @@
 
 This plugin fixes some Cyberpunk 2077 issues and adds some features.
 
+Works with 1.04 and 1.05.
+
 ### Current fixes
 
 | Patches      | Description     |
@@ -38,3 +40,4 @@ This plugin fixes some Cyberpunk 2077 issues and adds some features.
 * [CookiePLMonster](https://www.reddit.com/r/pcgaming/comments/kbsywg/cyberpunk_2077_used_an_intel_c_compiler_which/gfknein/?utm_source=reddit&utm_medium=web2x&context=3)
 * [SirLynix](https://github.com/DigitalPulseSoftware/BurgWar) for the CI file.
 * [emoose](https://github.com/yamashi/PerformanceOverhaulCyberpunk/issues/75) for pedestrian removal and start menu skip research.
+* [WopsS](https://github.com/WopsS/RED4ext) for being a good friend and for doing an excellent research on scripting.
