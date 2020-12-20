@@ -35,54 +35,52 @@ void Initialize(HMODULE mod)
     MH_Initialize();
 
     Options::Initialize(mod);
-    const auto& options = Options::Get();
+    auto& options = Options::Get();
 
     if (!options.IsCyberpunk2077())
         return;
 
-    Image image;
-
     if(options.PatchSMT)
-        SmtAmdPatch(&image);
+        SmtAmdPatch(&options.GameImage);
 
     if(options.PatchSpectre)
-        SpectrePatch(&image);
+        SpectrePatch(&options.GameImage);
 
     if (options.PatchAVX)
-        PatchAvx(&image);
+        PatchAvx(&options.GameImage);
 
     if(options.PatchMemoryPool)
-        PoolPatch(&image);
+        PoolPatch(&options.GameImage);
 
     if (options.PatchVirtualInput)
-        VirtualInputPatch(&image);
+        VirtualInputPatch(&options.GameImage);
 
     if (options.PatchEnableDebug)
-        EnableDebugPatch(&image);
+        EnableDebugPatch(&options.GameImage);
 
     if(options.PatchSkipStartMenu)
-        StartScreenPatch(&image);
+        StartScreenPatch(&options.GameImage);
 
     if(options.PatchRemovePedestrians)
-        RemovePedsPatch(&image);
+        RemovePedsPatch(&options.GameImage);
 
     if(options.PatchAsyncCompute || options.PatchAntialiasing)
-        OptionsPatch(&image);
+        OptionsPatch(&options.GameImage);
 
     if (options.PatchDisableIntroMovies)
-        DisableIntroMoviesPatch(&image);
+        DisableIntroMoviesPatch(&options.GameImage);
 
     if (options.PatchDisableVignette)
-        DisableVignettePatch(&image);
+        DisableVignettePatch(&options.GameImage);
 
     if (options.PatchDisableBoundaryTeleport)
-        DisableBoundaryTeleportPatch(&image);
+        DisableBoundaryTeleportPatch(&options.GameImage);
 
     if (options.DumpGameOptions)
-        OptionsInitPatch(&image);
+        OptionsInitPatch(&options.GameImage);
 
     if(options.Console)
-        Overlay::Initialize(&image);
+        Overlay::Initialize(&options.GameImage);
 
     MH_EnableHook(MH_ALL_HOOKS);
 

@@ -33,6 +33,16 @@ Options::Options(HMODULE aModule)
     logger->flush_on(spdlog::level::debug);
     set_default_logger(logger);
 
+    GameImage.Initialize();
+
+    if (GameImage.version)
+    {
+        auto [major, minor] = GameImage.GetVersion();
+        spdlog::info("Game version {}.{}", major, minor);
+    }
+    else
+        spdlog::info("Unknown Game Version, update the mod");
+
     const auto configPath = Path / "config.json";
 
     std::ifstream configFile(configPath);

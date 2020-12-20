@@ -1,14 +1,22 @@
 #include "Image.h"
 #include <windows.h>
-#include <zlib.h>
 #include <spdlog/spdlog.h>
 #include <dbghelp.h>
-#include <sstream>
 
-Image::Image()
+struct PdbInfo
 {
-    auto* pImage = GetModuleHandleA(nullptr);
+    DWORD     Signature;
+    BYTE      Guid[16];
+    DWORD     Age;
+    char      PdbFileName[1];
+};
 
+void Image::Initialize()
+{
+    static uint8_t s_Guid104[] = { 0x2B, 0x4E, 0x65, 0x3D, 0xD4, 0x68, 0xC7, 0x42, 0xBF, 0xC9, 0x58, 0xDC, 0x38, 0xD4, 0x2A, 0x36 };
+    static uint8_t s_Guid105[] = { 0x93, 0x5B, 0x36, 0x35, 0xDF, 0xA8, 0xE7, 0x41, 0x91, 0x8A, 0x64, 0x64, 0xF7, 0xA4, 0xF0, 0x8E };
+
+    auto* pImage = GetModuleHandleA(nullptr);
     IMAGE_NT_HEADERS* pHeader = ImageNtHeader(pImage);
     auto* pSectionHeaders = reinterpret_cast<IMAGE_SECTION_HEADER*>(pHeader + 1);
 
@@ -25,24 +33,22 @@ Image::Image()
         ++pSectionHeaders;
     }
 
-    uint32_t crc = crc32(0, pTextStart, pTextEnd - pTextStart);
-    std::ostringstream oss;
-    oss << crc;
+    auto* pDosHeader = reinterpret_cast<IMAGE_DOS_HEADER*>(base_address);
+    auto* pFileHeader = reinterpret_cast<IMAGE_FILE_HEADER*>(base_address + pDosHeader->e_lfanew + 4);
+    auto* pOptionalHeader = reinterpret_cast<IMAGE_OPTIONAL_HEADER*>(((char*)pFileHeader) + sizeof(IMAGE_FILE_HEADER));
+    auto* pDataDirectory = &pOptionalHeader->DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG];
+    auto* pDebugDirectory = reinterpret_cast<IMAGE_DEBUG_DIRECTORY*>(base_address + pDataDirectory->VirtualAddress);
 
-    spdlog::info("Computed .text crc: {:X}", crc); 
-
-    switch(crc)
+    // Check to see that the data has the right type
+    if (IMAGE_DEBUG_TYPE_CODEVIEW == pDebugDirectory->Type)
     {
-    case 3622375216:
-        spdlog::info("\tResolved to version: 1.04");
-        version = MakeVersion(1,4);
-        break;
-    case 0x20F87F01:
-        spdlog::info("\tResolved to version: 1.05");
-        version = MakeVersion(1, 5);
-        break;
-    default:
-        spdlog::error("\tUnknown version, please update the mod");
-        break;
+        PdbInfo* pdb_info = (PdbInfo*)(base_address + pDebugDirectory->AddressOfRawData);
+        if (0 == memcmp(&pdb_info->Signature, "RSDS", 4))
+        {
+            if (memcmp(&pdb_info->Guid, s_Guid104, 16) == 0)
+                version = MakeVersion(1, 4);
+            else if (memcmp(&pdb_info->Guid, s_Guid105, 16) == 0)
+                version = MakeVersion(1, 5);
+        }
     }
 }
