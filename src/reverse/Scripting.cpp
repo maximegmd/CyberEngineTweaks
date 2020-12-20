@@ -9,6 +9,7 @@
 #include "Pattern.h"
 #include "RTTI.h"
 #include "Utils.h"
+#include "overlay/Overlay.h"
 
 struct Unk523
 {
@@ -28,6 +29,90 @@ struct CScriptableStackFrame
     int32_t argCount;
     int64_t unk40;
 };
+
+using TCtor = CScriptableStackFrame * (*)(CScriptableStackFrame* aThis, __int64 aScriptable, Unk523* aArgs, int aArgsCount, __int64 a5, __int64* a6);
+using TExec = bool (*)(CBaseFunction* aThis, CScriptableStackFrame* stack);
+
+Scripting::Scripting()
+{
+    m_lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::io, sol::lib::math);
+
+    m_lua.new_usertype<Scripting>("__Game",
+        sol::meta_function::index, &Scripting::Index);
+
+    m_lua.globals()["Game"] = this;
+    m_lua["print"] = [](sol::variadic_args args, sol::this_environment env, sol::this_state L)
+    {
+        std::ostringstream oss;
+        sol::state_view s(L);
+        for(auto& v : args)
+        {
+            std::string str = s["tostring"](v.get<sol::object>());
+            oss << str << " ";
+        }
+        Overlay::Get().Log(oss.str());
+    };
+
+    if (Options::Get().GameImage.version == Image::MakeVersion(1, 4))
+    {
+        arg0Rtti = 0x1442FD030 - 0x140000000;
+        argiRtti = 0x143C62438 - 0x140000000;
+        ctorOffset = 0x140270370 - 0x140000000;
+        execOffset = 0x1402254A0 - 0x140000000;
+    }
+    else if (Options::Get().GameImage.version == Image::MakeVersion(1, 5))
+    {
+        arg0Rtti = 0x1442BC710 - 0x140000000;
+        argiRtti = 0x143C22238 - 0x140000000;
+        ctorOffset = 0x14026F8A0 - 0x140000000;
+        execOffset = 0x1402249F0 - 0x140000000;
+    }
+
+    m_pCtor = reinterpret_cast<void*>(ctorOffset + reinterpret_cast<uintptr_t>(GetModuleHandle(nullptr)));
+    m_pExec = reinterpret_cast<void*>(execOffset + reinterpret_cast<uintptr_t>(GetModuleHandle(nullptr)));
+
+}
+
+Scripting& Scripting::Get()
+{
+    static Scripting s_instance;
+    return s_instance;
+}
+
+bool Scripting::ExecuteLua(const std::string& aCommand)
+{
+    try
+    {
+        m_lua.script(aCommand);
+    }
+    catch(std::exception& e)
+    {
+        Overlay::Get().Log( e.what());
+        return false;
+    }
+
+    return true;
+}
+
+sol::protected_function Scripting::Index(Scripting& aThis, const std::string& acName)
+{
+    return aThis.InternalIndex(acName);
+}
+
+sol::protected_function Scripting::InternalIndex(const std::string& acName)
+{
+    sol::state_view s(m_lua);
+    return make_object(s, [this, name = acName](sol::variadic_args args, sol::this_environment env, sol::this_state L)
+    {
+        std::string result;
+        bool code = this->Execute(name, args, env, L, result);
+        if(!code)
+        {
+            Overlay::Get().Log("Error: " + result);
+        }
+        return std::make_tuple(code, result);
+    });
+}
 
 bool Scripting::Execute(const std::string& aCommand, std::string& aReturnMessage)
 {
@@ -73,39 +158,20 @@ bool Scripting::Execute(const std::string& aCommand, std::string& aReturnMessage
         redArgs.emplace_back(token.c_str());
     }
 
-    uintptr_t arg0Rtti = 0;
-    uintptr_t argiRtti = 0;
-    uintptr_t ctorOffset = 0;
-    uintptr_t execOffset = 0;
-
-    if (Options::Get().GameImage.version == Image::MakeVersion(1, 4))
-    {
-        arg0Rtti = 0x1442FD030 - 0x140000000;
-        argiRtti = 0x143C62438 - 0x140000000;
-        ctorOffset = 0x140270370 - 0x140000000;
-        execOffset = 0x1402254A0 - 0x140000000;
-    }
-    else if (Options::Get().GameImage.version == Image::MakeVersion(1, 5))
-    {
-        arg0Rtti = 0x1442BC710 - 0x140000000;
-        argiRtti = 0x143C22238 - 0x140000000;
-        ctorOffset = 0x14026F8A0 - 0x140000000;
-        execOffset = 0x1402249F0 - 0x140000000;
-    }
-
     auto* const type = CRTTISystem::Get()->GetType<CClass>(REDString::Hash("cpPlayerSystem"));
     auto* const engine = CGameEngine::Get();
     auto* unk10 = engine->framework->unk10;
 
-    auto arg0RttiPtr = *(uintptr_t*)(arg0Rtti + (uintptr_t)GetModuleHandle(nullptr));
-    auto argiRttiPtr = *(uintptr_t*)(argiRtti + (uintptr_t)GetModuleHandle(nullptr));
+    auto arg0RttiPtr = *(uintptr_t*)(Get().arg0Rtti + (uintptr_t)GetModuleHandle(nullptr));
+    auto argiRttiPtr = *(uintptr_t*)(Get().argiRtti + (uintptr_t)GetModuleHandle(nullptr));
+    
     if (!arg0RttiPtr || !argiRttiPtr)
     {
         aReturnMessage = "Game has not completed initialization. Wait until the title screen.";
         return false;
     }
 
-    auto func = CRTTISystem::Get()->GetGlobalFunction(REDString::Hash(funcName.c_str()));
+    const auto func = CRTTISystem::Get()->GetGlobalFunction(REDString::Hash(funcName.c_str()));
     if (!func)
     {
         aReturnMessage = "Function '" + funcName + "' not found or is not a global.";
@@ -150,19 +216,90 @@ bool Scripting::Execute(const std::string& aCommand, std::string& aReturnMessage
     }
 
     CScriptableStackFrame stack;
-    auto script40 = *(uintptr_t*)(scriptable + 0x40);
-    auto script40100 = *(uintptr_t*)(script40 + 0x100);
 
-    using ctor_t = CScriptableStackFrame * (*)(CScriptableStackFrame* aThis, __int64 aScriptable, Unk523* aArgs,
-        int aArgsCount, __int64 a5, __int64* a6);
-    ctor_t ctor = (ctor_t)(ctorOffset + (uintptr_t)GetModuleHandle(nullptr));
+    auto* ctor = static_cast<TCtor>(Get().m_pCtor);
 
-    //Result result;
+    ctor(&stack, scriptable, args, redArgs.size(), 0, nullptr);
 
-    ctor(&stack, scriptable, args, 3, 0, 0);
+    auto* exec = static_cast<TExec>(Get().m_pExec);
 
-    using exec_t = bool (*)(CBaseFunction* aThis, CScriptableStackFrame* stack);
-    exec_t exec = (exec_t)(execOffset + (uintptr_t)GetModuleHandle(nullptr));
+    return exec(func, &stack);
+}
+
+bool Scripting::Execute(const std::string& aFuncName, sol::variadic_args aArgs, sol::this_environment env, sol::this_state L, std::string& aReturnMessage)
+{
+    std::vector<REDString> redArgs;
+
+    for (auto v : aArgs)
+    {
+        std::string s = m_lua["tostring"](v.get<sol::object>());
+        redArgs.emplace_back(s.c_str());
+    }
+
+    auto* const type = CRTTISystem::Get()->GetType<CClass>(REDString::Hash("cpPlayerSystem"));
+    auto* const engine = CGameEngine::Get();
+    auto* unk10 = engine->framework->unk10;
+
+    auto arg0RttiPtr = *(uintptr_t*)(Get().arg0Rtti + (uintptr_t)GetModuleHandle(nullptr));
+    auto argiRttiPtr = *(uintptr_t*)(Get().argiRtti + (uintptr_t)GetModuleHandle(nullptr));
+
+    if (!arg0RttiPtr || !argiRttiPtr)
+    {
+        aReturnMessage = "Game has not completed initialization. Wait until the title screen.";
+        return false;
+    }
+
+    const auto func = CRTTISystem::Get()->GetGlobalFunction(REDString::Hash(aFuncName.c_str()));
+    if (!func)
+    {
+        aReturnMessage = "Function '" + aFuncName + "' not found or is not a global.";
+        return false;
+    }
+
+    if (func->parameter_count < 1 || *func->parameters[0] != arg0RttiPtr)
+    {
+        aReturnMessage = "Function '" + aFuncName + "' parameter 0 must be ScriptGameInstance.";
+        return false;
+    }
+
+    if (func->parameter_count - 1 != redArgs.size())
+    {
+        aReturnMessage = "Function '" + aFuncName + "' expects " +
+            std::to_string(func->parameter_count - 1) + " parameters, not " +
+            std::to_string(redArgs.size()) + ".";
+        return false;
+    }
+
+    for (uint32_t i = 1; i < func->parameter_count; i++)
+    {
+        if (*func->parameters[i] != argiRttiPtr)
+        {
+            aReturnMessage = "Function '" + aFuncName + "' parameter " + std::to_string(i) + " must be String.";
+            return false;
+        }
+    }
+
+    const auto scriptable = unk10->GetTypeInstance(type);
+
+    uint64_t a1 = *(uintptr_t*)(scriptable + 0x40);
+
+    Unk523 args[100];
+    args[0].unk0 = arg0RttiPtr;
+    args[0].unk8 = (uint64_t)&a1;
+
+    for (auto i = 0u; i < redArgs.size(); ++i)
+    {
+        args[i+1].unk0 = argiRttiPtr;
+        args[i+1].unk8 = (uint64_t)&redArgs[i];
+    }
+
+    CScriptableStackFrame stack;
+
+    auto* ctor = static_cast<TCtor>(m_pCtor);
+
+    ctor(&stack, scriptable, args, 3, 0, nullptr);
+
+    auto* exec = static_cast<TExec>(m_pExec);
 
     return exec(func, &stack);
 }

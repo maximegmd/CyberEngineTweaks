@@ -95,12 +95,7 @@ void Overlay::DrawImgui(IDXGISwapChain3* apSwapChain)
                 m_outputScroll = true;
             }
 
-            if (!Scripting::Execute(command, returnMessage))
-            {
-                std::lock_guard<std::recursive_mutex> _{ m_outputLock };
-                m_outputLines.push_back(std::string("Error: ") + returnMessage);
-                m_outputScroll = true;
-            }
+            Scripting::Get().ExecuteLua(command);
 
             if (m_inputClear)
                 std::memset(command, 0, sizeof(command));
@@ -167,7 +162,7 @@ TScriptCall** GetScriptCallArray()
 }
 
 
-void* Overlay::Log(uintptr_t apThis, uint8_t** apStack)
+void* Overlay::HookLog(uintptr_t apThis, uint8_t** apStack)
 {
     REDString result("");
     apStack[6] = nullptr;
@@ -176,13 +171,11 @@ void* Overlay::Log(uintptr_t apThis, uint8_t** apStack)
     GetScriptCallArray()[stack](apStack[8], apStack, &result, nullptr);
     ++(*apStack);
 
-    std::lock_guard<std::recursive_mutex> _{ Get().m_outputLock };
-    Get().m_outputLines.emplace_back(result.ToString());
-    Get().m_outputScroll = true;
+    Get().Log(result.ToString());
 
     result.Destroy();
 
-    return 0;
+    return nullptr;
 }
 
 void Overlay::Toggle()
@@ -206,9 +199,16 @@ void Overlay::Toggle()
     ClipToCenter(CGameEngine::Get()->pSomeStruct);
 }
 
-bool Overlay::IsEnabled()
+bool Overlay::IsEnabled() const
 {
     return m_enabled;
+}
+
+void Overlay::Log(const std::string& acpText)
+{
+    std::lock_guard<std::recursive_mutex> _{ m_outputLock };
+    m_outputLines.emplace_back(acpText);
+    m_outputScroll = true;
 }
 
 Overlay::Overlay() = default;

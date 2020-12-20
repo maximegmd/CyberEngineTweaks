@@ -33,7 +33,7 @@ void Overlay::EarlyHooks(Image* apImage)
 
     if(pLocation)
     {
-        if (MH_CreateHook(pLocation, &Log, reinterpret_cast<void**>(&m_realLog)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
+        if (MH_CreateHook(pLocation, &HookLog, reinterpret_cast<void**>(&m_realLog)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
         {
             spdlog::error("\tCould not hook Log function!");
         }

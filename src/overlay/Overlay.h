@@ -27,7 +27,9 @@ struct Overlay
 	void Hook();
 
 	void Toggle();
-	bool IsEnabled();
+	bool IsEnabled() const;
+
+	void Log(const std::string& acpText);
 
 protected:
 
@@ -47,7 +49,7 @@ protected:
 	static BOOL SetMousePosition(void* apThis, HWND Wnd, long X, long Y);
 	static BOOL ClipToCenter(CGameEngine::UnkC0* apThis);
 	static LRESULT APIENTRY WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	static void* Log(uintptr_t apThis, uint8_t** apStack);
+	static void* HookLog(uintptr_t apThis, uint8_t** apStack);
 	
 private:
 

@@ -1,6 +1,6 @@
 set_languages("cxx17")
 
-add_requires("spdlog", "nlohmann_json", "minhook", "imgui", "lua")
+add_requires("spdlog", "nlohmann_json", "minhook", "imgui", "lua", "sol2")
 
 add_rules("mode.debug", "mode.release")
 
@@ -17,4 +17,4 @@ target("cyber_engine_tweaks")
     add_headerfiles("src/**.h")
     add_includedirs("src/")
     add_syslinks("User32", "d3d11", "D3D12")
-    add_packages("spdlog", "nlohmann_json", "minhook", "imgui", "lua")
+    add_packages("spdlog", "nlohmann_json", "minhook", "imgui", "lua", "sol2")
