@@ -131,11 +131,11 @@ LRESULT APIENTRY Overlay::WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
             return 0;
     }
 
-    if (ImGui_ImplWin32_WndProcHandler(hwnd, uMsg, wParam, lParam))
-        return 1;
-
     if (s_pOverlay->IsEnabled())
     {
+        if (ImGui_ImplWin32_WndProcHandler(hwnd, uMsg, wParam, lParam))
+            return 1;
+
         // ignore mouse & keyboard events
         if ((uMsg >= WM_MOUSEFIRST && uMsg <= WM_MOUSELAST) ||
             (uMsg >= WM_KEYFIRST && uMsg <= WM_KEYLAST))
