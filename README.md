@@ -11,16 +11,16 @@ Works with 1.04 and 1.05.
 | Patches      | Description     |
 | :------------- | :------------------------------ | 
 | AMD SMT  | Improves performance on AMD CPUs by enabling all cores. |
-| AVX | Fixes a crash when playing the game with a CPU that does not support AVX |
+| AVX (up to 1.04) | Fixes a crash when playing the game with a CPU that does not support AVX |
 | Debug Menu   | Enables the debug menus in game so you can ~~cheat~~, investigate...  |
-| Pools | Improves memory usage, can improve performance on some configurations. |
+| Pools (up to 1.04) | Improves memory usage, can improve performance on some configurations. |
 | Spectre | Removes spectre mitigation to improve performance on all configurations. |
-| Steam Input | Enables the use of more gamepads (such as the Steam gamepad) |
+| Steam Input (up to 1.04) | Enables the use of more gamepads (such as the Steam gamepad) |
 | Skip start menu | Skips the menu asking you to press space bar to continue (Breaching...) |
 | Remove pedestrians and traffic | Removes most of the pedestrians and traffic |
 | Disable Async Compute | Disables async compute, this can give a boost on older GPUs (Nvidia 10xx series for example)|
 | Disable Antialiasing TAA | Disables antialiasing, not recommended but you do what you want! |
-| Console | Adds an overlay to draw a console so you can write any kind of console command |
+| Console | Adds an overlay to draw a console so you can write any kind of script command (full Lua support) |
 
 ### Upcoming
 
