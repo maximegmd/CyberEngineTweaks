@@ -1,8 +1,4 @@
-#include <windows.h>
-
 #include "Image.h"
-#include <utility>
-#include <cstring>
 #include <spdlog/spdlog.h>
 #include <cstdint>
 

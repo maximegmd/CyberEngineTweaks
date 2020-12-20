@@ -1,17 +1,18 @@
 #pragma once
 
 #include <d3d12.h>
-#include <dxgi.h>
 #include <dxgi1_4.h>
+#include <mutex>
+#include <string>
 #include <windows.h>
 #include <vector>
 
-struct SomeStruct;
-
+#include "reverse/Engine.h"
 
 using TPresentD3D12 = long(IDXGISwapChain3* pSwapChain, UINT SyncInterval, UINT Flags);
 using TSetMousePosition = BOOL(void* apThis, HWND Wnd, long X, long Y);
-using TClipToCenter = HWND(SomeStruct* apThis);
+using TClipToCenter = HWND(CGameEngine::UnkC0* apThis);
+using TLog = void*(uintptr_t a1, uint8_t** a2);
 
 struct Image;
 struct Overlay
@@ -40,10 +41,13 @@ protected:
 
 	void InitializeD3D12(IDXGISwapChain3* pSwapChain);
 	void Render(IDXGISwapChain3* pSwapChain);
+	void DrawImgui(IDXGISwapChain3* apSwapChain);
 
 	static long PresentD3D12(IDXGISwapChain3* pSwapChain, UINT SyncInterval, UINT Flags);
 	static BOOL SetMousePosition(void* apThis, HWND Wnd, long X, long Y);
-	static BOOL ClipToCenter(SomeStruct* apThis);
+	static BOOL ClipToCenter(CGameEngine::UnkC0* apThis);
+	static LRESULT APIENTRY WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	static void* Log(uintptr_t apThis, uint8_t** apStack);
 	
 private:
 
@@ -55,6 +59,11 @@ private:
 	ID3D12DescriptorHeap* m_pd3dSrvDescHeap;
 	ID3D12GraphicsCommandList* m_pd3dCommandList;
 	TClipToCenter* m_realClipToCenter{nullptr};
+	TLog* m_realLog{nullptr};
 	HWND m_hwnd;
+	WNDPROC	m_wndProc{nullptr};
 	bool m_enabled{ false };
+	
+	std::recursive_mutex m_outputLock;
+	std::vector<std::string> m_outputLines;
 };
