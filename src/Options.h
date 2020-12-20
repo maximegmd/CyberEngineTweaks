@@ -28,6 +28,7 @@ struct Options
 	bool DumpGameOptions{ false };
 	bool Console{ true };
 	int ConsoleKey{ VK_OEM_3 };
+	int ConsoleChar{ 0 };
 	float CPUMemoryPoolFraction{ 0.5f };
 	float GPUMemoryPoolFraction{ 1.f };
 	std::filesystem::path Path;

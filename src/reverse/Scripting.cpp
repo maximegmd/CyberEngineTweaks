@@ -34,29 +34,47 @@ struct CScriptableStackFrame
 
 bool Scripting::Execute(const std::string& aCommand, std::string& aReturnMessage)
 {
-    const auto argsStart = aCommand.find_first_of('(');
-    const auto argsEnd = aCommand.find_first_of(')');
+    if (aCommand.empty())
+    {
+        aReturnMessage = "Empty command.";
+        return false;
+    }
 
-    auto funcName = aCommand.substr(0, argsStart);
+    const auto paramStart = aCommand.find('(');
+    auto funcName = aCommand.substr(0, paramStart);
     trim(funcName);
-
-    std::string s = aCommand.substr(argsStart + 1, argsEnd - argsStart - 1);
-    const std::string delimiter = ",";
+    if (funcName.empty())
+    {
+        aReturnMessage = "Empty function.";
+        return false;
+    }
 
     std::vector<REDString> redArgs;
     redArgs.reserve(100);
     redArgs.emplace_back(funcName.c_str());
 
-    size_t pos = 0;
-    std::string token;
-    while ((pos = s.find(delimiter)) != std::string::npos) {
-        token = s.substr(0, pos);
+    if (paramStart != std::string::npos)
+    {
+        size_t tokenPos = paramStart + 1;
+        std::string token;
+
+        auto paramEnd = aCommand.find(')', tokenPos);
+        if (paramEnd == std::string::npos)
+            paramEnd = aCommand.length();
+
+        size_t delimPos;
+        while ((delimPos = aCommand.find(',', tokenPos)) != std::string::npos)
+        {
+            token = aCommand.substr(tokenPos, delimPos - tokenPos);
+            trim(token);
+            redArgs.emplace_back(token.c_str());
+            tokenPos = delimPos + 1;
+        }
+
+        token = aCommand.substr(tokenPos, paramEnd - tokenPos);
         trim(token);
         redArgs.emplace_back(token.c_str());
-        s.erase(0, pos + delimiter.length());
     }
-    trim(s);
-    redArgs.emplace_back(s.c_str());
 
     uintptr_t arg0Rtti = 0;
     uintptr_t argiRtti = 0;
@@ -82,11 +100,42 @@ bool Scripting::Execute(const std::string& aCommand, std::string& aReturnMessage
     auto* const engine = CGameEngine::Get();
     auto* unk10 = engine->framework->unk10;
 
-    auto func = CRTTISystem::Get()->GetGlobalFunction(REDString::Hash(funcName.c_str()));
-    if (!func || func->flags & 1)
+    auto arg0RttiPtr = *(uintptr_t*)(arg0Rtti + (uintptr_t)GetModuleHandle(nullptr));
+    auto argiRttiPtr = *(uintptr_t*)(argiRtti + (uintptr_t)GetModuleHandle(nullptr));
+    if (!arg0RttiPtr || !argiRttiPtr)
     {
-        aReturnMessage = "Function : " + funcName + " not found or is not a global.";
+        aReturnMessage = "Game has not completed initialization. Wait until the title screen.";
         return false;
+    }
+
+    auto func = CRTTISystem::Get()->GetGlobalFunction(REDString::Hash(funcName.c_str()));
+    if (!func)
+    {
+        aReturnMessage = "Function '" + funcName + "' not found or is not a global.";
+        return false;
+    }
+
+    if (func->parameter_count < 1 || *func->parameters[0] != arg0RttiPtr)
+    {
+        aReturnMessage = "Function '" + funcName + "' parameter 0 must be ScriptGameInstance.";
+        return false;
+    }
+
+    if (func->parameter_count != redArgs.size())
+    {
+        aReturnMessage = "Function '" + funcName + "' expects " +
+            std::to_string(func->parameter_count - 1) + " parameters, not " +
+            std::to_string(redArgs.size() - 1) + ".";
+        return false;
+    }
+
+    for (uint32_t i = 1; i < func->parameter_count; i++)
+    {
+        if (*func->parameters[i] != argiRttiPtr)
+        {
+            aReturnMessage = "Function '" + funcName + "' parameter " + std::to_string(i) + " must be String.";
+            return false;
+        }
     }
 
     const auto scriptable = unk10->GetTypeInstance(type);
@@ -94,12 +143,12 @@ bool Scripting::Execute(const std::string& aCommand, std::string& aReturnMessage
     uint64_t a1 = *(uintptr_t*)(scriptable + 0x40);
 
     Unk523 args[4];
-    args[0].unk0 = *(uintptr_t*)(arg0Rtti + (uintptr_t)GetModuleHandle(nullptr));
+    args[0].unk0 = arg0RttiPtr;
     args[0].unk8 = (uint64_t)&a1;
 
     for(auto i = 1u; i < redArgs.size(); ++i)
     {
-        args[i].unk0 = (uintptr_t)(argiRtti + (uintptr_t)GetModuleHandle(nullptr));
+        args[i].unk0 = argiRttiPtr;
         args[i].unk8 = (uint64_t)&redArgs[i];
     }
 

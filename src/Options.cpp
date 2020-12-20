@@ -62,6 +62,8 @@ Options::Options(HMODULE aModule)
         // check old config names
         if (config.value("unlock_menu", false))
             this->PatchEnableDebug = true;
+
+        this->ConsoleChar = MapVirtualKeyA(this->ConsoleKey, MAPVK_VK_TO_CHAR);
     }
 
     nlohmann::json config;

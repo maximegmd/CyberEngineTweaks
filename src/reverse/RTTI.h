@@ -36,9 +36,14 @@ struct CRTTIBaseType
 struct CClassFunction;
 struct CBaseFunction
 {
-    uint8_t pad0[0x78];
+    uint8_t pad0[0x28];
+    uintptr_t** parameters;
+    uint8_t pad30[0x04];
+    uint32_t parameter_count;
+    uint8_t pad38[0x40];
     int32_t flags;
 };
+static_assert(sizeof(CBaseFunction) == 0x80);
 
 struct CClass : CRTTIBaseType
 {
