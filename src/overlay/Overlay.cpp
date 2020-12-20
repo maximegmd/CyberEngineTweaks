@@ -46,7 +46,8 @@ void Overlay::DrawImgui(IDXGISwapChain3* apSwapChain)
 
     ImGui::Begin("Cyber Engine Tweaks");
 
-    if (Options::Get().GameImage.version == Image::MakeVersion(1, 4))
+    if (Options::Get().GameImage.version == Image::MakeVersion(1, 4) ||
+        Options::Get().GameImage.version == Image::MakeVersion(1, 5))
     {
         ImGui::PushItemWidth(600.f);
 

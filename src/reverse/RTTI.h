@@ -34,6 +34,7 @@ struct CRTTIBaseType
 };
 
 struct CClassFunction;
+struct CBaseFunction;
 
 struct CClass : CRTTIBaseType
 {
@@ -50,7 +51,7 @@ struct IRTTISystem
     virtual void sub_3() = 0;
     virtual void sub_4() = 0;
     virtual void sub_5() = 0;
-    virtual void sub_6() = 0;
+    virtual CBaseFunction* GetGlobalFunction(uint64_t aNameHash) = 0;
     virtual void sub_7() = 0;
     virtual void sub_8() = 0;
     virtual void sub_9() = 0;

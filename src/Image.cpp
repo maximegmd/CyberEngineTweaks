@@ -37,6 +37,10 @@ Image::Image()
         spdlog::info("\tResolved to version: 1.04");
         version = MakeVersion(1,4);
         break;
+    case 0x20F87F01:
+        spdlog::info("\tResolved to version: 1.05");
+        version = MakeVersion(1, 5);
+        break;
     default:
         spdlog::error("\tUnknown version, please update the mod");
         break;
