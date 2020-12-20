@@ -1,37 +1,12 @@
 #include "Scripting.h"
+#include "RED4ext/Scripting.hpp"
 
 #include <vector>
-#include <Windows.h>
 #include <spdlog/spdlog.h>
 
-#include "Engine.h"
 #include "Options.h"
-#include "Pattern.h"
-#include "RTTI.h"
-#include "Utils.h"
+#include "RED4ext/REDreverse/CString.hpp"
 #include "overlay/Overlay.h"
-
-struct Unk523
-{
-    int64_t unk0;
-    uint64_t unk8;
-};
-
-struct CScriptableStackFrame
-{
-    int64_t vtbl;
-    int64_t unk8;
-    int64_t unk10;
-    int64_t scriptable18;
-    int64_t scriptable20;
-    int64_t unk28;
-    int64_t args;
-    int32_t argCount;
-    int64_t unk40;
-};
-
-using TCtor = CScriptableStackFrame * (*)(CScriptableStackFrame* aThis, __int64 aScriptable, Unk523* aArgs, int aArgsCount, __int64 a5, __int64* a6);
-using TExec = bool (*)(CBaseFunction* aThis, CScriptableStackFrame* stack);
 
 Scripting::Scripting()
 {
@@ -52,25 +27,6 @@ Scripting::Scripting()
         }
         Overlay::Get().Log(oss.str());
     };
-
-    if (Options::Get().GameImage.version == Image::MakeVersion(1, 4))
-    {
-        arg0Rtti = 0x1442FD030 - 0x140000000;
-        argiRtti = 0x143C62438 - 0x140000000;
-        ctorOffset = 0x140270370 - 0x140000000;
-        execOffset = 0x1402254A0 - 0x140000000;
-    }
-    else if (Options::Get().GameImage.version == Image::MakeVersion(1, 5))
-    {
-        arg0Rtti = 0x1442BC710 - 0x140000000;
-        argiRtti = 0x143C22238 - 0x140000000;
-        ctorOffset = 0x14026F8A0 - 0x140000000;
-        execOffset = 0x1402249F0 - 0x140000000;
-    }
-
-    m_pCtor = reinterpret_cast<void*>(ctorOffset + reinterpret_cast<uintptr_t>(GetModuleHandle(nullptr)));
-    m_pExec = reinterpret_cast<void*>(execOffset + reinterpret_cast<uintptr_t>(GetModuleHandle(nullptr)));
-
 }
 
 Scripting& Scripting::Get()
@@ -116,7 +72,7 @@ sol::protected_function Scripting::InternalIndex(const std::string& acName)
 
 bool Scripting::Execute(const std::string& aFuncName, sol::variadic_args aArgs, sol::this_environment env, sol::this_state L, std::string& aReturnMessage)
 {
-    std::vector<REDString> redArgs;
+    std::vector<RED4ext::REDreverse::CString> redArgs;
 
     for (auto v : aArgs)
     {
@@ -124,81 +80,54 @@ bool Scripting::Execute(const std::string& aFuncName, sol::variadic_args aArgs, 
         redArgs.emplace_back(s.c_str());
     }
 
-    auto* const type = CRTTISystem::Get()->GetType<CClass>(REDString::Hash("cpPlayerSystem"));
-    auto* const engine = CGameEngine::Get();
-    auto* unk10 = engine->framework->unk10;
+    auto* pRtti = RED4ext::REDreverse::CRTTISystem::Get();
+    auto* pFunc = pRtti->GetGlobalFunction(RED4ext::FNV1a(aFuncName.c_str()));
 
-    auto arg0RttiPtr = *(uintptr_t*)(Get().arg0Rtti + (uintptr_t)GetModuleHandle(nullptr));
-    auto argiRttiPtr = *(uintptr_t*)(Get().argiRtti + (uintptr_t)GetModuleHandle(nullptr));
-
-    if (!arg0RttiPtr || !argiRttiPtr)
-    {
-        aReturnMessage = "Game has not completed initialization. Wait until the title screen.";
-        return false;
-    }
-
-    const auto func = CRTTISystem::Get()->GetGlobalFunction(REDString::Hash(aFuncName.c_str()));
-    if (!func)
+    if (!pFunc)
     {
         aReturnMessage = "Function '" + aFuncName + "' not found or is not a global.";
         return false;
     }
 
-    if (func->parameter_count < 1 || *func->parameters[0] != arg0RttiPtr)
-    {
-        aReturnMessage = "Function '" + aFuncName + "' parameter 0 must be ScriptGameInstance.";
-        return false;
-    }
-
-    if (func->parameter_count - 1 != redArgs.size())
+    if (pFunc->params.size - 1 != redArgs.size())
     {
         aReturnMessage = "Function '" + aFuncName + "' expects " +
-            std::to_string(func->parameter_count - 1) + " parameters, not " +
+            std::to_string(pFunc->params.size - 1) + " parameters, not " +
             std::to_string(redArgs.size()) + ".";
         return false;
     }
 
-    for (uint32_t i = 1; i < func->parameter_count; i++)
+    auto engine = RED4ext::REDreverse::CGameEngine::Get();
+    auto unk10 = engine->framework->unk10;
+
+    using CStackType = RED4ext::REDreverse::CScriptableStackFrame::CStackType;
+    std::vector<CStackType> args(redArgs.size() + 1);
+    args[0].type = *reinterpret_cast<RED4ext::REDreverse::CRTTIBaseType**>(pFunc->params.unk0[0]);
+    args[0].value = &unk10;
+
+    for(auto i = 0; i < redArgs.size(); ++i)
     {
-        if (*func->parameters[i] != argiRttiPtr)
-        {
-            aReturnMessage = "Function '" + aFuncName + "' parameter " + std::to_string(i) + " must be String.";
-            return false;
-        }
+        args[i + 1].type = *reinterpret_cast<RED4ext::REDreverse::CRTTIBaseType**>(pFunc->params.unk0[i + 1]);
+        args[i + 1].value = &redArgs[i];
     }
 
-    const auto scriptable = unk10->GetTypeInstance(type);
-
-    uint64_t a1 = *(uintptr_t*)(scriptable + 0x40);
-
-    Unk523 args[100];
-    args[0].unk0 = arg0RttiPtr;
-    args[0].unk8 = (uint64_t)&a1;
-
-    for (auto i = 0u; i < redArgs.size(); ++i)
+    CStackType result;
+    /*if (aOut)
     {
-        args[i+1].unk0 = argiRttiPtr;
-        args[i+1].unk8 = (uint64_t)&redArgs[i];
-    }
+        result.value = aOut;
+    }*/
 
-    CScriptableStackFrame stack;
+    std::aligned_storage_t<sizeof(RED4ext::REDreverse::CScriptableStackFrame), alignof(RED4ext::REDreverse::CScriptableStackFrame)> stackStore;
+    auto* stack = reinterpret_cast<RED4ext::REDreverse::CScriptableStackFrame*>(&stackStore);
 
-    auto* ctor = static_cast<TCtor>(m_pCtor);
+    static const auto cpPlayerSystem = RED4ext::FNV1a("cpPlayerSystem");
 
-    ctor(&stack, scriptable, args, 3, 0, nullptr);
+    const auto* type = pRtti->GetType(cpPlayerSystem);
+    const auto* pScriptable = unk10->GetTypeInstance(type);
 
-    auto* exec = static_cast<TExec>(m_pExec);
+    RED4ext::REDreverse::CScriptableStackFrame::Construct(stack, pScriptable, args.data(),
+                                                          static_cast<uint32_t>(args.size()),  nullptr, 0);
+    const auto success = pFunc->Call(stack);
 
-    return exec(func, &stack);
-}
-
-Result::Result()
-{
-    static auto* ptr = FindSignature({
-        0x48, 0x89, 0xB4, 0x24, 0xD8, 0x01, 0x00, 0x00, 0xB9,
-        0x05, 0x00, 0x00, 0x00, 0x4C, 0x89, 0xA4, 0x24, 0xA0,
-        0x01, 0x00, 0x00, 0x66, 0x3B, 0xC1, 0x4C, 0x89, 0xAC,
-        0x24, 0x98, 0x01, 0x00, 0x00, 0x4C, 0x8D, 0x25 }) + 0x24;
-
-    output = reinterpret_cast<REDString*>(ptr + *reinterpret_cast<int32_t*>(ptr) + 4);
+    return success;
 }

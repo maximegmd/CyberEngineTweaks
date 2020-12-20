@@ -14,7 +14,7 @@ struct Image
 
 	std::tuple<uint32_t, uint32_t> GetVersion() const noexcept
 	{
-		return std::make_tuple(version >> 32, (version >> 16) & 0xFFFF);
+		return std::make_tuple(static_cast<uint32_t>(version >> 32), static_cast<uint32_t>((version >> 16) & 0xFFFF));
 	}
 
 	uint64_t version{0};
