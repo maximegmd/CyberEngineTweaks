@@ -7,14 +7,14 @@ struct Image
 {
 	void Initialize();
 
-	static uint64_t MakeVersion(uint64_t aMajor, uint64_t aMinor) noexcept
+	static uint64_t MakeVersion(uint32_t aMajor, uint16_t aMinor) noexcept
 	{
-		return aMajor << 32 | aMinor << 16;
+		return static_cast<uint64_t>(aMajor) << 32 | static_cast<uint64_t>(aMinor) << 16;
 	}
 
-	std::tuple<uint32_t, uint32_t> GetVersion() const noexcept
+	std::tuple<uint32_t, uint16_t> GetVersion() const noexcept
 	{
-		return std::make_tuple(static_cast<uint32_t>(version >> 32), static_cast<uint32_t>((version >> 16) & 0xFFFF));
+		return std::make_tuple(static_cast<uint32_t>(version >> 32), static_cast<uint16_t>((version >> 16) & 0xFFFF));
 	}
 
 	uint64_t version{0};

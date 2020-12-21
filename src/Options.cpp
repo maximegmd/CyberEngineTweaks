@@ -38,7 +38,7 @@ Options::Options(HMODULE aModule)
     if (GameImage.version)
     {
         auto [major, minor] = GameImage.GetVersion();
-        spdlog::info("Game version {}.{}", major, minor);
+        spdlog::info("Game version {}.{:02d}", major, minor);
     }
     else
         spdlog::info("Unknown Game Version, update the mod");
