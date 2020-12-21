@@ -87,6 +87,7 @@ public:
   static void Toggle(const std::string& category, const std::string& name);
 
   static void Dump();
+  static void List(const std::string& category);
 
   static std::vector<GameOption*>& GetList();
 

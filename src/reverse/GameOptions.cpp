@@ -216,16 +216,14 @@ bool GameOption::Toggle()
 
 GameOption* GameOptions::Find(const std::string& category, const std::string& name)
 {
-    auto& options = GameOptions::GetList();
-
     auto& option = std::find_if(
-        options.begin(), options.end(),
+        s_gameOptions.begin(), s_gameOptions.end(),
         [&category, &name](GameOption* x)
         {
             return stricmp(x->pCategory, category.c_str()) == 0 && stricmp(x->pName, name.c_str()) == 0;
         });
 
-    if (option == options.end())
+    if (option == s_gameOptions.end())
     {
         Overlay::Get().Log("Failed to find game option '" + category + "/" + name + "'!");
         return nullptr;;
@@ -390,14 +388,39 @@ void GameOptions::Toggle(const std::string& category, const std::string& name)
 
 void GameOptions::Dump()
 {
-    auto& options = GameOptions::GetList();
-
-    for (auto option : options)
+    for (auto option : s_gameOptions)
     {
         spdlog::info(option->GetInfo());
     }
 
-    Overlay::Get().Log("Dumped " + std::to_string(options.size()) + " options to cyber_engine_tweaks.log");
+    Overlay::Get().Log("Dumped " + std::to_string(s_gameOptions.size()) + " options to cyber_engine_tweaks.log");
+}
+
+void GameOptions::List(const std::string& category)
+{
+    int count = 0;
+    auto& iter = s_gameOptions.begin();
+    while (iter != s_gameOptions.end())
+    {
+        iter = std::find_if(
+            iter, s_gameOptions.end(),
+            [&category](GameOption* x)
+            {
+                if (!category.length() || category.at(0) == '*')
+                    return true;
+
+                return stricmp(x->pCategory, category.c_str()) == 0;
+            });
+
+        if (iter != s_gameOptions.end())
+        {
+            Overlay::Get().Log((*iter)->GetInfo());
+            iter++;
+            count++;
+        }
+    }
+
+    Overlay::Get().Log("Found " + std::to_string(count) + " options");
 }
 
 std::vector<GameOption*>& GameOptions::GetList()

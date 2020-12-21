@@ -34,7 +34,8 @@ Scripting::Scripting()
         "SetFloat", &GameOptions::SetFloat,
 
         "Toggle", &GameOptions::Toggle,
-        "Dump", &GameOptions::Dump);
+        "Dump", &GameOptions::Dump,
+        "List", &GameOptions::List);
 
     m_lua.globals()["Game"] = this;
 
