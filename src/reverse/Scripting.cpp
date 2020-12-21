@@ -1,6 +1,7 @@
 #include "Scripting.h"
 #include "RED4ext/Scripting.hpp"
 
+#include <algorithm>
 #include <vector>
 #include <spdlog/spdlog.h>
 
@@ -8,6 +9,8 @@
 #include "Type.h"
 #include "RED4ext/REDreverse/CString.hpp"
 #include "overlay/Overlay.h"
+
+#include "GameOptions.h"
 
 Scripting::Scripting()
 {
@@ -23,6 +26,22 @@ Scripting::Scripting()
         sol::meta_function::index, &Type::Index,
         sol::meta_function::new_index, &Type::NewIndex);
 
+    m_lua.new_usertype<GameOptions>("GameOptions",
+        "new", sol::no_constructor,
+
+        "Print", &GameOptions::Print,
+        "Get", &GameOptions::Get,
+        "GetBool", &GameOptions::GetBool,
+        "GetInt", &GameOptions::GetInt,
+        "GetFloat", &GameOptions::GetFloat,
+        "Set", &GameOptions::Set,
+        "SetBool", &GameOptions::SetBool,
+        "SetInt", &GameOptions::SetInt,
+        "SetFloat", &GameOptions::SetFloat,
+        "Toggle", &GameOptions::Toggle,
+        "Dump", &GameOptions::Dump,
+        "List", &GameOptions::List);
+
     m_lua["Game"] = this;
     m_lua["CreateSingletonHandle"] = [this](const std::string& acName)
     {
@@ -33,7 +52,7 @@ Scripting::Scripting()
     {
         return this->CreateHandle(acName, apHandle);
     };
-
+  
     m_lua["print"] = [](sol::variadic_args args, sol::this_environment env, sol::this_state L)
     {
         std::ostringstream oss;

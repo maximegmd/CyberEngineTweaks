@@ -25,7 +25,7 @@ void SpinLockPatch(Image* apImage);
 void StartScreenPatch(Image* apImage);
 void RemovePedsPatch(Image* apImage);
 void OptionsPatch(Image* apImage);
-void OptionsInitPatch(Image* apImage);
+void OptionsInitHook(Image* apImage);
 void DisableIntroMoviesPatch(Image* apImage);
 void DisableVignettePatch(Image* apImage);
 void DisableBoundaryTeleportPatch(Image* apImage);
@@ -76,8 +76,7 @@ void Initialize(HMODULE mod)
     if (options.PatchDisableBoundaryTeleport)
         DisableBoundaryTeleportPatch(&options.GameImage);
 
-    if (options.DumpGameOptions)
-        OptionsInitPatch(&options.GameImage);
+    OptionsInitHook(&options.GameImage);
 
     if(options.Console)
         Overlay::Initialize(&options.GameImage);
