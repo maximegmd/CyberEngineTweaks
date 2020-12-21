@@ -82,6 +82,7 @@ bool Scripting::Execute(const std::string& aFuncName, sol::variadic_args aArgs, 
 
     auto* pRtti = RED4ext::REDreverse::CRTTISystem::Get();
     auto* pFunc = pRtti->GetGlobalFunction(RED4ext::FNV1a(aFuncName.c_str()));
+    static auto* pStringType = pRtti->GetType(RED4ext::FNV1a("String"));
 
     if (!pFunc)
     {
@@ -107,7 +108,14 @@ bool Scripting::Execute(const std::string& aFuncName, sol::variadic_args aArgs, 
 
     for(auto i = 0; i < redArgs.size(); ++i)
     {
-        args[i + 1].type = *reinterpret_cast<RED4ext::REDreverse::CRTTIBaseType**>(pFunc->params.unk0[i + 1]);
+        auto pType = *reinterpret_cast<RED4ext::REDreverse::CRTTIBaseType**>(pFunc->params.unk0[i + 1]);;
+        if (pType != pStringType)
+        {
+            aReturnMessage = "Function '" + aFuncName + "' parameter " + std::to_string(i) + " must be String.";
+            return false;
+        }
+        
+        args[i + 1].type = pType;
         args[i + 1].value = &redArgs[i];
     }
 
