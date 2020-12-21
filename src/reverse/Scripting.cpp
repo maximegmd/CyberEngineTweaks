@@ -10,7 +10,7 @@
 
 Scripting::Scripting()
 {
-    m_lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::io, sol::lib::math);
+    m_lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::io, sol::lib::math, sol::lib::package, sol::lib::os, sol::lib::table);
 
     m_lua.new_usertype<Scripting>("__Game",
         sol::meta_function::index, &Scripting::Index);
