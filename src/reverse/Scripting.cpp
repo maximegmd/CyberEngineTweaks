@@ -13,9 +13,12 @@ Scripting::Scripting()
     m_lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::io, sol::lib::math, sol::lib::package, sol::lib::os, sol::lib::table);
 
     m_lua.new_usertype<Scripting>("__Game",
-        sol::meta_function::index, &Scripting::Index);
+        sol::meta_function::construct, sol::no_constructor,
+        sol::meta_function::index, &Scripting::Index,
+        sol::meta_function::new_index, &Scripting::NewIndex);
 
-    m_lua.globals()["Game"] = this;
+    m_lua["Game"] = this;
+
     m_lua["print"] = [](sol::variadic_args args, sol::this_environment env, sol::this_state L)
     {
         std::ostringstream oss;
@@ -52,15 +55,27 @@ bool Scripting::ExecuteLua(const std::string& aCommand)
     return true;
 }
 
-sol::protected_function Scripting::Index(Scripting& aThis, const std::string& acName)
+sol::object Scripting::Index(const std::string& acName)
 {
-    return aThis.InternalIndex(acName);
+    if(const auto itor = m_properties.find(acName); itor != m_properties.end())
+    {
+        return itor->second;
+    }
+
+    return InternalIndex(acName);
+}
+
+sol::object Scripting::NewIndex(const std::string& acName, sol::object aParam)
+{
+    auto& property = m_properties[acName];
+    property = aParam;
+    return property;
 }
 
 sol::protected_function Scripting::InternalIndex(const std::string& acName)
 {
-    sol::state_view s(m_lua);
-    return make_object(s, [this, name = acName](sol::variadic_args args, sol::this_environment env, sol::this_state L)
+    const sol::state_view state(m_lua);
+    auto obj = make_object(state, [this, name = acName](sol::variadic_args args, sol::this_environment env, sol::this_state L)
     {
         std::string result;
         bool code = this->Execute(name, args, env, L, result);
@@ -70,6 +85,8 @@ sol::protected_function Scripting::InternalIndex(const std::string& acName)
         }
         return std::make_tuple(code, result);
     });
+
+    return NewIndex(acName, std::move(obj));
 }
 
 bool Scripting::Execute(const std::string& aFuncName, sol::variadic_args aArgs, sol::this_environment env, sol::this_state L, std::string& aReturnMessage)
