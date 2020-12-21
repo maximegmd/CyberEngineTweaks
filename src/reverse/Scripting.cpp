@@ -27,6 +27,8 @@ Scripting::Scripting()
         }
         Overlay::Get().Log(oss.str());
     };
+
+    m_lua.do_file("plugins/cyber_engine_tweaks/scripts/autoexec.lua");
 }
 
 Scripting& Scripting::Get()

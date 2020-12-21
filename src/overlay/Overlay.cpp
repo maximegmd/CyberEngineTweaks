@@ -89,13 +89,7 @@ void Overlay::DrawImgui(IDXGISwapChain3* apSwapChain)
         ImGui::SetItemDefaultFocus();
         if (execute)
         {
-            std::string returnMessage;
-
-            {
-                std::lock_guard<std::recursive_mutex> _{ m_outputLock };
-                m_outputLines.push_back(std::string(command));
-                m_outputScroll = true;
-            }
+            Get().Log(command);
 
             Scripting::Get().ExecuteLua(command);
 
