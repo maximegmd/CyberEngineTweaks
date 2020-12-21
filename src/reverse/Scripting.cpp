@@ -1,12 +1,15 @@
 #include "Scripting.h"
 #include "RED4ext/Scripting.hpp"
 
+#include <algorithm>
 #include <vector>
 #include <spdlog/spdlog.h>
 
 #include "Options.h"
 #include "RED4ext/REDreverse/CString.hpp"
 #include "overlay/Overlay.h"
+
+#include "GameOptions.h"
 
 Scripting::Scripting()
 {
@@ -15,7 +18,17 @@ Scripting::Scripting()
     m_lua.new_usertype<Scripting>("__Game",
         sol::meta_function::index, &Scripting::Index);
 
+    m_lua.new_usertype<GameOptions>("GameOptions",
+        "new", sol::no_constructor,
+        "Get", &GameOptions::Get,
+        "Set", &GameOptions::Set,
+        "SetBool", &GameOptions::SetBool,
+        "SetInt", &GameOptions::SetInt,
+        "SetFloat", &GameOptions::SetFloat,
+        "Dump", &GameOptions::Dump);
+
     m_lua.globals()["Game"] = this;
+
     m_lua["print"] = [](sol::variadic_args args, sol::this_environment env, sol::this_state L)
     {
         std::ostringstream oss;
