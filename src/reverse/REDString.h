@@ -7,6 +7,7 @@ struct REDString
 {
     REDString();
     REDString(const char* acpData);
+    REDString* Copy(REDString* other);
     void Destroy();
 
     char* ToString()

@@ -63,6 +63,35 @@ void Overlay::EarlyHooks(Image* apImage)
         else
             spdlog::info("\LogChannel function hook complete!");
     }
+
+    pLocation = FindSignature({
+        0x48, 0xBF, 0x58, 0xD1, 0x78, 0xA0, 0x18, 0x09,
+        0xBA, 0xEC, 0x75, 0x16, 0x48, 0x8D, 0x15, 0xCC,
+        0xCC, 0xCC, 0xCC, 0x48, 0x8B, 0xCF, 0xE8, 0xCC,
+        0xCC, 0xCC, 0xCC, 0xC6, 0x05, 0xCC, 0xCC, 0xCC,
+        0xCC, 0x01, 0x41, 0x8B, 0x06, 0x39, 0x05, 0xCC,
+        0xCC, 0xCC, 0xCC, 0x7F
+        });
+
+    if (pLocation)
+    {
+        pLocation = &pLocation[45] + static_cast<int8_t>(pLocation[44]);
+        pLocation = FindSignature(pLocation, pLocation + 45, {
+            0x48, 0x8D, 0x0D, 0xCC, 0xCC, 0xCC, 0xCC, 0xE8,
+            0xCC, 0xCC, 0xCC, 0xCC, 0x83, 0x3D, 0xCC, 0xCC,
+            0xCC, 0xCC, 0xFF, 0x75, 0xCC, 0x48, 0x8D, 0x05,
+            });
+        if (pLocation)
+        {
+            pLocation = &pLocation[28] + *reinterpret_cast<int32_t*>(&pLocation[24]);
+            if (MH_CreateHook(pLocation, &HookTDBIDToStringDEBUG, reinterpret_cast<void**>(&m_realTDBIDToStringDEBUG)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
+            {
+                spdlog::error("\tCould not hook TDBID::ToStringDEBUG function!");
+            }
+            else
+                spdlog::info("\tTDBID::ToStringDEBUG function hook complete!");
+        }
+    }
 }
 
 long Overlay::PresentD3D12(IDXGISwapChain3* pSwapChain, UINT SyncInterval, UINT Flags)

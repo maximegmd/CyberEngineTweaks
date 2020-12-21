@@ -55,6 +55,7 @@ protected:
 	static LRESULT APIENTRY WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	static void HookLog(ScriptContext* apContext, ScriptStack* apStack, void*, void*);
 	static void HookLogChannel(ScriptContext* apContext, ScriptStack* apStack, void*, void*);
+	static void HookTDBIDToStringDEBUG(ScriptContext* apContext, ScriptStack* apStack, void*, void*);
 
 private:
 
@@ -68,6 +69,7 @@ private:
 	TClipToCenter* m_realClipToCenter{nullptr};
 	TScriptCall* m_realLog{nullptr};
 	TScriptCall* m_realLogChannel{ nullptr };
+	TScriptCall* m_realTDBIDToStringDEBUG{ nullptr };
 	HWND m_hwnd;
 	WNDPROC	m_wndProc{nullptr};
 	bool m_enabled{ false };

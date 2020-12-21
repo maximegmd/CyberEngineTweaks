@@ -243,6 +243,41 @@ void Overlay::HookLogChannel(ScriptContext* apContext, ScriptStack* apStack, voi
     text.Destroy();
 }
 
+void Overlay::HookTDBIDToStringDEBUG(ScriptContext* apContext, ScriptStack* apStack, void* result, void*)
+{
+    uint8_t opcode;
+
+#pragma pack(push,1)
+    struct TDBID
+    {
+        uint32_t hash;
+        uint8_t unk4;
+        uint16_t unk5;
+        uint8_t unk7;
+    };
+#pragma pack(pop)
+    static_assert(sizeof(TDBID) == 8);
+
+    TDBID tdbid_value{};
+    apStack->unk30 = nullptr;
+    apStack->unk38 = nullptr;
+    opcode = *(apStack->m_code++);
+    GetScriptCallArray()[opcode](apStack->m_context, apStack, &tdbid_value, nullptr);
+    apStack->m_code++; // skip ParamEnd
+
+    if (result)
+    {
+        std::string tdbid_debug = (tdbid_value.unk5 == 0 && tdbid_value.unk7 == 0)
+            ? fmt::format("<TDBID:{:08X}:{:02X}>",
+                tdbid_value.hash, tdbid_value.unk4)
+            : fmt::format("<TDBID:{:08X}:{:02X}:{:04X}:{:02X}>",
+                tdbid_value.hash, tdbid_value.unk4, tdbid_value.unk5, tdbid_value.unk7);
+        REDString s(tdbid_debug.c_str());
+        ((REDString*)result)->Copy(&s);
+        s.Destroy();
+    }
+}
+
 void Overlay::Toggle()
 {
     struct Singleton
