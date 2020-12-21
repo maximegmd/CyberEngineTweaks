@@ -74,6 +74,7 @@ void Overlay::DrawImgui(IDXGISwapChain3* apSwapChain)
             for (auto& item : m_outputLines)
                 if (ImGui::Selectable(item.c_str()))
                     std::strncpy(command, item.c_str(), sizeof(command) - 1);
+
             if (m_outputScroll)
             {
                 if (m_outputShouldScroll)

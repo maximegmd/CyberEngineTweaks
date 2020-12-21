@@ -5,6 +5,7 @@
 #include <spdlog/spdlog.h>
 
 #include "Options.h"
+#include "System.h"
 #include "RED4ext/REDreverse/CString.hpp"
 #include "overlay/Overlay.h"
 
@@ -17,7 +18,16 @@ Scripting::Scripting()
         sol::meta_function::index, &Scripting::Index,
         sol::meta_function::new_index, &Scripting::NewIndex);
 
+    m_lua.new_usertype<System>("__System",
+        sol::meta_function::construct, sol::no_constructor,
+        sol::meta_function::index, &System::Index,
+        sol::meta_function::new_index, &System::NewIndex);
+
     m_lua["Game"] = this;
+    m_lua["GetSystem"] = [this](const std::string& acName)
+    {
+        return this->GetSystem(acName);
+    };
 
     m_lua["print"] = [](sol::variadic_args args, sol::this_environment env, sol::this_state L)
     {
@@ -72,6 +82,17 @@ sol::object Scripting::NewIndex(const std::string& acName, sol::object aParam)
     return property;
 }
 
+sol::object Scripting::GetSystem(const std::string& acName)
+{
+    auto itor = m_systems.find(acName);
+    if (itor != std::end(m_systems))
+        return make_object(m_lua, itor->second);
+
+    auto result = m_systems.emplace(std::make_pair(acName, System{ m_lua, acName }));
+
+    return make_object(m_lua, result.first->second);
+}
+
 sol::protected_function Scripting::InternalIndex(const std::string& acName)
 {
     const sol::state_view state(m_lua);
@@ -91,6 +112,8 @@ sol::protected_function Scripting::InternalIndex(const std::string& acName)
 
 bool Scripting::Execute(const std::string& aFuncName, sol::variadic_args aArgs, sol::this_environment env, sol::this_state L, std::string& aReturnMessage)
 {
+    static RED4ext::REDfunc<char* (*)(uint64_t& aHash)> CNamePool_Get({ 0x48, 0x83, 0xEC, 0x38, 0x48,0x8B,0x11,0x48,0x8D,0x4C,0x24,0x20,0xE8 }, 1);
+
     std::vector<RED4ext::REDreverse::CString> redArgs;
 
     for (auto v : aArgs)
@@ -125,6 +148,8 @@ bool Scripting::Execute(const std::string& aFuncName, sol::variadic_args aArgs, 
     args[0].type = *reinterpret_cast<RED4ext::REDreverse::CRTTIBaseType**>(pFunc->params.unk0[0]);
     args[0].value = &unk10;
 
+    const bool hasReturnType = (pFunc->returnType) != nullptr && (*pFunc->returnType) != nullptr;
+
     for(auto i = 0; i < redArgs.size(); ++i)
     {
         auto pType = *reinterpret_cast<RED4ext::REDreverse::CRTTIBaseType**>(pFunc->params.unk0[i + 1]);;
@@ -139,6 +164,16 @@ bool Scripting::Execute(const std::string& aFuncName, sol::variadic_args aArgs, 
     }
 
     CStackType result;
+    if (hasReturnType)
+    {
+        uint64_t hash = 0;
+        (*pFunc->returnType)->GetName(&hash);
+        if (hash)
+        {
+            std::string typeName = CNamePool_Get(hash);
+            Overlay::Get().Log("Return type: " + typeName);
+        }
+    }
     /*if (aOut)
     {
         result.value = aOut;
