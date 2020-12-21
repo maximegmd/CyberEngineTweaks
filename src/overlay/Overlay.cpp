@@ -9,6 +9,7 @@
 #include <Pattern.h>
 #include <kiero/kiero.h>
 #include <spdlog/spdlog.h>
+#include <RED4ext/REDhash.hpp>
 
 #include "imgui_impl_dx12.h"
 #include "imgui_impl_win32.h"
@@ -152,7 +153,19 @@ LRESULT APIENTRY Overlay::WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
     return CallWindowProc(s_pOverlay->m_wndProc, hwnd, uMsg, wParam, lParam);
 }
 
-using TScriptCall = void*(uint8_t*, uint8_t**, REDString*, void*);
+struct ScriptContext
+{
+};
+
+struct ScriptStack
+{
+    uint8_t* m_code;
+    uint8_t pad[0x28];
+    void* unk30;
+    void* unk38;
+    ScriptContext* m_context;
+};
+static_assert(offsetof(ScriptStack, m_context) == 0x40);
 
 TScriptCall** GetScriptCallArray()
 {
@@ -162,21 +175,72 @@ TScriptCall** GetScriptCallArray()
     return reinterpret_cast<TScriptCall**>(finalLocation);
 }
 
-
-void* Overlay::HookLog(uintptr_t apThis, uint8_t** apStack)
+void Overlay::HookLog(ScriptContext* apContext, ScriptStack* apStack, void*, void*)
 {
-    REDString result("");
-    apStack[6] = nullptr;
-    apStack[7] = nullptr;
-    auto stack = *(*apStack)++;
-    GetScriptCallArray()[stack](apStack[8], apStack, &result, nullptr);
-    ++(*apStack);
+    REDString text("");
+    apStack->unk30 = nullptr;
+    apStack->unk38 = nullptr;
+    auto opcode = *(apStack->m_code++);
+    GetScriptCallArray()[opcode](apStack->m_context, apStack, &text, nullptr);
+    apStack->m_code++; // skip ParamEnd
 
-    Get().Log(result.ToString());
+    Get().Log(text.ToString());
 
-    result.Destroy();
+    text.Destroy();
+}
 
+const char* GetChannelStr(uint64_t hash)
+{
+    switch (hash)
+    {
+#define HASH_CASE(x) case RED4ext::FNV1a(x): return x
+        HASH_CASE("AI");
+        HASH_CASE("AICover");
+        HASH_CASE("ASSERT");
+        HASH_CASE("Damage");
+        HASH_CASE("DevelopmentManager");
+        HASH_CASE("Device");
+        HASH_CASE("Items");
+        HASH_CASE("ItemManager");
+        HASH_CASE("Puppet");
+        HASH_CASE("Scanner");
+        HASH_CASE("Stats");
+        HASH_CASE("StatPools");
+        HASH_CASE("Strike");
+        HASH_CASE("TargetManager");
+        HASH_CASE("Test");
+        HASH_CASE("UI");
+        HASH_CASE("Vehicles");
+#undef HASH_CASE
+    }
     return nullptr;
+}
+
+void Overlay::HookLogChannel(ScriptContext* apContext, ScriptStack* apStack, void*, void*)
+{
+    uint8_t opcode;
+
+    uint64_t channel_hash = 0;
+    apStack->unk30 = nullptr;
+    apStack->unk38 = nullptr;
+    opcode = *(apStack->m_code++);
+    GetScriptCallArray()[opcode](apStack->m_context, apStack, &channel_hash, nullptr);
+
+    REDString text("");
+    apStack->unk30 = nullptr;
+    apStack->unk38 = nullptr;
+    opcode = *(apStack->m_code++);
+    GetScriptCallArray()[opcode](apStack->m_context, apStack, &text, nullptr);
+
+    apStack->m_code++; // skip ParamEnd
+
+    auto channel_str = GetChannelStr(channel_hash);
+    std::string channel = channel_str == nullptr
+        ? "?" + std::to_string(channel_hash)
+        : std::string(channel_str);
+    Get().Log("[" + channel + "] " +text.ToString());
+
+    text.Destroy();
 }
 
 void Overlay::Toggle()
@@ -215,4 +279,3 @@ void Overlay::Log(const std::string& acpText)
 Overlay::Overlay() = default;
 
 Overlay::~Overlay() = default;
-

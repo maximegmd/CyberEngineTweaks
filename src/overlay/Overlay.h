@@ -9,10 +9,14 @@
 
 #include "reverse/Engine.h"
 
+struct ScriptContext;
+struct ScriptStack;
+struct REDString;
+
 using TPresentD3D12 = long(IDXGISwapChain3* pSwapChain, UINT SyncInterval, UINT Flags);
 using TSetMousePosition = BOOL(void* apThis, HWND Wnd, long X, long Y);
 using TClipToCenter = HWND(CGameEngine::UnkC0* apThis);
-using TLog = void*(uintptr_t a1, uint8_t** a2);
+using TScriptCall = void(ScriptContext*, ScriptStack*, void*, void*);
 
 struct Image;
 struct Overlay
@@ -49,8 +53,9 @@ protected:
 	static BOOL SetMousePosition(void* apThis, HWND Wnd, long X, long Y);
 	static BOOL ClipToCenter(CGameEngine::UnkC0* apThis);
 	static LRESULT APIENTRY WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	static void* HookLog(uintptr_t apThis, uint8_t** apStack);
-	
+	static void HookLog(ScriptContext* apContext, ScriptStack* apStack, void*, void*);
+	static void HookLogChannel(ScriptContext* apContext, ScriptStack* apStack, void*, void*);
+
 private:
 
 	Overlay();
@@ -61,7 +66,8 @@ private:
 	ID3D12DescriptorHeap* m_pd3dSrvDescHeap;
 	ID3D12GraphicsCommandList* m_pd3dCommandList;
 	TClipToCenter* m_realClipToCenter{nullptr};
-	TLog* m_realLog{nullptr};
+	TScriptCall* m_realLog{nullptr};
+	TScriptCall* m_realLogChannel{ nullptr };
 	HWND m_hwnd;
 	WNDPROC	m_wndProc{nullptr};
 	bool m_enabled{ false };
