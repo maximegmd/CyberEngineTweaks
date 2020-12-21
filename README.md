@@ -34,6 +34,12 @@ Works with 1.04 and 1.05.
 
 [Usage with Proton](PROTON.md)
 
+## Contributing
+
+If you wish to contribute to the main repo, try to follow the coding style in the code, otherwise not much to say, don't use code that is not yours unless the license is compatible with MIT.
+
+As for the wiki, please make a pull request [here](https://github.com/yamashi/CyberEngineTweaksWiki/) and once accepted I will push it to this repo's wiki.
+
 ## Credits
 
 * [UnhingedDoork](https://www.reddit.com/r/Amd/comments/kbp0np/cyberpunk_2077_seems_to_ignore_smt_and_mostly/gfjf1vo/?utm_source=reddit&utm_medium=web2x&context=3)

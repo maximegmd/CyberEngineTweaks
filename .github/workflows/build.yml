@@ -18,6 +18,11 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: Checkout submodules
+      run: |
+        git submodule sync --recursive
+        git submodule update --init --force --recursive --depth=1
+
     # Install xmake
     - name: Setup xmake
       uses: xmake-io/github-action-setup-xmake@v1

@@ -28,6 +28,22 @@ REDString::REDString(const char* acpData)
     RealStringCtor(this, acpData);
 }
 
+REDString* REDString::Copy(REDString* other)
+{
+    static uint8_t* CopyCaller = FindSignature({
+        0x40, 0x53, 0x48, 0x83, 0xEC, 0x20, 0x48, 0x8B,
+        0xCA, 0x49, 0x8B, 0xD8, 0xE8, 0xCC, 0xCC, 0xCC,
+        0xCC, 0x48, 0x8B, 0xD0, 0x48, 0x8B, 0xCB, 0xE8,
+        0xCC, 0xCC, 0xCC, 0xCC, 0xB0, 0x01, 0x48, 0x83,
+        0xC4, 0x20, 0x5B, 0xC3
+        });
+    using TStringCopy = REDString*(REDString*, REDString*);
+    static TStringCopy* RealStringCopy = reinterpret_cast<TStringCopy*>(
+        &CopyCaller[28] + *reinterpret_cast<int32_t*>(&CopyCaller[24]));
+
+    return RealStringCopy(this, other);
+}
+
 void REDString::Destroy()
 {
     using TStringDtor = void(REDString*);
