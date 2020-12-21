@@ -11,10 +11,11 @@
 #include "RED4ext/REDreverse/Function.hpp"
 #include "overlay/Overlay.h"
 
-Type::Type(sol::state_view aView, RED4ext::REDreverse::CClass* apClass, std::string aName)
+Type::Type(sol::state_view aView, RED4ext::REDreverse::CClass* apClass, std::string aName, RED4ext::REDreverse::Scripting::IScriptable* apHandle)
     : m_lua(aView)
     , m_pType(apClass)
     , m_name(std::move(aName))
+    , m_pHandle(apHandle)
 {
 }
 
@@ -148,7 +149,9 @@ sol::object Type::Execute(RED4ext::REDreverse::CClassFunction* apFunc, const std
     std::aligned_storage_t<sizeof(RED4ext::REDreverse::CScriptableStackFrame), alignof(RED4ext::REDreverse::CScriptableStackFrame)> stackStore;
     auto* stack = reinterpret_cast<RED4ext::REDreverse::CScriptableStackFrame*>(&stackStore);
 
-    const auto* pScriptable = unk10->GetTypeInstance(m_pType);
+    auto* pScriptable = m_pHandle;
+    if(pScriptable == nullptr)
+        pScriptable = unk10->GetTypeInstance(m_pType);
 
     RED4ext::REDreverse::CScriptableStackFrame::Construct(stack, pScriptable, args.data(),
                                                           static_cast<uint32_t>(args.size()), hasReturnType ? &result : nullptr, 0);

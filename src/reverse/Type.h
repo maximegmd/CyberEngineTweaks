@@ -5,6 +5,10 @@
 
 namespace RED4ext {
 	namespace REDreverse {
+		namespace Scripting {
+			struct IScriptable;
+		}
+
 		struct CClass;
 		struct CClassFunction;
 	}
@@ -12,7 +16,7 @@ namespace RED4ext {
 
 struct Type
 {
-    Type(sol::state_view aView, RED4ext::REDreverse::CClass* apClass, std::string aName);
+    Type(sol::state_view aView, RED4ext::REDreverse::CClass* apClass, std::string aName, RED4ext::REDreverse::Scripting::IScriptable* apHandle = nullptr);
 	
     sol::object Index(const std::string& acName);
     sol::object NewIndex(const std::string& acName, sol::object aParam);
@@ -23,6 +27,7 @@ struct Type
 private:
     sol::state_view m_lua;
     RED4ext::REDreverse::CClass* m_pType;
+    RED4ext::REDreverse::Scripting::IScriptable* m_pHandle{nullptr};
     std::string m_name;
     std::unordered_map<std::string, sol::object> m_properties;
 };

@@ -24,9 +24,14 @@ Scripting::Scripting()
         sol::meta_function::new_index, &Type::NewIndex);
 
     m_lua["Game"] = this;
-    m_lua["GetType"] = [this](const std::string& acName)
+    m_lua["CreateSingletonHandle"] = [this](const std::string& acName)
     {
-        return this->GetType(acName);
+        return this->CreateSingletonHandle(acName);
+    };
+
+    m_lua["CreateHandle"] = [this](const std::string& acName, RED4ext::REDreverse::Scripting::IScriptable* apHandle)
+    {
+        return this->CreateHandle(acName, apHandle);
     };
 
     m_lua["print"] = [](sol::variadic_args args, sol::this_environment env, sol::this_state L)
@@ -82,7 +87,12 @@ sol::object Scripting::NewIndex(const std::string& acName, sol::object aParam)
     return property;
 }
 
-sol::object Scripting::GetType(const std::string& acName)
+sol::object Scripting::CreateSingletonHandle(const std::string& acName)
+{
+    return CreateHandle(acName, nullptr);
+}
+
+sol::object Scripting::CreateHandle(const std::string& acName, RED4ext::REDreverse::Scripting::IScriptable* apHandle)
 {
     auto itor = m_systems.find(acName);
     if (itor != std::end(m_systems))
@@ -90,14 +100,13 @@ sol::object Scripting::GetType(const std::string& acName)
 
     auto* pRtti = RED4ext::REDreverse::CRTTISystem::Get();
     auto* pType = pRtti->GetType<RED4ext::REDreverse::CClass*>(RED4ext::FNV1a(acName));
-    if(!pType)
+    if (!pType)
     {
         Overlay::Get().Log("Type '" + acName + "' not found or is not initialized yet.");
         return make_object(m_lua, nullptr);
     }
 
-    auto result = m_systems.emplace(std::make_pair(acName, Type{ m_lua, pType, acName }));
-
+    auto result = m_systems.emplace(std::make_pair(acName, Type{ m_lua, pType, acName, apHandle }));
     return make_object(m_lua, result.first->second);
 }
 
@@ -107,18 +116,18 @@ sol::protected_function Scripting::InternalIndex(const std::string& acName)
     auto obj = make_object(state, [this, name = acName](sol::variadic_args args, sol::this_environment env, sol::this_state L)
     {
         std::string result;
-        bool code = this->Execute(name, args, env, L, result);
+        auto code = this->Execute(name, args, env, L, result);
         if(!code)
         {
             Overlay::Get().Log("Error: " + result);
         }
-        return std::make_tuple(code, result);
+        return code;
     });
 
     return NewIndex(acName, std::move(obj));
 }
 
-bool Scripting::Execute(const std::string& aFuncName, sol::variadic_args aArgs, sol::this_environment env, sol::this_state L, std::string& aReturnMessage)
+sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args aArgs, sol::this_environment env, sol::this_state L, std::string& aReturnMessage)
 {
     static RED4ext::REDfunc<char* (*)(uint64_t& aHash)> CNamePool_Get({ 0x48, 0x83, 0xEC, 0x38, 0x48,0x8B,0x11,0x48,0x8D,0x4C,0x24,0x20,0xE8 }, 1);
 
@@ -130,7 +139,8 @@ bool Scripting::Execute(const std::string& aFuncName, sol::variadic_args aArgs, 
     if (!pFunc)
     {
         aReturnMessage = "Function '" + aFuncName + "' not found or is not a global.";
-        return false;
+
+        return make_object(m_lua, nullptr);
     }
 
     if (pFunc->params.size - 1 != aArgs.size())
@@ -138,7 +148,8 @@ bool Scripting::Execute(const std::string& aFuncName, sol::variadic_args aArgs, 
         aReturnMessage = "Function '" + aFuncName + "' expects " +
             std::to_string(pFunc->params.size - 1) + " parameters, not " +
             std::to_string(aArgs.size()) + ".";
-        return false;
+
+        return make_object(m_lua, nullptr);
     }
 
     auto engine = RED4ext::REDreverse::CGameEngine::Get();
@@ -149,7 +160,7 @@ bool Scripting::Execute(const std::string& aFuncName, sol::variadic_args aArgs, 
     args[0].type = *reinterpret_cast<RED4ext::REDreverse::CRTTIBaseType**>(pFunc->params.unk0[0]);
     args[0].value = &unk10;
 
-    const bool hasReturnType = (pFunc->returnType) != nullptr && (*pFunc->returnType) != nullptr;
+    const bool hasReturnType = (pFunc->returnType) != nullptr && (*pFunc->returnType) != nullptr && (*pFunc->returnType)->GetType() == RED4ext::REDreverse::RTTIType::Handle;
 
     for (auto i = 0; i < aArgs.size(); ++i)
     {
@@ -182,27 +193,22 @@ bool Scripting::Execute(const std::string& aFuncName, sol::variadic_args aArgs, 
                 aReturnMessage = "Function '" + aFuncName + "' parameter " + std::to_string(i) + " must be " + typeName + ".";
             }
 
-            return false;
+            return make_object(m_lua, nullptr);
         }
     }
 
-    uint8_t returnBuffer[0x100];
+
+    struct Ref
+    {
+        RED4ext::REDreverse::Scripting::IScriptable* ref{nullptr};
+        uint32_t* count{nullptr};
+    };
+
+    Ref returnBuffer;
 
     CStackType result;
-    if (hasReturnType)
-    {
-        uint64_t hash = 0;
-        (*pFunc->returnType)->GetName(&hash);
-        if (hash)
-        {
-            std::string typeName = CNamePool_Get(hash);
-            Overlay::Get().Log("Return type: " + typeName);
-        }
-    }
-    /*if (aOut)
-    {
-        result.value = aOut;
-    }*/
+    result.value = &returnBuffer;
+    result.type = *pFunc->returnType;
 
     std::aligned_storage_t<sizeof(RED4ext::REDreverse::CScriptableStackFrame), alignof(RED4ext::REDreverse::CScriptableStackFrame)> stackStore;
     auto* stack = reinterpret_cast<RED4ext::REDreverse::CScriptableStackFrame*>(&stackStore);
@@ -210,11 +216,14 @@ bool Scripting::Execute(const std::string& aFuncName, sol::variadic_args aArgs, 
     static const auto cpPlayerSystem = RED4ext::FNV1a("cpPlayerSystem");
 
     const auto* type = pRtti->GetType(cpPlayerSystem);
-    const auto* pScriptable = unk10->GetTypeInstance(type);
+
+    auto pScriptable = unk10->GetTypeInstance(type);
 
     RED4ext::REDreverse::CScriptableStackFrame::Construct(stack, pScriptable, args.data(),
-                                                          static_cast<uint32_t>(args.size()),  nullptr, 0);
+                                                          static_cast<uint32_t>(args.size()),  hasReturnType ? &result : nullptr, 0);
     const auto success = pFunc->Call(stack);
+    if (!success)
+        return make_object(m_lua, nullptr);
 
-    return success;
+    return make_object(m_lua, returnBuffer.ref);
 }
