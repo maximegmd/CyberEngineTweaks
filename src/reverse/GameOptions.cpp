@@ -21,6 +21,14 @@ std::string GameOption::GetInfo()
         ret << pName;
 
     ret << " = ";
+    ret << GetString();
+
+    return ret.str();
+}
+
+std::string GameOption::GetString()
+{
+    std::stringstream ret;
 
     switch (type)
     {
@@ -47,6 +55,54 @@ std::string GameOption::GetInfo()
     }
 
     return ret.str();
+}
+
+bool GameOption::GetBool(bool& retval)
+{
+    retval = false;
+    if (type != GameOptionType::Boolean)
+        return false;
+    if (!pBoolean)
+        return false;
+
+    retval = *pBoolean;
+    return true;
+}
+
+bool GameOption::GetInt(int& retval)
+{
+    retval = 0;
+    if (type != GameOptionType::Integer && type != GameOptionType::Color)
+        return false;
+    if (!pInteger)
+        return false;
+
+    retval = *pInteger;
+    return true;
+}
+
+bool GameOption::GetFloat(float& retval)
+{
+    retval = 0.f;
+    if (type != GameOptionType::Float)
+        return false;
+    if (!pFloat)
+        return false;
+
+    retval = *pFloat;
+    return true;
+}
+
+bool GameOption::GetColor(int& retval)
+{
+    retval = 0;
+    if (type != GameOptionType::Color)
+        return false;
+    if (!pInteger)
+        return false;
+
+    retval = *pInteger;
+    return true;
 }
 
 bool GameOption::Set(const std::string& value)
@@ -158,7 +214,7 @@ bool GameOption::Toggle()
     return true;
 }
 
-void GameOptions::Get(const std::string& category, const std::string& name)
+GameOption* GameOptions::Find(const std::string& category, const std::string& name)
 {
     auto& options = GameOptions::GetList();
 
@@ -172,33 +228,92 @@ void GameOptions::Get(const std::string& category, const std::string& name)
     if (option == options.end())
     {
         Overlay::Get().Log("Failed to find game option '" + category + "/" + name + "'!");
-        return;
+        return nullptr;;
     }
 
-    Overlay::Get().Log((*option)->GetInfo());
+    return *option;
 }
+
+void GameOptions::Print(const std::string& category, const std::string& name)
+{
+    auto* option = Find(category, name);
+    if (!option)
+        return;
+
+    Overlay::Get().Log(option->GetInfo());
+}
+
+std::string GameOptions::Get(const std::string& category, const std::string& name)
+{
+    auto* option = Find(category, name);
+    if (!option)
+        return "";
+
+    return option->GetString();
+}
+
+bool GameOptions::GetBool(const std::string& category, const std::string& name)
+{
+    auto* option = Find(category, name);
+    if (!option)
+        return false;
+
+    bool value = false;
+    bool result = option->GetBool(value);
+    if (!result)
+    {
+        Overlay::Get().Log("Failed to read game option '" + category + "/" + name + "', not a boolean?");
+        return false;
+    }
+
+    return value;
+}
+
+int GameOptions::GetInt(const std::string& category, const std::string& name)
+{
+    auto* option = Find(category, name);
+    if (!option)
+        return false;
+
+    int value = false;
+    bool result = option->GetInt(value);
+    if (!result)
+    {
+        Overlay::Get().Log("Failed to read game option '" + category + "/" + name + "', not an integer/color?");
+        return 0;
+    }
+
+    return value;
+}
+
+float GameOptions::GetFloat(const std::string& category, const std::string& name)
+{
+    auto* option = Find(category, name);
+    if (!option)
+        return false;
+
+    float value = false;
+    bool result = option->GetFloat(value);
+    if (!result)
+    {
+        Overlay::Get().Log("Failed to read game option '" + category + "/" + name + "', not a float?");
+        return 0.f;
+    }
+
+    return value;
+}
+
 void GameOptions::Set(const std::string& category, const std::string& name, const std::string& value)
 {
-    auto& options = GameOptions::GetList();
-
-    auto& option = std::find_if(
-        options.begin(), options.end(),
-        [&category, &name](GameOption* x)
-        {
-            return stricmp(x->pCategory, category.c_str()) == 0 && stricmp(x->pName, name.c_str()) == 0;
-        });
-
-    if (option == options.end())
-    {
-        Overlay::Get().Log("Failed to find game option '" + category + "/" + name + "'!");
+    auto* option = Find(category, name);
+    if (!option)
         return;
-    }
 
-    if ((*option)->Set(value))
-        Overlay::Get().Log((*option)->GetInfo());
+    if (option->Set(value))
+        Overlay::Get().Log(option->GetInfo());
     else
     {
-        if ((*option)->type == GameOptionType::String)
+        if (option->type == GameOptionType::String)
             Overlay::Get().Log("Failed to set game option '" + category + "/" + name + "', can't set string options right now.");
         else
             Overlay::Get().Log("Failed to set game option '" + category + "/" + name + "' due to an error (missing pointer?).");
@@ -207,26 +322,15 @@ void GameOptions::Set(const std::string& category, const std::string& name, cons
 
 void GameOptions::SetBool(const std::string& category, const std::string& name, bool value)
 {
-    auto& options = GameOptions::GetList();
-
-    auto& option = std::find_if(
-        options.begin(), options.end(),
-        [&category, &name](GameOption* x)
-        {
-            return stricmp(x->pCategory, category.c_str()) == 0 && stricmp(x->pName, name.c_str()) == 0;
-        });
-
-    if (option == options.end())
-    {
-        Overlay::Get().Log("Failed to find game option '" + category + "/" + name + "'!");
+    auto* option = Find(category, name);
+    if (!option)
         return;
-    }
 
-    if ((*option)->SetBool(value))
-        Overlay::Get().Log((*option)->GetInfo());
+    if (option->SetBool(value))
+        Overlay::Get().Log(option->GetInfo());
     else
     {
-        if ((*option)->type != GameOptionType::Boolean)
+        if (option->type != GameOptionType::Boolean)
             Overlay::Get().Log("Failed to set game option '" + category + "/" + name + "', not a boolean.");
         else
             Overlay::Get().Log("Failed to set game option '" + category + "/" + name + "' due to an error (missing pointer?).");
@@ -235,26 +339,15 @@ void GameOptions::SetBool(const std::string& category, const std::string& name, 
 
 void GameOptions::SetInt(const std::string& category, const std::string& name, int value)
 {
-    auto& options = GameOptions::GetList();
-
-    auto& option = std::find_if(
-        options.begin(), options.end(),
-        [&category, &name](GameOption* x)
-        {
-            return stricmp(x->pCategory, category.c_str()) == 0 && stricmp(x->pName, name.c_str()) == 0;
-        });
-
-    if (option == options.end())
-    {
-        Overlay::Get().Log("Failed to find game option '" + category + "/" + name + "'!");
+    auto* option = Find(category, name);
+    if (!option)
         return;
-    }
 
-    if ((*option)->SetInt(value))
-        Overlay::Get().Log((*option)->GetInfo());
+    if (option->SetInt(value))
+        Overlay::Get().Log(option->GetInfo());
     else
     {
-        if ((*option)->type != GameOptionType::Integer && (*option)->type != GameOptionType::Color)
+        if (option->type != GameOptionType::Integer && option->type != GameOptionType::Color)
             Overlay::Get().Log("Failed to set game option '" + category + "/" + name + "', not an integer.");
         else
             Overlay::Get().Log("Failed to set game option '" + category + "/" + name + "' due to an error (missing pointer?).");
@@ -263,26 +356,15 @@ void GameOptions::SetInt(const std::string& category, const std::string& name, i
 
 void GameOptions::SetFloat(const std::string& category, const std::string& name, float value)
 {
-    auto& options = GameOptions::GetList();
-
-    auto& option = std::find_if(
-        options.begin(), options.end(),
-        [&category, &name](GameOption* x)
-        {
-            return stricmp(x->pCategory, category.c_str()) == 0 && stricmp(x->pName, name.c_str()) == 0;
-        });
-
-    if (option == options.end())
-    {
-        Overlay::Get().Log("Failed to find game option '" + category + "/" + name + "'!");
+    auto* option = Find(category, name);
+    if (!option)
         return;
-    }
 
-    if ((*option)->SetFloat(value))
-        Overlay::Get().Log((*option)->GetInfo());
+    if (option->SetFloat(value))
+        Overlay::Get().Log(option->GetInfo());
     else
     {
-        if ((*option)->type != GameOptionType::Float)
+        if (option->type != GameOptionType::Float)
             Overlay::Get().Log("Failed to set game option '" + category + "/" + name + "', not a float.");
         else
             Overlay::Get().Log("Failed to set game option '" + category + "/" + name + "' due to an error (missing pointer?).");
@@ -291,26 +373,15 @@ void GameOptions::SetFloat(const std::string& category, const std::string& name,
 
 void GameOptions::Toggle(const std::string& category, const std::string& name)
 {
-    auto& options = GameOptions::GetList();
-
-    auto& option = std::find_if(
-        options.begin(), options.end(),
-        [&category, &name](GameOption* x)
-        {
-            return stricmp(x->pCategory, category.c_str()) == 0 && stricmp(x->pName, name.c_str()) == 0;
-        });
-
-    if (option == options.end())
-    {
-        Overlay::Get().Log("Failed to find game option '" + category + "/" + name + "'!");
+    auto* option = Find(category, name);
+    if (!option)
         return;
-    }
 
-    if ((*option)->Toggle())
-        Overlay::Get().Log((*option)->GetInfo());
+    if (option->Toggle())
+        Overlay::Get().Log(option->GetInfo());
     else
     {
-        if ((*option)->type != GameOptionType::Boolean)
+        if (option->type != GameOptionType::Boolean)
             Overlay::Get().Log("Failed to set game option '" + category + "/" + name + "', not a boolean.");
         else
             Overlay::Get().Log("Failed to set game option '" + category + "/" + name + "' due to an error (missing pointer?).");

@@ -45,6 +45,13 @@ struct GameOption
 
   std::string GetInfo();
 
+  std::string GetString();
+
+  bool GetBool(bool& retval);
+  bool GetInt(int& retval);
+  bool GetFloat(float& retval);
+  bool GetColor(int& retval);
+
   bool Set(const std::string& value);
   bool SetBool(bool value);
   bool SetInt(int value);
@@ -61,7 +68,16 @@ static_assert(offsetof(GameOption, pBoolean) == 0x30);
 // Struct to expose to Lua to allow these functions to be called at runtime
 struct GameOptions
 {
-  static void Get(const std::string& category, const std::string& name);
+private:
+  static GameOption* Find(const std::string& category, const std::string& name);
+
+public:
+  static void Print(const std::string& category, const std::string& name);
+
+  static std::string Get(const std::string& category, const std::string& name);
+  static bool GetBool(const std::string& category, const std::string& name);
+  static int GetInt(const std::string& category, const std::string& name);
+  static float GetFloat(const std::string& category, const std::string& name);
 
   static void Set(const std::string& category, const std::string& name, const std::string& value);
   static void SetBool(const std::string& category, const std::string& name, bool value);
@@ -73,4 +89,5 @@ struct GameOptions
   static void Dump();
 
   static std::vector<GameOption*>& GetList();
+
 };

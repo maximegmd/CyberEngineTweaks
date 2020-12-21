@@ -20,11 +20,19 @@ Scripting::Scripting()
 
     m_lua.new_usertype<GameOptions>("GameOptions",
         "new", sol::no_constructor,
+
+        "Print", &GameOptions::Print,
+
         "Get", &GameOptions::Get,
+        "GetBool", &GameOptions::GetBool,
+        "GetInt", &GameOptions::GetInt,
+        "GetFloat", &GameOptions::GetFloat,
+
         "Set", &GameOptions::Set,
         "SetBool", &GameOptions::SetBool,
         "SetInt", &GameOptions::SetInt,
         "SetFloat", &GameOptions::SetFloat,
+
         "Toggle", &GameOptions::Toggle,
         "Dump", &GameOptions::Dump);
 
