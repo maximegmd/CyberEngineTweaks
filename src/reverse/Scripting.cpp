@@ -166,8 +166,8 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
     {
         auto arg = aArgs[i];
 
-        auto* pType = *reinterpret_cast<RED4ext::REDreverse::CRTTIBaseType**>(pFunc->params.unk0[i]);
-        args[i].type = pType;
+        auto* pType = *reinterpret_cast<RED4ext::REDreverse::CRTTIBaseType**>(pFunc->params.unk0[i + 1]);
+        args[i + 1].type = pType;
 
         if (pType == pStringType)
         {
@@ -175,13 +175,13 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
             auto* pMemory = _malloca(sizeof(RED4ext::REDreverse::CString));
 
             auto* pString = new (pMemory) RED4ext::REDreverse::CString{ sstr.c_str() };
-            args[i].value = pString;
+            args[i + 1].value = pString;
         }
         else if (pType == pInt32Type)
         {
             auto* pMemory = static_cast<int32_t*>(_malloca(sizeof(int32_t)));
             *pMemory = arg.get<int32_t>();
-            args[i].value = pMemory;
+            args[i + 1].value = pMemory;
         }
         else
         {
@@ -207,8 +207,11 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
     Ref returnBuffer;
 
     CStackType result;
-    result.value = &returnBuffer;
-    result.type = *pFunc->returnType;
+    if (hasReturnType)
+    {
+        result.value = &returnBuffer;
+        result.type = *pFunc->returnType;
+    }
 
     std::aligned_storage_t<sizeof(RED4ext::REDreverse::CScriptableStackFrame), alignof(RED4ext::REDreverse::CScriptableStackFrame)> stackStore;
     auto* stack = reinterpret_cast<RED4ext::REDreverse::CScriptableStackFrame*>(&stackStore);
@@ -224,6 +227,9 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
     const auto success = pFunc->Call(stack);
     if (!success)
         return make_object(m_lua, nullptr);
+
+    if (!hasReturnType)
+        return make_object(m_lua, true);
 
     return make_object(m_lua, returnBuffer.ref);
 }
