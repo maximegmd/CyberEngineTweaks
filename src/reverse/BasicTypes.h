@@ -19,7 +19,15 @@ struct Quaternion
 	std::string ToString() const noexcept;
 };
 
+// - But yamyam these two are exactly the same why you do this?
+// - We have to implement different destructors but we are lazy
 struct StrongHandle
+{
+	RED4ext::REDreverse::Scripting::IScriptable* handle;
+	uint32_t* refCount;
+};
+
+struct WeakHandle
 {
 	RED4ext::REDreverse::Scripting::IScriptable* handle;
 	uint32_t* refCount;

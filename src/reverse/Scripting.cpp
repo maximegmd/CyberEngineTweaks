@@ -13,6 +13,9 @@
 #include "RED4ext/REDreverse/CName.hpp"
 
 #include "GameOptions.h"
+#include "SingletonReference.h"
+#include "StrongReference.h"
+#include "WeakReference.h"
 
 Scripting::Scripting()
 {
@@ -28,9 +31,26 @@ Scripting::Scripting()
         sol::meta_function::index, &Type::Index,
         sol::meta_function::new_index, &Type::NewIndex);
 
-    m_lua.new_usertype<GameOptions>("GameOptions",
-        "new", sol::no_constructor,
+    m_lua.new_usertype<StrongReference>("StrongReference",
+        sol::meta_function::construct, sol::no_constructor,
+        sol::base_classes, sol::bases<Type>(),
+        sol::meta_function::index, &StrongReference::Index,
+        sol::meta_function::new_index, &StrongReference::NewIndex);
 
+    m_lua.new_usertype<WeakReference>("WeakReference",
+        sol::meta_function::construct, sol::no_constructor,
+        sol::base_classes, sol::bases<Type>(),
+        sol::meta_function::index, &WeakReference::Index,
+        sol::meta_function::new_index, &WeakReference::NewIndex);
+
+    m_lua.new_usertype<SingletonReference>("SingletonReference",
+        sol::meta_function::construct, sol::no_constructor,
+        sol::base_classes, sol::bases<Type>(),
+        sol::meta_function::index, &SingletonReference::Index,
+        sol::meta_function::new_index, &SingletonReference::NewIndex);
+
+    m_lua.new_usertype<GameOptions>("GameOptions",
+        sol::meta_function::construct, sol::no_constructor,
         "Print", &GameOptions::Print,
         "Get", &GameOptions::Get,
         "GetBool", &GameOptions::GetBool,
@@ -56,26 +76,9 @@ Scripting::Scripting()
         "hash", sol::property(&CName::hash));
 
     m_lua["Game"] = this;
-    m_lua["CreateSingletonHandle"] = [this](const std::string& acName)
+    m_lua["GetSingleton"] = [this](const std::string& acName)
     {
-        return this->CreateSingletonHandle(acName);
-    };
-
-    m_lua["CreateHandle"] = [this](StrongHandle* apHandle)
-    {
-        auto* pType = apHandle->handle->GetClass();
-        if(pType)
-        {
-            uint64_t hash = 0;
-            pType->GetName(&hash);
-            if(hash)
-            {
-                const auto type = RED4ext::REDreverse::CName::ToString(hash);
-                return this->CreateHandle(type, apHandle->handle);
-            }
-        }
-
-        return make_object(m_lua, nullptr);
+        return this->GetSingletonHandle(acName);
     };
   
     m_lua["print"] = [](sol::variadic_args args, sol::this_environment env, sol::this_state L)
@@ -125,20 +128,42 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::REDreverse::CScrip
 
     auto* pType = aResult.type;
 
+    if (pType == nullptr)
+        return sol::nil;
     if (pType == pStringType)
         return make_object(aState, std::string(static_cast<RED4ext::REDreverse::CString*>(aResult.value)->ToString()));
-    if (pType == pInt32Type)
+    else if (pType == pInt32Type)
         return make_object(aState, *static_cast<int32_t*>(aResult.value));
-    if (pType == pBoolType)
+    else if (pType == pBoolType)
         return make_object(aState, *static_cast<bool*>(aResult.value));
-    if (pType == pQuaternion)
+    else if (pType == pQuaternion)
         return make_object(aState, *static_cast<Quaternion*>(aResult.value));
-    if (pType == pCNameType)
+    else if (pType == pCNameType)
         return make_object(aState, *static_cast<CName*>(aResult.value));
-    if (pType->GetType() == RED4ext::REDreverse::RTTIType::Handle)
-        return make_object(aState, *static_cast<StrongHandle*>(aResult.value));
+    else if (pType->GetType() == RED4ext::REDreverse::RTTIType::Handle)
+    {
+        const auto handle = *static_cast<StrongHandle*>(aResult.value);
+        if (handle.handle)
+            return make_object(aState, StrongReference(aState, handle));
+    }
+    else if (pType->GetType() == RED4ext::REDreverse::RTTIType::WeakHandle)
+    {
+        const auto handle = *static_cast<WeakHandle*>(aResult.value);
+        if (handle.handle)
+            return make_object(aState, WeakReference(aState, handle));
+    }
+    else
+    {
+        uint64_t hash = 0;
+        pType->GetName(&hash);
+        if (hash)
+        {
+            const std::string typeName = RED4ext::REDreverse::CName::ToString(hash);
+            Overlay::Get().Log("Unhandled return type: " + typeName + " type : " + std::to_string((uint32_t)pType->GetType()));
+        }
+    }
 
-    return make_object(aState, nullptr);
+    return sol::nil;
 }
 
 sol::object Scripting::Index(const std::string& acName)
@@ -158,15 +183,10 @@ sol::object Scripting::NewIndex(const std::string& acName, sol::object aParam)
     return property;
 }
 
-sol::object Scripting::CreateSingletonHandle(const std::string& acName)
+sol::object Scripting::GetSingletonHandle(const std::string& acName)
 {
-    return CreateHandle(acName, nullptr);
-}
-
-sol::object Scripting::CreateHandle(const std::string& acName, RED4ext::REDreverse::Scripting::IScriptable* apHandle)
-{
-    auto itor = m_systems.find(acName);
-    if (itor != std::end(m_systems))
+    auto itor = m_singletons.find(acName);
+    if (itor != std::end(m_singletons))
         return make_object(m_lua, itor->second);
 
     auto* pRtti = RED4ext::REDreverse::CRTTISystem::Get();
@@ -174,10 +194,10 @@ sol::object Scripting::CreateHandle(const std::string& acName, RED4ext::REDrever
     if (!pType)
     {
         Overlay::Get().Log("Type '" + acName + "' not found or is not initialized yet.");
-        return make_object(m_lua, nullptr);
+        return sol::nil;
     }
 
-    auto result = m_systems.emplace(std::make_pair(acName, Type{ m_lua, pType, acName, apHandle }));
+    auto result = m_singletons.emplace(std::make_pair(acName, SingletonReference{ m_lua, pType }));
     return make_object(m_lua, result.first->second);
 }
 
@@ -206,11 +226,11 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
     static auto* pCNameType = pRtti->GetType(RED4ext::FNV1a("CName"));
     static auto* pInt32Type = pRtti->GetType(RED4ext::FNV1a("Int32"));
     static auto* pBoolType = pRtti->GetType(RED4ext::FNV1a("Bool"));
-    static const auto cpPlayerSystem = RED4ext::FNV1a("cpPlayerSystem");
-    static const auto cpGameInstance = RED4ext::FNV1a("ScriptGameInstance");
+    static const auto hashcpPlayerSystem = RED4ext::FNV1a("cpPlayerSystem");
+    static const auto hashGameInstance = RED4ext::FNV1a("ScriptGameInstance");
 
-    auto* type = pRtti->GetType<RED4ext::REDreverse::CClass*>(cpPlayerSystem);
-    auto* gameInstanceType = pRtti->GetType<RED4ext::REDreverse::CClass*>(cpGameInstance);
+    auto* pPlayerSystem = pRtti->GetType<RED4ext::REDreverse::CClass*>(hashcpPlayerSystem);
+    auto* gameInstanceType = pRtti->GetType<RED4ext::REDreverse::CClass*>(hashGameInstance);
 
     if (!pFunc)
     {
@@ -219,7 +239,7 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
         {
             aReturnMessage = "Function '" + aFuncName + "' not found or is not a global.";
 
-            return make_object(m_lua, nullptr);
+            return sol::nil;
         }
     }
 
@@ -229,24 +249,23 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
             std::to_string(pFunc->params.size - 1) + " parameters, not " +
             std::to_string(aArgs.size()) + ".";
 
-        return make_object(m_lua, nullptr);
+        return sol::nil;
     }
 
-    auto engine = RED4ext::REDreverse::CGameEngine::Get();
-    auto unk10 = engine->framework->unk10;
+    const auto engine = RED4ext::REDreverse::CGameEngine::Get();
+    auto* unk10 = engine->framework->gameInstance;
 
     using CStackType = RED4ext::REDreverse::CScriptableStackFrame::CStackType;
     std::vector<CStackType> args(aArgs.size() + 1);
-    args[0].type = *reinterpret_cast<RED4ext::REDreverse::CRTTIBaseType**>(pFunc->params.unk0[0]);
-    args[0].value = &unk10;
 
-    const bool hasReturnType = (pFunc->returnType) != nullptr && (*pFunc->returnType) != nullptr && (*pFunc->returnType)->GetType() == RED4ext::REDreverse::RTTIType::Handle;
+    args[0].type = *pFunc->params.types[0];
+    args[0].value = &unk10;
 
     for (auto i = 0; i < aArgs.size(); ++i)
     {
         auto arg = aArgs[i];
 
-        auto* pType = *reinterpret_cast<RED4ext::REDreverse::CRTTIBaseType**>(pFunc->params.unk0[i + 1]);
+        auto* pType = *pFunc->params.types[i + 1];
         args[i + 1].type = pType;
 
         void* pMemory = nullptr;
@@ -291,8 +310,9 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
 
     }
 
-    uint8_t buffer[1000]{ 0 };
+    const bool hasReturnType = (pFunc->returnType) != nullptr && (*pFunc->returnType) != nullptr;
 
+    uint8_t buffer[1000]{ 0 };
     CStackType result;
     if (hasReturnType)
     {
@@ -303,28 +323,16 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
     std::aligned_storage_t<sizeof(RED4ext::REDreverse::CScriptableStackFrame), alignof(RED4ext::REDreverse::CScriptableStackFrame)> stackStore;
     auto* stack = reinterpret_cast<RED4ext::REDreverse::CScriptableStackFrame*>(&stackStore);
 
-    auto pScriptable = unk10->GetTypeInstance(type);
+    const auto pScriptable = unk10->GetTypeInstance(pPlayerSystem);
 
     RED4ext::REDreverse::CScriptableStackFrame::Construct(stack, pScriptable, args.data(),
                                                           static_cast<uint32_t>(args.size()),  hasReturnType ? &result : nullptr, 0);
     const auto success = pFunc->Call(stack);
     if (!success)
-        return make_object(m_lua, nullptr);
+        return sol::nil;
 
     if(hasReturnType)
-    {
-        auto luaResult = ToLua(m_lua, result);
-        if (luaResult)
-            return luaResult;
-
-        uint64_t hash = 0;
-        (*pFunc->returnType)->GetName(&hash);
-        if (hash)
-        {
-            const std::string typeName = RED4ext::REDreverse::CName::ToString(hash);
-            Overlay::Get().Log("Unhandled return type: " + typeName + " type : " + std::to_string((uint32_t)(*pFunc->returnType)->GetType()));
-        }
-    }
+        return ToLua(m_lua, result);
 
     return make_object(m_lua, true);
 }
