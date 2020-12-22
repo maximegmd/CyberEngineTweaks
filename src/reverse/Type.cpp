@@ -5,10 +5,9 @@
 
 #include <vector>
 #include <spdlog/spdlog.h>
+#include <TiltedCore/ScratchAllocator.hpp>
 
-#include "BasicTypes.h"
 #include "Options.h"
-#include "RED4ext/REDreverse/CString.hpp"
 #include "RED4ext/REDreverse/Function.hpp"
 #include "overlay/Overlay.h"
 #include "RED4ext/REDreverse/CName.hpp"
@@ -82,13 +81,6 @@ std::string Type::GetName() const
 
 sol::object Type::Execute(RED4ext::REDreverse::CClassFunction* apFunc, const std::string& acName, sol::variadic_args aArgs, sol::this_environment env, sol::this_state L, std::string& aReturnMessage)
 {
-    auto* pRtti = RED4ext::REDreverse::CRTTISystem::Get();
-
-    static auto* pStringType = pRtti->GetType(RED4ext::FNV1a("String"));
-    static auto* pCNameType = pRtti->GetType(RED4ext::FNV1a("CName"));
-    static auto* pInt32Type = pRtti->GetType(RED4ext::FNV1a("Int32"));
-    static auto* pQuaternionType = pRtti->GetType(RED4ext::FNV1a("Quaternion"));
-
     if (apFunc->params.size != aArgs.size())
     {
         aReturnMessage = "Function '" + acName + "' expects " +
@@ -98,61 +90,42 @@ sol::object Type::Execute(RED4ext::REDreverse::CClassFunction* apFunc, const std
         return sol::nil;
     }
 
-    using CStackType = RED4ext::REDreverse::CScriptableStackFrame::CStackType;
-    std::vector<CStackType> args(aArgs.size());
+    std::vector<RED4ext::REDreverse::CScriptableStackFrame::CStackType> args(aArgs.size());
 
-    for(auto i = 0ull; i < aArgs.size(); ++i)
+    static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 13);
+    struct ResetAllocator
     {
-        auto arg = aArgs[i];
-
-        auto* pType = *apFunc->params.types[i];
-        args[i].type = pType;
-
-        void* pMemory = nullptr;
-
-        if(pType == pStringType)
+        ~ResetAllocator()
         {
-            const std::string sstr = m_lua["tostring"](arg.get<sol::object>());
-            pMemory = _malloca(sizeof(RED4ext::REDreverse::CString));
-
-            new (pMemory) RED4ext::REDreverse::CString{ sstr.c_str() };
+            s_scratchMemory.Reset();
         }
-        else if(pType == pInt32Type)
+    };
+    ResetAllocator ___allocatorReset;
+
+    for (auto i = 0; i < aArgs.size(); ++i)
+    {
+        args[i] = Scripting::ToRED(aArgs[i].get<sol::object>(), *apFunc->params.types[i], &s_scratchMemory);
+
+        if (!args[i].value)
         {
-            pMemory = _malloca(sizeof(int32_t));
-            *static_cast<int32_t*>(pMemory) = arg.get<int32_t>();
-        }
-        else if(pType == pQuaternionType)
-        {
-            pMemory = _malloca(sizeof(Quaternion));
-            *static_cast<Quaternion*>(pMemory) = arg.get<Quaternion>();
-        }
-        else if(pType == pCNameType)
-        {
-            const std::string sstr = m_lua["tostring"](arg.get<sol::object>());
-            pMemory = _malloca(sizeof(CName));
-            static_cast<CName*>(pMemory)->hash = RED4ext::FNV1a(sstr);
-        }
-        else
-        {
+            auto* pType = *apFunc->params.types[i];
+
             uint64_t hash = 0;
             pType->GetName(&hash);
             if (hash)
             {
-                const std::string typeName = RED4ext::REDreverse::CName::ToString(hash);
+                std::string typeName = RED4ext::REDreverse::CName::ToString(hash);
                 aReturnMessage = "Function '" + acName + "' parameter " + std::to_string(i) + " must be " + typeName + ".";
             }
 
             return sol::nil;
         }
-
-        args[i].value = pMemory;
     }
 
     const bool hasReturnType = (apFunc->returnType) != nullptr && (*apFunc->returnType) != nullptr;
 
     uint8_t buffer[1000]{0};
-    CStackType result;
+    RED4ext::REDreverse::CScriptableStackFrame::CStackType result;
     if (hasReturnType)
     {
         result.value = buffer;

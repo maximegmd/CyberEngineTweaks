@@ -21,6 +21,7 @@ Options::Options(HMODULE aModule)
         return;
 
     Path = Path.parent_path().parent_path();
+
     Path /= "plugins";
     Path /= "cyber_engine_tweaks/";
 

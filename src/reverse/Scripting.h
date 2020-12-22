@@ -7,6 +7,10 @@
 #include "Type.h"
 #include "RED4ext/REDreverse/Scripting/StackFrame.hpp"
 
+namespace TiltedPhoques {
+	struct Allocator;
+}
+
 namespace RED4ext {
 	namespace REDreverse {
 		namespace Scripting {
@@ -24,6 +28,7 @@ struct Scripting
     bool ExecuteLua(const std::string& aCommand);
 
 	static sol::object ToLua(sol::state_view aState, RED4ext::REDreverse::CScriptableStackFrame::CStackType& aResult);
+	static RED4ext::REDreverse::CScriptableStackFrame::CStackType ToRED(sol::object aObject, RED4ext::REDreverse::CRTTIBaseType* apRtti, TiltedPhoques::Allocator* apAllocator);
 	
 protected:
 

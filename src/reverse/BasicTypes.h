@@ -35,6 +35,7 @@ struct WeakHandle
 
 struct CName
 {
+	CName(uint64_t aHash) : hash(aHash){}
 	uint64_t hash;
 
 	std::string ToString() const noexcept;

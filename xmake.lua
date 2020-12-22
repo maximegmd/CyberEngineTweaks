@@ -1,11 +1,11 @@
 set_languages("cxx17")
 
-add_requires("spdlog", "nlohmann_json", "minhook", "imgui", "lua", "sol2")
+add_requires("spdlog", "nlohmann_json", "minhook", "imgui", "sol2", "tiltedcore")
 
 add_rules("mode.debug", "mode.release")
 
-add_ldflags("/LTCG", "/OPT:REF")
-add_cxflags("/Ot", "/GL", "/Ob2", "/Oi", "/GS-")
+--add_ldflags("/LTCG", "/OPT:REF")
+--add_cxflags("/Ot", "/GL", "/Ob2", "/Oi", "/GS-")
 
 set_optimize("fastest")
 
@@ -23,5 +23,5 @@ target("cyber_engine_tweaks")
     add_headerfiles("src/**.h")
     add_includedirs("src/")
     add_syslinks("User32", "d3d11", "D3D12")
-    add_packages("spdlog", "nlohmann_json", "minhook", "imgui", "lua", "sol2")
+    add_packages("spdlog", "nlohmann_json", "minhook", "imgui", "sol2", "tiltedcore")
     add_deps("RED4ext")

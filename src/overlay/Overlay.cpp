@@ -42,6 +42,8 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 
 void Overlay::DrawImgui(IDXGISwapChain3* apSwapChain)
 {
+    Scripting::Get();
+
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();

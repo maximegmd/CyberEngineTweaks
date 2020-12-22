@@ -17,6 +17,8 @@
 #include "StrongReference.h"
 #include "WeakReference.h"
 
+#include <TiltedCore/ScratchAllocator.hpp>
+
 Scripting::Scripting()
 {
     m_lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::io, sol::lib::math, sol::lib::package, sol::lib::os, sol::lib::table);
@@ -93,7 +95,7 @@ Scripting::Scripting()
         Overlay::Get().Log(oss.str());
     };
 
-    m_lua.do_file("plugins/cyber_engine_tweaks/scripts/autoexec.lua");
+    m_lua.do_file((Options::Get().Path / "scripts" / "autoexec.lua").string());
 }
 
 Scripting& Scripting::Get()
@@ -166,6 +168,44 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::REDreverse::CScrip
     return sol::nil;
 }
 
+RED4ext::REDreverse::CScriptableStackFrame::CStackType Scripting::ToRED(sol::object aObject, RED4ext::REDreverse::CRTTIBaseType* apRtti, TiltedPhoques::Allocator* apAllocator)
+{
+    static auto* pRtti = RED4ext::REDreverse::CRTTISystem::Get();
+    static auto* pStringType = pRtti->GetType(RED4ext::FNV1a("String"));
+    static auto* pCNameType = pRtti->GetType(RED4ext::FNV1a("CName"));
+    static auto* pInt32Type = pRtti->GetType(RED4ext::FNV1a("Int32"));
+    static auto* pBoolType = pRtti->GetType(RED4ext::FNV1a("Bool"));
+    static auto* pQuaternion = pRtti->GetType(RED4ext::FNV1a("Quaternion"));
+
+    RED4ext::REDreverse::CScriptableStackFrame::CStackType result;
+
+    sol::state_view v(aObject.lua_state());
+
+    if (apRtti)
+    {
+        result.type = apRtti;
+
+        if (apRtti == pStringType)
+        {
+            const std::string sstr = v["tostring"](aObject);
+            result.value = apAllocator->New<RED4ext::REDreverse::CString>(sstr.c_str());
+        }
+        else if (apRtti == pInt32Type)
+            result.value = apAllocator->New<int32_t>(aObject.as<int32_t>());
+        else if (apRtti == pBoolType)
+            result.value = apAllocator->New<bool>(aObject.as<bool>());
+        else if (apRtti == pQuaternion)
+            result.value = apAllocator->New<Quaternion>(aObject.as<Quaternion>());
+        else if (apRtti == pCNameType)
+        {
+            const std::string sstr = v["tostring"](aObject);
+            result.value = apAllocator->New<CName>(RED4ext::FNV1a(sstr));
+        }
+    }
+
+    return result;
+}
+
 sol::object Scripting::Index(const std::string& acName)
 {
     if(const auto itor = m_properties.find(acName); itor != m_properties.end())
@@ -221,11 +261,9 @@ sol::protected_function Scripting::InternalIndex(const std::string& acName)
 sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args aArgs, sol::this_environment env, sol::this_state L, std::string& aReturnMessage)
 {
     auto* pRtti = RED4ext::REDreverse::CRTTISystem::Get();
+
     RED4ext::REDreverse::CBaseFunction* pFunc = pRtti->GetGlobalFunction(RED4ext::FNV1a(aFuncName.c_str()));
-    static auto* pStringType = pRtti->GetType(RED4ext::FNV1a("String"));
-    static auto* pCNameType = pRtti->GetType(RED4ext::FNV1a("CName"));
-    static auto* pInt32Type = pRtti->GetType(RED4ext::FNV1a("Int32"));
-    static auto* pBoolType = pRtti->GetType(RED4ext::FNV1a("Bool"));
+
     static const auto hashcpPlayerSystem = RED4ext::FNV1a("cpPlayerSystem");
     static const auto hashGameInstance = RED4ext::FNV1a("ScriptGameInstance");
 
@@ -252,7 +290,7 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
         return sol::nil;
     }
 
-    const auto engine = RED4ext::REDreverse::CGameEngine::Get();
+    const auto* engine = RED4ext::REDreverse::CGameEngine::Get();
     auto* unk10 = engine->framework->gameInstance;
 
     using CStackType = RED4ext::REDreverse::CScriptableStackFrame::CStackType;
@@ -261,53 +299,35 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
     args[0].type = *pFunc->params.types[0];
     args[0].value = &unk10;
 
-    for (auto i = 0; i < aArgs.size(); ++i)
+    // 8KB should cut it
+    static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 13);
+    struct ResetAllocator
     {
-        auto arg = aArgs[i];
-
-        auto* pType = *pFunc->params.types[i + 1];
-        args[i + 1].type = pType;
-
-        void* pMemory = nullptr;
-
-        if (pType == pStringType)
+        ~ResetAllocator()
         {
-            const std::string sstr = m_lua["tostring"](arg.get<sol::object>());
-            pMemory = _malloca(sizeof(RED4ext::REDreverse::CString));
-
-            new (pMemory) RED4ext::REDreverse::CString{ sstr.c_str() };
+            s_scratchMemory.Reset();
         }
-        else if (pType == pInt32Type)
+    };
+    ResetAllocator ___allocatorReset;
+
+    for (auto i = 0ull; i < aArgs.size(); ++i)
+    {
+        args[i + 1ull] = ToRED(aArgs[i].get<sol::object>(), *pFunc->params.types[i + 1ull], &s_scratchMemory);
+
+        if(!args[i + 1ull].value)
         {
-            pMemory = _malloca(sizeof(int32_t));
-            *static_cast<int32_t*>(pMemory) = arg.get<int32_t>();
-        }
-        else if (pType == pBoolType)
-        {
-            pMemory = _malloca(sizeof(bool));
-            *static_cast<bool*>(pMemory) = arg.get<bool>();
-        }
-        else if (pType == pCNameType)
-        {
-            const std::string sstr = m_lua["tostring"](arg.get<sol::object>());
-            pMemory = _malloca(sizeof(CName));
-            static_cast<CName*>(pMemory)->hash = RED4ext::FNV1a(sstr);
-        }
-        else
-        {
+            auto* pType = *pFunc->params.types[i + 1];
+
             uint64_t hash = 0;
             pType->GetName(&hash);
             if (hash)
             {
-                std::string typeName = RED4ext::REDreverse::CName::ToString(hash);
+                const auto typeName = RED4ext::REDreverse::CName::ToString(hash);
                 aReturnMessage = "Function '" + aFuncName + "' parameter " + std::to_string(i) + " must be " + typeName + ".";
             }
 
-            return make_object(m_lua, nullptr);
+            return sol::nil;
         }
-
-        args[i + 1].value = pMemory;
-
     }
 
     const bool hasReturnType = (pFunc->returnType) != nullptr && (*pFunc->returnType) != nullptr;
@@ -323,7 +343,7 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
     std::aligned_storage_t<sizeof(RED4ext::REDreverse::CScriptableStackFrame), alignof(RED4ext::REDreverse::CScriptableStackFrame)> stackStore;
     auto* stack = reinterpret_cast<RED4ext::REDreverse::CScriptableStackFrame*>(&stackStore);
 
-    const auto pScriptable = unk10->GetTypeInstance(pPlayerSystem);
+    const auto* pScriptable = unk10->GetTypeInstance(pPlayerSystem);
 
     RED4ext::REDreverse::CScriptableStackFrame::Construct(stack, pScriptable, args.data(),
                                                           static_cast<uint32_t>(args.size()),  hasReturnType ? &result : nullptr, 0);
