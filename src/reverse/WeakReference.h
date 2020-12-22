@@ -13,5 +13,7 @@ protected:
 	virtual RED4ext::REDreverse::Scripting::IScriptable* GetHandle();
 	
 private:
+	friend struct Scripting;
+	
     WeakHandle m_weakHandle;
 };

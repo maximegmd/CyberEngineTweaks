@@ -77,6 +77,15 @@ Scripting::Scripting()
         sol::meta_function::to_string, &CName::ToString,
         "hash", sol::property(&CName::hash));
 
+    m_lua.new_usertype<TweakDBID>("TweakDBID", sol::constructors<TweakDBID(const std::string&)>(),
+        sol::meta_function::to_string, &TweakDBID::ToString);
+    m_lua.new_usertype<ItemID>("ItemID", sol::constructors<ItemID(const TweakDBID&)>(),
+        sol::meta_function::to_string, &ItemID::ToString);
+
+    m_lua.new_usertype<CName>("CName",
+        sol::meta_function::to_string, &CName::ToString,
+        "hash", sol::property(&CName::hash));
+
     m_lua.new_usertype<Type::Descriptor>("Descriptor",
         sol::meta_function::to_string, &Type::Descriptor::ToString);
 
@@ -89,6 +98,17 @@ Scripting::Scripting()
     m_lua["Dump"] = [this](Type* apType)
     {
         return apType->Dump();
+    };
+
+    m_lua["DumpType"] = [this](const std::string& acName)
+    {
+        auto* pRtti = RED4ext::REDreverse::CRTTISystem::Get();
+        auto* pType = pRtti->GetType<RED4ext::REDreverse::CClass*>(RED4ext::FNV1a(acName));
+        if (!pType || pType->GetType() != RED4ext::REDreverse::RTTIType::Simple)
+            return Type::Descriptor();
+
+        Type type(m_lua, pType);
+        return type.Dump();
     };
   
     m_lua["print"] = [](sol::variadic_args args, sol::this_environment env, sol::this_state L)
@@ -135,6 +155,8 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::REDreverse::CScrip
     static auto* pInt32Type = pRtti->GetType(RED4ext::FNV1a("Int32"));
     static auto* pBoolType = pRtti->GetType(RED4ext::FNV1a("Bool"));
     static auto* pQuaternion = pRtti->GetType(RED4ext::FNV1a("Quaternion"));
+    static auto* pgameItemID = pRtti->GetType(RED4ext::FNV1a("gameItemID"));
+    static auto* pTweakDBID = pRtti->GetType(RED4ext::FNV1a("TweakDBID"));
 
     auto* pType = aResult.type;
 
@@ -142,15 +164,20 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::REDreverse::CScrip
         return sol::nil;
     if (pType == pStringType)
         return make_object(aState, std::string(static_cast<RED4ext::REDreverse::CString*>(aResult.value)->ToString()));
-    else if (pType == pInt32Type)
+    if (pType == pInt32Type)
         return make_object(aState, *static_cast<int32_t*>(aResult.value));
-    else if (pType == pBoolType)
+    if (pType == pBoolType)
         return make_object(aState, *static_cast<bool*>(aResult.value));
-    else if (pType == pQuaternion)
+    if (pType == pQuaternion)
         return make_object(aState, *static_cast<Quaternion*>(aResult.value));
-    else if (pType == pCNameType)
+    if (pType == pgameItemID)
+        return make_object(aState, *static_cast<ItemID*>(aResult.value));
+    if (pType == pTweakDBID)
+        return make_object(aState, *static_cast<TweakDBID*>(aResult.value));
+    if (pType == pCNameType)
         return make_object(aState, *static_cast<CName*>(aResult.value));
-    else if (pType->GetType() == RED4ext::REDreverse::RTTIType::Handle)
+
+    if (pType->GetType() == RED4ext::REDreverse::RTTIType::Handle)
     {
         const auto handle = *static_cast<StrongHandle*>(aResult.value);
         if (handle.handle)
@@ -181,6 +208,8 @@ RED4ext::REDreverse::CScriptableStackFrame::CStackType Scripting::ToRED(sol::obj
     static auto* pRtti = RED4ext::REDreverse::CRTTISystem::Get();
     static auto* pStringType = pRtti->GetType(RED4ext::FNV1a("String"));
     static auto* pCNameType = pRtti->GetType(RED4ext::FNV1a("CName"));
+    static auto* pgameItemID = pRtti->GetType(RED4ext::FNV1a("gameItemID"));
+    static auto* pTweakDBID = pRtti->GetType(RED4ext::FNV1a("TweakDBID"));
     static auto* pInt32Type = pRtti->GetType(RED4ext::FNV1a("Int32"));
     static auto* pBoolType = pRtti->GetType(RED4ext::FNV1a("Bool"));
     static auto* pQuaternion = pRtti->GetType(RED4ext::FNV1a("Quaternion"));
@@ -200,6 +229,10 @@ RED4ext::REDreverse::CScriptableStackFrame::CStackType Scripting::ToRED(sol::obj
         }
         else if (apRtti == pInt32Type)
             result.value = apAllocator->New<int32_t>(aObject.as<int32_t>());
+        else if (apRtti == pgameItemID)
+            result.value = apAllocator->New<ItemID>(aObject.as<ItemID>());
+        else if (apRtti == pTweakDBID)
+            result.value = apAllocator->New<TweakDBID>(aObject.as<TweakDBID>());
         else if (apRtti == pBoolType)
             result.value = apAllocator->New<bool>(aObject.as<bool>());
         else if (apRtti == pQuaternion)
@@ -208,6 +241,40 @@ RED4ext::REDreverse::CScriptableStackFrame::CStackType Scripting::ToRED(sol::obj
         {
             const std::string sstr = v["tostring"](aObject);
             result.value = apAllocator->New<CName>(RED4ext::FNV1a(sstr));
+        }
+        else if (apRtti->GetType() == RED4ext::REDreverse::RTTIType::Handle)
+        {
+            if (aObject.is<StrongReference>())
+            {
+                auto* pSubType = static_cast<RED4ext::REDreverse::CClass*>(apRtti)->parent;
+                RED4ext::REDreverse::CRTTIBaseType* pType = aObject.as<StrongReference*>()->m_pType;
+                while (pType != nullptr && pType != pSubType)
+                {
+                    pType = static_cast<RED4ext::REDreverse::CClass*>(pType)->parent;
+                }
+
+                if (pType != nullptr)
+                {
+                    result.value = apAllocator->New<StrongHandle>(aObject.as<StrongReference>().m_strongHandle);
+                }
+            }
+        }
+        else if (apRtti->GetType() == RED4ext::REDreverse::RTTIType::WeakHandle)
+        {
+            if (aObject.is<WeakReference>())
+            {
+                auto* pSubType = static_cast<RED4ext::REDreverse::CClass*>(apRtti)->parent;
+                RED4ext::REDreverse::CRTTIBaseType* pType = aObject.as<WeakReference*>()->m_pType;
+                while (pType != nullptr && pType != pSubType)
+                {
+                    pType = static_cast<RED4ext::REDreverse::CClass*>(pType)->parent;
+                }
+
+                if (pType != nullptr)
+                {
+                    result.value = apAllocator->New<WeakHandle>(aObject.as<WeakReference>().m_weakHandle);
+                }
+            }
         }
     }
 

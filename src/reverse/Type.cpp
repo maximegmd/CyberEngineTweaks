@@ -21,7 +21,7 @@ std::string Type::Descriptor::ToString() const
     {
         result += "\t\t" + function + ",\n";
     }
-    result += "},\nproperties: {";
+    result += "},\nproperties: {\n";
     for (auto& property : properties)
     {
         result += "\t\t" + property + ",\n";
@@ -115,8 +115,11 @@ Type::Descriptor Type::Dump() const
         for (auto i = 0u; i < m_pType->properties.size; ++i)
         {
             auto* pProperty = m_pType->properties.arr[i];
-            std::string funcName = RED4ext::REDreverse::CName::ToString(pProperty->name);
-            descriptor.properties.push_back(funcName);
+            uint64_t name = 0;
+            pProperty->type->GetName(&name);
+            
+            std::string propName = std::string(RED4ext::REDreverse::CName::ToString(pProperty->name)) + " : " + RED4ext::REDreverse::CName::ToString(name);
+            descriptor.properties.push_back(propName);
         }
     }
 

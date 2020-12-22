@@ -18,7 +18,7 @@ struct Type
 {
 	struct Descriptor
 	{
-		std::string name;
+		std::string name{"Unknown"};
 		std::vector<std::string> functions;
 		std::vector<std::string> properties;
 
@@ -37,9 +37,11 @@ struct Type
 
 protected:
 
-	virtual RED4ext::REDreverse::Scripting::IScriptable* GetHandle() = 0;
+	virtual RED4ext::REDreverse::Scripting::IScriptable* GetHandle() { return nullptr; }
 
 	RED4ext::REDreverse::CClass* m_pType{ nullptr };
+
+	friend struct Scripting;
 	
 private:
     sol::state_view m_lua;
