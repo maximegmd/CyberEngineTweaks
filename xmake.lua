@@ -4,10 +4,10 @@ add_requires("spdlog", "nlohmann_json", "minhook", "imgui", "lua", "sol2")
 
 add_rules("mode.debug", "mode.release")
 
---add_ldflags("/LTCG", "/OPT:REF")
---add_cxflags("/Ot", "/GL", "/Ob2", "/Oi", "/GS-")
+add_ldflags("/LTCG", "/OPT:REF")
+add_cxflags("/Ot", "/GL", "/Ob2", "/Oi", "/GS-")
 
---set_optimize("fastest")
+set_optimize("fastest")
 
 target("RED4ext")
     set_kind("static")

@@ -61,7 +61,7 @@ void Overlay::EarlyHooks(Image* apImage)
             spdlog::error("\tCould not hook LogChannel function!");
         }
         else
-            spdlog::info("\LogChannel function hook complete!");
+            spdlog::info("\tLogChannel function hook complete!");
     }
 
     pLocation = FindSignature({

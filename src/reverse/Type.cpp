@@ -6,10 +6,13 @@
 #include <vector>
 #include <spdlog/spdlog.h>
 
+
+#include "BasicTypes.h"
 #include "Options.h"
 #include "RED4ext/REDreverse/CString.hpp"
 #include "RED4ext/REDreverse/Function.hpp"
 #include "overlay/Overlay.h"
+#include "RED4ext/REDreverse/CName.hpp"
 
 Type::Type(sol::state_view aView, RED4ext::REDreverse::CClass* apClass, std::string aName, RED4ext::REDreverse::Scripting::IScriptable* apHandle)
     : m_lua(aView)
@@ -71,12 +74,12 @@ sol::protected_function Type::InternalIndex(const std::string& acName)
 
 sol::object Type::Execute(RED4ext::REDreverse::CClassFunction* apFunc, const std::string& acName, sol::variadic_args aArgs, sol::this_environment env, sol::this_state L, std::string& aReturnMessage)
 {
-    static RED4ext::REDfunc<char* (*)(uint64_t& aHash)> CNamePool_Get({ 0x48, 0x83, 0xEC, 0x38, 0x48,0x8B,0x11,0x48,0x8D,0x4C,0x24,0x20,0xE8 }, 1);
-
     auto* pRtti = RED4ext::REDreverse::CRTTISystem::Get();
 
     static auto* pStringType = pRtti->GetType(RED4ext::FNV1a("String"));
+    static auto* pCNameType = pRtti->GetType(RED4ext::FNV1a("CName"));
     static auto* pInt32Type = pRtti->GetType(RED4ext::FNV1a("Int32"));
+    static auto* pQuaternionType = pRtti->GetType(RED4ext::FNV1a("Quaternion"));
 
     if (apFunc->params.size != aArgs.size())
     {
@@ -102,19 +105,32 @@ sol::object Type::Execute(RED4ext::REDreverse::CClassFunction* apFunc, const std
         auto* pType = *reinterpret_cast<RED4ext::REDreverse::CRTTIBaseType**>(apFunc->params.unk0[i]);
         args[i].type = pType;
 
+        void* pMemory = nullptr;
+
         if(pType == pStringType)
         {
             const std::string sstr = m_lua["tostring"](arg.get<sol::object>());
-            auto* pMemory = _malloca(sizeof(RED4ext::REDreverse::CString));
+            pMemory = _malloca(sizeof(RED4ext::REDreverse::CString));
 
-            auto* pString = new (pMemory) RED4ext::REDreverse::CString{ sstr.c_str() };
-            args[i].value = pString;
+            new (pMemory) RED4ext::REDreverse::CString{ sstr.c_str() };
         }
         else if(pType == pInt32Type)
         {
-            auto* pMemory = static_cast<int32_t*>(_malloca(sizeof(int32_t)));
-            *pMemory = arg.get<int32_t>();
-            args[i].value = pMemory;
+            pMemory = _malloca(sizeof(int32_t));
+            *static_cast<int32_t*>(pMemory) = arg.get<int32_t>();
+        }
+        else if(pType == pQuaternionType)
+        {
+            const std::string sstr = m_lua["tostring"](arg.get<sol::object>());
+            pMemory = _malloca(sizeof(uint64_t));
+
+            *static_cast<uint64_t*>(pMemory) = RED4ext::FNV1a(sstr);
+        }
+        else if(pType == pCNameType)
+        {
+            const std::string sstr = m_lua["tostring"](arg.get<sol::object>());
+            pMemory = _malloca(sizeof(CName));
+            static_cast<CName*>(pMemory)->hash = RED4ext::FNV1a(sstr);
         }
         else
         {
@@ -122,28 +138,23 @@ sol::object Type::Execute(RED4ext::REDreverse::CClassFunction* apFunc, const std
             pType->GetName(&hash);
             if (hash)
             {
-                const std::string typeName = CNamePool_Get(hash);
+                const std::string typeName = RED4ext::REDreverse::CName::ToString(hash);
                 aReturnMessage = "Function '" + acName + "' parameter " + std::to_string(i) + " must be " + typeName + ".";
             }
 
             return make_object(m_lua, nullptr);
-        }        
+        }
+
+        args[i].value = pMemory;
     }
 
-    uint64_t value = 0;
+    uint8_t buffer[1000]{0};
 
     CStackType result;
     if (hasReturnType)
     {
-        /*uint64_t hash = 0;
-        (*pFunc->returnType)->GetName(&hash);
-        if (hash)
-        {
-            const std::string typeName = CNamePool_Get(hash);
-            Overlay::Get().Log("Return type: " + typeName + " type : " + std::to_string((uint32_t)(*pFunc->returnType)->GetType()));
-        }*/
-
-        result.value = &value;
+        result.value = buffer;
+        result.type = *apFunc->returnType;
     }
 
     std::aligned_storage_t<sizeof(RED4ext::REDreverse::CScriptableStackFrame), alignof(RED4ext::REDreverse::CScriptableStackFrame)> stackStore;
@@ -162,7 +173,17 @@ sol::object Type::Execute(RED4ext::REDreverse::CClassFunction* apFunc, const std
 
     if(hasReturnType)
     {
-        return make_object(m_lua, value);
+        auto luaResult = Scripting::ToLua(m_lua, result);
+        if (luaResult)
+            return luaResult;
+
+        uint64_t hash = 0;
+        (*apFunc->returnType)->GetName(&hash);
+        if (hash)
+        {
+            const std::string typeName = RED4ext::REDreverse::CName::ToString(hash);
+            Overlay::Get().Log("Unhandled return type: " + typeName + " type : " + std::to_string((uint32_t)(*apFunc->returnType)->GetType()));
+        }
     }
 
     return make_object(m_lua, true);

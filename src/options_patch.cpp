@@ -4,7 +4,6 @@
 #include <sstream>
 #include "Options.h"
 #include "Pattern.h"
-#include "reverse/REDString.h"
 #include "reverse/GameOptions.h"
 
 bool HookGameOptionGetBoolean(GameOption* apThis, uint8_t* apVariable, GameOptionType aType)

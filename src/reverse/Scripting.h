@@ -4,6 +4,7 @@
 #include <sol/sol.hpp>
 
 #include "Type.h"
+#include "RED4ext/REDreverse/Scripting/StackFrame.hpp"
 
 namespace RED4ext {
 	namespace REDreverse {
@@ -20,6 +21,8 @@ struct Scripting
     static Scripting& Get();
 	
     bool ExecuteLua(const std::string& aCommand);
+
+	static sol::object ToLua(sol::state_view aState, RED4ext::REDreverse::CScriptableStackFrame::CStackType& aResult);
 	
 protected:
 

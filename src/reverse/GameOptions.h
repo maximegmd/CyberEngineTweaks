@@ -1,7 +1,11 @@
 #pragma once
 #include <vector>
 
-class REDString;
+namespace RED4ext {
+	namespace REDreverse {
+		struct CString;
+	}
+}
 
 enum class GameOptionType : uint8_t
 {
@@ -28,7 +32,7 @@ struct GameOption
     bool* pBoolean;
     int32_t* pInteger;
     float* pFloat;
-    REDString* pString;
+    RED4ext::REDreverse::CString* pString;
   };
 
   union

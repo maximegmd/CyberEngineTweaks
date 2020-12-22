@@ -2,7 +2,7 @@
 #include "Image.h"
 #include <spdlog/spdlog.h>
 #include "Pattern.h"
-#include "reverse/REDString.h"
+#include "RED4ext/REDhash.hpp"
 
 using TInitScriptMemberVariable = void*(void* a1, void* a2, uint64_t a3, uint64_t nameHash, void* a5, void* a6, void* a7);
 TInitScriptMemberVariable* RealInitScriptMemberVariable = nullptr;
@@ -17,12 +17,12 @@ void* HookInitScriptMemberVariable(void* a1, void* a2, uint64_t a3, uint64_t nam
     // Ideally I think the real solution is to change GameFramework/InitialState INI variable from "Initialization" to "PreGameSession" or "MainMenu" instead
     // Unfortunately that causes a black screen on launch though, likely only works properly on non-shipping builds
 
-    if (nameHash == REDString::Hash("logoTrainWBBink") ||
-        nameHash == REDString::Hash("logoTrainNamcoBink") ||
-        nameHash == REDString::Hash("logoTrainStadiaBink") ||
-        nameHash == REDString::Hash("logoTrainNoRTXBink") ||
-        nameHash == REDString::Hash("logoTrainRTXBink") ||
-        nameHash == REDString::Hash("introMessageBink"))
+    if (nameHash == RED4ext::FNV1a("logoTrainWBBink") ||
+        nameHash == RED4ext::FNV1a("logoTrainNamcoBink") ||
+        nameHash == RED4ext::FNV1a("logoTrainStadiaBink") ||
+        nameHash == RED4ext::FNV1a("logoTrainNoRTXBink") ||
+        nameHash == RED4ext::FNV1a("logoTrainRTXBink") ||
+        nameHash == RED4ext::FNV1a("introMessageBink"))
     {
         nameHash = ~nameHash;
     }

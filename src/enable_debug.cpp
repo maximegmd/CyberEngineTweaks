@@ -2,7 +2,7 @@
 #include <spdlog/spdlog.h>
 #include <MinHook.h>
 #include "Pattern.h"
-#include "reverse/REDString.h"
+#include "RED4ext/REDhash.hpp"
 
 using ScriptExecutionPointer = uint64_t;
 
@@ -32,12 +32,12 @@ void HookRegisterScriptFunction(void* a, uint64_t hash, uint64_t hash2, void* fu
 {
     // IsFinal (global)
     // if false shows debug menu option on main menu & pause menu
-    if (hash == REDString::Hash("IsFinal"))
+    if (hash == RED4ext::FNV1a("IsFinal"))
         func = &HookIsFinal;
 
     // AreDebugContextsEnabled (global)
     // unknown effect
-    else if (hash == REDString::Hash("AreDebugContextsEnabled"))
+    else if (hash == RED4ext::FNV1a("AreDebugContextsEnabled"))
         func = &HookIsDebug;
 
     RealRegisterScriptFunction(a, hash, hash2, func);
@@ -48,12 +48,12 @@ void HookRegisterScriptMemberFunction(void* a, void* parentClass, uint64_t hash,
     // WorldMapMenuGameController::CanDebugTeleport
     // allows using world_map_menu_debug_teleport binding on map screen to teleport
     // (must be set inside r6\config\inputUserMappings.xml first)
-    if (hash == REDString::Hash("CanDebugTeleport"))
+    if (hash == RED4ext::FNV1a("CanDebugTeleport"))
         func = &HookIsDebug;
 
     // TargetShootComponent::IsDebugEnabled
     // unknown effect
-    else if (hash == REDString::Hash("IsDebugEnabled"))
+    else if (hash == RED4ext::FNV1a("IsDebugEnabled"))
         func = &HookIsDebug;
 
     RealRegisterScriptMemberFunction(a, parentClass, hash, hash2, func, flag);

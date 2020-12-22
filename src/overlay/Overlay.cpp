@@ -13,8 +13,8 @@
 
 #include "imgui_impl_dx12.h"
 #include "imgui_impl_win32.h"
+#include "RED4ext/REDreverse/CString.hpp"
 #include "reverse/Engine.h"
-#include "reverse/REDString.h"
 #include "reverse/Scripting.h"
 
 static std::shared_ptr<Overlay> s_pOverlay;
@@ -90,7 +90,7 @@ void Overlay::DrawImgui(IDXGISwapChain3* apSwapChain)
         ImGui::SetItemDefaultFocus();
         if (execute)
         {
-            Get().Log(command);
+            Get().Log(std::string("> ") + command);
 
             Scripting::Get().ExecuteLua(command);
 
@@ -172,7 +172,7 @@ TScriptCall** GetScriptCallArray()
 
 void Overlay::HookLog(ScriptContext* apContext, ScriptStack* apStack, void*, void*)
 {
-    REDString text("");
+    RED4ext::REDreverse::CString text("");
     apStack->unk30 = nullptr;
     apStack->unk38 = nullptr;
     auto opcode = *(apStack->m_code++);
@@ -221,7 +221,7 @@ void Overlay::HookLogChannel(ScriptContext* apContext, ScriptStack* apStack, voi
     opcode = *(apStack->m_code++);
     GetScriptCallArray()[opcode](apStack->m_context, apStack, &channel_hash, nullptr);
 
-    REDString text("");
+    RED4ext::REDreverse::CString text("");
     apStack->unk30 = nullptr;
     apStack->unk38 = nullptr;
     opcode = *(apStack->m_code++);
@@ -267,8 +267,8 @@ void Overlay::HookTDBIDToStringDEBUG(ScriptContext* apContext, ScriptStack* apSt
                 tdbid_value.hash, tdbid_value.unk4)
             : fmt::format("<TDBID:{:08X}:{:02X}:{:04X}:{:02X}>",
                 tdbid_value.hash, tdbid_value.unk4, tdbid_value.unk5, tdbid_value.unk7);
-        REDString s(tdbid_debug.c_str());
-        ((REDString*)result)->Copy(&s);
+        RED4ext::REDreverse::CString s(tdbid_debug.c_str());
+        static_cast<RED4ext::REDreverse::CString*>(result)->Copy(&s);
         s.Destroy();
     }
 }

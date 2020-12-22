@@ -11,7 +11,6 @@
 
 struct ScriptContext;
 struct ScriptStack;
-struct REDString;
 
 using TPresentD3D12 = long(IDXGISwapChain3* pSwapChain, UINT SyncInterval, UINT Flags);
 using TSetMousePosition = BOOL(void* apThis, HWND Wnd, long X, long Y);
