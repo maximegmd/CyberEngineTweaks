@@ -201,17 +201,26 @@ sol::protected_function Scripting::InternalIndex(const std::string& acName)
 sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args aArgs, sol::this_environment env, sol::this_state L, std::string& aReturnMessage)
 {
     auto* pRtti = RED4ext::REDreverse::CRTTISystem::Get();
-    auto* pFunc = pRtti->GetGlobalFunction(RED4ext::FNV1a(aFuncName.c_str()));
+    RED4ext::REDreverse::CBaseFunction* pFunc = pRtti->GetGlobalFunction(RED4ext::FNV1a(aFuncName.c_str()));
     static auto* pStringType = pRtti->GetType(RED4ext::FNV1a("String"));
     static auto* pCNameType = pRtti->GetType(RED4ext::FNV1a("CName"));
     static auto* pInt32Type = pRtti->GetType(RED4ext::FNV1a("Int32"));
     static auto* pBoolType = pRtti->GetType(RED4ext::FNV1a("Bool"));
+    static const auto cpPlayerSystem = RED4ext::FNV1a("cpPlayerSystem");
+    static const auto cpGameInstance = RED4ext::FNV1a("ScriptGameInstance");
+
+    auto* type = pRtti->GetType<RED4ext::REDreverse::CClass*>(cpPlayerSystem);
+    auto* gameInstanceType = pRtti->GetType<RED4ext::REDreverse::CClass*>(cpGameInstance);
 
     if (!pFunc)
     {
-        aReturnMessage = "Function '" + aFuncName + "' not found or is not a global.";
+        pFunc = gameInstanceType->GetFunction(RED4ext::FNV1a(aFuncName.c_str()));
+        if (!pFunc)
+        {
+            aReturnMessage = "Function '" + aFuncName + "' not found or is not a global.";
 
-        return make_object(m_lua, nullptr);
+            return make_object(m_lua, nullptr);
+        }
     }
 
     if (pFunc->params.size - 1 != aArgs.size())
@@ -282,7 +291,6 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
 
     }
 
-
     uint8_t buffer[1000]{ 0 };
 
     CStackType result;
@@ -294,10 +302,6 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
 
     std::aligned_storage_t<sizeof(RED4ext::REDreverse::CScriptableStackFrame), alignof(RED4ext::REDreverse::CScriptableStackFrame)> stackStore;
     auto* stack = reinterpret_cast<RED4ext::REDreverse::CScriptableStackFrame*>(&stackStore);
-
-    static const auto cpPlayerSystem = RED4ext::FNV1a("cpPlayerSystem");
-
-    const auto* type = pRtti->GetType(cpPlayerSystem);
 
     auto pScriptable = unk10->GetTypeInstance(type);
 
