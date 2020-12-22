@@ -90,6 +90,26 @@ Scripting::Scripting()
         Overlay::Get().Log(oss.str());
     };
 
+    m_lua["load"] = [](sol::variadic_args args, sol::this_environment env, sol::this_state L)
+    {
+        std::ostringstream oss;
+        sol::state_view s(L);
+        for(auto& v : args)
+        {
+            std::string str = s["tostring"](v.get<sol::object>());
+            Overlay::Get().Log("[Load] Loading \"" + str + "\"");
+
+            sol::load_result script = s.load_file(str);
+            sol::protected_function_result scriptResult = script();
+
+            if (!scriptResult.valid()) {
+                Overlay::Get().Log("[Load] \"" + str + "\" is not a valid file");
+            } else {
+                Overlay::Get().Log("[Load] Loaded \"" + str + "\"");
+            }
+        }
+    };
+
     m_lua.do_file("plugins/cyber_engine_tweaks/scripts/autoexec.lua");
 }
 
