@@ -13,6 +13,24 @@
 #include "RED4ext/REDreverse/CName.hpp"
 
 
+std::string Type::Descriptor::ToString() const
+{
+    std::string result;
+    result += "{\n\tname: " + name + ",\n\tfunctions: {\n";
+    for (auto& function : functions)
+    {
+        result += "\t\t" + function + ",\n";
+    }
+    result += "},\nproperties: {";
+    for (auto& property : properties)
+    {
+        result += "\t\t" + property + ",\n";
+    }
+    result += "\t}\n}";
+
+    return result;
+}
+
 Type::Type(sol::state_view aView, RED4ext::REDreverse::CClass* apClass)
     : m_lua(std::move(aView))
     , m_pType(apClass)
@@ -77,6 +95,32 @@ std::string Type::GetName() const
     }
 
     return "";
+}
+
+Type::Descriptor Type::Dump() const
+{
+    Descriptor descriptor;
+
+    if(m_pType)
+    {
+        descriptor.name = RED4ext::REDreverse::CName::ToString(m_pType->nameHash);
+
+        for (auto i = 0u; i < m_pType->functions.size; ++i)
+        {
+            auto* pFunc = m_pType->functions.arr[i];
+            std::string funcName = RED4ext::REDreverse::CName::ToString(pFunc->nameHash);
+            descriptor.functions.push_back(funcName);
+        }
+
+        for (auto i = 0u; i < m_pType->properties.size; ++i)
+        {
+            auto* pProperty = m_pType->properties.arr[i];
+            std::string funcName = RED4ext::REDreverse::CName::ToString(pProperty->name);
+            descriptor.properties.push_back(funcName);
+        }
+    }
+
+    return descriptor;
 }
 
 sol::object Type::Execute(RED4ext::REDreverse::CClassFunction* apFunc, const std::string& acName, sol::variadic_args aArgs, sol::this_environment env, sol::this_state L, std::string& aReturnMessage)

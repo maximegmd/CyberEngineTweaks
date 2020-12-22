@@ -65,7 +65,7 @@ void Overlay::DrawImgui(IDXGISwapChain3* apSwapChain)
         ImGui::SameLine();
         ImGui::Checkbox("Scroll Output", &m_outputShouldScroll);
 
-        static char command[512] = { 0 };
+        static char command[200000] = { 0 };
 
         {
             std::lock_guard<std::recursive_mutex> _{ m_outputLock };

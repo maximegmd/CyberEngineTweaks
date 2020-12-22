@@ -77,10 +77,18 @@ Scripting::Scripting()
         sol::meta_function::to_string, &CName::ToString,
         "hash", sol::property(&CName::hash));
 
+    m_lua.new_usertype<Type::Descriptor>("Descriptor",
+        sol::meta_function::to_string, &Type::Descriptor::ToString);
+
     m_lua["Game"] = this;
     m_lua["GetSingleton"] = [this](const std::string& acName)
     {
         return this->GetSingletonHandle(acName);
+    };
+
+    m_lua["Dump"] = [this](Type* apType)
+    {
+        return apType->Dump();
     };
   
     m_lua["print"] = [](sol::variadic_args args, sol::this_environment env, sol::this_state L)
