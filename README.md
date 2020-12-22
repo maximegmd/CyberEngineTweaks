@@ -30,7 +30,7 @@ Works with 1.04 and 1.05.
 
 ## Usage and configuration
 
-[Read the wiki](https://github.com/yamashi/PerformanceOverhaulCyberpunk/wiki)
+[Read the wiki](https://wiki.cybermods.net/cyber-engine-tweaks/)
 
 [Usage with Proton](PROTON.md)
 
