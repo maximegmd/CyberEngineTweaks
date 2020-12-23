@@ -3,9 +3,7 @@
 #include <atlcomcli.h>
 #include <d3d12.h>
 #include <dxgi.h>
-#include <Image.h>
 #include <imgui.h>
-#include <memory>
 #include <Pattern.h>
 #include <kiero/kiero.h>
 #include <spdlog/spdlog.h>
@@ -139,8 +137,6 @@ void Overlay::Render(IDXGISwapChain3* pSwapChain)
     m_pd3dCommandList->ResourceBarrier(1, &barrier);
     m_pd3dCommandList->Close();
 
-    auto* pCommandQueue = *reinterpret_cast<ID3D12CommandQueue**>(reinterpret_cast<uintptr_t>(pSwapChain) + kiero::getCommandQueueOffset());
-
-    pCommandQueue->ExecuteCommandLists(1, reinterpret_cast<ID3D12CommandList**>(&m_pd3dCommandList));
+    m_pCommandQueue->ExecuteCommandLists(1, reinterpret_cast<ID3D12CommandList**>(&m_pd3dCommandList));
 }
 
