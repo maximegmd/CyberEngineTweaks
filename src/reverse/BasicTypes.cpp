@@ -17,7 +17,7 @@ std::string CName::ToString() const noexcept
 std::string TweakDBID::ToString() const noexcept
 {
     std::ostringstream oss;
-    oss << std::hex << "TweakDBID{ hash: " << hash << ", length: " << string_length << ", unk5: " << unk5 << " unk7: " << (uint32_t)unk7 << " }";
+    oss << std::hex << "TweakDBID{ hash: " << name_hash << ", length: " << name_length << ", unk5: " << unk5 << " unk7: " << (uint32_t)unk7 << " }";
 
     return oss.str();
 }
@@ -77,9 +77,9 @@ static const unsigned int crc32_table[] =
     0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d
 };
 
-uint32_t crc32(const char* buf, size_t len)
+uint32_t crc32(const char* buf, size_t len, uint32_t seed)
 {
-    uint32_t crc = ~0;
+    uint32_t crc = ~seed;
     auto q = buf + len;
     for (auto p = buf; p < q; p++) {
         auto octet = *p;

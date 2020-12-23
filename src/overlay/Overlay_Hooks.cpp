@@ -65,6 +65,76 @@ void Overlay::EarlyHooks(Image* apImage)
     }
 
     pLocation = FindSignature({
+        0x48, 0x89, 0x5C, 0x24, 0x08, 0x48, 0x89, 0x74,
+        0x24, 0x10, 0x57, 0x48, 0x83, 0xEC, 0x40, 0x80,
+        0x3A, 0x00, 0x48, 0x8B, 0xFA
+        });
+
+    if (pLocation)
+    {
+        if (MH_CreateHook(pLocation, &HookTDBIDCtor, reinterpret_cast<void**>(&m_realTDBIDCtor)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
+        {
+            spdlog::error("\tCould not hook TDBID::ctor function!");
+        }
+        else
+            spdlog::info("\tTDBID::ctor function hook complete!");
+    }
+
+    pLocation = FindSignature({
+        0x48, 0x89, 0x5C, 0x24, 0x08, 0x48, 0x89, 0x74,
+        0x24, 0x10, 0x57, 0x48, 0x83, 0xEC, 0x30, 0x48,
+        0x8B, 0xF1, 0x48, 0x8B, 0xDA, 0x48, 0x8B, 0xCA,
+        0xE8, 0xCC, 0xCC, 0xCC, 0xCC, 0x48, 0x8B, 0xCB
+        });
+
+    if (pLocation)
+    {
+        if (MH_CreateHook(pLocation, &HookTDBIDCtorCString, reinterpret_cast<void**>(&m_realTDBIDCtorCString)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
+        {
+            spdlog::error("\tCould not hook TDBID::ctor[CString] function!");
+        }
+        else
+            spdlog::info("\tTDBID::ctor[CString] function hook complete!");
+    }
+
+    pLocation = FindSignature({
+        0x48, 0x89, 0x5C, 0x24, 0x10, 0x48, 0x89, 0x74,
+        0x24, 0x18, 0x57, 0x48, 0x83, 0xEC, 0x20, 0x33,
+        0xC0, 0x4D, 0x8B, 0xC8, 0x48, 0x8B, 0xF2, 0x4D,
+        0x85, 0xC0, 0x74, 0x0F, 0x41, 0x38, 0x00,
+        });
+
+    if (pLocation)
+    {
+        if (MH_CreateHook(pLocation, &HookTDBIDCtorDerive, reinterpret_cast<void**>(&m_realTDBIDCtorDerive)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
+        {
+            spdlog::error("\tCould not hook TDBID::ctor[Derive] function!");
+        }
+        else
+            spdlog::info("\tTDBID::ctor[Derive] function hook complete!");
+    }
+
+    pLocation = FindSignature({
+        0x48, 0x89, 0x5C, 0x24, 0x08, 0x48, 0x89, 0x54,
+        0x24, 0x10, 0x57, 0x48, 0x83, 0xEC, 0x50, 0x48,
+        0x8B, 0xF9, 0x48, 0x8D, 0x54, 0x24, 0x20, 0x48,
+        0x8D, 0x4C, 0x24, 0x68, 0xE8
+        });
+
+    if (pLocation)
+    {
+        if (MH_CreateHook(pLocation, &HookTDBIDCtorUnknown, reinterpret_cast<void**>(&m_realTDBIDCtorUnknown)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
+        {
+            spdlog::error("\tCould not hook TDBID::ctor[Unknown] function!");
+        }
+        else
+        {
+            spdlog::info("\tTDBID::ctor[Unknown] function hook complete!");
+            *reinterpret_cast<void**>(&m_someStringLookup) = &pLocation[33] + *reinterpret_cast<int32_t*>(&pLocation[29]);
+        }
+    }
+
+    pLocation = FindSignature({
         0x48, 0xBF, 0x58, 0xD1, 0x78, 0xA0, 0x18, 0x09,
         0xBA, 0xEC, 0x75, 0x16, 0x48, 0x8D, 0x15, 0xCC,
         0xCC, 0xCC, 0xCC, 0x48, 0x8B, 0xCF, 0xE8, 0xCC,

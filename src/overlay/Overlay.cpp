@@ -14,6 +14,7 @@
 #include "imgui_impl_dx12.h"
 #include "imgui_impl_win32.h"
 #include "RED4ext/REDreverse/CString.hpp"
+#include "reverse/BasicTypes.h"
 #include "reverse/Engine.h"
 #include "reverse/Scripting.h"
 
@@ -246,36 +247,95 @@ void Overlay::HookLogChannel(ScriptContext* apContext, ScriptStack* apStack, voi
     text.Destroy();
 }
 
+std::string GetTDBDIDDebugString(TDBID tdbid)
+{
+    return (tdbid.unk5 == 0 && tdbid.unk7 == 0)
+        ? fmt::format("<TDBID:{:08X}:{:02X}>",
+            tdbid.name_hash, tdbid.name_length)
+        : fmt::format("<TDBID:{:08X}:{:02X}:{:04X}:{:02X}>",
+            tdbid.name_hash, tdbid.name_length, tdbid.unk5, tdbid.unk7);
+}
+
+void Overlay::RegisterTDBIDString(uint64_t value, uint64_t base, const std::string& name)
+{
+    std::lock_guard<std::recursive_mutex> _{ m_tdbidLock };
+    m_tdbidLookup[value] = { base, name };
+}
+
+std::string Overlay::GetTDBIDString(uint64_t value)
+{
+    std::lock_guard<std::recursive_mutex> _{ m_tdbidLock };
+    auto it = m_tdbidLookup.find(value);
+    auto end = Get().m_tdbidLookup.end();
+    if (it == end)
+        return GetTDBDIDDebugString(TDBID{ value });
+    std::string string = (*it).second.name;
+    uint64_t base = (*it).second.base;
+    while (base)
+    {
+        it = m_tdbidLookup.find(base);
+        if (it == end)
+        {
+            string.insert(0, GetTDBDIDDebugString(TDBID{ base }));
+            break;
+        }
+        string.insert(0, (*it).second.name);
+        base = (*it).second.base;
+    }
+    return string;
+}
+
+TDBID* Overlay::HookTDBIDCtor(TDBID* apThis, const char* name)
+{
+    auto result = Get().m_realTDBIDCtor(apThis, name);
+    Get().RegisterTDBIDString(apThis->value, 0, name);
+    return result;
+}
+
+TDBID* Overlay::HookTDBIDCtorCString(TDBID* apThis, const RED4ext::REDreverse::CString* name)
+{
+    auto result = Get().m_realTDBIDCtorCString(apThis, name);
+    Get().RegisterTDBIDString(apThis->value, 0, name->ToString());
+    return result;
+}
+
+TDBID* Overlay::HookTDBIDCtorDerive(TDBID* apBase, TDBID* apThis, const char* name)
+{
+    auto result = Get().m_realTDBIDCtorDerive(apBase, apThis, name);
+    Get().RegisterTDBIDString(apThis->value, apBase->value, std::string(name));
+    return result;
+}
+
+struct UnknownString
+{
+    const char* string;
+    uint32_t size;
+};
+
+TDBID* Overlay::HookTDBIDCtorUnknown(TDBID* apThis, uint64_t name)
+{
+    auto result = Get().m_realTDBIDCtorUnknown(apThis, name);
+    UnknownString unknown;
+    Get().m_someStringLookup(&name, &unknown);
+    Get().RegisterTDBIDString(apThis->value, 0, std::string(unknown.string, unknown.size));
+    return result;
+}
+
 void Overlay::HookTDBIDToStringDEBUG(ScriptContext* apContext, ScriptStack* apStack, void* result, void*)
 {
     uint8_t opcode;
 
-#pragma pack(push,1)
-    struct TDBID
-    {
-        uint32_t hash;
-        uint8_t unk4;
-        uint16_t unk5;
-        uint8_t unk7;
-    };
-#pragma pack(pop)
-    static_assert(sizeof(TDBID) == 8);
-
-    TDBID tdbid_value{};
+    TDBID tdbid;
     apStack->unk30 = nullptr;
     apStack->unk38 = nullptr;
     opcode = *(apStack->m_code++);
-    GetScriptCallArray()[opcode](apStack->m_context, apStack, &tdbid_value, nullptr);
+    GetScriptCallArray()[opcode](apStack->m_context, apStack, &tdbid, nullptr);
     apStack->m_code++; // skip ParamEnd
 
     if (result)
     {
-        std::string tdbid_debug = (tdbid_value.unk5 == 0 && tdbid_value.unk7 == 0)
-            ? fmt::format("<TDBID:{:08X}:{:02X}>",
-                tdbid_value.hash, tdbid_value.unk4)
-            : fmt::format("<TDBID:{:08X}:{:02X}:{:04X}:{:02X}>",
-                tdbid_value.hash, tdbid_value.unk4, tdbid_value.unk5, tdbid_value.unk7);
-        RED4ext::REDreverse::CString s(tdbid_debug.c_str());
+        std::string name = Get().GetTDBIDString(tdbid.value);
+        RED4ext::REDreverse::CString s(name.c_str());
         static_cast<RED4ext::REDreverse::CString*>(result)->Copy(&s);
         s.Destroy();
     }
