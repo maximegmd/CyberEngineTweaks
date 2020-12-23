@@ -53,8 +53,9 @@ void Overlay::DrawImgui(IDXGISwapChain3* apSwapChain)
 
     ImGui::Begin("Cyber Engine Tweaks");
 
-    if (Options::Get().GameImage.version == Image::MakeVersion(1, 4) ||
-        Options::Get().GameImage.version == Image::MakeVersion(1, 5))
+    auto [major, minor] = Options::Get().GameImage.GetVersion();
+
+    if (major == 1 && (minor >= 4 && minor <= 6))
     {
         ImGui::Checkbox("Clear Input", &m_inputClear);
         ImGui::SameLine();
