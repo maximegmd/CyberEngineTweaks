@@ -131,9 +131,11 @@ LRESULT APIENTRY Overlay::WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
     case WM_SYSKEYUP:
         if (wParam == Options::Get().ConsoleKey)
             return 0;
+        break;
     case WM_CHAR:
         if (Options::Get().ConsoleChar && wParam == Options::Get().ConsoleChar)
             return 0;
+        break;
     }
 
     if (s_pOverlay->IsEnabled())
