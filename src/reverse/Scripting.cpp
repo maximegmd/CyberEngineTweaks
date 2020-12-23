@@ -153,6 +153,7 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::REDreverse::CScrip
     static auto* pStringType = pRtti->GetType(RED4ext::FNV1a("String"));
     static auto* pCNameType = pRtti->GetType(RED4ext::FNV1a("CName"));
     static auto* pInt32Type = pRtti->GetType(RED4ext::FNV1a("Int32"));
+    static auto* pFloatType = pRtti->GetType(RED4ext::FNV1a("Float"));
     static auto* pBoolType = pRtti->GetType(RED4ext::FNV1a("Bool"));
     static auto* pQuaternion = pRtti->GetType(RED4ext::FNV1a("Quaternion"));
     static auto* pgameItemID = pRtti->GetType(RED4ext::FNV1a("gameItemID"));
@@ -166,6 +167,8 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::REDreverse::CScrip
         return make_object(aState, std::string(static_cast<RED4ext::REDreverse::CString*>(aResult.value)->ToString()));
     if (pType == pInt32Type)
         return make_object(aState, *static_cast<int32_t*>(aResult.value));
+    if (pType == pFloatType)
+        return make_object(aState, *static_cast<float*>(aResult.value));
     if (pType == pBoolType)
         return make_object(aState, *static_cast<bool*>(aResult.value));
     if (pType == pQuaternion)
@@ -211,6 +214,7 @@ RED4ext::REDreverse::CScriptableStackFrame::CStackType Scripting::ToRED(sol::obj
     static auto* pgameItemID = pRtti->GetType(RED4ext::FNV1a("gameItemID"));
     static auto* pTweakDBID = pRtti->GetType(RED4ext::FNV1a("TweakDBID"));
     static auto* pInt32Type = pRtti->GetType(RED4ext::FNV1a("Int32"));
+    static auto* pFloatType = pRtti->GetType(RED4ext::FNV1a("Float"));
     static auto* pBoolType = pRtti->GetType(RED4ext::FNV1a("Bool"));
     static auto* pQuaternion = pRtti->GetType(RED4ext::FNV1a("Quaternion"));
 
@@ -229,6 +233,8 @@ RED4ext::REDreverse::CScriptableStackFrame::CStackType Scripting::ToRED(sol::obj
         }
         else if (apRtti == pInt32Type)
             result.value = apAllocator->New<int32_t>(aObject.as<int32_t>());
+        else if (apRtti == pFloatType)
+            result.value = apAllocator->New<float>(aObject.as<float>());
         else if (apRtti == pgameItemID)
             result.value = apAllocator->New<ItemID>(aObject.as<ItemID>());
         else if (apRtti == pTweakDBID)
