@@ -3,49 +3,49 @@
 #include "BasicTypes.h"
 #include "LuaRED.h"
 
-template<size_t i>
-sol::object RecursiveInternalToLua(MetaArrayImpl<i>& arr, RED4ext::REDreverse::CScriptableStackFrame::CStackType& aResult, sol::state_view aLua)
+template<int64_t i, typename T, std::enable_if_t<i < 0>* = nullptr>
+sol::object RecursiveInternalToLua(T& arr, RED4ext::REDreverse::CScriptableStackFrame::CStackType& aResult, sol::state_view aLua)
 {
     return sol::nil;
 }
 
-template<size_t i, typename HeadItem, typename... TailItems>
-sol::object RecursiveInternalToLua(MetaArrayImpl<i, HeadItem, TailItems...>& arr, RED4ext::REDreverse::CScriptableStackFrame::CStackType& aResult, sol::state_view aLua)
+template<int64_t i, typename T, std::enable_if_t<i >= 0>* = nullptr>
+sol::object RecursiveInternalToLua(T& arr, RED4ext::REDreverse::CScriptableStackFrame::CStackType& aResult, sol::state_view aLua)
 {
-    if (arr.MetaArrayEntry<i, HeadItem>::value.Is(aResult.type))
-        return arr.MetaArrayEntry<i, HeadItem>::value.ToLua(aResult, aLua);
+    if (std::get<i>(arr).Is(aResult.type))
+        return std::get<i>(arr).ToLua(aResult, aLua);
 
-    return RecursiveInternalToLua<i + 1, TailItems...>(arr, aResult, aLua);
+    return RecursiveInternalToLua<i - 1>(arr, aResult, aLua);
 }
 
-template<typename HeadItem, typename... TailItems>
-sol::object InternalToLua(MetaArray<HeadItem, TailItems...>& arr, RED4ext::REDreverse::CScriptableStackFrame::CStackType& aResult, sol::state_view aLua)
+template<typename T>
+sol::object InternalToLua(T& arr, RED4ext::REDreverse::CScriptableStackFrame::CStackType& aResult, sol::state_view aLua)
 {
-    return RecursiveInternalToLua<0, HeadItem, TailItems...>(arr, aResult, aLua);
+    return RecursiveInternalToLua<std::tuple_size<T>::value - 1>(arr, aResult, aLua);
 }
 
-template<size_t i>
-RED4ext::REDreverse::CScriptableStackFrame::CStackType RecursiveInternalToRED(MetaArrayImpl<i>& arr, sol::object aObject, RED4ext::REDreverse::CRTTIBaseType* apRtti, TiltedPhoques::Allocator* apAllocator)
+template<int64_t i, typename T, std::enable_if_t<i < 0>* = nullptr>
+RED4ext::REDreverse::CScriptableStackFrame::CStackType RecursiveInternalToRED(T& arr, sol::object aObject, RED4ext::REDreverse::CRTTIBaseType* apRtti, TiltedPhoques::Allocator* apAllocator)
 {
     return {};
 }
 
-template<size_t i, typename HeadItem, typename... TailItems>
-RED4ext::REDreverse::CScriptableStackFrame::CStackType RecursiveInternalToRED(MetaArrayImpl<i, HeadItem, TailItems...>& arr, sol::object aObject, RED4ext::REDreverse::CRTTIBaseType* apRtti, TiltedPhoques::Allocator* apAllocator)
+template<int64_t i, typename T, std::enable_if_t<i >= 0>* = nullptr>
+RED4ext::REDreverse::CScriptableStackFrame::CStackType RecursiveInternalToRED(T& arr, sol::object aObject, RED4ext::REDreverse::CRTTIBaseType* apRtti, TiltedPhoques::Allocator* apAllocator)
 {
-    if (arr.MetaArrayEntry<i, HeadItem>::value.Is(apRtti))
-        return arr.MetaArrayEntry<i, HeadItem>::value.ToRED(aObject, apRtti, apAllocator);
+    if (std::get<i>(arr).Is(apRtti))
+        return std::get<i>(arr).ToRED(aObject, apRtti, apAllocator);
 
-    return RecursiveInternalToRED<i + 1, TailItems...>(arr, aObject, apRtti, apAllocator);
+    return RecursiveInternalToRED<i - 1>(arr, aObject, apRtti, apAllocator);
 }
 
-template<typename HeadItem, typename... TailItems>
-RED4ext::REDreverse::CScriptableStackFrame::CStackType InternalToRED(MetaArray<HeadItem, TailItems...>& arr, sol::object aObject, RED4ext::REDreverse::CRTTIBaseType* apRtti, TiltedPhoques::Allocator* apAllocator)
+template<typename T>
+RED4ext::REDreverse::CScriptableStackFrame::CStackType InternalToRED(T& arr, sol::object aObject, RED4ext::REDreverse::CRTTIBaseType* apRtti, TiltedPhoques::Allocator* apAllocator)
 {
-    return RecursiveInternalToRED<0, HeadItem, TailItems...>(arr, aObject, apRtti, apAllocator);
+    return RecursiveInternalToRED<std::tuple_size<T>::value - 1>(arr, aObject, apRtti, apAllocator);
 }
 
-static MetaArray<
+static std::tuple<
     LuaRED<int8_t, "Int8">,
     LuaRED<int16_t, "Int16">,
     LuaRED<int32_t, "Int32">,
