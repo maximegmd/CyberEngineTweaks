@@ -11,8 +11,10 @@
 #include "RED4ext/REDreverse/CString.hpp"
 #include "overlay/Overlay.h"
 #include "RED4ext/REDreverse/CName.hpp"
+#include "RED4ext/REDreverse/RTTI/CArray.hpp"
 
 #include "LuaRED.h"
+#include "Array.h"
 
 #include "GameOptions.h"
 #include "SingletonReference.h"
@@ -187,6 +189,25 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::REDreverse::CScrip
         const auto handle = *static_cast<WeakHandle*>(aResult.value);
         if (handle.handle)
             return make_object(aState, WeakReference(aState, handle));
+    }
+    else if (pType->GetType() == RED4ext::REDreverse::RTTIType::Array)
+    {
+        auto* pArrayType = static_cast<RED4ext::REDreverse::CArray*>(pType);
+        const auto arrayHandle = *static_cast<Array<void*>*>(aResult.value);
+        std::vector<sol::object> result;
+        for(auto i = 0u; i < arrayHandle.count; ++i)
+        {
+            RED4ext::REDreverse::CScriptableStackFrame::CStackType el;
+            el.value = &arrayHandle.entries[i];
+            el.type = pArrayType->heldType;
+
+            uint64_t hash;
+            pArrayType->heldType->GetName(&hash);
+
+            result.emplace_back(ToLua(aState, el));
+        }
+
+        return sol::make_object(aState, result);
     }
     else
     {

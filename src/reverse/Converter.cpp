@@ -45,6 +45,7 @@ RED4ext::REDreverse::CScriptableStackFrame::CStackType InternalToRED(T& arr, sol
     return RecursiveInternalToRED<std::tuple_size<T>::value - 1>(arr, aObject, apRtti, apAllocator);
 }
 
+// Note that this be parse from end to beginning, so if you want a type to be parsed first, put it at the end
 static std::tuple<
     LuaRED<int8_t, "Int8">,
     LuaRED<int16_t, "Int16">,
