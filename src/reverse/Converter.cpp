@@ -46,8 +46,12 @@ RED4ext::REDreverse::CScriptableStackFrame::CStackType InternalToRED(MetaArray<H
 }
 
 static MetaArray<
+    LuaRED<int8_t, "Int8">,
+    LuaRED<int16_t, "Int16">,
     LuaRED<int32_t, "Int32">,
     LuaRED<int64_t, "Int64">,
+    LuaRED<uint8_t, "Uint8">,
+    LuaRED<uint16_t, "Uint16">,
     LuaRED<uint32_t, "Uint32">,
     LuaRED<uint64_t, "Uint64">,
     LuaRED<float, "Float">,
