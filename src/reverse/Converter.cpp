@@ -47,9 +47,14 @@ RED4ext::REDreverse::CScriptableStackFrame::CStackType InternalToRED(MetaArray<H
 
 static MetaArray<
     LuaRED<int32_t, "Int32">,
+    LuaRED<int64_t, "Int64">,
+    LuaRED<uint32_t, "Uint32">,
+    LuaRED<uint64_t, "Uint64">,
     LuaRED<float, "Float">,
     LuaRED<bool, "Bool">,
     LuaRED<Quaternion, "Quaternion">,
+    LuaRED<Vector4, "Vector4">,
+    LuaRED<EulerAngles, "EulerAngles">,
     LuaRED<ItemID, "gameItemID">,
     LuaRED<TweakDBID, "TweakDBID">,
     LuaRED<CName, "CName">

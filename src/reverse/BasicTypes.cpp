@@ -4,6 +4,16 @@
 
 #include "RED4ext/REDreverse/CName.hpp"
 
+std::string Vector4::ToString() const noexcept
+{
+    return "Vector4{ x: " + std::to_string(x) + " y: " + std::to_string(y) + " z: " + std::to_string(z) + " w: " + std::to_string(w) + " }";
+}
+
+std::string EulerAngles::ToString() const noexcept
+{
+    return "EulerAngles{ x: " + std::to_string(x) + " y: " + std::to_string(y) + " z: " + std::to_string(z) + " }";
+}
+
 std::string Quaternion::ToString() const noexcept
 {
     return "Quaternion{ x: " + std::to_string(x) + " y: " + std::to_string(y) + " z: " + std::to_string(z) + " w: " + std::to_string(w) + " }";

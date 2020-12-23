@@ -70,7 +70,23 @@ Scripting::Scripting()
         "Dump", &GameOptions::Dump,
         "List", &GameOptions::List);
 
+    m_lua.new_usertype<Vector4>("Vector4",
+        sol::constructors<Vector4(float, float, float, float)>(),
+        sol::meta_function::to_string, &Vector4::ToString,
+        "x", sol::property(&Vector4::x),
+        "y", sol::property(&Vector4::y),
+        "z", sol::property(&Vector4::z),
+        "w", sol::property(&Vector4::w));
+
+    m_lua.new_usertype<EulerAngles>("EulerAngles",
+        sol::constructors<EulerAngles(float, float, float)>(),
+        sol::meta_function::to_string, &EulerAngles::ToString,
+        "x", sol::property(&EulerAngles::x),
+        "y", sol::property(&EulerAngles::y),
+        "z", sol::property(&EulerAngles::z));
+
     m_lua.new_usertype<Quaternion>("Quaternion",
+        sol::constructors<Quaternion(float, float, float, float)>(),
         sol::meta_function::to_string, &Quaternion::ToString,
         "x", sol::property(&Quaternion::x),
         "y", sol::property(&Quaternion::y),

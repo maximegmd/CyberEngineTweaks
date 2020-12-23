@@ -11,8 +11,39 @@ namespace RED4ext {
 	}
 }
 
-struct Quaternion
+struct Vector4
 {
+	Vector4(float aX, float aY, float aZ, float aW)
+		: x(aX), y(aY), z(aZ), w(aW)
+	{}
+	
+	float x;
+	float y;
+	float z;
+	float w;
+
+	std::string ToString() const noexcept;
+};
+
+struct EulerAngles
+{
+	EulerAngles(float aX, float aY, float aZ)
+		: x(aX), y(aY), z(aZ)
+	{}
+	
+	float x;
+	float y;
+	float z;
+	
+	std::string ToString() const noexcept;
+};
+
+struct Quaternion : Vector4
+{
+	Quaternion(float aX, float aY, float aZ, float aW)
+		: Vector4(aX, aY, aZ, aW)
+	{}
+	
 	float x;
 	float y;
 	float z;

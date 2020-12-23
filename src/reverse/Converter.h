@@ -1,4 +1,5 @@
 #pragma once
+
 #include <sol/sol.hpp>
 #include "RED4ext/REDreverse/Scripting/StackFrame.hpp"
 
