@@ -1,5 +1,7 @@
 # Cyber Engine Tweaks
 
+[![Patreon](https://img.shields.io/badge/Patreon-donate-purple.svg)](https://www.patreon.com/tiltedphoques)
+
 ## What's this?
 
 This plugin fixes some Cyberpunk 2077 issues and adds some features.
