@@ -4,19 +4,18 @@
 #include "RED4ext/REDreverse/RTTI/RTTISystem.hpp"
 #include "RED4ext/REDhash.hpp"
 #include "TiltedCore/Allocator.hpp"
-#include "Converter.h"
 
 template<class T, FixedString REDName>
-struct LuaRED : Converter::IConverter
+struct LuaRED
 {
 	static constexpr char const* Name = REDName;
 	
-	sol::object ToLua(RED4ext::REDreverse::CScriptableStackFrame::CStackType& aResult, sol::state_view aLua) override
+	sol::object ToLua(RED4ext::REDreverse::CScriptableStackFrame::CStackType& aResult, sol::state_view aLua)
 	{
 		return make_object(aLua, *static_cast<T*>(aResult.value));
 	}
 
-	RED4ext::REDreverse::CScriptableStackFrame::CStackType ToRED(sol::object aObject, RED4ext::REDreverse::CRTTIBaseType* apRtti, TiltedPhoques::Allocator* apAllocator) override
+	RED4ext::REDreverse::CScriptableStackFrame::CStackType ToRED(sol::object aObject, RED4ext::REDreverse::CRTTIBaseType* apRtti, TiltedPhoques::Allocator* apAllocator) 
 	{
 		RED4ext::REDreverse::CScriptableStackFrame::CStackType result;
 		result.type = m_pRtti;
@@ -25,7 +24,7 @@ struct LuaRED : Converter::IConverter
 		return result;
 	}
 
-	bool Is(RED4ext::REDreverse::CRTTIBaseType* apRtti) const override
+	bool Is(RED4ext::REDreverse::CRTTIBaseType* apRtti) const
 	{
 		if (!Resolve())
 			return false;

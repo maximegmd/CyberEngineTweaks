@@ -21,6 +21,8 @@
 
 #include <TiltedCore/ScratchAllocator.hpp>
 
+#include "Converter.h"
+
 Scripting::Scripting()
 {
     m_lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::io, sol::lib::math, sol::lib::package, sol::lib::os, sol::lib::table);
