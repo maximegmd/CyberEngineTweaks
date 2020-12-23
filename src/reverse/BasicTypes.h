@@ -21,7 +21,7 @@ struct Quaternion
 	std::string ToString() const noexcept;
 };
 
-uint32_t crc32(const char* buf, size_t len);
+uint32_t crc32(const char* buf, size_t len, uint32_t seed);
 
 // - But yamyam these two are exactly the same why you do this?
 // - We have to implement different destructors but we are lazy
@@ -48,18 +48,48 @@ struct CName
 #pragma pack(push, 1)
 struct TweakDBID
 {
-	TweakDBID(const std::string& aName)
+	TweakDBID() = default;
+
+	TweakDBID(uint32_t name_hash, uint8_t name_length, uint16_t unk5, uint8_t unk7)
 	{
-		hash = crc32(aName.c_str(), aName.size());
-		string_length = aName.size();
+		this->name_hash = name_hash;
+		this->name_length = name_length;
+		this->unk5 = unk5;
+		this->unk7 = unk7;
+	}
+
+	TweakDBID(uint64_t value)
+	{
+		this->value = value;
+	}
+
+	TweakDBID(const std::string_view aName)
+	{
+		name_hash = crc32(aName.data(), aName.size(), 0);
+		name_length = aName.size();
+		unk5 = unk7 = 0;
+	}
+
+	TweakDBID(const TweakDBID& base, const std::string_view aName)
+	{
+		name_hash = crc32(aName.data(), aName.size(), base.name_hash);
+		name_length = aName.size() + base.name_length;
+		unk5 = unk7 = 0;
 	}
 
 	std::string ToString() const noexcept;
 	
-	uint32_t hash;
-	uint8_t string_length;
-	uint16_t unk5{0};
-	uint8_t unk7{0};
+	union
+	{
+		uint64_t value;
+		struct
+		{
+			uint32_t name_hash;
+			uint8_t name_length;
+			uint16_t unk5;
+			uint8_t unk7;
+		};
+	};
 };
 
 static_assert(sizeof(TweakDBID) == 8);
