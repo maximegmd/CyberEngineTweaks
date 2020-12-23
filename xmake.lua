@@ -1,4 +1,3 @@
-set_languages("cxx17")
 
 add_requires("spdlog", "nlohmann_json", "minhook", "imgui", "sol2", "tiltedcore")
 
@@ -10,6 +9,8 @@ if is_mode("release") then
 
     set_optimize("fastest")
 end
+
+add_cxflags("/std:c++latest")
 
 target("RED4ext")
     set_kind("static")

@@ -214,7 +214,7 @@ bool GameOption::Toggle()
 
 GameOption* GameOptions::Find(const std::string& category, const std::string& name)
 {
-    auto& option = std::find_if(
+    auto option = std::find_if(
         s_gameOptions.begin(), s_gameOptions.end(),
         [&category, &name](GameOption* x)
         {
@@ -397,7 +397,7 @@ void GameOptions::Dump()
 void GameOptions::List(const std::string& category)
 {
     int count = 0;
-    auto& iter = s_gameOptions.begin();
+    auto iter = s_gameOptions.begin();
     while (iter != s_gameOptions.end())
     {
         iter = std::find_if(

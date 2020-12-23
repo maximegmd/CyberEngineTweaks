@@ -68,7 +68,7 @@ void EnableDebugPatch(Image* apImage)
 
     for (int i = 0; i < 2; i++)
     {
-        char* patchType = (i == 0 ? "Unlock menu patch" : "Unlock debug functions");
+        const char* patchType = (i == 0 ? "Unlock menu patch" : "Unlock debug functions");
 
         uint8_t* pCallLocation = nullptr;
         if (pChecksumLocations[i])

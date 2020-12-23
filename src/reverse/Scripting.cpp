@@ -12,6 +12,8 @@
 #include "overlay/Overlay.h"
 #include "RED4ext/REDreverse/CName.hpp"
 
+#include "LuaRED.h"
+
 #include "GameOptions.h"
 #include "SingletonReference.h"
 #include "StrongReference.h"
@@ -74,17 +76,15 @@ Scripting::Scripting()
         "w", sol::property(&Quaternion::w));
 
     m_lua.new_usertype<CName>("CName",
+        sol::constructors<CName(const std::string&)>(),
         sol::meta_function::to_string, &CName::ToString,
         "hash", sol::property(&CName::hash));
 
     m_lua.new_usertype<TweakDBID>("TweakDBID", sol::constructors<TweakDBID(const std::string&)>(),
         sol::meta_function::to_string, &TweakDBID::ToString);
+
     m_lua.new_usertype<ItemID>("ItemID", sol::constructors<ItemID(const TweakDBID&)>(),
         sol::meta_function::to_string, &ItemID::ToString);
-
-    m_lua.new_usertype<CName>("CName",
-        sol::meta_function::to_string, &CName::ToString,
-        "hash", sol::property(&CName::hash));
 
     m_lua.new_usertype<Type::Descriptor>("Descriptor",
         sol::meta_function::to_string, &Type::Descriptor::ToString);
@@ -115,7 +115,7 @@ Scripting::Scripting()
     {
         std::ostringstream oss;
         sol::state_view s(L);
-        for(auto& v : args)
+        for(auto v : args)
         {
             std::string str = s["tostring"](v.get<sol::object>());
             oss << str << " ";
@@ -151,13 +151,6 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::REDreverse::CScrip
 {
     static auto* pRtti = RED4ext::REDreverse::CRTTISystem::Get();
     static auto* pStringType = pRtti->GetType(RED4ext::FNV1a("String"));
-    static auto* pCNameType = pRtti->GetType(RED4ext::FNV1a("CName"));
-    static auto* pInt32Type = pRtti->GetType(RED4ext::FNV1a("Int32"));
-    static auto* pFloatType = pRtti->GetType(RED4ext::FNV1a("Float"));
-    static auto* pBoolType = pRtti->GetType(RED4ext::FNV1a("Bool"));
-    static auto* pQuaternion = pRtti->GetType(RED4ext::FNV1a("Quaternion"));
-    static auto* pgameItemID = pRtti->GetType(RED4ext::FNV1a("gameItemID"));
-    static auto* pTweakDBID = pRtti->GetType(RED4ext::FNV1a("TweakDBID"));
 
     auto* pType = aResult.type;
 
@@ -165,21 +158,6 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::REDreverse::CScrip
         return sol::nil;
     if (pType == pStringType)
         return make_object(aState, std::string(static_cast<RED4ext::REDreverse::CString*>(aResult.value)->ToString()));
-    if (pType == pInt32Type)
-        return make_object(aState, *static_cast<int32_t*>(aResult.value));
-    if (pType == pFloatType)
-        return make_object(aState, *static_cast<float*>(aResult.value));
-    if (pType == pBoolType)
-        return make_object(aState, *static_cast<bool*>(aResult.value));
-    if (pType == pQuaternion)
-        return make_object(aState, *static_cast<Quaternion*>(aResult.value));
-    if (pType == pgameItemID)
-        return make_object(aState, *static_cast<ItemID*>(aResult.value));
-    if (pType == pTweakDBID)
-        return make_object(aState, *static_cast<TweakDBID*>(aResult.value));
-    if (pType == pCNameType)
-        return make_object(aState, *static_cast<CName*>(aResult.value));
-
     if (pType->GetType() == RED4ext::REDreverse::RTTIType::Handle)
     {
         const auto handle = *static_cast<StrongHandle*>(aResult.value);
@@ -194,6 +172,10 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::REDreverse::CScrip
     }
     else
     {
+        auto result = Converter::ToLua(aResult, aState);
+        if (result != sol::nil)
+            return result;
+
         uint64_t hash = 0;
         pType->GetName(&hash);
         if (hash)
@@ -210,13 +192,6 @@ RED4ext::REDreverse::CScriptableStackFrame::CStackType Scripting::ToRED(sol::obj
 {
     static auto* pRtti = RED4ext::REDreverse::CRTTISystem::Get();
     static auto* pStringType = pRtti->GetType(RED4ext::FNV1a("String"));
-    static auto* pCNameType = pRtti->GetType(RED4ext::FNV1a("CName"));
-    static auto* pgameItemID = pRtti->GetType(RED4ext::FNV1a("gameItemID"));
-    static auto* pTweakDBID = pRtti->GetType(RED4ext::FNV1a("TweakDBID"));
-    static auto* pInt32Type = pRtti->GetType(RED4ext::FNV1a("Int32"));
-    static auto* pFloatType = pRtti->GetType(RED4ext::FNV1a("Float"));
-    static auto* pBoolType = pRtti->GetType(RED4ext::FNV1a("Bool"));
-    static auto* pQuaternion = pRtti->GetType(RED4ext::FNV1a("Quaternion"));
 
     RED4ext::REDreverse::CScriptableStackFrame::CStackType result;
 
@@ -230,23 +205,6 @@ RED4ext::REDreverse::CScriptableStackFrame::CStackType Scripting::ToRED(sol::obj
         {
             const std::string sstr = v["tostring"](aObject);
             result.value = apAllocator->New<RED4ext::REDreverse::CString>(sstr.c_str());
-        }
-        else if (apRtti == pInt32Type)
-            result.value = apAllocator->New<int32_t>(aObject.as<int32_t>());
-        else if (apRtti == pFloatType)
-            result.value = apAllocator->New<float>(aObject.as<float>());
-        else if (apRtti == pgameItemID)
-            result.value = apAllocator->New<ItemID>(aObject.as<ItemID>());
-        else if (apRtti == pTweakDBID)
-            result.value = apAllocator->New<TweakDBID>(aObject.as<TweakDBID>());
-        else if (apRtti == pBoolType)
-            result.value = apAllocator->New<bool>(aObject.as<bool>());
-        else if (apRtti == pQuaternion)
-            result.value = apAllocator->New<Quaternion>(aObject.as<Quaternion>());
-        else if (apRtti == pCNameType)
-        {
-            const std::string sstr = v["tostring"](aObject);
-            result.value = apAllocator->New<CName>(RED4ext::FNV1a(sstr));
         }
         else if (apRtti->GetType() == RED4ext::REDreverse::RTTIType::Handle)
         {
@@ -281,6 +239,10 @@ RED4ext::REDreverse::CScriptableStackFrame::CStackType Scripting::ToRED(sol::obj
                     result.value = apAllocator->New<WeakHandle>(aObject.as<WeakReference>().m_weakHandle);
                 }
             }
+        }
+        else
+        {
+            return Converter::ToRED(aObject, apRtti, apAllocator);
         }
     }
 

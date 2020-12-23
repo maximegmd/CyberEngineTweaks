@@ -40,6 +40,7 @@ struct WeakHandle
 struct CName
 {
 	CName(uint64_t aHash) : hash(aHash){}
+	CName(const std::string& aName) : hash(RED4ext::FNV1a(aName.c_str())){}
 	uint64_t hash;
 
 	std::string ToString() const noexcept;
