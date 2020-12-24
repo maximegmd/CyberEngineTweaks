@@ -6,7 +6,7 @@
 
 This plugin fixes some Cyberpunk 2077 issues and adds some features.
 
-Works with 1.04 and 1.05.
+Works with 1.04, 1.05 and 1.06.
 
 ### Current fixes
 
