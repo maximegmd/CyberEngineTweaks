@@ -45,6 +45,27 @@ RED4ext::REDreverse::CScriptableStackFrame::CStackType InternalToRED(T& arr, sol
     return RecursiveInternalToRED<std::tuple_size<T>::value - 1>(arr, aObject, apRtti, apAllocator);
 }
 
+template<int64_t i, typename T, std::enable_if_t<i < 0>* = nullptr>
+size_t RecursiveInternalSize(T& arr, RED4ext::REDreverse::CRTTIBaseType* apRtti)
+{
+    return 0;
+}
+
+template<int64_t i, typename T, std::enable_if_t<i >= 0>* = nullptr>
+size_t RecursiveInternalSize(T& arr, RED4ext::REDreverse::CRTTIBaseType* apRtti)
+{
+    if (std::get<i>(arr).Is(apRtti))
+        return std::get<i>(arr).Size();
+
+    return RecursiveInternalSize<i - 1>(arr, apRtti);
+}
+
+template<typename T>
+size_t InternalSize(T& arr, RED4ext::REDreverse::CRTTIBaseType* apRtti)
+{
+    return RecursiveInternalSize<std::tuple_size<T>::value - 1>(arr, apRtti);
+}
+
 // Note that this be parse from end to beginning, so if you want a type to be parsed first, put it at the end
 static std::tuple<
     LuaRED<int8_t, "Int8">,
@@ -64,6 +85,11 @@ static std::tuple<
     LuaRED<TweakDBID, "TweakDBID">,
     LuaRED<CName, "CName">
 > s_convertersMeta;
+
+size_t Converter::Size(RED4ext::REDreverse::CRTTIBaseType* apRtti)
+{
+    return InternalSize(s_convertersMeta, apRtti);
+}
 
 sol::object Converter::ToLua(RED4ext::REDreverse::CScriptableStackFrame::CStackType& aResult, sol::state_view aLua)
 {

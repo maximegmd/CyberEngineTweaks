@@ -9,6 +9,7 @@ namespace TiltedPhoques {
 
 namespace Converter
 {
+	size_t Size(RED4ext::REDreverse::CRTTIBaseType* apRtti);
 	sol::object ToLua(RED4ext::REDreverse::CScriptableStackFrame::CStackType& aResult, sol::state_view aLua);
 	RED4ext::REDreverse::CScriptableStackFrame::CStackType ToRED(sol::object aObject, RED4ext::REDreverse::CRTTIBaseType* apRtti, TiltedPhoques::Allocator* apAllocator);
 }

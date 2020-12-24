@@ -13,7 +13,7 @@ namespace RED4ext {
 
 struct Vector4
 {
-	Vector4(float aX, float aY, float aZ, float aW)
+	Vector4(float aX = 0.f, float aY = 0.f, float aZ = 0.f, float aW = 0.f)
 		: x(aX), y(aY), z(aZ), w(aW)
 	{}
 	
@@ -27,7 +27,7 @@ struct Vector4
 
 struct EulerAngles
 {
-	EulerAngles(float aX, float aY, float aZ)
+	EulerAngles(float aX = 0.f, float aY = 0.f, float aZ = 0.f)
 		: x(aX), y(aY), z(aZ)
 	{}
 	
@@ -40,7 +40,7 @@ struct EulerAngles
 
 struct Quaternion : Vector4
 {
-	Quaternion(float aX, float aY, float aZ, float aW)
+	Quaternion(float aX = 0.f, float aY = 0.f, float aZ = 0.f, float aW = 0.f)
 		: Vector4(aX, aY, aZ, aW)
 	{}
 	
@@ -58,19 +58,19 @@ uint32_t crc32(const char* buf, size_t len, uint32_t seed);
 // - We have to implement different destructors but we are lazy
 struct StrongHandle
 {
-	RED4ext::REDreverse::Scripting::IScriptable* handle;
-	uint32_t* refCount;
+	RED4ext::REDreverse::Scripting::IScriptable* handle{nullptr};
+	uint32_t* refCount{nullptr};
 };
 
 struct WeakHandle
 {
-	RED4ext::REDreverse::Scripting::IScriptable* handle;
-	uint32_t* refCount;
+	RED4ext::REDreverse::Scripting::IScriptable* handle{nullptr};
+	uint32_t* refCount{nullptr};
 };
 
 struct CName
 {
-	CName(uint64_t aHash) : hash(aHash){}
+	CName(uint64_t aHash = 0) : hash(aHash){}
 	CName(const std::string& aName) : hash(RED4ext::FNV1a(aName.c_str())){}
 	uint64_t hash;
 
@@ -113,7 +113,7 @@ struct TweakDBID
 	
 	union
 	{
-		uint64_t value;
+		uint64_t value{0};
 		struct
 		{
 			uint32_t name_hash;
@@ -128,6 +128,7 @@ static_assert(sizeof(TweakDBID) == 8);
 
 struct ItemID
 {
+	ItemID() = default;
 	ItemID(const TweakDBID& aId) : id(aId) {}
 
 	std::string ToString() const noexcept;

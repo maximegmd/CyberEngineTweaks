@@ -128,16 +128,7 @@ Type::Descriptor Type::Dump() const
 
 sol::object Type::Execute(RED4ext::REDreverse::CClassFunction* apFunc, const std::string& acName, sol::variadic_args aArgs, sol::this_environment env, sol::this_state L, std::string& aReturnMessage)
 {
-    if (apFunc->params.size != aArgs.size())
-    {
-        aReturnMessage = "Function '" + acName + "' expects " +
-            std::to_string(apFunc->params.size) + " parameters, not " +
-            std::to_string(aArgs.size()) + ".";
-
-        return sol::nil;
-    }
-
-    std::vector<RED4ext::REDreverse::CScriptableStackFrame::CStackType> args(aArgs.size());
+    std::vector<RED4ext::REDreverse::CScriptableStackFrame::CStackType> args(apFunc->params.size);
 
     static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 13);
     struct ResetAllocator
@@ -149,13 +140,24 @@ sol::object Type::Execute(RED4ext::REDreverse::CClassFunction* apFunc, const std
     };
     ResetAllocator ___allocatorReset;
 
-    for (auto i = 0; i < aArgs.size(); ++i)
+    for (auto i = 0u; i < apFunc->params.size; ++i)
     {
-        args[i] = Scripting::ToRED(aArgs[i].get<sol::object>(), *apFunc->params.types[i], &s_scratchMemory);
-
-        if (!args[i].value)
+        if ((apFunc->params.arr[i]->flag & 0x200) != 0) // Deal with out params
         {
-            auto* pType = *apFunc->params.types[i];
+            args[i] = Scripting::ToRED(sol::nil, apFunc->params.arr[i]->type, &s_scratchMemory);
+        }
+        else if (aArgs.size() > i)
+        {
+            args[i] = Scripting::ToRED(aArgs[i].get<sol::object>(), apFunc->params.arr[i]->type, &s_scratchMemory);
+        }
+        else if((apFunc->params.arr[i]->flag & 0x400) != 0) // Deal with optional params
+        {
+            args[i].value = nullptr;
+        }
+
+        if (!args[i].value && (apFunc->params.arr[i]->flag & 0x1) == 0)
+        {
+            auto* pType = apFunc->params.arr[i]->type;
 
             uint64_t hash = 0;
             pType->GetName(&hash);
@@ -189,8 +191,23 @@ sol::object Type::Execute(RED4ext::REDreverse::CClassFunction* apFunc, const std
     if (!success)
         return sol::nil;
 
-    if(hasReturnType)
-        return Scripting::ToLua(m_lua, result);
+    std::vector<sol::object> returns;
 
-    return make_object(m_lua, true);
+    if (hasReturnType)
+        returns.push_back(Scripting::ToLua(m_lua, result));
+
+    for (auto i = 0; i < apFunc->params.size; ++i)
+    {
+        if ((apFunc->params.arr[i]->flag & 0x200) == 0)
+            continue;
+
+        returns.push_back(Scripting::ToLua(m_lua, args[i]));
+    }
+
+    if (returns.empty())
+        return sol::nil;
+    if (returns.size() == 1)
+        return returns[0];
+
+    return make_object(m_lua, returns);
 }

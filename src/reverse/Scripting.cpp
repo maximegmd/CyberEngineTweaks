@@ -167,6 +167,21 @@ bool Scripting::ExecuteLua(const std::string& aCommand)
     return true;
 }
 
+size_t Scripting::Size(RED4ext::REDreverse::CRTTIBaseType* apRtti)
+{
+    static auto* pRtti = RED4ext::REDreverse::CRTTISystem::Get();
+    static auto* pStringType = pRtti->GetType(RED4ext::FNV1a("String"));
+
+    if (apRtti == pStringType)
+        return sizeof(RED4ext::REDreverse::CString);
+    if (apRtti->GetType() == RED4ext::REDreverse::RTTIType::Handle)
+        return sizeof(StrongHandle);
+    if (apRtti->GetType() == RED4ext::REDreverse::RTTIType::WeakHandle)
+        return sizeof(WeakHandle);
+
+    return Converter::Size(apRtti);
+}
+
 sol::object Scripting::ToLua(sol::state_view aState, RED4ext::REDreverse::CScriptableStackFrame::CStackType& aResult)
 {
     static auto* pRtti = RED4ext::REDreverse::CRTTISystem::Get();
@@ -193,12 +208,12 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::REDreverse::CScrip
     else if (pType->GetType() == RED4ext::REDreverse::RTTIType::Array)
     {
         auto* pArrayType = static_cast<RED4ext::REDreverse::CArray*>(pType);
-        const auto arrayHandle = *static_cast<Array<void*>*>(aResult.value);
+        const auto arrayHandle = *static_cast<Array<uint8_t>*>(aResult.value);
         std::vector<sol::object> result;
         for(auto i = 0u; i < arrayHandle.count; ++i)
         {
             RED4ext::REDreverse::CScriptableStackFrame::CStackType el;
-            el.value = &arrayHandle.entries[i];
+            el.value = arrayHandle.entries + i * Size(pArrayType);
             el.type = pArrayType->heldType;
 
             uint64_t hash;
@@ -207,7 +222,7 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::REDreverse::CScrip
             result.emplace_back(ToLua(aState, el));
         }
 
-        return sol::make_object(aState, result);
+        return make_object(aState, result);
     }
     else
     {
@@ -234,7 +249,7 @@ RED4ext::REDreverse::CScriptableStackFrame::CStackType Scripting::ToRED(sol::obj
 
     RED4ext::REDreverse::CScriptableStackFrame::CStackType result;
 
-    sol::state_view v(aObject.lua_state());
+    bool hasData = aObject != sol::nil;
 
     if (apRtti)
     {
@@ -242,8 +257,13 @@ RED4ext::REDreverse::CScriptableStackFrame::CStackType Scripting::ToRED(sol::obj
 
         if (apRtti == pStringType)
         {
-            const std::string sstr = v["tostring"](aObject);
-            result.value = apAllocator->New<RED4ext::REDreverse::CString>(sstr.c_str());
+            std::string str;
+            if (hasData)
+            {
+                sol::state_view v(aObject.lua_state());
+                str = v["tostring"](aObject);
+            }
+            result.value = apAllocator->New<RED4ext::REDreverse::CString>(str.c_str());
         }
         else if (apRtti->GetType() == RED4ext::REDreverse::RTTIType::Handle)
         {
@@ -258,7 +278,10 @@ RED4ext::REDreverse::CScriptableStackFrame::CStackType Scripting::ToRED(sol::obj
 
                 if (pType != nullptr)
                 {
-                    result.value = apAllocator->New<StrongHandle>(aObject.as<StrongReference>().m_strongHandle);
+                    if (hasData)
+                        result.value = apAllocator->New<StrongHandle>(aObject.as<StrongReference>().m_strongHandle);
+                    else
+                        result.value = apAllocator->New<StrongHandle>();
                 }
             }
         }
@@ -275,9 +298,17 @@ RED4ext::REDreverse::CScriptableStackFrame::CStackType Scripting::ToRED(sol::obj
 
                 if (pType != nullptr)
                 {
-                    result.value = apAllocator->New<WeakHandle>(aObject.as<WeakReference>().m_weakHandle);
+                    if (hasData)
+                        result.value = apAllocator->New<WeakHandle>(aObject.as<WeakReference>().m_weakHandle);
+                    else
+                        result.value = apAllocator->New<WeakHandle>();
                 }
             }
+        }
+        else if (apRtti->GetType() == RED4ext::REDreverse::RTTIType::Array)
+        {
+            if (!hasData)
+                result.value = apAllocator->New<Array<void*>>();
         }
         else
         {
@@ -378,7 +409,7 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
     using CStackType = RED4ext::REDreverse::CScriptableStackFrame::CStackType;
     std::vector<CStackType> args(aArgs.size() + 1);
 
-    args[0].type = *pFunc->params.types[0];
+    args[0].type = pFunc->params.arr[0]->type;
     args[0].value = &unk10;
 
     // 8KB should cut it
@@ -394,11 +425,11 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
 
     for (auto i = 0ull; i < aArgs.size(); ++i)
     {
-        args[i + 1ull] = ToRED(aArgs[i].get<sol::object>(), *pFunc->params.types[i + 1ull], &s_scratchMemory);
+        args[i + 1ull] = ToRED(aArgs[i].get<sol::object>(), pFunc->params.arr[i + 1ull]->type, &s_scratchMemory);
 
         if(!args[i + 1ull].value)
         {
-            auto* pType = *pFunc->params.types[i + 1];
+            auto* pType = pFunc->params.arr[i + 1]->type;
 
             uint64_t hash = 0;
             pType->GetName(&hash);

@@ -27,6 +27,7 @@ struct Scripting
 	
     bool ExecuteLua(const std::string& aCommand);
 
+	static size_t Size(RED4ext::REDreverse::CRTTIBaseType* apRtti);
 	static sol::object ToLua(sol::state_view aState, RED4ext::REDreverse::CScriptableStackFrame::CStackType& aResult);
 	static RED4ext::REDreverse::CScriptableStackFrame::CStackType ToRED(sol::object aObject, RED4ext::REDreverse::CRTTIBaseType* apRtti, TiltedPhoques::Allocator* apAllocator);
 	

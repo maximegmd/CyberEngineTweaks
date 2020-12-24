@@ -19,9 +19,17 @@ struct LuaRED
 	{
 		RED4ext::REDreverse::CScriptableStackFrame::CStackType result;
 		result.type = m_pRtti;
-		result.value = apAllocator->New<T>(aObject.as<T>());
+		if(aObject != sol::nil)
+			result.value = apAllocator->New<T>(aObject.as<T>());
+		else
+			result.value = apAllocator->New<T>();
 
 		return result;
+	}
+
+	size_t Size() const noexcept
+	{
+		return sizeof(T);
 	}
 
 	bool Is(RED4ext::REDreverse::CRTTIBaseType* apRtti) const
