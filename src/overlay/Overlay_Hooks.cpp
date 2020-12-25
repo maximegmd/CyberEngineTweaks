@@ -177,19 +177,6 @@ long Overlay::PresentD3D12(IDXGISwapChain3* pSwapChain, UINT SyncInterval, UINT 
     return Get().m_realPresentD3D12(pSwapChain, SyncInterval, Flags);
 }
 
-void Overlay::ExecuteCommandListsD3D12(ID3D12CommandQueue* apCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists)
-{
-    auto& overlay = Get();
-    if (overlay.m_pCommandQueue == nullptr)
-    {
-        auto desc = apCommandQueue->GetDesc();
-        if(desc.Type == D3D12_COMMAND_LIST_TYPE_DIRECT)
-            overlay.m_pCommandQueue = apCommandQueue;
-    }
-
-    overlay.m_realExecuteCommandLists(apCommandQueue, NumCommandLists, ppCommandLists);
-}
-
 BOOL Overlay::ClipToCenter(CGameEngine::UnkC0* apThis)
 {
     const HWND wnd = apThis->Wnd;
@@ -223,9 +210,6 @@ void Overlay::Hook()
 {
     if (kiero::bind(140, reinterpret_cast<void**>(&m_realPresentD3D12), &PresentD3D12) != kiero::Status::Success)
         spdlog::error("\tD3D12 Present Hook failed!");
-
-    if (kiero::bind(54, reinterpret_cast<void**>(&m_realExecuteCommandLists), &ExecuteCommandListsD3D12) != kiero::Status::Success)
-        spdlog::error("\tD3D12 ExecuteCommandLists Hook failed!");
 
     spdlog::info("\tD3D12 hook complete");
 }

@@ -96,6 +96,9 @@ void Overlay::InitializeD3D12(IDXGISwapChain3* pSwapChain)
             d3d12Device->CreateRenderTargetView(m_frameContexts[i].BackBuffer, nullptr, m_frameContexts[i].MainRenderTargetDescriptor);
         }
 
+        uintptr_t swapChainAddr = reinterpret_cast<uintptr_t>(pSwapChain);
+        m_pCommandQueue = *reinterpret_cast<ID3D12CommandQueue**>(swapChainAddr + kiero::getCommandQueueOffset());
+
         ImGui_ImplWin32_Init(m_hwnd);
         ImGui_ImplDX12_Init(d3d12Device, buffersCounts,
             DXGI_FORMAT_R8G8B8A8_UNORM, m_pd3dSrvDescHeap,
