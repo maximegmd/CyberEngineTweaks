@@ -67,6 +67,7 @@ protected:
 	void DrawImgui(IDXGISwapChain3* apSwapChain);
 
 	static long PresentD3D12(IDXGISwapChain3* pSwapChain, UINT SyncInterval, UINT Flags);
+	static void ExecuteCommandListsD3D12(ID3D12CommandQueue* apCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists);
 	static BOOL SetMousePosition(void* apThis, HWND Wnd, long X, long Y);
 	static BOOL ClipToCenter(CGameEngine::UnkC0* apThis);
 	static LRESULT APIENTRY WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
