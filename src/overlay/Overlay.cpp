@@ -110,6 +110,8 @@ void Overlay::DrawImgui(IDXGISwapChain3* apSwapChain)
             ImGui::SetKeyboardFocusHere();
         }
     }
+    else
+        ImGui::Text("Unkwown version, please update your game and the mod");
 
     ImGui::End();
 
