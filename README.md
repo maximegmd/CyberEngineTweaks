@@ -16,7 +16,6 @@ Works with 1.04, 1.05 and 1.06.
 | AVX (up to 1.04) | Fixes a crash when playing the game with a CPU that does not support AVX |
 | Debug Menu   | Enables the debug menus in game so you can ~~cheat~~, investigate...  |
 | Pools (up to 1.04) | Improves memory usage, can improve performance on some configurations. |
-| Spectre | Removes spectre mitigation to improve performance on all configurations. |
 | Steam Input (up to 1.04) | Enables the use of more gamepads (such as the Steam gamepad) |
 | Skip start menu | Skips the menu asking you to press space bar to continue (Breaching...) |
 | Remove pedestrians and traffic | Removes most of the pedestrians and traffic |
