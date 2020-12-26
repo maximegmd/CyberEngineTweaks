@@ -45,9 +45,6 @@ void Initialize(HMODULE mod)
     if (options.PatchAVX && options.GameImage.version <= Image::MakeVersion(1, 4))
         PatchAvx(&options.GameImage);
 
-    if(options.PatchMemoryPool && options.GameImage.version <= Image::MakeVersion(1,4))
-        PoolPatch(&options.GameImage);
-
     if (options.PatchVirtualInput)
         VirtualInputPatch(&options.GameImage);
 
