@@ -98,6 +98,9 @@ void Initialize(HMODULE mod)
 
 void Shutdown()
 {
+    if(Options::Get().Console)
+        Overlay::Shutdown();
+
     kiero::shutdown();
 
     MH_DisableHook(MH_ALL_HOOKS);
