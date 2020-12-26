@@ -49,7 +49,7 @@ From now on, you can follow the Setting up the mod with ProtonTricks instruction
 
 For users running on the GOG version of the game, via launcher like [Lutris](https://lutris.net/), [Minigalaxy](https://github.com/sharkwouter/minigalaxy) or [GameHub](https://github.com/tkashkin/GameHub), those running from the direct GOG Galaxy Windows application through Wine, or those directly using the Game libraries, Protontricks won´t be helpful in your case, as Protontricks will notice that you don´t have the game on Steam.
 
-Instead, use Winetricks in which Protontricks is derivated from. 
+Instead, use Winetricks in which Protontricks is derived from. 
 
 Either run Winetricks in itself if you use your default prefix, or from your custom prefix via: `WINEPREFIX=<Location of your WinePrefix directory> winetricks --gui` via the terminal.
 
