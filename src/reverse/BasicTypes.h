@@ -11,6 +11,19 @@ namespace RED4ext {
 	}
 }
 
+struct Vector3
+{
+	Vector3(float aX = 0.f, float aY = 0.f, float aZ = 0.f)
+		: x(aX), y(aY), z(aZ)
+	{}
+
+	float x;
+	float y;
+	float z;
+
+	std::string ToString() const noexcept;
+};
+
 struct Vector4
 {
 	Vector4(float aX = 0.f, float aY = 0.f, float aZ = 0.f, float aW = 0.f)
@@ -27,27 +40,27 @@ struct Vector4
 
 struct EulerAngles
 {
-	EulerAngles(float aX = 0.f, float aY = 0.f, float aZ = 0.f)
-		: x(aX), y(aY), z(aZ)
+	EulerAngles(float aPitch = 0.f, float aYaw = 0.f, float aRoll = 0.f)
+		: pitch(aPitch), yaw(aYaw), roll(aRoll)
 	{}
 	
-	float x;
-	float y;
-	float z;
+	float pitch;
+	float yaw;
+	float roll;
 	
 	std::string ToString() const noexcept;
 };
 
-struct Quaternion : Vector4
+struct Quaternion
 {
-	Quaternion(float aX = 0.f, float aY = 0.f, float aZ = 0.f, float aW = 0.f)
-		: Vector4(aX, aY, aZ, aW)
+	Quaternion(float aI = 0.f, float aJ = 0.f, float aK = 0.f, float aR = 0.f)
+		: i(aI), j(aJ), k(aK), r(aR)
 	{}
 	
-	float x;
-	float y;
-	float z;
-	float w;
+	float i;
+	float j;
+	float k;
+	float r;
 
 	std::string ToString() const noexcept;
 };
@@ -71,8 +84,18 @@ struct WeakHandle
 struct CName
 {
 	CName(uint64_t aHash = 0) : hash(aHash){}
+	CName(uint32_t aHashLo, uint32_t aHashHi) : hash_lo(aHashLo), hash_hi(aHashHi) {}
 	CName(const std::string& aName) : hash(RED4ext::FNV1a(aName.c_str())){}
-	uint64_t hash;
+
+	union
+	{
+		uint64_t hash;
+		struct
+		{
+			uint32_t hash_lo;
+			uint32_t hash_hi;
+		};
+	};
 
 	std::string ToString() const noexcept;
 };
@@ -82,17 +105,17 @@ struct TweakDBID
 {
 	TweakDBID() = default;
 
-	TweakDBID(uint32_t name_hash, uint8_t name_length, uint16_t unk5, uint8_t unk7)
+	TweakDBID(uint32_t aNameHash, uint8_t aNameLength)
 	{
-		this->name_hash = name_hash;
-		this->name_length = name_length;
-		this->unk5 = unk5;
-		this->unk7 = unk7;
+		this->name_hash = aNameHash;
+		this->name_length = aNameLength;
+		this->unk5 = 0;
+		this->unk7 = 0;
 	}
 
-	TweakDBID(uint64_t value)
+	TweakDBID(uint64_t aValue)
 	{
-		this->value = value;
+		this->value = aValue;
 	}
 
 	TweakDBID(const std::string_view aName)
@@ -102,10 +125,10 @@ struct TweakDBID
 		unk5 = unk7 = 0;
 	}
 
-	TweakDBID(const TweakDBID& base, const std::string_view aName)
+	TweakDBID(const TweakDBID& aBase, const std::string_view aName)
 	{
-		name_hash = crc32(aName.data(), aName.size(), base.name_hash);
-		name_length = aName.size() + base.name_length;
+		name_hash = crc32(aName.data(), aName.size(), aBase.name_hash);
+		name_length = aName.size() + aBase.name_length;
 		unk5 = unk7 = 0;
 	}
 
@@ -129,15 +152,16 @@ static_assert(sizeof(TweakDBID) == 8);
 struct ItemID
 {
 	ItemID() = default;
-	ItemID(const TweakDBID& aId) : id(aId) {}
+	ItemID(const TweakDBID& aId, uint32_t aRngSeed = 2, uint16_t aUnknown = 0, uint8_t aMaybeType = 0)
+		: id(aId), rng_seed(aRngSeed), unknown(aUnknown), maybe_type(aMaybeType), pad(0) {}
 
 	std::string ToString() const noexcept;
 	
 	TweakDBID id;
-	uint32_t rngSeed{ 2 };
-	uint16_t unkC{ 0 };
-	uint8_t maybeType{ 0 };
-	uint8_t padF;
+	uint32_t rng_seed{ 2 };
+	uint16_t unknown{ 0 };
+	uint8_t maybe_type{ 0 };
+	uint8_t pad;
 };
 
 static_assert(sizeof(ItemID) == 0x10);

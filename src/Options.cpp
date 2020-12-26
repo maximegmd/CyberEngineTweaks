@@ -52,7 +52,6 @@ Options::Options(HMODULE aModule)
         auto config = nlohmann::json::parse(configFile);
         this->PatchAVX = config.value("avx", this->PatchAVX);
         this->PatchSMT = config.value("smt", this->PatchSMT);
-        this->PatchSpectre = config.value("spectre", this->PatchSpectre);
         this->PatchMemoryPool = config.value("memory_pool", this->PatchMemoryPool);
         this->PatchVirtualInput = config.value("virtual_input", this->PatchVirtualInput);
         this->PatchEnableDebug = config.value("enable_debug", this->PatchEnableDebug);
@@ -80,7 +79,6 @@ Options::Options(HMODULE aModule)
     nlohmann::json config;
     config["avx"] = this->PatchAVX;
     config["smt"] = this->PatchSMT;
-    config["spectre"] = this->PatchSpectre;
     config["memory_pool"] = this->PatchMemoryPool;
     config["virtual_input"] = this->PatchVirtualInput;
     config["enable_debug"] = this->PatchEnableDebug;

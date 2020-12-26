@@ -19,7 +19,6 @@ void EnableDebugPatch(Image* apImage);
 void VirtualInputPatch(Image* apImage);
 void SmtAmdPatch(Image* apImage);
 void PatchAvx(Image* apImage);
-void SpectrePatch(Image* apImage);
 void StringInitializerPatch(Image* apImage);
 void SpinLockPatch(Image* apImage);
 void StartScreenPatch(Image* apImage);
@@ -42,9 +41,6 @@ void Initialize(HMODULE mod)
 
     if(options.PatchSMT)
         SmtAmdPatch(&options.GameImage);
-
-    if(options.PatchSpectre)
-        SpectrePatch(&options.GameImage);
 
     if (options.PatchAVX && options.GameImage.version <= Image::MakeVersion(1, 4))
         PatchAvx(&options.GameImage);

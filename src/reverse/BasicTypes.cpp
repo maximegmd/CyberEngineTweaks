@@ -1,43 +1,45 @@
 #include "BasicTypes.h"
 
-#include <sstream>
+#include <spdlog/fmt/fmt.h>
 
 #include "RED4ext/REDreverse/CName.hpp"
 
+std::string Vector3::ToString() const noexcept
+{
+    return fmt::format("ToVector3{{ x = {0}, y = {1}, z = {2} }}", x, y, z);
+}
+
 std::string Vector4::ToString() const noexcept
 {
-    return "Vector4{ x: " + std::to_string(x) + " y: " + std::to_string(y) + " z: " + std::to_string(z) + " w: " + std::to_string(w) + " }";
+    return fmt::format("ToVector4{{ x = {0}, y = {1}, z = {2}, w = {3} }}", x, y, z, w);
 }
 
 std::string EulerAngles::ToString() const noexcept
 {
-    return "EulerAngles{ x: " + std::to_string(x) + " y: " + std::to_string(y) + " z: " + std::to_string(z) + " }";
+    return fmt::format("ToEulerAngles{{ pitch = {0}, yaw = {1}, roll = {2} }}", pitch, yaw, roll);
 }
 
 std::string Quaternion::ToString() const noexcept
 {
-    return "Quaternion{ x: " + std::to_string(x) + " y: " + std::to_string(y) + " z: " + std::to_string(z) + " w: " + std::to_string(w) + " }";
+    return fmt::format("ToQuaternion{{ i = {0}, j = {1}, k = {2}, r = {3} }}", i, j, k, r);
 }
 
 std::string CName::ToString() const noexcept
 {
-    return "CName{ hash: " + std::to_string(hash) + " - '" + RED4ext::REDreverse::CName::ToString(hash) + "' }";
+    const auto resolved = RED4ext::REDreverse::CName::ToString(hash);
+    if (!resolved)
+        return fmt::format("ToCName{{ hash_lo = 0x{0:08X}, hash_hi = 0x{1:08X} }}", hash_lo, hash_hi);
+    return fmt::format("ToCName{{ hash_lo = 0x{0:08X}, hash_hi = 0x{1:08X} --['{1}']-- }}", hash_lo, hash_hi, resolved);
 }
 
 std::string TweakDBID::ToString() const noexcept
 {
-    std::ostringstream oss;
-    oss << std::hex << "TweakDBID{ hash: " << name_hash << ", length: " << name_length << ", unk5: " << unk5 << " unk7: " << (uint32_t)unk7 << " }";
-
-    return oss.str();
+    return fmt::format("ToTweakDBID{{ hash = 0x{0:08X}, length = {1:d} }}", name_hash, name_length);
 }
 
 std::string ItemID::ToString() const noexcept
 {
-    std::ostringstream oss;
-    oss << std::hex << "ItemID{ id: " << id.ToString() << ", rngSeed: " << rngSeed << ", unkC: " << unkC << " maybeType: " << (uint32_t)maybeType << " }";
-
-    return oss.str();
+    return fmt::format("ToItemID{{ id = {0}, rng_seed = {1}, unknown = {2}, maybe_type = {3} }}", id.ToString(), rng_seed, unknown, maybe_type);
 }
 
 static const unsigned int crc32_table[] =
