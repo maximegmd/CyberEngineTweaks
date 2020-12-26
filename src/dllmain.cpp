@@ -99,6 +99,9 @@ void Initialize(HMODULE mod)
 void Shutdown()
 {
     kiero::shutdown();
+
+    MH_DisableHook(MH_ALL_HOOKS);
+    MH_Uninitialize();
 }
 
 BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID) {
