@@ -17,6 +17,7 @@ auto s_metaVisitor = [](auto... args) {
     LuaRED<float, "Float">(),
     LuaRED<bool, "Bool">(),
     LuaRED<Quaternion, "Quaternion">(),
+    LuaRED<Vector3, "Vector3">(),
     LuaRED<Vector4, "Vector4">(),
     LuaRED<EulerAngles, "EulerAngles">(),
     LuaRED<ItemID, "gameItemID">(),
