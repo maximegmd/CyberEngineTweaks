@@ -1,4 +1,5 @@
 #include "Overlay.h"
+#include "Options.h"
 
 #include <atlcomcli.h>
 #include <d3d12.h>
@@ -8,6 +9,35 @@
 #include <Pattern.h>
 #include <kiero/kiero.h>
 #include <spdlog/spdlog.h>
+
+BOOL Overlay::ClipToCenter(CGameEngine::UnkC0* apThis)
+{
+    const HWND wnd = apThis->Wnd;
+    const HWND foreground = GetForegroundWindow();
+
+    if (wnd == foreground && apThis->unk164 && !apThis->unk140 && !Get().IsEnabled())
+    {
+        RECT rect;
+        GetClientRect(wnd, &rect);
+        ClientToScreen(wnd, reinterpret_cast<POINT*>(&rect.left));
+        ClientToScreen(wnd, reinterpret_cast<POINT*>(&rect.right));
+        rect.left = (rect.left + rect.right) / 2;
+        rect.right = rect.left;
+        rect.bottom = (rect.bottom + rect.top) / 2;
+        rect.top = rect.bottom;
+        apThis->isClipped = true;
+        ShowCursor(FALSE);
+        return ClipCursor(&rect);
+    }
+
+    if (apThis->isClipped)
+    {
+        apThis->isClipped = false;
+        return ClipCursor(nullptr);
+    }
+
+    return 1;
+}
 
 void Overlay::EarlyHooks(Image* apImage)
 {
@@ -172,6 +202,7 @@ long Overlay::PresentD3D12(IDXGISwapChain3* pSwapChain, UINT SyncInterval, UINT 
         Get().InitializeD3D12(pSwapChain);
     });
 
+    if (!Options::Get().Uninject == true)
     Get().Render(pSwapChain);
 
     return Get().m_realPresentD3D12(pSwapChain, SyncInterval, Flags);
@@ -188,35 +219,6 @@ void Overlay::ExecuteCommandListsD3D12(ID3D12CommandQueue* apCommandQueue, UINT 
     }
 
     overlay.m_realExecuteCommandLists(apCommandQueue, NumCommandLists, ppCommandLists);
-}
-
-BOOL Overlay::ClipToCenter(CGameEngine::UnkC0* apThis)
-{
-    const HWND wnd = apThis->Wnd;
-    const HWND foreground = GetForegroundWindow();
-
-    if(wnd == foreground && apThis->unk164 && !apThis->unk140 && !Get().IsEnabled())
-    {
-        RECT rect;
-        GetClientRect(wnd, &rect);
-        ClientToScreen(wnd, reinterpret_cast<POINT*>(&rect.left));
-        ClientToScreen(wnd, reinterpret_cast<POINT*>(&rect.right));
-        rect.left = (rect.left + rect.right) / 2;
-        rect.right = rect.left;
-        rect.bottom = (rect.bottom + rect.top) / 2;
-        rect.top = rect.bottom;
-        apThis->isClipped = true;
-        ShowCursor(FALSE);
-        return ClipCursor(&rect);
-    }
-
-    if(apThis->isClipped)
-    {
-        apThis->isClipped = false;
-        return ClipCursor(nullptr);
-    }
-
-    return 1;
 }
 
 void Overlay::Hook()

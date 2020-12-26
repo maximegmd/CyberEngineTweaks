@@ -29,6 +29,20 @@ void Overlay::Initialize(Image* apImage)
     }
 }
 
+void Overlay::release()
+{
+    s_pOverlay->d3d12Device->Release();
+    s_pOverlay->m_pd3dRtvDescHeap->Release();
+    s_pOverlay->m_pd3dSrvDescHeap->Release();
+    s_pOverlay->m_pd3dCommandList->Release();
+    s_pOverlay->m_pCommandQueue->Release();
+}
+
+void Overlay::InputHookRemove()
+{
+    SetWindowLongPtr(s_pOverlay->m_hwnd, GWLP_WNDPROC, (LONG_PTR)s_pOverlay->m_wndProc);
+}
+
 void Overlay::Shutdown()
 {
     s_pOverlay = nullptr;
@@ -39,8 +53,6 @@ Overlay& Overlay::Get()
     return *s_pOverlay;
 }
 
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
 void Overlay::DrawImgui(IDXGISwapChain3* apSwapChain)
 {
     Scripting::Get();
@@ -50,13 +62,13 @@ void Overlay::DrawImgui(IDXGISwapChain3* apSwapChain)
     ImGui::NewFrame();
 
     ImGui::SetNextWindowSize(ImVec2(600.f, ImGui::GetFrameHeight() * 15.f + ImGui::GetFrameHeightWithSpacing()), ImGuiCond_FirstUseEver);
-
+  
     ImGui::Begin("Cyber Engine Tweaks");
 
     auto [major, minor] = Options::Get().GameImage.GetVersion();
 
     if (major == 1 && (minor >= 4 && minor <= 6))
-    {
+    { 
         ImGui::Checkbox("Clear Input", &m_inputClear);
         ImGui::SameLine();
         if (ImGui::Button("Clear Output"))
@@ -66,6 +78,22 @@ void Overlay::DrawImgui(IDXGISwapChain3* apSwapChain)
         }
         ImGui::SameLine();
         ImGui::Checkbox("Scroll Output", &m_outputShouldScroll);
+        ImGui::SameLine();
+        if (ImGui::Button("Shut down"))
+            Options::Get().Uninject = true;
+
+        if (ImGui::TreeNode("Config"))
+        {
+            ImGuiIO& io = ImGui::GetIO();
+
+            ImGui::CheckboxFlags("Nav EnableKey board", (unsigned int*)&io.ConfigFlags, ImGuiConfigFlags_NavEnableKeyboard);
+
+            ImGui::CheckboxFlags("Nav Enable Gamepad", (unsigned int*)&io.ConfigFlags, ImGuiConfigFlags_NavEnableGamepad);
+
+            //ImGui::CheckboxFlags("io.ConfigFlags: Nav EnableKey board", &io.ConfigFlags, ImGuiBackendFlags_HasGamepad);
+
+            ImGui::TreePop();
+        }
 
         static char command[200000] = { 0 };
 
@@ -118,12 +146,18 @@ void Overlay::DrawImgui(IDXGISwapChain3* apSwapChain)
     ImGui::Render();
 }
 
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 LRESULT APIENTRY Overlay::WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     if (uMsg == WM_KEYDOWN && wParam == Options::Get().ConsoleKey)
     {
         s_pOverlay->Toggle();
         return 0;
+    }
+
+    if ((GetAsyncKeyState(Options::Get().ConsoleUninjectKey) & 0x1))
+    {
+        Options::Get().Uninject = true;
     }
 
     switch (uMsg)

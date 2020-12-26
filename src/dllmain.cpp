@@ -3,6 +3,7 @@
 #include <windows.h>
 #include <DbgHelp.h>
 #include <spdlog/spdlog.h>
+#include <spdlog/sinks/rotating_file_sink.h>
 #include <kiero/kiero.h>
 #include <overlay/Overlay.h>
 #include <MinHook.h>
@@ -29,15 +30,45 @@ void DisableIntroMoviesPatch(Image* apImage);
 void DisableVignettePatch(Image* apImage);
 void DisableBoundaryTeleportPatch(Image* apImage);
 
-void Initialize(HMODULE mod)
+
+void Initialize_logger_path(HMODULE aModule)
 {
+    char parentPath[2048 + 1] = { 0 };
+    GetModuleFileNameA(GetModuleHandleA(nullptr), parentPath, std::size(parentPath) - 1);
+    Options::ExeName = std::filesystem::path(parentPath).filename().string();
+ 
+    char path[2048 + 1] = { 0 };
+    GetModuleFileNameA(aModule, path, std::size(path) - 1);
+ 
+    Options::Path = path;
+    Options::Path = Options::Path.parent_path().parent_path();
+
+    Options::Path /= "plugins";
+
+    Options::Path /= "cyber_engine_tweaks/";
+  
+    std::error_code ec;
+    create_directories(Options::Path, ec);
+}
+
+unsigned long __stdcall  Initialize(HMODULE mod)
+{
+    Initialize_logger_path(mod);
+
+    auto rotatingLogger = std::make_shared<spdlog::sinks::rotating_file_sink_mt>((Options::Path / "cyber_engine_tweaks.log").string(), 1048576 * 5, 3);
+    auto logger = std::make_shared<spdlog::logger>("", spdlog::sinks_init_list{ rotatingLogger });
+    logger->flush_on(spdlog::level::debug);
+    set_default_logger(logger);
+    spdlog::info("logger_init_Ok");
+
     MH_Initialize();
+    spdlog::info("MH_Initialize");
 
     Options::Initialize(mod);
     auto& options = Options::Get();
 
     if (!options.IsCyberpunk2077())
-        return;
+        return true;
 
     if(options.PatchSMT)
         SmtAmdPatch(&options.GameImage);
@@ -81,11 +112,13 @@ void Initialize(HMODULE mod)
 
     if (options.Console)
     {
+        Overlay::Get().m_enabled = true;
         std::thread t([]()
             {
                 if (kiero::init(kiero::RenderType::D3D12) != kiero::Status::Success)
                 {
                     spdlog::error("Kiero failed!");
+                    Options::Get().Uninject = true;
                 }
                 else
                     Overlay::Get().Hook();
@@ -94,21 +127,35 @@ void Initialize(HMODULE mod)
     }
 
     spdlog::default_logger()->flush();
+
+    do {
+        Sleep(100);
+    } while (!Options::Get().Uninject == true);
+
+    Overlay::release();
+
+    kiero::MH_shutdown();
+
+    Overlay::InputHookRemove();
+
+    Overlay::Shutdown();
+
+    spdlog::info("Bye Bye !!!");
+    spdlog::drop("");
+
+    Beep(220, 100);
+    FreeLibraryAndExitThread(mod, 0);
+
+    return 0;
 }
 
-void Shutdown()
-{
-    kiero::shutdown();
-}
 
 BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID) {
     switch(ul_reason_for_call) {
     case DLL_PROCESS_ATTACH:
-        Initialize(mod);
+        CreateThread(0, 0, (LPTHREAD_START_ROUTINE)Initialize, mod, 0, 0);       
         break;
-
     case DLL_PROCESS_DETACH:
-        Shutdown();
         break;
     case DLL_THREAD_ATTACH:
     case DLL_THREAD_DETACH:

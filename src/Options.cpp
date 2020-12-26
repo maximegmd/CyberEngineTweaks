@@ -1,39 +1,34 @@
 #include "Options.h"
 #include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
-#include <spdlog/sinks/rotating_file_sink.h>
+//#include <spdlog/sinks/rotating_file_sink.h>
 #include <fstream>
 
 static std::unique_ptr<Options> s_instance;
 
+//char Options::le_DLL_Path[MAX_PATH];
+LPCSTR Options::TargetAppWindowTitle = "Cyberpunk 2077 (C) 2020 by CD Projekt RED";
+std::filesystem::path Options::Path;
+std::string Options::ExeName;
+
+bool Options::IsCyberpunk2077()/* const noexcept*/
+{
+    return ExeName == "Cyberpunk2077.exe";
+}
+
+void Options::Initialize(HMODULE aModule)
+{
+    // Horrible hack because make_unique can't access private member
+    s_instance.reset(new (std::nothrow) Options(aModule));
+}
+
+Options& Options::Get()
+{
+    return *s_instance;
+}
+
 Options::Options(HMODULE aModule)
 {
-    char path[2048 + 1] = { 0 };
-    GetModuleFileNameA(aModule, path, std::size(path) - 1);
-
-    Path = path;
-
-    char parentPath[2048 + 1] = { 0 };
-    GetModuleFileNameA(GetModuleHandleA(nullptr), parentPath, std::size(parentPath) - 1);
-
-    ExeName = std::filesystem::path(parentPath).filename().string();
-    if (!IsCyberpunk2077())
-        return;
-
-    Path = Path.parent_path().parent_path();
-
-    Path /= "plugins";
-    Path /= "cyber_engine_tweaks/";
-
-    std::error_code ec;
-    create_directories(Path, ec);
-
-    const auto rotatingLogger = std::make_shared<spdlog::sinks::rotating_file_sink_mt>((Path / "cyber_engine_tweaks.log").string(), 1048576 * 5, 3);
-
-    const auto logger = std::make_shared<spdlog::logger>("", spdlog::sinks_init_list{ rotatingLogger });
-    logger->flush_on(spdlog::level::debug);
-    set_default_logger(logger);
-
     GameImage.Initialize();
 
     if (GameImage.version)
@@ -45,6 +40,7 @@ Options::Options(HMODULE aModule)
         spdlog::info("Unknown Game Version, update the mod");
 
     const auto configPath = Path / "config.json";
+    spdlog::info("configPath = {0}{1}", Path.string().c_str(), "config.json");
 
     std::ifstream configFile(configPath);
     if(configFile)
@@ -97,21 +93,6 @@ Options::Options(HMODULE aModule)
 
     std::ofstream o(configPath);
     o << config.dump(4) << std::endl;
-}
 
-bool Options::IsCyberpunk2077() const noexcept
-{
-    return ExeName == "Cyberpunk2077.exe";
+    spdlog::info("config loaded OK");
 }
-
-void Options::Initialize(HMODULE aModule)
-{
-    // Horrible hack because make_unique can't access private member
-    s_instance.reset(new (std::nothrow) Options(aModule));
-}
-
-Options& Options::Get()
-{
-    return *s_instance;
-}
-

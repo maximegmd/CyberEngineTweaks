@@ -1,0 +1,28 @@
+0: look 
+https://xmake.io/#/plugin/builtin_plugins
+
+1: run 
+Ze_Open_cmd_In_This_Dir
+
+
+2: pour build just le .asi  (ou .dll)
+xmake        ou     xmake -v    pour voire les info de compil
+
+ou 
+
+2: créé le projet .snl
+xmake project -k vsxmake
+
+
+
+Autre cmd utiles:
+xmake
+xmake -u
+xmake -v
+xmake project -k vsxmake
+xmake require --list
+xmake -P
+xmake require --info
+
+
+

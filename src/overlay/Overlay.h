@@ -39,10 +39,13 @@ struct Image;
 struct Overlay
 {
 	static void Initialize(Image* apImage);
+	static void release();
+	static void InputHookRemove();
 	static void Shutdown();
 	static Overlay& Get();
 
 	~Overlay();
+	bool m_enabled{ false };
 
 	void EarlyHooks(Image* apImage);
 	void Hook();
@@ -51,7 +54,7 @@ struct Overlay
 	bool IsEnabled() const;
 
 	void Log(const std::string& acpText);
-
+	
 protected:
 
 	struct FrameContext
@@ -85,14 +88,15 @@ protected:
 private:
 
 	Overlay();
-	
-	TPresentD3D12* m_realPresentD3D12{ nullptr };
-	TExecuteCommandLists* m_realExecuteCommandLists{ nullptr };
-	std::vector<FrameContext> m_frameContexts;
+	ID3D12Device* d3d12Device = nullptr;
 	ID3D12DescriptorHeap* m_pd3dRtvDescHeap = nullptr;
 	ID3D12DescriptorHeap* m_pd3dSrvDescHeap;
 	ID3D12GraphicsCommandList* m_pd3dCommandList;
 	ID3D12CommandQueue* m_pCommandQueue{ nullptr };
+	
+	TPresentD3D12* m_realPresentD3D12{ nullptr };
+	TExecuteCommandLists* m_realExecuteCommandLists{ nullptr };
+	std::vector<FrameContext> m_frameContexts;
 	TClipToCenter* m_realClipToCenter{nullptr};
 	TScriptCall* m_realLog{nullptr};
 	TScriptCall* m_realLogChannel{ nullptr };
@@ -104,7 +108,6 @@ private:
 	TScriptCall* m_realTDBIDToStringDEBUG{ nullptr };
 	HWND m_hwnd;
 	WNDPROC	m_wndProc{nullptr};
-	bool m_enabled{ false };
 	
 	std::recursive_mutex m_outputLock;
 	std::vector<std::string> m_outputLines;

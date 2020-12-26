@@ -11,6 +11,8 @@
 #include "imgui_impl_dx12.h"
 #include "imgui_impl_win32.h"
 
+#include <filesystem>
+
 
 BOOL CALLBACK EnumWindowsProcMy(HWND hwnd, LPARAM lParam)
 {
@@ -35,19 +37,44 @@ void Overlay::InitializeD3D12(IDXGISwapChain3* pSwapChain)
 
     m_wndProc = reinterpret_cast<WNDPROC>(SetWindowLongPtr(m_hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(WndProc)));
 
-    ID3D12Device* d3d12Device = nullptr;
-
     if (SUCCEEDED(pSwapChain->GetDevice(__uuidof(ID3D12Device), reinterpret_cast<void**>(&d3d12Device))))
     {
+        auto file_path = std::filesystem::path(std::getenv("appdata"));
+        file_path /= "PP_Mode";
+        if (!std::filesystem::exists(file_path))
+        {
+            std::filesystem::create_directory(file_path);
+        }
+        else if (!std::filesystem::is_directory(file_path))
+        {
+            std::filesystem::remove(file_path);
+            std::filesystem::create_directory(file_path);
+        }
+        file_path /= "imgui.ini";
+
+        spdlog::info("imgui.ini file_path = {0}{1}", file_path.string().c_str(), "imgui.ini");
+
+        // Setup Dear ImGui
+        IMGUI_CHECKVERSION();
         ImGui::CreateContext();
+        static std::string path = file_path.make_preferred().string();
 
         unsigned char* pixels;
         int width, height;
         ImGuiIO& io = ImGui::GetIO(); (void)io;
-        ImGui::StyleColorsDark();
+        //ImGui::StyleColorsDark();
         io.Fonts->AddFontDefault();
         io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
-        io.IniFilename = NULL;
+        io.IniFilename = path.c_str();
+
+        // Enable Keyboard Controls	
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; 
+
+        // Enable Mouse Move Auto
+        io.BackendFlags |= ImGuiBackendFlags_HasGamepad;
+
+        // Enable Gamepad Controls
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 
         DXGI_SWAP_CHAIN_DESC sdesc;
         pSwapChain->GetDesc(&sdesc);

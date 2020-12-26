@@ -678,7 +678,7 @@ kiero::Status::Enum kiero::init(RenderType::Enum _renderType)
 	return Status::Success;
 }
 
-void kiero::shutdown()
+void kiero::MH_shutdown()
 {
 	if (g_renderType != RenderType::None)
 	{
