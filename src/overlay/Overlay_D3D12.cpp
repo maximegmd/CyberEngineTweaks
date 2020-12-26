@@ -30,7 +30,8 @@ BOOL CALLBACK EnumWindowsProcMy(HWND hwnd, LPARAM lParam)
 
 bool Overlay::InitializeD3D12(IDXGISwapChain3* pSwapChain)
 {
-    static auto checkCmdQueue = [](Overlay* overlay) {
+    static auto checkCmdQueue = [](Overlay* overlay) 
+    {
         if (overlay->m_pCommandQueue == nullptr) 
         {
             auto swapChainAddr = reinterpret_cast<uintptr_t>(*(&overlay->m_pdxgiSwapChain));
@@ -52,7 +53,8 @@ bool Overlay::InitializeD3D12(IDXGISwapChain3* pSwapChain)
         return true;
     };
 
-    static auto reset = [](Overlay* overlay) {
+    static auto reset = [](Overlay* overlay) 
+    {
         overlay->m_frameContexts.clear();
         overlay->m_pdxgiSwapChain = nullptr;
         overlay->m_pd3d12Device = nullptr;
@@ -64,7 +66,8 @@ bool Overlay::InitializeD3D12(IDXGISwapChain3* pSwapChain)
     };
 
     // Window hook (done once)
-    if (m_hWnd == nullptr) {
+    if (m_hWnd == nullptr) 
+    {
         if (EnumWindows(EnumWindowsProcMy, reinterpret_cast<LPARAM>(&m_hWnd)))
             spdlog::error("\tOverlay::InitializeD3D12(pSwapChain={0}) - window hook failed!", reinterpret_cast<void*>(pSwapChain));
         else 
@@ -186,7 +189,8 @@ bool Overlay::InitializeD3D12(IDXGISwapChain3* pSwapChain)
         return reset(this);
     }
 
-    if (!ImGui_ImplDX12_CreateDeviceObjects()) {
+    if (!ImGui_ImplDX12_CreateDeviceObjects()) 
+    {
         spdlog::error("\tOverlay::InitializeD3D12(pSwapChain={0}) - ImGui_ImplDX12_CreateDeviceObjects call failed!", reinterpret_cast<void*>(pSwapChain));
         ImGui_ImplDX12_Shutdown();
         ImGui_ImplWin32_Shutdown();

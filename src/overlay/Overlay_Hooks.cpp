@@ -151,10 +151,9 @@ void Overlay::EarlyHooks(Image* apImage)
 long Overlay::PresentD3D12(IDXGISwapChain3* pSwapChain, UINT SyncInterval, UINT Flags)
 {
     auto& overlay = Get();
-    
-    if (overlay.InitializeD3D12(pSwapChain)) {
+
+    if (overlay.InitializeD3D12(pSwapChain)) 
         overlay.Render(pSwapChain);
-    }
     
     return overlay.m_realPresentD3D12(pSwapChain, SyncInterval, Flags);
 }

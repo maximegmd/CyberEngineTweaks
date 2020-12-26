@@ -101,8 +101,9 @@ void Shutdown()
     kiero::shutdown();
 }
 
-BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID) {
-	DisableThreadLibraryCalls(mod);
+BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID) 
+{
+    DisableThreadLibraryCalls(mod);
 
     switch(ul_reason_for_call) {
     case DLL_PROCESS_ATTACH:
