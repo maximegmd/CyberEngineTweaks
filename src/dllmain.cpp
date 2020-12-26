@@ -106,6 +106,8 @@ void Shutdown()
 }
 
 BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID) {
+	DisableThreadLibraryCalls(mod);
+
     switch(ul_reason_for_call) {
     case DLL_PROCESS_ATTACH:
         Initialize(mod);
@@ -114,8 +116,6 @@ BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID) {
     case DLL_PROCESS_DETACH:
         Shutdown();
         break;
-    case DLL_THREAD_ATTACH:
-    case DLL_THREAD_DETACH:
     default:
         break;
     }

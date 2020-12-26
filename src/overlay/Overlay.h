@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atlcomcli.h>
 #include <d3d12.h>
 #include <dxgi1_4.h>
 #include <mutex>
@@ -56,13 +57,12 @@ protected:
 
 	struct FrameContext
 	{
-		ID3D12Resource* MainRenderTargetResource = nullptr;
-		D3D12_CPU_DESCRIPTOR_HANDLE MainRenderTargetDescriptor;
-		ID3D12Resource* BackBuffer = nullptr;
-		ID3D12CommandAllocator* CommandAllocator = nullptr;
+		CComPtr<ID3D12Resource> BackBuffer;
+		CComPtr<ID3D12Resource> MainRenderTargetResource;
+		D3D12_CPU_DESCRIPTOR_HANDLE MainRenderTargetDescriptor{ 0 };
 	};
 
-	void InitializeD3D12(IDXGISwapChain3* pSwapChain);
+	bool InitializeD3D12(IDXGISwapChain3* pSwapChain);
 	void Render(IDXGISwapChain3* pSwapChain);
 	void DrawImgui(IDXGISwapChain3* apSwapChain);
 
@@ -85,16 +85,21 @@ protected:
 private:
 
 	Overlay();
-	
+
 	TPresentD3D12* m_realPresentD3D12{ nullptr };
 	TExecuteCommandLists* m_realExecuteCommandLists{ nullptr };
+
 	std::vector<FrameContext> m_frameContexts;
-	ID3D12DescriptorHeap* m_pd3dRtvDescHeap = nullptr;
-	ID3D12DescriptorHeap* m_pd3dSrvDescHeap;
-	ID3D12GraphicsCommandList* m_pd3dCommandList;
-	ID3D12CommandQueue* m_pCommandQueue{ nullptr };
-	TClipToCenter* m_realClipToCenter{nullptr};
-	TScriptCall* m_realLog{nullptr};
+	CComPtr<IDXGISwapChain3> m_pdxgiSwapChain;
+	CComPtr<ID3D12Device> m_pd3d12Device;
+	CComPtr<ID3D12DescriptorHeap> m_pd3dRtvDescHeap;
+	CComPtr<ID3D12DescriptorHeap> m_pd3dSrvDescHeap;
+	CComPtr<ID3D12CommandAllocator> m_pd3dCommandAllocator;
+	CComPtr<ID3D12GraphicsCommandList> m_pd3dCommandList;
+	CComPtr<ID3D12CommandQueue> m_pCommandQueue;
+
+	TClipToCenter* m_realClipToCenter{ nullptr };
+	TScriptCall* m_realLog{ nullptr };
 	TScriptCall* m_realLogChannel{ nullptr };
 	TTDBIDCtor* m_realTDBIDCtor{ nullptr };
 	TTDBIDCtorCString* m_realTDBIDCtorCString{ nullptr };
@@ -102,8 +107,9 @@ private:
 	TTDBIDCtorUnknown* m_realTDBIDCtorUnknown{ nullptr };
 	TSomeStringLookup* m_someStringLookup{ nullptr };
 	TScriptCall* m_realTDBIDToStringDEBUG{ nullptr };
-	HWND m_hwnd;
-	WNDPROC	m_wndProc{nullptr};
+
+	HWND m_hWnd{ nullptr };
+	WNDPROC	m_wndProc{ nullptr };
 	bool m_enabled{ false };
 	
 	std::recursive_mutex m_outputLock;
@@ -113,4 +119,6 @@ private:
 	bool m_inputClear{ true };
 	std::recursive_mutex m_tdbidLock;
 	std::unordered_map<uint64_t, TDBIDLookupEntry> m_tdbidLookup;
+
+	bool m_initialized{ false };
 };
