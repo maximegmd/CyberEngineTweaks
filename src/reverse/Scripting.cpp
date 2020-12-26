@@ -100,7 +100,7 @@ Scripting::Scripting()
         sol::meta_function::to_string, &CName::ToString,
         "hash", sol::property(&CName::hash));
 
-    m_lua.new_usertype<TweakDBID>("TweakDBID", sol::constructors<TweakDBID(const std::string&)>(),
+    m_lua.new_usertype<TweakDBID>("TweakDBID", sol::constructors<TweakDBID(const std::string&), TweakDBID(uint32_t, uint8_t)>(),
         sol::meta_function::to_string, &TweakDBID::ToString);
 
     m_lua.new_usertype<ItemID>("ItemID", sol::constructors<ItemID(const TweakDBID&)>(),

@@ -82,7 +82,7 @@ struct TweakDBID
 {
 	TweakDBID() = default;
 
-	TweakDBID(uint32_t name_hash, uint8_t name_length, uint16_t unk5, uint8_t unk7)
+	TweakDBID(uint32_t name_hash, uint8_t name_length, uint16_t unk5 = 0, uint8_t unk7 = 0)
 	{
 		this->name_hash = name_hash;
 		this->name_length = name_length;
