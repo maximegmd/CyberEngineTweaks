@@ -369,12 +369,39 @@ kiero::Status::Enum kiero::init(RenderType::Enum _renderType)
 #if KIERO_INCLUDE_D3D12
 				HMODULE libDXGI;
 				HMODULE libD3D12;
-				if ((libDXGI = ::GetModuleHandle(KIERO_TEXT("dxgi.dll"))) == NULL || (libD3D12 = ::GetModuleHandle(KIERO_TEXT("d3d12.dll"))) == NULL)
+				if ((libDXGI = ::GetModuleHandle(KIERO_TEXT("dxgi.dll"))) == NULL)
 				{
 					::DestroyWindow(window);
 					::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
 					return Status::ModuleNotFoundError;
 				}
+
+                if ((libD3D12 = ::GetModuleHandle(KIERO_TEXT("d3d12.dll"))) == NULL)
+                {
+                    if ((libD3D12 = ::LoadLibraryEx(KIERO_TEXT("d3d12.dll"), NULL, LOAD_LIBRARY_SEARCH_SYSTEM32)) == NULL)
+                    {
+                        const char* localD3d12Paths[] =
+                        {
+                            KIERO_TEXT(".\\d3d12.dll"),
+                            KIERO_TEXT(".\\d3d12on7\\d3d12.dll"),
+                            KIERO_TEXT(".\\12on7\\d3d12.dll")
+                        };
+
+                        for (uint32_t i = 0; i < KIERO_ARRAY_SIZE(localD3d12Paths); i++)
+                        {
+                            libD3D12 = LoadLibrary(localD3d12Paths[i]);
+                            if (libD3D12 != NULL)
+                                break;
+                        }
+
+                        if (libD3D12 == NULL)
+                        {
+                            ::DestroyWindow(window);
+                            ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
+                            return Status::ModuleNotFoundError;
+                        }
+                    }
+                }
 
                 void* CreateDXGIFactory;
                 if ((CreateDXGIFactory = ::GetProcAddress(libDXGI, "CreateDXGIFactory")) == NULL)
