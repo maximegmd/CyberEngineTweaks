@@ -167,10 +167,10 @@ void Overlay::ExecuteCommandListsD3D12(ID3D12CommandQueue* apCommandQueue, UINT 
         if(desc.Type == D3D12_COMMAND_LIST_TYPE_DIRECT) 
         {
             overlay.m_pCommandQueue = apCommandQueue;
-            spdlog::info("\tOverlay::ExecuteCommandListsD3D12 - found valid queue!");
+            spdlog::info("\tOverlay::ExecuteCommandListsD3D12() - found valid command queue.");
         }
         else 
-            spdlog::error("\tOverlay::ExecuteCommandListsD3D12 - invalid type of command list!");
+            spdlog::error("\tOverlay::ExecuteCommandListsD3D12() - invalid type of command list!");
     }
 
     overlay.m_realExecuteCommandLists(apCommandQueue, NumCommandLists, ppCommandLists);
@@ -222,7 +222,7 @@ void Overlay::Hook()
     }
 
     if (d3d12FailedHooksCount == 0) 
-        spdlog::info("\tD3D12 hook complete");
+        spdlog::info("\tD3D12 hook complete.");
     else 
         spdlog::error("\tD3D12 hook failed!");
 }

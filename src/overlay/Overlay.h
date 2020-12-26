@@ -57,6 +57,7 @@ protected:
 
 	struct FrameContext
 	{
+		CComPtr<ID3D12CommandAllocator> CommandAllocator;
 		CComPtr<ID3D12Resource> BackBuffer;
 		CComPtr<ID3D12Resource> MainRenderTargetResource;
 		D3D12_CPU_DESCRIPTOR_HANDLE MainRenderTargetDescriptor{ 0 };
@@ -94,7 +95,6 @@ private:
 	CComPtr<ID3D12Device> m_pd3d12Device;
 	CComPtr<ID3D12DescriptorHeap> m_pd3dRtvDescHeap;
 	CComPtr<ID3D12DescriptorHeap> m_pd3dSrvDescHeap;
-	CComPtr<ID3D12CommandAllocator> m_pd3dCommandAllocator;
 	CComPtr<ID3D12GraphicsCommandList> m_pd3dCommandList;
 	CComPtr<ID3D12CommandQueue> m_pCommandQueue;
 
