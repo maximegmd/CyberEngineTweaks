@@ -72,39 +72,120 @@ Scripting::Scripting()
         "Dump", &GameOptions::Dump,
         "List", &GameOptions::List);
 
+    m_lua.new_usertype<Vector3>("Vector3",
+        sol::constructors<Vector3(float, float, float), Vector3(float, float), Vector3(float), Vector3()>(),
+        sol::meta_function::to_string, &Vector3::ToString,
+        "x", &Vector3::x,
+        "y", &Vector3::y,
+        "z", &Vector3::z);
+
+    m_lua["ToVector3"] = [this](sol::table table) -> Vector3
+    {
+        return Vector3
+        {
+            table["x"].get_or(0.f),
+            table["y"].get_or(0.f),
+            table["z"].get_or(0.f)
+        };
+    };
+
     m_lua.new_usertype<Vector4>("Vector4",
-        sol::constructors<Vector4(float, float, float, float)>(),
+        sol::constructors<Vector4(float, float, float, float), Vector4(float, float, float), Vector4(float, float), Vector4(float), Vector4()>(),
         sol::meta_function::to_string, &Vector4::ToString,
         "x", &Vector4::x,
         "y", &Vector4::y,
         "z", &Vector4::z,
         "w", &Vector4::w);
 
+    m_lua["ToVector4"] = [this](sol::table table) -> Vector4
+    {
+        return Vector4
+        {
+            table["x"].get_or(0.f),
+            table["y"].get_or(0.f),
+            table["z"].get_or(0.f),
+            table["w"].get_or(0.f)
+        };
+    };
+
     m_lua.new_usertype<EulerAngles>("EulerAngles",
-        sol::constructors<EulerAngles(float, float, float)>(),
+        sol::constructors<EulerAngles(float, float, float), EulerAngles(float, float), EulerAngles(float), EulerAngles()>(),
         sol::meta_function::to_string, &EulerAngles::ToString,
-        "x", &EulerAngles::x,
-        "y", &EulerAngles::y,
-        "z", &EulerAngles::z);
+        "pitch", &EulerAngles::pitch,
+        "yaw", &EulerAngles::yaw,
+        "roll", &EulerAngles::roll);
+
+    m_lua["ToEulerAngles"] = [this](sol::table table) -> EulerAngles
+    {
+        return EulerAngles
+        {
+            table["pitch"].get_or(0.f),
+            table["roll"].get_or(0.f),
+            table["yaw"].get_or(0.f)
+        };
+    };
 
     m_lua.new_usertype<Quaternion>("Quaternion",
-        sol::constructors<Quaternion(float, float, float, float)>(),
+        sol::constructors<Quaternion(float, float, float, float), Quaternion(float, float, float), Quaternion(float, float), Quaternion(float), Quaternion()>(),
         sol::meta_function::to_string, &Quaternion::ToString,
-        "x", &Quaternion::x,
-        "y", &Quaternion::y,
-        "z", &Quaternion::z,
-        "w", &Quaternion::w);
+        "i", &Quaternion::i,
+        "j", &Quaternion::j,
+        "k", &Quaternion::k,
+        "r", &Quaternion::r);
+
+    m_lua["ToQuaternion"] = [this](sol::table table) -> Quaternion
+    {
+        return Quaternion
+        {
+            table["i"].get_or(0.f),
+            table["j"].get_or(0.f),
+            table["k"].get_or(0.f),
+            table["r"].get_or(0.f)
+        };
+    };
 
     m_lua.new_usertype<CName>("CName",
-        sol::constructors<CName(const std::string&)>(),
+        sol::constructors<CName(const std::string&), CName(uint32_t), CName(uint32_t, uint32_t), CName()>(),
         sol::meta_function::to_string, &CName::ToString,
-        "hash", &CName::hash);
+        "hash_lo", &CName::hash_lo,
+        "hash_hi", &CName::hash_hi);
 
-    m_lua.new_usertype<TweakDBID>("TweakDBID", sol::constructors<TweakDBID(const std::string&), TweakDBID(uint32_t, uint8_t)>(),
+    m_lua["ToCName"] = [this](sol::table table) -> CName
+    {
+        return CName
+        {
+            table["hash_lo"].get_or<uint32_t>(0),
+            table["hash_hi"].get_or<uint32_t>(0)
+        };
+    };
+
+    m_lua.new_usertype<TweakDBID>("TweakDBID",
+        sol::constructors<TweakDBID(const std::string&), TweakDBID(const TweakDBID&, const std::string&), TweakDBID(uint32_t, uint8_t), TweakDBID()>(),
         sol::meta_function::to_string, &TweakDBID::ToString);
 
-    m_lua.new_usertype<ItemID>("ItemID", sol::constructors<ItemID(const TweakDBID&)>(),
+    m_lua["ToTweakDBID"] = [this](sol::table table) -> TweakDBID
+    {
+        return TweakDBID
+        {
+            table["hash"].get_or<uint32_t>(0),
+            table["length"].get_or<uint8_t>(0)
+        };
+    };
+
+    m_lua.new_usertype<ItemID>("ItemID",
+        sol::constructors<ItemID(const TweakDBID&, uint32_t, uint16_t, uint8_t), ItemID(const TweakDBID&, uint32_t, uint16_t), ItemID(const TweakDBID&, uint32_t), ItemID(const TweakDBID&), ItemID()>(),
         sol::meta_function::to_string, &ItemID::ToString);
+
+    m_lua["ToItemID"] = [this](sol::table table) -> ItemID
+    {
+        return ItemID
+        {
+            table["id"].get_or<TweakDBID>(0),
+            table["rng_seed"].get_or<uint32_t>(2),
+            table["unknown"].get_or<uint16_t>(0),
+            table["maybe_type"].get_or<uint8_t>(0),
+        };
+    };
 
     m_lua.new_usertype<Type::Descriptor>("Descriptor",
         sol::meta_function::to_string, &Type::Descriptor::ToString);
@@ -135,10 +216,14 @@ Scripting::Scripting()
     {
         std::ostringstream oss;
         sol::state_view s(L);
-        for(auto v : args)
+        for (auto it = args.cbegin(); it != args.cend(); ++it)
         {
-            std::string str = s["tostring"](v.get<sol::object>());
-            oss << str << " ";
+            if (it != args.cbegin())
+            {
+                oss << " ";
+            }
+            std::string str = s["tostring"]((*it).get<sol::object>());
+            oss << str;
         }
         Overlay::Get().Log(oss.str());
     };
