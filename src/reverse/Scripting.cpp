@@ -75,30 +75,30 @@ Scripting::Scripting()
     m_lua.new_usertype<Vector4>("Vector4",
         sol::constructors<Vector4(float, float, float, float)>(),
         sol::meta_function::to_string, &Vector4::ToString,
-        "x", sol::property(&Vector4::x),
-        "y", sol::property(&Vector4::y),
-        "z", sol::property(&Vector4::z),
-        "w", sol::property(&Vector4::w));
+        "x", &Vector4::x,
+        "y", &Vector4::y,
+        "z", &Vector4::z,
+        "w", &Vector4::w);
 
     m_lua.new_usertype<EulerAngles>("EulerAngles",
         sol::constructors<EulerAngles(float, float, float)>(),
         sol::meta_function::to_string, &EulerAngles::ToString,
-        "x", sol::property(&EulerAngles::x),
-        "y", sol::property(&EulerAngles::y),
-        "z", sol::property(&EulerAngles::z));
+        "x", &EulerAngles::x,
+        "y", &EulerAngles::y,
+        "z", &EulerAngles::z);
 
     m_lua.new_usertype<Quaternion>("Quaternion",
         sol::constructors<Quaternion(float, float, float, float)>(),
         sol::meta_function::to_string, &Quaternion::ToString,
-        "x", sol::property(&Quaternion::x),
-        "y", sol::property(&Quaternion::y),
-        "z", sol::property(&Quaternion::z),
-        "w", sol::property(&Quaternion::w));
+        "x", &Quaternion::x,
+        "y", &Quaternion::y,
+        "z", &Quaternion::z,
+        "w", &Quaternion::w);
 
     m_lua.new_usertype<CName>("CName",
         sol::constructors<CName(const std::string&)>(),
         sol::meta_function::to_string, &CName::ToString,
-        "hash", sol::property(&CName::hash));
+        "hash", &CName::hash);
 
     m_lua.new_usertype<TweakDBID>("TweakDBID", sol::constructors<TweakDBID(const std::string&), TweakDBID(uint32_t, uint8_t)>(),
         sol::meta_function::to_string, &TweakDBID::ToString);
@@ -124,7 +124,7 @@ Scripting::Scripting()
     {
         auto* pRtti = RED4ext::REDreverse::CRTTISystem::Get();
         auto* pType = pRtti->GetType<RED4ext::REDreverse::CClass*>(RED4ext::FNV1a(acName));
-        if (!pType || pType->GetType() != RED4ext::REDreverse::RTTIType::Simple)
+        if (!pType || pType->GetType() == RED4ext::REDreverse::RTTIType::Simple)
             return Type::Descriptor();
 
         Type type(m_lua, pType);
