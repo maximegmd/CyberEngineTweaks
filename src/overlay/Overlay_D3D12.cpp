@@ -103,9 +103,6 @@ bool Overlay::InitializeD3D12(IDXGISwapChain3* pSwapChain)
         return reset(this);
     }
 
-    unsigned char* pixels;
-    int width, height;
-
     DXGI_SWAP_CHAIN_DESC sdesc;
     m_pdxgiSwapChain->GetDesc(&sdesc);
 
@@ -168,7 +165,6 @@ bool Overlay::InitializeD3D12(IDXGISwapChain3* pSwapChain)
     ImGuiIO& io = ImGui::GetIO();
     ImGui::StyleColorsDark();
     io.Fonts->AddFontDefault();
-    io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
     io.IniFilename = NULL;
 
     if (!ImGui_ImplWin32_Init(m_hWnd)) 
