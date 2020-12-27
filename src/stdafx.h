@@ -38,7 +38,6 @@
 #include <d3dcompiler.h>
 #include <Windows.h>
 #include <SDKDDKVer.h>
-#define WIN32_LEAN_AND_MEAN
 #include <DbgHelp.h>
 
 #include <TiltedCore/Allocator.hpp>
