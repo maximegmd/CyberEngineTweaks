@@ -28,8 +28,9 @@ struct Options
 	float CPUMemoryPoolFraction{ 0.5f };
 	float GPUMemoryPoolFraction{ 1.f };
 	std::filesystem::path Path;
-	std::string ExeName;
+	std::filesystem::path ExePath;
 	Image GameImage;
+	bool ExeValid{ false };
 
 private:
 

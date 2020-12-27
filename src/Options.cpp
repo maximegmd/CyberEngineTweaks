@@ -10,18 +10,50 @@ Options::Options(HMODULE aModule)
 {
     char path[2048 + 1] = { 0 };
     GetModuleFileNameA(aModule, path, std::size(path) - 1);
-
     Path = path;
 
-    char parentPath[2048 + 1] = { 0 };
-    GetModuleFileNameA(GetModuleHandleA(nullptr), parentPath, std::size(parentPath) - 1);
+    char exePath[2048 + 1] = { 0 };
+    GetModuleFileNameA(GetModuleHandleA(nullptr), exePath, std::size(exePath) - 1);
+    ExePath = exePath;
 
-    ExeName = std::filesystem::path(parentPath).filename().string();
+    int verInfoSz = GetFileVersionInfoSizeA(exePath, nullptr);
+    if(verInfoSz) 
+    {
+        auto verInfo = std::make_unique<BYTE[]>(verInfoSz);
+        if(GetFileVersionInfoA(exePath, 0, verInfoSz, verInfo.get())) 
+        {
+            struct 
+            {
+                WORD Language;
+                WORD CodePage;
+            } *pTranslations;
+
+            UINT transBytes = 0;
+            if(VerQueryValueA(verInfo.get(), "\\VarFileInfo\\Translation", reinterpret_cast<void**>(&pTranslations), &transBytes)) 
+            {
+                UINT dummy;
+                char* productName = nullptr;
+                char subBlock[64];
+                for(UINT i = 0; i < (transBytes / sizeof(*pTranslations)); i++)
+                {
+                    sprintf_s(subBlock, "\\StringFileInfo\\%04x%04x\\ProductName", pTranslations[i].Language, pTranslations[i].CodePage);
+                    if(VerQueryValueA(verInfo.get(), subBlock, reinterpret_cast<void**>(&productName), &dummy)) 
+                        if (strcmp(productName, "Cyberpunk 2077") == 0) 
+                        {
+                            ExeValid = true;
+                            break;
+                        }
+                }
+            }
+        }
+    }
+    // check if exe name matches in case previous check fails
+    ExeValid = ExeValid || (ExePath.filename() == "Cyberpunk2077.exe");
+
     if (!IsCyberpunk2077())
         return;
 
     Path = Path.parent_path().parent_path();
-
     Path /= "plugins";
     Path /= "cyber_engine_tweaks/";
 
@@ -99,7 +131,7 @@ Options::Options(HMODULE aModule)
 
 bool Options::IsCyberpunk2077() const noexcept
 {
-    return ExeName == "Cyberpunk2077.exe";
+    return ExeValid;
 }
 
 void Options::Initialize(HMODULE aModule)
