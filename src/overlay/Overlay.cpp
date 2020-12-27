@@ -370,11 +370,13 @@ Overlay::Overlay() = default;
 
 Overlay::~Overlay() 
 {
+    kiero::shutdown();
+
+    if (m_hWnd != nullptr)
+        SetWindowLongPtr(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(m_wndProc));
+
     if (m_initialized) 
     {
-        if (m_hWnd != nullptr)
-            SetWindowLongPtr(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(m_wndProc));
-            
         ImGui_ImplDX12_Shutdown();
         ImGui_ImplWin32_Shutdown();
         ImGui::DestroyContext();
