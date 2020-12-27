@@ -1,13 +1,10 @@
+#include <stdafx.h>
+
 #include "Overlay.h"
 
-#include <atlcomcli.h>
-#include <d3d12.h>
 #include <Image.h>
-#include <imgui.h>
-#include <MinHook.h>
 #include <Pattern.h>
 #include <kiero/kiero.h>
-#include <spdlog/spdlog.h>
 
 void Overlay::EarlyHooks(Image* apImage)
 {
@@ -190,9 +187,9 @@ void Overlay::ExecuteCommandListsD3D12(ID3D12CommandQueue* apCommandQueue, UINT 
     overlay.m_realExecuteCommandLists(apCommandQueue, NumCommandLists, ppCommandLists);
 }
 
-BOOL Overlay::ClipToCenter(CGameEngine::UnkC0* apThis)
+BOOL Overlay::ClipToCenter(RED4ext::REDreverse::CGameEngine::UnkC0* apThis)
 {
-    const HWND wnd = apThis->Wnd;
+    const HWND wnd = (HWND)apThis->hWnd;
     const HWND foreground = GetForegroundWindow();
 
     if(wnd == foreground && apThis->unk164 && !apThis->unk140 && !Get().IsEnabled())

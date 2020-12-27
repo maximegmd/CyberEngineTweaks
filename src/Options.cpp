@@ -1,8 +1,8 @@
+#include <stdafx.h>
+
 #include "Options.h"
-#include <nlohmann/json.hpp>
-#include <spdlog/spdlog.h>
+
 #include <spdlog/sinks/rotating_file_sink.h>
-#include <fstream>
 
 static std::unique_ptr<Options> s_instance;
 
@@ -52,7 +52,6 @@ Options::Options(HMODULE aModule)
         auto config = nlohmann::json::parse(configFile);
         this->PatchAVX = config.value("avx", this->PatchAVX);
         this->PatchSMT = config.value("smt", this->PatchSMT);
-        this->PatchMemoryPool = config.value("memory_pool", this->PatchMemoryPool);
         this->PatchVirtualInput = config.value("virtual_input", this->PatchVirtualInput);
         this->PatchEnableDebug = config.value("enable_debug", this->PatchEnableDebug);
         this->CPUMemoryPoolFraction = config.value("cpu_memory_pool_fraction", this->CPUMemoryPoolFraction);
@@ -79,7 +78,6 @@ Options::Options(HMODULE aModule)
     nlohmann::json config;
     config["avx"] = this->PatchAVX;
     config["smt"] = this->PatchSMT;
-    config["memory_pool"] = this->PatchMemoryPool;
     config["virtual_input"] = this->PatchVirtualInput;
     config["enable_debug"] = this->PatchEnableDebug;
     config["cpu_memory_pool_fraction"] = this->CPUMemoryPoolFraction;

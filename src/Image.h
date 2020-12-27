@@ -1,8 +1,5 @@
 #pragma once
 
-#include <cstdint>
-#include <tuple>
-
 struct Image
 {
 	void Initialize();

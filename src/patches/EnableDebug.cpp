@@ -1,8 +1,7 @@
+#include <stdafx.h>
+
 #include "Image.h"
-#include <spdlog/spdlog.h>
-#include <MinHook.h>
 #include "Pattern.h"
-#include "RED4ext/REDhash.hpp"
 
 using ScriptExecutionPointer = uint64_t;
 

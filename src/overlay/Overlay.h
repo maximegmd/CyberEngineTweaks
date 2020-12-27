@@ -1,16 +1,6 @@
 #pragma once
 
-#include <d3d12.h>
-#include <dxgi1_4.h>
-#include <mutex>
-#include <string>
-#include <windows.h>
-#include <unordered_map>
-#include <vector>
-
 #include "reverse/BasicTypes.h"
-#include "reverse/Engine.h"
-#include "RED4ext/REDreverse/CString.hpp"
 
 typedef TweakDBID TDBID;
 
@@ -21,7 +11,7 @@ struct UnknownString;
 using TPresentD3D12 = long(IDXGISwapChain3* pSwapChain, UINT SyncInterval, UINT Flags);
 using TExecuteCommandLists = void(ID3D12CommandQueue* apCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists);
 using TSetMousePosition = BOOL(void* apThis, HWND Wnd, long X, long Y);
-using TClipToCenter = HWND(CGameEngine::UnkC0* apThis);
+using TClipToCenter = HWND(RED4ext::REDreverse::CGameEngine::UnkC0* apThis);
 using TScriptCall = void(ScriptContext*, ScriptStack*, void*, void*);
 using TTDBIDCtor = TDBID*(TDBID*, const char*);
 using TTDBIDCtorCString = TDBID*(TDBID*, const RED4ext::REDreverse::CString*);
@@ -69,7 +59,7 @@ protected:
 	static long PresentD3D12(IDXGISwapChain3* pSwapChain, UINT SyncInterval, UINT Flags);
 	static void ExecuteCommandListsD3D12(ID3D12CommandQueue* apCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists);
 	static BOOL SetMousePosition(void* apThis, HWND Wnd, long X, long Y);
-	static BOOL ClipToCenter(CGameEngine::UnkC0* apThis);
+	static BOOL ClipToCenter(RED4ext::REDreverse::CGameEngine::UnkC0* apThis);
 	static LRESULT APIENTRY WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	static void HookLog(ScriptContext* apContext, ScriptStack* apStack, void*, void*);
 	static void HookLogChannel(ScriptContext* apContext, ScriptStack* apStack, void*, void*);

@@ -1,11 +1,4 @@
 #pragma once
-#include <vector>
-
-namespace RED4ext {
-	namespace REDreverse {
-		struct CString;
-	}
-}
 
 enum class GameOptionType : uint8_t
 {

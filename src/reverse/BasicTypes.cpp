@@ -1,8 +1,9 @@
+#include <stdafx.h>
+
 #include "BasicTypes.h"
 
 #include <spdlog/fmt/fmt.h>
 
-#include "RED4ext/REDreverse/CName.hpp"
 
 std::string Vector3::ToString() const noexcept
 {

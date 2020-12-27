@@ -1,19 +1,5 @@
 #pragma once
 
-#include <string>
-#include <sol/sol.hpp>
-
-namespace RED4ext {
-	namespace REDreverse {
-		namespace Scripting {
-			struct IScriptable;
-		}
-
-		struct CClass;
-		struct CClassFunction;
-	}
-}
-
 struct Type
 {
 	struct Descriptor

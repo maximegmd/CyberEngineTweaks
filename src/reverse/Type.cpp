@@ -1,16 +1,9 @@
+#include <stdafx.h>
+
 #include "Type.h"
 
-#include "Scripting.h"
-#include "RED4ext/Scripting.hpp"
-
-#include <vector>
-#include <spdlog/spdlog.h>
-#include <TiltedCore/ScratchAllocator.hpp>
-
-#include "Options.h"
-#include "RED4ext/REDreverse/Function.hpp"
+#include "scripting/Scripting.h"
 #include "overlay/Overlay.h"
-#include "RED4ext/REDreverse/CName.hpp"
 
 
 std::string Type::Descriptor::ToString() const

@@ -1,12 +1,8 @@
+#include <stdafx.h>
+
 #include "Overlay.h"
 
-#include <atlcomcli.h>
-#include <d3d12.h>
-#include <dxgi.h>
-#include <imgui.h>
-#include <Pattern.h>
 #include <kiero/kiero.h>
-#include <spdlog/spdlog.h>
 
 #include "imgui_impl_dx12.h"
 #include "imgui_impl_win32.h"

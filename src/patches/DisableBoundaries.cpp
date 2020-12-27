@@ -1,6 +1,6 @@
-#include <windows.h>
+#include <stdafx.h>
+
 #include "Image.h"
-#include <spdlog/spdlog.h>
 #include "Pattern.h"
 
 void DisableBoundaryTeleportPatch(Image* apImage)

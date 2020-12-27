@@ -1,8 +1,6 @@
-#include "SingletonReference.h"
-#include <RED4ext/REDreverse/Scripting/IScriptable.hpp>
+#include <stdafx.h>
 
-#include "RED4ext/REDreverse/GameEngine.hpp"
-#include "RED4ext/REDreverse/RTTI/RTTISystem.hpp"
+#include "SingletonReference.h"
 
 SingletonReference::SingletonReference(sol::state_view aView, RED4ext::REDreverse::CClass* apClass)
     : Type(std::move(aView), apClass)

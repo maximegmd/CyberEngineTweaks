@@ -1,5 +1,6 @@
+#include <stdafx.h>
+
 #include "StrongReference.h"
-#include <RED4ext/REDreverse/Scripting/IScriptable.hpp>
 
 StrongReference::StrongReference(sol::state_view aView, StrongHandle aStrongHandle)
     : Type(aView, aStrongHandle.handle->GetClass())

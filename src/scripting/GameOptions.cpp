@@ -1,10 +1,7 @@
-#include <string>
-#include <spdlog/spdlog.h>
-#include <sstream>
+#include <stdafx.h>
 
 #include "GameOptions.h"
 #include "overlay/Overlay.h"
-#include "RED4ext/REDreverse/CString.hpp"
 
 static std::vector<GameOption*> s_gameOptions;
 

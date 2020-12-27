@@ -1,5 +1,6 @@
+#include <stdafx.h>
+
 #include "Image.h"
-#include <spdlog/spdlog.h>
 
 void VirtualInputPatch(Image* apImage)
 {
