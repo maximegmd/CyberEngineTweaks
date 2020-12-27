@@ -1,9 +1,6 @@
 #pragma once
 
 #include "common/Meta.h"
-#include "RED4ext/REDreverse/RTTI/RTTISystem.hpp"
-#include "RED4ext/REDhash.hpp"
-#include "TiltedCore/Allocator.hpp"
 
 template<class T, FixedString REDName>
 struct LuaRED

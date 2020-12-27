@@ -1,8 +1,7 @@
-#include <MinHook.h>
+#include <stdafx.h>
+
 #include "Image.h"
-#include <spdlog/spdlog.h>
 #include "Pattern.h"
-#include "RED4ext/REDhash.hpp"
 
 using TInitScriptMemberVariable = void*(void* a1, void* a2, uint64_t a3, uint64_t nameHash, void* a5, void* a6, void* a7);
 TInitScriptMemberVariable* RealInitScriptMemberVariable = nullptr;

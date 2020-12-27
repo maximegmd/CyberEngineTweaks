@@ -1,5 +1,6 @@
+#include <stdafx.h>
+
 #include "Pattern.h"
-#include <spdlog/spdlog.h>
 
 #include "Options.h"
 

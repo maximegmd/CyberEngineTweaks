@@ -1,3 +1,5 @@
+#include <stdafx.h>
+
 #include "Utils.h"
 
 void ltrim(std::string& s)

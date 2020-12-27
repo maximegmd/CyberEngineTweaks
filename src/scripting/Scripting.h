@@ -1,23 +1,6 @@
 #pragma once
 
-#include <string>
-#include <sol/sol.hpp>
-
-#include "SingletonReference.h"
-#include "Type.h"
-#include "RED4ext/REDreverse/Scripting/StackFrame.hpp"
-
-namespace TiltedPhoques {
-	struct Allocator;
-}
-
-namespace RED4ext {
-	namespace REDreverse {
-		namespace Scripting {
-			struct IScriptable;
-		}
-	}
-}
+#include "reverse/SingletonReference.h"
 
 struct Scripting
 {
@@ -30,8 +13,10 @@ struct Scripting
 	static size_t Size(RED4ext::REDreverse::CRTTIBaseType* apRtti);
 	static sol::object ToLua(sol::state_view aState, RED4ext::REDreverse::CScriptableStackFrame::CStackType& aResult);
 	static RED4ext::REDreverse::CScriptableStackFrame::CStackType ToRED(sol::object aObject, RED4ext::REDreverse::CRTTIBaseType* apRtti, TiltedPhoques::Allocator* apAllocator);
-	
+
 protected:
+
+	void Initialize();
 
     sol::object Index(const std::string& acName);
     sol::object NewIndex(const std::string& acName, sol::object aParam);

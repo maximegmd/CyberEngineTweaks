@@ -20,7 +20,8 @@ target("RED4ext")
     add_includedirs("vendor/RED4ext/src/red4ext.sdk/", { public = true })
 
 target("cyber_engine_tweaks")
-    add_defines("KIERO_USE_MINHOOK=1", "KIERO_INCLUDE_D3D12=1")
+    add_defines("KIERO_USE_MINHOOK=1", "KIERO_INCLUDE_D3D12=1", "IMGUI_IMPL_WIN32_DISABLE_GAMEPAD")
+    -- set_pcxxheader("src/stdafx.h") -- see: https://github.com/xmake-io/xmake/issues/1171#issuecomment-751421178
     set_kind("shared")
     set_filename("cyber_engine_tweaks.asi")
     add_files("src/**.cpp")

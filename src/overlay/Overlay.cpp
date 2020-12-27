@@ -1,22 +1,16 @@
+#include <stdafx.h>
+
 #include "Overlay.h"
 
-#include <atlcomcli.h>
-#include <d3d12.h>
 #include <Image.h>
-#include <imgui.h>
-#include <memory>
 #include <Options.h>
 #include <Pattern.h>
 #include <kiero/kiero.h>
-#include <spdlog/spdlog.h>
-#include <RED4ext/REDhash.hpp>
 
 #include "imgui_impl_dx12.h"
 #include "imgui_impl_win32.h"
-#include "RED4ext/REDreverse/CString.hpp"
 #include "reverse/BasicTypes.h"
-#include "reverse/Engine.h"
-#include "reverse/Scripting.h"
+#include "scripting/Scripting.h"
 
 static std::shared_ptr<Overlay> s_pOverlay;
 
@@ -347,12 +341,6 @@ void Overlay::HookTDBIDToStringDEBUG(ScriptContext* apContext, ScriptStack* apSt
 
 void Overlay::Toggle()
 {
-    struct Singleton
-    {
-        uint8_t pad0[0xC0];
-        SomeStruct* pSomeStruct;
-    };
-
     m_enabled = !m_enabled;
 
     while(true)
@@ -363,7 +351,7 @@ void Overlay::Toggle()
             break;
     }
 
-    ClipToCenter(CGameEngine::Get()->pSomeStruct);
+    ClipToCenter(RED4ext::REDreverse::CGameEngine::Get()->unkC0);
 }
 
 bool Overlay::IsEnabled() const

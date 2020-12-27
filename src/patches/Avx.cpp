@@ -1,10 +1,4 @@
-#include <SDKDDKVer.h>
-#define WIN32_LEAN_AND_MEAN
-#include <cstdint>
-#include <windows.h>
-#include <DbgHelp.h>
-#include <bitset>
-#include <spdlog/spdlog.h>
+#include <stdafx.h>
 
 #include "Image.h"
 

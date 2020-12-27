@@ -1,12 +1,7 @@
-#include <SDKDDKVer.h>
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <DbgHelp.h>
-#include <spdlog/spdlog.h>
+#include <stdafx.h>
+
 #include <kiero/kiero.h>
 #include <overlay/Overlay.h>
-#include <MinHook.h>
-#include <thread>
 
 #include "Image.h"
 #include "Options.h"
@@ -14,13 +9,10 @@
 #pragma comment( lib, "dbghelp.lib" )
 #pragma comment(linker, "/DLL")
 
-void PoolPatch(Image* apImage);
 void EnableDebugPatch(Image* apImage);
 void VirtualInputPatch(Image* apImage);
 void SmtAmdPatch(Image* apImage);
 void PatchAvx(Image* apImage);
-void StringInitializerPatch(Image* apImage);
-void SpinLockPatch(Image* apImage);
 void StartScreenPatch(Image* apImage);
 void RemovePedsPatch(Image* apImage);
 void OptionsPatch(Image* apImage);
@@ -44,9 +36,6 @@ void Initialize(HMODULE mod)
 
     if (options.PatchAVX && options.GameImage.version <= Image::MakeVersion(1, 4))
         PatchAvx(&options.GameImage);
-
-    if(options.PatchMemoryPool && options.GameImage.version <= Image::MakeVersion(1,4))
-        PoolPatch(&options.GameImage);
 
     if (options.PatchVirtualInput)
         VirtualInputPatch(&options.GameImage);
@@ -98,7 +87,13 @@ void Initialize(HMODULE mod)
 
 void Shutdown()
 {
+    if(Options::Get().Console)
+        Overlay::Shutdown();
+
     kiero::shutdown();
+
+    MH_DisableHook(MH_ALL_HOOKS);
+    MH_Uninitialize();
 }
 
 BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID) 

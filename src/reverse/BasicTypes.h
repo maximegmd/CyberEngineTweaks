@@ -1,15 +1,4 @@
 #pragma once
-#include <string>
-
-#include "RED4ext/REDhash.hpp"
-
-namespace RED4ext {
-	namespace REDreverse {
-		namespace Scripting {
-			struct IScriptable;
-		}
-	}
-}
 
 struct Vector3
 {

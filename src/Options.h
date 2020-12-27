@@ -1,7 +1,5 @@
 #pragma once
 
-#include <windows.h>
-#include <filesystem>
 #include "Image.h"
 
 struct Options
@@ -14,7 +12,6 @@ struct Options
 	bool PatchSMT{ false };
 	bool PatchAVX{ true };
 	bool PatchVirtualInput{ true };
-	bool PatchMemoryPool{ true };
 	bool PatchEnableDebug{ false };
 	bool PatchRemovePedestrians{ false };
 	bool PatchAsyncCompute{ false };

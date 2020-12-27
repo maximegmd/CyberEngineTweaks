@@ -1,7 +1,6 @@
+#include <stdafx.h>
+
 #include "Image.h"
-#include <windows.h>
-#include <spdlog/spdlog.h>
-#include <dbghelp.h>
 
 struct PdbInfo
 {

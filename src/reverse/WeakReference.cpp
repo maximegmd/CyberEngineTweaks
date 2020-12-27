@@ -1,5 +1,6 @@
+#include <stdafx.h>
+
 #include "WeakReference.h"
-#include <RED4ext/REDreverse/Scripting/IScriptable.hpp>
 
 WeakReference::WeakReference(sol::state_view aView, WeakHandle aWeakHandle)
     : Type(aView, aWeakHandle.handle->GetClass())

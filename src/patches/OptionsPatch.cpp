@@ -1,10 +1,9 @@
+#include <stdafx.h>
+
 #include "Image.h"
-#include <spdlog/spdlog.h>
-#include <MinHook.h>
-#include <sstream>
 #include "Options.h"
 #include "Pattern.h"
-#include "reverse/GameOptions.h"
+#include "scripting/GameOptions.h"
 
 bool HookGameOptionGetBoolean(GameOption* apThis, uint8_t* apVariable, GameOptionType aType)
 {
