@@ -108,8 +108,6 @@ void Overlay::DrawImgui(IDXGISwapChain3* apSwapChain)
         ImGui::Text("Unknown version, please update your game and the mod");
 
     ImGui::End();
-
-    ImGui::Render();
 }
 
 LRESULT APIENTRY Overlay::WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -137,8 +135,9 @@ LRESULT APIENTRY Overlay::WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
 
     if (s_pOverlay->IsEnabled())
     {
-        if (ImGui_ImplWin32_WndProcHandler(hwnd, uMsg, wParam, lParam))
-            return 1;
+        LRESULT ret = ImGui_ImplWin32_WndProcHandler(hwnd, uMsg, wParam, lParam);
+        if (ret)
+            return ret;
 
         // ignore mouse & keyboard events
         if ((uMsg >= WM_MOUSEFIRST && uMsg <= WM_MOUSELAST) ||
@@ -357,7 +356,7 @@ void Overlay::Toggle()
 
 bool Overlay::IsEnabled() const
 {
-    return m_enabled;
+    return m_initialized && m_enabled;
 }
 
 void Overlay::Log(const std::string& acpText)
@@ -369,4 +368,15 @@ void Overlay::Log(const std::string& acpText)
 
 Overlay::Overlay() = default;
 
-Overlay::~Overlay() = default;
+Overlay::~Overlay() 
+{
+    if (m_initialized) 
+    {
+        if (m_hWnd != nullptr)
+            SetWindowLongPtr(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(m_wndProc));
+            
+        ImGui_ImplDX12_Shutdown();
+        ImGui_ImplWin32_Shutdown();
+        ImGui::DestroyContext();
+    }
+}
