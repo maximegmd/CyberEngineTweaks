@@ -38,7 +38,7 @@ Works with 1.04, 1.05 and 1.06.
 
 If you wish to contribute to the main repo, try to follow the coding style in the code, otherwise not much to say, don't use code that is not yours unless the license is compatible with MIT.
 
-As for the wiki, please make a pull request [here](https://github.com/yamashi/CyberEngineTweaksWiki/) and once accepted I will push it to this repo's wiki.
+As for the wiki, please ask on discord for write permissions.
 
 ## Credits
 
