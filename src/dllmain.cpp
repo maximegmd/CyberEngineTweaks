@@ -90,8 +90,6 @@ void Shutdown()
     if(Options::Get().Console)
         Overlay::Shutdown();
 
-    kiero::shutdown();
-
     MH_DisableHook(MH_ALL_HOOKS);
     MH_Uninitialize();
 }
@@ -100,16 +98,16 @@ BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID)
 {
     DisableThreadLibraryCalls(mod);
 
-    switch(ul_reason_for_call) {
-    case DLL_PROCESS_ATTACH:
-        Initialize(mod);
-        break;
-
-    case DLL_PROCESS_DETACH:
-        Shutdown();
-        break;
-    default:
-        break;
+    switch(ul_reason_for_call) 
+    {
+        case DLL_PROCESS_ATTACH:
+            Initialize(mod);
+            break;
+        case DLL_PROCESS_DETACH:
+            Shutdown();
+            break;
+        default:
+            break;
     }
 
     return TRUE;
