@@ -378,48 +378,48 @@ kiero::Status::Enum kiero::init(RenderType::Enum _renderType)
 					return Status::ModuleNotFoundError;
 				}
 
-                if ((libD3D12 = ::GetModuleHandle(KIERO_TEXT("d3d12.dll"))) == NULL)
-                {
-                    if ((libD3D12 = ::LoadLibraryEx(KIERO_TEXT("d3d12.dll"), NULL, LOAD_LIBRARY_SEARCH_SYSTEM32)) == NULL)
-                    {
-                        const char* localD3d12Paths[] =
-                        {
-                            KIERO_TEXT(".\\d3d12.dll"),
-                            KIERO_TEXT(".\\d3d12on7\\d3d12.dll"),
-                            KIERO_TEXT(".\\12on7\\d3d12.dll")
-                        };
+				if ((libD3D12 = ::GetModuleHandle(KIERO_TEXT("d3d12.dll"))) == NULL)
+				{
+					if ((libD3D12 = ::LoadLibraryEx(KIERO_TEXT("d3d12.dll"), NULL, LOAD_LIBRARY_SEARCH_SYSTEM32)) == NULL)
+					{
+						const char* localD3d12Paths[] =
+						{
+							KIERO_TEXT(".\\d3d12.dll"),
+							KIERO_TEXT(".\\d3d12on7\\d3d12.dll"),
+							KIERO_TEXT(".\\12on7\\d3d12.dll")
+						};
 
-                        for (uint32_t i = 0; i < KIERO_ARRAY_SIZE(localD3d12Paths); i++)
-                        {
-                            libD3D12 = LoadLibrary(localD3d12Paths[i]);
-                            if (libD3D12 != NULL)
-                                break;
-                        }
+						for (uint32_t i = 0; i < KIERO_ARRAY_SIZE(localD3d12Paths); i++)
+						{
+							libD3D12 = LoadLibrary(localD3d12Paths[i]);
+							if (libD3D12 != NULL)
+								break;
+						}
 
-                        if (libD3D12 == NULL)
-                        {
-                            ::DestroyWindow(window);
-                            ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
-                            return Status::ModuleNotFoundError;
-                        }
-                    }
-                }
+						if (libD3D12 == NULL)
+						{
+							::DestroyWindow(window);
+							::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
+							return Status::ModuleNotFoundError;
+						}
+					}
+				}
 
-                void* CreateDXGIFactory;
-                if ((CreateDXGIFactory = ::GetProcAddress(libDXGI, "CreateDXGIFactory")) == NULL)
-                {
-                    ::DestroyWindow(window);
-                    ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
-                    return Status::UnknownError;
-                }
+				void* CreateDXGIFactory;
+				if ((CreateDXGIFactory = ::GetProcAddress(libDXGI, "CreateDXGIFactory")) == NULL)
+				{
+					::DestroyWindow(window);
+					::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
+					return Status::UnknownError;
+				}
 
-                IDXGIFactory* factory;
-                if (((long(__stdcall*)(const IID&, void**))(CreateDXGIFactory))(__uuidof(IDXGIFactory), (void**)&factory) < 0)
-                {
-                    ::DestroyWindow(window);
-                    ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
-                    return Status::UnknownError;
-                }
+				IDXGIFactory* factory;
+				if (((long(__stdcall*)(const IID&, void**))(CreateDXGIFactory))(__uuidof(IDXGIFactory), (void**)&factory) < 0)
+				{
+					::DestroyWindow(window);
+					::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
+					return Status::UnknownError;
+				}
 
 				IDXGIAdapter* adapter;
 				if (factory->EnumAdapters(0, &adapter) == DXGI_ERROR_NOT_FOUND)
@@ -429,21 +429,21 @@ kiero::Status::Enum kiero::init(RenderType::Enum _renderType)
 					return Status::UnknownError;
 				}
 
-                void* D3D12CreateDevice;
-                if ((D3D12CreateDevice = ::GetProcAddress(libD3D12, "D3D12CreateDevice")) == NULL)
-                {
-                    ::DestroyWindow(window);
-                    ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
-                    return Status::UnknownError;
-                }
+				void* D3D12CreateDevice;
+				if ((D3D12CreateDevice = ::GetProcAddress(libD3D12, "D3D12CreateDevice")) == NULL)
+				{
+					::DestroyWindow(window);
+					::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
+					return Status::UnknownError;
+				}
 
-                ID3D12Device* device;
-                if (((long(__stdcall*)(IUnknown*, D3D_FEATURE_LEVEL, const IID&, void**))(D3D12CreateDevice))(adapter, D3D_FEATURE_LEVEL_11_0, __uuidof(ID3D12Device), (void**)&device) < 0)
-                {
-                    ::DestroyWindow(window);
-                    ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
-                    return Status::UnknownError;
-                }
+				ID3D12Device* device;
+				if (((long(__stdcall*)(IUnknown*, D3D_FEATURE_LEVEL, const IID&, void**))(D3D12CreateDevice))(adapter, D3D_FEATURE_LEVEL_11_0, __uuidof(ID3D12Device), (void**)&device) < 0)
+				{
+					::DestroyWindow(window);
+					::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
+					return Status::UnknownError;
+				}
 
 				D3D12_COMMAND_QUEUE_DESC queueDesc;
 				queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
@@ -477,7 +477,7 @@ kiero::Status::Enum kiero::init(RenderType::Enum _renderType)
 
 				ID3D12DeviceDownlevel* downlevelDevice;
 				g_isDownLevelDevice = device->QueryInterface(__uuidof(ID3D12DeviceDownlevel), (void**)&downlevelDevice) >= 0;
-                IDXGISwapChain* swapChain = NULL;
+				IDXGISwapChain* swapChain = NULL;
 				ID3D12CommandQueueDownlevel* commandQueueDownlevel = NULL;
 
 				if (!g_isDownLevelDevice)
@@ -515,27 +515,27 @@ kiero::Status::Enum kiero::init(RenderType::Enum _renderType)
 						return Status::UnknownError;
 					}
 
-	                auto valueToFind = reinterpret_cast<uintptr_t>(commandQueue);
-	                auto* swapChainPtr = reinterpret_cast<uintptr_t*>(swapChain);
+					auto valueToFind = reinterpret_cast<uintptr_t>(commandQueue);
+					auto* swapChainPtr = reinterpret_cast<uintptr_t*>(swapChain);
 
-	                auto addr = std::find(swapChainPtr, swapChainPtr + 512, valueToFind);
+					auto addr = std::find(swapChainPtr, swapChainPtr + 512, valueToFind);
 
-	                g_commandQueueOffset = reinterpret_cast<uintptr_t>(addr) - reinterpret_cast<uintptr_t>(swapChainPtr);
+					g_commandQueueOffset = reinterpret_cast<uintptr_t>(addr) - reinterpret_cast<uintptr_t>(swapChainPtr);
 				}
-                else
-                {
-                	if (commandQueue->QueryInterface(__uuidof(ID3D12CommandQueueDownlevel), (void**)&commandQueueDownlevel) < 0)
-                	{
-                		::DestroyWindow(window);
+				else
+				{
+					if (commandQueue->QueryInterface(__uuidof(ID3D12CommandQueueDownlevel), (void**)&commandQueueDownlevel) < 0)
+					{
+						::DestroyWindow(window);
 						::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
 						return Status::UnknownError;
-                	}
-                	
-	                auto* commandQueueDownlevelPtr = reinterpret_cast<uintptr_t*>(commandQueueDownlevel);
-	                auto addr = std::find(commandQueueDownlevelPtr, commandQueueDownlevelPtr + 512, reinterpret_cast<uintptr_t>(commandQueue));
+					}
+					
+					auto* commandQueueDownlevelPtr = reinterpret_cast<uintptr_t*>(commandQueueDownlevel);
+					auto addr = std::find(commandQueueDownlevelPtr, commandQueueDownlevelPtr + 512, reinterpret_cast<uintptr_t>(commandQueue));
 
-	                g_commandQueueOffset = reinterpret_cast<uintptr_t>(addr) - reinterpret_cast<uintptr_t>(commandQueueDownlevelPtr);
-                }
+					g_commandQueueOffset = reinterpret_cast<uintptr_t>(addr) - reinterpret_cast<uintptr_t>(commandQueueDownlevelPtr);
+				}
 
 				g_methodsTable = (uint150_t*)::calloc(150, sizeof(uint150_t));
 				::memcpy(g_methodsTable, *(uint150_t**)device, 44 * sizeof(uint150_t));
@@ -544,7 +544,7 @@ kiero::Status::Enum kiero::init(RenderType::Enum _renderType)
 				::memcpy(g_methodsTable + 44 + 19 + 9, *(uint150_t**)commandList, 60 * sizeof(uint150_t));
 				if (swapChain != NULL)
 					::memcpy(g_methodsTable + 44 + 19 + 9 + 60, *(uint150_t**)swapChain, 18 * sizeof(uint150_t));
-                else if (commandQueueDownlevel != NULL)
+				else if (commandQueueDownlevel != NULL)
 					::memcpy(g_methodsTable + 44 + 19 + 9 + 60, *(uint150_t**)commandQueueDownlevel, 4 * sizeof(uint150_t));
 
 #if KIERO_USE_MINHOOK
@@ -800,7 +800,7 @@ uint150_t* kiero::getMethodsTable()
 
 uintptr_t kiero::getCommandQueueOffset()
 {
-    return g_commandQueueOffset;
+	return g_commandQueueOffset;
 }
 
 bool kiero::isDownLevelDevice()
