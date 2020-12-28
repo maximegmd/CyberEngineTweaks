@@ -149,10 +149,50 @@ long Overlay::PresentD3D12(IDXGISwapChain3* pSwapChain, UINT SyncInterval, UINT 
 {
     auto& overlay = Get();
 
-    if (overlay.InitializeD3D12(pSwapChain)) 
+    if (overlay.InitializeD3D12(pSwapChain))
         overlay.Render(pSwapChain);
     
     return overlay.m_realPresentD3D12(pSwapChain, SyncInterval, Flags);
+}
+
+HRESULT Overlay::PresentD3D12Downlevel(ID3D12CommandQueueDownlevel* pCommandQueueDownlevel, ID3D12GraphicsCommandList* pOpenCommandList, ID3D12Resource* pSourceTex2D, HWND hWindow, D3D12_DOWNLEVEL_PRESENT_FLAGS Flags)
+{
+    auto& overlay = Get();
+
+    if (overlay.InitializeD3D12Downlevel(overlay.m_pCommandQueue, pSourceTex2D))
+        overlay.Render(nullptr);
+
+    return overlay.m_realPresentD3D12Downlevel(pCommandQueueDownlevel, pOpenCommandList, pSourceTex2D, hWindow, Flags);
+}
+
+HRESULT Overlay::CreateCommittedResourceD3D12(ID3D12Device* pDevice, const D3D12_HEAP_PROPERTIES* pHeapProperties, D3D12_HEAP_FLAGS HeapFlags, const D3D12_RESOURCE_DESC* pDesc,
+    D3D12_RESOURCE_STATES InitialResourceState, const D3D12_CLEAR_VALUE* pOptimizedClearValue, const IID* riidResource, void** ppvResource)
+{
+    auto& overlay = Get();
+
+    // Check if this is a backbuffer resource being created
+    bool isBackBuffer = false;
+    if (pHeapProperties != NULL && pHeapProperties->Type == D3D12_HEAP_TYPE_DEFAULT && HeapFlags == D3D12_HEAP_FLAG_NONE &&
+        pDesc != NULL && pDesc->Flags == D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET && InitialResourceState == D3D12_RESOURCE_STATE_COMMON &&
+        pOptimizedClearValue == NULL && riidResource != NULL && IsEqualGUID(*riidResource, __uuidof(ID3D12Resource)))
+    {
+        spdlog::debug("\tOverlay::CreateCommittedResourceD3D12() - found valid backbuffer target.");
+        isBackBuffer = true;
+    }
+
+    HRESULT result = overlay.m_realCreateCommittedResource(pDevice, pHeapProperties, HeapFlags, pDesc, InitialResourceState, pOptimizedClearValue, riidResource, ppvResource);
+
+    if (SUCCEEDED(result) && isBackBuffer)
+    {
+        // Store the returned resource
+        overlay.m_downlevelBackbuffers.emplace_back(static_cast<ID3D12Resource*>(*ppvResource));
+    }
+
+    // If D3D12 has been initialized, there is no need to continue hooking this function since the backbuffers are only created once.
+    if (overlay.m_initialized)
+        kiero::unbind(27);
+
+    return result;
 }
 
 void Overlay::ExecuteCommandListsD3D12(ID3D12CommandQueue* apCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists)
@@ -167,7 +207,7 @@ void Overlay::ExecuteCommandListsD3D12(ID3D12CommandQueue* apCommandQueue, UINT 
             spdlog::info("\tOverlay::ExecuteCommandListsD3D12() - found valid command queue.");
         }
         else 
-            spdlog::error("\tOverlay::ExecuteCommandListsD3D12() - invalid type of command list!");
+            spdlog::info("\tOverlay::ExecuteCommandListsD3D12() - ignoring unusable command list type");
     }
 
     overlay.m_realExecuteCommandLists(apCommandQueue, NumCommandLists, ppCommandLists);
@@ -206,10 +246,24 @@ void Overlay::Hook()
 {
     // D3D12 hook
     int d3d12FailedHooksCount = 0;
-    if (kiero::bind(140, reinterpret_cast<void**>(&m_realPresentD3D12), &PresentD3D12) != kiero::Status::Success) 
+
+    if (!kiero::isDownLevelDevice() && kiero::bind(140, reinterpret_cast<void**>(&m_realPresentD3D12), &PresentD3D12) != kiero::Status::Success) 
     {
         spdlog::error("\tD3D12 Present hook failed!");
         ++d3d12FailedHooksCount;
+    }
+    else if (kiero::isDownLevelDevice())
+    {
+        if (kiero::bind(135, reinterpret_cast<void**>(&m_realPresentD3D12Downlevel), &PresentD3D12Downlevel) != kiero::Status::Success)
+        {
+            spdlog::error("\tD3D12On7 Downlevel Present Hook failed!");
+            ++d3d12FailedHooksCount;
+        }
+        if (kiero::bind(27, reinterpret_cast<void**>(&m_realCreateCommittedResource), &CreateCommittedResourceD3D12) != kiero::Status::Success)
+        {
+            spdlog::error("\tD3D12On7 CreateCommittedResource Hook failed!");
+            ++d3d12FailedHooksCount;
+        }
     }
 
     if (kiero::bind(54, reinterpret_cast<void**>(&m_realExecuteCommandLists), &ExecuteCommandListsD3D12) != kiero::Status::Success)
@@ -223,4 +277,3 @@ void Overlay::Hook()
     else 
         spdlog::error("\tD3D12 hook failed!");
 }
-
