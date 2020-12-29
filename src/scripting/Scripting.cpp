@@ -41,24 +41,24 @@ bool Scripting::ExecuteLua(const std::string& aCommand)
     return true;
 }
 
-size_t Scripting::Size(RED4ext::REDreverse::CRTTIBaseType* apRtti)
+size_t Scripting::Size(RED4ext::IRTTIType* apRtti)
 {
-    static auto* pRtti = RED4ext::REDreverse::CRTTISystem::Get();
+    static auto* pRtti = RED4ext::CRTTISystem::Get();
     static auto* pStringType = pRtti->GetType(RED4ext::FNV1a("String"));
 
     if (apRtti == pStringType)
-        return sizeof(RED4ext::REDreverse::CString);
-    if (apRtti->GetType() == RED4ext::REDreverse::RTTIType::Handle)
+        return sizeof(RED4ext::CString);
+    if (apRtti->GetType() == RED4ext::ERTTIType::Handle)
         return sizeof(StrongHandle);
-    if (apRtti->GetType() == RED4ext::REDreverse::RTTIType::WeakHandle)
+    if (apRtti->GetType() == RED4ext::ERTTIType::WeakHandle)
         return sizeof(WeakHandle);
 
     return Converter::Size(apRtti);
 }
 
-sol::object Scripting::ToLua(sol::state_view aState, RED4ext::REDreverse::CScriptableStackFrame::CStackType& aResult)
+sol::object Scripting::ToLua(sol::state_view aState, RED4ext::CStackType& aResult)
 {
-    static auto* pRtti = RED4ext::REDreverse::CRTTISystem::Get();
+    static auto* pRtti = RED4ext::CRTTISystem::Get();
     static auto* pStringType = pRtti->GetType(RED4ext::FNV1a("String"));
 
     auto* pType = aResult.type;
@@ -66,32 +66,32 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::REDreverse::CScrip
     if (pType == nullptr)
         return sol::nil;
     if (pType == pStringType)
-        return make_object(aState, std::string(static_cast<RED4ext::REDreverse::CString*>(aResult.value)->ToString()));
-    if (pType->GetType() == RED4ext::REDreverse::RTTIType::Handle)
+        return make_object(aState, std::string(static_cast<RED4ext::CString*>(aResult.value)->c_str()));
+    if (pType->GetType() == RED4ext::ERTTIType::Handle)
     {
         const auto handle = *static_cast<StrongHandle*>(aResult.value);
         if (handle.handle)
             return make_object(aState, StrongReference(aState, handle));
     }
-    else if (pType->GetType() == RED4ext::REDreverse::RTTIType::WeakHandle)
+    else if (pType->GetType() == RED4ext::ERTTIType::WeakHandle)
     {
         const auto handle = *static_cast<WeakHandle*>(aResult.value);
         if (handle.handle)
             return make_object(aState, WeakReference(aState, handle));
     }
-    else if (pType->GetType() == RED4ext::REDreverse::RTTIType::Array)
+    else if (pType->GetType() == RED4ext::ERTTIType::Array)
     {
-        auto* pArrayType = static_cast<RED4ext::REDreverse::CArray*>(pType);
+        auto* pArrayType = static_cast<RED4ext::CArray*>(pType);
         const auto arrayHandle = *static_cast<Array<uint8_t>*>(aResult.value);
         std::vector<sol::object> result;
         for(auto i = 0u; i < arrayHandle.count; ++i)
         {
-            RED4ext::REDreverse::CScriptableStackFrame::CStackType el;
+            RED4ext::CStackType el;
             el.value = arrayHandle.entries + i * Size(pArrayType);
-            el.type = pArrayType->heldType;
+            el.type = pArrayType->GetInnerType();
 
-            uint64_t hash;
-            pArrayType->heldType->GetName(&hash);
+            RED4ext::CName hash;
+            pArrayType->GetInnerType()->GetName(hash);
 
             result.emplace_back(ToLua(aState, el));
         }
@@ -104,11 +104,11 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::REDreverse::CScrip
         if (result != sol::nil)
             return result;
 
-        uint64_t hash = 0;
-        pType->GetName(&hash);
+        RED4ext::CName hash;
+        pType->GetName(hash);
         if (hash)
         {
-            const std::string typeName = RED4ext::REDreverse::CName::ToString(hash);
+            const std::string typeName = hash.ToString();
             Overlay::Get().Log("Unhandled return type: " + typeName + " type : " + std::to_string((uint32_t)pType->GetType()));
         }
     }
@@ -116,12 +116,12 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::REDreverse::CScrip
     return sol::nil;
 }
 
-RED4ext::REDreverse::CScriptableStackFrame::CStackType Scripting::ToRED(sol::object aObject, RED4ext::REDreverse::CRTTIBaseType* apRtti, TiltedPhoques::Allocator* apAllocator)
+RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator)
 {
-    static auto* pRtti = RED4ext::REDreverse::CRTTISystem::Get();
+    static auto* pRtti = RED4ext::CRTTISystem::Get();
     static auto* pStringType = pRtti->GetType(RED4ext::FNV1a("String"));
 
-    RED4ext::REDreverse::CScriptableStackFrame::CStackType result;
+    RED4ext::CStackType result;
 
     bool hasData = aObject != sol::nil;
 
@@ -137,17 +137,17 @@ RED4ext::REDreverse::CScriptableStackFrame::CStackType Scripting::ToRED(sol::obj
                 sol::state_view v(aObject.lua_state());
                 str = v["tostring"](aObject);
             }
-            result.value = apAllocator->New<RED4ext::REDreverse::CString>(str.c_str());
+            result.value = apAllocator->New<RED4ext::CString>(str.c_str());
         }
-        else if (apRtti->GetType() == RED4ext::REDreverse::RTTIType::Handle)
+        else if (apRtti->GetType() == RED4ext::ERTTIType::Handle)
         {
             if (aObject.is<StrongReference>())
             {
-                auto* pSubType = static_cast<RED4ext::REDreverse::CClass*>(apRtti)->parent;
-                RED4ext::REDreverse::CRTTIBaseType* pType = aObject.as<StrongReference*>()->m_pType;
+                auto* pSubType = static_cast<RED4ext::CClass*>(apRtti)->parent;
+                RED4ext::IRTTIType* pType = aObject.as<StrongReference*>()->m_pType;
                 while (pType != nullptr && pType != pSubType)
                 {
-                    pType = static_cast<RED4ext::REDreverse::CClass*>(pType)->parent;
+                    pType = static_cast<RED4ext::CClass*>(pType)->parent;
                 }
 
                 if (pType != nullptr)
@@ -159,15 +159,15 @@ RED4ext::REDreverse::CScriptableStackFrame::CStackType Scripting::ToRED(sol::obj
                 }
             }
         }
-        else if (apRtti->GetType() == RED4ext::REDreverse::RTTIType::WeakHandle)
+        else if (apRtti->GetType() == RED4ext::ERTTIType::WeakHandle)
         {
             if (aObject.is<WeakReference>())
             {
-                auto* pSubType = static_cast<RED4ext::REDreverse::CClass*>(apRtti)->parent;
-                RED4ext::REDreverse::CRTTIBaseType* pType = aObject.as<WeakReference*>()->m_pType;
+                auto* pSubType = static_cast<RED4ext::CClass*>(apRtti)->parent;
+                RED4ext::IRTTIType* pType = aObject.as<WeakReference*>()->m_pType;
                 while (pType != nullptr && pType != pSubType)
                 {
-                    pType = static_cast<RED4ext::REDreverse::CClass*>(pType)->parent;
+                    pType = static_cast<RED4ext::CClass*>(pType)->parent;
                 }
 
                 if (pType != nullptr)
@@ -179,7 +179,7 @@ RED4ext::REDreverse::CScriptableStackFrame::CStackType Scripting::ToRED(sol::obj
                 }
             }
         }
-        else if (apRtti->GetType() == RED4ext::REDreverse::RTTIType::Array)
+        else if (apRtti->GetType() == RED4ext::ERTTIType::Array)
         {
             if (!hasData)
                 result.value = apAllocator->New<Array<void*>>();
@@ -371,9 +371,9 @@ void Scripting::Initialize()
 
     m_lua["DumpType"] = [this](const std::string& acName)
     {
-        auto* pRtti = RED4ext::REDreverse::CRTTISystem::Get();
-        auto* pType = pRtti->GetType<RED4ext::REDreverse::CClass*>(RED4ext::FNV1a(acName));
-        if (!pType || pType->GetType() == RED4ext::REDreverse::RTTIType::Simple)
+        auto* pRtti = RED4ext::CRTTISystem::Get();
+        auto* pType = pRtti->GetClass(RED4ext::FNV1a(acName.c_str()));
+        if (!pType || pType->GetType() == RED4ext::ERTTIType::Simple)
             return Type::Descriptor();
 
         Type type(m_lua, pType);
@@ -422,8 +422,8 @@ sol::object Scripting::GetSingletonHandle(const std::string& acName)
     if (itor != std::end(m_singletons))
         return make_object(m_lua, itor->second);
 
-    auto* pRtti = RED4ext::REDreverse::CRTTISystem::Get();
-    auto* pType = pRtti->GetType<RED4ext::REDreverse::CClass*>(RED4ext::FNV1a(acName));
+    auto* pRtti = RED4ext::CRTTISystem::Get();
+    auto* pType = pRtti->GetClass(RED4ext::FNV1a(acName.c_str()));
     if (!pType)
     {
         Overlay::Get().Log("Type '" + acName + "' not found or is not initialized yet.");
@@ -453,15 +453,15 @@ sol::protected_function Scripting::InternalIndex(const std::string& acName)
 
 sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args aArgs, sol::this_environment env, sol::this_state L, std::string& aReturnMessage)
 {
-    auto* pRtti = RED4ext::REDreverse::CRTTISystem::Get();
+    auto* pRtti = RED4ext::CRTTISystem::Get();
 
-    RED4ext::REDreverse::CBaseFunction* pFunc = pRtti->GetGlobalFunction(RED4ext::FNV1a(aFuncName.c_str()));
+    RED4ext::CBaseFunction* pFunc = pRtti->GetFunction(RED4ext::FNV1a(aFuncName.c_str()));
 
     static const auto hashcpPlayerSystem = RED4ext::FNV1a("cpPlayerSystem");
     static const auto hashGameInstance = RED4ext::FNV1a("ScriptGameInstance");
 
-    auto* pPlayerSystem = pRtti->GetType<RED4ext::REDreverse::CClass*>(hashcpPlayerSystem);
-    auto* gameInstanceType = pRtti->GetType<RED4ext::REDreverse::CClass*>(hashGameInstance);
+    auto* pPlayerSystem = pRtti->GetClass(hashcpPlayerSystem);
+    auto* gameInstanceType = pRtti->GetClass(hashGameInstance);
 
     if (!pFunc)
     {
@@ -483,13 +483,13 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
         return sol::nil;
     }
 
-    const auto* engine = RED4ext::REDreverse::CGameEngine::Get();
+    const auto* engine = RED4ext::CGameEngine::Get();
     auto* unk10 = engine->framework->gameInstance;
 
-    using CStackType = RED4ext::REDreverse::CScriptableStackFrame::CStackType;
+    using CStackType = RED4ext::CStackType;
     std::vector<CStackType> args(aArgs.size() + 1);
 
-    args[0].type = pFunc->params.arr[0]->type;
+    args[0].type = pFunc->params[0]->type;
     args[0].value = &unk10;
 
     // 8KB should cut it
@@ -505,17 +505,17 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
 
     for (auto i = 0ull; i < aArgs.size(); ++i)
     {
-        args[i + 1ull] = ToRED(aArgs[i].get<sol::object>(), pFunc->params.arr[i + 1ull]->type, &s_scratchMemory);
+        args[i + 1ull] = ToRED(aArgs[i].get<sol::object>(), pFunc->params[i + 1ull]->type, &s_scratchMemory);
 
         if(!args[i + 1ull].value)
         {
-            auto* pType = pFunc->params.arr[i + 1]->type;
+            auto* pType = pFunc->params[i + 1]->type;
 
-            uint64_t hash = 0;
-            pType->GetName(&hash);
-            if (hash)
+            RED4ext::CName name;
+            pType->GetName(name);
+            if (name)
             {
-                const auto typeName = RED4ext::REDreverse::CName::ToString(hash);
+                const auto typeName = name.ToString();
                 aReturnMessage = "Function '" + aFuncName + "' parameter " + std::to_string(i) + " must be " + typeName + ".";
             }
 
@@ -523,24 +523,21 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
         }
     }
 
-    const bool hasReturnType = (pFunc->returnType) != nullptr && (*pFunc->returnType) != nullptr;
+    const bool hasReturnType = (pFunc->returnType) != nullptr && (pFunc->returnType->type) != nullptr;
 
     uint8_t buffer[1000]{ 0 };
     CStackType result;
     if (hasReturnType)
     {
         result.value = &buffer;
-        result.type = *pFunc->returnType;
+        result.type = pFunc->returnType->type;
     }
 
-    std::aligned_storage_t<sizeof(RED4ext::REDreverse::CScriptableStackFrame), alignof(RED4ext::REDreverse::CScriptableStackFrame)> stackStore;
-    auto* stack = reinterpret_cast<RED4ext::REDreverse::CScriptableStackFrame*>(&stackStore);
+    auto* pScriptable = static_cast<RED4ext::IScriptable*>(unk10->GetInstance(pPlayerSystem));
 
-    const auto* pScriptable = unk10->GetTypeInstance(pPlayerSystem);
+    RED4ext::CStack stack(pScriptable, args.data(), static_cast<uint32_t>(args.size()), hasReturnType ? &result : nullptr, 0);
 
-    RED4ext::REDreverse::CScriptableStackFrame::Construct(stack, pScriptable, args.data(),
-                                                          static_cast<uint32_t>(args.size()),  hasReturnType ? &result : nullptr, 0);
-    const auto success = pFunc->Call(stack);
+    const auto success = pFunc->Execute(&stack);
     if (!success)
         return sol::nil;
 

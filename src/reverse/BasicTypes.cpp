@@ -27,7 +27,9 @@ std::string Quaternion::ToString() const noexcept
 
 std::string CName::ToString() const noexcept
 {
-    const auto resolved = RED4ext::REDreverse::CName::ToString(hash);
+    RED4ext::CName internal(hash);
+
+    const auto resolved = internal.ToString();
     if (!resolved)
         return fmt::format("ToCName{{ hash_lo = 0x{0:08X}, hash_hi = 0x{1:08X} }}", hash_lo, hash_hi);
     return fmt::format("ToCName{{ hash_lo = 0x{0:08X}, hash_hi = 0x{1:08X} --['{1}']-- }}", hash_lo, hash_hi, resolved);

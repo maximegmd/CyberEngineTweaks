@@ -25,7 +25,7 @@ struct GameOption
     bool* pBoolean;
     int32_t* pInteger;
     float* pFloat;
-    RED4ext::REDreverse::CString* pString;
+    RED4ext::CString* pString;
   };
 
   union

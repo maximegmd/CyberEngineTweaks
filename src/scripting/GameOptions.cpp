@@ -41,7 +41,7 @@ std::string GameOption::GetString()
         break;
     case GameOptionType::String:
         if (pString)
-            ret << "\"" << pString->ToString() << "\"";
+            ret << "\"" << pString->c_str() << "\"";
         break;
     case GameOptionType::Color:
         if (pInteger)

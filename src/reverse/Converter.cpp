@@ -27,7 +27,7 @@ auto s_metaVisitor = [](auto... args) {
     LuaRED<CName, "CName">()
     );
 
-size_t Converter::Size(RED4ext::REDreverse::CRTTIBaseType* apRtti)
+size_t Converter::Size(RED4ext::IRTTIType* apRtti)
 {
     size_t s = 0;
 
@@ -51,7 +51,7 @@ size_t Converter::Size(RED4ext::REDreverse::CRTTIBaseType* apRtti)
     return s;
 }
 
-sol::object Converter::ToLua(RED4ext::REDreverse::CScriptableStackFrame::CStackType& aResult, sol::state_view aLua)
+sol::object Converter::ToLua(RED4ext::CStackType& aResult, sol::state_view aLua)
 {
     sol::object o = sol::nil;
     auto initLuaObject = [&](auto& x)
@@ -74,9 +74,9 @@ sol::object Converter::ToLua(RED4ext::REDreverse::CScriptableStackFrame::CStackT
     return o;
 }
 
-RED4ext::REDreverse::CScriptableStackFrame::CStackType Converter::ToRED(sol::object aObject, RED4ext::REDreverse::CRTTIBaseType* apRtti, TiltedPhoques::Allocator* apAllocator)
+RED4ext::CStackType Converter::ToRED(sol::object aObject, RED4ext::IRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator)
 {
-    RED4ext::REDreverse::CScriptableStackFrame::CStackType r;
+    RED4ext::CStackType r;
     auto initStackType = [&](auto& x)
     {
         if (x.Is(apRtti))

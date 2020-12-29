@@ -7,14 +7,14 @@ struct LuaRED
 {
 	static constexpr char const* Name = REDName;
 	
-	sol::object ToLua(RED4ext::REDreverse::CScriptableStackFrame::CStackType& aResult, sol::state_view aLua)
+	sol::object ToLua(RED4ext::CStackType& aResult, sol::state_view aLua)
 	{
 		return make_object(aLua, *static_cast<T*>(aResult.value));
 	}
 
-	RED4ext::REDreverse::CScriptableStackFrame::CStackType ToRED(sol::object aObject, RED4ext::REDreverse::CRTTIBaseType* apRtti, TiltedPhoques::Allocator* apAllocator) 
+	RED4ext::CStackType ToRED(sol::object aObject, RED4ext::IRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator) 
 	{
-		RED4ext::REDreverse::CScriptableStackFrame::CStackType result;
+		RED4ext::CStackType result;
 		result.type = m_pRtti;
 		if(aObject != sol::nil)
 			result.value = apAllocator->New<T>(aObject.as<T>());
@@ -29,7 +29,7 @@ struct LuaRED
 		return sizeof(T);
 	}
 
-	bool Is(RED4ext::REDreverse::CRTTIBaseType* apRtti) const
+	bool Is(RED4ext::IRTTIType* apRtti) const
 	{
 		if (!Resolve())
 			return false;
@@ -44,11 +44,11 @@ private:
 		if (m_pRtti)
 			return true;
 
-		auto* pRtti = RED4ext::REDreverse::CRTTISystem::Get();
+		auto* pRtti = RED4ext::CRTTISystem::Get();
 		m_pRtti = pRtti->GetType(RED4ext::FNV1a(Name));
 
 		return m_pRtti != nullptr;
 	}
 
-	mutable RED4ext::REDreverse::CRTTIBaseType* m_pRtti{nullptr};
+	mutable RED4ext::IRTTIType* m_pRtti{nullptr};
 };

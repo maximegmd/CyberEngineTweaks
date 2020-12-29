@@ -173,7 +173,7 @@ void Overlay::ExecuteCommandListsD3D12(ID3D12CommandQueue* apCommandQueue, UINT 
     overlay.m_realExecuteCommandLists(apCommandQueue, NumCommandLists, ppCommandLists);
 }
 
-BOOL Overlay::ClipToCenter(RED4ext::REDreverse::CGameEngine::UnkC0* apThis)
+BOOL Overlay::ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis)
 {
     const HWND wnd = (HWND)apThis->hWnd;
     const HWND foreground = GetForegroundWindow();

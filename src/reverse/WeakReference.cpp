@@ -3,7 +3,7 @@
 #include "WeakReference.h"
 
 WeakReference::WeakReference(sol::state_view aView, WeakHandle aWeakHandle)
-    : Type(aView, aWeakHandle.handle->GetClass())
+    : Type(aView, static_cast<RED4ext::CClass*>(aWeakHandle.handle->GetParentType()))
     , m_weakHandle(aWeakHandle)
 {
 }
@@ -13,7 +13,7 @@ WeakReference::~WeakReference()
     // Someday maybe actually free memory
 }
 
-RED4ext::REDreverse::Scripting::IScriptable* WeakReference::GetHandle()
+RED4ext::IScriptable* WeakReference::GetHandle()
 {
     return m_weakHandle.handle;
 }

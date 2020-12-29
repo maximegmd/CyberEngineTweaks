@@ -1,3 +1,3 @@
-[submodule "vendor/RED4ext"]
-	path = vendor/RED4ext
-	url = https://github.com/yamashi/RED4ext.git
+[submodule "vendor/RED4ext.SDK"]
+	path = vendor/RED4ext.SDK
+	url = https://github.com/yamashi/RED4ext.SDK

@@ -24,7 +24,7 @@ std::string Type::Descriptor::ToString() const
     return result;
 }
 
-Type::Type(sol::state_view aView, RED4ext::REDreverse::CClass* apClass)
+Type::Type(sol::state_view aView, RED4ext::CClass* apClass)
     : m_lua(std::move(aView))
     , m_pType(apClass)
 {
@@ -54,7 +54,7 @@ sol::protected_function Type::InternalIndex(const std::string& acName)
         return sol::nil;
     }
 
-    auto* pFunc = m_pType->GetFunction(RED4ext::FNV1a(acName));
+    auto* pFunc = m_pType->GetFunction(RED4ext::FNV1a(acName.c_str()));
     if(!pFunc)
     {
         Overlay::Get().Log("Function '" + acName + "' not found in system '" + GetName() + "'.");
@@ -79,11 +79,11 @@ std::string Type::GetName() const
 {
     if (m_pType)
     {
-        uint64_t name;
-        m_pType->GetName(&name);
+        RED4ext::CName name;
+        m_pType->GetName(name);
         if (name)
         {
-            return RED4ext::REDreverse::CName::ToString(name);
+            return name.ToString();
         }
     }
 
@@ -96,22 +96,22 @@ Type::Descriptor Type::Dump() const
 
     if(m_pType)
     {
-        descriptor.name = RED4ext::REDreverse::CName::ToString(m_pType->nameHash);
+        descriptor.name = m_pType->name.ToString();
 
-        for (auto i = 0u; i < m_pType->functions.size; ++i)
+        for (auto i = 0u; i < m_pType->funcs.size; ++i)
         {
-            auto* pFunc = m_pType->functions.arr[i];
-            std::string funcName = RED4ext::REDreverse::CName::ToString(pFunc->nameHash);
+            auto* pFunc = m_pType->funcs[i];
+            std::string funcName = pFunc->name.ToString();
             descriptor.functions.push_back(funcName);
         }
 
-        for (auto i = 0u; i < m_pType->properties.size; ++i)
+        for (auto i = 0u; i < m_pType->props.size; ++i)
         {
-            auto* pProperty = m_pType->properties.arr[i];
-            uint64_t name = 0;
-            pProperty->type->GetName(&name);
+            auto* pProperty = m_pType->props[i];
+            RED4ext::CName name;
+            pProperty->type->GetName(name);
             
-            std::string propName = std::string(RED4ext::REDreverse::CName::ToString(pProperty->name)) + " : " + RED4ext::REDreverse::CName::ToString(name);
+            std::string propName = std::string(pProperty->name.ToString()) + " : " + name.ToString();
             descriptor.properties.push_back(propName);
         }
     }
@@ -119,9 +119,9 @@ Type::Descriptor Type::Dump() const
     return descriptor;
 }
 
-sol::object Type::Execute(RED4ext::REDreverse::CClassFunction* apFunc, const std::string& acName, sol::variadic_args aArgs, sol::this_environment env, sol::this_state L, std::string& aReturnMessage)
+sol::object Type::Execute(RED4ext::CClassFunction* apFunc, const std::string& acName, sol::variadic_args aArgs, sol::this_environment env, sol::this_state L, std::string& aReturnMessage)
 {
-    std::vector<RED4ext::REDreverse::CScriptableStackFrame::CStackType> args(apFunc->params.size);
+    std::vector<RED4ext::CStackType> args(apFunc->params.size);
 
     static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 13);
     struct ResetAllocator
@@ -135,28 +135,28 @@ sol::object Type::Execute(RED4ext::REDreverse::CClassFunction* apFunc, const std
 
     for (auto i = 0u; i < apFunc->params.size; ++i)
     {
-        if ((apFunc->params.arr[i]->flag & 0x200) != 0) // Deal with out params
+        if ((apFunc->params[i]->flags & 0x200) != 0) // Deal with out params
         {
-            args[i] = Scripting::ToRED(sol::nil, apFunc->params.arr[i]->type, &s_scratchMemory);
+            args[i] = Scripting::ToRED(sol::nil, apFunc->params[i]->type, &s_scratchMemory);
         }
         else if (aArgs.size() > i)
         {
-            args[i] = Scripting::ToRED(aArgs[i].get<sol::object>(), apFunc->params.arr[i]->type, &s_scratchMemory);
+            args[i] = Scripting::ToRED(aArgs[i].get<sol::object>(), apFunc->params[i]->type, &s_scratchMemory);
         }
-        else if((apFunc->params.arr[i]->flag & 0x400) != 0) // Deal with optional params
+        else if((apFunc->params[i]->flags & 0x400) != 0) // Deal with optional params
         {
             args[i].value = nullptr;
         }
 
-        if (!args[i].value && (apFunc->params.arr[i]->flag & 0x1) == 0)
+        if (!args[i].value && (apFunc->params[i]->flags & 0x1) == 0)
         {
-            auto* pType = apFunc->params.arr[i]->type;
+            auto* pType = apFunc->params[i]->type;
 
-            uint64_t hash = 0;
-            pType->GetName(&hash);
+            RED4ext::CName hash;
+            pType->GetName(hash);
             if (hash)
             {
-                std::string typeName = RED4ext::REDreverse::CName::ToString(hash);
+                std::string typeName = hash.ToString();
                 aReturnMessage = "Function '" + acName + "' parameter " + std::to_string(i) + " must be " + typeName + ".";
             }
 
@@ -164,23 +164,19 @@ sol::object Type::Execute(RED4ext::REDreverse::CClassFunction* apFunc, const std
         }
     }
 
-    const bool hasReturnType = (apFunc->returnType) != nullptr && (*apFunc->returnType) != nullptr;
+    const bool hasReturnType = (apFunc->returnType) != nullptr && (apFunc->returnType->type) != nullptr;
 
     uint8_t buffer[1000]{0};
-    RED4ext::REDreverse::CScriptableStackFrame::CStackType result;
+    RED4ext::CStackType result;
     if (hasReturnType)
     {
         result.value = buffer;
-        result.type = *apFunc->returnType;
+        result.type = apFunc->returnType->type;
     }
 
-    std::aligned_storage_t<sizeof(RED4ext::REDreverse::CScriptableStackFrame), alignof(RED4ext::REDreverse::CScriptableStackFrame)> stackStore;
-    auto* stack = reinterpret_cast<RED4ext::REDreverse::CScriptableStackFrame*>(&stackStore);
+    RED4ext::CStack stack(GetHandle(), args.data(), args.size(), hasReturnType ? &result : nullptr, 0);
 
-    RED4ext::REDreverse::CScriptableStackFrame::Construct(stack, GetHandle(), args.data(),
-                                                          static_cast<uint32_t>(args.size()), hasReturnType ? &result : nullptr, 0);
-
-    const auto success = apFunc->Call(stack);
+    const auto success = apFunc->Execute(&stack);
     if (!success)
         return sol::nil;
 
@@ -191,7 +187,7 @@ sol::object Type::Execute(RED4ext::REDreverse::CClassFunction* apFunc, const std
 
     for (auto i = 0; i < apFunc->params.size; ++i)
     {
-        if ((apFunc->params.arr[i]->flag & 0x200) == 0)
+        if ((apFunc->params[i]->flags & 0x200) == 0)
             continue;
 
         returns.push_back(Scripting::ToLua(m_lua, args[i]));

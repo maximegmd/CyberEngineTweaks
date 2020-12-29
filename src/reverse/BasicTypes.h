@@ -60,13 +60,13 @@ uint32_t crc32(const char* buf, size_t len, uint32_t seed);
 // - We have to implement different destructors but we are lazy
 struct StrongHandle
 {
-	RED4ext::REDreverse::Scripting::IScriptable* handle{nullptr};
+	RED4ext::IScriptable* handle{nullptr};
 	uint32_t* refCount{nullptr};
 };
 
 struct WeakHandle
 {
-	RED4ext::REDreverse::Scripting::IScriptable* handle{nullptr};
+	RED4ext::IScriptable* handle{nullptr};
 	uint32_t* refCount{nullptr};
 };
 

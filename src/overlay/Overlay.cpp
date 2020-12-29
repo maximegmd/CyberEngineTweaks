@@ -185,16 +185,14 @@ TScriptCall** GetScriptCallArray()
 
 void Overlay::HookLog(ScriptContext* apContext, ScriptStack* apStack, void*, void*)
 {
-    RED4ext::REDreverse::CString text("");
+    RED4ext::CString text("");
     apStack->unk30 = nullptr;
     apStack->unk38 = nullptr;
     auto opcode = *(apStack->m_code++);
     GetScriptCallArray()[opcode](apStack->m_context, apStack, &text, nullptr);
     apStack->m_code++; // skip ParamEnd
 
-    Get().Log(text.ToString());
-
-    text.Destroy();
+    Get().Log(text.c_str());
 }
 
 const char* GetChannelStr(uint64_t hash)
@@ -234,7 +232,7 @@ void Overlay::HookLogChannel(ScriptContext* apContext, ScriptStack* apStack, voi
     opcode = *(apStack->m_code++);
     GetScriptCallArray()[opcode](apStack->m_context, apStack, &channel_hash, nullptr);
 
-    RED4ext::REDreverse::CString text("");
+    RED4ext::CString text("");
     apStack->unk30 = nullptr;
     apStack->unk38 = nullptr;
     opcode = *(apStack->m_code++);
@@ -246,9 +244,7 @@ void Overlay::HookLogChannel(ScriptContext* apContext, ScriptStack* apStack, voi
     std::string channel = channel_str == nullptr
         ? "?" + std::to_string(channel_hash)
         : std::string(channel_str);
-    Get().Log("[" + channel + "] " +text.ToString());
-
-    text.Destroy();
+    Get().Log("[" + channel + "] " +text.c_str());
 }
 
 std::string GetTDBDIDDebugString(TDBID tdbid)
@@ -296,10 +292,10 @@ TDBID* Overlay::HookTDBIDCtor(TDBID* apThis, const char* name)
     return result;
 }
 
-TDBID* Overlay::HookTDBIDCtorCString(TDBID* apThis, const RED4ext::REDreverse::CString* name)
+TDBID* Overlay::HookTDBIDCtorCString(TDBID* apThis, const RED4ext::CString* name)
 {
     auto result = Get().m_realTDBIDCtorCString(apThis, name);
-    Get().RegisterTDBIDString(apThis->value, 0, name->ToString());
+    Get().RegisterTDBIDString(apThis->value, 0, name->c_str());
     return result;
 }
 
@@ -339,9 +335,8 @@ void Overlay::HookTDBIDToStringDEBUG(ScriptContext* apContext, ScriptStack* apSt
     if (result)
     {
         std::string name = Get().GetTDBIDString(tdbid.value);
-        RED4ext::REDreverse::CString s(name.c_str());
-        static_cast<RED4ext::REDreverse::CString*>(result)->Copy(&s);
-        s.Destroy();
+        RED4ext::CString s(name.c_str());
+        *static_cast<RED4ext::CString*>(result) = s;
     }
 }
 
@@ -357,7 +352,7 @@ void Overlay::Toggle()
             break;
     }
 
-    ClipToCenter(RED4ext::REDreverse::CGameEngine::Get()->unkC0);
+    ClipToCenter(RED4ext::CGameEngine::Get()->unkC0);
 }
 
 bool Overlay::IsEnabled() const

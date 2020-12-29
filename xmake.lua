@@ -12,12 +12,13 @@ if is_mode("release") then
 end
 
 add_cxflags("/std:c++latest")
+add_defines("RED4EXT_STATIC_LIB")
 
-target("RED4ext")
+target("RED4ext.SDK")
     set_kind("static")
-    add_files("vendor/RED4ext/src/red4ext.sdk/**.cpp")
-    add_headerfiles("vendor/RED4ext/src/red4ext.sdk/**.hpp")
-    add_includedirs("vendor/RED4ext/src/red4ext.sdk/", { public = true })
+    add_files("vendor/RED4ext.SDK/src/**.cpp")
+    add_headerfiles("vendor/RED4ext.SDK/include/**.hpp")
+    add_includedirs("vendor/RED4ext.SDK/include/", { public = true })
 
 target("cyber_engine_tweaks")
     add_defines("KIERO_USE_MINHOOK=1", "KIERO_INCLUDE_D3D12=1", "IMGUI_IMPL_WIN32_DISABLE_GAMEPAD", "WIN32_LEAN_AND_MEAN")
@@ -29,4 +30,4 @@ target("cyber_engine_tweaks")
     add_includedirs("src/")
     add_syslinks("User32", "Version", "d3d11")
     add_packages("spdlog", "nlohmann_json", "minhook", "imgui", "sol2", "tiltedcore")
-    add_deps("RED4ext")
+    add_deps("RED4ext.SDK")
