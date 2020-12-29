@@ -75,6 +75,7 @@ void Overlay::DrawImgui()
                 for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i) 
                 {
                     auto& item = m_outputLines[i];
+                    ImGui::PushID(i);
                     if (ImGui::Selectable(item.c_str()))
                     {
                         auto str = item;
@@ -83,6 +84,7 @@ void Overlay::DrawImgui()
 
                         std::strncpy(command, str.c_str(), sizeof(command) - 1);
                     }
+                    ImGui::PopID();
                 }
 
             if (m_outputScroll)
