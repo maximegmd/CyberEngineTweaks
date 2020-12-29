@@ -366,7 +366,7 @@ void Scripting::Initialize()
 
     m_lua["Dump"] = [this](Type* apType)
     {
-        return apType->Dump();
+        return apType != nullptr ? apType->Dump() : Type::Descriptor{};
     };
 
     m_lua["DumpType"] = [this](const std::string& acName)
