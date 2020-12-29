@@ -135,7 +135,7 @@ sol::object Type::Execute(RED4ext::CClassFunction* apFunc, const std::string& ac
 
     for (auto i = 0u; i < apFunc->params.size; ++i)
     {
-        if ((apFunc->params[i]->flags & 0x200) != 0) // Deal with out params
+        if ((apFunc->params[i]->unk28 & 0x200) != 0) // Deal with out params
         {
             args[i] = Scripting::ToRED(sol::nil, apFunc->params[i]->type, &s_scratchMemory);
         }
@@ -143,12 +143,12 @@ sol::object Type::Execute(RED4ext::CClassFunction* apFunc, const std::string& ac
         {
             args[i] = Scripting::ToRED(aArgs[i].get<sol::object>(), apFunc->params[i]->type, &s_scratchMemory);
         }
-        else if((apFunc->params[i]->flags & 0x400) != 0) // Deal with optional params
+        else if((apFunc->params[i]->unk28 & 0x400) != 0) // Deal with optional params
         {
             args[i].value = nullptr;
         }
 
-        if (!args[i].value && (apFunc->params[i]->flags & 0x1) == 0)
+        if (!args[i].value && (apFunc->params[i]->unk28 & 0x400) == 0)
         {
             auto* pType = apFunc->params[i]->type;
 
@@ -180,23 +180,24 @@ sol::object Type::Execute(RED4ext::CClassFunction* apFunc, const std::string& ac
     if (!success)
         return sol::nil;
 
-    std::vector<sol::object> returns;
+    sol::table returns(m_lua, sol::create);
 
     if (hasReturnType)
-        returns.push_back(Scripting::ToLua(m_lua, result));
+        returns[1] = Scripting::ToLua(m_lua, result);
 
+    size_t index = 2;
     for (auto i = 0; i < apFunc->params.size; ++i)
     {
-        if ((apFunc->params[i]->flags & 0x200) == 0)
+        if ((apFunc->params[i]->unk28 & 0x200) == 0)
             continue;
 
-        returns.push_back(Scripting::ToLua(m_lua, args[i]));
+        returns[index++] = Scripting::ToLua(m_lua, args[i]);
     }
 
     if (returns.empty())
         return sol::nil;
     if (returns.size() == 1)
-        return returns[0];
+        return returns.get<sol::object>(1);
 
-    return make_object(m_lua, returns);
+    return returns;
 }

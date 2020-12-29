@@ -83,7 +83,7 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::CStackType& aResul
     {
         auto* pArrayType = static_cast<RED4ext::CArray*>(pType);
         const auto arrayHandle = *static_cast<Array<uint8_t>*>(aResult.value);
-        std::vector<sol::object> result;
+        sol::table result(aState, sol::create);
         for(auto i = 0u; i < arrayHandle.count; ++i)
         {
             RED4ext::CStackType el;
@@ -93,10 +93,10 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::CStackType& aResul
             RED4ext::CName hash;
             pArrayType->GetInnerType()->GetName(hash);
 
-            result.emplace_back(ToLua(aState, el));
+            result[i + 1] = ToLua(aState, el);
         }
 
-        return make_object(aState, result);
+        return result;
     }
     else
     {
