@@ -54,10 +54,9 @@ protected:
 		CComPtr<ID3D12Resource> MainRenderTargetResource;
 		D3D12_CPU_DESCRIPTOR_HANDLE MainRenderTargetDescriptor{ 0 };
 	};
-
 	bool InitializeD3D12(IDXGISwapChain3* pSwapChain);
 	bool InitializeD3D12Downlevel(ID3D12CommandQueue* pCommandQueue, ID3D12Resource* pSourceTex2D);
-	bool InitializeImGui(size_t buffersCounts, const std::function<bool(Overlay* overlay)>& reset);
+	bool InitializeImGui();
 	void Render(IDXGISwapChain3* pSwapChain);
 	void DrawImgui();
 
@@ -82,6 +81,8 @@ protected:
 private:
 
 	Overlay();
+
+	bool InitializeD3D12Reset();
 
 	TPresentD3D12* m_realPresentD3D12{ nullptr };
 	TPresentD3D12Downlevel* m_realPresentD3D12Downlevel{ nullptr };
