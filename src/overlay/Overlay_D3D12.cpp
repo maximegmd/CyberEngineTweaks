@@ -175,7 +175,7 @@ bool Overlay::InitializeD3D12(IDXGISwapChain3* pSwapChain)
     return true;
 }
 
-bool Overlay::InitializeD3D12Downlevel(ID3D12CommandQueue* pCommandQueue, ID3D12Resource* pSourceTex2D)
+bool Overlay::InitializeD3D12Downlevel(ID3D12CommandQueue* pCommandQueue, ID3D12Resource* pSourceTex2D, HWND hWindow)
 {
     // Window hook (repeated till successful, should be on first call)
     if (m_hWnd == nullptr) 
@@ -195,7 +195,17 @@ bool Overlay::InitializeD3D12Downlevel(ID3D12CommandQueue* pCommandQueue, ID3D12
     if (m_initialized) 
         return true;
 
+    auto cmdQueueDesc = pCommandQueue->GetDesc();
+    if(cmdQueueDesc.Type != D3D12_COMMAND_LIST_TYPE_DIRECT) 
+    {
+        spdlog::warn("\tOverlay::InitializeD3D12Downlevel() - ignoring command queue - invalid type of command list!");
+        return false;
+    }
+
     m_pCommandQueue = pCommandQueue;
+
+    if (hWindow != m_hWnd) 
+        spdlog::warn("\tOverlay::InitializeD3D12Downlevel() - output window of current swap chain does not match hooked window! Currently hooked to {0} while swap chain output window is {1}.", reinterpret_cast<void*>(m_hWnd), reinterpret_cast<void*>(hWindow));
 
     if (FAILED(pSourceTex2D->GetDevice(IID_PPV_ARGS(&m_pd3d12Device))))
     {

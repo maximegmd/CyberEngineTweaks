@@ -380,23 +380,22 @@ kiero::Status::Enum kiero::init(RenderType::Enum _renderType)
 
 				if ((libD3D12 = ::GetModuleHandle(KIERO_TEXT("d3d12.dll"))) == NULL)
 				{
-					if ((libD3D12 = ::LoadLibraryEx(KIERO_TEXT("d3d12.dll"), NULL, LOAD_LIBRARY_SEARCH_SYSTEM32)) == NULL)
+					const char* localD3d12on7Paths[] =
 					{
-						const char* localD3d12Paths[] =
-						{
-							KIERO_TEXT(".\\d3d12.dll"),
-							KIERO_TEXT(".\\d3d12on7\\d3d12.dll"),
-							KIERO_TEXT(".\\12on7\\d3d12.dll")
-						};
+						KIERO_TEXT(".\\d3d12on7\\d3d12.dll"),
+						KIERO_TEXT(".\\12on7\\d3d12.dll")
+					};
 
-						for (uint32_t i = 0; i < KIERO_ARRAY_SIZE(localD3d12Paths); i++)
-						{
-							libD3D12 = LoadLibrary(localD3d12Paths[i]);
-							if (libD3D12 != NULL)
-								break;
-						}
+					for (uint32_t i = 0; i < KIERO_ARRAY_SIZE(localD3d12on7Paths); i++)
+					{
+						libD3D12 = LoadLibrary(localD3d12on7Paths[i]);
+						if (libD3D12 != NULL)
+							break;
+					}
 
-						if (libD3D12 == NULL)
+					if (libD3D12 == NULL)
+					{
+						if ((libD3D12 = ::LoadLibrary(KIERO_TEXT("d3d12.dll"))) == NULL)
 						{
 							::DestroyWindow(window);
 							::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
