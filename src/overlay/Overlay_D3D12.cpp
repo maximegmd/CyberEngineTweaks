@@ -24,6 +24,19 @@ BOOL CALLBACK EnumWindowsProcMy(HWND hwnd, LPARAM lParam)
     return TRUE;
 }
 
+bool Overlay::InitializeD3D12Reset()
+{
+    m_frameContexts.clear();
+    m_downlevelBackbuffers.clear();
+    m_pdxgiSwapChain = nullptr;
+    m_pd3d12Device = nullptr;
+    m_pd3dRtvDescHeap = nullptr;
+    m_pd3dSrvDescHeap = nullptr;
+    m_pd3dCommandList = nullptr;
+    // NOTE: not clearing m_hWnd, m_wndProc and m_pCommandQueue, as these should be persistent once set till the EOL of Overlay
+    return false;
+}
+
 bool Overlay::InitializeD3D12(IDXGISwapChain3* pSwapChain)
 {
     static auto checkCmdQueue = [](Overlay* overlay) 
@@ -47,19 +60,6 @@ bool Overlay::InitializeD3D12(IDXGISwapChain3* pSwapChain)
             return false;
         }
         return true;
-    };
-
-    static auto reset = [](Overlay* overlay)
-    {
-        overlay->m_frameContexts.clear();
-        overlay->m_downlevelBackbuffers.clear();
-        overlay->m_pdxgiSwapChain = nullptr;
-        overlay->m_pd3d12Device = nullptr;
-        overlay->m_pd3dRtvDescHeap = nullptr;
-        overlay->m_pd3dSrvDescHeap = nullptr;
-        overlay->m_pd3dCommandList = nullptr;
-        // NOTE: not clearing m_hWnd, m_wndProc and m_pCommandQueue, as these should be persistent once set till the EOL of Overlay
-        return false;
     };
 
     // Window hook (repeated till successful, should be on first call)
@@ -97,7 +97,7 @@ bool Overlay::InitializeD3D12(IDXGISwapChain3* pSwapChain)
     if (FAILED(m_pdxgiSwapChain->GetDevice(IID_PPV_ARGS(&m_pd3d12Device))))
     {
         spdlog::error("\tOverlay::InitializeD3D12() - failed to get device!");
-        return reset(this);
+        return InitializeD3D12Reset();
     }
 
     DXGI_SWAP_CHAIN_DESC sdesc;
@@ -119,7 +119,7 @@ bool Overlay::InitializeD3D12(IDXGISwapChain3* pSwapChain)
     if (FAILED(m_pd3d12Device->CreateDescriptorHeap(&rtvdesc, IID_PPV_ARGS(&m_pd3dRtvDescHeap))))
     {
         spdlog::error("\tOverlay::InitializeD3D12() - failed to create RTV descriptor heap!");
-        return reset(this);
+        return InitializeD3D12Reset();
     }
 
     const SIZE_T rtvDescriptorSize = m_pd3d12Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
@@ -137,30 +137,30 @@ bool Overlay::InitializeD3D12(IDXGISwapChain3* pSwapChain)
     if (FAILED(m_pd3d12Device->CreateDescriptorHeap(&srvdesc, IID_PPV_ARGS(&m_pd3dSrvDescHeap))))
     {
         spdlog::error("\tOverlay::InitializeD3D12() - failed to create SRV descriptor heap!");
-        return reset(this);
+        return InitializeD3D12Reset();
     }
     
     for (auto& context : m_frameContexts)
         if (FAILED(m_pd3d12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&context.CommandAllocator))))
         {
             spdlog::error("\tOverlay::InitializeD3D12() - failed to create command allocator!");
-            return reset(this);
+            return InitializeD3D12Reset();
         }
 
     if (FAILED(m_pd3d12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_frameContexts[0].CommandAllocator, nullptr, IID_PPV_ARGS(&m_pd3dCommandList))) ||
         FAILED(m_pd3dCommandList->Close()))
     {
         spdlog::error("\tOverlay::InitializeD3D12() - failed to create command list!");
-        return reset(this);
+        return InitializeD3D12Reset();
     }
 
     for (auto& context : m_frameContexts)
         m_pd3d12Device->CreateRenderTargetView(context.BackBuffer, nullptr, context.MainRenderTargetDescriptor);
 
-    if (!InitializeImGui(buffersCounts, reset))
+    if (!InitializeImGui(buffersCounts))
     {
         spdlog::error("\tOverlay::InitializeD3D12() - failed to initialize ImGui!");
-        return reset(this);
+        return InitializeD3D12Reset();
     }
 
     spdlog::info("\tOverlay::InitializeD3D12() - initialization successful!");
@@ -177,19 +177,6 @@ bool Overlay::InitializeD3D12(IDXGISwapChain3* pSwapChain)
 
 bool Overlay::InitializeD3D12Downlevel(ID3D12CommandQueue* pCommandQueue, ID3D12Resource* pSourceTex2D)
 {
-    static auto reset = [](Overlay* overlay)
-    {
-        overlay->m_frameContexts.clear();
-        overlay->m_downlevelBackbuffers.clear();
-        overlay->m_pdxgiSwapChain = nullptr;
-        overlay->m_pd3d12Device = nullptr;
-        overlay->m_pd3dRtvDescHeap = nullptr;
-        overlay->m_pd3dSrvDescHeap = nullptr;
-        overlay->m_pd3dCommandList = nullptr;
-        // NOTE: not clearing m_hWnd, m_wndProc and m_pCommandQueue, as these should be persistent once set till the EOL of Overlay
-        return false;
-    };
-
     // Window hook (repeated till successful, should be on first call)
     if (m_hWnd == nullptr) 
     {
@@ -213,7 +200,7 @@ bool Overlay::InitializeD3D12Downlevel(ID3D12CommandQueue* pCommandQueue, ID3D12
     if (FAILED(pSourceTex2D->GetDevice(IID_PPV_ARGS(&m_pd3d12Device))))
     {
         spdlog::error("\tOverlay::InitializeD3D12Downlevel() - failed to get device!");
-        return reset(this);
+        return InitializeD3D12Reset();
     }
 
     // Limit to at most 3 buffers
@@ -222,7 +209,7 @@ bool Overlay::InitializeD3D12Downlevel(ID3D12CommandQueue* pCommandQueue, ID3D12
     if (buffersCounts == 0)
     {
         spdlog::error("\tOverlay::InitializeD3D12Downlevel() - no backbuffers were found!");
-        return reset(this);
+        return InitializeD3D12Reset();
     }
 
     D3D12_DESCRIPTOR_HEAP_DESC rtvdesc;
@@ -233,7 +220,7 @@ bool Overlay::InitializeD3D12Downlevel(ID3D12CommandQueue* pCommandQueue, ID3D12
     if (FAILED(m_pd3d12Device->CreateDescriptorHeap(&rtvdesc, IID_PPV_ARGS(&m_pd3dRtvDescHeap))))
     {
         spdlog::error("\tOverlay::InitializeD3D12Downlevel() - failed to create RTV descriptor heap!");
-        return reset(this);
+        return InitializeD3D12Reset();
     }
 
     const SIZE_T rtvDescriptorSize = m_pd3d12Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
@@ -251,7 +238,7 @@ bool Overlay::InitializeD3D12Downlevel(ID3D12CommandQueue* pCommandQueue, ID3D12
     if (FAILED(m_pd3d12Device->CreateDescriptorHeap(&srvdesc, IID_PPV_ARGS(&m_pd3dSrvDescHeap))))
     {
         spdlog::error("\tOverlay::InitializeD3D12Downlevel() - failed to create SRV descriptor heap!");
-        return reset(this);
+        return InitializeD3D12Reset();
     }
     
     for (auto& context : m_frameContexts)
@@ -259,20 +246,20 @@ bool Overlay::InitializeD3D12Downlevel(ID3D12CommandQueue* pCommandQueue, ID3D12
         if (FAILED(m_pd3d12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&context.CommandAllocator))))
         {
             spdlog::error("\tOverlay::InitializeD3D12Downlevel() - failed to create command allocator!");
-            return reset(this);
+            return InitializeD3D12Reset();
         }
     }
 
     if (FAILED(m_pd3d12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_frameContexts[0].CommandAllocator, nullptr, IID_PPV_ARGS(&m_pd3dCommandList))))
     {
         spdlog::error("\tOverlay::InitializeD3D12Downlevel() - failed to create command list!");
-        return reset(this);
+        return InitializeD3D12Reset();
     }
 
     if (FAILED(m_pd3dCommandList->Close()))
     {
         spdlog::error("\tOverlay::InitializeD3D12Downlevel() - failed to close command list!");
-        return reset(this);
+        return InitializeD3D12Reset();
     }
 
     // Skip the first N - 3 buffers as they are no longer in use
@@ -284,10 +271,10 @@ bool Overlay::InitializeD3D12Downlevel(ID3D12CommandQueue* pCommandQueue, ID3D12
         m_pd3d12Device->CreateRenderTargetView(context.BackBuffer, nullptr, context.MainRenderTargetDescriptor);
     }
 
-    if (!InitializeImGui(buffersCounts, reset))
+    if (!InitializeImGui(buffersCounts))
     {
         spdlog::error("\tOverlay::InitializeD3D12Downlevel() - failed to initialize ImGui!");
-        return reset(this);
+        return InitializeD3D12Reset();
     }
 
     spdlog::info("\tOverlay::InitializeD3D12Downlevel() - initialization successful!");
@@ -296,7 +283,7 @@ bool Overlay::InitializeD3D12Downlevel(ID3D12CommandQueue* pCommandQueue, ID3D12
     return true;
 }
 
-bool Overlay::InitializeImGui(size_t buffersCounts, const std::function<bool(Overlay* overlay)>& reset)
+bool Overlay::InitializeImGui(size_t buffersCounts)
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -309,7 +296,7 @@ bool Overlay::InitializeImGui(size_t buffersCounts, const std::function<bool(Ove
     {
         spdlog::error("\tOverlay::InitializeImGui() - ImGui_ImplWin32_Init call failed!");
         ImGui::DestroyContext();
-        return reset(this);
+        return false;
     }
 
     if (!ImGui_ImplDX12_Init(m_pd3d12Device, static_cast<int>(buffersCounts),
@@ -320,7 +307,7 @@ bool Overlay::InitializeImGui(size_t buffersCounts, const std::function<bool(Ove
         spdlog::error("\tOverlay::InitializeImGui() - ImGui_ImplDX12_Init call failed!");
         ImGui_ImplWin32_Shutdown();
         ImGui::DestroyContext();
-        return reset(this);
+        return false;
     }
 
     if (!ImGui_ImplDX12_CreateDeviceObjects()) 
@@ -329,7 +316,7 @@ bool Overlay::InitializeImGui(size_t buffersCounts, const std::function<bool(Ove
         ImGui_ImplDX12_Shutdown();
         ImGui_ImplWin32_Shutdown();
         ImGui::DestroyContext();
-        return reset(this);
+        return false;
     }
 
     return true;
