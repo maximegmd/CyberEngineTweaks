@@ -1,6 +1,5 @@
 #include <stdafx.h>
 
-#include <kiero/kiero.h>
 #include <overlay/Overlay.h>
 
 #include "Image.h"
@@ -67,20 +66,6 @@ void Initialize(HMODULE mod)
         Overlay::Initialize(&options.GameImage);
 
     MH_EnableHook(MH_ALL_HOOKS);
-
-    if (options.Console)
-    {
-        std::thread t([]()
-            {
-                if (kiero::init(kiero::RenderType::D3D12) != kiero::Status::Success)
-                {
-                    spdlog::error("Kiero failed!");
-                }
-                else
-                    Overlay::Get().Hook();
-            });
-        t.detach();
-    }
 
     spdlog::default_logger()->flush();
 }
