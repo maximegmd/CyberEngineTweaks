@@ -32,7 +32,7 @@ std::string CName::ToString() const noexcept
     const auto resolved = internal.ToString();
     if (!resolved)
         return fmt::format("ToCName{{ hash_lo = 0x{0:08X}, hash_hi = 0x{1:08X} }}", hash_lo, hash_hi);
-    return fmt::format("ToCName{{ hash_lo = 0x{0:08X}, hash_hi = 0x{1:08X} --['{2}']-- }}", hash_lo, hash_hi, resolved);
+    return fmt::format("ToCName{{ hash_lo = 0x{0:08X}, hash_hi = 0x{1:08X} --[[ {2} --]] }}", hash_lo, hash_hi, resolved);
 }
 
 std::string TweakDBID::ToString() const noexcept
