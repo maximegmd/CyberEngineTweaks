@@ -157,7 +157,7 @@ bool Overlay::InitializeD3D12(IDXGISwapChain3* pSwapChain)
     for (auto& context : m_frameContexts)
         m_pd3d12Device->CreateRenderTargetView(context.BackBuffer, nullptr, context.MainRenderTargetDescriptor);
 
-    if (!InitializeImGui())
+    if (!InitializeImGui(buffersCounts))
     {
         spdlog::error("\tOverlay::InitializeD3D12() - failed to initialize ImGui!");
         return InitializeD3D12Reset();
@@ -271,7 +271,7 @@ bool Overlay::InitializeD3D12Downlevel(ID3D12CommandQueue* pCommandQueue, ID3D12
         m_pd3d12Device->CreateRenderTargetView(context.BackBuffer, nullptr, context.MainRenderTargetDescriptor);
     }
 
-    if (!InitializeImGui())
+    if (!InitializeImGui(buffersCounts))
     {
         spdlog::error("\tOverlay::InitializeD3D12Downlevel() - failed to initialize ImGui!");
         return InitializeD3D12Reset();
@@ -283,7 +283,7 @@ bool Overlay::InitializeD3D12Downlevel(ID3D12CommandQueue* pCommandQueue, ID3D12
     return true;
 }
 
-bool Overlay::InitializeImGui()
+bool Overlay::InitializeImGui(size_t buffersCounts)
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -299,7 +299,7 @@ bool Overlay::InitializeImGui()
         return false;
     }
 
-    if (!ImGui_ImplDX12_Init(m_pd3d12Device, static_cast<int>(m_frameContexts.size()),
+    if (!ImGui_ImplDX12_Init(m_pd3d12Device, static_cast<int>(buffersCounts),
         DXGI_FORMAT_R8G8B8A8_UNORM, m_pd3dSrvDescHeap,
         m_pd3dSrvDescHeap->GetCPUDescriptorHandleForHeapStart(),
         m_pd3dSrvDescHeap->GetGPUDescriptorHandleForHeapStart()))

@@ -56,7 +56,7 @@ protected:
 	};
 	bool InitializeD3D12(IDXGISwapChain3* pSwapChain);
 	bool InitializeD3D12Downlevel(ID3D12CommandQueue* pCommandQueue, ID3D12Resource* pSourceTex2D);
-	bool InitializeImGui();
+	bool InitializeImGui(size_t buffersCounts);
 	void Render(IDXGISwapChain3* pSwapChain);
 	void DrawImgui();
 
