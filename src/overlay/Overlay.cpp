@@ -12,7 +12,7 @@
 #include "reverse/BasicTypes.h"
 #include "scripting/Scripting.h"
 
-static std::shared_ptr<Overlay> s_pOverlay;
+static std::unique_ptr<Overlay> s_pOverlay;
 
 void Overlay::Initialize(Image* apImage)
 {
@@ -20,12 +20,22 @@ void Overlay::Initialize(Image* apImage)
     {
         s_pOverlay.reset(new (std::nothrow) Overlay);
         s_pOverlay->EarlyHooks(apImage);
+        std::thread t([]()
+        {
+            if (kiero::init(kiero::RenderType::D3D12) != kiero::Status::Success)
+                spdlog::error("Kiero failed!");
+            else
+                Overlay::Get().Hook();
+        });
+        t.detach();
     }
 }
 
 void Overlay::Shutdown()
 {
     s_pOverlay = nullptr;
+
+    kiero::shutdown();
 }
 
 Overlay& Overlay::Get()
@@ -373,8 +383,6 @@ Overlay::Overlay() = default;
 
 Overlay::~Overlay() 
 {
-    kiero::shutdown();
-
     if (m_hWnd != nullptr)
         SetWindowLongPtr(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(m_wndProc));
 
