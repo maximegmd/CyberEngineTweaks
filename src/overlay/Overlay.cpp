@@ -69,14 +69,20 @@ void Overlay::DrawImgui(IDXGISwapChain3* apSwapChain)
             ImVec2 listboxSize = ImGui::GetContentRegionAvail();
             listboxSize.y -= ImGui::GetFrameHeightWithSpacing();
             const auto result = ImGui::ListBoxHeader("", listboxSize);
-            for (auto& item : m_outputLines)
-                if (ImGui::Selectable(item.c_str()))
+            ImGuiListClipper clipper;
+            clipper.Begin(m_outputLines.size());
+            while (clipper.Step())
+                for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i) 
                 {
-                    auto str = item;
-                    if (item[0] == '>' && item[1] == ' ')
-                        str = str.substr(2);
+                    auto& item = m_outputLines[i];
+                    if (ImGui::Selectable(item.c_str()))
+                    {
+                        auto str = item;
+                        if (item[0] == '>' && item[1] == ' ')
+                            str = str.substr(2);
 
-                    std::strncpy(command, str.c_str(), sizeof(command) - 1);
+                        std::strncpy(command, str.c_str(), sizeof(command) - 1);
+                    }
                 }
 
             if (m_outputScroll)
