@@ -470,7 +470,7 @@ bool    ImGui_ImplDX12_CreateDeviceObjects()
                     break;
             }
 
-            // If failed, we should be on Windows 10. Attempt to load d3d12.dll from System32 only.
+            // If failed, we should be on Windows 10.
             if (d3d12_dll == NULL)
                 d3d12_dll = ::LoadLibraryA("d3d12.dll"); 
         
