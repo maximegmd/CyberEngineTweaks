@@ -1,6 +1,7 @@
 #pragma once
 
 #include "reverse/BasicTypes.h"
+#include "common/D3D12Downlevel.h"
 
 typedef TweakDBID TDBID;
 
@@ -9,6 +10,8 @@ struct ScriptStack;
 struct UnknownString;
 
 using TPresentD3D12 = long(IDXGISwapChain3* pSwapChain, UINT SyncInterval, UINT Flags);
+using TPresentD3D12Downlevel = HRESULT(ID3D12CommandQueueDownlevel* pCommandQueueDownlevel, ID3D12GraphicsCommandList* pOpenCommandList, ID3D12Resource* pSourceTex2D, HWND hWindow, D3D12_DOWNLEVEL_PRESENT_FLAGS Flags);
+using TCreateCommittedResource = HRESULT(ID3D12Device *pDevice, const D3D12_HEAP_PROPERTIES* pHeapProperties, D3D12_HEAP_FLAGS HeapFlags, const D3D12_RESOURCE_DESC* pDesc, D3D12_RESOURCE_STATES InitialResourceState, const D3D12_CLEAR_VALUE* pOptimizedClearValue, const IID* riidResource, void** ppvResource);
 using TExecuteCommandLists = void(ID3D12CommandQueue* apCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists);
 using TSetMousePosition = BOOL(void* apThis, HWND Wnd, long X, long Y);
 using TClipToCenter = HWND(RED4ext::CGameEngine::UnkC0* apThis);
@@ -53,10 +56,14 @@ protected:
 	};
 
 	bool InitializeD3D12(IDXGISwapChain3* pSwapChain);
+	bool InitializeD3D12Downlevel(ID3D12CommandQueue* pCommandQueue, ID3D12Resource* pSourceTex2D);
+	bool InitializeImGui(size_t buffersCounts, const std::function<bool(Overlay* overlay)>& reset);
 	void Render(IDXGISwapChain3* pSwapChain);
-	void DrawImgui(IDXGISwapChain3* apSwapChain);
+	void DrawImgui();
 
 	static long PresentD3D12(IDXGISwapChain3* pSwapChain, UINT SyncInterval, UINT Flags);
+	static HRESULT PresentD3D12Downlevel(ID3D12CommandQueueDownlevel* pCommandQueueDownlevel, ID3D12GraphicsCommandList* pOpenCommandList, ID3D12Resource* pSourceTex2D, HWND hWindow, D3D12_DOWNLEVEL_PRESENT_FLAGS Flags);
+	static HRESULT CreateCommittedResourceD3D12(ID3D12Device* pDevice, const D3D12_HEAP_PROPERTIES* pHeapProperties, D3D12_HEAP_FLAGS HeapFlags, const D3D12_RESOURCE_DESC* pDesc, D3D12_RESOURCE_STATES InitialResourceState, const D3D12_CLEAR_VALUE* pOptimizedClearValue, const IID* riidResource, void** ppvResource);
 	static void ExecuteCommandListsD3D12(ID3D12CommandQueue* apCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists);
 	static BOOL SetMousePosition(void* apThis, HWND Wnd, long X, long Y);
 	static BOOL ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis);
@@ -77,9 +84,12 @@ private:
 	Overlay();
 
 	TPresentD3D12* m_realPresentD3D12{ nullptr };
+	TPresentD3D12Downlevel* m_realPresentD3D12Downlevel{ nullptr };
+	TCreateCommittedResource* m_realCreateCommittedResource{ nullptr };
 	TExecuteCommandLists* m_realExecuteCommandLists{ nullptr };
 
 	std::vector<FrameContext> m_frameContexts;
+	std::vector<CComPtr<ID3D12Resource>> m_downlevelBackbuffers;
 	CComPtr<IDXGISwapChain3> m_pdxgiSwapChain;
 	CComPtr<ID3D12Device> m_pd3d12Device;
 	CComPtr<ID3D12DescriptorHeap> m_pd3dRtvDescHeap;

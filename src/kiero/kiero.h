@@ -74,6 +74,7 @@ namespace kiero
 	RenderType::Enum getRenderType();
 	uint150_t* getMethodsTable();
 	uintptr_t getCommandQueueOffset();
+	bool isDownLevelDevice();
 }
 
 #endif // __KIERO_H__
