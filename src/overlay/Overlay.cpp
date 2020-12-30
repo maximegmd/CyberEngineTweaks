@@ -108,7 +108,11 @@ void Overlay::DrawImgui()
         }
 
         ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-        ImGui::SetKeyboardFocusHere();
+        if (Get().m_toggled)
+        {
+            ImGui::SetKeyboardFocusHere();
+            Get().m_toggled = false;
+        }
         const auto execute = ImGui::InputText("", command, std::size(command), ImGuiInputTextFlags_EnterReturnsTrue);
         ImGui::SetItemDefaultFocus();
         if (execute)
@@ -371,8 +375,11 @@ void Overlay::Toggle()
 
     while(true)
     {
-        if (m_enabled && ShowCursor(TRUE) >= 0)
+        if (m_enabled && ShowCursor(TRUE) >= 0) 
+        {
+            m_toggled = true;
             break;
+        }
         if (!m_enabled && ShowCursor(FALSE) < 0)
             break;
     }

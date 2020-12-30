@@ -112,6 +112,7 @@ private:
 	HWND m_hWnd{ nullptr };
 	WNDPROC	m_wndProc{ nullptr };
 	bool m_enabled{ false };
+	bool m_toggled{ false };
 	
 	std::recursive_mutex m_outputLock;
 	std::vector<std::string> m_outputLines;
