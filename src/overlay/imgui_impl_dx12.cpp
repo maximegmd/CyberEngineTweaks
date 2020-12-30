@@ -454,30 +454,28 @@ bool    ImGui_ImplDX12_CreateDeviceObjects()
         static HINSTANCE d3d12_dll = ::GetModuleHandleA("d3d12.dll");
         if (d3d12_dll == NULL)
         {
-            // Attempt to load d3d12.dll from System32 only. This will only succeed on Windows 10.
-            d3d12_dll = ::LoadLibraryExA("d3d12.dll", NULL, LOAD_LIBRARY_SEARCH_SYSTEM32);
-            if (d3d12_dll == NULL)
+            // Attempt to load d3d12.dll from local directories in decreasing order of likelihood. This will only succeed if
+            // (1) the current OS is Windows 7, and
+            // (2) there exists a version of d3d12.dll for Windows 7 (D3D12On7) in one of the following directories.
+            static const char* localD3d12Paths[] =
             {
-                // Attempt to load d3d12.dll from local directories in decreasing order of likelihood. This will only succeed if
-                // (1) the current OS is Windows 7, and
-                // (2) there exists a version of d3d12.dll for Windows 7 (D3D12On7) in one of the following directories.
-                static const char* localD3d12Paths[] =
-                {
-                    ".\\d3d12.dll",             // current directory
-                    ".\\d3d12on7\\d3d12.dll",   // used by some games
-                    ".\\12on7\\d3d12.dll"       // used in the Microsoft D3D12On7 sample
-                };
+                ".\\d3d12on7\\d3d12.dll",   // used by some games
+                ".\\12on7\\d3d12.dll"       // used in the Microsoft D3D12On7 sample
+            };
 
-                for (unsigned int i = 0; i < _countof(localD3d12Paths); i++)
-                {
-                    d3d12_dll = LoadLibraryA(localD3d12Paths[i]);
-                    if (d3d12_dll != NULL)
-                        break;
-                }
-
-                if (d3d12_dll == NULL)
-                    return false;
+            for (unsigned int i = 0; i < _countof(localD3d12Paths); i++)
+            {
+                d3d12_dll = LoadLibraryA(localD3d12Paths[i]);
+                if (d3d12_dll != NULL)
+                    break;
             }
+
+            // If failed, we should be on Windows 10.
+            if (d3d12_dll == NULL)
+                d3d12_dll = ::LoadLibraryA("d3d12.dll"); 
+        
+            if (d3d12_dll == NULL)
+                return false;
         }
 
         PFN_D3D12_SERIALIZE_ROOT_SIGNATURE D3D12SerializeRootSignatureFn = (PFN_D3D12_SERIALIZE_ROOT_SIGNATURE)::GetProcAddress(d3d12_dll, "D3D12SerializeRootSignature");
