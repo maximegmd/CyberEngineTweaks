@@ -271,7 +271,6 @@ void Overlay::Hook()
     int d3d12CompleteHooksCount = 0;
     
     const char* d3d12type = (kiero::isDownLevelDevice()) ? ("D3D12on7") : ("D3D12");
-    spdlog::info("\tKiero initialized for {0}", d3d12type);
 
     if (kiero::isDownLevelDevice()) 
     {

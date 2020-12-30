@@ -22,10 +22,14 @@ void Overlay::Initialize(Image* apImage)
         s_pOverlay->EarlyHooks(apImage);
         std::thread t([]()
         {
-            if (kiero::init(kiero::RenderType::D3D12) != kiero::Status::Success)
+            if (kiero::init() != kiero::Status::Success)
                 spdlog::error("Kiero failed!");
             else
+            {
+                const char* d3d12type = (kiero::isDownLevelDevice()) ? ("D3D12on7") : ("D3D12");
+                spdlog::info("\tKiero initialized for {0}", d3d12type);
                 Overlay::Get().Hook();
+            }
         });
         t.detach();
     }
