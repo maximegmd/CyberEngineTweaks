@@ -108,6 +108,7 @@ void Overlay::DrawImgui()
         }
 
         ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+        ImGui::SetKeyboardFocusHere();
         const auto execute = ImGui::InputText("", command, std::size(command), ImGuiInputTextFlags_EnterReturnsTrue);
         ImGui::SetItemDefaultFocus();
         if (execute)
@@ -118,8 +119,6 @@ void Overlay::DrawImgui()
 
             if (m_inputClear)
                 std::memset(command, 0, sizeof(command));
-
-            ImGui::SetKeyboardFocusHere();
         }
     }
     else
