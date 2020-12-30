@@ -16,6 +16,7 @@ struct Options
 	bool PatchRemovePedestrians{ false };
 	bool PatchAsyncCompute{ false };
 	bool PatchAntialiasing{ false };
+	bool PatchSaveLock{ true };
 	bool PatchSkipStartMenu{ true };
 	bool PatchDisableIntroMovies{ false };
 	bool PatchDisableVignette{ false };
