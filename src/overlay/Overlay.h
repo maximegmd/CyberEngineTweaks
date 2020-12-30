@@ -82,7 +82,7 @@ private:
 
 	Overlay();
 
-	bool InitializeD3D12Reset();
+	bool ResetD3D12State();
 
 	TPresentD3D12* m_realPresentD3D12{ nullptr };
 	TPresentD3D12Downlevel* m_realPresentD3D12Downlevel{ nullptr };
