@@ -1,4 +1,4 @@
-set_languages("cxx17")
+set_languages("cxx20")
 
 add_requires("spdlog", "nlohmann_json", "minhook", "imgui", "sol2", "tiltedcore", { external = false })
 
