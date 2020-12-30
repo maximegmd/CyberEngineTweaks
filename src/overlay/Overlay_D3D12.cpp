@@ -205,7 +205,7 @@ bool Overlay::InitializeD3D12Downlevel(ID3D12CommandQueue* pCommandQueue, ID3D12
     m_pCommandQueue = pCommandQueue;
 
     if (hWindow != m_hWnd) 
-        spdlog::warn("\tOverlay::InitializeD3D12Downlevel() - output window of current swap chain does not match hooked window! Currently hooked to {0} while swap chain output window is {1}.", reinterpret_cast<void*>(m_hWnd), reinterpret_cast<void*>(hWindow));
+        spdlog::warn("\tOverlay::InitializeD3D12Downlevel() - current output window does not match hooked window! Currently hooked to {0} while current output window is {1}.", reinterpret_cast<void*>(m_hWnd), reinterpret_cast<void*>(hWindow));
 
     if (FAILED(pSourceTex2D->GetDevice(IID_PPV_ARGS(&m_pd3d12Device))))
     {
