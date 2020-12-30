@@ -54,6 +54,8 @@ protected:
 		CComPtr<ID3D12Resource> MainRenderTargetResource;
 		D3D12_CPU_DESCRIPTOR_HANDLE MainRenderTargetDescriptor{ 0 };
 	};
+
+	bool ResetD3D12State();
 	bool InitializeD3D12(IDXGISwapChain3* pSwapChain);
 	bool InitializeD3D12Downlevel(ID3D12CommandQueue* pCommandQueue, ID3D12Resource* pSourceTex2D, HWND hWindow);
 	bool InitializeImGui(size_t buffersCounts);
@@ -81,8 +83,6 @@ protected:
 private:
 
 	Overlay();
-
-	bool ResetD3D12State();
 
 	TPresentD3D12* m_realPresentD3D12{ nullptr };
 	TPresentD3D12Downlevel* m_realPresentD3D12Downlevel{ nullptr };

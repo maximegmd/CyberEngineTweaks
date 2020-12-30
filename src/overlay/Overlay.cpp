@@ -135,6 +135,15 @@ LRESULT APIENTRY Overlay::WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
         return 0;
     }
 
+    if (uMsg == WM_WINDOWPOSCHANGED) 
+    {
+        auto wp = reinterpret_cast<WINDOWPOS*>(lParam);
+        spdlog::info("\tWM_WINDOWPOSCHANGED message received! Position: ({0}, {1}) Size ({2}, {3})", wp->x, wp->y, wp->cx, wp->cy);
+        auto d3d12Type = (kiero::isDownLevelDevice()) ? ("D3D12on7") : ("D3D12");
+        spdlog::info("\tTriggering {0} state reset", d3d12Type);
+        s_pOverlay->ResetD3D12State();
+    }
+
     switch (uMsg)
     {
     case WM_KEYDOWN:
