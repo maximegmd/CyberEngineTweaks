@@ -68,7 +68,7 @@ protected:
 	static void ExecuteCommandListsD3D12(ID3D12CommandQueue* apCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists);
 	static BOOL SetMousePosition(void* apThis, HWND Wnd, long X, long Y);
 	static BOOL ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis);
-	static LRESULT APIENTRY WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	static LRESULT APIENTRY WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	static void HookLog(ScriptContext* apContext, ScriptStack* apStack, void*, void*);
 	static void HookLogChannel(ScriptContext* apContext, ScriptStack* apStack, void*, void*);
 	static TDBID* HookTDBIDCtor(TDBID* apThis, const char* apName);

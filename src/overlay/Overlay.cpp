@@ -127,7 +127,7 @@ void Overlay::DrawImgui()
     ImGui::End();
 }
 
-LRESULT APIENTRY Overlay::WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT APIENTRY Overlay::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     if (uMsg == WM_KEYDOWN && wParam == Options::Get().ConsoleKey)
     {
@@ -135,13 +135,18 @@ LRESULT APIENTRY Overlay::WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
         return 0;
     }
 
-    if (uMsg == WM_WINDOWPOSCHANGED) 
+    if (uMsg == WM_WINDOWPOSCHANGED)
     {
         auto wp = reinterpret_cast<WINDOWPOS*>(lParam);
-        spdlog::info("\tWM_WINDOWPOSCHANGED message received! Position: ({0}, {1}) Size ({2}, {3})", wp->x, wp->y, wp->cx, wp->cy);
-        auto d3d12Type = (kiero::isDownLevelDevice()) ? ("D3D12on7") : ("D3D12");
-        spdlog::info("\tTriggering {0} state reset", d3d12Type);
-        s_pOverlay->ResetD3D12State();
+        spdlog::info("\tWM_WINDOWPOSCHANGED message received! Position: ({0}, {1}) Size ({2}, {3}) Flags ({4:x})", wp->x, wp->y, wp->cx, wp->cy, wp->flags);
+        if ((wp->flags & SWP_FRAMECHANGED) && 
+            (wp->flags & SWP_NOSIZE) && 
+            (wp->flags & SWP_NOZORDER))
+        {
+            auto d3d12Type = (kiero::isDownLevelDevice()) ? ("D3D12on7") : ("D3D12");
+            spdlog::info("\tCurrent WM_WINDOWPOSCHANGED flags match {0} state reset event - calling Overlay::ResetD3D12State()", d3d12Type);
+            s_pOverlay->ResetD3D12State();
+        }
     }
 
     switch (uMsg)
@@ -161,7 +166,7 @@ LRESULT APIENTRY Overlay::WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
 
     if (s_pOverlay->IsEnabled())
     {
-        LRESULT ret = ImGui_ImplWin32_WndProcHandler(hwnd, uMsg, wParam, lParam);
+        LRESULT ret = ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);
         if (ret)
             return ret;
 
@@ -178,7 +183,7 @@ LRESULT APIENTRY Overlay::WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
         }
     }
 
-    return CallWindowProc(s_pOverlay->m_wndProc, hwnd, uMsg, wParam, lParam);
+    return CallWindowProc(s_pOverlay->m_wndProc, hWnd, uMsg, wParam, lParam);
 }
 
 struct ScriptContext
