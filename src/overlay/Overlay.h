@@ -54,6 +54,8 @@ protected:
 		CComPtr<ID3D12Resource> MainRenderTargetResource;
 		D3D12_CPU_DESCRIPTOR_HANDLE MainRenderTargetDescriptor{ 0 };
 	};
+
+	bool ResetD3D12State();
 	bool InitializeD3D12(IDXGISwapChain3* pSwapChain);
 	bool InitializeD3D12Downlevel(ID3D12CommandQueue* pCommandQueue, ID3D12Resource* pSourceTex2D, HWND hWindow);
 	bool InitializeImGui(size_t buffersCounts);
@@ -66,7 +68,7 @@ protected:
 	static void ExecuteCommandListsD3D12(ID3D12CommandQueue* apCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists);
 	static BOOL SetMousePosition(void* apThis, HWND Wnd, long X, long Y);
 	static BOOL ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis);
-	static LRESULT APIENTRY WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	static LRESULT APIENTRY WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	static void HookLog(ScriptContext* apContext, ScriptStack* apStack, void*, void*);
 	static void HookLogChannel(ScriptContext* apContext, ScriptStack* apStack, void*, void*);
 	static TDBID* HookTDBIDCtor(TDBID* apThis, const char* apName);
@@ -81,8 +83,6 @@ protected:
 private:
 
 	Overlay();
-
-	bool InitializeD3D12Reset();
 
 	TPresentD3D12* m_realPresentD3D12{ nullptr };
 	TPresentD3D12Downlevel* m_realPresentD3D12Downlevel{ nullptr };
@@ -112,6 +112,7 @@ private:
 	HWND m_hWnd{ nullptr };
 	WNDPROC	m_wndProc{ nullptr };
 	bool m_enabled{ false };
+	bool m_toggled{ false };
 	
 	std::recursive_mutex m_outputLock;
 	std::vector<std::string> m_outputLines;
