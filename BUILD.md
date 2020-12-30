@@ -11,6 +11,10 @@ Building instructions for the plugin.
 2. cmd: `xmake -y`
 3. The files should be in `build\windows\x64\release`
 
+### Visual Studio
+
+If you want visual studio projects execute `xmake project -k vsxmake` and you will find the sln in the newly created `vsxmake` folder.
+
 ### Install
 
 1. Copy `build\windows\x64\release\cyber_engine_tweaks.asi` to `<cyberpunk install path>\bin\x64\plugins\cyber_engine_tweaks.asi`
