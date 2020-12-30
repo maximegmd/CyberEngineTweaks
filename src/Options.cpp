@@ -89,6 +89,7 @@ Options::Options(HMODULE aModule)
         this->CPUMemoryPoolFraction = config.value("cpu_memory_pool_fraction", this->CPUMemoryPoolFraction);
         this->GPUMemoryPoolFraction = config.value("gpu_memory_pool_fraction", this->GPUMemoryPoolFraction);
         this->PatchRemovePedestrians = config.value("remove_pedestrians", this->PatchRemovePedestrians);
+        this->PatchSaveLock = config.value("save_lock", this->PatchSaveLock);
         this->PatchSkipStartMenu = config.value("skip_start_menu", this->PatchSkipStartMenu);
         this->PatchAsyncCompute = config.value("disable_async_compute", this->PatchAsyncCompute);
         this->PatchAntialiasing = config.value("disable_antialiasing", this->PatchAntialiasing);
@@ -115,6 +116,7 @@ Options::Options(HMODULE aModule)
     config["cpu_memory_pool_fraction"] = this->CPUMemoryPoolFraction;
     config["gpu_memory_pool_fraction"] = this->GPUMemoryPoolFraction;
     config["remove_pedestrians"] = this->PatchRemovePedestrians;
+    config["save_lock"] = this->PatchSaveLock;
     config["skip_start_menu"] = this->PatchSkipStartMenu;
     config["disable_async_compute"] = this->PatchAsyncCompute;
     config["disable_antialiasing"] = this->PatchAntialiasing;
