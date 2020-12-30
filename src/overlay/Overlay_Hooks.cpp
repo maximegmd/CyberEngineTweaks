@@ -159,8 +159,15 @@ HRESULT Overlay::PresentD3D12Downlevel(ID3D12CommandQueueDownlevel* pCommandQueu
 {
     auto& overlay = Get();
 
+    // On Windows 7 there is no swap chain to query the current backbuffer index, so instead we simply count to 3 and wrap around.
+    // Increment the buffer index here even if the overlay is not enabled, so we stay in sync with the game's present calls.
+    // TODO: investigate if there isn't a better way of doing this (finding the current index in the game exe?)
+    overlay.m_downlevelBufferIndex = (!overlay.m_initialized || overlay.m_downlevelBufferIndex == 2) ? 0 : overlay.m_downlevelBufferIndex + 1;
+
     if (overlay.InitializeD3D12Downlevel(overlay.m_pCommandQueue, pSourceTex2D, hWindow))
+    {
         overlay.Render(nullptr);
+    }
 
     return overlay.m_realPresentD3D12Downlevel(pCommandQueueDownlevel, pOpenCommandList, pSourceTex2D, hWindow, Flags);
 }

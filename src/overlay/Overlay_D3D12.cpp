@@ -33,6 +33,7 @@ bool Overlay::InitializeD3D12Reset()
     m_pd3dRtvDescHeap = nullptr;
     m_pd3dSrvDescHeap = nullptr;
     m_pd3dCommandList = nullptr;
+    m_downlevelBufferIndex = 0;
     // NOTE: not clearing m_hWnd, m_wndProc and m_pCommandQueue, as these should be persistent once set till the EOL of Overlay
     return false;
 }
@@ -334,19 +335,12 @@ bool Overlay::InitializeImGui(size_t buffersCounts)
 
 void Overlay::Render(IDXGISwapChain3* pSwapChain)
 {
-    // On Windows 7 there is no swap chain to query the current backbuffer index, so instead we simply count to 3 and wrap around.
-    // Increment the buffer index here even if the overlay is not enabled, so we stay in sync with the game's present calls.
-    // TODO: investigate if there isn't a better way of doing this
-    static uint32_t downLevelBufferIndex = 0;
-    const uint32_t currentDownlevelBufferIndex = downLevelBufferIndex;
-    downLevelBufferIndex = downLevelBufferIndex == 2 ? 0 : downLevelBufferIndex + 1;
-
     if (!IsEnabled())
         return;
 
     DrawImgui();
 
-    const auto bufferIndex = pSwapChain != nullptr ? pSwapChain->GetCurrentBackBufferIndex() : currentDownlevelBufferIndex;
+    const auto bufferIndex = pSwapChain != nullptr ? pSwapChain->GetCurrentBackBufferIndex() : m_downlevelBufferIndex;
     auto& frameContext = m_frameContexts[bufferIndex];
     frameContext.CommandAllocator->Reset();
 

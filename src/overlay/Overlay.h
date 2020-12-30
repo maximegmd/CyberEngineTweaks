@@ -97,6 +97,7 @@ private:
 	CComPtr<ID3D12DescriptorHeap> m_pd3dSrvDescHeap;
 	CComPtr<ID3D12GraphicsCommandList> m_pd3dCommandList;
 	CComPtr<ID3D12CommandQueue> m_pCommandQueue;
+	uint32_t m_downlevelBufferIndex;
 
 	TClipToCenter* m_realClipToCenter{ nullptr };
 	TScriptCall* m_realLog{ nullptr };
