@@ -7,7 +7,7 @@
 #include "imgui_impl_dx12.h"
 #include "imgui_impl_win32.h"
 
-BOOL CALLBACK EnumWindowsProcMy(HWND hwnd, LPARAM lParam)
+static BOOL CALLBACK EnumWindowsProcMy(HWND hwnd, LPARAM lParam)
 {
     DWORD lpdwProcessId;
     GetWindowThreadProcessId(hwnd, &lpdwProcessId);
