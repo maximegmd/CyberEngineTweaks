@@ -45,7 +45,7 @@ bool Overlay::ResetD3D12State()
     return false;
 }
 
-bool Overlay::InitializeD3D12(IDXGISwapChain3* pSwapChain)
+bool Overlay::InitializeD3D12(IDXGISwapChain* pSwapChain)
 {
     static auto checkCmdQueue = [](Overlay* overlay) 
     {
@@ -87,7 +87,13 @@ bool Overlay::InitializeD3D12(IDXGISwapChain3* pSwapChain)
 
     if (m_initialized) 
     {
-        if (m_pdxgiSwapChain != pSwapChain)
+        CComPtr<IDXGISwapChain3> pSwapChain3;
+		if (FAILED(pSwapChain->QueryInterface(IID_PPV_ARGS(&pSwapChain3))))
+		{
+            spdlog::error("\tOverlay::InitializeD3D12() - unable to query pSwapChain interface for IDXGISwapChain3! (pSwapChain = {0})", reinterpret_cast<void*>(pSwapChain));
+            return false;
+		}
+        if (m_pdxgiSwapChain != pSwapChain3)
         {
             spdlog::warn("\tOverlay::InitializeD3D12() - multiple swap chains detected! Currently hooked to {0}, this call was from {1}.", reinterpret_cast<void*>(*(&m_pdxgiSwapChain)), reinterpret_cast<void*>(pSwapChain));
             return false;
@@ -100,7 +106,11 @@ bool Overlay::InitializeD3D12(IDXGISwapChain3* pSwapChain)
         return true;
     }
 
-    m_pdxgiSwapChain = pSwapChain;
+    if (FAILED(pSwapChain->QueryInterface(IID_PPV_ARGS(&m_pdxgiSwapChain))))
+    {
+        spdlog::error("\tOverlay::InitializeD3D12() - unable to query pSwapChain interface for IDXGISwapChain3! (pSwapChain = {0})", reinterpret_cast<void*>(pSwapChain));
+        return ResetD3D12State();
+    }
 
     if (FAILED(m_pdxgiSwapChain->GetDevice(IID_PPV_ARGS(&m_pd3d12Device))))
     {
@@ -340,14 +350,14 @@ bool Overlay::InitializeImGui(size_t buffersCounts)
     return true;
 }
 
-void Overlay::Render(IDXGISwapChain3* pSwapChain)
+void Overlay::Render()
 {
     if (!IsEnabled())
         return;
 
     DrawImgui();
 
-    const auto bufferIndex = pSwapChain != nullptr ? pSwapChain->GetCurrentBackBufferIndex() : m_downlevelBufferIndex;
+    const auto bufferIndex = (m_pdxgiSwapChain != nullptr) ? (m_pdxgiSwapChain->GetCurrentBackBufferIndex()) : (m_downlevelBufferIndex);
     auto& frameContext = m_frameContexts[bufferIndex];
     frameContext.CommandAllocator->Reset();
 

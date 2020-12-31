@@ -145,14 +145,27 @@ void Overlay::EarlyHooks(Image* apImage)
     }
 }
 
-long Overlay::PresentD3D12(IDXGISwapChain3* pSwapChain, UINT SyncInterval, UINT Flags)
+HRESULT Overlay::ResizeBuffersD3D12(IDXGISwapChain* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags)
 {
+    auto& overlay = Get();
+    
+    if (overlay.m_initialized)
+    {
+        spdlog::info("\tOverlay::ResizeBuffersD3D12() called with initialized Overlay, triggering Overlay::ResetD3D12State.");
+        overlay.ResetD3D12State();
+    }
+
+    return overlay.m_realResizeBuffersD3D12(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags);
+}
+
+HRESULT Overlay::PresentD3D12(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT PresentFlags)
+{    
     auto& overlay = Get();
 
     if (overlay.InitializeD3D12(pSwapChain))
-        overlay.Render(pSwapChain);
+        overlay.Render();
     
-    return overlay.m_realPresentD3D12(pSwapChain, SyncInterval, Flags);
+    return overlay.m_realPresentD3D12(pSwapChain, SyncInterval, PresentFlags);
 }
 
 HRESULT Overlay::PresentD3D12Downlevel(ID3D12CommandQueueDownlevel* pCommandQueueDownlevel, ID3D12GraphicsCommandList* pOpenCommandList, ID3D12Resource* pSourceTex2D, HWND hWindow, D3D12_DOWNLEVEL_PRESENT_FLAGS Flags)
@@ -182,7 +195,7 @@ HRESULT Overlay::PresentD3D12Downlevel(ID3D12CommandQueueDownlevel* pCommandQueu
 
     if (!resizing && overlay.InitializeD3D12Downlevel(overlay.m_pCommandQueue, pSourceTex2D, hWindow))
     {
-        overlay.Render(nullptr);
+        overlay.Render();
     }
 
     return overlay.m_realPresentD3D12Downlevel(pCommandQueueDownlevel, pOpenCommandList, pSourceTex2D, hWindow, Flags);
@@ -274,7 +287,7 @@ void Overlay::Hook()
 
     if (kiero::isDownLevelDevice()) 
     {
-        if (kiero::bind(135, reinterpret_cast<void**>(&m_realPresentD3D12Downlevel), &PresentD3D12Downlevel) != kiero::Status::Success)
+        if (kiero::bind(175, reinterpret_cast<void**>(&m_realPresentD3D12Downlevel), &PresentD3D12Downlevel) != kiero::Status::Success)
         {
             spdlog::error("\t{0} Downlevel Present hook failed!", d3d12type);
             ++d3d12FailedHooksCount;
@@ -297,6 +310,7 @@ void Overlay::Hook()
         }
     }
     else
+    {
         if (kiero::bind(140, reinterpret_cast<void**>(&m_realPresentD3D12), &PresentD3D12) != kiero::Status::Success)
         {
             spdlog::error("\t{0} Present hook failed!", d3d12type);
@@ -307,6 +321,18 @@ void Overlay::Hook()
             spdlog::info("\t{0} Present hook complete.", d3d12type);
             ++d3d12CompleteHooksCount;
         }
+
+        if (kiero::bind(145, reinterpret_cast<void**>(&m_realResizeBuffersD3D12), &ResizeBuffersD3D12) != kiero::Status::Success)
+        {
+            spdlog::error("\t{0} ResizeBuffers hook failed!", d3d12type);
+            ++d3d12FailedHooksCount;
+        }
+        else 
+        {
+            spdlog::info("\t{0} ResizeBuffers hook complete.", d3d12type);
+            ++d3d12CompleteHooksCount;
+        }
+    }
 
     if (kiero::bind(54, reinterpret_cast<void**>(&m_realExecuteCommandLists), &ExecuteCommandListsD3D12) != kiero::Status::Success)
     {
