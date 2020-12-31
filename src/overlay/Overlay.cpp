@@ -83,7 +83,7 @@ void Overlay::DrawImgui()
 
             ImVec2 listboxSize = ImGui::GetContentRegionAvail();
             listboxSize.y -= ImGui::GetFrameHeightWithSpacing();
-            const auto result = ImGui::ListBoxHeader("", listboxSize);
+            const auto result = ImGui::ListBoxHeader("##ConsoleHeader", listboxSize);
             ImGuiListClipper clipper;
             clipper.Begin(m_outputLines.size());
             while (clipper.Step())
@@ -118,7 +118,7 @@ void Overlay::DrawImgui()
             ImGui::SetKeyboardFocusHere();
             Get().m_focusConsoleInput = false;
         }
-        const auto execute = ImGui::InputText("", command, std::size(command), ImGuiInputTextFlags_EnterReturnsTrue);
+        const auto execute = ImGui::InputText("##InputCommand", command, std::size(command), ImGuiInputTextFlags_EnterReturnsTrue);
         ImGui::SetItemDefaultFocus();
         if (execute)
         {
