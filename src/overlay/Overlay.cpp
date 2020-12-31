@@ -76,7 +76,7 @@ void Overlay::DrawImgui()
         ImGui::SameLine();
         ImGui::Checkbox("Scroll Output", &m_outputShouldScroll);
         ImGui::SameLine();
-        ImGui::Checkbox("Disable Game log", &m_disabledGameLog);
+        ImGui::Checkbox("Disable Game Log", &m_disabledGameLog);
 
         static char command[200000] = { 0 };
 
