@@ -57,7 +57,8 @@ void Overlay::DrawImgui()
     ImGui_ImplWin32_NewFrame(m_outWidth, m_outHeight);
     ImGui::NewFrame();
 
-    ImGui::SetNextWindowSize(ImVec2(600.f, ImGui::GetFrameHeight() * 15.f + ImGui::GetFrameHeightWithSpacing()), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(ImVec2(0.f, 0.f), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(m_outWidth, m_outHeight * 0.3f), ImGuiCond_FirstUseEver);
 
     ImGui::Begin("Cyber Engine Tweaks");
 
