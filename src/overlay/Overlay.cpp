@@ -113,10 +113,10 @@ void Overlay::DrawImgui()
         }
 
         ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-        if (Get().m_toggled)
+        if (Get().m_focusConsoleInput)
         {
             ImGui::SetKeyboardFocusHere();
-            Get().m_toggled = false;
+            Get().m_focusConsoleInput = false;
         }
         const auto execute = ImGui::InputText("", command, std::size(command), ImGuiInputTextFlags_EnterReturnsTrue);
         ImGui::SetItemDefaultFocus();
@@ -161,6 +161,9 @@ LRESULT APIENTRY Overlay::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 
     if (s_pOverlay->IsEnabled())
     {
+        if (uMsg == WM_KEYUP && wParam == VK_RETURN)
+            s_pOverlay->m_focusConsoleInput = true;
+
         LRESULT ret = ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);
         if (ret)
             return ret;
@@ -368,7 +371,7 @@ void Overlay::Toggle()
     {
         if (m_enabled && ShowCursor(TRUE) >= 0) 
         {
-            m_toggled = true;
+            m_focusConsoleInput = true;
             break;
         }
         if (!m_enabled && ShowCursor(FALSE) < 0)

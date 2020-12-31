@@ -115,7 +115,7 @@ private:
 	HWND m_hWnd{ nullptr };
 	WNDPROC	m_wndProc{ nullptr };
 	bool m_enabled{ false };
-	bool m_toggled{ false };
+	bool m_focusConsoleInput{ false };
 
 	UINT m_outWidth{ 0 };
 	UINT m_outHeight{ 0 };
