@@ -75,6 +75,8 @@ void Overlay::DrawImgui()
         }
         ImGui::SameLine();
         ImGui::Checkbox("Scroll Output", &m_outputShouldScroll);
+        ImGui::SameLine();
+        ImGui::Checkbox("Disable Game log", &m_disabledGameLog);
 
         static char command[200000] = { 0 };
 
@@ -216,7 +218,8 @@ void Overlay::HookLog(ScriptContext* apContext, ScriptStack* apStack, void*, voi
     GetScriptCallArray()[opcode](apStack->m_context, apStack, &text, nullptr);
     apStack->m_code++; // skip ParamEnd
 
-    Get().Log(text.c_str());
+    if (!Get().m_disabledGameLog)
+        Get().Log(text.c_str());
 }
 
 const char* GetChannelStr(uint64_t hash)
@@ -263,12 +266,15 @@ void Overlay::HookLogChannel(ScriptContext* apContext, ScriptStack* apStack, voi
     GetScriptCallArray()[opcode](apStack->m_context, apStack, &text, nullptr);
 
     apStack->m_code++; // skip ParamEnd
-
-    auto channel_str = GetChannelStr(channel_hash);
-    std::string channel = channel_str == nullptr
-        ? "?" + std::to_string(channel_hash)
-        : std::string(channel_str);
-    Get().Log("[" + channel + "] " +text.c_str());
+    
+    if (!Get().m_disabledGameLog)
+    {
+        auto channel_str = GetChannelStr(channel_hash);
+        std::string channel = channel_str == nullptr
+            ? "?" + std::to_string(channel_hash)
+            : std::string(channel_str);
+        Get().Log("[" + channel + "] " +text.c_str());
+    }
 }
 
 std::string GetTDBDIDDebugString(TDBID tdbid)

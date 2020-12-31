@@ -125,6 +125,7 @@ private:
 	bool m_outputShouldScroll{ true };
 	bool m_outputScroll{ false };
 	bool m_inputClear{ true };
+	bool m_disabledGameLog{ false };
 	std::recursive_mutex m_tdbidLock;
 	std::unordered_map<uint64_t, TDBIDLookupEntry> m_tdbidLookup;
 
