@@ -92,7 +92,7 @@ bool Overlay::InitializeD3D12(IDXGISwapChain* pSwapChain)
         CComPtr<IDXGISwapChain3> pSwapChain3;
 		if (FAILED(pSwapChain->QueryInterface(IID_PPV_ARGS(&pSwapChain3))))
 		{
-            spdlog::error("Overlay::InitializeD3D12() - unable to query pSwapChain interface for IDXGISwapChain3! (pSwapChain = {0})", reinterpret_cast<void*>(pSwapChain));
+			spdlog::error("Overlay::InitializeD3D12() - unable to query pSwapChain interface for IDXGISwapChain3! (pSwapChain = {0})", reinterpret_cast<void*>(pSwapChain));
             return false;
 		}
         if (m_pdxgiSwapChain != pSwapChain3)

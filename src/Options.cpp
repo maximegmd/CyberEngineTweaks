@@ -111,7 +111,7 @@ Options::Options(HMODULE aModule)
     }
 
     std::string scriptsPath = this->ScriptsPath.string();
-    spdlog::info("LUA scripts search path: \"{}\"", scriptsPath);
+    spdlog::info("Lua scripts search path: \"{}\"", scriptsPath);
 
     nlohmann::json config;
     config["avx"] = this->PatchAVX;
