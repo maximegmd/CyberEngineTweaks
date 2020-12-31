@@ -41,6 +41,8 @@ bool Overlay::ResetD3D12State()
     m_pd3dSrvDescHeap = nullptr;
     m_pd3dCommandList = nullptr;
     m_downlevelBufferIndex = 0;
+    m_outWidth = 0;
+    m_outHeight = 0;
     // NOTE: not clearing m_hWnd, m_wndProc and m_pCommandQueue, as these should be persistent once set till the EOL of Overlay
     return false;
 }
@@ -123,6 +125,9 @@ bool Overlay::InitializeD3D12(IDXGISwapChain* pSwapChain)
 
     if (sdesc.OutputWindow != m_hWnd) 
         spdlog::warn("\tOverlay::InitializeD3D12() - output window of current swap chain does not match hooked window! Currently hooked to {0} while swap chain output window is {1}.", reinterpret_cast<void*>(m_hWnd), reinterpret_cast<void*>(sdesc.OutputWindow));
+
+    m_outWidth = sdesc.BufferDesc.Width;
+    m_outHeight = sdesc.BufferDesc.Height;
 
     auto buffersCounts = sdesc.BufferCount;
     m_frameContexts.resize(buffersCounts);

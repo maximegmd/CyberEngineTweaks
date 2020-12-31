@@ -54,7 +54,7 @@ void Overlay::DrawImgui()
     Scripting::Get();
 
     ImGui_ImplDX12_NewFrame();
-    ImGui_ImplWin32_NewFrame();
+    ImGui_ImplWin32_NewFrame(m_outWidth, m_outHeight);
     ImGui::NewFrame();
 
     ImGui::SetNextWindowSize(ImVec2(600.f, ImGui::GetFrameHeight() * 15.f + ImGui::GetFrameHeightWithSpacing()), ImGuiCond_FirstUseEver);

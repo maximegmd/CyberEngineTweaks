@@ -151,6 +151,7 @@ HRESULT Overlay::ResizeBuffersD3D12(IDXGISwapChain* pSwapChain, UINT BufferCount
     
     if (overlay.m_initialized)
     {
+        // NOTE: right now, done in case of any swap chain ResizeBuffers call, which may not be ideal. We have yet to encounter multiple swap chains in use though, so should be safe
         spdlog::info("\tOverlay::ResizeBuffersD3D12() called with initialized Overlay, triggering Overlay::ResetD3D12State.");
         overlay.ResetD3D12State();
     }
@@ -189,14 +190,10 @@ HRESULT Overlay::PresentD3D12Downlevel(ID3D12CommandQueueDownlevel* pCommandQueu
         resizing = overlay.m_downlevelBackbuffers.size() < 3;
     }
     else
-    {
        overlay.m_downlevelBufferIndex = static_cast<uint32_t>(std::distance(overlay.m_downlevelBackbuffers.cbegin(), it));
-    }
 
     if (!resizing && overlay.InitializeD3D12Downlevel(overlay.m_pCommandQueue, pSourceTex2D, hWindow))
-    {
         overlay.Render();
-    }
 
     return overlay.m_realPresentD3D12Downlevel(pCommandQueueDownlevel, pOpenCommandList, pSourceTex2D, hWindow, Flags);
 }

@@ -116,6 +116,9 @@ private:
 	WNDPROC	m_wndProc{ nullptr };
 	bool m_enabled{ false };
 	bool m_toggled{ false };
+
+	UINT m_outWidth{ 0 };
+	UINT m_outHeight{ 0 };
 	
 	std::recursive_mutex m_outputLock;
 	std::vector<std::string> m_outputLines;
