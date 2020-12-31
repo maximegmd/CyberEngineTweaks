@@ -53,6 +53,8 @@ Options::Options(HMODULE aModule)
     Path /= _T("plugins");
     Path /= _T("cyber_engine_tweaks\\");
 
+    ScriptsPath = Path / "scripts\\";
+
     std::error_code ec;
     create_directories(Path, ec);
 
@@ -93,6 +95,7 @@ Options::Options(HMODULE aModule)
         this->PatchDisableIntroMovies = config.value("disable_intro_movies", this->PatchDisableIntroMovies);
         this->PatchDisableVignette = config.value("disable_vignette", this->PatchDisableVignette);
         this->PatchDisableBoundaryTeleport = config.value("disable_boundary_teleport", this->PatchDisableBoundaryTeleport);
+	    this->ScriptsPath = config.value("scripts_path", this->ScriptsPath.string());
 
         this->DumpGameOptions = config.value("dump_game_options", this->DumpGameOptions);
         this->Console = config.value("console", this->Console);
@@ -104,6 +107,9 @@ Options::Options(HMODULE aModule)
 
         this->ConsoleChar = MapVirtualKeyA(this->ConsoleKey, MAPVK_VK_TO_CHAR);
     }
+
+    std::string scriptsPath = this->ScriptsPath.string();
+    spdlog::info("LUA scripts search path: \"{}\"", scriptsPath);
 
     nlohmann::json config;
     config["avx"] = this->PatchAVX;
@@ -122,6 +128,7 @@ Options::Options(HMODULE aModule)
     config["disable_intro_movies"] = this->PatchDisableIntroMovies;
     config["disable_vignette"] = this->PatchDisableVignette;
     config["disable_boundary_teleport"] = this->PatchDisableBoundaryTeleport;
+    config["scripts_path"] = scriptsPath;
 
     std::ofstream o(configPath);
     o << config.dump(4) << std::endl;

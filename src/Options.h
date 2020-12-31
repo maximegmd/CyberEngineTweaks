@@ -29,6 +29,7 @@ struct Options
 	float GPUMemoryPoolFraction{ 1.f };
 	std::filesystem::path Path;
 	std::filesystem::path ExePath;
+	std::filesystem::path ScriptsPath;
 	Image GameImage;
 	bool ExeValid{ false };
 

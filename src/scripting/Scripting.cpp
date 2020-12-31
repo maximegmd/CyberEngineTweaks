@@ -395,7 +395,8 @@ void Scripting::Initialize()
         }
         Overlay::Get().Log(oss.str());
     };
-
+    
+    std::filesystem::current_path(Options::Get().ScriptsPath);
     m_lua.do_file((Options::Get().Path / "scripts" / "autoexec.lua").string());
 }
 
