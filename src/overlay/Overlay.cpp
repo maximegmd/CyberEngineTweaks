@@ -98,6 +98,7 @@ void Overlay::DrawImgui()
                             str = str.substr(2);
 
                         std::strncpy(command, str.c_str(), sizeof(command) - 1);
+                        Get().m_focusConsoleInput = true;
                     }
                     ImGui::PopID();
                 }
