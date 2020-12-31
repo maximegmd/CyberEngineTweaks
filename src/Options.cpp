@@ -64,6 +64,8 @@ Options::Options(HMODULE aModule)
     logger->flush_on(spdlog::level::debug);
     set_default_logger(logger);
 
+    spdlog::info("Cyber Engine Tweaks is starting...");
+
     GameImage.Initialize();
 
     if (GameImage.version)
