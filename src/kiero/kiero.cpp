@@ -182,7 +182,7 @@ kiero::Status::Enum kiero::init()
 			return Status::UnknownError;
 		}
 
-		if (FAILED(swapChain1->QueryInterface(__uuidof(IDXGISwapChain3), (void**)&swapChain)))
+		if (FAILED(swapChain1->QueryInterface(IID_PPV_ARGS(&swapChain))))
 		{
 			::DestroyWindow(window);
 			::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
@@ -210,15 +210,15 @@ kiero::Status::Enum kiero::init()
 		g_commandQueueOffset = reinterpret_cast<uintptr_t>(addr) - reinterpret_cast<uintptr_t>(commandQueueDownlevelPtr);
 	}
 
-	g_methodsTable = (uint150_t*)::calloc(150, sizeof(uint150_t));
+	g_methodsTable = (uint150_t*)::calloc(176, sizeof(uint150_t));
 	::memcpy(g_methodsTable, *(uint150_t**)(void*)device, 44 * sizeof(uint150_t));
 	::memcpy(g_methodsTable + 44, *(uint150_t**)(void*)commandQueue, 19 * sizeof(uint150_t));
 	::memcpy(g_methodsTable + 44 + 19, *(uint150_t**)(void*)commandAllocator, 9 * sizeof(uint150_t));
 	::memcpy(g_methodsTable + 44 + 19 + 9, *(uint150_t**)(void*)commandList, 60 * sizeof(uint150_t));
 	if (!g_isDownLevelDevice)
-		::memcpy(g_methodsTable + 44 + 19 + 9 + 60, *(uint150_t**)(void*)swapChain, 18 * sizeof(uint150_t));
+		::memcpy(g_methodsTable + 44 + 19 + 9 + 60, *(uint150_t**)(void*)swapChain, 40 * sizeof(uint150_t));
 	else
-		::memcpy(g_methodsTable + 44 + 19 + 9 + 60, *(uint150_t**)(void*)commandQueueDownlevel, 4 * sizeof(uint150_t));
+		::memcpy(g_methodsTable + 44 + 19 + 9 + 60 + 40, *(uint150_t**)(void*)commandQueueDownlevel, 4 * sizeof(uint150_t));
 
 	::DestroyWindow(window);
 	::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
