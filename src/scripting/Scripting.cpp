@@ -405,8 +405,8 @@ void Scripting::Initialize()
     // execute autoexec.lua inside user-set script directory (directory stays set afterwards to this)
     if (defPath != Options::Get().ScriptsPath)
     {
-        m_lua.do_file("autoexec.lua");
         std::filesystem::current_path(Options::Get().ScriptsPath);
+        m_lua.do_file("autoexec.lua");
     }
 }
 
