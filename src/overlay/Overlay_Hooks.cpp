@@ -15,9 +15,9 @@ void Overlay::EarlyHooks(Image* apImage)
     if (pLocation)
     {
         if (MH_CreateHook(pLocation, &ClipToCenter, reinterpret_cast<void**>(&m_realClipToCenter)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-            spdlog::error("\tCould not hook mouse clip function!");
+            spdlog::error("Could not hook mouse clip function!");
         else
-            spdlog::info("\tHook mouse clip function!");
+            spdlog::info("Hook mouse clip function!");
     }
 
     pLocation = FindSignature({
@@ -29,9 +29,9 @@ void Overlay::EarlyHooks(Image* apImage)
     if(pLocation)
     {
         if (MH_CreateHook(pLocation, &HookLog, reinterpret_cast<void**>(&m_realLog)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-            spdlog::error("\tCould not hook Log function!");
+            spdlog::error("Could not hook Log function!");
         else
-            spdlog::info("\tLog function hook complete!");
+            spdlog::info("Log function hook complete!");
     }
 
     pLocation = FindSignature({
@@ -50,9 +50,9 @@ void Overlay::EarlyHooks(Image* apImage)
     if (pLocation)
     {
         if (MH_CreateHook(pLocation, &HookLogChannel, reinterpret_cast<void**>(&m_realLogChannel)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-            spdlog::error("\tCould not hook LogChannel function!");
+            spdlog::error("Could not hook LogChannel function!");
         else
-            spdlog::info("\tLogChannel function hook complete!");
+            spdlog::info("LogChannel function hook complete!");
     }
 
     pLocation = FindSignature({
@@ -64,9 +64,9 @@ void Overlay::EarlyHooks(Image* apImage)
     if (pLocation)
     {
         if (MH_CreateHook(pLocation, &HookTDBIDCtor, reinterpret_cast<void**>(&m_realTDBIDCtor)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-            spdlog::error("\tCould not hook TDBID::ctor function!");
+            spdlog::error("Could not hook TDBID::ctor function!");
         else
-            spdlog::info("\tTDBID::ctor function hook complete!");
+            spdlog::info("TDBID::ctor function hook complete!");
     }
 
     pLocation = FindSignature({
@@ -79,9 +79,9 @@ void Overlay::EarlyHooks(Image* apImage)
     if (pLocation)
     {
         if (MH_CreateHook(pLocation, &HookTDBIDCtorCString, reinterpret_cast<void**>(&m_realTDBIDCtorCString)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-            spdlog::error("\tCould not hook TDBID::ctor[CString] function!");
+            spdlog::error("Could not hook TDBID::ctor[CString] function!");
         else
-            spdlog::info("\tTDBID::ctor[CString] function hook complete!");
+            spdlog::info("TDBID::ctor[CString] function hook complete!");
     }
 
     pLocation = FindSignature({
@@ -94,9 +94,9 @@ void Overlay::EarlyHooks(Image* apImage)
     if (pLocation)
     {
         if (MH_CreateHook(pLocation, &HookTDBIDCtorDerive, reinterpret_cast<void**>(&m_realTDBIDCtorDerive)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-            spdlog::error("\tCould not hook TDBID::ctor[Derive] function!");
+            spdlog::error("Could not hook TDBID::ctor[Derive] function!");
         else
-            spdlog::info("\tTDBID::ctor[Derive] function hook complete!");
+            spdlog::info("TDBID::ctor[Derive] function hook complete!");
     }
 
     pLocation = FindSignature({
@@ -109,10 +109,10 @@ void Overlay::EarlyHooks(Image* apImage)
     if (pLocation)
     {
         if (MH_CreateHook(pLocation, &HookTDBIDCtorUnknown, reinterpret_cast<void**>(&m_realTDBIDCtorUnknown)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-            spdlog::error("\tCould not hook TDBID::ctor[Unknown] function!");
+            spdlog::error("Could not hook TDBID::ctor[Unknown] function!");
         else
         {
-            spdlog::info("\tTDBID::ctor[Unknown] function hook complete!");
+            spdlog::info("TDBID::ctor[Unknown] function hook complete!");
             *reinterpret_cast<void**>(&m_someStringLookup) = &pLocation[33] + *reinterpret_cast<int32_t*>(&pLocation[29]);
         }
     }
@@ -138,9 +138,9 @@ void Overlay::EarlyHooks(Image* apImage)
         {
             pLocation = &pLocation[28] + *reinterpret_cast<int32_t*>(&pLocation[24]);
             if (MH_CreateHook(pLocation, &HookTDBIDToStringDEBUG, reinterpret_cast<void**>(&m_realTDBIDToStringDEBUG)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-                spdlog::error("\tCould not hook TDBID::ToStringDEBUG function!");
+                spdlog::error("Could not hook TDBID::ToStringDEBUG function!");
             else
-                spdlog::info("\tTDBID::ToStringDEBUG function hook complete!");
+                spdlog::info("TDBID::ToStringDEBUG function hook complete!");
         }
     }
 }
@@ -152,7 +152,7 @@ HRESULT Overlay::ResizeBuffersD3D12(IDXGISwapChain* pSwapChain, UINT BufferCount
     if (overlay.m_initialized)
     {
         // NOTE: right now, done in case of any swap chain ResizeBuffers call, which may not be ideal. We have yet to encounter multiple swap chains in use though, so should be safe
-        spdlog::info("\tOverlay::ResizeBuffersD3D12() called with initialized Overlay, triggering Overlay::ResetD3D12State.");
+        spdlog::info("Overlay::ResizeBuffersD3D12() called with initialized Overlay, triggering Overlay::ResetD3D12State.");
         overlay.ResetD3D12State();
     }
 
@@ -180,7 +180,7 @@ HRESULT Overlay::PresentD3D12Downlevel(ID3D12CommandQueueDownlevel* pCommandQueu
     {
         if (overlay.m_initialized)
         {
-            spdlog::warn("\tOverlay::PresentD3D12Downlevel() - buffer at {0} not found in backbuffer list! Assuming window was resized - note that support for resizing is experimental.", (void*)pSourceTex2D);
+            spdlog::warn("Overlay::PresentD3D12Downlevel() - buffer at {0} not found in backbuffer list! Assuming window was resized - note that support for resizing is experimental.", (void*)pSourceTex2D);
             overlay.ResetD3D12State();
         }
 
@@ -218,7 +218,7 @@ HRESULT Overlay::CreateCommittedResourceD3D12(ID3D12Device* pDevice, const D3D12
     {
         // Store the returned resource
         overlay.m_downlevelBackbuffers.emplace_back(static_cast<ID3D12Resource*>(*ppvResource));
-        spdlog::debug("\tOverlay::CreateCommittedResourceD3D12() - found valid backbuffer target at {0}.", *ppvResource);
+        spdlog::debug("Overlay::CreateCommittedResourceD3D12() - found valid backbuffer target at {0}.", *ppvResource);
     }
 
     // If D3D12 has been initialized, there is no need to continue hooking this function since the backbuffers are only created once.
@@ -237,10 +237,10 @@ void Overlay::ExecuteCommandListsD3D12(ID3D12CommandQueue* apCommandQueue, UINT 
         if(desc.Type == D3D12_COMMAND_LIST_TYPE_DIRECT) 
         {
             overlay.m_pCommandQueue = apCommandQueue;
-            spdlog::info("\tOverlay::ExecuteCommandListsD3D12() - found valid command queue.");
+            spdlog::info("Overlay::ExecuteCommandListsD3D12() - found valid command queue.");
         }
         else 
-            spdlog::info("\tOverlay::ExecuteCommandListsD3D12() - ignoring command queue - unusable command list type");
+            spdlog::info("Overlay::ExecuteCommandListsD3D12() - ignoring command queue - unusable command list type");
     }
 
     overlay.m_realExecuteCommandLists(apCommandQueue, NumCommandLists, ppCommandLists);
@@ -286,23 +286,23 @@ void Overlay::Hook()
     {
         if (kiero::bind(175, reinterpret_cast<void**>(&m_realPresentD3D12Downlevel), &PresentD3D12Downlevel) != kiero::Status::Success)
         {
-            spdlog::error("\t{0} Downlevel Present hook failed!", d3d12type);
+            spdlog::error("{0} Downlevel Present hook failed!", d3d12type);
             ++d3d12FailedHooksCount;
         }
         else 
         {
-            spdlog::info("\t{0} Downlevel Present hook complete.", d3d12type);
+            spdlog::info("{0} Downlevel Present hook complete.", d3d12type);
             ++d3d12CompleteHooksCount;
         }
 
         if (kiero::bind(27, reinterpret_cast<void**>(&m_realCreateCommittedResource), &CreateCommittedResourceD3D12) != kiero::Status::Success)
         {
-            spdlog::error("\t{0} CreateCommittedResource Hook failed!", d3d12type);
+            spdlog::error("{0} CreateCommittedResource Hook failed!", d3d12type);
             ++d3d12FailedHooksCount;
         }
         else 
         {
-            spdlog::info("\t{0} CreateCommittedResource hook complete.", d3d12type);
+            spdlog::info("{0} CreateCommittedResource hook complete.", d3d12type);
             ++d3d12CompleteHooksCount;
         }
     }
@@ -310,40 +310,40 @@ void Overlay::Hook()
     {
         if (kiero::bind(140, reinterpret_cast<void**>(&m_realPresentD3D12), &PresentD3D12) != kiero::Status::Success)
         {
-            spdlog::error("\t{0} Present hook failed!", d3d12type);
+            spdlog::error("{0} Present hook failed!", d3d12type);
             ++d3d12FailedHooksCount;
         }
         else 
         {
-            spdlog::info("\t{0} Present hook complete.", d3d12type);
+            spdlog::info("{0} Present hook complete.", d3d12type);
             ++d3d12CompleteHooksCount;
         }
 
         if (kiero::bind(145, reinterpret_cast<void**>(&m_realResizeBuffersD3D12), &ResizeBuffersD3D12) != kiero::Status::Success)
         {
-            spdlog::error("\t{0} ResizeBuffers hook failed!", d3d12type);
+            spdlog::error("{0} ResizeBuffers hook failed!", d3d12type);
             ++d3d12FailedHooksCount;
         }
         else 
         {
-            spdlog::info("\t{0} ResizeBuffers hook complete.", d3d12type);
+            spdlog::info("{0} ResizeBuffers hook complete.", d3d12type);
             ++d3d12CompleteHooksCount;
         }
     }
 
     if (kiero::bind(54, reinterpret_cast<void**>(&m_realExecuteCommandLists), &ExecuteCommandListsD3D12) != kiero::Status::Success)
     {
-        spdlog::error("\t{0} ExecuteCommandLists hook failed!", d3d12type);
+        spdlog::error("{0} ExecuteCommandLists hook failed!", d3d12type);
         ++d3d12FailedHooksCount;
     }
     else 
     {
-        spdlog::info("\t{0} ExecuteCommandLists hook complete.", d3d12type);
+        spdlog::info("{0} ExecuteCommandLists hook complete.", d3d12type);
         ++d3d12CompleteHooksCount;
     }
 
     if (d3d12FailedHooksCount == 0) 
-        spdlog::info("\t{0} hook complete. ({1}/{2})", d3d12type, d3d12CompleteHooksCount, d3d12CompleteHooksCount+d3d12FailedHooksCount);
+        spdlog::info("{0} hook complete. ({1}/{2})", d3d12type, d3d12CompleteHooksCount, d3d12CompleteHooksCount+d3d12FailedHooksCount);
     else 
-        spdlog::error("\t{0} hook failed! ({1}/{2})", d3d12type, d3d12CompleteHooksCount, d3d12CompleteHooksCount+d3d12FailedHooksCount);
+        spdlog::error("{0} hook failed! ({1}/{2})", d3d12type, d3d12CompleteHooksCount, d3d12CompleteHooksCount+d3d12FailedHooksCount);
 }

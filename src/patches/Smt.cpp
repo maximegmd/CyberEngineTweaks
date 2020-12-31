@@ -16,10 +16,10 @@ void SmtAmdPatch(Image* apImage)
         *pMemoryItor = 0xEB;
         VirtualProtect(pMemoryItor, 8, oldProtect, nullptr);
 
-        spdlog::info("\tAMD SMT Patch: success");
+        spdlog::info("AMD SMT Patch: success");
 
         return;
     }
 
-    spdlog::warn("\tAMD SMT Patch: failed");
+    spdlog::warn("AMD SMT Patch: failed");
 }

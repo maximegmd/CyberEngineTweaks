@@ -27,7 +27,7 @@ void Overlay::Initialize(Image* apImage)
             else
             {
                 const char* d3d12type = (kiero::isDownLevelDevice()) ? ("D3D12on7") : ("D3D12");
-                spdlog::info("\tKiero initialized for {0}", d3d12type);
+                spdlog::info("Kiero initialized for {0}", d3d12type);
                 Overlay::Get().Hook();
             }
         });
