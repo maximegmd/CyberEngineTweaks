@@ -459,6 +459,8 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
 
     static const auto hashcpPlayerSystem = RED4ext::FNV1a("cpPlayerSystem");
     static const auto hashGameInstance = RED4ext::FNV1a("ScriptGameInstance");
+    auto* pGIType = pRtti->GetType(RED4ext::FNV1a("ScriptGameInstance"));
+
 
     auto* pPlayerSystem = pRtti->GetClass(hashcpPlayerSystem);
     auto* gameInstanceType = pRtti->GetClass(hashGameInstance);
@@ -474,24 +476,6 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
         }
     }
 
-    if (pFunc->params.size - 1 != aArgs.size())
-    {
-        aReturnMessage = "Function '" + aFuncName + "' expects " +
-            std::to_string(pFunc->params.size - 1) + " parameters, not " +
-            std::to_string(aArgs.size()) + ".";
-
-        return sol::nil;
-    }
-
-    const auto* engine = RED4ext::CGameEngine::Get();
-    auto* unk10 = engine->framework->gameInstance;
-
-    using CStackType = RED4ext::CStackType;
-    std::vector<CStackType> args(aArgs.size() + 1);
-
-    args[0].type = pFunc->params[0]->type;
-    args[0].value = &unk10;
-
     // 8KB should cut it
     static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 13);
     struct ResetAllocator
@@ -503,15 +487,46 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
     };
     ResetAllocator ___allocatorReset;
 
+    using CStackType = RED4ext::CStackType;
+    const auto* engine = RED4ext::CGameEngine::Get();
+    auto* unk10 = engine->framework->gameInstance;
+
+    RED4ext::CName name;
+    uint8_t argOffset = 0;
+
+    if (pFunc->params.size > 0) {
+        auto* pType = pFunc->params[0]->type;
+        if (pType == pGIType) {
+            argOffset = 1;
+        }
+    }
+
+    std::vector<CStackType> args(aArgs.size() + argOffset);
+
+
+    if (pFunc->params.size - argOffset != aArgs.size())
+    {
+        aReturnMessage = "Function '" + aFuncName + "' expects " +
+            std::to_string(pFunc->params.size - argOffset) + " parameters, not " +
+            std::to_string(aArgs.size()) + ".";
+
+        return sol::nil;
+    }
+
+    if (argOffset > 0)
+    {
+        args[0].type = pFunc->params[0]->type;
+        args[0].value = &unk10;
+    }
+
     for (auto i = 0ull; i < aArgs.size(); ++i)
     {
-        args[i + 1ull] = ToRED(aArgs[i].get<sol::object>(), pFunc->params[i + 1ull]->type, &s_scratchMemory);
+        args[i + argOffset] = ToRED(aArgs[i].get<sol::object>(), pFunc->params[i + argOffset]->type, &s_scratchMemory);
 
-        if(!args[i + 1ull].value)
+        if(!args[i + argOffset].value)
         {
-            auto* pType = pFunc->params[i + 1]->type;
+            auto* pType = pFunc->params[i + argOffset]->type;
 
-            RED4ext::CName name;
             pType->GetName(name);
             if (name)
             {
