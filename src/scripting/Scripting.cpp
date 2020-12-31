@@ -456,6 +456,7 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
     auto* pRtti = RED4ext::CRTTISystem::Get();
 
     RED4ext::CBaseFunction* pFunc = pRtti->GetFunction(RED4ext::FNV1a(aFuncName.c_str()));
+    RED4ext::CProperty* pProp = pRtti->GetProperty(RED4ext::FNV1a(aFuncName.c_str()));
 
     static const auto hashcpPlayerSystem = RED4ext::FNV1a("cpPlayerSystem");
     static const auto hashGameInstance = RED4ext::FNV1a("ScriptGameInstance");
@@ -463,16 +464,26 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
     auto* pPlayerSystem = pRtti->GetClass(hashcpPlayerSystem);
     auto* gameInstanceType = pRtti->GetClass(hashGameInstance);
 
-    if (!pFunc)
+    // Check if both are unset
+    if (!pFunc && !pProp)
     {
+        // Attempt to find a function
         pFunc = gameInstanceType->GetFunction(RED4ext::FNV1a(aFuncName.c_str()));
+        // No function found
         if (!pFunc)
         {
-            aReturnMessage = "Function '" + aFuncName + "' not found or is not a global.";
+            // Attempt to find a property
+            pProp = gameInstanceType->GetProperty(RED4ext::FNV1a(aFuncName.c_str()));
+            // If, after trying, it is neither a Property or Function, throw error
+            if (!pProp)
+            {
+                aReturnMessage = "Function or Property '" + aFuncName + "' not found or is not a global.";
 
-            return sol::nil;
+                return sol::nil;
+            }
         }
     }
+
 
     if (pFunc->params.size - 1 != aArgs.size())
     {
