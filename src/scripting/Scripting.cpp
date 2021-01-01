@@ -408,6 +408,10 @@ void Scripting::Initialize()
         Overlay::Get().Log(oss.str());
     };
 
+    m_lua["GetAsyncKeyState"] = [](int aKeyCode) -> bool
+    {
+        return GetAsyncKeyState(aKeyCode) & 0x8000 != 0;
+    };
 
     // execute autoexec.lua inside our default script directory
     std::filesystem::current_path(Options::Get().CETPath / "scripts");
