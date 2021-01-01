@@ -51,9 +51,9 @@ Options::Options(HMODULE aModule)
 
     Path = ExePath.parent_path();
     Path /= _T("plugins");
-    Path /= _T("cyber_engine_tweaks\\");
+    Path /= _T("cyber_engine_tweaks");
 
-    ScriptsPath = (Path / "scripts\\").make_preferred();
+    ScriptsPath = (Path / "scripts").make_preferred();
 
     std::error_code ec;
     create_directories(Path, ec);
