@@ -90,6 +90,41 @@ std::string Type::GetName() const
     return "";
 }
 
+std::string Type::FunctionDescriptor(RED4ext::CBaseFunction* pFunc) const
+{
+    std::stringstream ret;
+
+    // name2 seems to be a cleaner representation of the name
+    // for example, name would be "DisableFootstepAudio;Bool", and name2 is just"DisableFootstepAudio"
+    std::string funcName2 = pFunc->name2.ToString();
+
+    ret << funcName2 << "(";
+
+    RED4ext::CName name;
+    for (auto i = 0u; i < pFunc->params.size; ++i)
+    {
+        auto* param = pFunc->params[i];
+        ret << param->name.ToString() << ": ";
+        param->type->GetName(name);
+        ret << name.ToString();
+        if (i < pFunc->params.size - 1) {
+            ret << ", ";
+        }
+    }
+
+    ret << ")";
+
+    const bool hasReturnType = (pFunc->returnType) != nullptr && (pFunc->returnType->type) != nullptr;
+
+    if (hasReturnType)
+    {
+        pFunc->returnType->type->GetName(name);
+        ret << ": " << name.ToString();
+    }
+
+    return ret.str();
+}
+
 Type::Descriptor Type::Dump() const
 {
     Descriptor descriptor;
@@ -101,18 +136,22 @@ Type::Descriptor Type::Dump() const
         for (auto i = 0u; i < m_pType->funcs.size; ++i)
         {
             auto* pFunc = m_pType->funcs[i];
-            std::string funcName = pFunc->name.ToString();
-            descriptor.functions.push_back(funcName);
+            std::string funcDescriptor = FunctionDescriptor(pFunc);
+            descriptor.functions.push_back(funcDescriptor);
         }
 
         for (auto i = 0u; i < m_pType->props.size; ++i)
         {
             auto* pProperty = m_pType->props[i];
+
             RED4ext::CName name;
             pProperty->type->GetName(name);
+
+            std::stringstream ret;
+
+            ret << pProperty->name.ToString() << ": " << name.ToString();
             
-            std::string propName = std::string(pProperty->name.ToString()) + " : " + name.ToString();
-            descriptor.properties.push_back(propName);
+            descriptor.properties.push_back(ret.str());
         }
     }
 
