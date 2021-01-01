@@ -53,7 +53,7 @@ Options::Options(HMODULE aModule)
     Path /= _T("plugins");
     Path /= _T("cyber_engine_tweaks\\");
 
-    ScriptsPath = Path / "scripts\\";
+    ScriptsPath = (Path / "scripts\\").make_preferred();
 
     std::error_code ec;
     create_directories(Path, ec);
@@ -98,6 +98,7 @@ Options::Options(HMODULE aModule)
         this->PatchDisableVignette = config.value("disable_vignette", this->PatchDisableVignette);
         this->PatchDisableBoundaryTeleport = config.value("disable_boundary_teleport", this->PatchDisableBoundaryTeleport);
         this->ScriptsPath = config.value("scripts_path", this->ScriptsPath.string());
+        this->ScriptsPath = this->ScriptsPath.make_preferred();
 
         this->DumpGameOptions = config.value("dump_game_options", this->DumpGameOptions);
         this->Console = config.value("console", this->Console);
