@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ScriptStore.h"
 #include "reverse/SingletonReference.h"
 
 struct Scripting
@@ -30,4 +31,5 @@ private:
     sol::state m_lua;
     std::unordered_map<std::string, sol::object> m_properties;
     std::unordered_map<std::string, SingletonReference> m_singletons;
+    ScriptStore m_store;
 };

@@ -7,9 +7,9 @@ struct ScriptStore
 	ScriptStore();
 	~ScriptStore();
 
-	void LoadAll();
+	void LoadAll(sol::state_view aStateView);
 
 private:
 	
-	std::unordered_map<std::filesystem::path, ScriptContext> m_contexts;
+	std::unordered_map<std::string, ScriptContext> m_contexts;
 };

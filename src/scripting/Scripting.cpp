@@ -18,6 +18,8 @@
 Scripting::Scripting()
 {
     Initialize();
+
+    m_store.LoadAll(m_lua);
 }
 
 Scripting& Scripting::Get()

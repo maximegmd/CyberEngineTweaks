@@ -187,7 +187,7 @@ LRESULT APIENTRY Overlay::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
     return CallWindowProc(s_pOverlay->m_wndProc, hWnd, uMsg, wParam, lParam);
 }
 
-struct ScriptContext
+struct REDScriptContext
 {
 };
 
@@ -197,7 +197,7 @@ struct ScriptStack
     uint8_t pad[0x28];
     void* unk30;
     void* unk38;
-    ScriptContext* m_context;
+    REDScriptContext* m_context;
 };
 static_assert(offsetof(ScriptStack, m_context) == 0x40);
 
@@ -209,7 +209,7 @@ TScriptCall** GetScriptCallArray()
     return reinterpret_cast<TScriptCall**>(finalLocation);
 }
 
-void Overlay::HookLog(ScriptContext* apContext, ScriptStack* apStack, void*, void*)
+void Overlay::HookLog(REDScriptContext* apContext, ScriptStack* apStack, void*, void*)
 {
     RED4ext::CString text("");
     apStack->unk30 = nullptr;
@@ -249,7 +249,7 @@ const char* GetChannelStr(uint64_t hash)
     return nullptr;
 }
 
-void Overlay::HookLogChannel(ScriptContext* apContext, ScriptStack* apStack, void*, void*)
+void Overlay::HookLogChannel(REDScriptContext* apContext, ScriptStack* apStack, void*, void*)
 {
     uint8_t opcode;
 
@@ -351,7 +351,7 @@ TDBID* Overlay::HookTDBIDCtorUnknown(TDBID* apThis, uint64_t name)
     return result;
 }
 
-void Overlay::HookTDBIDToStringDEBUG(ScriptContext* apContext, ScriptStack* apStack, void* result, void*)
+void Overlay::HookTDBIDToStringDEBUG(REDScriptContext* apContext, ScriptStack* apStack, void* result, void*)
 {
     uint8_t opcode;
 

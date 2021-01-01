@@ -5,7 +5,7 @@
 
 typedef TweakDBID TDBID;
 
-struct ScriptContext;
+struct REDScriptContext;
 struct ScriptStack;
 struct UnknownString;
 
@@ -16,7 +16,7 @@ using TCreateCommittedResource = HRESULT(ID3D12Device *pDevice, const D3D12_HEAP
 using TExecuteCommandLists = void(ID3D12CommandQueue* apCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists);
 using TSetMousePosition = BOOL(void* apThis, HWND Wnd, long X, long Y);
 using TClipToCenter = HWND(RED4ext::CGameEngine::UnkC0* apThis);
-using TScriptCall = void(ScriptContext*, ScriptStack*, void*, void*);
+using TScriptCall = void(REDScriptContext*, ScriptStack*, void*, void*);
 using TTDBIDCtor = TDBID*(TDBID*, const char*);
 using TTDBIDCtorCString = TDBID*(TDBID*, const RED4ext::CString*);
 using TTDBIDCtorDerive = TDBID*(const TDBID*, TDBID*, const char*);
@@ -71,13 +71,13 @@ protected:
 	static BOOL SetMousePosition(void* apThis, HWND Wnd, long X, long Y);
 	static BOOL ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis);
 	static LRESULT APIENTRY WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	static void HookLog(ScriptContext* apContext, ScriptStack* apStack, void*, void*);
-	static void HookLogChannel(ScriptContext* apContext, ScriptStack* apStack, void*, void*);
+	static void HookLog(REDScriptContext* apContext, ScriptStack* apStack, void*, void*);
+	static void HookLogChannel(REDScriptContext* apContext, ScriptStack* apStack, void*, void*);
 	static TDBID* HookTDBIDCtor(TDBID* apThis, const char* apName);
 	static TDBID* HookTDBIDCtorCString(TDBID* apThis, const RED4ext::CString* apName);
 	static TDBID* HookTDBIDCtorDerive(TDBID* apBase, TDBID* apThis, const char* apName);
 	static TDBID* HookTDBIDCtorUnknown(TDBID* apThis, uint64_t apName);
-	static void HookTDBIDToStringDEBUG(ScriptContext* apContext, ScriptStack* apStack, void*, void*);
+	static void HookTDBIDToStringDEBUG(REDScriptContext* apContext, ScriptStack* apStack, void*, void*);
 
 	void RegisterTDBIDString(uint64_t value, uint64_t base, const std::string& string);
 	std::string GetTDBIDString(uint64_t value);

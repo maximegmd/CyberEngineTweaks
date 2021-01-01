@@ -4,15 +4,30 @@
 
 #include "Options.h"
 
-void ScriptStore::LoadAll()
+ScriptStore::ScriptStore()
 {
-    const auto cScriptsPath = Options::Get().ScriptsPath / "autorun_scripts";
+    
+}
+
+ScriptStore::~ScriptStore()
+{
+
+}
+
+void ScriptStore::LoadAll(sol::state_view aStateView)
+{
+    const auto cScriptsPath = Options::Get().ScriptsPath;
 
     for (auto& file : std::filesystem::directory_iterator(cScriptsPath))
     {
-        if (!file.is_directory() && file.path().extension() == ".lua")
-        {
-            const auto modName = file.path().filename();
-        }
+        if (!file.is_directory())
+            continue;
+
+        if (!exists(file.path() / "init.lua"))
+            continue;
+
+        auto name = relative(file.path(), cScriptsPath).string();
+
+        auto ctx = ScriptContext{ aStateView, file.path() };
     }
 }
