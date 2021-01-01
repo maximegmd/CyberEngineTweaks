@@ -7,3 +7,6 @@ Game['PlayFinisherSingle'] = Game['PlayFinisherSingle;GameInstance']
 Game['PPS'] = Game['PPS;GameInstance']
 
 print("Cyber Engine Tweaks autoexec.lua execution complete.")
+
+require "plugins\\cyber_engine_tweaks\\scripts\\teleport"
+print("Teleport loaded; Usage 'teleportForward(5)'")
