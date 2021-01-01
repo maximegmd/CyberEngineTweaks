@@ -52,13 +52,12 @@ Options::Options(HMODULE aModule)
     RootPath = exePath.parent_path();
 
     CETPath = RootPath;
-    CETPath /= _T("plugins");
-    CETPath /= _T("cyber_engine_tweaks");
+    CETPath /= "plugins";
+    CETPath /= "cyber_engine_tweaks";
+    std::filesystem::create_directories(CETPath);
 
     ScriptsPath = CETPath / "mods";
-    
-    std::error_code ec;
-    std::filesystem::create_directories(CETPath, ec);
+    std::filesystem::create_directories(ScriptsPath);
 
     const auto rotatingLogger = std::make_shared<spdlog::sinks::rotating_file_sink_mt>((CETPath / "cyber_engine_tweaks.log").string(), 1048576 * 5, 3);
 
