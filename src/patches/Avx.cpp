@@ -25,7 +25,7 @@ void PatchAvx(Image* apImage)
 {
     if(IsAVXSupported())
     {
-        spdlog::info("\tAVX Patch: skip, cpu has AVX support");
+        spdlog::info("AVX Patch: skip, cpu has AVX support");
         return;
     }
 
@@ -45,7 +45,7 @@ void PatchAvx(Image* apImage)
             *pMemoryItor = 0xC3;
             VirtualProtect(pMemoryItor, 8, oldProtect, nullptr);
 
-            spdlog::info("\tAVX Patch: success");
+            spdlog::info("AVX Patch: success");
 
             return;
         }
@@ -53,6 +53,6 @@ void PatchAvx(Image* apImage)
         pMemoryItor++;
     }
 
-    spdlog::warn("\tAVX Patch: failed");
+    spdlog::warn("AVX Patch: failed");
 
 }

@@ -145,7 +145,7 @@ static bool ImGui_ImplWin32_UpdateMouseCursor()
     return true;
 }
 
-static void ImGui_ImplWin32_UpdateMousePos()
+static void ImGui_ImplWin32_UpdateMousePos(UINT OutWidth, UINT OutHeight)
 {
     ImGuiIO& io = ImGui::GetIO();
 
@@ -163,7 +163,18 @@ static void ImGui_ImplWin32_UpdateMousePos()
     if (HWND active_window = ::GetForegroundWindow())
         if (active_window == g_hWnd || ::IsChild(active_window, g_hWnd))
             if (::GetCursorPos(&pos) && ::ScreenToClient(g_hWnd, &pos))
-                io.MousePos = ImVec2((float)pos.x, (float)pos.y);
+                if (!OutWidth || !OutHeight)
+                    io.MousePos = ImVec2((float)pos.x, (float)pos.y);
+                else 
+                {
+                    RECT clientRect;
+                    ::GetClientRect(g_hWnd, &clientRect);
+
+                    // scale, just to make sure coords are correct (fixes issues in fullscreen)
+                    auto xScale = static_cast<float>(OutWidth) / (clientRect.right - clientRect.left);
+                    auto yScale = static_cast<float>(OutHeight) / (clientRect.bottom - clientRect.top);
+                    io.MousePos = ImVec2(pos.x * xScale, pos.y * yScale);
+                }
 }
 
 // Gamepad navigation mapping
@@ -215,7 +226,7 @@ static void ImGui_ImplWin32_UpdateGamepads()
 #endif // #ifndef IMGUI_IMPL_WIN32_DISABLE_GAMEPAD
 }
 
-void    ImGui_ImplWin32_NewFrame()
+void    ImGui_ImplWin32_NewFrame(UINT OutWidth, UINT OutHeight)
 {
     ImGuiIO& io = ImGui::GetIO();
     IM_ASSERT(io.Fonts->IsBuilt() && "Font atlas not built! It is generally built by the renderer backend. Missing call to renderer _NewFrame() function? e.g. ImGui_ImplOpenGL3_NewFrame().");
@@ -239,7 +250,7 @@ void    ImGui_ImplWin32_NewFrame()
     // io.KeysDown[], io.MousePos, io.MouseDown[], io.MouseWheel: filled by the WndProc handler below.
 
     // Update OS mouse position
-    ImGui_ImplWin32_UpdateMousePos();
+    ImGui_ImplWin32_UpdateMousePos(OutWidth, OutHeight);
 
     // Update OS mouse cursor with the cursor requested by imgui
     ImGuiMouseCursor mouse_cursor = io.MouseDrawCursor ? ImGuiMouseCursor_None : ImGui::GetMouseCursor();

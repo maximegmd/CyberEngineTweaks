@@ -1,27 +1,15 @@
-#ifndef __KIERO_H__
-#define __KIERO_H__
+#pragma once
 
 #include <stdint.h>
 
-#define KIERO_VERSION "1.2.10"
-
-#define KIERO_INCLUDE_D3D9   0 // 1 if you need D3D9 hook
-#define KIERO_INCLUDE_D3D10  0 // 1 if you need D3D10 hook
-#define KIERO_INCLUDE_D3D11  0 // 1 if you need D3D11 hook
-#define KIERO_INCLUDE_D3D12  1 // 1 if you need D3D12 hook
-#define KIERO_INCLUDE_OPENGL 0 // 1 if you need OpenGL hook
-#define KIERO_INCLUDE_VULKAN 0 // 1 if you need Vulkan hook
-#define KIERO_USE_MINHOOK    1 // 1 if you will use kiero::bind function
-
-#define KIERO_ARCH_X64 0
-#define KIERO_ARCH_X86 0
+#define KIERO_VERSION "1.2.10-cet_1.0"
 
 #if defined(_M_X64)	
-# undef  KIERO_ARCH_X64
-# define KIERO_ARCH_X64 1
+	#define KIERO_ARCH_X86 0
+	#define KIERO_ARCH_X64 1
 #else
-# undef  KIERO_ARCH_X86
-# define KIERO_ARCH_X86 1
+	#define KIERO_ARCH_X86 1
+	#define KIERO_ARCH_X64 0
 #endif
 
 #if KIERO_ARCH_X64
@@ -47,34 +35,13 @@ namespace kiero
 		};
 	};
 
-	struct RenderType
-	{
-		enum Enum
-		{
-			None,
-
-			D3D9,
-			D3D10,
-			D3D11,
-			D3D12,
-
-			OpenGL,
-			Vulkan,
-
-			Auto
-		};
-	};
-
-	Status::Enum init(RenderType::Enum renderType);
+	Status::Enum init();
 	void shutdown();
 
 	Status::Enum bind(uint16_t index, void** original, void* function);
 	void unbind(uint16_t index);
 
-	RenderType::Enum getRenderType();
 	uint150_t* getMethodsTable();
 	uintptr_t getCommandQueueOffset();
 	bool isDownLevelDevice();
 }
-
-#endif // __KIERO_H__

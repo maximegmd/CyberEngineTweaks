@@ -6,4 +6,4 @@ Game['PlayFinisher'] = Game['PlayFinisher;GameInstance']
 Game['PlayFinisherSingle'] = Game['PlayFinisherSingle;GameInstance']
 Game['PPS'] = Game['PPS;GameInstance']
 
-print("Autoexec: complete")
+print("Cyber Engine Tweaks autoexec.lua execution complete.")

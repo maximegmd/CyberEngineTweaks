@@ -8,19 +8,14 @@ static std::unique_ptr<Options> s_instance;
 
 Options::Options(HMODULE aModule)
 {
-    char path[2048 + 1] = { 0 };
-    GetModuleFileNameA(aModule, path, std::size(path) - 1);
-    Path = path;
+    TCHAR exePathBuf[2048 + 1] = { 0 };
+    GetModuleFileName(GetModuleHandle(nullptr), exePathBuf, std::size(exePathBuf) - 1);
 
-    char exePath[2048 + 1] = { 0 };
-    GetModuleFileNameA(GetModuleHandleA(nullptr), exePath, std::size(exePath) - 1);
-    ExePath = exePath;
-
-    int verInfoSz = GetFileVersionInfoSizeA(exePath, nullptr);
+    int verInfoSz = GetFileVersionInfoSize(exePathBuf, nullptr);
     if(verInfoSz) 
     {
         auto verInfo = std::make_unique<BYTE[]>(verInfoSz);
-        if(GetFileVersionInfoA(exePath, 0, verInfoSz, verInfo.get())) 
+        if(GetFileVersionInfo(exePathBuf, 0, verInfoSz, verInfo.get())) 
         {
             struct 
             {
@@ -29,16 +24,16 @@ Options::Options(HMODULE aModule)
             } *pTranslations;
 
             UINT transBytes = 0;
-            if(VerQueryValueA(verInfo.get(), "\\VarFileInfo\\Translation", reinterpret_cast<void**>(&pTranslations), &transBytes)) 
+            if(VerQueryValue(verInfo.get(), _T("\\VarFileInfo\\Translation"), reinterpret_cast<void**>(&pTranslations), &transBytes)) 
             {
                 UINT dummy;
                 char* productName = nullptr;
                 char subBlock[64];
                 for(UINT i = 0; i < (transBytes / sizeof(*pTranslations)); i++)
                 {
-                    sprintf_s(subBlock, "\\StringFileInfo\\%04x%04x\\ProductName", pTranslations[i].Language, pTranslations[i].CodePage);
-                    if(VerQueryValueA(verInfo.get(), subBlock, reinterpret_cast<void**>(&productName), &dummy)) 
-                        if (strcmp(productName, "Cyberpunk 2077") == 0) 
+                    _stprintf(subBlock, _T("\\StringFileInfo\\%04x%04x\\ProductName"), pTranslations[i].Language, pTranslations[i].CodePage);
+                    if(VerQueryValue(verInfo.get(), subBlock, reinterpret_cast<void**>(&productName), &dummy)) 
+                        if (_tcscmp(productName, _T("Cyberpunk 2077")) == 0) 
                         {
                             ExeValid = true;
                             break;
@@ -48,23 +43,30 @@ Options::Options(HMODULE aModule)
         }
     }
     // check if exe name matches in case previous check fails
-    ExeValid = ExeValid || (ExePath.filename() == "Cyberpunk2077.exe");
+    std::filesystem::path exePath = exePathBuf;
+    ExeValid = ExeValid || (exePath.filename() == "Cyberpunk2077.exe");
 
     if (!IsCyberpunk2077())
         return;
 
-    Path = Path.parent_path().parent_path();
-    Path /= "plugins";
-    Path /= "cyber_engine_tweaks/";
+    RootPath = exePath.parent_path();
 
+    CETPath = RootPath;
+    CETPath /= _T("plugins");
+    CETPath /= _T("cyber_engine_tweaks");
+
+    ScriptsPath = CETPath / "mods";
+    
     std::error_code ec;
-    create_directories(Path, ec);
+    std::filesystem::create_directories(CETPath, ec);
 
-    const auto rotatingLogger = std::make_shared<spdlog::sinks::rotating_file_sink_mt>((Path / "cyber_engine_tweaks.log").string(), 1048576 * 5, 3);
+    const auto rotatingLogger = std::make_shared<spdlog::sinks::rotating_file_sink_mt>((CETPath / "cyber_engine_tweaks.log").string(), 1048576 * 5, 3);
 
     const auto logger = std::make_shared<spdlog::logger>("", spdlog::sinks_init_list{ rotatingLogger });
     logger->flush_on(spdlog::level::debug);
     set_default_logger(logger);
+
+    spdlog::info("Cyber Engine Tweaks is starting...");
 
     GameImage.Initialize();
 
@@ -72,11 +74,18 @@ Options::Options(HMODULE aModule)
     {
         auto [major, minor] = GameImage.GetVersion();
         spdlog::info("Game version {}.{:02d}", major, minor);
+        spdlog::info("Root path: \"{}\"", RootPath.string().c_str());
+        spdlog::info("Cyber Engine Tweaks path: \"{}\"", CETPath.string().c_str());
+        spdlog::info("Lua scripts search path: \"{}\"", ScriptsPath.string().c_str());
     }
     else
         spdlog::info("Unknown Game Version, update the mod");
 
-    const auto configPath = Path / "config.json";
+    const auto configPath = CETPath / "config.json";
+    
+    // remove empty config.json
+    if (std::filesystem::exists(configPath) && !std::filesystem::file_size(configPath))
+        std::filesystem::remove(configPath);
 
     std::ifstream configFile(configPath);
     if(configFile)
@@ -106,6 +115,7 @@ Options::Options(HMODULE aModule)
 
         this->ConsoleChar = MapVirtualKeyA(this->ConsoleKey, MAPVK_VK_TO_CHAR);
     }
+    configFile.close();
 
     nlohmann::json config;
     config["avx"] = this->PatchAVX;

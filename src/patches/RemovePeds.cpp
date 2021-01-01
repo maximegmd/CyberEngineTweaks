@@ -8,7 +8,7 @@ void RemovePedsPatch(Image* apImage)
     auto pLocation = FindSignature(apImage->pTextStart, apImage->pTextEnd, { 0x3B, 0xD8, 0x0F, 0x4E, 0xC3, 0x8B, 0xD8, 0x85, 0xDB, 0x0F, 0x8E });
     if(pLocation == nullptr)
     {
-        spdlog::info("\tRemove peds patch: failed, could not be found");
+        spdlog::info("Remove peds patch: failed, could not be found");
         return;
     }
 
@@ -18,5 +18,5 @@ void RemovePedsPatch(Image* apImage)
     pLocation[10] = 0xE9;
     VirtualProtect(pLocation, 32, oldProtect, nullptr);
 
-    spdlog::info("\tRemove peds patch: success");
+    spdlog::info("Remove peds patch: success");
 }

@@ -22,10 +22,14 @@ void Overlay::Initialize(Image* apImage)
         s_pOverlay->EarlyHooks(apImage);
         std::thread t([]()
         {
-            if (kiero::init(kiero::RenderType::D3D12) != kiero::Status::Success)
+            if (kiero::init() != kiero::Status::Success)
                 spdlog::error("Kiero failed!");
             else
+            {
+                const char* d3d12type = (kiero::isDownLevelDevice()) ? ("D3D12on7") : ("D3D12");
+                spdlog::info("Kiero initialized for {0}", d3d12type);
                 Overlay::Get().Hook();
+            }
         });
         t.detach();
     }
@@ -50,10 +54,11 @@ void Overlay::DrawImgui()
     Scripting::Get();
 
     ImGui_ImplDX12_NewFrame();
-    ImGui_ImplWin32_NewFrame();
+    ImGui_ImplWin32_NewFrame(m_outWidth, m_outHeight);
     ImGui::NewFrame();
 
-    ImGui::SetNextWindowSize(ImVec2(600.f, ImGui::GetFrameHeight() * 15.f + ImGui::GetFrameHeightWithSpacing()), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(ImVec2(0.f, 0.f), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(m_outWidth, m_outHeight * 0.3f), ImGuiCond_FirstUseEver);
 
     ImGui::Begin("Cyber Engine Tweaks");
 
@@ -70,6 +75,8 @@ void Overlay::DrawImgui()
         }
         ImGui::SameLine();
         ImGui::Checkbox("Scroll Output", &m_outputShouldScroll);
+        ImGui::SameLine();
+        ImGui::Checkbox("Disable Game Log", &m_disabledGameLog);
 
         static char command[200000] = { 0 };
 
@@ -78,7 +85,7 @@ void Overlay::DrawImgui()
 
             ImVec2 listboxSize = ImGui::GetContentRegionAvail();
             listboxSize.y -= ImGui::GetFrameHeightWithSpacing();
-            const auto result = ImGui::ListBoxHeader("", listboxSize);
+            const auto result = ImGui::ListBoxHeader("##ConsoleHeader", listboxSize);
             ImGuiListClipper clipper;
             clipper.Begin(m_outputLines.size());
             while (clipper.Step())
@@ -93,6 +100,7 @@ void Overlay::DrawImgui()
                             str = str.substr(2);
 
                         std::strncpy(command, str.c_str(), sizeof(command) - 1);
+                        Get().m_focusConsoleInput = true;
                     }
                     ImGui::PopID();
                 }
@@ -108,12 +116,12 @@ void Overlay::DrawImgui()
         }
 
         ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-        if (Get().m_toggled)
+        if (Get().m_focusConsoleInput)
         {
             ImGui::SetKeyboardFocusHere();
-            Get().m_toggled = false;
+            Get().m_focusConsoleInput = false;
         }
-        const auto execute = ImGui::InputText("", command, std::size(command), ImGuiInputTextFlags_EnterReturnsTrue);
+        const auto execute = ImGui::InputText("##InputCommand", command, std::size(command), ImGuiInputTextFlags_EnterReturnsTrue);
         ImGui::SetItemDefaultFocus();
         if (execute)
         {
@@ -139,20 +147,6 @@ LRESULT APIENTRY Overlay::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
         return 0;
     }
 
-    if (uMsg == WM_WINDOWPOSCHANGED)
-    {
-        auto wp = reinterpret_cast<WINDOWPOS*>(lParam);
-        spdlog::info("\tWM_WINDOWPOSCHANGED message received! Position: ({0}, {1}) Size ({2}, {3}) Flags ({4:x})", wp->x, wp->y, wp->cx, wp->cy, wp->flags);
-        if ((wp->flags & SWP_FRAMECHANGED) && 
-            (wp->flags & SWP_NOSIZE) && 
-            (wp->flags & SWP_NOZORDER))
-        {
-            auto d3d12Type = (kiero::isDownLevelDevice()) ? ("D3D12on7") : ("D3D12");
-            spdlog::info("\tCurrent WM_WINDOWPOSCHANGED flags match {0} state reset event - calling Overlay::ResetD3D12State()", d3d12Type);
-            s_pOverlay->ResetD3D12State();
-        }
-    }
-
     switch (uMsg)
     {
     case WM_KEYDOWN:
@@ -170,6 +164,9 @@ LRESULT APIENTRY Overlay::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 
     if (s_pOverlay->IsEnabled())
     {
+        if (uMsg == WM_KEYUP && wParam == VK_RETURN)
+            s_pOverlay->m_focusConsoleInput = true;
+
         LRESULT ret = ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);
         if (ret)
             return ret;
@@ -221,7 +218,8 @@ void Overlay::HookLog(ScriptContext* apContext, ScriptStack* apStack, void*, voi
     GetScriptCallArray()[opcode](apStack->m_context, apStack, &text, nullptr);
     apStack->m_code++; // skip ParamEnd
 
-    Get().Log(text.c_str());
+    if (!Get().m_disabledGameLog)
+        Get().Log(text.c_str());
 }
 
 const char* GetChannelStr(uint64_t hash)
@@ -268,12 +266,15 @@ void Overlay::HookLogChannel(ScriptContext* apContext, ScriptStack* apStack, voi
     GetScriptCallArray()[opcode](apStack->m_context, apStack, &text, nullptr);
 
     apStack->m_code++; // skip ParamEnd
-
-    auto channel_str = GetChannelStr(channel_hash);
-    std::string channel = channel_str == nullptr
-        ? "?" + std::to_string(channel_hash)
-        : std::string(channel_str);
-    Get().Log("[" + channel + "] " +text.c_str());
+    
+    if (!Get().m_disabledGameLog)
+    {
+        auto channel_str = GetChannelStr(channel_hash);
+        std::string channel = channel_str == nullptr
+            ? "?" + std::to_string(channel_hash)
+            : std::string(channel_str);
+        Get().Log("[" + channel + "] " +text.c_str());
+    }
 }
 
 std::string GetTDBDIDDebugString(TDBID tdbid)
@@ -377,7 +378,7 @@ void Overlay::Toggle()
     {
         if (m_enabled && ShowCursor(TRUE) >= 0) 
         {
-            m_toggled = true;
+            m_focusConsoleInput = true;
             break;
         }
         if (!m_enabled && ShowCursor(FALSE) < 0)
