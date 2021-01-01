@@ -8,6 +8,8 @@ struct Scripting
     Scripting();
 	
     static Scripting& Get();
+
+    const ScriptStore& GetStore() const;
 	
     bool ExecuteLua(const std::string& aCommand);
 

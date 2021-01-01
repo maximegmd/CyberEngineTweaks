@@ -28,6 +28,11 @@ Scripting& Scripting::Get()
     return s_instance;
 }
 
+const ScriptStore& Scripting::GetStore() const
+{
+    return m_store;
+}
+
 bool Scripting::ExecuteLua(const std::string& aCommand)
 {
     try
@@ -276,6 +281,11 @@ void Scripting::Initialize()
             table["z"].get_or(0.f),
             table["w"].get_or(0.f)
         };
+    };
+
+    m_lua["GetMod"] = [this](const std::string& acName) -> sol::object
+    {
+        return GetStore().Get(acName);
     };
 
     m_lua.new_usertype<EulerAngles>("EulerAngles",

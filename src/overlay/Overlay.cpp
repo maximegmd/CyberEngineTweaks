@@ -28,7 +28,7 @@ void Overlay::Initialize(Image* apImage)
             {
                 const char* d3d12type = (kiero::isDownLevelDevice()) ? ("D3D12on7") : ("D3D12");
                 spdlog::info("Kiero initialized for {0}", d3d12type);
-                Overlay::Get().Hook();
+                Get().Hook();
             }
         });
         t.detach();
@@ -51,8 +51,6 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 
 void Overlay::DrawImgui()
 {
-    Scripting::Get();
-
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplWin32_NewFrame(m_outWidth, m_outHeight);
     ImGui::NewFrame();
