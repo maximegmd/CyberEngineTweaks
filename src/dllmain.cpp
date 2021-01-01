@@ -20,8 +20,15 @@ void DisableIntroMoviesPatch(Image* apImage);
 void DisableVignettePatch(Image* apImage);
 void DisableBoundaryTeleportPatch(Image* apImage);
 
-void Initialize(HMODULE mod)
+static HANDLE s_modInstanceMutex = nullptr; 
+
+static void Initialize(HMODULE mod)
 {
+    s_modInstanceMutex = CreateMutex(NULL, TRUE, _T("Cyber Engine Tweaks Module Instance"));
+    if (s_modInstanceMutex == nullptr) {
+        return;
+    }
+
     MH_Initialize();
 
     Options::Initialize(mod);
@@ -70,13 +77,18 @@ void Initialize(HMODULE mod)
     spdlog::default_logger()->flush();
 }
 
-void Shutdown()
+static void Shutdown()
 {
-    if(Options::Get().Console)
-        Overlay::Shutdown();
+    if (s_modInstanceMutex)
+    {
+        if(Options::Get().Console)
+            Overlay::Shutdown();
 
-    MH_DisableHook(MH_ALL_HOOKS);
-    MH_Uninitialize();
+        MH_DisableHook(MH_ALL_HOOKS);
+        MH_Uninitialize();
+
+        ReleaseMutex(s_modInstanceMutex);
+    }
 }
 
 BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID) 
