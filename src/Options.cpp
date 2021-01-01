@@ -56,7 +56,7 @@ Options::Options(HMODULE aModule)
     ScriptsPath = (Path / "scripts").make_preferred();
 
     std::error_code ec;
-    create_directories(Path, ec);
+    std::filesystem::create_directories(Path, ec);
 
     const auto rotatingLogger = std::make_shared<spdlog::sinks::rotating_file_sink_mt>((Path / "cyber_engine_tweaks.log").string(), 1048576 * 5, 3);
 
@@ -79,6 +79,10 @@ Options::Options(HMODULE aModule)
         spdlog::info("Unknown Game Version, update the mod");
 
     const auto configPath = Path / "config.json";
+    
+    // remove empty config.json
+    if (std::filesystem::exists(configPath) && !std::filesystem::file_size(configPath))
+        std::filesystem::remove(configPath);
 
     std::ifstream configFile(configPath);
     if(configFile)
@@ -110,6 +114,7 @@ Options::Options(HMODULE aModule)
 
         this->ConsoleChar = MapVirtualKeyA(this->ConsoleKey, MAPVK_VK_TO_CHAR);
     }
+    configFile.close();
 
     std::string scriptsPath = this->ScriptsPath.string();
     spdlog::info("Lua scripts search path: \"{}\"", scriptsPath);
