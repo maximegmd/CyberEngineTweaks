@@ -27,8 +27,8 @@ struct Options
 	int ConsoleChar{ 0 };
 	float CPUMemoryPoolFraction{ 0.5f };
 	float GPUMemoryPoolFraction{ 1.f };
-	std::filesystem::path Path;
-	std::filesystem::path ExePath;
+	std::filesystem::path CETPath;
+	std::filesystem::path RootPath;
 	std::filesystem::path ScriptsPath;
 	Image GameImage;
 	bool ExeValid{ false };

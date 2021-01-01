@@ -6,7 +6,7 @@
 
 void ScriptStore::LoadAll()
 {
-    const auto cScriptsPath = Options::Get().Path / "autorun_scripts";
+    const auto cScriptsPath = Options::Get().ScriptsPath / "autorun_scripts";
 
     for (auto& file : std::filesystem::directory_iterator(cScriptsPath))
     {

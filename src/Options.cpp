@@ -8,15 +8,14 @@ static std::unique_ptr<Options> s_instance;
 
 Options::Options(HMODULE aModule)
 {
-    TCHAR exePath[2048 + 1] = { 0 };
-    GetModuleFileName(GetModuleHandle(nullptr), exePath, std::size(exePath) - 1);
-    ExePath = exePath;
+    TCHAR exePathBuf[2048 + 1] = { 0 };
+    GetModuleFileName(GetModuleHandle(nullptr), exePathBuf, std::size(exePathBuf) - 1);
 
-    int verInfoSz = GetFileVersionInfoSize(exePath, nullptr);
+    int verInfoSz = GetFileVersionInfoSize(exePathBuf, nullptr);
     if(verInfoSz) 
     {
         auto verInfo = std::make_unique<BYTE[]>(verInfoSz);
-        if(GetFileVersionInfo(exePath, 0, verInfoSz, verInfo.get())) 
+        if(GetFileVersionInfo(exePathBuf, 0, verInfoSz, verInfo.get())) 
         {
             struct 
             {
@@ -44,21 +43,24 @@ Options::Options(HMODULE aModule)
         }
     }
     // check if exe name matches in case previous check fails
-    ExeValid = ExeValid || (ExePath.filename() == _T("Cyberpunk2077.exe"));
+    std::filesystem::path exePath = exePathBuf;
+    ExeValid = ExeValid || (exePath.filename() == "Cyberpunk2077.exe");
 
     if (!IsCyberpunk2077())
         return;
 
-    Path = ExePath.parent_path();
-    Path /= _T("plugins");
-    Path /= _T("cyber_engine_tweaks");
+    RootPath = exePath.parent_path();
 
-    ScriptsPath = (Path / "scripts").make_preferred();
+    CETPath = RootPath;
+    CETPath /= _T("plugins");
+    CETPath /= _T("cyber_engine_tweaks");
 
+    ScriptsPath = CETPath / "mods";
+    
     std::error_code ec;
-    std::filesystem::create_directories(Path, ec);
+    std::filesystem::create_directories(CETPath, ec);
 
-    const auto rotatingLogger = std::make_shared<spdlog::sinks::rotating_file_sink_mt>((Path / "cyber_engine_tweaks.log").string(), 1048576 * 5, 3);
+    const auto rotatingLogger = std::make_shared<spdlog::sinks::rotating_file_sink_mt>((CETPath / "cyber_engine_tweaks.log").string(), 1048576 * 5, 3);
 
     const auto logger = std::make_shared<spdlog::logger>("", spdlog::sinks_init_list{ rotatingLogger });
     logger->flush_on(spdlog::level::debug);
@@ -72,13 +74,14 @@ Options::Options(HMODULE aModule)
     {
         auto [major, minor] = GameImage.GetVersion();
         spdlog::info("Game version {}.{:02d}", major, minor);
-        spdlog::info("EXE path: \"{}\"", ExePath.string().c_str());
-        spdlog::info("Cyber Engine Tweaks path: \"{}\"", Path.string().c_str());
+        spdlog::info("Root path: \"{}\"", RootPath.string().c_str());
+        spdlog::info("Cyber Engine Tweaks path: \"{}\"", CETPath.string().c_str());
+        spdlog::info("Lua scripts search path: \"{}\"", ScriptsPath.string().c_str());
     }
     else
         spdlog::info("Unknown Game Version, update the mod");
 
-    const auto configPath = Path / "config.json";
+    const auto configPath = CETPath / "config.json";
     
     // remove empty config.json
     if (std::filesystem::exists(configPath) && !std::filesystem::file_size(configPath))
@@ -101,8 +104,6 @@ Options::Options(HMODULE aModule)
         this->PatchDisableIntroMovies = config.value("disable_intro_movies", this->PatchDisableIntroMovies);
         this->PatchDisableVignette = config.value("disable_vignette", this->PatchDisableVignette);
         this->PatchDisableBoundaryTeleport = config.value("disable_boundary_teleport", this->PatchDisableBoundaryTeleport);
-        this->ScriptsPath = config.value("scripts_path", this->ScriptsPath.string());
-        this->ScriptsPath = this->ScriptsPath.make_preferred();
 
         this->DumpGameOptions = config.value("dump_game_options", this->DumpGameOptions);
         this->Console = config.value("console", this->Console);
@@ -115,9 +116,6 @@ Options::Options(HMODULE aModule)
         this->ConsoleChar = MapVirtualKeyA(this->ConsoleKey, MAPVK_VK_TO_CHAR);
     }
     configFile.close();
-
-    std::string scriptsPath = this->ScriptsPath.string();
-    spdlog::info("Lua scripts search path: \"{}\"", scriptsPath);
 
     nlohmann::json config;
     config["avx"] = this->PatchAVX;
@@ -136,7 +134,6 @@ Options::Options(HMODULE aModule)
     config["disable_intro_movies"] = this->PatchDisableIntroMovies;
     config["disable_vignette"] = this->PatchDisableVignette;
     config["disable_boundary_teleport"] = this->PatchDisableBoundaryTeleport;
-    config["scripts_path"] = scriptsPath;
 
     std::ofstream o(configPath);
     o << config.dump(4) << std::endl;
