@@ -419,11 +419,6 @@ void Scripting::Initialize()
         m_lua.do_file("autoexec.lua");
     else
         Overlay::Get().Log("WARNING: missing CET autoexec.lua!");
-    
-    // execute autoexec.lua inside user script directory (NOTE: directory stays set afterwards to this for now)
-    std::filesystem::current_path(Options::Get().ScriptsPath);
-    if (std::filesystem::exists("autoexec.lua"))
-        m_lua.do_file("autoexec.lua");
 }
 
 sol::object Scripting::Index(const std::string& acName)
