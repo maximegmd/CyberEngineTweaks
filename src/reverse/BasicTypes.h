@@ -70,11 +70,6 @@ struct WeakHandle
 	uint32_t* refCount{nullptr};
 };
 
-struct RawHandle
-{
-	void* instance;
-};
-
 struct CName
 {
 	CName(uint64_t aHash = 0) : hash(aHash){}
