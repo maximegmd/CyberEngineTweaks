@@ -3,6 +3,7 @@
 #include "Converter.h"
 
 #include "BasicTypes.h"
+#include "Enum.h"
 #include "LuaRED.h"
 
 auto s_metaVisitor = [](auto... args) {
@@ -24,7 +25,8 @@ auto s_metaVisitor = [](auto... args) {
     LuaRED<EulerAngles, "EulerAngles">(),
     LuaRED<ItemID, "gameItemID">(),
     LuaRED<TweakDBID, "TweakDBID">(),
-    LuaRED<CName, "CName">()
+    LuaRED<CName, "CName">(),
+    LuaRED<Enum, "Enum">()
     );
 
 size_t Converter::Size(RED4ext::IRTTIType* apRtti)

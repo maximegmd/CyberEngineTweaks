@@ -1,4 +1,5 @@
 #include <stdafx.h>
+#include <spdlog/fmt/fmt.h>
 
 #include "Type.h"
 
@@ -11,6 +12,11 @@ std::string Type::Descriptor::ToString() const
     std::string result;
     result += "{\n\tname: " + name + ",\n\tfunctions: {\n";
     for (auto& function : functions)
+    {
+        result += "\t\t" + function + ",\n";
+    }
+    result += "},\n\tstaticFunctions: {\n";
+    for (auto& function : staticFunctions)
     {
         result += "\t\t" + function + ",\n";
     }
@@ -57,8 +63,21 @@ sol::protected_function Type::InternalIndex(const std::string& acName)
     auto* pFunc = m_pType->GetFunction(RED4ext::FNV1a(acName.c_str()));
     if(!pFunc)
     {
-        Overlay::Get().Log("Function '" + acName + "' not found in system '" + GetName() + "'.");
-        return sol::nil;
+        // Search the function table if it isn't found, the above function only searches by ShortName so overloads are not found
+        for (uint32_t i = 0; i < m_pType->funcs.size; ++i)
+        {
+            if (m_pType->funcs.entries[i]->name.hash == RED4ext::FNV1a(acName.c_str()))
+            {
+                pFunc = static_cast<RED4ext::CClassFunction*>(m_pType->funcs.entries[i]);
+                break;
+            }
+        }
+
+        if (!pFunc)
+        {
+            Overlay::Get().Log("Function '" + acName + "' not found in system '" + GetName() + "'.");
+            return sol::nil;
+        }
     }
 
     auto obj = make_object(m_lua, [pFunc, name = acName](Type* apType, sol::variadic_args args, sol::this_environment env, sol::this_state L)
@@ -98,21 +117,35 @@ Type::Descriptor Type::Dump() const
     {
         descriptor.name = m_pType->name.ToString();
 
-        for (auto i = 0u; i < m_pType->funcs.size; ++i)
+        RED4ext::CClass* type = m_pType;
+        while (type)
         {
-            auto* pFunc = m_pType->funcs[i];
-            std::string funcName = pFunc->name.ToString();
-            descriptor.functions.push_back(funcName);
-        }
+            std::string name = type->name.ToString();
+            for (auto i = 0u; i < type->funcs.size; ++i)
+            {
+                auto* pFunc = type->funcs[i];
+                std::string funcName = "Owner:(" + name + ") Hash:" + pFunc->name.ToString() + " Hash:( " + fmt::format("{:016x}", pFunc->name.hash) + ") / ShortName:(" + pFunc->name2.ToString() + ") Hash:( " + fmt::format("{:016x}", pFunc->name2.hash) + ")";
+                descriptor.functions.push_back(funcName);
+            }
 
-        for (auto i = 0u; i < m_pType->props.size; ++i)
-        {
-            auto* pProperty = m_pType->props[i];
-            RED4ext::CName name;
-            pProperty->type->GetName(name);
-            
-            std::string propName = std::string(pProperty->name.ToString()) + " : " + name.ToString();
-            descriptor.properties.push_back(propName);
+            for (auto i = 0u; i < type->staticFuncs.size; ++i)
+            {
+                auto* pFunc = type->staticFuncs[i];
+                std::string funcName = "Owner:(" + name + ") Hash:" + pFunc->name.ToString() + " Hash:( " + fmt::format("{:016x}", pFunc->name.hash) + ") / ShortName:(" + pFunc->name2.ToString() + ") Hash:( " + fmt::format("{:016x}", pFunc->name2.hash) + ")";
+                descriptor.staticFunctions.push_back(funcName);
+            }
+
+            for (auto i = 0u; i < type->props.size; ++i)
+            {
+                auto* pProperty = type->props[i];
+                RED4ext::CName name;
+                pProperty->type->GetName(name);
+
+                std::string propName = std::string(pProperty->name.ToString()) + " : " + name.ToString();
+                descriptor.properties.push_back(propName);
+            }
+
+            type = type->parent && type->parent->GetType() == RED4ext::ERTTIType::Class ? type->parent : nullptr;
         }
     }
 
