@@ -494,9 +494,11 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
     RED4ext::CName name;
     uint8_t argOffset = 0;
 
-    if (pFunc->params.size > 0) {
+    if (pFunc->params.size > 0)
+    {
         auto* pType = pFunc->params[0]->type;
-        if (pType == pGIType) {
+        if (pType == pGIType)
+        {
             argOffset = 1;
         }
     }
