@@ -461,7 +461,6 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
     static const auto hashGameInstance = RED4ext::FNV1a("ScriptGameInstance");
     auto* pGIType = pRtti->GetType(RED4ext::FNV1a("ScriptGameInstance"));
 
-
     auto* pPlayerSystem = pRtti->GetClass(hashcpPlayerSystem);
     auto* gameInstanceType = pRtti->GetClass(hashGameInstance);
 
@@ -497,6 +496,7 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
     if (pFunc->params.size > 0)
     {
         auto* pType = pFunc->params[0]->type;
+        // check if the first argument is expected to be ScriptGameInstance
         if (pType == pGIType)
         {
             argOffset = 1;
@@ -504,7 +504,6 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
     }
 
     std::vector<CStackType> args(aArgs.size() + argOffset);
-
 
     if (pFunc->params.size - argOffset != aArgs.size())
     {
@@ -517,6 +516,7 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
 
     if (argOffset > 0)
     {
+        // Inject the ScriptGameInstance into first argument
         args[0].type = pFunc->params[0]->type;
         args[0].value = &unk10;
     }
