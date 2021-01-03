@@ -227,6 +227,8 @@ bool Overlay::InitializeD3D12Downlevel(ID3D12CommandQueue* pCommandQueue, ID3D12
     }
 
     m_pCommandQueue = pCommandQueue;
+    m_outWidth = static_cast<UINT>(pSourceTex2D->GetDesc().Width);
+    m_outHeight = pSourceTex2D->GetDesc().Height;
 
     if (hWindow != m_hWnd) 
         spdlog::warn("Overlay::InitializeD3D12Downlevel() - current output window does not match hooked window! Currently hooked to {0} while current output window is {1}.", reinterpret_cast<void*>(m_hWnd), reinterpret_cast<void*>(hWindow));

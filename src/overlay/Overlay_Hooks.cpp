@@ -173,27 +173,15 @@ HRESULT Overlay::PresentD3D12Downlevel(ID3D12CommandQueueDownlevel* pCommandQueu
 {
     auto& overlay = Get();
 
-    // On Windows 7 there is no swap chain to query the current backbuffer index. Instead do a reverse lookup in the known backbuffer list
-    const auto it = std::find(overlay.m_downlevelBackbuffers.cbegin(), overlay.m_downlevelBackbuffers.cend(), pSourceTex2D);
-    bool resizing = false;
-    if (it == overlay.m_downlevelBackbuffers.cend())
+    // On Windows 7 there is no swap chain to query the current backbuffer index, so instead we simply count to 3 and wrap around.
+    // Increment the buffer index here even if the overlay is not enabled, so we stay in sync with the game's present calls.
+    // TODO: investigate if there isn't a better way of doing this (finding the current index in the game exe?)
+    overlay.m_downlevelBufferIndex = (!overlay.m_initialized || overlay.m_downlevelBufferIndex == 2) ? 0 : overlay.m_downlevelBufferIndex + 1;
+
+    if (overlay.InitializeD3D12Downlevel(overlay.m_pCommandQueue, pSourceTex2D, hWindow))
     {
-        if (overlay.m_initialized)
-        {
-            spdlog::warn("Overlay::PresentD3D12Downlevel() - buffer at {0} not found in backbuffer list! Assuming window was resized - note that support for resizing is experimental.", (void*)pSourceTex2D);
-            overlay.ResetD3D12State();
-        }
-
-        overlay.m_downlevelBackbuffers.emplace_back(pSourceTex2D);
-
-        // If we don't have a full backbuffer list, do not attempt to reinitialize yet
-        resizing = overlay.m_downlevelBackbuffers.size() < 3;
-    }
-    else
-       overlay.m_downlevelBufferIndex = static_cast<uint32_t>(std::distance(overlay.m_downlevelBackbuffers.cbegin(), it));
-
-    if (!resizing && overlay.InitializeD3D12Downlevel(overlay.m_pCommandQueue, pSourceTex2D, hWindow))
         overlay.Render();
+    }
 
     return overlay.m_realPresentD3D12Downlevel(pCommandQueueDownlevel, pOpenCommandList, pSourceTex2D, hWindow, Flags);
 }
