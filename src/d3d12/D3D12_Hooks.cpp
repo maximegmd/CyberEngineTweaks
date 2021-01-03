@@ -6,31 +6,31 @@
 #include <Pattern.h>
 #include <kiero/kiero.h>
 
-HRESULT D3D12::ResizeBuffersD3D12(IDXGISwapChain* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags)
+HRESULT D3D12::ResizeBuffers(IDXGISwapChain* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags)
 {
     auto& d3d12 = Get();
     
     if (d3d12.m_initialized)
     {
         // NOTE: right now, done in case of any swap chain ResizeBuffers call, which may not be ideal. We have yet to encounter multiple swap chains in use though, so should be safe
-        spdlog::info("D3D12::ResizeBuffersD3D12() called with initialized D3D12, triggering D3D12::ResetD3D12State.");
-        d3d12.ResetD3D12State();
+        spdlog::info("D3D12::ResizeBuffers() called with initialized D3D12, triggering D3D12::ResetState.");
+        d3d12.ResetState();
     }
 
     return d3d12.m_realResizeBuffersD3D12(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags);
 }
 
-HRESULT D3D12::PresentD3D12(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT PresentFlags)
+HRESULT D3D12::Present(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT PresentFlags)
 {
     auto& d3d12 = Get();
 
-    if (d3d12.InitializeD3D12(pSwapChain))
+    if (d3d12.Initialize(pSwapChain))
         d3d12.Update(0.0f);
     
     return d3d12.m_realPresentD3D12(pSwapChain, SyncInterval, PresentFlags);
 }
 
-HRESULT D3D12::PresentD3D12Downlevel(ID3D12CommandQueueDownlevel* pCommandQueueDownlevel, ID3D12GraphicsCommandList* pOpenCommandList, ID3D12Resource* pSourceTex2D, HWND hWindow, D3D12_DOWNLEVEL_PRESENT_FLAGS Flags)
+HRESULT D3D12::PresentDownlevel(ID3D12CommandQueueDownlevel* pCommandQueueDownlevel, ID3D12GraphicsCommandList* pOpenCommandList, ID3D12Resource* pSourceTex2D, HWND hWindow, D3D12_DOWNLEVEL_PRESENT_FLAGS Flags)
 {
     auto& d3d12 = Get();
 
@@ -39,13 +39,13 @@ HRESULT D3D12::PresentD3D12Downlevel(ID3D12CommandQueueDownlevel* pCommandQueueD
     // TODO: investigate if there isn't a better way of doing this (finding the current index in the game exe?)
     d3d12.m_downlevelBufferIndex = (!d3d12.m_initialized || d3d12.m_downlevelBufferIndex == 2) ? 0 : d3d12.m_downlevelBufferIndex + 1;
 
-    if (d3d12.InitializeD3D12Downlevel(d3d12.m_pCommandQueue, pSourceTex2D, hWindow))
+    if (d3d12.InitializeDownlevel(d3d12.m_pCommandQueue, pSourceTex2D, hWindow))
         d3d12.Update(0.0f);
 
     return d3d12.m_realPresentD3D12Downlevel(pCommandQueueDownlevel, pOpenCommandList, pSourceTex2D, hWindow, Flags);
 }
 
-HRESULT D3D12::CreateCommittedResourceD3D12(ID3D12Device* pDevice, const D3D12_HEAP_PROPERTIES* pHeapProperties, D3D12_HEAP_FLAGS HeapFlags, const D3D12_RESOURCE_DESC* pDesc,
+HRESULT D3D12::CreateCommittedResource(ID3D12Device* pDevice, const D3D12_HEAP_PROPERTIES* pHeapProperties, D3D12_HEAP_FLAGS HeapFlags, const D3D12_RESOURCE_DESC* pDesc,
     D3D12_RESOURCE_STATES InitialResourceState, const D3D12_CLEAR_VALUE* pOptimizedClearValue, const IID* riidResource, void** ppvResource)
 {
     auto& d3d12 = Get();
@@ -75,7 +75,7 @@ HRESULT D3D12::CreateCommittedResourceD3D12(ID3D12Device* pDevice, const D3D12_H
     return result;
 }
 
-void D3D12::ExecuteCommandListsD3D12(ID3D12CommandQueue* apCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists)
+void D3D12::ExecuteCommandLists(ID3D12CommandQueue* apCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists)
 {
     auto& d3d12 = Get();
     if (d3d12.m_pCommandQueue == nullptr)
@@ -102,7 +102,7 @@ void D3D12::Hook()
 
     if (kiero::isDownLevelDevice()) 
     {
-        if (kiero::bind(175, reinterpret_cast<void**>(&m_realPresentD3D12Downlevel), &PresentD3D12Downlevel) != kiero::Status::Success)
+        if (kiero::bind(175, reinterpret_cast<void**>(&m_realPresentD3D12Downlevel), &PresentDownlevel) != kiero::Status::Success)
         {
             spdlog::error("{0} Downlevel Present hook failed!", d3d12type);
             ++d3d12FailedHooksCount;
@@ -113,7 +113,7 @@ void D3D12::Hook()
             ++d3d12CompleteHooksCount;
         }
 
-        if (kiero::bind(27, reinterpret_cast<void**>(&m_realCreateCommittedResource), &CreateCommittedResourceD3D12) != kiero::Status::Success)
+        if (kiero::bind(27, reinterpret_cast<void**>(&m_realCreateCommittedResource), &CreateCommittedResource) != kiero::Status::Success)
         {
             spdlog::error("{0} CreateCommittedResource Hook failed!", d3d12type);
             ++d3d12FailedHooksCount;
@@ -126,7 +126,7 @@ void D3D12::Hook()
     }
     else
     {
-        if (kiero::bind(140, reinterpret_cast<void**>(&m_realPresentD3D12), &PresentD3D12) != kiero::Status::Success)
+        if (kiero::bind(140, reinterpret_cast<void**>(&m_realPresentD3D12), &Present) != kiero::Status::Success)
         {
             spdlog::error("{0} Present hook failed!", d3d12type);
             ++d3d12FailedHooksCount;
@@ -137,7 +137,7 @@ void D3D12::Hook()
             ++d3d12CompleteHooksCount;
         }
 
-        if (kiero::bind(145, reinterpret_cast<void**>(&m_realResizeBuffersD3D12), &ResizeBuffersD3D12) != kiero::Status::Success)
+        if (kiero::bind(145, reinterpret_cast<void**>(&m_realResizeBuffersD3D12), &ResizeBuffers) != kiero::Status::Success)
         {
             spdlog::error("{0} ResizeBuffers hook failed!", d3d12type);
             ++d3d12FailedHooksCount;
@@ -149,7 +149,7 @@ void D3D12::Hook()
         }
     }
 
-    if (kiero::bind(54, reinterpret_cast<void**>(&m_realExecuteCommandLists), &ExecuteCommandListsD3D12) != kiero::Status::Success)
+    if (kiero::bind(54, reinterpret_cast<void**>(&m_realExecuteCommandLists), &ExecuteCommandLists) != kiero::Status::Success)
     {
         spdlog::error("{0} ExecuteCommandLists hook failed!", d3d12type);
         ++d3d12FailedHooksCount;
