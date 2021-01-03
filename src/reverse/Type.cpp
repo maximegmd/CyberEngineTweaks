@@ -15,12 +15,12 @@ std::string Type::Descriptor::ToString() const
     {
         result += "\t\t" + function + ",\n";
     }
-    result += "},\n\tstaticFunctions: {\n";
+    result += "\t},\n\tstaticFunctions: {\n";
     for (auto& function : staticFunctions)
     {
         result += "\t\t" + function + ",\n";
     }
-    result += "},\nproperties: {\n";
+    result += "\t},\n\tproperties: {\n";
     for (auto& property : properties)
     {
         result += "\t\t" + property + ",\n";
@@ -109,7 +109,100 @@ std::string Type::GetName() const
     return "";
 }
 
-Type::Descriptor Type::Dump() const
+std::string Type::FunctionDescriptor(RED4ext::CBaseFunction* pFunc, bool withHashes) const
+{
+    std::stringstream ret;
+    RED4ext::CName typeName;
+    std::vector<std::string> params;
+    bool hasOutParams = false;
+
+    // name2 seems to be a cleaner representation of the name
+    // for example, name would be "DisableFootstepAudio;Bool", and name2 is just"DisableFootstepAudio"
+    std::string funcName2 = pFunc->name2.ToString();
+
+    ret << funcName2 << "(";
+
+    for (auto i = 0u; i < pFunc->params.size; ++i)
+    {
+        auto* param = pFunc->params[i];
+
+        if ((param->unk28 & 0x200) != 0)
+        {
+            // 'out' param, for returning additional data
+            // we hide these here so we can display them in the return types
+            hasOutParams = true;
+            continue;
+        }
+        param->type->GetName(typeName);
+        params.push_back(param->name.ToString() + std::string(": ") + typeName.ToString());
+    }
+
+    for (auto i = 0u; i < params.size(); ++i)
+    {
+        ret << params[i];
+        if (i < params.size() - 1)
+        {
+            ret << ", ";
+        }
+    }
+
+    ret << ")";
+
+    const bool hasReturnType = (pFunc->returnType) != nullptr && (pFunc->returnType->type) != nullptr;
+
+    params.clear();
+
+    if (hasReturnType)
+    {
+        pFunc->returnType->type->GetName(typeName);
+        params.push_back(typeName.ToString());
+    }
+
+    if (hasOutParams)
+    {
+        for (auto i = 0u; i < pFunc->params.size; ++i)
+        {
+            auto* param = pFunc->params[i];
+
+            if ((param->unk28 & 0x200) == 0)
+            {
+                // ignone non-out params cause we've dealt with them above
+                continue;
+            }
+
+            param->type->GetName(typeName);
+            params.push_back(param->name.ToString() + std::string(": ") + typeName.ToString());
+        }
+
+    }
+
+    if (params.size() > 0)
+    {
+        ret << " => (";
+
+        for (auto i = 0; i < params.size(); ++i)
+        {
+            ret << params[i];
+            if (i < params.size() - 1)
+            {
+                ret << ", ";
+            }
+        }
+
+        ret << ")";
+    }
+
+
+    if (withHashes)
+    {
+        std::string funcHashes = "Hash:(" + fmt::format("{:016x}", pFunc->name.hash) + ") / ShortName:(" + pFunc->name2.ToString() + ") Hash:(" + fmt::format("{:016x}", pFunc->name2.hash) + ")";
+        ret << " # " << funcHashes;
+    }
+
+    return ret.str();
+}
+
+Type::Descriptor Type::Dump(bool withHashes) const
 {
     Descriptor descriptor;
 
@@ -124,15 +217,15 @@ Type::Descriptor Type::Dump() const
             for (auto i = 0u; i < type->funcs.size; ++i)
             {
                 auto* pFunc = type->funcs[i];
-                std::string funcName = "Owner:(" + name + ") Hash:" + pFunc->name.ToString() + " Hash:( " + fmt::format("{:016x}", pFunc->name.hash) + ") / ShortName:(" + pFunc->name2.ToString() + ") Hash:( " + fmt::format("{:016x}", pFunc->name2.hash) + ")";
-                descriptor.functions.push_back(funcName);
+                std::string funcDesc = FunctionDescriptor(pFunc, withHashes);
+                descriptor.functions.push_back(funcDesc);
             }
 
             for (auto i = 0u; i < type->staticFuncs.size; ++i)
             {
                 auto* pFunc = type->staticFuncs[i];
-                std::string funcName = "Owner:(" + name + ") Hash:" + pFunc->name.ToString() + " Hash:( " + fmt::format("{:016x}", pFunc->name.hash) + ") / ShortName:(" + pFunc->name2.ToString() + ") Hash:( " + fmt::format("{:016x}", pFunc->name2.hash) + ")";
-                descriptor.staticFunctions.push_back(funcName);
+                std::string funcDesc = FunctionDescriptor(pFunc, withHashes);
+                descriptor.staticFunctions.push_back(funcDesc);
             }
 
             for (auto i = 0u; i < type->props.size; ++i)
@@ -141,8 +234,7 @@ Type::Descriptor Type::Dump() const
                 RED4ext::CName name;
                 pProperty->type->GetName(name);
 
-                std::string propName = std::string(pProperty->name.ToString()) + " : " + name.ToString();
-                descriptor.properties.push_back(propName);
+                descriptor.properties.push_back(pProperty->name.ToString() + std::string(": ") + name.ToString());
             }
 
             type = type->parent && type->parent->GetType() == RED4ext::ERTTIType::Class ? type->parent : nullptr;

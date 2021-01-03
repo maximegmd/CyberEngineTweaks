@@ -418,12 +418,12 @@ void Scripting::Initialize()
         return this->GetSingletonHandle(acName);
     };
 
-    m_lua["Dump"] = [this](Type* apType)
+    m_lua["Dump"] = [this](Type* apType, bool detailed)
     {
-        return apType != nullptr ? apType->Dump() : Type::Descriptor{};
+        return apType != nullptr ? apType->Dump(detailed) : Type::Descriptor{};
     };
 
-    m_lua["DumpType"] = [this](const std::string& acName)
+    m_lua["DumpType"] = [this](const std::string& acName, bool detailed)
     {
         auto* pRtti = RED4ext::CRTTISystem::Get();
         auto* pType = pRtti->GetClass(RED4ext::FNV1a(acName.c_str()));
@@ -431,7 +431,7 @@ void Scripting::Initialize()
             return Type::Descriptor();
 
         Type type(m_lua, pType);
-        return type.Dump();
+        return type.Dump(detailed);
     };
 
     m_lua["print"] = [](sol::variadic_args args, sol::this_environment env, sol::this_state L)
