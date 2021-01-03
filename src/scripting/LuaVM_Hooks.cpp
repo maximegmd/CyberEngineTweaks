@@ -46,6 +46,7 @@ void LuaVM::HookLog(REDScriptContext* apContext, ScriptStack* apStack, void*, vo
     {
         Scripting::Get().GetStore().TriggerOnInit();
         Get().m_initialized = true;
+        spdlog::info("LuaVM initialization complete!");
     }
 }
 
@@ -105,6 +106,7 @@ void LuaVM::HookLogChannel(REDScriptContext* apContext, ScriptStack* apStack, vo
     {
         Scripting::Get().GetStore().TriggerOnInit();
         Get().m_initialized = true;
+        spdlog::info("LuaVM initialization complete!");
     }
 }
 

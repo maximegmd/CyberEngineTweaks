@@ -52,18 +52,18 @@ bool D3D12::ResetState()
 
 bool D3D12::Initialize(IDXGISwapChain* pSwapChain)
 {
-    static auto checkCmdQueue = [](D3D12* overlay) 
+    static auto checkCmdQueue = [](D3D12* d3d12) 
     {
-        if (overlay->m_pCommandQueue == nullptr) 
+        if (d3d12->m_pCommandQueue == nullptr) 
         {
-            auto swapChainAddr = reinterpret_cast<uintptr_t>(*(&overlay->m_pdxgiSwapChain));
-            overlay->m_pCommandQueue = *reinterpret_cast<ID3D12CommandQueue**>(swapChainAddr + kiero::getCommandQueueOffset());
-            if (overlay->m_pCommandQueue != nullptr) 
+            auto swapChainAddr = reinterpret_cast<uintptr_t>(*(&d3d12->m_pdxgiSwapChain));
+            d3d12->m_pCommandQueue = *reinterpret_cast<ID3D12CommandQueue**>(swapChainAddr + kiero::getCommandQueueOffset());
+            if (d3d12->m_pCommandQueue != nullptr) 
             {
-                auto desc = overlay->m_pCommandQueue->GetDesc();
+                auto desc = d3d12->m_pCommandQueue->GetDesc();
                 if(desc.Type != D3D12_COMMAND_LIST_TYPE_DIRECT) 
                 {
-                    overlay->m_pCommandQueue = nullptr;
+                    d3d12->m_pCommandQueue = nullptr;
                     spdlog::warn("D3D12::Initialize() - invalid type of command list!");
                     return false;
                 }
