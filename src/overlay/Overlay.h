@@ -1,7 +1,7 @@
 #pragma once
 
 #include "reverse/BasicTypes.h"
-#include "common/D3D12Downlevel.h"
+#include "d3d12/D3D12.h"
 
 typedef TweakDBID TDBID;
 
@@ -9,11 +9,6 @@ struct REDScriptContext;
 struct ScriptStack;
 struct UnknownString;
 
-using TResizeBuffersD3D12 = HRESULT(IDXGISwapChain* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags);
-using TPresentD3D12 = HRESULT(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT PresentFlags);
-using TPresentD3D12Downlevel = HRESULT(ID3D12CommandQueueDownlevel* pCommandQueueDownlevel, ID3D12GraphicsCommandList* pOpenCommandList, ID3D12Resource* pSourceTex2D, HWND hWindow, D3D12_DOWNLEVEL_PRESENT_FLAGS Flags);
-using TCreateCommittedResource = HRESULT(ID3D12Device *pDevice, const D3D12_HEAP_PROPERTIES* pHeapProperties, D3D12_HEAP_FLAGS HeapFlags, const D3D12_RESOURCE_DESC* pDesc, D3D12_RESOURCE_STATES InitialResourceState, const D3D12_CLEAR_VALUE* pOptimizedClearValue, const IID* riidResource, void** ppvResource);
-using TExecuteCommandLists = void(ID3D12CommandQueue* apCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists);
 using TSetMousePosition = BOOL(void* apThis, HWND Wnd, long X, long Y);
 using TClipToCenter = HWND(RED4ext::CGameEngine::UnkC0* apThis);
 using TScriptCall = void(REDScriptContext*, ScriptStack*, void*, void*);
@@ -68,7 +63,6 @@ protected:
 	static HRESULT PresentD3D12Downlevel(ID3D12CommandQueueDownlevel* pCommandQueueDownlevel, ID3D12GraphicsCommandList* pOpenCommandList, ID3D12Resource* pSourceTex2D, HWND hWindow, D3D12_DOWNLEVEL_PRESENT_FLAGS Flags);
 	static HRESULT CreateCommittedResourceD3D12(ID3D12Device* pDevice, const D3D12_HEAP_PROPERTIES* pHeapProperties, D3D12_HEAP_FLAGS HeapFlags, const D3D12_RESOURCE_DESC* pDesc, D3D12_RESOURCE_STATES InitialResourceState, const D3D12_CLEAR_VALUE* pOptimizedClearValue, const IID* riidResource, void** ppvResource);
 	static void ExecuteCommandListsD3D12(ID3D12CommandQueue* apCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists);
-	static BOOL SetMousePosition(void* apThis, HWND Wnd, long X, long Y);
 	static BOOL ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis);
 	static LRESULT APIENTRY WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	static void HookLog(REDScriptContext* apContext, ScriptStack* apStack, void*, void*);
@@ -131,4 +125,6 @@ private:
 
 	UINT m_outWidth{ 0 };
 	UINT m_outHeight{ 0 };
+
+	friend struct D3D12;
 };

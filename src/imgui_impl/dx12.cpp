@@ -30,7 +30,7 @@
 
 #include <stdafx.h>
 
-#include "imgui_impl_dx12.h"
+#include "dx12.h"
 
 // DirectX
 #ifdef _MSC_VER

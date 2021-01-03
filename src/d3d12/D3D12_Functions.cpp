@@ -1,11 +1,12 @@
 #include <stdafx.h>
 
-#include "Overlay.h"
+#include "D3D12.h"
 
 #include <kiero/kiero.h>
 #include <imgui_impl/dx12.h>
 #include <imgui_impl/win32.h>
 
+#include <overlay/Overlay.h>
 #include <scripting/Scripting.h>
 
 static BOOL CALLBACK EnumWindowsProcMy(HWND hwnd, LPARAM lParam)
@@ -25,7 +26,7 @@ static BOOL CALLBACK EnumWindowsProcMy(HWND hwnd, LPARAM lParam)
     return TRUE;
 }
 
-bool Overlay::ResetD3D12State()
+bool D3D12::ResetD3D12State()
 {
     if (m_initialized)
     {   
@@ -44,13 +45,13 @@ bool Overlay::ResetD3D12State()
     m_downlevelBufferIndex = 0;
     m_outWidth = 0;
     m_outHeight = 0;
-    // NOTE: not clearing m_hWnd, m_wndProc and m_pCommandQueue, as these should be persistent once set till the EOL of Overlay
+    // NOTE: not clearing m_hWnd, m_wndProc and m_pCommandQueue, as these should be persistent once set till the EOL of D3D12
     return false;
 }
 
-bool Overlay::InitializeD3D12(IDXGISwapChain* pSwapChain)
+bool D3D12::InitializeD3D12(IDXGISwapChain* pSwapChain)
 {
-    static auto checkCmdQueue = [](Overlay* overlay) 
+    static auto checkCmdQueue = [](D3D12* overlay) 
     {
         if (overlay->m_pCommandQueue == nullptr) 
         {
@@ -62,12 +63,12 @@ bool Overlay::InitializeD3D12(IDXGISwapChain* pSwapChain)
                 if(desc.Type != D3D12_COMMAND_LIST_TYPE_DIRECT) 
                 {
                     overlay->m_pCommandQueue = nullptr;
-                    spdlog::warn("Overlay::InitializeD3D12() - invalid type of command list!");
+                    spdlog::warn("D3D12::InitializeD3D12() - invalid type of command list!");
                     return false;
                 }
                 return true;
             }
-            spdlog::warn("Overlay::InitializeD3D12() - swap chain is missing command queue!");
+            spdlog::warn("D3D12::InitializeD3D12() - swap chain is missing command queue!");
             return false;
         }
         return true;
@@ -77,11 +78,11 @@ bool Overlay::InitializeD3D12(IDXGISwapChain* pSwapChain)
     if (m_hWnd == nullptr) 
     {
         if (EnumWindows(EnumWindowsProcMy, reinterpret_cast<LPARAM>(&m_hWnd)))
-            spdlog::error("Overlay::InitializeD3D12() - window hook failed!");
+            spdlog::error("D3D12::InitializeD3D12() - window hook failed!");
         else 
         {
             m_wndProc = reinterpret_cast<WNDPROC>(SetWindowLongPtr(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(WndProc)));
-            spdlog::info("Overlay::InitializeD3D12() - window hook complete.");
+            spdlog::info("D3D12::InitializeD3D12() - window hook complete.");
         }
     }
 
@@ -93,17 +94,17 @@ bool Overlay::InitializeD3D12(IDXGISwapChain* pSwapChain)
         CComPtr<IDXGISwapChain3> pSwapChain3;
         if (FAILED(pSwapChain->QueryInterface(IID_PPV_ARGS(&pSwapChain3))))
         {
-            spdlog::error("Overlay::InitializeD3D12() - unable to query pSwapChain interface for IDXGISwapChain3! (pSwapChain = {0})", reinterpret_cast<void*>(pSwapChain));
+            spdlog::error("D3D12::InitializeD3D12() - unable to query pSwapChain interface for IDXGISwapChain3! (pSwapChain = {0})", reinterpret_cast<void*>(pSwapChain));
             return false;
         }
         if (m_pdxgiSwapChain != pSwapChain3)
         {
-            spdlog::warn("Overlay::InitializeD3D12() - multiple swap chains detected! Currently hooked to {0}, this call was from {1}.", reinterpret_cast<void*>(*(&m_pdxgiSwapChain)), reinterpret_cast<void*>(pSwapChain));
+            spdlog::warn("D3D12::InitializeD3D12() - multiple swap chains detected! Currently hooked to {0}, this call was from {1}.", reinterpret_cast<void*>(*(&m_pdxgiSwapChain)), reinterpret_cast<void*>(pSwapChain));
             return false;
         }
         if (!checkCmdQueue(this))
         {
-            spdlog::error("Overlay::InitializeD3D12() - missing command queue!");
+            spdlog::error("D3D12::InitializeD3D12() - missing command queue!");
             return false;
         }
         return true;
@@ -111,13 +112,13 @@ bool Overlay::InitializeD3D12(IDXGISwapChain* pSwapChain)
 
     if (FAILED(pSwapChain->QueryInterface(IID_PPV_ARGS(&m_pdxgiSwapChain))))
     {
-        spdlog::error("Overlay::InitializeD3D12() - unable to query pSwapChain interface for IDXGISwapChain3! (pSwapChain = {0})", reinterpret_cast<void*>(pSwapChain));
+        spdlog::error("D3D12::InitializeD3D12() - unable to query pSwapChain interface for IDXGISwapChain3! (pSwapChain = {0})", reinterpret_cast<void*>(pSwapChain));
         return ResetD3D12State();
     }
 
     if (FAILED(m_pdxgiSwapChain->GetDevice(IID_PPV_ARGS(&m_pd3d12Device))))
     {
-        spdlog::error("Overlay::InitializeD3D12() - failed to get device!");
+        spdlog::error("D3D12::InitializeD3D12() - failed to get device!");
         return ResetD3D12State();
     }
 
@@ -125,7 +126,7 @@ bool Overlay::InitializeD3D12(IDXGISwapChain* pSwapChain)
     m_pdxgiSwapChain->GetDesc(&sdesc);
 
     if (sdesc.OutputWindow != m_hWnd) 
-        spdlog::warn("Overlay::InitializeD3D12() - output window of current swap chain does not match hooked window! Currently hooked to {0} while swap chain output window is {1}.", reinterpret_cast<void*>(m_hWnd), reinterpret_cast<void*>(sdesc.OutputWindow));
+        spdlog::warn("D3D12::InitializeD3D12() - output window of current swap chain does not match hooked window! Currently hooked to {0} while swap chain output window is {1}.", reinterpret_cast<void*>(m_hWnd), reinterpret_cast<void*>(sdesc.OutputWindow));
 
     m_outWidth = sdesc.BufferDesc.Width;
     m_outHeight = sdesc.BufferDesc.Height;
@@ -142,7 +143,7 @@ bool Overlay::InitializeD3D12(IDXGISwapChain* pSwapChain)
     rtvdesc.NodeMask = 1;
     if (FAILED(m_pd3d12Device->CreateDescriptorHeap(&rtvdesc, IID_PPV_ARGS(&m_pd3dRtvDescHeap))))
     {
-        spdlog::error("Overlay::InitializeD3D12() - failed to create RTV descriptor heap!");
+        spdlog::error("D3D12::InitializeD3D12() - failed to create RTV descriptor heap!");
         return ResetD3D12State();
     }
 
@@ -160,21 +161,21 @@ bool Overlay::InitializeD3D12(IDXGISwapChain* pSwapChain)
     srvdesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     if (FAILED(m_pd3d12Device->CreateDescriptorHeap(&srvdesc, IID_PPV_ARGS(&m_pd3dSrvDescHeap))))
     {
-        spdlog::error("Overlay::InitializeD3D12() - failed to create SRV descriptor heap!");
+        spdlog::error("D3D12::InitializeD3D12() - failed to create SRV descriptor heap!");
         return ResetD3D12State();
     }
     
     for (auto& context : m_frameContexts)
         if (FAILED(m_pd3d12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&context.CommandAllocator))))
         {
-            spdlog::error("Overlay::InitializeD3D12() - failed to create command allocator!");
+            spdlog::error("D3D12::InitializeD3D12() - failed to create command allocator!");
             return ResetD3D12State();
         }
 
     if (FAILED(m_pd3d12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_frameContexts[0].CommandAllocator, nullptr, IID_PPV_ARGS(&m_pd3dCommandList))) ||
         FAILED(m_pd3dCommandList->Close()))
     {
-        spdlog::error("Overlay::InitializeD3D12() - failed to create command list!");
+        spdlog::error("D3D12::InitializeD3D12() - failed to create command list!");
         return ResetD3D12State();
     }
 
@@ -183,33 +184,33 @@ bool Overlay::InitializeD3D12(IDXGISwapChain* pSwapChain)
 
     if (!InitializeImGui(buffersCounts))
     {
-        spdlog::error("Overlay::InitializeD3D12() - failed to initialize ImGui!");
+        spdlog::error("D3D12::InitializeD3D12() - failed to initialize ImGui!");
         return ResetD3D12State();
     }
 
-    spdlog::info("Overlay::InitializeD3D12() - initialization successful!");
+    spdlog::info("D3D12::InitializeD3D12() - initialization successful!");
     m_initialized = true;
 
     if (!checkCmdQueue(this))
     {
-        spdlog::error("Overlay::InitializeD3D12() - missing command queue!");
+        spdlog::error("D3D12::InitializeD3D12() - missing command queue!");
         return false;
     }
 
     return true;
 }
 
-bool Overlay::InitializeD3D12Downlevel(ID3D12CommandQueue* pCommandQueue, ID3D12Resource* pSourceTex2D, HWND hWindow)
+bool D3D12::InitializeD3D12Downlevel(ID3D12CommandQueue* pCommandQueue, ID3D12Resource* pSourceTex2D, HWND hWindow)
 {
     // Window hook (repeated till successful, should be on first call)
     if (m_hWnd == nullptr) 
     {
         if (EnumWindows(EnumWindowsProcMy, reinterpret_cast<LPARAM>(&m_hWnd)))
-            spdlog::error("Overlay::InitializeD3D12Downlevel() - window hook failed!");
+            spdlog::error("D3D12::InitializeD3D12Downlevel() - window hook failed!");
         else 
         {
             m_wndProc = reinterpret_cast<WNDPROC>(SetWindowLongPtr(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(WndProc)));
-            spdlog::info("Overlay::InitializeD3D12Downlevel() - window hook complete.");
+            spdlog::info("D3D12::InitializeD3D12Downlevel() - window hook complete.");
         }
     }
 
@@ -222,7 +223,7 @@ bool Overlay::InitializeD3D12Downlevel(ID3D12CommandQueue* pCommandQueue, ID3D12
     auto cmdQueueDesc = pCommandQueue->GetDesc();
     if(cmdQueueDesc.Type != D3D12_COMMAND_LIST_TYPE_DIRECT) 
     {
-        spdlog::warn("Overlay::InitializeD3D12Downlevel() - ignoring command queue - invalid type of command list!");
+        spdlog::warn("D3D12::InitializeD3D12Downlevel() - ignoring command queue - invalid type of command list!");
         return false;
     }
 
@@ -231,11 +232,11 @@ bool Overlay::InitializeD3D12Downlevel(ID3D12CommandQueue* pCommandQueue, ID3D12
     m_outHeight = pSourceTex2D->GetDesc().Height;
 
     if (hWindow != m_hWnd) 
-        spdlog::warn("Overlay::InitializeD3D12Downlevel() - current output window does not match hooked window! Currently hooked to {0} while current output window is {1}.", reinterpret_cast<void*>(m_hWnd), reinterpret_cast<void*>(hWindow));
+        spdlog::warn("D3D12::InitializeD3D12Downlevel() - current output window does not match hooked window! Currently hooked to {0} while current output window is {1}.", reinterpret_cast<void*>(m_hWnd), reinterpret_cast<void*>(hWindow));
 
     if (FAILED(pSourceTex2D->GetDevice(IID_PPV_ARGS(&m_pd3d12Device))))
     {
-        spdlog::error("Overlay::InitializeD3D12Downlevel() - failed to get device!");
+        spdlog::error("D3D12::InitializeD3D12Downlevel() - failed to get device!");
         return ResetD3D12State();
     }
 
@@ -244,7 +245,7 @@ bool Overlay::InitializeD3D12Downlevel(ID3D12CommandQueue* pCommandQueue, ID3D12
     m_frameContexts.resize(buffersCounts);
     if (buffersCounts == 0)
     {
-        spdlog::error("Overlay::InitializeD3D12Downlevel() - no backbuffers were found!");
+        spdlog::error("D3D12::InitializeD3D12Downlevel() - no backbuffers were found!");
         return ResetD3D12State();
     }
 
@@ -255,7 +256,7 @@ bool Overlay::InitializeD3D12Downlevel(ID3D12CommandQueue* pCommandQueue, ID3D12
     rtvdesc.NodeMask = 1;
     if (FAILED(m_pd3d12Device->CreateDescriptorHeap(&rtvdesc, IID_PPV_ARGS(&m_pd3dRtvDescHeap))))
     {
-        spdlog::error("Overlay::InitializeD3D12Downlevel() - failed to create RTV descriptor heap!");
+        spdlog::error("D3D12::InitializeD3D12Downlevel() - failed to create RTV descriptor heap!");
         return ResetD3D12State();
     }
 
@@ -273,7 +274,7 @@ bool Overlay::InitializeD3D12Downlevel(ID3D12CommandQueue* pCommandQueue, ID3D12
     srvdesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     if (FAILED(m_pd3d12Device->CreateDescriptorHeap(&srvdesc, IID_PPV_ARGS(&m_pd3dSrvDescHeap))))
     {
-        spdlog::error("Overlay::InitializeD3D12Downlevel() - failed to create SRV descriptor heap!");
+        spdlog::error("D3D12::InitializeD3D12Downlevel() - failed to create SRV descriptor heap!");
         return ResetD3D12State();
     }
     
@@ -281,20 +282,20 @@ bool Overlay::InitializeD3D12Downlevel(ID3D12CommandQueue* pCommandQueue, ID3D12
     {
         if (FAILED(m_pd3d12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&context.CommandAllocator))))
         {
-            spdlog::error("Overlay::InitializeD3D12Downlevel() - failed to create command allocator!");
+            spdlog::error("D3D12::InitializeD3D12Downlevel() - failed to create command allocator!");
             return ResetD3D12State();
         }
     }
 
     if (FAILED(m_pd3d12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_frameContexts[0].CommandAllocator, nullptr, IID_PPV_ARGS(&m_pd3dCommandList))))
     {
-        spdlog::error("Overlay::InitializeD3D12Downlevel() - failed to create command list!");
+        spdlog::error("D3D12::InitializeD3D12Downlevel() - failed to create command list!");
         return ResetD3D12State();
     }
 
     if (FAILED(m_pd3dCommandList->Close()))
     {
-        spdlog::error("Overlay::InitializeD3D12Downlevel() - failed to close command list!");
+        spdlog::error("D3D12::InitializeD3D12Downlevel() - failed to close command list!");
         return ResetD3D12State();
     }
 
@@ -309,17 +310,17 @@ bool Overlay::InitializeD3D12Downlevel(ID3D12CommandQueue* pCommandQueue, ID3D12
 
     if (!InitializeImGui(buffersCounts))
     {
-        spdlog::error("Overlay::InitializeD3D12Downlevel() - failed to initialize ImGui!");
+        spdlog::error("D3D12::InitializeD3D12Downlevel() - failed to initialize ImGui!");
         return ResetD3D12State();
     }
 
-    spdlog::info("Overlay::InitializeD3D12Downlevel() - initialization successful!");
+    spdlog::info("D3D12::InitializeD3D12Downlevel() - initialization successful!");
     m_initialized = true;
 
     return true;
 }
 
-bool Overlay::InitializeImGui(size_t buffersCounts)
+bool D3D12::InitializeImGui(size_t buffersCounts)
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -330,7 +331,7 @@ bool Overlay::InitializeImGui(size_t buffersCounts)
 
     if (!ImGui_ImplWin32_Init(m_hWnd)) 
     {
-        spdlog::error("Overlay::InitializeImGui() - ImGui_ImplWin32_Init call failed!");
+        spdlog::error("D3D12::InitializeImGui() - ImGui_ImplWin32_Init call failed!");
         ImGui::DestroyContext();
         return false;
     }
@@ -340,7 +341,7 @@ bool Overlay::InitializeImGui(size_t buffersCounts)
         m_pd3dSrvDescHeap->GetCPUDescriptorHandleForHeapStart(),
         m_pd3dSrvDescHeap->GetGPUDescriptorHandleForHeapStart()))
     {
-        spdlog::error("Overlay::InitializeImGui() - ImGui_ImplDX12_Init call failed!");
+        spdlog::error("D3D12::InitializeImGui() - ImGui_ImplDX12_Init call failed!");
         ImGui_ImplWin32_Shutdown();
         ImGui::DestroyContext();
         return false;
@@ -348,7 +349,7 @@ bool Overlay::InitializeImGui(size_t buffersCounts)
 
     if (!ImGui_ImplDX12_CreateDeviceObjects()) 
     {
-        spdlog::error("Overlay::InitializeImGui() - ImGui_ImplDX12_CreateDeviceObjects call failed!");
+        spdlog::error("D3D12::InitializeImGui() - ImGui_ImplDX12_CreateDeviceObjects call failed!");
         ImGui_ImplDX12_Shutdown();
         ImGui_ImplWin32_Shutdown();
         ImGui::DestroyContext();
@@ -358,17 +359,14 @@ bool Overlay::InitializeImGui(size_t buffersCounts)
     return true;
 }
 
-void Overlay::Render()
+void D3D12::Update(float deltaTime)
 {
-    if (m_logCount.load(std::memory_order_relaxed) < 2)
-        return;
-
-    Scripting::Get().GetStore().TriggerOnUpdate();
-
-    if (!IsEnabled())
-        return;
-
-    DrawImgui();
+    ImGui_ImplDX12_NewFrame();
+    ImGui_ImplWin32_NewFrame(m_outWidth, m_outHeight);
+    ImGui::NewFrame();
+    
+    if (Options::Get().Console)
+        Overlay::Get().Render();
 
     const auto bufferIndex = (m_pdxgiSwapChain != nullptr) ? (m_pdxgiSwapChain->GetCurrentBackBufferIndex()) : (m_downlevelBufferIndex);
     auto& frameContext = m_frameContexts[bufferIndex];

@@ -5,12 +5,13 @@
 #include <Image.h>
 #include <Options.h>
 #include <Pattern.h>
-#include <kiero/kiero.h>
 
-#include "imgui_impl_dx12.h"
-#include "imgui_impl_win32.h"
-#include "reverse/BasicTypes.h"
-#include "scripting/Scripting.h"
+#include <kiero/kiero.h>
+#include <imgui_impl/dx12.h>
+#include <imgui_impl/win32.h>
+
+#include <reverse/BasicTypes.h>
+#include <scripting/Scripting.h>
 
 static std::unique_ptr<Overlay> s_pOverlay;
 
