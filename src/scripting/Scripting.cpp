@@ -14,6 +14,7 @@
 #include "reverse/StrongReference.h"
 #include "reverse/Converter.h"
 #include "reverse/WeakReference.h"
+#include "reverse/ClassReference.h"
 #include "reverse/Enum.h"
 
 Scripting::Scripting()
@@ -267,6 +268,12 @@ void Scripting::Initialize()
         sol::meta_function::index, &SingletonReference::Index,
         sol::meta_function::new_index, &SingletonReference::NewIndex);
 
+    m_lua.new_usertype<ClassReference>("ClassReference",
+        sol::meta_function::construct, sol::no_constructor,
+        sol::base_classes, sol::bases<Type>(),
+        sol::meta_function::index, &ClassReference::Index,
+        sol::meta_function::new_index, &ClassReference::NewIndex);
+
     m_lua.new_usertype<GameOptions>("GameOptions",
         sol::meta_function::construct, sol::no_constructor,
         "Print", &GameOptions::Print,
@@ -416,6 +423,11 @@ void Scripting::Initialize()
     m_lua["GetSingleton"] = [this](const std::string& acName)
     {
         return this->GetSingletonHandle(acName);
+    };
+
+    m_lua["GameDump"] = [this](Type* apType)
+    {
+        return apType ? apType->GameDump() : "Null";
     };
 
     m_lua["Dump"] = [this](Type* apType, bool detailed)
