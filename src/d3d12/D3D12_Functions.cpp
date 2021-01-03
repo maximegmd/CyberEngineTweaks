@@ -6,7 +6,7 @@
 #include <imgui_impl/dx12.h>
 #include <imgui_impl/win32.h>
 
-#include <overlay/Overlay.h>
+#include <console/Console.h>
 #include <scripting/Scripting.h>
 
 static BOOL CALLBACK EnumWindowsProcMy(HWND hwnd, LPARAM lParam)
@@ -366,7 +366,7 @@ void D3D12::Update(float deltaTime)
     ImGui::NewFrame();
     
     if (Options::Get().Console)
-        Overlay::Get().Render();
+        Console::Get().Render();
 
     const auto bufferIndex = (m_pdxgiSwapChain != nullptr) ? (m_pdxgiSwapChain->GetCurrentBackBufferIndex()) : (m_downlevelBufferIndex);
     auto& frameContext = m_frameContexts[bufferIndex];

@@ -1,33 +1,33 @@
 #include <stdafx.h>
 
-#include "Overlay.h"
+#include "Console.h"
 
 #include <Image.h>
 #include <Options.h>
 #include <scripting/Scripting.h>
 
-static std::unique_ptr<Overlay> s_pOverlay;
+static std::unique_ptr<Console> s_pOverlay;
 
-void Overlay::Initialize(Image* apImage)
+void Console::Initialize(Image* apImage)
 {
     if (!s_pOverlay)
     {
-        s_pOverlay.reset(new (std::nothrow) Overlay);
+        s_pOverlay.reset(new (std::nothrow) Console);
         s_pOverlay->Hook(apImage);
     }
 }
 
-void Overlay::Shutdown()
+void Console::Shutdown()
 {
     s_pOverlay = nullptr;
 }
 
-Overlay& Overlay::Get()
+Console& Console::Get()
 {
     return *s_pOverlay;
 }
 
-void Overlay::Render()
+void Console::Render()
 {
     if (m_logCount.load(std::memory_order_relaxed) < 2)
         return;
@@ -121,7 +121,7 @@ void Overlay::Render()
     ImGui::End();
 }
 
-void Overlay::Toggle()
+void Console::Toggle()
 {
     m_enabled = !m_enabled;
 
@@ -143,12 +143,12 @@ void Overlay::Toggle()
     ClipToCenter(RED4ext::CGameEngine::Get()->unkC0);
 }
 
-bool Overlay::IsEnabled() const
+bool Console::IsEnabled() const
 {
     return m_enabled;
 }
 
-void Overlay::Log(const std::string& acpText)
+void Console::Log(const std::string& acpText)
 {
     std::lock_guard<std::recursive_mutex> _{ m_outputLock };
     std::istringstream lines(acpText);
@@ -161,7 +161,7 @@ void Overlay::Log(const std::string& acpText)
     m_outputScroll = true;
 }
 
-LRESULT Overlay::OnWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT Console::OnWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     if (uMsg == WM_KEYDOWN && wParam == Options::Get().ConsoleKey)
     {
@@ -193,6 +193,6 @@ LRESULT Overlay::OnWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
-Overlay::Overlay() = default;
+Console::Console() = default;
 
-Overlay::~Overlay() = default;
+Console::~Console() = default;

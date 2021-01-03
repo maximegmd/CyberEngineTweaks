@@ -1,12 +1,12 @@
 #include <stdafx.h>
 
-#include "Overlay.h"
+#include "Console.h"
 
 #include <Image.h>
 #include <Pattern.h>
 #include <kiero/kiero.h>
 
-BOOL Overlay::ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis)
+BOOL Console::ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis)
 {
     const HWND wnd = (HWND)apThis->hWnd;
     const HWND foreground = GetForegroundWindow();
@@ -57,7 +57,7 @@ static TScriptCall** GetScriptCallArray()
     return reinterpret_cast<TScriptCall**>(finalLocation);
 }
 
-void Overlay::HookLog(REDScriptContext* apContext, ScriptStack* apStack, void*, void*)
+void Console::HookLog(REDScriptContext* apContext, ScriptStack* apStack, void*, void*)
 {
     RED4ext::CString text("");
     apStack->unk30 = nullptr;
@@ -99,7 +99,7 @@ static const char* GetChannelStr(uint64_t hash)
     return nullptr;
 }
 
-void Overlay::HookLogChannel(REDScriptContext* apContext, ScriptStack* apStack, void*, void*)
+void Console::HookLogChannel(REDScriptContext* apContext, ScriptStack* apStack, void*, void*)
 {
     uint8_t opcode;
 
@@ -136,13 +136,13 @@ static std::string GetTDBDIDDebugString(TDBID tdbid)
             tdbid.name_hash, tdbid.name_length, tdbid.unk5, tdbid.unk7);
 }
 
-void Overlay::RegisterTDBIDString(uint64_t value, uint64_t base, const std::string& name)
+void Console::RegisterTDBIDString(uint64_t value, uint64_t base, const std::string& name)
 {
     std::lock_guard<std::recursive_mutex> _{ m_tdbidLock };
     m_tdbidLookup[value] = { base, name };
 }
 
-std::string Overlay::GetTDBIDString(uint64_t value)
+std::string Console::GetTDBIDString(uint64_t value)
 {
     std::lock_guard<std::recursive_mutex> _{ m_tdbidLock };
     auto it = m_tdbidLookup.find(value);
@@ -165,21 +165,21 @@ std::string Overlay::GetTDBIDString(uint64_t value)
     return string;
 }
 
-TDBID* Overlay::HookTDBIDCtor(TDBID* apThis, const char* name)
+TDBID* Console::HookTDBIDCtor(TDBID* apThis, const char* name)
 {
     auto result = Get().m_realTDBIDCtor(apThis, name);
     Get().RegisterTDBIDString(apThis->value, 0, name);
     return result;
 }
 
-TDBID* Overlay::HookTDBIDCtorCString(TDBID* apThis, const RED4ext::CString* name)
+TDBID* Console::HookTDBIDCtorCString(TDBID* apThis, const RED4ext::CString* name)
 {
     auto result = Get().m_realTDBIDCtorCString(apThis, name);
     Get().RegisterTDBIDString(apThis->value, 0, name->c_str());
     return result;
 }
 
-TDBID* Overlay::HookTDBIDCtorDerive(TDBID* apBase, TDBID* apThis, const char* name)
+TDBID* Console::HookTDBIDCtorDerive(TDBID* apBase, TDBID* apThis, const char* name)
 {
     auto result = Get().m_realTDBIDCtorDerive(apBase, apThis, name);
     Get().RegisterTDBIDString(apThis->value, apBase->value, std::string(name));
@@ -192,7 +192,7 @@ struct UnknownString
     uint32_t size;
 };
 
-TDBID* Overlay::HookTDBIDCtorUnknown(TDBID* apThis, uint64_t name)
+TDBID* Console::HookTDBIDCtorUnknown(TDBID* apThis, uint64_t name)
 {
     auto result = Get().m_realTDBIDCtorUnknown(apThis, name);
     UnknownString unknown;
@@ -201,7 +201,7 @@ TDBID* Overlay::HookTDBIDCtorUnknown(TDBID* apThis, uint64_t name)
     return result;
 }
 
-void Overlay::HookTDBIDToStringDEBUG(REDScriptContext* apContext, ScriptStack* apStack, void* result, void*)
+void Console::HookTDBIDToStringDEBUG(REDScriptContext* apContext, ScriptStack* apStack, void* result, void*)
 {
     uint8_t opcode;
 
@@ -220,7 +220,7 @@ void Overlay::HookTDBIDToStringDEBUG(REDScriptContext* apContext, ScriptStack* a
     }
 }
 
-void Overlay::Hook(Image* apImage)
+void Console::Hook(Image* apImage)
 {
     uint8_t* pLocation = FindSignature({
         0x48, 0x89, 0x5C, 0x24, 0x08, 0x57, 0x48, 0x83, 0xEC, 0x30, 0x48, 0x8B,

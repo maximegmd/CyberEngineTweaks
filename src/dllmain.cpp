@@ -1,6 +1,6 @@
 #include <stdafx.h>
 
-#include <overlay/Overlay.h>
+#include <console/Console.h>
 
 #include "Image.h"
 #include "Options.h"
@@ -70,7 +70,7 @@ static void Initialize(HMODULE mod)
     OptionsInitHook(&options.GameImage);
 
     if(options.Console)
-        Overlay::Initialize(&options.GameImage);
+        Console::Initialize(&options.GameImage);
 
     D3D12::Initialize();
 
@@ -84,7 +84,7 @@ static void Shutdown()
     if (s_modInstanceMutex)
     {
         if(Options::Get().Console)
-            Overlay::Shutdown();
+            Console::Shutdown();
 
         MH_DisableHook(MH_ALL_HOOKS);
         MH_Uninitialize();

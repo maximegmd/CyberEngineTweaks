@@ -25,13 +25,13 @@ struct TDBIDLookupEntry
 };
 
 struct Image;
-struct Overlay
+struct Console
 {
 	static void Initialize(Image* apImage);
 	static void Shutdown();
-	static Overlay& Get();
+	static Console& Get();
 
-	~Overlay();
+	~Console();
 
 	void Toggle();
 	bool IsEnabled() const;
@@ -61,7 +61,7 @@ protected:
 
 private:
 
-	Overlay();
+	Console();
 
 	TResizeBuffersD3D12* m_realResizeBuffersD3D12{ nullptr };
 	TPresentD3D12* m_realPresentD3D12{ nullptr };

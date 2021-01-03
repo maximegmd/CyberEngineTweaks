@@ -8,7 +8,7 @@
 #include <imgui_impl/dx12.h>
 #include <imgui_impl/win32.h>
 
-#include <overlay/Overlay.h>
+#include <console/Console.h>
 
 static std::unique_ptr<D3D12> s_pD3D12;
 
@@ -50,9 +50,9 @@ LRESULT APIENTRY D3D12::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
     {
         if (Options::Get().Console)
         {
-            auto res = Overlay::Get().OnWndProc(hWnd, uMsg, wParam, lParam);
+            auto res = Console::Get().OnWndProc(hWnd, uMsg, wParam, lParam);
             if (res)
-                return 0; // Overlay wants this input ignored!
+                return 0; // Console wants this input ignored!
         }
 
         if (Get().m_passInputToImGui)
