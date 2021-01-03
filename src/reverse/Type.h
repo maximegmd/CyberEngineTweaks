@@ -6,6 +6,7 @@ struct Type
 	{
 		std::string name{"Unknown"};
 		std::vector<std::string> functions;
+		std::vector<std::string> staticFunctions;
 		std::vector<std::string> properties;
 
 		std::string ToString() const;
@@ -23,7 +24,6 @@ struct Type
     sol::object Execute(RED4ext::CClassFunction* apFunc, const std::string& acName, sol::variadic_args args, sol::this_environment env, sol::this_state L, std::string& aReturnMessage);
 
 protected:
-
 	virtual RED4ext::IScriptable* GetHandle() { return nullptr; }
 
 	RED4ext::CClass* m_pType{ nullptr };
@@ -34,3 +34,4 @@ private:
     sol::state_view m_lua;
     std::unordered_map<std::string, sol::object> m_properties;
 };
+

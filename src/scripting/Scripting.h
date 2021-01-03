@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ScriptStore.h"
 #include "reverse/SingletonReference.h"
 
 struct Scripting
@@ -7,6 +8,8 @@ struct Scripting
     Scripting();
 	
     static Scripting& Get();
+
+    const ScriptStore& GetStore() const;
 	
     bool ExecuteLua(const std::string& aCommand);
 
@@ -30,4 +33,5 @@ private:
     sol::state m_lua;
     std::unordered_map<std::string, sol::object> m_properties;
     std::unordered_map<std::string, SingletonReference> m_singletons;
+    ScriptStore m_store;
 };

@@ -14,16 +14,24 @@
 #include "reverse/StrongReference.h"
 #include "reverse/Converter.h"
 #include "reverse/WeakReference.h"
+#include "reverse/Enum.h"
 
 Scripting::Scripting()
 {
     Initialize();
+
+    m_store.LoadAll(m_lua);
 }
 
 Scripting& Scripting::Get()
 {
     static Scripting s_instance;
     return s_instance;
+}
+
+const ScriptStore& Scripting::GetStore() const
+{
+    return m_store;
 }
 
 bool Scripting::ExecuteLua(const std::string& aCommand)
@@ -158,6 +166,23 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
                         result.value = apAllocator->New<StrongHandle>();
                 }
             }
+            else if (aObject.is<WeakReference>()) // Handle Implicit Cast - Probably an awful conversion without proper ref handling but try anyway
+            {
+                auto* pSubType = static_cast<RED4ext::CClass*>(apRtti)->parent;
+                RED4ext::IRTTIType* pType = aObject.as<WeakReference*>()->m_pType;
+                while (pType != nullptr && pType != pSubType)
+                {
+                    pType = static_cast<RED4ext::CClass*>(pType)->parent;
+                }
+
+                if (pType != nullptr)
+                {
+                    if (hasData)
+                        result.value = apAllocator->New<StrongHandle>(*reinterpret_cast<StrongHandle*>(&aObject.as<WeakReference>().m_weakHandle));
+                    else
+                        result.value = apAllocator->New<StrongHandle>();
+                }
+            }
         }
         else if (apRtti->GetType() == RED4ext::ERTTIType::WeakHandle)
         {
@@ -174,6 +199,23 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
                 {
                     if (hasData)
                         result.value = apAllocator->New<WeakHandle>(aObject.as<WeakReference>().m_weakHandle);
+                    else
+                        result.value = apAllocator->New<WeakHandle>();
+                }
+            }
+            else if (aObject.is<StrongReference>()) // Handle Implicit Cast
+            {
+                auto* pSubType = static_cast<RED4ext::CClass*>(apRtti)->parent;
+                RED4ext::IRTTIType* pType = aObject.as<StrongReference*>()->m_pType;
+                while (pType != nullptr && pType != pSubType)
+                {
+                    pType = static_cast<RED4ext::CClass*>(pType)->parent;
+                }
+
+                if (pType != nullptr)
+                {
+                    if (hasData)
+                        result.value = apAllocator->New<WeakHandle>(*reinterpret_cast<WeakHandle*>(&aObject.as<StrongReference>().m_strongHandle));
                     else
                         result.value = apAllocator->New<WeakHandle>();
                 }
@@ -265,6 +307,11 @@ void Scripting::Initialize()
         "z", &Vector4::z,
         "w", &Vector4::w);
 
+    m_lua.new_usertype<Enum>("Enum",
+        sol::constructors<Enum(const std::string&, const std::string&), Enum(const std::string&, uint32_t)>(),
+        sol::meta_function::to_string, &Enum::ToString,
+        "value", sol::property(&Enum::GetValueName, &Enum::SetValueByName));
+
     m_lua["ToVector4"] = [this](sol::table table) -> Vector4
     {
         return Vector4
@@ -274,6 +321,11 @@ void Scripting::Initialize()
             table["z"].get_or(0.f),
             table["w"].get_or(0.f)
         };
+    };
+
+    m_lua["GetMod"] = [this](const std::string& acName) -> sol::object
+    {
+        return GetStore().Get(acName);
     };
 
     m_lua.new_usertype<EulerAngles>("EulerAngles",
@@ -329,7 +381,8 @@ void Scripting::Initialize()
 
     m_lua.new_usertype<TweakDBID>("TweakDBID",
         sol::constructors<TweakDBID(const std::string&), TweakDBID(const TweakDBID&, const std::string&), TweakDBID(uint32_t, uint8_t), TweakDBID()>(),
-        sol::meta_function::to_string, &TweakDBID::ToString);
+        sol::meta_function::to_string, &TweakDBID::ToString,
+        "hash", &TweakDBID::name_hash);
 
     m_lua["ToTweakDBID"] = [this](sol::table table) -> TweakDBID
     {
@@ -342,7 +395,8 @@ void Scripting::Initialize()
 
     m_lua.new_usertype<ItemID>("ItemID",
         sol::constructors<ItemID(const TweakDBID&, uint32_t, uint16_t, uint8_t), ItemID(const TweakDBID&, uint32_t, uint16_t), ItemID(const TweakDBID&, uint32_t), ItemID(const TweakDBID&), ItemID()>(),
-        sol::meta_function::to_string, &ItemID::ToString);
+        sol::meta_function::to_string, &ItemID::ToString,
+        "tdbid", &ItemID::id);
 
     m_lua["ToItemID"] = [this](sol::table table) -> ItemID
     {
@@ -393,10 +447,21 @@ void Scripting::Initialize()
             std::string str = s["tostring"]((*it).get<sol::object>());
             oss << str;
         }
+        spdlog::info(oss.str());
         Overlay::Get().Log(oss.str());
     };
 
-    m_lua.do_file((Options::Get().Path / "scripts" / "autoexec.lua").string());
+    m_lua["GetAsyncKeyState"] = [](int aKeyCode) -> bool
+    {
+        return GetAsyncKeyState(aKeyCode) & 0x8000 != 0;
+    };
+
+    // execute autoexec.lua inside our default script directory
+    std::filesystem::current_path(Options::Get().CETPath / "scripts");
+    if (std::filesystem::exists("autoexec.lua"))
+        m_lua.do_file("autoexec.lua");
+    else
+        Overlay::Get().Log("WARNING: missing CET autoexec.lua!");
 }
 
 sol::object Scripting::Index(const std::string& acName)
@@ -459,6 +524,7 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
 
     static const auto hashcpPlayerSystem = RED4ext::FNV1a("cpPlayerSystem");
     static const auto hashGameInstance = RED4ext::FNV1a("ScriptGameInstance");
+    auto* pGIType = pRtti->GetType(RED4ext::FNV1a("ScriptGameInstance"));
 
     auto* pPlayerSystem = pRtti->GetClass(hashcpPlayerSystem);
     auto* gameInstanceType = pRtti->GetClass(hashGameInstance);
@@ -474,24 +540,6 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
         }
     }
 
-    if (pFunc->params.size - 1 != aArgs.size())
-    {
-        aReturnMessage = "Function '" + aFuncName + "' expects " +
-            std::to_string(pFunc->params.size - 1) + " parameters, not " +
-            std::to_string(aArgs.size()) + ".";
-
-        return sol::nil;
-    }
-
-    const auto* engine = RED4ext::CGameEngine::Get();
-    auto* unk10 = engine->framework->gameInstance;
-
-    using CStackType = RED4ext::CStackType;
-    std::vector<CStackType> args(aArgs.size() + 1);
-
-    args[0].type = pFunc->params[0]->type;
-    args[0].value = &unk10;
-
     // 8KB should cut it
     static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 13);
     struct ResetAllocator
@@ -503,15 +551,49 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
     };
     ResetAllocator ___allocatorReset;
 
+    using CStackType = RED4ext::CStackType;
+    const auto* engine = RED4ext::CGameEngine::Get();
+    auto* unk10 = engine->framework->gameInstance;
+
+    RED4ext::CName name;
+    uint8_t argOffset = 0;
+
+    if (pFunc->params.size > 0)
+    {
+        auto* pType = pFunc->params[0]->type;
+        // check if the first argument is expected to be ScriptGameInstance
+        if (pType == pGIType)
+        {
+            argOffset = 1;
+        }
+    }
+
+    std::vector<CStackType> args(aArgs.size() + argOffset);
+
+    if (pFunc->params.size - argOffset != aArgs.size())
+    {
+        aReturnMessage = "Function '" + aFuncName + "' expects " +
+            std::to_string(pFunc->params.size - argOffset) + " parameters, not " +
+            std::to_string(aArgs.size()) + ".";
+
+        return sol::nil;
+    }
+
+    if (argOffset > 0)
+    {
+        // Inject the ScriptGameInstance into first argument
+        args[0].type = pFunc->params[0]->type;
+        args[0].value = &unk10;
+    }
+
     for (auto i = 0ull; i < aArgs.size(); ++i)
     {
-        args[i + 1ull] = ToRED(aArgs[i].get<sol::object>(), pFunc->params[i + 1ull]->type, &s_scratchMemory);
+        args[i + argOffset] = ToRED(aArgs[i].get<sol::object>(), pFunc->params[i + argOffset]->type, &s_scratchMemory);
 
-        if(!args[i + 1ull].value)
+        if(!args[i + argOffset].value)
         {
-            auto* pType = pFunc->params[i + 1]->type;
+            auto* pType = pFunc->params[i + argOffset]->type;
 
-            RED4ext::CName name;
             pType->GetName(name);
             if (name)
             {

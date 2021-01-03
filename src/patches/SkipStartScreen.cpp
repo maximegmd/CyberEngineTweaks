@@ -8,7 +8,7 @@ void StartScreenPatch(Image* apImage)
     auto pLocation = FindSignature(apImage->pTextStart, apImage->pTextEnd, { 0x48, 0xBB , 0xE6 , 0xF8 , 0xA5, 0xA3, 0x36, 0x56, 0x4E, 0xA7, 0xC6 , 0x85, 0xB0, 0xCC, 0xCC, 0xCC, 0x01 });
     if(pLocation == nullptr)
     {
-        spdlog::info("\tStart screen patch: failed, could not be found");
+        spdlog::info("Start screen patch: failed, could not be found");
         return;
     }
 
@@ -20,5 +20,5 @@ void StartScreenPatch(Image* apImage)
     pLocation[1] = 0x90;
     VirtualProtect(pLocation, 32, oldProtect, nullptr);
 
-    spdlog::info("\tStart screen patch: success");
+    spdlog::info("Start screen patch: success");
 }

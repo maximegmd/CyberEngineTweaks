@@ -23,7 +23,7 @@ void VirtualInputPatch(Image* apImage)
             pMemoryItor[3] = 0x90;
             VirtualProtect(pMemoryItor, 8, oldProtect, nullptr);
 
-            spdlog::info("\tVirtual Input Patch: success");
+            spdlog::info("Virtual Input Patch: success");
 
             return;
         }
@@ -31,6 +31,6 @@ void VirtualInputPatch(Image* apImage)
         pMemoryItor++;
     }
 
-    spdlog::warn("\tVirtual Input Patch: failed");
+    spdlog::warn("Virtual Input Patch: failed");
 
 }
