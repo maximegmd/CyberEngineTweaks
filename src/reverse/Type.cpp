@@ -152,7 +152,7 @@ Type::Descriptor Type::Dump() const
     return descriptor;
 }
 
-sol::object Type::Execute(RED4ext::CClassFunction* apFunc, const std::string& acName, sol::variadic_args aArgs, sol::this_environment env, sol::this_state L, std::string& aReturnMessage)
+sol::variadic_results Type::Execute(RED4ext::CClassFunction* apFunc, const std::string& acName, sol::variadic_args aArgs, sol::this_environment env, sol::this_state L, std::string& aReturnMessage)
 {
     std::vector<RED4ext::CStackType> args(apFunc->params.size);
 
@@ -193,7 +193,7 @@ sol::object Type::Execute(RED4ext::CClassFunction* apFunc, const std::string& ac
                 aReturnMessage = "Function '" + acName + "' parameter " + std::to_string(i) + " must be " + typeName + ".";
             }
 
-            return sol::nil;
+            return {};
         }
     }
 
@@ -211,26 +211,20 @@ sol::object Type::Execute(RED4ext::CClassFunction* apFunc, const std::string& ac
 
     const auto success = apFunc->Execute(&stack);
     if (!success)
-        return sol::nil;
+        return {};
 
-    sol::table returns(m_lua, sol::create);
+    sol::variadic_results results;
 
     if (hasReturnType)
-        returns[1] = Scripting::ToLua(m_lua, result);
+        results.push_back(Scripting::ToLua(m_lua, result));
 
-    size_t index = 2;
     for (auto i = 0; i < apFunc->params.size; ++i)
     {
         if ((apFunc->params[i]->unk28 & 0x200) == 0)
             continue;
 
-        returns[index++] = Scripting::ToLua(m_lua, args[i]);
+        results.push_back(Scripting::ToLua(m_lua, args[i]));
     }
 
-    if (returns.empty())
-        return sol::nil;
-    if (returns.size() == 1)
-        return returns.get<sol::object>(1);
-
-    return returns;
+    return results;
 }

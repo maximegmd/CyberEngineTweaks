@@ -11,7 +11,7 @@ if is_mode("release") then
     set_optimize("fastest")
 end
 
-add_cxflags("/std:c++latest")
+add_cxflags("/std:c++latest", "/bigobj")
 add_defines("RED4EXT_STATIC_LIB")
 
 target("RED4ext.SDK")

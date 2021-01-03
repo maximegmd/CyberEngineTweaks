@@ -20,7 +20,7 @@ struct Type
 	std::string GetName() const;
 	Descriptor Dump() const;
 	
-    sol::object Execute(RED4ext::CClassFunction* apFunc, const std::string& acName, sol::variadic_args args, sol::this_environment env, sol::this_state L, std::string& aReturnMessage);
+	sol::variadic_results Execute(RED4ext::CClassFunction* apFunc, const std::string& acName, sol::variadic_args args, sol::this_environment env, sol::this_state L, std::string& aReturnMessage);
 
 protected:
 	virtual RED4ext::IScriptable* GetHandle() { return nullptr; }
