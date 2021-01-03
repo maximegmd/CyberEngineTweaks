@@ -7,7 +7,8 @@
 #include <imgui_impl/win32.h>
 
 #include <console/Console.h>
-#include <scripting/Scripting.h>
+#include <scripting/LuaVM.h>
+
 
 static BOOL CALLBACK EnumWindowsProcMy(HWND hwnd, LPARAM lParam)
 {
@@ -364,9 +365,11 @@ void D3D12::Update(float deltaTime)
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplWin32_NewFrame(m_outWidth, m_outHeight);
     ImGui::NewFrame();
+
+    LuaVM::Get().Update(deltaTime);
     
     if (Options::Get().Console)
-        Console::Get().Render();
+        Console::Get().Update(deltaTime);
 
     const auto bufferIndex = (m_pdxgiSwapChain != nullptr) ? (m_pdxgiSwapChain->GetCurrentBackBufferIndex()) : (m_downlevelBufferIndex);
     auto& frameContext = m_frameContexts[bufferIndex];

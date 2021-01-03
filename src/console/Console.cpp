@@ -3,37 +3,35 @@
 #include "Console.h"
 
 #include <Image.h>
+#include <Pattern.h>
 #include <Options.h>
-#include <scripting/Scripting.h>
 
-static std::unique_ptr<Console> s_pOverlay;
+#include <d3d12/D3D12.h>
+#include <scripting/LuaVM.h>
+
+static std::unique_ptr<Console> s_pConsole;
 
 void Console::Initialize(Image* apImage)
 {
-    if (!s_pOverlay)
+    if (!s_pConsole)
     {
-        s_pOverlay.reset(new (std::nothrow) Console);
-        s_pOverlay->Hook(apImage);
+        s_pConsole.reset(new (std::nothrow) Console);
+        s_pConsole->Hook(apImage);
     }
 }
 
 void Console::Shutdown()
 {
-    s_pOverlay = nullptr;
+    s_pConsole = nullptr;
 }
 
 Console& Console::Get()
 {
-    return *s_pOverlay;
+    return *s_pConsole;
 }
 
-void Console::Render()
+void Console::Update(float deltaTime)
 {
-    if (m_logCount.load(std::memory_order_relaxed) < 2)
-        return;
-
-    Scripting::Get().GetStore().TriggerOnUpdate();
-
     if (!IsEnabled())
         return;
 
@@ -109,7 +107,11 @@ void Console::Render()
         {
             Get().Log(std::string("> ") + command);
 
-            Scripting::Get().ExecuteLua(command);
+            auto& luaVM = LuaVM::Get();
+            if (luaVM.IsInitialized())
+                luaVM.ExecuteLua(command);
+            else 
+                Get().Log("Command not executed! LuaVM is not yet initialized!");
 
             if (m_inputClear)
                 std::memset(command, 0, sizeof(command));
@@ -191,6 +193,50 @@ LRESULT Console::OnWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     }
 
     return 0;
+}
+
+BOOL Console::ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis)
+{
+    HWND wnd = (HWND)apThis->hWnd;
+    HWND foreground = GetForegroundWindow();
+
+    if(wnd == foreground && apThis->unk164 && !apThis->unk140 && !Get().IsEnabled())
+    {
+        RECT rect;
+        GetClientRect(wnd, &rect);
+        ClientToScreen(wnd, reinterpret_cast<POINT*>(&rect.left));
+        ClientToScreen(wnd, reinterpret_cast<POINT*>(&rect.right));
+        rect.left = (rect.left + rect.right) / 2;
+        rect.right = rect.left;
+        rect.bottom = (rect.bottom + rect.top) / 2;
+        rect.top = rect.bottom;
+        apThis->isClipped = true;
+        ShowCursor(FALSE);
+        return ClipCursor(&rect);
+    }
+
+    if(apThis->isClipped)
+    {
+        apThis->isClipped = false;
+        return ClipCursor(nullptr);
+    }
+
+    return 1;
+}
+
+void Console::Hook(Image* apImage)
+{
+    uint8_t* pLocation = FindSignature({
+        0x48, 0x89, 0x5C, 0x24, 0x08, 0x57, 0x48, 0x83, 0xEC, 0x30, 0x48, 0x8B,
+        0x99, 0x68, 0x01, 0x00, 0x00, 0x48, 0x8B, 0xF9, 0xFF });
+
+    if (pLocation)
+    {
+        if (MH_CreateHook(pLocation, &ClipToCenter, reinterpret_cast<void**>(&m_realClipToCenter)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
+            spdlog::error("Could not hook mouse clip function!");
+        else
+            spdlog::info("Hook mouse clip function!");
+    }
 }
 
 Console::Console() = default;

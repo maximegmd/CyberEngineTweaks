@@ -7,7 +7,7 @@ struct ScriptContext
 
 	[[nodiscard]] bool IsValid() const;
 
-	void TriggerOnUpdate() const;
+	void TriggerOnUpdate(float deltaTime) const;
 	void TriggerOnInit() const;
 
 	sol::object GetObject() const;

@@ -1,39 +1,12 @@
 #include <stdafx.h>
 
-#include "Console.h"
+#include "LuaVM.h"
+#include "Scripting.h"
 
 #include <Image.h>
 #include <Pattern.h>
-#include <kiero/kiero.h>
 
-BOOL Console::ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis)
-{
-    const HWND wnd = (HWND)apThis->hWnd;
-    const HWND foreground = GetForegroundWindow();
-
-    if(wnd == foreground && apThis->unk164 && !apThis->unk140 && !Get().IsEnabled())
-    {
-        RECT rect;
-        GetClientRect(wnd, &rect);
-        ClientToScreen(wnd, reinterpret_cast<POINT*>(&rect.left));
-        ClientToScreen(wnd, reinterpret_cast<POINT*>(&rect.right));
-        rect.left = (rect.left + rect.right) / 2;
-        rect.right = rect.left;
-        rect.bottom = (rect.bottom + rect.top) / 2;
-        rect.top = rect.bottom;
-        apThis->isClipped = true;
-        ShowCursor(FALSE);
-        return ClipCursor(&rect);
-    }
-
-    if(apThis->isClipped)
-    {
-        apThis->isClipped = false;
-        return ClipCursor(nullptr);
-    }
-
-    return 1;
-}
+#include <console/Console.h>
 
 struct REDScriptContext
 {
@@ -57,7 +30,7 @@ static TScriptCall** GetScriptCallArray()
     return reinterpret_cast<TScriptCall**>(finalLocation);
 }
 
-void Console::HookLog(REDScriptContext* apContext, ScriptStack* apStack, void*, void*)
+void LuaVM::HookLog(REDScriptContext* apContext, ScriptStack* apStack, void*, void*)
 {
     RED4ext::CString text("");
     apStack->unk30 = nullptr;
@@ -65,11 +38,15 @@ void Console::HookLog(REDScriptContext* apContext, ScriptStack* apStack, void*, 
     auto opcode = *(apStack->m_code++);
     GetScriptCallArray()[opcode](apStack->m_context, apStack, &text, nullptr);
     apStack->m_code++; // skip ParamEnd
+    
+    if (Options::Get().Console)
+        Console::Get().GameLog(text.c_str());
 
-    if (!Get().m_disabledGameLog)
-        Get().Log(text.c_str());
-
-    Get().m_logCount.fetch_add(1);
+    if (!Get().m_initialized)
+    {
+        Scripting::Get().GetStore().TriggerOnInit();
+        Get().m_initialized = true;
+    }
 }
 
 static const char* GetChannelStr(uint64_t hash)
@@ -99,7 +76,7 @@ static const char* GetChannelStr(uint64_t hash)
     return nullptr;
 }
 
-void Console::HookLogChannel(REDScriptContext* apContext, ScriptStack* apStack, void*, void*)
+void LuaVM::HookLogChannel(REDScriptContext* apContext, ScriptStack* apStack, void*, void*)
 {
     uint8_t opcode;
 
@@ -117,13 +94,17 @@ void Console::HookLogChannel(REDScriptContext* apContext, ScriptStack* apStack, 
 
     apStack->m_code++; // skip ParamEnd
     
-    if (!Get().m_disabledGameLog)
+    auto channel_str = GetChannelStr(channel_hash);
+    std::string channel = channel_str == nullptr
+        ? "?" + std::to_string(channel_hash)
+        : std::string(channel_str);
+    if (Options::Get().Console)
+        Console::Get().GameLog("[" + channel + "] " +text.c_str());
+
+    if (!Get().m_initialized)
     {
-        auto channel_str = GetChannelStr(channel_hash);
-        std::string channel = channel_str == nullptr
-            ? "?" + std::to_string(channel_hash)
-            : std::string(channel_str);
-        Get().Log("[" + channel + "] " +text.c_str());
+        Scripting::Get().GetStore().TriggerOnInit();
+        Get().m_initialized = true;
     }
 }
 
@@ -136,13 +117,13 @@ static std::string GetTDBDIDDebugString(TDBID tdbid)
             tdbid.name_hash, tdbid.name_length, tdbid.unk5, tdbid.unk7);
 }
 
-void Console::RegisterTDBIDString(uint64_t value, uint64_t base, const std::string& name)
+void LuaVM::RegisterTDBIDString(uint64_t value, uint64_t base, const std::string& name)
 {
     std::lock_guard<std::recursive_mutex> _{ m_tdbidLock };
     m_tdbidLookup[value] = { base, name };
 }
 
-std::string Console::GetTDBIDString(uint64_t value)
+std::string LuaVM::GetTDBIDString(uint64_t value)
 {
     std::lock_guard<std::recursive_mutex> _{ m_tdbidLock };
     auto it = m_tdbidLookup.find(value);
@@ -165,21 +146,21 @@ std::string Console::GetTDBIDString(uint64_t value)
     return string;
 }
 
-TDBID* Console::HookTDBIDCtor(TDBID* apThis, const char* name)
+TDBID* LuaVM::HookTDBIDCtor(TDBID* apThis, const char* name)
 {
     auto result = Get().m_realTDBIDCtor(apThis, name);
     Get().RegisterTDBIDString(apThis->value, 0, name);
     return result;
 }
 
-TDBID* Console::HookTDBIDCtorCString(TDBID* apThis, const RED4ext::CString* name)
+TDBID* LuaVM::HookTDBIDCtorCString(TDBID* apThis, const RED4ext::CString* name)
 {
     auto result = Get().m_realTDBIDCtorCString(apThis, name);
     Get().RegisterTDBIDString(apThis->value, 0, name->c_str());
     return result;
 }
 
-TDBID* Console::HookTDBIDCtorDerive(TDBID* apBase, TDBID* apThis, const char* name)
+TDBID* LuaVM::HookTDBIDCtorDerive(TDBID* apBase, TDBID* apThis, const char* name)
 {
     auto result = Get().m_realTDBIDCtorDerive(apBase, apThis, name);
     Get().RegisterTDBIDString(apThis->value, apBase->value, std::string(name));
@@ -192,7 +173,7 @@ struct UnknownString
     uint32_t size;
 };
 
-TDBID* Console::HookTDBIDCtorUnknown(TDBID* apThis, uint64_t name)
+TDBID* LuaVM::HookTDBIDCtorUnknown(TDBID* apThis, uint64_t name)
 {
     auto result = Get().m_realTDBIDCtorUnknown(apThis, name);
     UnknownString unknown;
@@ -201,7 +182,7 @@ TDBID* Console::HookTDBIDCtorUnknown(TDBID* apThis, uint64_t name)
     return result;
 }
 
-void Console::HookTDBIDToStringDEBUG(REDScriptContext* apContext, ScriptStack* apStack, void* result, void*)
+void LuaVM::HookTDBIDToStringDEBUG(REDScriptContext* apContext, ScriptStack* apStack, void* result, void*)
 {
     uint8_t opcode;
 
@@ -220,21 +201,9 @@ void Console::HookTDBIDToStringDEBUG(REDScriptContext* apContext, ScriptStack* a
     }
 }
 
-void Console::Hook(Image* apImage)
+void LuaVM::Hook(Image* apImage)
 {
     uint8_t* pLocation = FindSignature({
-        0x48, 0x89, 0x5C, 0x24, 0x08, 0x57, 0x48, 0x83, 0xEC, 0x30, 0x48, 0x8B,
-        0x99, 0x68, 0x01, 0x00, 0x00, 0x48, 0x8B, 0xF9, 0xFF });
-
-    if (pLocation)
-    {
-        if (MH_CreateHook(pLocation, &ClipToCenter, reinterpret_cast<void**>(&m_realClipToCenter)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-            spdlog::error("Could not hook mouse clip function!");
-        else
-            spdlog::info("Hook mouse clip function!");
-    }
-
-    pLocation = FindSignature({
         0x40, 0x53, 0x48, 0x83, 0xEC, 0x40, 0x48, 0x8B,
         0xDA, 0xE8, 0xCC, 0xCC, 0xCC, 0xCC, 0x48, 0x8B,
         0xD0, 0x48, 0x8D, 0x4C, 0x24, 0x20

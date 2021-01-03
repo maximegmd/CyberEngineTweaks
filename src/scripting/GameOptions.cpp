@@ -220,7 +220,8 @@ GameOption* GameOptions::Find(const std::string& category, const std::string& na
 
     if (option == s_gameOptions.end())
     {
-        Console::Get().Log("Failed to find game option '" + category + "/" + name + "'!");
+        if (Options::Get().Console)
+            Console::Get().Log("Failed to find game option '" + category + "/" + name + "'!");
         return nullptr;;
     }
 
@@ -233,7 +234,8 @@ void GameOptions::Print(const std::string& category, const std::string& name)
     if (!option)
         return;
 
-    Console::Get().Log(option->GetInfo());
+    if (Options::Get().Console)
+        Console::Get().Log(option->GetInfo());
 }
 
 std::string GameOptions::Get(const std::string& category, const std::string& name)
@@ -255,7 +257,8 @@ bool GameOptions::GetBool(const std::string& category, const std::string& name)
     bool result = option->GetBool(value);
     if (!result)
     {
-        Console::Get().Log("Failed to read game option '" + category + "/" + name + "', not a boolean?");
+        if (Options::Get().Console)
+            Console::Get().Log("Failed to read game option '" + category + "/" + name + "', not a boolean?");
         return false;
     }
 
@@ -272,7 +275,8 @@ int GameOptions::GetInt(const std::string& category, const std::string& name)
     bool result = option->GetInt(value);
     if (!result)
     {
-        Console::Get().Log("Failed to read game option '" + category + "/" + name + "', not an integer/color?");
+        if (Options::Get().Console)
+            Console::Get().Log("Failed to read game option '" + category + "/" + name + "', not an integer/color?");
         return 0;
     }
 
@@ -289,7 +293,8 @@ float GameOptions::GetFloat(const std::string& category, const std::string& name
     bool result = option->GetFloat(value);
     if (!result)
     {
-        Console::Get().Log("Failed to read game option '" + category + "/" + name + "', not a float?");
+        if (Options::Get().Console)
+            Console::Get().Log("Failed to read game option '" + category + "/" + name + "', not a float?");
         return 0.f;
     }
 
@@ -303,8 +308,11 @@ void GameOptions::Set(const std::string& category, const std::string& name, cons
         return;
 
     if (option->Set(value))
-        Console::Get().Log(option->GetInfo());
-    else
+    {
+        if (Options::Get().Console)
+            Console::Get().Log(option->GetInfo());
+    }
+    else if (Options::Get().Console)
     {
         if (option->type == GameOptionType::String)
             Console::Get().Log("Failed to set game option '" + category + "/" + name + "', can't set string options right now.");
@@ -320,8 +328,11 @@ void GameOptions::SetBool(const std::string& category, const std::string& name, 
         return;
 
     if (option->SetBool(value))
-        Console::Get().Log(option->GetInfo());
-    else
+    {
+        if (Options::Get().Console)
+            Console::Get().Log(option->GetInfo());
+    }
+    else if (Options::Get().Console)
     {
         if (option->type != GameOptionType::Boolean)
             Console::Get().Log("Failed to set game option '" + category + "/" + name + "', not a boolean.");
@@ -337,8 +348,11 @@ void GameOptions::SetInt(const std::string& category, const std::string& name, i
         return;
 
     if (option->SetInt(value))
-        Console::Get().Log(option->GetInfo());
-    else
+    {
+        if (Options::Get().Console)
+            Console::Get().Log(option->GetInfo());
+    }
+    else if (Options::Get().Console)
     {
         if (option->type != GameOptionType::Integer && option->type != GameOptionType::Color)
             Console::Get().Log("Failed to set game option '" + category + "/" + name + "', not an integer.");
@@ -354,8 +368,11 @@ void GameOptions::SetFloat(const std::string& category, const std::string& name,
         return;
 
     if (option->SetFloat(value))
-        Console::Get().Log(option->GetInfo());
-    else
+    {
+        if (Options::Get().Console)
+            Console::Get().Log(option->GetInfo());
+    }
+    else if (Options::Get().Console)
     {
         if (option->type != GameOptionType::Float)
             Console::Get().Log("Failed to set game option '" + category + "/" + name + "', not a float.");
@@ -371,8 +388,11 @@ void GameOptions::Toggle(const std::string& category, const std::string& name)
         return;
 
     if (option->Toggle())
-        Console::Get().Log(option->GetInfo());
-    else
+    {
+        if (Options::Get().Console)
+            Console::Get().Log(option->GetInfo());
+    }
+    else if (Options::Get().Console)
     {
         if (option->type != GameOptionType::Boolean)
             Console::Get().Log("Failed to set game option '" + category + "/" + name + "', not a boolean.");
@@ -388,7 +408,8 @@ void GameOptions::Dump()
         spdlog::info(option->GetInfo());
     }
 
-    Console::Get().Log("Dumped " + std::to_string(s_gameOptions.size()) + " options to cyber_engine_tweaks.log");
+    if (Options::Get().Console)
+        Console::Get().Log("Dumped " + std::to_string(s_gameOptions.size()) + " options to cyber_engine_tweaks.log");
 }
 
 void GameOptions::List(const std::string& category)
@@ -409,13 +430,15 @@ void GameOptions::List(const std::string& category)
 
         if (iter != s_gameOptions.end())
         {
-            Console::Get().Log((*iter)->GetInfo());
+            if (Options::Get().Console)
+                Console::Get().Log((*iter)->GetInfo());
             iter++;
             count++;
         }
     }
-
-    Console::Get().Log("Found " + std::to_string(count) + " options");
+    
+    if (Options::Get().Console)
+        Console::Get().Log("Found " + std::to_string(count) + " options");
 }
 
 std::vector<GameOption*>& GameOptions::GetList()
