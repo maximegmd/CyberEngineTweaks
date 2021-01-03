@@ -2,7 +2,6 @@
 
 #include "D3D12.h"
 
-#include <Image.h>
 #include <Options.h>
 
 #include <kiero/kiero.h>
@@ -13,7 +12,7 @@
 
 static std::unique_ptr<D3D12> s_pD3D12;
 
-void D3D12::Initialize(Image* apImage)
+void D3D12::Initialize()
 {
     if (!s_pD3D12)
     {

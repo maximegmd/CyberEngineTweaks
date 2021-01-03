@@ -8,10 +8,9 @@ using TPresentD3D12Downlevel = HRESULT(ID3D12CommandQueueDownlevel* pCommandQueu
 using TCreateCommittedResource = HRESULT(ID3D12Device *pDevice, const D3D12_HEAP_PROPERTIES* pHeapProperties, D3D12_HEAP_FLAGS HeapFlags, const D3D12_RESOURCE_DESC* pDesc, D3D12_RESOURCE_STATES InitialResourceState, const D3D12_CLEAR_VALUE* pOptimizedClearValue, const IID* riidResource, void** ppvResource);
 using TExecuteCommandLists = void(ID3D12CommandQueue* apCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists);
 
-struct Image;
 struct D3D12
 {
-	static void Initialize(Image* apImage);
+	static void Initialize();
 	static void Shutdown();
 	static D3D12& Get();
 
