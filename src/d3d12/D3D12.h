@@ -17,12 +17,14 @@ struct D3D12
 
 	~D3D12();
 	
-	void Hook();
+	void PassInputToImGui(bool enabled) { m_passInputToImGui = enabled; }
+	void CatchInputInImGui(bool enabled) { m_catchInputInImGui = enabled; }
 	
-	bool PassInputToImGui{ false };
-	bool CatchInputInImGui{ false };
+	SIZE GetResolution() const { return { static_cast<LONG>(m_outWidth), static_cast<LONG>(m_outHeight) }; }
 
 protected:
+	
+	void Hook();
 
 	struct FrameContext
 	{
@@ -73,4 +75,7 @@ private:
 
 	UINT m_outWidth{ 0 };
 	UINT m_outHeight{ 0 };
+	
+	bool m_passInputToImGui{ false };
+	bool m_catchInputInImGui{ false };
 };

@@ -72,6 +72,8 @@ static void Initialize(HMODULE mod)
     if(options.Console)
         Overlay::Initialize(&options.GameImage);
 
+    D3D12::Initialize(&options.GameImage);
+
     MH_EnableHook(MH_ALL_HOOKS);
 
     spdlog::default_logger()->flush();

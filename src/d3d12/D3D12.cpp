@@ -45,39 +45,40 @@ D3D12& D3D12::Get()
     return *s_pD3D12;
 }
 
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
 LRESULT APIENTRY D3D12::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    if (Options::Get().Console)
+    if (Get().m_initialized)
     {
-        auto res = Overlay::WndProc(hWnd, uMsg, wParam, lParam);
-        if (res)
-            return 0; // Overlay wants this input ignored!
-    }
-
-    if (Get().PassInputToImGui)
-    {
-        auto res = ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);
-        if (res)
-            return res;
-
-        if (Get().CatchInputInImGui)
+        if (Options::Get().Console)
         {
-            // ignore mouse & keyboard events
-            if ((uMsg >= WM_MOUSEFIRST && uMsg <= WM_MOUSELAST) ||
-                (uMsg >= WM_KEYFIRST && uMsg <= WM_KEYLAST))
-                return 0;
+            auto res = Overlay::Get().OnWndProc(hWnd, uMsg, wParam, lParam);
+            if (res)
+                return 0; // Overlay wants this input ignored!
+        }
 
-            // ignore specific messages
-            switch (uMsg)
+        if (Get().m_passInputToImGui)
+        {
+            auto res = ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);
+            if (res)
+                return res;
+
+            if (Get().m_catchInputInImGui)
             {
-                case WM_INPUT:
+                // ignore mouse & keyboard events
+                if ((uMsg >= WM_MOUSEFIRST && uMsg <= WM_MOUSELAST) ||
+                    (uMsg >= WM_KEYFIRST && uMsg <= WM_KEYLAST))
                     return 0;
+
+                // ignore specific messages
+                switch (uMsg)
+                {
+                    case WM_INPUT:
+                        return 0;
+                }
             }
         }
     }
-
+    
     return CallWindowProc(Get().m_wndProc, hWnd, uMsg, wParam, lParam);
 }
 

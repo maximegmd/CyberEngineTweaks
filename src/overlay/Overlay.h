@@ -33,38 +33,21 @@ struct Overlay
 
 	~Overlay();
 
-	void EarlyHooks(Image* apImage);
-	void Hook();
-
 	void Toggle();
 	bool IsEnabled() const;
 
 	void Log(const std::string& acpText);
+	
+	void Render();
+
+	LRESULT OnWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 protected:
-
-	struct FrameContext
-	{
-		CComPtr<ID3D12CommandAllocator> CommandAllocator;
-		CComPtr<ID3D12Resource> BackBuffer;
-		CComPtr<ID3D12Resource> MainRenderTargetResource;
-		D3D12_CPU_DESCRIPTOR_HANDLE MainRenderTargetDescriptor{ 0 };
-	};
-
-	bool ResetD3D12State();
-	bool InitializeD3D12(IDXGISwapChain* pSwapChain);
-	bool InitializeD3D12Downlevel(ID3D12CommandQueue* pCommandQueue, ID3D12Resource* pSourceTex2D, HWND hWindow);
-	bool InitializeImGui(size_t buffersCounts);
-	void Render();
+	
+	void Hook(Image* apImage);
 	void DrawImgui();
-
-	static HRESULT ResizeBuffersD3D12(IDXGISwapChain* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags);
-	static HRESULT PresentD3D12(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT PresentFlags);
-	static HRESULT PresentD3D12Downlevel(ID3D12CommandQueueDownlevel* pCommandQueueDownlevel, ID3D12GraphicsCommandList* pOpenCommandList, ID3D12Resource* pSourceTex2D, HWND hWindow, D3D12_DOWNLEVEL_PRESENT_FLAGS Flags);
-	static HRESULT CreateCommittedResourceD3D12(ID3D12Device* pDevice, const D3D12_HEAP_PROPERTIES* pHeapProperties, D3D12_HEAP_FLAGS HeapFlags, const D3D12_RESOURCE_DESC* pDesc, D3D12_RESOURCE_STATES InitialResourceState, const D3D12_CLEAR_VALUE* pOptimizedClearValue, const IID* riidResource, void** ppvResource);
-	static void ExecuteCommandListsD3D12(ID3D12CommandQueue* apCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists);
+	
 	static BOOL ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis);
-	static LRESULT APIENTRY WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	static void HookLog(REDScriptContext* apContext, ScriptStack* apStack, void*, void*);
 	static void HookLogChannel(REDScriptContext* apContext, ScriptStack* apStack, void*, void*);
 	static TDBID* HookTDBIDCtor(TDBID* apThis, const char* apName);
@@ -92,22 +75,11 @@ private:
 	bool m_outputScroll{ false };
 	bool m_inputClear{ true };
 	bool m_disabledGameLog{ true };
-	bool m_initialized{ false };
 	std::atomic<uint64_t> m_logCount{ 0 };
 	
 	std::recursive_mutex m_tdbidLock;
 	std::unordered_map<uint64_t, TDBIDLookupEntry> m_tdbidLookup;
-
-	std::vector<FrameContext> m_frameContexts;
-	std::vector<CComPtr<ID3D12Resource>> m_downlevelBackbuffers;
-	CComPtr<IDXGISwapChain3> m_pdxgiSwapChain;
-	CComPtr<ID3D12Device> m_pd3d12Device;
-	CComPtr<ID3D12DescriptorHeap> m_pd3dRtvDescHeap;
-	CComPtr<ID3D12DescriptorHeap> m_pd3dSrvDescHeap;
-	CComPtr<ID3D12GraphicsCommandList> m_pd3dCommandList;
-	CComPtr<ID3D12CommandQueue> m_pCommandQueue;
-	uint32_t m_downlevelBufferIndex;
-
+	
 	TClipToCenter* m_realClipToCenter{ nullptr };
 	TScriptCall* m_realLog{ nullptr };
 	TScriptCall* m_realLogChannel{ nullptr };
@@ -122,9 +94,4 @@ private:
 	WNDPROC	m_wndProc{ nullptr };
 	bool m_enabled{ false };
 	bool m_focusConsoleInput{ false };
-
-	UINT m_outWidth{ 0 };
-	UINT m_outHeight{ 0 };
-
-	friend struct D3D12;
 };

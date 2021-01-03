@@ -6,7 +6,221 @@
 #include <Pattern.h>
 #include <kiero/kiero.h>
 
-void Overlay::EarlyHooks(Image* apImage)
+BOOL Overlay::ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis)
+{
+    const HWND wnd = (HWND)apThis->hWnd;
+    const HWND foreground = GetForegroundWindow();
+
+    if(wnd == foreground && apThis->unk164 && !apThis->unk140 && !Get().IsEnabled())
+    {
+        RECT rect;
+        GetClientRect(wnd, &rect);
+        ClientToScreen(wnd, reinterpret_cast<POINT*>(&rect.left));
+        ClientToScreen(wnd, reinterpret_cast<POINT*>(&rect.right));
+        rect.left = (rect.left + rect.right) / 2;
+        rect.right = rect.left;
+        rect.bottom = (rect.bottom + rect.top) / 2;
+        rect.top = rect.bottom;
+        apThis->isClipped = true;
+        ShowCursor(FALSE);
+        return ClipCursor(&rect);
+    }
+
+    if(apThis->isClipped)
+    {
+        apThis->isClipped = false;
+        return ClipCursor(nullptr);
+    }
+
+    return 1;
+}
+
+struct REDScriptContext
+{
+};
+
+struct ScriptStack
+{
+    uint8_t* m_code;
+    uint8_t pad[0x28];
+    void* unk30;
+    void* unk38;
+    REDScriptContext* m_context;
+};
+static_assert(offsetof(ScriptStack, m_context) == 0x40);
+
+static TScriptCall** GetScriptCallArray()
+{
+    static uint8_t* pLocation = FindSignature({ 0x4C, 0x8D, 0x15, 0xCC, 0xCC, 0xCC, 0xCC, 0x48, 0x89, 0x42, 0x38, 0x49, 0x8B, 0xF8, 0x48, 0x8B, 0x02, 0x4C, 0x8D, 0x44, 0x24, 0x20, 0xC7 }) + 3;
+    static uintptr_t finalLocation = (uintptr_t)pLocation + 4 + *reinterpret_cast<uint32_t*>(pLocation);
+
+    return reinterpret_cast<TScriptCall**>(finalLocation);
+}
+
+void Overlay::HookLog(REDScriptContext* apContext, ScriptStack* apStack, void*, void*)
+{
+    RED4ext::CString text("");
+    apStack->unk30 = nullptr;
+    apStack->unk38 = nullptr;
+    auto opcode = *(apStack->m_code++);
+    GetScriptCallArray()[opcode](apStack->m_context, apStack, &text, nullptr);
+    apStack->m_code++; // skip ParamEnd
+
+    if (!Get().m_disabledGameLog)
+        Get().Log(text.c_str());
+
+    Get().m_logCount.fetch_add(1);
+}
+
+static const char* GetChannelStr(uint64_t hash)
+{
+    switch (hash)
+    {
+#define HASH_CASE(x) case RED4ext::FNV1a(x): return x
+        HASH_CASE("AI");
+        HASH_CASE("AICover");
+        HASH_CASE("ASSERT");
+        HASH_CASE("Damage");
+        HASH_CASE("DevelopmentManager");
+        HASH_CASE("Device");
+        HASH_CASE("Items");
+        HASH_CASE("ItemManager");
+        HASH_CASE("Puppet");
+        HASH_CASE("Scanner");
+        HASH_CASE("Stats");
+        HASH_CASE("StatPools");
+        HASH_CASE("Strike");
+        HASH_CASE("TargetManager");
+        HASH_CASE("Test");
+        HASH_CASE("UI");
+        HASH_CASE("Vehicles");
+#undef HASH_CASE
+    }
+    return nullptr;
+}
+
+void Overlay::HookLogChannel(REDScriptContext* apContext, ScriptStack* apStack, void*, void*)
+{
+    uint8_t opcode;
+
+    uint64_t channel_hash = 0;
+    apStack->unk30 = nullptr;
+    apStack->unk38 = nullptr;
+    opcode = *(apStack->m_code++);
+    GetScriptCallArray()[opcode](apStack->m_context, apStack, &channel_hash, nullptr);
+
+    RED4ext::CString text("");
+    apStack->unk30 = nullptr;
+    apStack->unk38 = nullptr;
+    opcode = *(apStack->m_code++);
+    GetScriptCallArray()[opcode](apStack->m_context, apStack, &text, nullptr);
+
+    apStack->m_code++; // skip ParamEnd
+    
+    if (!Get().m_disabledGameLog)
+    {
+        auto channel_str = GetChannelStr(channel_hash);
+        std::string channel = channel_str == nullptr
+            ? "?" + std::to_string(channel_hash)
+            : std::string(channel_str);
+        Get().Log("[" + channel + "] " +text.c_str());
+    }
+}
+
+static std::string GetTDBDIDDebugString(TDBID tdbid)
+{
+    return (tdbid.unk5 == 0 && tdbid.unk7 == 0)
+        ? fmt::format("<TDBID:{:08X}:{:02X}>",
+            tdbid.name_hash, tdbid.name_length)
+        : fmt::format("<TDBID:{:08X}:{:02X}:{:04X}:{:02X}>",
+            tdbid.name_hash, tdbid.name_length, tdbid.unk5, tdbid.unk7);
+}
+
+void Overlay::RegisterTDBIDString(uint64_t value, uint64_t base, const std::string& name)
+{
+    std::lock_guard<std::recursive_mutex> _{ m_tdbidLock };
+    m_tdbidLookup[value] = { base, name };
+}
+
+std::string Overlay::GetTDBIDString(uint64_t value)
+{
+    std::lock_guard<std::recursive_mutex> _{ m_tdbidLock };
+    auto it = m_tdbidLookup.find(value);
+    auto end = Get().m_tdbidLookup.end();
+    if (it == end)
+        return GetTDBDIDDebugString(TDBID{ value });
+    std::string string = (*it).second.name;
+    uint64_t base = (*it).second.base;
+    while (base)
+    {
+        it = m_tdbidLookup.find(base);
+        if (it == end)
+        {
+            string.insert(0, GetTDBDIDDebugString(TDBID{ base }));
+            break;
+        }
+        string.insert(0, (*it).second.name);
+        base = (*it).second.base;
+    }
+    return string;
+}
+
+TDBID* Overlay::HookTDBIDCtor(TDBID* apThis, const char* name)
+{
+    auto result = Get().m_realTDBIDCtor(apThis, name);
+    Get().RegisterTDBIDString(apThis->value, 0, name);
+    return result;
+}
+
+TDBID* Overlay::HookTDBIDCtorCString(TDBID* apThis, const RED4ext::CString* name)
+{
+    auto result = Get().m_realTDBIDCtorCString(apThis, name);
+    Get().RegisterTDBIDString(apThis->value, 0, name->c_str());
+    return result;
+}
+
+TDBID* Overlay::HookTDBIDCtorDerive(TDBID* apBase, TDBID* apThis, const char* name)
+{
+    auto result = Get().m_realTDBIDCtorDerive(apBase, apThis, name);
+    Get().RegisterTDBIDString(apThis->value, apBase->value, std::string(name));
+    return result;
+}
+
+struct UnknownString
+{
+    const char* string;
+    uint32_t size;
+};
+
+TDBID* Overlay::HookTDBIDCtorUnknown(TDBID* apThis, uint64_t name)
+{
+    auto result = Get().m_realTDBIDCtorUnknown(apThis, name);
+    UnknownString unknown;
+    Get().m_someStringLookup(&name, &unknown);
+    Get().RegisterTDBIDString(apThis->value, 0, std::string(unknown.string, unknown.size));
+    return result;
+}
+
+void Overlay::HookTDBIDToStringDEBUG(REDScriptContext* apContext, ScriptStack* apStack, void* result, void*)
+{
+    uint8_t opcode;
+
+    TDBID tdbid;
+    apStack->unk30 = nullptr;
+    apStack->unk38 = nullptr;
+    opcode = *(apStack->m_code++);
+    GetScriptCallArray()[opcode](apStack->m_context, apStack, &tdbid, nullptr);
+    apStack->m_code++; // skip ParamEnd
+
+    if (result)
+    {
+        std::string name = Get().GetTDBIDString(tdbid.value);
+        RED4ext::CString s(name.c_str());
+        *static_cast<RED4ext::CString*>(result) = s;
+    }
+}
+
+void Overlay::Hook(Image* apImage)
 {
     uint8_t* pLocation = FindSignature({
         0x48, 0x89, 0x5C, 0x24, 0x08, 0x57, 0x48, 0x83, 0xEC, 0x30, 0x48, 0x8B,
@@ -143,195 +357,4 @@ void Overlay::EarlyHooks(Image* apImage)
                 spdlog::info("TDBID::ToStringDEBUG function hook complete!");
         }
     }
-}
-
-HRESULT Overlay::ResizeBuffersD3D12(IDXGISwapChain* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags)
-{
-    auto& overlay = Get();
-    
-    if (overlay.m_initialized)
-    {
-        // NOTE: right now, done in case of any swap chain ResizeBuffers call, which may not be ideal. We have yet to encounter multiple swap chains in use though, so should be safe
-        spdlog::info("Overlay::ResizeBuffersD3D12() called with initialized Overlay, triggering Overlay::ResetD3D12State.");
-        overlay.ResetD3D12State();
-    }
-
-    return overlay.m_realResizeBuffersD3D12(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags);
-}
-
-HRESULT Overlay::PresentD3D12(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT PresentFlags)
-{    
-    auto& overlay = Get();
-
-    if (overlay.InitializeD3D12(pSwapChain))
-        overlay.Render();
-    
-    return overlay.m_realPresentD3D12(pSwapChain, SyncInterval, PresentFlags);
-}
-
-HRESULT Overlay::PresentD3D12Downlevel(ID3D12CommandQueueDownlevel* pCommandQueueDownlevel, ID3D12GraphicsCommandList* pOpenCommandList, ID3D12Resource* pSourceTex2D, HWND hWindow, D3D12_DOWNLEVEL_PRESENT_FLAGS Flags)
-{
-    auto& overlay = Get();
-
-    // On Windows 7 there is no swap chain to query the current backbuffer index, so instead we simply count to 3 and wrap around.
-    // Increment the buffer index here even if the overlay is not enabled, so we stay in sync with the game's present calls.
-    // TODO: investigate if there isn't a better way of doing this (finding the current index in the game exe?)
-    overlay.m_downlevelBufferIndex = (!overlay.m_initialized || overlay.m_downlevelBufferIndex == 2) ? 0 : overlay.m_downlevelBufferIndex + 1;
-
-    if (overlay.InitializeD3D12Downlevel(overlay.m_pCommandQueue, pSourceTex2D, hWindow))
-    {
-        overlay.Render();
-    }
-
-    return overlay.m_realPresentD3D12Downlevel(pCommandQueueDownlevel, pOpenCommandList, pSourceTex2D, hWindow, Flags);
-}
-
-HRESULT Overlay::CreateCommittedResourceD3D12(ID3D12Device* pDevice, const D3D12_HEAP_PROPERTIES* pHeapProperties, D3D12_HEAP_FLAGS HeapFlags, const D3D12_RESOURCE_DESC* pDesc,
-    D3D12_RESOURCE_STATES InitialResourceState, const D3D12_CLEAR_VALUE* pOptimizedClearValue, const IID* riidResource, void** ppvResource)
-{
-    auto& overlay = Get();
-
-    // Check if this is a backbuffer resource being created
-    bool isBackBuffer = false;
-    if (pHeapProperties != NULL && pHeapProperties->Type == D3D12_HEAP_TYPE_DEFAULT && HeapFlags == D3D12_HEAP_FLAG_NONE &&
-        pDesc != NULL && pDesc->Flags == D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET && InitialResourceState == D3D12_RESOURCE_STATE_COMMON &&
-        pOptimizedClearValue == NULL && riidResource != NULL && IsEqualGUID(*riidResource, __uuidof(ID3D12Resource)))
-    {
-        isBackBuffer = true;
-    }
-
-    HRESULT result = overlay.m_realCreateCommittedResource(pDevice, pHeapProperties, HeapFlags, pDesc, InitialResourceState, pOptimizedClearValue, riidResource, ppvResource);
-
-    if (SUCCEEDED(result) && isBackBuffer)
-    {
-        // Store the returned resource
-        overlay.m_downlevelBackbuffers.emplace_back(static_cast<ID3D12Resource*>(*ppvResource));
-        spdlog::debug("Overlay::CreateCommittedResourceD3D12() - found valid backbuffer target at {0}.", *ppvResource);
-    }
-
-    // If D3D12 has been initialized, there is no need to continue hooking this function since the backbuffers are only created once.
-    if (overlay.m_initialized)
-        kiero::unbind(27);
-
-    return result;
-}
-
-void Overlay::ExecuteCommandListsD3D12(ID3D12CommandQueue* apCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists)
-{
-    auto& overlay = Get();
-    if (overlay.m_pCommandQueue == nullptr)
-    {
-        auto desc = apCommandQueue->GetDesc();
-        if(desc.Type == D3D12_COMMAND_LIST_TYPE_DIRECT) 
-        {
-            overlay.m_pCommandQueue = apCommandQueue;
-            spdlog::info("Overlay::ExecuteCommandListsD3D12() - found valid command queue.");
-        }
-        else 
-            spdlog::info("Overlay::ExecuteCommandListsD3D12() - ignoring command queue - unusable command list type");
-    }
-
-    overlay.m_realExecuteCommandLists(apCommandQueue, NumCommandLists, ppCommandLists);
-}
-
-BOOL Overlay::ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis)
-{
-    const HWND wnd = (HWND)apThis->hWnd;
-    const HWND foreground = GetForegroundWindow();
-
-    if(wnd == foreground && apThis->unk164 && !apThis->unk140 && !Get().IsEnabled())
-    {
-        RECT rect;
-        GetClientRect(wnd, &rect);
-        ClientToScreen(wnd, reinterpret_cast<POINT*>(&rect.left));
-        ClientToScreen(wnd, reinterpret_cast<POINT*>(&rect.right));
-        rect.left = (rect.left + rect.right) / 2;
-        rect.right = rect.left;
-        rect.bottom = (rect.bottom + rect.top) / 2;
-        rect.top = rect.bottom;
-        apThis->isClipped = true;
-        ShowCursor(FALSE);
-        return ClipCursor(&rect);
-    }
-
-    if(apThis->isClipped)
-    {
-        apThis->isClipped = false;
-        return ClipCursor(nullptr);
-    }
-
-    return 1;
-}
-
-void Overlay::Hook()
-{
-    int d3d12FailedHooksCount = 0;
-    int d3d12CompleteHooksCount = 0;
-    
-    const char* d3d12type = (kiero::isDownLevelDevice()) ? ("D3D12on7") : ("D3D12");
-
-    if (kiero::isDownLevelDevice()) 
-    {
-        if (kiero::bind(175, reinterpret_cast<void**>(&m_realPresentD3D12Downlevel), &PresentD3D12Downlevel) != kiero::Status::Success)
-        {
-            spdlog::error("{0} Downlevel Present hook failed!", d3d12type);
-            ++d3d12FailedHooksCount;
-        }
-        else 
-        {
-            spdlog::info("{0} Downlevel Present hook complete.", d3d12type);
-            ++d3d12CompleteHooksCount;
-        }
-
-        if (kiero::bind(27, reinterpret_cast<void**>(&m_realCreateCommittedResource), &CreateCommittedResourceD3D12) != kiero::Status::Success)
-        {
-            spdlog::error("{0} CreateCommittedResource Hook failed!", d3d12type);
-            ++d3d12FailedHooksCount;
-        }
-        else 
-        {
-            spdlog::info("{0} CreateCommittedResource hook complete.", d3d12type);
-            ++d3d12CompleteHooksCount;
-        }
-    }
-    else
-    {
-        if (kiero::bind(140, reinterpret_cast<void**>(&m_realPresentD3D12), &PresentD3D12) != kiero::Status::Success)
-        {
-            spdlog::error("{0} Present hook failed!", d3d12type);
-            ++d3d12FailedHooksCount;
-        }
-        else 
-        {
-            spdlog::info("{0} Present hook complete.", d3d12type);
-            ++d3d12CompleteHooksCount;
-        }
-
-        if (kiero::bind(145, reinterpret_cast<void**>(&m_realResizeBuffersD3D12), &ResizeBuffersD3D12) != kiero::Status::Success)
-        {
-            spdlog::error("{0} ResizeBuffers hook failed!", d3d12type);
-            ++d3d12FailedHooksCount;
-        }
-        else 
-        {
-            spdlog::info("{0} ResizeBuffers hook complete.", d3d12type);
-            ++d3d12CompleteHooksCount;
-        }
-    }
-
-    if (kiero::bind(54, reinterpret_cast<void**>(&m_realExecuteCommandLists), &ExecuteCommandListsD3D12) != kiero::Status::Success)
-    {
-        spdlog::error("{0} ExecuteCommandLists hook failed!", d3d12type);
-        ++d3d12FailedHooksCount;
-    }
-    else 
-    {
-        spdlog::info("{0} ExecuteCommandLists hook complete.", d3d12type);
-        ++d3d12CompleteHooksCount;
-    }
-
-    if (d3d12FailedHooksCount == 0) 
-        spdlog::info("{0} hook complete. ({1}/{2})", d3d12type, d3d12CompleteHooksCount, d3d12CompleteHooksCount+d3d12FailedHooksCount);
-    else 
-        spdlog::error("{0} hook failed! ({1}/{2})", d3d12type, d3d12CompleteHooksCount, d3d12CompleteHooksCount+d3d12FailedHooksCount);
 }
