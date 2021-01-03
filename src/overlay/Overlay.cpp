@@ -125,6 +125,10 @@ void Overlay::Toggle()
 {
     m_enabled = !m_enabled;
 
+    auto& d3d12 = D3D12::Get();
+    d3d12.PassInputToImGui(m_enabled);
+    d3d12.CatchInputInImGui(m_enabled);
+
     while(true)
     {
         if (m_enabled && ShowCursor(TRUE) >= 0) 

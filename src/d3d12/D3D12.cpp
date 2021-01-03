@@ -62,7 +62,7 @@ LRESULT APIENTRY D3D12::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             if (res)
                 return res;
 
-            if (Get().m_catchInputInImGui)
+            if (Get().m_catchInputInImGui) // TODO: look into io.WantCaptureMouse and io.WantCaptureKeyboard
             {
                 // ignore mouse & keyboard events
                 if ((uMsg >= WM_MOUSEFIRST && uMsg <= WM_MOUSELAST) ||
