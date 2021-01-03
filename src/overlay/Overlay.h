@@ -91,6 +91,18 @@ private:
 	TPresentD3D12Downlevel* m_realPresentD3D12Downlevel{ nullptr };
 	TCreateCommittedResource* m_realCreateCommittedResource{ nullptr };
 	TExecuteCommandLists* m_realExecuteCommandLists{ nullptr };
+	
+	std::recursive_mutex m_outputLock;
+	std::vector<std::string> m_outputLines;
+	bool m_outputShouldScroll{ true };
+	bool m_outputScroll{ false };
+	bool m_inputClear{ true };
+	bool m_disabledGameLog{ true };
+	bool m_initialized{ false };
+	std::atomic<uint64_t> m_logCount{ 0 };
+	
+	std::recursive_mutex m_tdbidLock;
+	std::unordered_map<uint64_t, TDBIDLookupEntry> m_tdbidLookup;
 
 	std::vector<FrameContext> m_frameContexts;
 	std::vector<CComPtr<ID3D12Resource>> m_downlevelBackbuffers;
@@ -119,15 +131,4 @@ private:
 
 	UINT m_outWidth{ 0 };
 	UINT m_outHeight{ 0 };
-	
-	std::recursive_mutex m_outputLock;
-	std::vector<std::string> m_outputLines;
-	bool m_outputShouldScroll{ true };
-	bool m_outputScroll{ false };
-	bool m_inputClear{ true };
-	bool m_disabledGameLog{ true };
-	std::recursive_mutex m_tdbidLock;
-	std::unordered_map<uint64_t, TDBIDLookupEntry> m_tdbidLookup;
-
-	bool m_initialized{ false };
 };

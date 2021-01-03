@@ -358,6 +358,9 @@ bool Overlay::InitializeImGui(size_t buffersCounts)
 
 void Overlay::Render()
 {
+    if (m_logCount.load(std::memory_order_relaxed) < 2)
+        return;
+
     Scripting::Get().GetStore().TriggerOnUpdate();
 
     if (!IsEnabled())

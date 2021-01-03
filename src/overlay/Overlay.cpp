@@ -218,6 +218,8 @@ void Overlay::HookLog(REDScriptContext* apContext, ScriptStack* apStack, void*, 
 
     if (!Get().m_disabledGameLog)
         Get().Log(text.c_str());
+
+    Get().m_logCount.fetch_add(1);
 }
 
 const char* GetChannelStr(uint64_t hash)
