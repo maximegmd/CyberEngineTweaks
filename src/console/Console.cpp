@@ -30,7 +30,7 @@ Console& Console::Get()
     return *s_pConsole;
 }
 
-void Console::Update(float deltaTime)
+void Console::Update()
 {
     if (!IsEnabled())
         return;
@@ -106,12 +106,8 @@ void Console::Update(float deltaTime)
         if (execute)
         {
             Get().Log(std::string("> ") + command);
-
-            auto& luaVM = LuaVM::Get();
-            if (luaVM.IsInitialized())
-                luaVM.ExecuteLua(command);
-            else 
-                Get().Log("Command not executed! LuaVM is not yet initialized!");
+            
+            LuaVM::Get().ExecuteLua(command);
 
             if (m_inputClear)
                 std::memset(command, 0, sizeof(command));

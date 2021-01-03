@@ -25,7 +25,7 @@ HRESULT D3D12::Present(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Prese
     auto& d3d12 = Get();
 
     if (d3d12.Initialize(pSwapChain))
-        d3d12.Update(0.0f);
+        d3d12.Update(); 
     
     return d3d12.m_realPresentD3D12(pSwapChain, SyncInterval, PresentFlags);
 }
@@ -40,7 +40,7 @@ HRESULT D3D12::PresentDownlevel(ID3D12CommandQueueDownlevel* pCommandQueueDownle
     d3d12.m_downlevelBufferIndex = (!d3d12.m_initialized || d3d12.m_downlevelBufferIndex == 2) ? 0 : d3d12.m_downlevelBufferIndex + 1;
 
     if (d3d12.InitializeDownlevel(d3d12.m_pCommandQueue, pSourceTex2D, hWindow))
-        d3d12.Update(0.0f);
+        d3d12.Update();
 
     return d3d12.m_realPresentD3D12Downlevel(pCommandQueueDownlevel, pOpenCommandList, pSourceTex2D, hWindow, Flags);
 }

@@ -6,6 +6,8 @@
 #include <Options.h>
 #include <scripting/Scripting.h>
 
+#include "console/Console.h"
+
 static std::unique_ptr<LuaVM> s_pLuaVM;
 
 void LuaVM::Initialize(Image* apImage)
@@ -37,7 +39,11 @@ void LuaVM::Update(float deltaTime)
 
 bool LuaVM::ExecuteLua(const std::string& aCommand)
 {
-    assert(m_initialized);
+    if (!m_initialized)
+    {
+        if (Options::Get().Console)
+            Console::Get().Log("Command not executed! LuaVM is not yet initialized!");
+    }
 
     return Scripting::Get().ExecuteLua(aCommand);
 }

@@ -17,7 +17,7 @@ struct Console
 	void Log(const std::string& acpText);
 	void GameLog(const std::string& acpText) { if (!m_disabledGameLog) Log(acpText); }
 	
-	void Update(float deltaTime);
+	void Update();
 
 	LRESULT OnWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 

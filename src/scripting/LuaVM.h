@@ -28,8 +28,7 @@ struct LuaVM
 	static void Initialize(Image* apImage);
 	static void Shutdown();
 	static LuaVM& Get();
-
-	bool IsInitialized() const { return m_initialized; }
+	
   bool ExecuteLua(const std::string& aCommand);
 
 	~LuaVM();
