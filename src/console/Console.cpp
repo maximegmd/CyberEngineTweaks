@@ -11,12 +11,12 @@
 
 static std::unique_ptr<Console> s_pConsole;
 
-void Console::Initialize(Image* apImage)
+void Console::Initialize()
 {
     if (!s_pConsole)
     {
         s_pConsole.reset(new (std::nothrow) Console);
-        s_pConsole->Hook(apImage);
+        s_pConsole->Hook();
     }
 }
 
@@ -146,10 +146,10 @@ bool Console::IsEnabled() const
     return m_enabled;
 }
 
-void Console::Log(const std::string& acpText)
+void Console::Log(const std::string& pText)
 {
     std::lock_guard<std::recursive_mutex> _{ m_outputLock };
-    std::istringstream lines(acpText);
+    std::istringstream lines(pText);
     std::string line;
 
     while (std::getline(lines, line))
@@ -159,7 +159,7 @@ void Console::Log(const std::string& acpText)
     m_outputScroll = true;
 }
 
-LRESULT Console::OnWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT Console::OnWndProc(HWND, UINT uMsg, WPARAM wParam, LPARAM)
 {
     if (uMsg == WM_KEYDOWN && wParam == Options::Get().ConsoleKey)
     {
@@ -191,12 +191,12 @@ LRESULT Console::OnWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
-BOOL Console::ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis)
+BOOL Console::ClipToCenter(RED4ext::CGameEngine::UnkC0* pThis)
 {
-    HWND wnd = (HWND)apThis->hWnd;
+    HWND wnd = (HWND)pThis->hWnd;
     HWND foreground = GetForegroundWindow();
 
-    if(wnd == foreground && apThis->unk164 && !apThis->unk140 && !Get().IsEnabled())
+    if(wnd == foreground && pThis->unk164 && !pThis->unk140 && !Get().IsEnabled())
     {
         RECT rect;
         GetClientRect(wnd, &rect);
@@ -206,21 +206,21 @@ BOOL Console::ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis)
         rect.right = rect.left;
         rect.bottom = (rect.bottom + rect.top) / 2;
         rect.top = rect.bottom;
-        apThis->isClipped = true;
+        pThis->isClipped = true;
         ShowCursor(FALSE);
         return ClipCursor(&rect);
     }
 
-    if(apThis->isClipped)
+    if(pThis->isClipped)
     {
-        apThis->isClipped = false;
+        pThis->isClipped = false;
         return ClipCursor(nullptr);
     }
 
     return 1;
 }
 
-void Console::Hook(Image* apImage)
+void Console::Hook()
 {
     uint8_t* pLocation = FindSignature({
         0x48, 0x89, 0x5C, 0x24, 0x08, 0x57, 0x48, 0x83, 0xEC, 0x30, 0x48, 0x8B,

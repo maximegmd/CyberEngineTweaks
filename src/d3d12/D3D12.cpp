@@ -46,7 +46,8 @@ D3D12& D3D12::Get()
 
 LRESULT APIENTRY D3D12::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    if (Get().m_initialized)
+    auto& d3d12 = Get();
+    if (d3d12.m_initialized)
     {
         if (Options::Get().Console)
         {
@@ -55,13 +56,13 @@ LRESULT APIENTRY D3D12::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
                 return 0; // Console wants this input ignored!
         }
 
-        if (Get().m_passInputToImGui)
+        if (d3d12.m_passInputToImGui)
         {
             auto res = ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);
             if (res)
                 return res;
 
-            if (Get().m_catchInputInImGui) // TODO: look into io.WantCaptureMouse and io.WantCaptureKeyboard
+            if (d3d12.m_catchInputInImGui) // TODO: look into io.WantCaptureMouse and io.WantCaptureKeyboard
             {
                 // ignore mouse & keyboard events
                 if ((uMsg >= WM_MOUSEFIRST && uMsg <= WM_MOUSELAST) ||
@@ -78,7 +79,7 @@ LRESULT APIENTRY D3D12::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
         }
     }
     
-    return CallWindowProc(Get().m_wndProc, hWnd, uMsg, wParam, lParam);
+    return CallWindowProc(d3d12.m_wndProc, hWnd, uMsg, wParam, lParam);
 }
 
 D3D12::D3D12() = default;

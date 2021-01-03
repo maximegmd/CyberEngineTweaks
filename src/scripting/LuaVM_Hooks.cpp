@@ -30,14 +30,14 @@ static TScriptCall** GetScriptCallArray()
     return reinterpret_cast<TScriptCall**>(finalLocation);
 }
 
-void LuaVM::HookLog(REDScriptContext* apContext, ScriptStack* apStack, void*, void*)
+void LuaVM::HookLog(REDScriptContext*, ScriptStack* pStack, void*, void*)
 {
     RED4ext::CString text("");
-    apStack->unk30 = nullptr;
-    apStack->unk38 = nullptr;
-    auto opcode = *(apStack->m_code++);
-    GetScriptCallArray()[opcode](apStack->m_context, apStack, &text, nullptr);
-    apStack->m_code++; // skip ParamEnd
+    pStack->unk30 = nullptr;
+    pStack->unk38 = nullptr;
+    auto opcode = *(pStack->m_code++);
+    GetScriptCallArray()[opcode](pStack->m_context, pStack, &text, nullptr);
+    pStack->m_code++; // skip ParamEnd
     
     if (Options::Get().Console)
         Console::Get().GameLog(text.c_str());
@@ -77,23 +77,23 @@ static const char* GetChannelStr(uint64_t hash)
     return nullptr;
 }
 
-void LuaVM::HookLogChannel(REDScriptContext* apContext, ScriptStack* apStack, void*, void*)
+void LuaVM::HookLogChannel(REDScriptContext*, ScriptStack* pStack, void*, void*)
 {
     uint8_t opcode;
 
     uint64_t channel_hash = 0;
-    apStack->unk30 = nullptr;
-    apStack->unk38 = nullptr;
-    opcode = *(apStack->m_code++);
-    GetScriptCallArray()[opcode](apStack->m_context, apStack, &channel_hash, nullptr);
+    pStack->unk30 = nullptr;
+    pStack->unk38 = nullptr;
+    opcode = *(pStack->m_code++);
+    GetScriptCallArray()[opcode](pStack->m_context, pStack, &channel_hash, nullptr);
 
     RED4ext::CString text("");
-    apStack->unk30 = nullptr;
-    apStack->unk38 = nullptr;
-    opcode = *(apStack->m_code++);
-    GetScriptCallArray()[opcode](apStack->m_context, apStack, &text, nullptr);
+    pStack->unk30 = nullptr;
+    pStack->unk38 = nullptr;
+    opcode = *(pStack->m_code++);
+    GetScriptCallArray()[opcode](pStack->m_context, pStack, &text, nullptr);
 
-    apStack->m_code++; // skip ParamEnd
+    pStack->m_code++; // skip ParamEnd
     
     auto channel_str = GetChannelStr(channel_hash);
     std::string channel = channel_str == nullptr
@@ -148,24 +148,24 @@ std::string LuaVM::GetTDBIDString(uint64_t value)
     return string;
 }
 
-TDBID* LuaVM::HookTDBIDCtor(TDBID* apThis, const char* name)
+TDBID* LuaVM::HookTDBIDCtor(TDBID* pThis, const char* name)
 {
-    auto result = Get().m_realTDBIDCtor(apThis, name);
-    Get().RegisterTDBIDString(apThis->value, 0, name);
+    auto result = Get().m_realTDBIDCtor(pThis, name);
+    Get().RegisterTDBIDString(pThis->value, 0, name);
     return result;
 }
 
-TDBID* LuaVM::HookTDBIDCtorCString(TDBID* apThis, const RED4ext::CString* name)
+TDBID* LuaVM::HookTDBIDCtorCString(TDBID* pThis, const RED4ext::CString* name)
 {
-    auto result = Get().m_realTDBIDCtorCString(apThis, name);
-    Get().RegisterTDBIDString(apThis->value, 0, name->c_str());
+    auto result = Get().m_realTDBIDCtorCString(pThis, name);
+    Get().RegisterTDBIDString(pThis->value, 0, name->c_str());
     return result;
 }
 
-TDBID* LuaVM::HookTDBIDCtorDerive(TDBID* apBase, TDBID* apThis, const char* name)
+TDBID* LuaVM::HookTDBIDCtorDerive(TDBID* pBase, TDBID* pThis, const char* name)
 {
-    auto result = Get().m_realTDBIDCtorDerive(apBase, apThis, name);
-    Get().RegisterTDBIDString(apThis->value, apBase->value, std::string(name));
+    auto result = Get().m_realTDBIDCtorDerive(pBase, pThis, name);
+    Get().RegisterTDBIDString(pThis->value, pBase->value, std::string(name));
     return result;
 }
 
@@ -175,25 +175,25 @@ struct UnknownString
     uint32_t size;
 };
 
-TDBID* LuaVM::HookTDBIDCtorUnknown(TDBID* apThis, uint64_t name)
+TDBID* LuaVM::HookTDBIDCtorUnknown(TDBID* pThis, uint64_t name)
 {
-    auto result = Get().m_realTDBIDCtorUnknown(apThis, name);
+    auto result = Get().m_realTDBIDCtorUnknown(pThis, name);
     UnknownString unknown;
     Get().m_someStringLookup(&name, &unknown);
-    Get().RegisterTDBIDString(apThis->value, 0, std::string(unknown.string, unknown.size));
+    Get().RegisterTDBIDString(pThis->value, 0, std::string(unknown.string, unknown.size));
     return result;
 }
 
-void LuaVM::HookTDBIDToStringDEBUG(REDScriptContext* apContext, ScriptStack* apStack, void* result, void*)
+void LuaVM::HookTDBIDToStringDEBUG(REDScriptContext*, ScriptStack* pStack, void* result, void*)
 {
     uint8_t opcode;
 
     TDBID tdbid;
-    apStack->unk30 = nullptr;
-    apStack->unk38 = nullptr;
-    opcode = *(apStack->m_code++);
-    GetScriptCallArray()[opcode](apStack->m_context, apStack, &tdbid, nullptr);
-    apStack->m_code++; // skip ParamEnd
+    pStack->unk30 = nullptr;
+    pStack->unk38 = nullptr;
+    opcode = *(pStack->m_code++);
+    GetScriptCallArray()[opcode](pStack->m_context, pStack, &tdbid, nullptr);
+    pStack->m_code++; // skip ParamEnd
 
     if (result)
     {
@@ -203,7 +203,7 @@ void LuaVM::HookTDBIDToStringDEBUG(REDScriptContext* apContext, ScriptStack* apS
     }
 }
 
-void LuaVM::Hook(Image* apImage)
+void LuaVM::Hook()
 {
     uint8_t* pLocation = FindSignature({
         0x40, 0x53, 0x48, 0x83, 0xEC, 0x40, 0x48, 0x8B,

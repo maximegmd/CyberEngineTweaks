@@ -8,7 +8,7 @@ struct REDScriptContext;
 struct ScriptStack;
 struct UnknownString;
 
-using TSetMousePosition = BOOL(void* apThis, HWND Wnd, long X, long Y);
+using TSetMousePosition = BOOL(void*, HWND, long, long);
 using TScriptCall = void(REDScriptContext*, ScriptStack*, void*, void*);
 using TTDBIDCtor = TDBID*(TDBID*, const char*);
 using TTDBIDCtorCString = TDBID*(TDBID*, const RED4ext::CString*);
@@ -25,11 +25,11 @@ struct TDBIDLookupEntry
 struct Image;
 struct LuaVM
 {
-	static void Initialize(Image* apImage);
+	static void Initialize();
 	static void Shutdown();
 	static LuaVM& Get();
 	
-  bool ExecuteLua(const std::string& aCommand);
+  bool ExecuteLua(const std::string& command);
 
 	~LuaVM();
 	
@@ -37,15 +37,15 @@ struct LuaVM
 
 protected:
 	
-	void Hook(Image* apImage);
+	void Hook();
 	
-	static void HookLog(REDScriptContext* apContext, ScriptStack* apStack, void*, void*);
-	static void HookLogChannel(REDScriptContext* apContext, ScriptStack* apStack, void*, void*);
-	static TDBID* HookTDBIDCtor(TDBID* apThis, const char* apName);
-	static TDBID* HookTDBIDCtorCString(TDBID* apThis, const RED4ext::CString* apName);
-	static TDBID* HookTDBIDCtorDerive(TDBID* apBase, TDBID* apThis, const char* apName);
-	static TDBID* HookTDBIDCtorUnknown(TDBID* apThis, uint64_t apName);
-	static void HookTDBIDToStringDEBUG(REDScriptContext* apContext, ScriptStack* apStack, void*, void*);
+	static void HookLog(REDScriptContext* pContext, ScriptStack* pStack, void*, void*);
+	static void HookLogChannel(REDScriptContext* pContext, ScriptStack* pStack, void*, void*);
+	static TDBID* HookTDBIDCtor(TDBID* pThis, const char* pName);
+	static TDBID* HookTDBIDCtorCString(TDBID* pThis, const RED4ext::CString* pName);
+	static TDBID* HookTDBIDCtorDerive(TDBID* pBase, TDBID* pThis, const char* pName);
+	static TDBID* HookTDBIDCtorUnknown(TDBID* pThis, uint64_t pName);
+	static void HookTDBIDToStringDEBUG(REDScriptContext* pContext, ScriptStack* pStack, void*, void*);
 
 	void RegisterTDBIDString(uint64_t value, uint64_t base, const std::string& string);
 	std::string GetTDBIDString(uint64_t value);

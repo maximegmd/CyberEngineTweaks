@@ -10,12 +10,12 @@
 
 static std::unique_ptr<LuaVM> s_pLuaVM;
 
-void LuaVM::Initialize(Image* apImage)
+void LuaVM::Initialize()
 {
     if (!s_pLuaVM)
     {
         s_pLuaVM.reset(new (std::nothrow) LuaVM);
-        s_pLuaVM->Hook(apImage);
+        s_pLuaVM->Hook();
     }
 }
 
@@ -37,7 +37,7 @@ void LuaVM::Update(float deltaTime)
     Scripting::Get().GetStore().TriggerOnUpdate(deltaTime);
 }
 
-bool LuaVM::ExecuteLua(const std::string& aCommand)
+bool LuaVM::ExecuteLua(const std::string& command)
 {
     if (!m_initialized)
     {
@@ -45,7 +45,7 @@ bool LuaVM::ExecuteLua(const std::string& aCommand)
             Console::Get().Log("Command not executed! LuaVM is not yet initialized!");
     }
 
-    return Scripting::Get().ExecuteLua(aCommand);
+    return Scripting::Get().ExecuteLua(command);
 }
 
 LuaVM::LuaVM() = default;
