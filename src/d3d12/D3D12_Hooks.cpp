@@ -78,6 +78,7 @@ HRESULT D3D12::CreateCommittedResource(ID3D12Device* pDevice, const D3D12_HEAP_P
 void D3D12::ExecuteCommandLists(ID3D12CommandQueue* pCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists)
 {
     auto& d3d12 = Get();
+
     if (d3d12.m_pCommandQueue == nullptr)
     {
         auto desc = pCommandQueue->GetDesc();

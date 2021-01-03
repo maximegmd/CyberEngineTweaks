@@ -38,6 +38,7 @@ struct LuaVM
 protected:
 	
 	void Hook();
+	void PostInitialize();
 	
 	static void HookLog(REDScriptContext* pContext, ScriptStack* pStack, void*, void*);
 	static void HookLogChannel(REDScriptContext* pContext, ScriptStack* pStack, void*, void*);

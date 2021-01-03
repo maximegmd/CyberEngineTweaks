@@ -42,12 +42,7 @@ void LuaVM::HookLog(REDScriptContext*, ScriptStack* pStack, void*, void*)
     if (Options::Get().Console)
         Console::Get().GameLog(text.c_str());
 
-    if (!Get().m_initialized)
-    {
-        Scripting::Get().GetStore().TriggerOnInit();
-        Get().m_initialized = true;
-        spdlog::info("LuaVM initialization complete!");
-    }
+    Get().PostInitialize();
 }
 
 static const char* GetChannelStr(uint64_t hash)
@@ -101,13 +96,9 @@ void LuaVM::HookLogChannel(REDScriptContext*, ScriptStack* pStack, void*, void*)
         : std::string(channel_str);
     if (Options::Get().Console)
         Console::Get().GameLog("[" + channel + "] " +text.c_str());
+    
 
-    if (!Get().m_initialized)
-    {
-        Scripting::Get().GetStore().TriggerOnInit();
-        Get().m_initialized = true;
-        spdlog::info("LuaVM initialization complete!");
-    }
+    Get().PostInitialize();
 }
 
 static std::string GetTDBDIDDebugString(TDBID tdbid)
@@ -129,7 +120,7 @@ std::string LuaVM::GetTDBIDString(uint64_t value)
 {
     std::lock_guard<std::recursive_mutex> _{ m_tdbidLock };
     auto it = m_tdbidLookup.find(value);
-    auto end = Get().m_tdbidLookup.end();
+    auto end = m_tdbidLookup.end();
     if (it == end)
         return GetTDBDIDDebugString(TDBID{ value });
     std::string string = (*it).second.name;
@@ -150,22 +141,25 @@ std::string LuaVM::GetTDBIDString(uint64_t value)
 
 TDBID* LuaVM::HookTDBIDCtor(TDBID* pThis, const char* name)
 {
-    auto result = Get().m_realTDBIDCtor(pThis, name);
-    Get().RegisterTDBIDString(pThis->value, 0, name);
+    auto& luavm = Get();
+    auto result = luavm.m_realTDBIDCtor(pThis, name);
+    luavm.RegisterTDBIDString(pThis->value, 0, name);
     return result;
 }
 
 TDBID* LuaVM::HookTDBIDCtorCString(TDBID* pThis, const RED4ext::CString* name)
 {
-    auto result = Get().m_realTDBIDCtorCString(pThis, name);
-    Get().RegisterTDBIDString(pThis->value, 0, name->c_str());
+    auto& luavm = Get();
+    auto result = luavm.m_realTDBIDCtorCString(pThis, name);
+    luavm.RegisterTDBIDString(pThis->value, 0, name->c_str());
     return result;
 }
 
 TDBID* LuaVM::HookTDBIDCtorDerive(TDBID* pBase, TDBID* pThis, const char* name)
 {
-    auto result = Get().m_realTDBIDCtorDerive(pBase, pThis, name);
-    Get().RegisterTDBIDString(pThis->value, pBase->value, std::string(name));
+    auto& luavm = Get();
+    auto result = luavm.m_realTDBIDCtorDerive(pBase, pThis, name);
+    luavm.RegisterTDBIDString(pThis->value, pBase->value, std::string(name));
     return result;
 }
 
@@ -177,10 +171,11 @@ struct UnknownString
 
 TDBID* LuaVM::HookTDBIDCtorUnknown(TDBID* pThis, uint64_t name)
 {
-    auto result = Get().m_realTDBIDCtorUnknown(pThis, name);
+    auto& luavm = Get();
+    auto result = luavm.m_realTDBIDCtorUnknown(pThis, name);
     UnknownString unknown;
-    Get().m_someStringLookup(&name, &unknown);
-    Get().RegisterTDBIDString(pThis->value, 0, std::string(unknown.string, unknown.size));
+    luavm.m_someStringLookup(&name, &unknown);
+    luavm.RegisterTDBIDString(pThis->value, 0, std::string(unknown.string, unknown.size));
     return result;
 }
 

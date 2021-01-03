@@ -80,7 +80,7 @@ void Console::Update()
                             str = str.substr(2);
 
                         std::strncpy(command, str.c_str(), sizeof(command) - 1);
-                        Get().m_focusConsoleInput = true;
+                        m_focusConsoleInput = true;
                     }
                     ImGui::PopID();
                 }
@@ -96,16 +96,16 @@ void Console::Update()
         }
 
         ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-        if (Get().m_focusConsoleInput)
+        if (m_focusConsoleInput)
         {
             ImGui::SetKeyboardFocusHere();
-            Get().m_focusConsoleInput = false;
+            m_focusConsoleInput = false;
         }
         const auto execute = ImGui::InputText("##InputCommand", command, std::size(command), ImGuiInputTextFlags_EnterReturnsTrue);
         ImGui::SetItemDefaultFocus();
         if (execute)
         {
-            Get().Log(std::string("> ") + command);
+            Log(std::string("> ") + command);
             
             LuaVM::Get().ExecuteLua(command);
 
@@ -161,7 +161,8 @@ void Console::Log(const std::string& pText)
 
 LRESULT Console::OnWndProc(HWND, UINT uMsg, WPARAM wParam, LPARAM)
 {
-    if (uMsg == WM_KEYDOWN && wParam == Options::Get().ConsoleKey)
+    auto& options = Options::Get();
+    if (uMsg == WM_KEYDOWN && wParam == options.ConsoleKey)
     {
         Toggle();
         return 1;
@@ -173,11 +174,11 @@ LRESULT Console::OnWndProc(HWND, UINT uMsg, WPARAM wParam, LPARAM)
         case WM_SYSKEYDOWN:
         case WM_KEYUP:
         case WM_SYSKEYUP:
-            if (wParam == Options::Get().ConsoleKey)
+            if (wParam == options.ConsoleKey)
                 return 1;
             break;
         case WM_CHAR:
-            if (Options::Get().ConsoleChar && wParam == Options::Get().ConsoleChar)
+            if (options.ConsoleChar && wParam == options.ConsoleChar)
                 return 1;
             break;
     }

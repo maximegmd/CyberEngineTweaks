@@ -48,6 +48,16 @@ bool LuaVM::ExecuteLua(const std::string& command)
     return Scripting::Get().ExecuteLua(command);
 }
 
+void LuaVM::PostInitialize()
+{
+    if (m_initialized)
+        return;
+
+    Scripting::Get().GetStore().TriggerOnInit();
+    spdlog::info("LuaVM initialization complete!");
+    m_initialized = true;
+}
+
 LuaVM::LuaVM() = default;
 
 LuaVM::~LuaVM() = default;
