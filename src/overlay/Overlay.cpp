@@ -396,7 +396,13 @@ bool Overlay::IsEnabled() const
 void Overlay::Log(const std::string& acpText)
 {
     std::lock_guard<std::recursive_mutex> _{ m_outputLock };
-    m_outputLines.emplace_back(acpText);
+    std::istringstream lines(acpText);
+    std::string line;
+
+    while (std::getline(lines, line))
+    {
+        m_outputLines.emplace_back(line);
+    }
     m_outputScroll = true;
 }
 
