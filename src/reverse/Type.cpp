@@ -15,12 +15,12 @@ std::string Type::Descriptor::ToString() const
     {
         result += "\t\t" + function + ",\n";
     }
-    result += "},\n\tstaticFunctions: {\n";
+    result += "\t},\n\tstaticFunctions: {\n";
     for (auto& function : staticFunctions)
     {
         result += "\t\t" + function + ",\n";
     }
-    result += "},\nproperties: {\n";
+    result += "\t},\n\tproperties: {\n";
     for (auto& property : properties)
     {
         result += "\t\t" + property + ",\n";
