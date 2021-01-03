@@ -14,6 +14,7 @@
 #include "reverse/StrongReference.h"
 #include "reverse/Converter.h"
 #include "reverse/WeakReference.h"
+#include "reverse/Enum.h"
 
 Scripting::Scripting()
 {
@@ -165,6 +166,23 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
                         result.value = apAllocator->New<StrongHandle>();
                 }
             }
+            else if (aObject.is<WeakReference>()) // Handle Implicit Cast - Probably an awful conversion without proper ref handling but try anyway
+            {
+                auto* pSubType = static_cast<RED4ext::CClass*>(apRtti)->parent;
+                RED4ext::IRTTIType* pType = aObject.as<WeakReference*>()->m_pType;
+                while (pType != nullptr && pType != pSubType)
+                {
+                    pType = static_cast<RED4ext::CClass*>(pType)->parent;
+                }
+
+                if (pType != nullptr)
+                {
+                    if (hasData)
+                        result.value = apAllocator->New<StrongHandle>(*reinterpret_cast<StrongHandle*>(&aObject.as<WeakReference>().m_weakHandle));
+                    else
+                        result.value = apAllocator->New<StrongHandle>();
+                }
+            }
         }
         else if (apRtti->GetType() == RED4ext::ERTTIType::WeakHandle)
         {
@@ -181,6 +199,23 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
                 {
                     if (hasData)
                         result.value = apAllocator->New<WeakHandle>(aObject.as<WeakReference>().m_weakHandle);
+                    else
+                        result.value = apAllocator->New<WeakHandle>();
+                }
+            }
+            else if (aObject.is<StrongReference>()) // Handle Implicit Cast
+            {
+                auto* pSubType = static_cast<RED4ext::CClass*>(apRtti)->parent;
+                RED4ext::IRTTIType* pType = aObject.as<StrongReference*>()->m_pType;
+                while (pType != nullptr && pType != pSubType)
+                {
+                    pType = static_cast<RED4ext::CClass*>(pType)->parent;
+                }
+
+                if (pType != nullptr)
+                {
+                    if (hasData)
+                        result.value = apAllocator->New<WeakHandle>(*reinterpret_cast<WeakHandle*>(&aObject.as<StrongReference>().m_strongHandle));
                     else
                         result.value = apAllocator->New<WeakHandle>();
                 }
@@ -272,6 +307,11 @@ void Scripting::Initialize()
         "z", &Vector4::z,
         "w", &Vector4::w);
 
+    m_lua.new_usertype<Enum>("Enum",
+        sol::constructors<Enum(const std::string&, const std::string&), Enum(const std::string&, uint32_t)>(),
+        sol::meta_function::to_string, &Enum::ToString,
+        "value", sol::property(&Enum::GetValueName, &Enum::SetValueByName));
+
     m_lua["ToVector4"] = [this](sol::table table) -> Vector4
     {
         return Vector4
@@ -341,7 +381,8 @@ void Scripting::Initialize()
 
     m_lua.new_usertype<TweakDBID>("TweakDBID",
         sol::constructors<TweakDBID(const std::string&), TweakDBID(const TweakDBID&, const std::string&), TweakDBID(uint32_t, uint8_t), TweakDBID()>(),
-        sol::meta_function::to_string, &TweakDBID::ToString);
+        sol::meta_function::to_string, &TweakDBID::ToString,
+        "hash", &TweakDBID::name_hash);
 
     m_lua["ToTweakDBID"] = [this](sol::table table) -> TweakDBID
     {
@@ -354,7 +395,8 @@ void Scripting::Initialize()
 
     m_lua.new_usertype<ItemID>("ItemID",
         sol::constructors<ItemID(const TweakDBID&, uint32_t, uint16_t, uint8_t), ItemID(const TweakDBID&, uint32_t, uint16_t), ItemID(const TweakDBID&, uint32_t), ItemID(const TweakDBID&), ItemID()>(),
-        sol::meta_function::to_string, &ItemID::ToString);
+        sol::meta_function::to_string, &ItemID::ToString,
+        "tdbid", &ItemID::id);
 
     m_lua["ToItemID"] = [this](sol::table table) -> ItemID
     {
@@ -405,6 +447,7 @@ void Scripting::Initialize()
             std::string str = s["tostring"]((*it).get<sol::object>());
             oss << str;
         }
+        spdlog::info(oss.str());
         Overlay::Get().Log(oss.str());
     };
 
