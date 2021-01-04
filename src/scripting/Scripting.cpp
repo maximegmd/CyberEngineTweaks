@@ -5,16 +5,19 @@
 #include "Options.h"
 #include "GameOptions.h"
 
-#include "console/Console.h"
+#include <sol_imgui/sol_imgui.h>
 
-#include "reverse/Type.h"
-#include "reverse/Array.h"
-#include "reverse/BasicTypes.h"
-#include "reverse/SingletonReference.h"
-#include "reverse/StrongReference.h"
-#include "reverse/Converter.h"
-#include "reverse/WeakReference.h"
-#include "reverse/Enum.h"
+#include <d3d12/D3D12.h>
+#include <console/Console.h>
+
+#include <reverse/Type.h>
+#include <reverse/Array.h>
+#include <reverse/BasicTypes.h>
+#include <reverse/SingletonReference.h>
+#include <reverse/StrongReference.h>
+#include <reverse/Converter.h>
+#include <reverse/WeakReference.h>
+#include <reverse/Enum.h>
 
 Scripting::Scripting()
 {
@@ -238,6 +241,33 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
 void Scripting::Initialize()
 {
     m_lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::io, sol::lib::math, sol::lib::package, sol::lib::os, sol::lib::table);
+    
+    sol_ImGui::InitBindings(m_lua);
+    
+    m_lua["GetDisplayResolution"] = []() -> ImVec2
+    {
+        auto resolution = D3D12::Get().GetResolution();
+        return ImVec2
+        {
+            static_cast<float>(resolution.cx),
+            static_cast<float>(resolution.cy)
+        };
+    };
+
+    m_lua["TrapInputInImGui"] = [](bool trap)
+    {
+        D3D12::Get().TrapInputInImGui(trap);
+    };
+
+    m_lua["ToVector3"] = [](sol::table table) -> Vector3
+    {
+        return Vector3
+        {
+            table["x"].get_or(0.f),
+            table["y"].get_or(0.f),
+            table["z"].get_or(0.f)
+        };
+    };
 
     m_lua.new_usertype<Scripting>("__Game",
         sol::meta_function::construct, sol::no_constructor,
@@ -289,7 +319,7 @@ void Scripting::Initialize()
         "y", &Vector3::y,
         "z", &Vector3::z);
 
-    m_lua["ToVector3"] = [this](sol::table table) -> Vector3
+    m_lua["ToVector3"] = [](sol::table table) -> Vector3
     {
         return Vector3
         {
@@ -312,7 +342,7 @@ void Scripting::Initialize()
         sol::meta_function::to_string, &Enum::ToString,
         "value", sol::property(&Enum::GetValueName, &Enum::SetValueByName));
 
-    m_lua["ToVector4"] = [this](sol::table table) -> Vector4
+    m_lua["ToVector4"] = [](sol::table table) -> Vector4
     {
         return Vector4
         {
@@ -335,7 +365,7 @@ void Scripting::Initialize()
         "yaw", &EulerAngles::yaw,
         "roll", &EulerAngles::roll);
 
-    m_lua["ToEulerAngles"] = [this](sol::table table) -> EulerAngles
+    m_lua["ToEulerAngles"] = [](sol::table table) -> EulerAngles
     {
         return EulerAngles
         {
@@ -353,7 +383,7 @@ void Scripting::Initialize()
         "k", &Quaternion::k,
         "r", &Quaternion::r);
 
-    m_lua["ToQuaternion"] = [this](sol::table table) -> Quaternion
+    m_lua["ToQuaternion"] = [](sol::table table) -> Quaternion
     {
         return Quaternion
         {
@@ -370,7 +400,7 @@ void Scripting::Initialize()
         "hash_lo", &CName::hash_lo,
         "hash_hi", &CName::hash_hi);
 
-    m_lua["ToCName"] = [this](sol::table table) -> CName
+    m_lua["ToCName"] = [](sol::table table) -> CName
     {
         return CName
         {
@@ -384,7 +414,7 @@ void Scripting::Initialize()
         sol::meta_function::to_string, &TweakDBID::ToString,
         "hash", &TweakDBID::name_hash);
 
-    m_lua["ToTweakDBID"] = [this](sol::table table) -> TweakDBID
+    m_lua["ToTweakDBID"] = [](sol::table table) -> TweakDBID
     {
         return TweakDBID
         {
@@ -398,7 +428,7 @@ void Scripting::Initialize()
         sol::meta_function::to_string, &ItemID::ToString,
         "tdbid", &ItemID::id);
 
-    m_lua["ToItemID"] = [this](sol::table table) -> ItemID
+    m_lua["ToItemID"] = [](sol::table table) -> ItemID
     {
         return ItemID
         {
@@ -423,7 +453,7 @@ void Scripting::Initialize()
         return m_store.LoadAll(m_lua);
     };
 
-    m_lua["Dump"] = [this](Type* apType, bool aDetailed)
+    m_lua["Dump"] = [](Type* apType, bool aDetailed)
     {
         return apType != nullptr ? apType->Dump(aDetailed) : Type::Descriptor{};
     };

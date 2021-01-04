@@ -127,20 +127,8 @@ void Console::Toggle()
 {
     m_enabled = !m_enabled;
 
-    auto& d3d12 = D3D12::Get();
-    d3d12.PassInputToImGui(m_enabled);
-    d3d12.CatchInputInImGui(m_enabled);
-
-    while(true)
-    {
-        if (m_enabled && ShowCursor(TRUE) >= 0) 
-        {
-            m_focusConsoleInput = true;
-            break;
-        }
-        if (!m_enabled && ShowCursor(FALSE) < 0)
-            break;
-    }
+    D3D12::Get().TrapInputInImGui(m_enabled);
+    m_focusConsoleInput = m_enabled;
 
     ClipToCenter(RED4ext::CGameEngine::Get()->unkC0);
 }

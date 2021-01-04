@@ -6,9 +6,10 @@ struct ScriptContext
     ~ScriptContext();
 
     [[nodiscard]] bool IsValid() const;
-
-    void TriggerOnUpdate(float aDeltaTime) const;
+    
     void TriggerOnInit() const;
+    void TriggerOnUpdate(float aDeltaTime) const;
+    void TriggerOnDraw() const;
 
     sol::object GetObject() const;
 
@@ -19,5 +20,6 @@ private:
     sol::object m_object;
     sol::function m_onInit;
     sol::function m_onUpdate;
+    sol::function m_onDraw;
     bool m_initialized{false};
 };

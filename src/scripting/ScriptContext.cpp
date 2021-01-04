@@ -9,10 +9,12 @@ ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::
 {
     m_env["registerForEvent"] = [this](const std::string& acName, sol::function aCallback)
     {
-        if(acName == "onUpdate")
-            m_onUpdate = aCallback;
-        else if(acName == "onInit")
+        if(acName == "onInit")
             m_onInit = aCallback;
+        else if(acName == "onUpdate")
+            m_onUpdate = aCallback;
+        else if(acName == "onDraw")
+            m_onDraw = aCallback;
     };
 
     const auto path = acPath / "init.lua";
@@ -40,16 +42,22 @@ bool ScriptContext::IsValid() const
     return m_initialized;
 }
 
+void ScriptContext::TriggerOnInit() const
+{
+    if (m_onInit)
+        m_onInit();
+}
+
 void ScriptContext::TriggerOnUpdate(float aDeltaTime) const
 {
     if (m_onUpdate)
         m_onUpdate(aDeltaTime);
 }
 
-void ScriptContext::TriggerOnInit() const
+void ScriptContext::TriggerOnDraw() const
 {
-    if (m_onInit)
-        m_onInit();
+    if (m_onDraw)
+        m_onDraw();
 }
 
 sol::object ScriptContext::GetObject() const

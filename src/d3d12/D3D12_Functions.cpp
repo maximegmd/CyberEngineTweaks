@@ -18,7 +18,6 @@ bool D3D12::ResetState()
         m_initialized = false;
         ImGui_ImplDX12_Shutdown();
         ImGui_ImplWin32_Shutdown();
-        ImGui::DestroyContext();
     }
     m_frameContexts.clear();
     m_downlevelBackbuffers.clear();
@@ -308,17 +307,20 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
 
 bool D3D12::InitializeImGui(size_t aBuffersCounts)
 {
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    ImGui::StyleColorsDark();
-    io.Fonts->AddFontDefault();
-    io.IniFilename = NULL;
+    if (ImGui::GetCurrentContext() == nullptr)
+    {
+        // do this once, do not repeat context creation!
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGuiIO& io = ImGui::GetIO();
+        ImGui::StyleColorsDark();
+        io.Fonts->AddFontDefault();
+        io.IniFilename = NULL;
+    }
     
     if (!ImGui_ImplWin32_Init(Window::Get().GetWindow())) 
     {
         spdlog::error("D3D12::InitializeImGui() - ImGui_ImplWin32_Init call failed!");
-        ImGui::DestroyContext();
         return false;
     }
 
@@ -329,7 +331,6 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
     {
         spdlog::error("D3D12::InitializeImGui() - ImGui_ImplDX12_Init call failed!");
         ImGui_ImplWin32_Shutdown();
-        ImGui::DestroyContext();
         return false;
     }
 
@@ -338,7 +339,6 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         spdlog::error("D3D12::InitializeImGui() - ImGui_ImplDX12_CreateDeviceObjects call failed!");
         ImGui_ImplDX12_Shutdown();
         ImGui_ImplWin32_Shutdown();
-        ImGui::DestroyContext();
         return false;
     }
 
