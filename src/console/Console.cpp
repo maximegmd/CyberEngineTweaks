@@ -150,13 +150,13 @@ bool Console::IsEnabled() const
     return m_enabled;
 }
 
-void Console::Log(const std::string& pText)
+void Console::Log(const std::string& acpText)
 {
     if (this == nullptr)
         return;
 
     std::lock_guard<std::recursive_mutex> _{ m_outputLock };
-    std::istringstream lines(pText);
+    std::istringstream lines(acpText);
     std::string line;
 
     while (std::getline(lines, line))
@@ -202,12 +202,12 @@ LRESULT Console::OnWndProc(HWND, UINT uMsg, WPARAM wParam, LPARAM)
     return 0;
 }
 
-BOOL Console::ClipToCenter(RED4ext::CGameEngine::UnkC0* pThis)
+BOOL Console::ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis)
 {
-    HWND wnd = (HWND)pThis->hWnd;
+    HWND wnd = (HWND)apThis->hWnd;
     HWND foreground = GetForegroundWindow();
 
-    if(wnd == foreground && pThis->unk164 && !pThis->unk140 && !Get().IsEnabled())
+    if(wnd == foreground && apThis->unk164 && !apThis->unk140 && !Get().IsEnabled())
     {
         RECT rect;
         GetClientRect(wnd, &rect);
@@ -217,14 +217,14 @@ BOOL Console::ClipToCenter(RED4ext::CGameEngine::UnkC0* pThis)
         rect.right = rect.left;
         rect.bottom = (rect.bottom + rect.top) / 2;
         rect.top = rect.bottom;
-        pThis->isClipped = true;
+        apThis->isClipped = true;
         ShowCursor(FALSE);
         return ClipCursor(&rect);
     }
 
-    if(pThis->isClipped)
+    if(apThis->isClipped)
     {
-        pThis->isClipped = false;
+        apThis->isClipped = false;
         return ClipCursor(nullptr);
     }
 

@@ -75,23 +75,23 @@ HRESULT D3D12::CreateCommittedResource(ID3D12Device* pDevice, const D3D12_HEAP_P
     return result;
 }
 
-void D3D12::ExecuteCommandLists(ID3D12CommandQueue* pCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists)
+void D3D12::ExecuteCommandLists(ID3D12CommandQueue* apCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists)
 {
     auto& d3d12 = Get();
 
     if (d3d12.m_pCommandQueue == nullptr)
     {
-        auto desc = pCommandQueue->GetDesc();
+        auto desc = apCommandQueue->GetDesc();
         if(desc.Type == D3D12_COMMAND_LIST_TYPE_DIRECT) 
         {
-            d3d12.m_pCommandQueue = pCommandQueue;
+            d3d12.m_pCommandQueue = apCommandQueue;
             spdlog::info("D3D12::ExecuteCommandListsD3D12() - found valid command queue.");
         }
         else 
             spdlog::info("D3D12::ExecuteCommandListsD3D12() - ignoring command queue - unusable command list type");
     }
 
-    d3d12.m_realExecuteCommandLists(pCommandQueue, NumCommandLists, ppCommandLists);
+    d3d12.m_realExecuteCommandLists(apCommandQueue, NumCommandLists, ppCommandLists);
 }
 
 void D3D12::Hook()

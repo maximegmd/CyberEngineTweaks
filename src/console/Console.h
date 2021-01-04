@@ -1,6 +1,6 @@
 #pragma once
 
-using TClipToCenter = HWND(RED4ext::CGameEngine::UnkC0* pThis);
+using TClipToCenter = HWND(RED4ext::CGameEngine::UnkC0* apThis);
 
 struct Image;
 struct Console
@@ -14,8 +14,8 @@ struct Console
 	void Toggle();
 	bool IsEnabled() const;
 	
-	void Log(const std::string& pText);
-	void GameLog(const std::string& pText) { if (!m_disabledGameLog) Log(pText); }
+	void Log(const std::string& acpText);
+	void GameLog(const std::string& acpText) { if (!m_disabledGameLog) Log(acpText); }
 	
 	void Update();
 
@@ -25,7 +25,7 @@ protected:
 	
 	void Hook();
 	
-	static BOOL ClipToCenter(RED4ext::CGameEngine::UnkC0* pThis);
+	static BOOL ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis);
 
 private:
 
