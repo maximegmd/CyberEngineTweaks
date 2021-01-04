@@ -17,27 +17,9 @@ struct D3D12
 
     ~D3D12();
     
-    void TrapInputInImGui(bool aEnabled)
-    {
-        int showCursorState;
-        if (aEnabled)
-            do { showCursorState = ShowCursor(TRUE); } while (showCursorState < 0);
-        else
-            do { showCursorState = ShowCursor(FALSE); } while (showCursorState >= 0);
-
-        /*
-        // TODO: this does not seem to help cursor not showing when this is called from inside LuaVM 
-        if (m_trapInputInImGui != aEnabled)
-        {
-            static auto cursor = LoadCursor(nullptr, IDC_ARROW);
-            HCURSOR newCursor = (aEnabled) ? (cursor) : (nullptr);
-            SetClassLongPtr(Window::Get().GetWindow(), GCLP_HCURSOR, reinterpret_cast<LONG_PTR>(newCursor));
-            SetCursor(newCursor);
-        }
-        */
-
-        m_trapInputInImGui = aEnabled;
-    }
+    void SetTrapInputInImGui(bool aEnabled);
+    
+    bool IsTrapInputInImGui() const { return m_trapInputInImGui; }
     
     SIZE GetResolution() const { return m_outSize; }
 

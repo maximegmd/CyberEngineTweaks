@@ -60,6 +60,9 @@ void Console::Update()
         ImGui::Checkbox("Scroll Output", &m_outputShouldScroll);
         ImGui::SameLine();
         ImGui::Checkbox("Disable Game Log", &m_disabledGameLog);
+        ImGui::SameLine();
+        if (ImGui::Button("Reload All Mods"))
+            LuaVM::Get().ReloadAllMods();
 
         static char command[200000] = { 0 };
 
@@ -127,7 +130,7 @@ void Console::Toggle()
 {
     m_enabled = !m_enabled;
 
-    D3D12::Get().TrapInputInImGui(m_enabled);
+    D3D12::Get().SetTrapInputInImGui(m_enabled);
     m_focusConsoleInput = m_enabled;
 
     ClipToCenter(RED4ext::CGameEngine::Get()->unkC0);

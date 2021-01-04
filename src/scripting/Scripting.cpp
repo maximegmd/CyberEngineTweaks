@@ -23,7 +23,7 @@ Scripting::Scripting()
 {
     Initialize();
 
-    m_store.LoadAll(m_lua);
+    ReloadAllMods();
 }
 
 Scripting& Scripting::Get()
@@ -244,19 +244,24 @@ void Scripting::Initialize()
     
     sol_ImGui::InitBindings(m_lua);
     
-    m_lua["GetDisplayResolution"] = []() -> ImVec2
+    m_lua["GetDisplayResolution"] = []() -> std::tuple<float, float>
     {
         auto resolution = D3D12::Get().GetResolution();
-        return ImVec2
+        return
         {
             static_cast<float>(resolution.cx),
             static_cast<float>(resolution.cy)
         };
     };
 
-    m_lua["TrapInputInImGui"] = [](bool trap)
+    m_lua["SetTrapInputInImGui"] = [](bool trap)
     {
-        D3D12::Get().TrapInputInImGui(trap);
+        D3D12::Get().SetTrapInputInImGui(trap);
+    };
+
+    m_lua["IsTrapInputInImGui"] = []() -> bool
+    {
+        return D3D12::Get().IsTrapInputInImGui();
     };
 
     m_lua["ToVector3"] = [](sol::table table) -> Vector3
@@ -448,9 +453,9 @@ void Scripting::Initialize()
         return this->GetSingletonHandle(acName);
     };
 
-    m_lua["ReloadScripts"] = [this]()
+    m_lua["ReloadAllMods"] = [this]()
     {
-        return m_store.LoadAll(m_lua);
+        ReloadAllMods();
     };
 
     m_lua["Dump"] = [](Type* apType, bool aDetailed)
