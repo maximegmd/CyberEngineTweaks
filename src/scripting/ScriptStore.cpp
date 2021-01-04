@@ -16,6 +16,8 @@ ScriptStore::~ScriptStore()
 
 void ScriptStore::LoadAll(sol::state_view aStateView)
 {
+    m_contexts.clear();
+
     const auto cScriptsPath = Options::Get().ScriptsPath;
 
     for (const auto& file : std::filesystem::directory_iterator(cScriptsPath))
@@ -35,7 +37,9 @@ void ScriptStore::LoadAll(sol::state_view aStateView)
             m_contexts.emplace(name, std::move(ctx));
         }
         else
+        {
             spdlog::warn("Mod {} failed to load!", file.path().string());
+        }
     }
 }
 

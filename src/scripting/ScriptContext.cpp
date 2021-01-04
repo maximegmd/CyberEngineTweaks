@@ -23,6 +23,12 @@ ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::
         m_initialized = true;
         m_object = result;
     }
+    else
+    {
+        sol::error err = result;
+        std::string what = err.what();
+        spdlog::error(what);
+    }
 }
 
 ScriptContext::~ScriptContext()

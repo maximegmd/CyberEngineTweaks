@@ -418,29 +418,34 @@ void Scripting::Initialize()
         return this->GetSingletonHandle(acName);
     };
 
-    m_lua["Dump"] = [this](Type* apType, bool detailed)
+    m_lua["ReloadScripts"] = [this]()
     {
-        return apType != nullptr ? apType->Dump(detailed) : Type::Descriptor{};
+        return m_store.LoadAll(m_lua);
     };
 
-    m_lua["DumpType"] = [this](const std::string& acName, bool detailed)
+    m_lua["Dump"] = [this](Type* apType, bool aDetailed)
+    {
+        return apType != nullptr ? apType->Dump(aDetailed) : Type::Descriptor{};
+    };
+
+    m_lua["DumpType"] = [this](const std::string& acName, bool aDetailed)
     {
         auto* pRtti = RED4ext::CRTTISystem::Get();
         auto* pType = pRtti->GetClass(RED4ext::FNV1a(acName.c_str()));
         if (!pType || pType->GetType() == RED4ext::ERTTIType::Simple)
             return Type::Descriptor();
 
-        Type type(m_lua, pType);
-        return type.Dump(detailed);
+        const Type type(m_lua, pType);
+        return type.Dump(aDetailed);
     };
 
-    m_lua["print"] = [](sol::variadic_args args, sol::this_environment env, sol::this_state L)
+    m_lua["print"] = [](sol::variadic_args aArgs, sol::this_environment aEnvironment, sol::this_state aState)
     {
         std::ostringstream oss;
-        sol::state_view s(L);
-        for (auto it = args.cbegin(); it != args.cend(); ++it)
+        sol::state_view s(aState);
+        for (auto it = aArgs.cbegin(); it != aArgs.cend(); ++it)
         {
-            if (it != args.cbegin())
+            if (it != aArgs.cbegin())
             {
                 oss << " ";
             }
