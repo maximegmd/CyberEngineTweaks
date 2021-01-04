@@ -102,6 +102,7 @@ Options::Options(HMODULE aModule)
         this->PatchDisableIntroMovies = config.value("disable_intro_movies", this->PatchDisableIntroMovies);
         this->PatchDisableVignette = config.value("disable_vignette", this->PatchDisableVignette);
         this->PatchDisableBoundaryTeleport = config.value("disable_boundary_teleport", this->PatchDisableBoundaryTeleport);
+        this->PatchDisableWin7Vsync = config.value("disable_win7_vsync", this->PatchDisableWin7Vsync);
 
         this->DumpGameOptions = config.value("dump_game_options", this->DumpGameOptions);
         this->Console = config.value("console", this->Console);
@@ -131,6 +132,7 @@ Options::Options(HMODULE aModule)
     config["disable_intro_movies"] = this->PatchDisableIntroMovies;
     config["disable_vignette"] = this->PatchDisableVignette;
     config["disable_boundary_teleport"] = this->PatchDisableBoundaryTeleport;
+    config["disable_win7_vsync"] = this->PatchDisableWin7Vsync;
 
     std::ofstream o(configPath);
     o << config.dump(4) << std::endl;
