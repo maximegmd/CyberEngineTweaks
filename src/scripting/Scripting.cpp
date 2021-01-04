@@ -42,8 +42,7 @@ bool Scripting::ExecuteLua(const std::string& aCommand)
     }
     catch(std::exception& e)
     {
-        if (Options::Get().Console)
-            Console::Get().Log( e.what());
+        Console::Get().Log( e.what());
         return false;
     }
 
@@ -118,8 +117,7 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::CStackType& aResul
         if (hash)
         {
             const std::string typeName = hash.ToString();
-            if (Options::Get().Console)
-                Console::Get().Log("Unhandled return type: " + typeName + " type : " + std::to_string((uint32_t)pType->GetType()));
+            Console::Get().Log("Unhandled return type: " + typeName + " type : " + std::to_string((uint32_t)pType->GetType()));
         }
     }
 
@@ -449,8 +447,7 @@ void Scripting::Initialize()
             std::string str = s["tostring"]((*it).get<sol::object>());
             oss << str;
         }
-        if (Options::Get().Console)
-            Console::Get().Log(oss.str());
+        Console::Get().Log(oss.str());
     };
 
     m_lua["GetAsyncKeyState"] = [](int aKeyCode) -> bool
@@ -464,8 +461,7 @@ void Scripting::Initialize()
         m_lua.do_file("autoexec.lua");
     else
     {
-        if (Options::Get().Console)
-            Console::Get().Log("WARNING: missing CET autoexec.lua!");
+        Console::Get().Log("WARNING: missing CET autoexec.lua!");
         spdlog::warn("Scripting::Initialize() - missing CET autoexec.lua!");
     }
 }
@@ -497,8 +493,7 @@ sol::object Scripting::GetSingletonHandle(const std::string& acName)
     auto* pType = pRtti->GetClass(RED4ext::FNV1a(acName.c_str()));
     if (!pType)
     {
-        if (Options::Get().Console)
-            Console::Get().Log("Type '" + acName + "' not found or is not initialized yet.");
+        Console::Get().Log("Type '" + acName + "' not found or is not initialized yet.");
         return sol::nil;
     }
 
@@ -515,8 +510,7 @@ sol::protected_function Scripting::InternalIndex(const std::string& acName)
         auto code = this->Execute(name, args, env, L, result);
         if(!code)
         {
-            if (Options::Get().Console)
-                Console::Get().Log("Error: " + result);
+            Console::Get().Log("Error: " + result);
         }
         return code;
     });

@@ -75,8 +75,7 @@ sol::protected_function Type::InternalIndex(const std::string& acName)
 
         if (!pFunc)
         {
-            if (Options::Get().Console)
-                Console::Get().Log("Function '" + acName + "' not found in system '" + GetName() + "'.");
+            Console::Get().Log("Function '" + acName + "' not found in system '" + GetName() + "'.");
             return sol::nil;
         }
     }
@@ -87,8 +86,7 @@ sol::protected_function Type::InternalIndex(const std::string& acName)
         auto funcRet = apType->Execute(pFunc, name, args, env, L, result);
         if(!result.empty())
         {
-            if (Options::Get().Console)
-                Console::Get().Log("Error: " + result);
+            Console::Get().Log("Error: " + result);
         }
         return funcRet;
     });
