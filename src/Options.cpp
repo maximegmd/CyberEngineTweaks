@@ -105,7 +105,7 @@ Options::Options(HMODULE aModule)
 
         this->DumpGameOptions = config.value("dump_game_options", this->DumpGameOptions);
         this->Console = config.value("console", this->Console);
-		this->ConsoleKey = config.value("console_key", this->ConsoleKey);
+        this->ConsoleKey = config.value("console_key", this->ConsoleKey);
 
         // check old config names
         if (config.value("unlock_menu", false))
