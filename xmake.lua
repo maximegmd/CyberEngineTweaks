@@ -7,6 +7,7 @@ add_rules("mode.debug", "mode.release")
 if is_mode("release") then
     add_ldflags("/LTCG", "/OPT:REF")
     add_cxflags("/Ot", "/GL", "/Ob2", "/Oi", "/GS-")
+    add_defines("NDEBUG")
 
     set_optimize("fastest")
 end

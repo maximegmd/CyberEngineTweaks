@@ -5,7 +5,7 @@
 #include "Options.h"
 #include "GameOptions.h"
 
-#include "overlay/Overlay.h"
+#include "console/Console.h"
 
 #include "reverse/Type.h"
 #include "reverse/Array.h"
@@ -34,15 +34,15 @@ const ScriptStore& Scripting::GetStore() const
     return m_store;
 }
 
-bool Scripting::ExecuteLua(const std::string& aCommand)
+bool Scripting::ExecuteLua(const std::string& acCommand)
 {
     try
     {
-        m_lua.script(aCommand);
+        m_lua.script(acCommand);
     }
     catch(std::exception& e)
     {
-        Overlay::Get().Log( e.what());
+        Console::Get().Log( e.what());
         return false;
     }
 
@@ -117,7 +117,7 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::CStackType& aResul
         if (hash)
         {
             const std::string typeName = hash.ToString();
-            Overlay::Get().Log("Unhandled return type: " + typeName + " type : " + std::to_string((uint32_t)pType->GetType()));
+            Console::Get().Log("Unhandled return type: " + typeName + " type : " + std::to_string((uint32_t)pType->GetType()));
         }
     }
 
@@ -453,7 +453,7 @@ void Scripting::Initialize()
             oss << str;
         }
         spdlog::info(oss.str());
-        Overlay::Get().Log(oss.str());
+        Console::Get().Log(oss.str());
     };
 
     m_lua["GetAsyncKeyState"] = [](int aKeyCode) -> bool
@@ -466,7 +466,13 @@ void Scripting::Initialize()
     if (std::filesystem::exists("autoexec.lua"))
         m_lua.do_file("autoexec.lua");
     else
-        Overlay::Get().Log("WARNING: missing CET autoexec.lua!");
+    {
+        Console::Get().Log("WARNING: missing CET autoexec.lua!");
+        spdlog::warn("Scripting::Initialize() - missing CET autoexec.lua!");
+    }
+
+    // set current path for following scripts to out ScriptsPath
+    std::filesystem::current_path(Options::Get().ScriptsPath);
 }
 
 sol::object Scripting::Index(const std::string& acName)
@@ -496,7 +502,7 @@ sol::object Scripting::GetSingletonHandle(const std::string& acName)
     auto* pType = pRtti->GetClass(RED4ext::FNV1a(acName.c_str()));
     if (!pType)
     {
-        Overlay::Get().Log("Type '" + acName + "' not found or is not initialized yet.");
+        Console::Get().Log("Type '" + acName + "' not found or is not initialized yet.");
         return sol::nil;
     }
 
@@ -513,7 +519,7 @@ sol::protected_function Scripting::InternalIndex(const std::string& acName)
         auto code = this->Execute(name, args, env, L, result);
         if(!code)
         {
-            Overlay::Get().Log("Error: " + result);
+            Console::Get().Log("Error: " + result);
         }
         return code;
     });

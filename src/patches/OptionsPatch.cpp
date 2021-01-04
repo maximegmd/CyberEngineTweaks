@@ -11,15 +11,16 @@ bool HookGameOptionGetBoolean(GameOption* apThis, uint8_t* apVariable, GameOptio
     if (!pVariable)
         return false;
 
-    if (Options::Get().PatchAsyncCompute && strcmp(apThis->pCategory, "Rendering/AsyncCompute") == 0)
+    auto& options = Options::Get();
+    if (options.PatchAsyncCompute && strcmp(apThis->pCategory, "Rendering/AsyncCompute") == 0)
     {
         *pVariable = false;
     }
-    else if (Options::Get().PatchAntialiasing && strcmp(apThis->pName, "Antialiasing") == 0)
+    else if (options.PatchAntialiasing && strcmp(apThis->pName, "Antialiasing") == 0)
     {
         *pVariable = false;
     }
-    else if (Options::Get().PatchAntialiasing && strcmp(apThis->pName, "ScreenSpaceReflection") == 0)
+    else if (options.PatchAntialiasing && strcmp(apThis->pName, "ScreenSpaceReflection") == 0)
     {
         *pVariable = false;
     }

@@ -30,7 +30,7 @@
 
 #include <stdafx.h>
 
-#include "imgui_impl_dx12.h"
+#include "dx12.h"
 
 // DirectX
 #ifdef _MSC_VER
@@ -38,13 +38,13 @@
 #endif
 
 // DirectX data
-static ID3D12Device*                g_pd3dDevice = NULL;
-static ID3D12RootSignature*         g_pRootSignature = NULL;
-static ID3D12PipelineState*         g_pPipelineState = NULL;
-static DXGI_FORMAT                  g_RTVFormat = DXGI_FORMAT_UNKNOWN;
-static ID3D12Resource*              g_pFontTextureResource = NULL;
-static D3D12_CPU_DESCRIPTOR_HANDLE  g_hFontSrvCpuDescHandle = {};
-static D3D12_GPU_DESCRIPTOR_HANDLE  g_hFontSrvGpuDescHandle = {};
+static ID3D12Device*               g_pd3dDevice = NULL;
+static ID3D12RootSignature*        g_pRootSignature = NULL;
+static ID3D12PipelineState*        g_pPipelineState = NULL;
+static DXGI_FORMAT                 g_RTVFormat = DXGI_FORMAT_UNKNOWN;
+static ID3D12Resource*             g_pFontTextureResource = NULL;
+static D3D12_CPU_DESCRIPTOR_HANDLE g_hFontSrvCpuDescHandle = {};
+static D3D12_GPU_DESCRIPTOR_HANDLE g_hFontSrvGpuDescHandle = {};
 
 struct FrameResources
 {
@@ -58,11 +58,11 @@ static UINT             g_numFramesInFlight = 0;
 static UINT             g_frameIndex = UINT_MAX;
 
 template<typename T>
-static void SafeRelease(T*& res)
+static void SafeRelease(T*& apRes)
 {
-    if (res)
-        res->Release();
-    res = NULL;
+    if (apRes)
+        apRes->Release();
+    apRes = NULL;
 }
 
 struct VERTEX_CONSTANT_BUFFER
@@ -70,16 +70,16 @@ struct VERTEX_CONSTANT_BUFFER
     float   mvp[4][4];
 };
 
-static void ImGui_ImplDX12_SetupRenderState(ImDrawData* draw_data, ID3D12GraphicsCommandList* ctx, FrameResources* fr)
+static void ImGui_ImplDX12_SetupRenderState(ImDrawData* apDrawData, ID3D12GraphicsCommandList* apCommandLists, FrameResources* apFrameResource)
 {
     // Setup orthographic projection matrix into our constant buffer
     // Our visible imgui space lies from draw_data->DisplayPos (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right).
     VERTEX_CONSTANT_BUFFER vertex_constant_buffer;
     {
-        float L = draw_data->DisplayPos.x;
-        float R = draw_data->DisplayPos.x + draw_data->DisplaySize.x;
-        float T = draw_data->DisplayPos.y;
-        float B = draw_data->DisplayPos.y + draw_data->DisplaySize.y;
+        float L = apDrawData->DisplayPos.x;
+        float R = apDrawData->DisplayPos.x + apDrawData->DisplaySize.x;
+        float T = apDrawData->DisplayPos.y;
+        float B = apDrawData->DisplayPos.y + apDrawData->DisplaySize.y;
         float mvp[4][4] =
         {
             { 2.0f/(R-L),   0.0f,           0.0f,       0.0f },
@@ -93,43 +93,43 @@ static void ImGui_ImplDX12_SetupRenderState(ImDrawData* draw_data, ID3D12Graphic
     // Setup viewport
     D3D12_VIEWPORT vp;
     memset(&vp, 0, sizeof(D3D12_VIEWPORT));
-    vp.Width = draw_data->DisplaySize.x;
-    vp.Height = draw_data->DisplaySize.y;
+    vp.Width = apDrawData->DisplaySize.x;
+    vp.Height = apDrawData->DisplaySize.y;
     vp.MinDepth = 0.0f;
     vp.MaxDepth = 1.0f;
     vp.TopLeftX = vp.TopLeftY = 0.0f;
-    ctx->RSSetViewports(1, &vp);
+    apCommandLists->RSSetViewports(1, &vp);
 
     // Bind shader and vertex buffers
     unsigned int stride = sizeof(ImDrawVert);
     unsigned int offset = 0;
     D3D12_VERTEX_BUFFER_VIEW vbv;
     memset(&vbv, 0, sizeof(D3D12_VERTEX_BUFFER_VIEW));
-    vbv.BufferLocation = fr->VertexBuffer->GetGPUVirtualAddress() + offset;
-    vbv.SizeInBytes = fr->VertexBufferSize * stride;
+    vbv.BufferLocation = apFrameResource->VertexBuffer->GetGPUVirtualAddress() + offset;
+    vbv.SizeInBytes = apFrameResource->VertexBufferSize * stride;
     vbv.StrideInBytes = stride;
-    ctx->IASetVertexBuffers(0, 1, &vbv);
+    apCommandLists->IASetVertexBuffers(0, 1, &vbv);
     D3D12_INDEX_BUFFER_VIEW ibv;
     memset(&ibv, 0, sizeof(D3D12_INDEX_BUFFER_VIEW));
-    ibv.BufferLocation = fr->IndexBuffer->GetGPUVirtualAddress();
-    ibv.SizeInBytes = fr->IndexBufferSize * sizeof(ImDrawIdx);
+    ibv.BufferLocation = apFrameResource->IndexBuffer->GetGPUVirtualAddress();
+    ibv.SizeInBytes = apFrameResource->IndexBufferSize * sizeof(ImDrawIdx);
     ibv.Format = sizeof(ImDrawIdx) == 2 ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT;
-    ctx->IASetIndexBuffer(&ibv);
-    ctx->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    ctx->SetPipelineState(g_pPipelineState);
-    ctx->SetGraphicsRootSignature(g_pRootSignature);
-    ctx->SetGraphicsRoot32BitConstants(0, 16, &vertex_constant_buffer, 0);
+    apCommandLists->IASetIndexBuffer(&ibv);
+    apCommandLists->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    apCommandLists->SetPipelineState(g_pPipelineState);
+    apCommandLists->SetGraphicsRootSignature(g_pRootSignature);
+    apCommandLists->SetGraphicsRoot32BitConstants(0, 16, &vertex_constant_buffer, 0);
 
     // Setup blend factor
     const float blend_factor[4] = { 0.f, 0.f, 0.f, 0.f };
-    ctx->OMSetBlendFactor(blend_factor);
+    apCommandLists->OMSetBlendFactor(blend_factor);
 }
 
 // Render function
-void ImGui_ImplDX12_RenderDrawData(ImDrawData* draw_data, ID3D12GraphicsCommandList* ctx)
+void ImGui_ImplDX12_RenderDrawData(ImDrawData* apDrawData, ID3D12GraphicsCommandList* apCommandLists)
 {
     // Avoid rendering when minimized
-    if (draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f)
+    if (apDrawData->DisplaySize.x <= 0.0f || apDrawData->DisplaySize.y <= 0.0f)
         return;
 
     // FIXME: I'm assuming that this only gets called once per frame!
@@ -138,10 +138,10 @@ void ImGui_ImplDX12_RenderDrawData(ImDrawData* draw_data, ID3D12GraphicsCommandL
     FrameResources* fr = &g_pFrameResources[g_frameIndex % g_numFramesInFlight];
 
     // Create and grow vertex/index buffers if needed
-    if (fr->VertexBuffer == NULL || fr->VertexBufferSize < draw_data->TotalVtxCount)
+    if (fr->VertexBuffer == NULL || fr->VertexBufferSize < apDrawData->TotalVtxCount)
     {
         SafeRelease(fr->VertexBuffer);
-        fr->VertexBufferSize = draw_data->TotalVtxCount + 5000;
+        fr->VertexBufferSize = apDrawData->TotalVtxCount + 5000;
         D3D12_HEAP_PROPERTIES props;
         memset(&props, 0, sizeof(D3D12_HEAP_PROPERTIES));
         props.Type = D3D12_HEAP_TYPE_UPLOAD;
@@ -161,10 +161,10 @@ void ImGui_ImplDX12_RenderDrawData(ImDrawData* draw_data, ID3D12GraphicsCommandL
         if (g_pd3dDevice->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, IID_PPV_ARGS(&fr->VertexBuffer)) < 0)
             return;
     }
-    if (fr->IndexBuffer == NULL || fr->IndexBufferSize < draw_data->TotalIdxCount)
+    if (fr->IndexBuffer == NULL || fr->IndexBufferSize < apDrawData->TotalIdxCount)
     {
         SafeRelease(fr->IndexBuffer);
-        fr->IndexBufferSize = draw_data->TotalIdxCount + 10000;
+        fr->IndexBufferSize = apDrawData->TotalIdxCount + 10000;
         D3D12_HEAP_PROPERTIES props;
         memset(&props, 0, sizeof(D3D12_HEAP_PROPERTIES));
         props.Type = D3D12_HEAP_TYPE_UPLOAD;
@@ -195,9 +195,9 @@ void ImGui_ImplDX12_RenderDrawData(ImDrawData* draw_data, ID3D12GraphicsCommandL
         return;
     ImDrawVert* vtx_dst = (ImDrawVert*)vtx_resource;
     ImDrawIdx* idx_dst = (ImDrawIdx*)idx_resource;
-    for (int n = 0; n < draw_data->CmdListsCount; n++)
+    for (int n = 0; n < apDrawData->CmdListsCount; n++)
     {
-        const ImDrawList* cmd_list = draw_data->CmdLists[n];
+        const ImDrawList* cmd_list = apDrawData->CmdLists[n];
         memcpy(vtx_dst, cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
         memcpy(idx_dst, cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
         vtx_dst += cmd_list->VtxBuffer.Size;
@@ -207,16 +207,16 @@ void ImGui_ImplDX12_RenderDrawData(ImDrawData* draw_data, ID3D12GraphicsCommandL
     fr->IndexBuffer->Unmap(0, &range);
 
     // Setup desired DX state
-    ImGui_ImplDX12_SetupRenderState(draw_data, ctx, fr);
+    ImGui_ImplDX12_SetupRenderState(apDrawData, apCommandLists, fr);
 
     // Render command lists
     // (Because we merged all buffers into a single one, we maintain our own offset into them)
     int global_vtx_offset = 0;
     int global_idx_offset = 0;
-    ImVec2 clip_off = draw_data->DisplayPos;
-    for (int n = 0; n < draw_data->CmdListsCount; n++)
+    ImVec2 clip_off = apDrawData->DisplayPos;
+    for (int n = 0; n < apDrawData->CmdListsCount; n++)
     {
-        const ImDrawList* cmd_list = draw_data->CmdLists[n];
+        const ImDrawList* cmd_list = apDrawData->CmdLists[n];
         for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
         {
             const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[cmd_i];
@@ -225,7 +225,7 @@ void ImGui_ImplDX12_RenderDrawData(ImDrawData* draw_data, ID3D12GraphicsCommandL
                 // User callback, registered via ImDrawList::AddCallback()
                 // (ImDrawCallback_ResetRenderState is a special callback value used by the user to request the renderer to reset render state.)
                 if (pcmd->UserCallback == ImDrawCallback_ResetRenderState)
-                    ImGui_ImplDX12_SetupRenderState(draw_data, ctx, fr);
+                    ImGui_ImplDX12_SetupRenderState(apDrawData, apCommandLists, fr);
                 else
                     pcmd->UserCallback(cmd_list, pcmd);
             }
@@ -235,9 +235,9 @@ void ImGui_ImplDX12_RenderDrawData(ImDrawData* draw_data, ID3D12GraphicsCommandL
                 const D3D12_RECT r = { (LONG)(pcmd->ClipRect.x - clip_off.x), (LONG)(pcmd->ClipRect.y - clip_off.y), (LONG)(pcmd->ClipRect.z - clip_off.x), (LONG)(pcmd->ClipRect.w - clip_off.y) };
                 if (r.right > r.left && r.bottom > r.top)
                 {
-                    ctx->SetGraphicsRootDescriptorTable(1, *(D3D12_GPU_DESCRIPTOR_HANDLE*)&pcmd->TextureId);
-                    ctx->RSSetScissorRects(1, &r);
-                    ctx->DrawIndexedInstanced(pcmd->ElemCount, 1, pcmd->IdxOffset + global_idx_offset, pcmd->VtxOffset + global_vtx_offset, 0);
+                    apCommandLists->SetGraphicsRootDescriptorTable(1, *(D3D12_GPU_DESCRIPTOR_HANDLE*)&pcmd->TextureId);
+                    apCommandLists->RSSetScissorRects(1, &r);
+                    apCommandLists->DrawIndexedInstanced(pcmd->ElemCount, 1, pcmd->IdxOffset + global_idx_offset, pcmd->VtxOffset + global_vtx_offset, 0);
                 }
             }
         }
@@ -395,7 +395,7 @@ static void ImGui_ImplDX12_CreateFontsTexture()
     io.Fonts->TexID = (ImTextureID)g_hFontSrvGpuDescHandle.ptr;
 }
 
-bool    ImGui_ImplDX12_CreateDeviceObjects()
+bool ImGui_ImplDX12_CreateDeviceObjects()
 {
     if (!g_pd3dDevice)
         return false;
@@ -633,7 +633,7 @@ bool    ImGui_ImplDX12_CreateDeviceObjects()
     return true;
 }
 
-void    ImGui_ImplDX12_InvalidateDeviceObjects()
+void ImGui_ImplDX12_InvalidateDeviceObjects()
 {
     if (!g_pd3dDevice)
         return;
@@ -653,25 +653,25 @@ void    ImGui_ImplDX12_InvalidateDeviceObjects()
     }
 }
 
-bool ImGui_ImplDX12_Init(ID3D12Device* device, int num_frames_in_flight, DXGI_FORMAT rtv_format, ID3D12DescriptorHeap* cbv_srv_heap,
-                         D3D12_CPU_DESCRIPTOR_HANDLE font_srv_cpu_desc_handle, D3D12_GPU_DESCRIPTOR_HANDLE font_srv_gpu_desc_handle)
+bool ImGui_ImplDX12_Init(ID3D12Device* apDevice, int aNumFramesInFlight, DXGI_FORMAT aRTVFormat, ID3D12DescriptorHeap* apSRVHeapDesc,
+                         D3D12_CPU_DESCRIPTOR_HANDLE aFontSRVDescCPU, D3D12_GPU_DESCRIPTOR_HANDLE aFontSRVDescGPU)
 {
     // Setup backend capabilities flags
     ImGuiIO& io = ImGui::GetIO();
     io.BackendRendererName = "imgui_impl_dx12";
     io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;  // We can honor the ImDrawCmd::VtxOffset field, allowing for large meshes.
 
-    g_pd3dDevice = device;
-    g_RTVFormat = rtv_format;
-    g_hFontSrvCpuDescHandle = font_srv_cpu_desc_handle;
-    g_hFontSrvGpuDescHandle = font_srv_gpu_desc_handle;
-    g_pFrameResources = new FrameResources[num_frames_in_flight];
-    g_numFramesInFlight = num_frames_in_flight;
+    g_pd3dDevice = apDevice;
+    g_RTVFormat = aRTVFormat;
+    g_hFontSrvCpuDescHandle = aFontSRVDescCPU;
+    g_hFontSrvGpuDescHandle = aFontSRVDescGPU;
+    g_pFrameResources = new FrameResources[aNumFramesInFlight];
+    g_numFramesInFlight = aNumFramesInFlight;
     g_frameIndex = UINT_MAX;
-    IM_UNUSED(cbv_srv_heap); // Unused in master branch (will be used by multi-viewports)
+    IM_UNUSED(apSRVHeapDesc); // Unused in master branch (will be used by multi-viewports)
 
     // Create buffers with a default size (they will later be grown as needed)
-    for (int i = 0; i < num_frames_in_flight; i++)
+    for (int i = 0; i < aNumFramesInFlight; i++)
     {
         FrameResources* fr = &g_pFrameResources[i];
         fr->IndexBuffer = NULL;

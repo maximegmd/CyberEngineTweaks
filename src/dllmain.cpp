@@ -1,9 +1,12 @@
 #include <stdafx.h>
 
-#include <overlay/Overlay.h>
-
 #include "Image.h"
 #include "Options.h"
+
+#include "d3d12/D3D12.h"
+#include "console/Console.h"
+#include "scripting/LuaVM.h"
+#include "window/Window.h"
 
 #pragma comment( lib, "dbghelp.lib" )
 #pragma comment(linker, "/DLL")
@@ -64,8 +67,14 @@ static void Initialize(HMODULE mod)
 
     OptionsInitHook(&options.GameImage);
 
+    Window::Initialize();
+
+    LuaVM::Initialize();
+
     if(options.Console)
-        Overlay::Initialize(&options.GameImage);
+        Console::Initialize();
+
+    D3D12::Initialize();
 
     MH_EnableHook(MH_ALL_HOOKS);
 
@@ -77,7 +86,7 @@ static void Shutdown()
     if (s_modInstanceMutex)
     {
         if(Options::Get().Console)
-            Overlay::Shutdown();
+            Console::Shutdown();
 
         MH_DisableHook(MH_ALL_HOOKS);
         MH_Uninitialize();
