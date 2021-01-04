@@ -9,23 +9,7 @@
 #include <console/Console.h>
 #include <scripting/LuaVM.h>
 
-
-static BOOL CALLBACK EnumWindowsProcMy(HWND hwnd, LPARAM lParam)
-{
-    DWORD lpdwProcessId;
-    GetWindowThreadProcessId(hwnd, &lpdwProcessId);
-    if (lpdwProcessId == GetCurrentProcessId())
-    {
-        char name[512] = { 0 };
-        GetWindowTextA(hwnd, name, 511);
-        if (strcmp("Cyberpunk 2077 (C) 2020 by CD Projekt RED", name) == 0)
-        {
-            *reinterpret_cast<HWND*>(lParam) = hwnd;
-            return FALSE;
-        }
-    }
-    return TRUE;
-}
+#include "window/Window.h"
 
 bool D3D12::ResetState()
 {
@@ -44,8 +28,7 @@ bool D3D12::ResetState()
     m_pd3dSrvDescHeap = nullptr;
     m_pd3dCommandList = nullptr;
     m_downlevelBufferIndex = 0;
-    m_outWidth = 0;
-    m_outHeight = 0;
+    m_outSize = { 0, 0 };
     // NOTE: not clearing m_hWnd, m_wndProc and m_pCommandQueue, as these should be persistent once set till the EOL of D3D12
     return false;
 }
@@ -75,20 +58,15 @@ bool D3D12::Initialize(IDXGISwapChain* pSwapChain)
         return true;
     };
 
-    // Window hook (repeated till successful, should be on first call)
-    if (m_hWnd == nullptr) 
-    {
-        if (EnumWindows(EnumWindowsProcMy, reinterpret_cast<LPARAM>(&m_hWnd)))
-            spdlog::error("D3D12::Initialize() - window hook failed!");
-        else 
-        {
-            m_wndProc = reinterpret_cast<WNDPROC>(SetWindowLongPtr(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(WndProc)));
-            spdlog::info("D3D12::Initialize() - window hook complete.");
-        }
-    }
-
     if (!pSwapChain)
         return false;
+
+    HWND hWnd = Window::Get().GetWindow();
+    if (!hWnd)
+    {
+        spdlog::warn("D3D12::InitializeDownlevel() - window not yet hooked!");
+        return false;
+    }
 
     if (m_initialized) 
     {
@@ -102,6 +80,13 @@ bool D3D12::Initialize(IDXGISwapChain* pSwapChain)
         {
             spdlog::warn("D3D12::Initialize() - multiple swap chains detected! Currently hooked to {0}, this call was from {1}.", reinterpret_cast<void*>(*(&m_pdxgiSwapChain)), reinterpret_cast<void*>(pSwapChain));
             return false;
+        }
+        {
+            DXGI_SWAP_CHAIN_DESC sdesc;
+            m_pdxgiSwapChain->GetDesc(&sdesc);
+            
+            if (hWnd != sdesc.OutputWindow)
+                spdlog::warn("D3D12::Initialize() - output window of current swap chain does not match hooked window! Currently hooked to {0} while swap chain output window is {1}.", reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(sdesc.OutputWindow));            
         }
         if (!checkCmdQueue(this))
         {
@@ -125,12 +110,11 @@ bool D3D12::Initialize(IDXGISwapChain* pSwapChain)
 
     DXGI_SWAP_CHAIN_DESC sdesc;
     m_pdxgiSwapChain->GetDesc(&sdesc);
+    
+    if (hWnd != sdesc.OutputWindow)
+        spdlog::warn("D3D12::Initialize() - output window of current swap chain does not match hooked window! Currently hooked to {0} while swap chain output window is {1}.", reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(sdesc.OutputWindow));
 
-    if (sdesc.OutputWindow != m_hWnd) 
-        spdlog::warn("D3D12::Initialize() - output window of current swap chain does not match hooked window! Currently hooked to {0} while swap chain output window is {1}.", reinterpret_cast<void*>(m_hWnd), reinterpret_cast<void*>(sdesc.OutputWindow));
-
-    m_outWidth = sdesc.BufferDesc.Width;
-    m_outHeight = sdesc.BufferDesc.Height;
+    m_outSize = { static_cast<LONG>(sdesc.BufferDesc.Width), static_cast<LONG>(sdesc.BufferDesc.Height) };
 
     auto buffersCounts = sdesc.BufferCount;
     m_frameContexts.resize(buffersCounts);
@@ -203,23 +187,23 @@ bool D3D12::Initialize(IDXGISwapChain* pSwapChain)
 
 bool D3D12::InitializeDownlevel(ID3D12CommandQueue* pCommandQueue, ID3D12Resource* pSourceTex2D, HWND hWindow)
 {
-    // Window hook (repeated till successful, should be on first call)
-    if (m_hWnd == nullptr) 
-    {
-        if (EnumWindows(EnumWindowsProcMy, reinterpret_cast<LPARAM>(&m_hWnd)))
-            spdlog::error("D3D12::InitializeDownlevel() - window hook failed!");
-        else 
-        {
-            m_wndProc = reinterpret_cast<WNDPROC>(SetWindowLongPtr(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(WndProc)));
-            spdlog::info("D3D12::InitializeDownlevel() - window hook complete.");
-        }
-    }
-
     if (!pCommandQueue || !pSourceTex2D)
         return false;
 
-    if (m_initialized) 
+    HWND hWnd = Window::Get().GetWindow();
+    if (!hWnd)
+    {
+        spdlog::warn("D3D12::InitializeDownlevel() - window not yet hooked!");
+        return false;
+    }
+
+    if (m_initialized)
+    {
+        if (hWnd != hWindow)
+            spdlog::warn("D3D12::InitializeDownlevel() - current output window does not match hooked window! Currently hooked to {0} while current output window is {1}.", reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(hWindow));
+
         return true;
+    }
 
     auto cmdQueueDesc = pCommandQueue->GetDesc();
     if(cmdQueueDesc.Type != D3D12_COMMAND_LIST_TYPE_DIRECT) 
@@ -229,11 +213,12 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* pCommandQueue, ID3D12Resourc
     }
 
     m_pCommandQueue = pCommandQueue;
-    m_outWidth = static_cast<UINT>(pSourceTex2D->GetDesc().Width);
-    m_outHeight = pSourceTex2D->GetDesc().Height;
 
-    if (hWindow != m_hWnd) 
-        spdlog::warn("D3D12::InitializeDownlevel() - current output window does not match hooked window! Currently hooked to {0} while current output window is {1}.", reinterpret_cast<void*>(m_hWnd), reinterpret_cast<void*>(hWindow));
+    auto st2DDesc = pSourceTex2D->GetDesc();
+    m_outSize = { static_cast<LONG>(st2DDesc.Width), static_cast<LONG>(st2DDesc.Height) };
+    
+    if (hWnd != hWindow)
+        spdlog::warn("D3D12::InitializeDownlevel() - current output window does not match hooked window! Currently hooked to {0} while current output window is {1}.", reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(hWindow));
 
     if (FAILED(pSourceTex2D->GetDevice(IID_PPV_ARGS(&m_pd3d12Device))))
     {
@@ -329,8 +314,8 @@ bool D3D12::InitializeImGui(size_t buffersCounts)
     ImGui::StyleColorsDark();
     io.Fonts->AddFontDefault();
     io.IniFilename = NULL;
-
-    if (!ImGui_ImplWin32_Init(m_hWnd)) 
+    
+    if (!ImGui_ImplWin32_Init(Window::Get().GetWindow())) 
     {
         spdlog::error("D3D12::InitializeImGui() - ImGui_ImplWin32_Init call failed!");
         ImGui::DestroyContext();
@@ -363,7 +348,7 @@ bool D3D12::InitializeImGui(size_t buffersCounts)
 void D3D12::Update()
 {
     ImGui_ImplDX12_NewFrame();
-    ImGui_ImplWin32_NewFrame(m_outWidth, m_outHeight);
+    ImGui_ImplWin32_NewFrame(m_outSize);
     ImGui::NewFrame();
 
     // TODO: better deltaTime! now, we abuse ImGui's IO here...

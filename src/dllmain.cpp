@@ -6,6 +6,7 @@
 #include "d3d12/D3D12.h"
 #include "console/Console.h"
 #include "scripting/LuaVM.h"
+#include "window/Window.h"
 
 #pragma comment( lib, "dbghelp.lib" )
 #pragma comment(linker, "/DLL")
@@ -70,7 +71,9 @@ static void Initialize(HMODULE mod)
         DisableBoundaryTeleportPatch(&options.GameImage);
 
     OptionsInitHook(&options.GameImage);
-    
+
+    Window::Initialize();
+
     LuaVM::Initialize();
 
     if(options.Console)

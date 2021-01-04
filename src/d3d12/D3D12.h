@@ -19,7 +19,11 @@ struct D3D12
 	void PassInputToImGui(bool enabled) { m_passInputToImGui = enabled; }
 	void CatchInputInImGui(bool enabled) { m_catchInputInImGui = enabled; }
 	
-	SIZE GetResolution() const { return { static_cast<LONG>(m_outWidth), static_cast<LONG>(m_outHeight) }; }
+	SIZE GetResolution() const { return m_outSize; }
+
+	LRESULT OnWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+	bool IsInitialized() const { return m_initialized; }
 
 protected:
 	
@@ -45,8 +49,7 @@ protected:
 	static HRESULT PresentDownlevel(ID3D12CommandQueueDownlevel* pCommandQueueDownlevel, ID3D12GraphicsCommandList* pOpenCommandList, ID3D12Resource* pSourceTex2D, HWND hWindow, D3D12_DOWNLEVEL_PRESENT_FLAGS Flags);
 	static HRESULT CreateCommittedResource(ID3D12Device* pDevice, const D3D12_HEAP_PROPERTIES* pHeapProperties, D3D12_HEAP_FLAGS HeapFlags, const D3D12_RESOURCE_DESC* pDesc, D3D12_RESOURCE_STATES InitialResourceState, const D3D12_CLEAR_VALUE* pOptimizedClearValue, const IID* riidResource, void** ppvResource);
 	static void ExecuteCommandLists(ID3D12CommandQueue* pCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists);
-	static LRESULT APIENTRY WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
+	
 private:
 
 	D3D12();
@@ -68,12 +71,8 @@ private:
 	CComPtr<ID3D12GraphicsCommandList> m_pd3dCommandList;
 	CComPtr<ID3D12CommandQueue> m_pCommandQueue;
 	uint32_t m_downlevelBufferIndex;
-
-	HWND m_hWnd{ nullptr };
-	WNDPROC	m_wndProc{ nullptr };
-
-	UINT m_outWidth{ 0 };
-	UINT m_outHeight{ 0 };
+	
+	SIZE m_outSize{ };
 	
 	bool m_passInputToImGui{ false };
 	bool m_catchInputInImGui{ false };

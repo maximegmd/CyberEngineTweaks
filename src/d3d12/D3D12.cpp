@@ -2,13 +2,9 @@
 
 #include "D3D12.h"
 
-#include <Options.h>
-
 #include <kiero/kiero.h>
 #include <imgui_impl/dx12.h>
 #include <imgui_impl/win32.h>
-
-#include <console/Console.h>
 
 static std::unique_ptr<D3D12> s_pD3D12;
 
@@ -44,18 +40,11 @@ D3D12& D3D12::Get()
     return *s_pD3D12;
 }
 
-LRESULT APIENTRY D3D12::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT D3D12::OnWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     auto& d3d12 = Get();
-    if (d3d12.m_initialized)
+    if (d3d12.IsInitialized())
     {
-        if (Options::Get().Console)
-        {
-            auto res = Console::Get().OnWndProc(hWnd, uMsg, wParam, lParam);
-            if (res)
-                return 0; // Console wants this input ignored!
-        }
-
         if (d3d12.m_passInputToImGui)
         {
             auto res = ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);
@@ -67,28 +56,25 @@ LRESULT APIENTRY D3D12::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
                 // ignore mouse & keyboard events
                 if ((uMsg >= WM_MOUSEFIRST && uMsg <= WM_MOUSELAST) ||
                     (uMsg >= WM_KEYFIRST && uMsg <= WM_KEYLAST))
-                    return 0;
+                    return 1;
 
                 // ignore specific messages
                 switch (uMsg)
                 {
                     case WM_INPUT:
-                        return 0;
+                        return 1;
                 }
             }
         }
     }
     
-    return CallWindowProc(d3d12.m_wndProc, hWnd, uMsg, wParam, lParam);
+    return 0;
 }
 
 D3D12::D3D12() = default;
 
 D3D12::~D3D12() 
 {
-    if (m_hWnd != nullptr)
-        SetWindowLongPtr(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(m_wndProc));
-
     if (m_initialized) 
     {
         ImGui_ImplDX12_Shutdown();

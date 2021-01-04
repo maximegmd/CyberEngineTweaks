@@ -42,7 +42,9 @@ void LuaVM::HookLog(REDScriptContext*, ScriptStack* pStack, void*, void*)
     if (Options::Get().Console)
         Console::Get().GameLog(text.c_str());
 
-    Get().PostInitialize();
+    //auto& luavm = Get();
+    //if (!luavm.IsInitialized())
+    //    luavm.PostInitialize();
 }
 
 static const char* GetChannelStr(uint64_t hash)
@@ -97,8 +99,10 @@ void LuaVM::HookLogChannel(REDScriptContext*, ScriptStack* pStack, void*, void*)
     if (Options::Get().Console)
         Console::Get().GameLog("[" + channel + "] " +text.c_str());
     
-
-    Get().PostInitialize();
+    
+    auto& luavm = Get();
+    if (!luavm.IsInitialized())
+        luavm.PostInitialize();
 }
 
 static std::string GetTDBDIDDebugString(TDBID tdbid)

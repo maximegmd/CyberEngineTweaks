@@ -30,6 +30,7 @@ struct LuaVM
 	static LuaVM& Get();
 	
   bool ExecuteLua(const std::string& command);
+	bool IsInitialized() const { return m_initialized; }
 
 	~LuaVM();
 	
