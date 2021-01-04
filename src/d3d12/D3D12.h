@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common/D3D12Downlevel.h"
+#include "window/Window.h"
 
 using TResizeBuffersD3D12 = HRESULT(IDXGISwapChain*, UINT, UINT, UINT, DXGI_FORMAT, UINT);
 using TPresentD3D12 = HRESULT(IDXGISwapChain*, UINT, UINT);
@@ -16,8 +17,27 @@ struct D3D12
 
     ~D3D12();
     
-    void PassInputToImGui(bool aEnabled) { m_passInputToImGui = aEnabled; }
-    void CatchInputInImGui(bool aEnabled) { m_catchInputInImGui = aEnabled; }
+    void TrapInputInImGui(bool aEnabled)
+    {
+        int showCursorState;
+        if (aEnabled)
+            do { showCursorState = ShowCursor(TRUE); } while (showCursorState < 0);
+        else
+            do { showCursorState = ShowCursor(FALSE); } while (showCursorState >= 0);
+
+        /*
+        // TODO: this does not seem to help cursor not showing when this is called from inside LuaVM 
+        if (m_trapInputInImGui != aEnabled)
+        {
+            static auto cursor = LoadCursor(nullptr, IDC_ARROW);
+            HCURSOR newCursor = (aEnabled) ? (cursor) : (nullptr);
+            SetClassLongPtr(Window::Get().GetWindow(), GCLP_HCURSOR, reinterpret_cast<LONG_PTR>(newCursor));
+            SetCursor(newCursor);
+        }
+        */
+
+        m_trapInputInImGui = aEnabled;
+    }
     
     SIZE GetResolution() const { return m_outSize; }
 
@@ -74,6 +94,5 @@ private:
     
     SIZE m_outSize{ };
     
-    bool m_passInputToImGui{ false };
-    bool m_catchInputInImGui{ false };
+    bool m_trapInputInImGui{ false };
 };

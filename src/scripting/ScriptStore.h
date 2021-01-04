@@ -8,9 +8,10 @@ struct ScriptStore
     ~ScriptStore();
 
     void LoadAll(sol::state_view aStateView);
-
-    void TriggerOnUpdate(float aDeltaTime) const;
+    
     void TriggerOnInit() const;
+    void TriggerOnUpdate(float aDeltaTime) const;
+    void TriggerOnDraw() const;
 
     sol::object Get(const std::string& acName) const;
 

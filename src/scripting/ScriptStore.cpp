@@ -43,16 +43,22 @@ void ScriptStore::LoadAll(sol::state_view aStateView)
     }
 }
 
+void ScriptStore::TriggerOnInit() const
+{
+    for (const auto& kvp : m_contexts)
+        kvp.second.TriggerOnInit();
+}
+
 void ScriptStore::TriggerOnUpdate(float aDeltaTime) const
 {
     for (const auto& kvp : m_contexts)
         kvp.second.TriggerOnUpdate(aDeltaTime);
 }
 
-void ScriptStore::TriggerOnInit() const
+void ScriptStore::TriggerOnDraw() const
 {
     for (const auto& kvp : m_contexts)
-        kvp.second.TriggerOnInit();
+        kvp.second.TriggerOnDraw();
 }
 
 sol::object ScriptStore::Get(const std::string& acName) const
