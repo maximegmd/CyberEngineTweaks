@@ -354,8 +354,7 @@ void D3D12::Update()
     // TODO: better deltaTime! now, we abuse ImGui's IO here...
     LuaVM::Get().Update(ImGui::GetIO().DeltaTime);
     
-    if (Options::Get().Console)
-        Console::Get().Update();
+    Console::Get().Update();
 
     const auto bufferIndex = (m_pdxgiSwapChain != nullptr) ? (m_pdxgiSwapChain->GetCurrentBackBufferIndex()) : (m_downlevelBufferIndex);
     auto& frameContext = m_frameContexts[bufferIndex];

@@ -32,6 +32,9 @@ Console& Console::Get()
 
 void Console::Update()
 {
+    if (this == nullptr)
+        return;
+
     if (!IsEnabled())
         return;
 
@@ -107,7 +110,8 @@ void Console::Update()
         {
             Log(std::string("> ") + command);
             
-            LuaVM::Get().ExecuteLua(command);
+            if (!LuaVM::Get().ExecuteLua(command))
+                Log("Command failed to execute!");
 
             if (m_inputClear)
                 std::memset(command, 0, sizeof(command));
@@ -148,6 +152,9 @@ bool Console::IsEnabled() const
 
 void Console::Log(const std::string& pText)
 {
+    if (this == nullptr)
+        return;
+
     std::lock_guard<std::recursive_mutex> _{ m_outputLock };
     std::istringstream lines(pText);
     std::string line;
@@ -161,6 +168,9 @@ void Console::Log(const std::string& pText)
 
 LRESULT Console::OnWndProc(HWND, UINT uMsg, WPARAM wParam, LPARAM)
 {
+    if (this == nullptr)
+        return 0;
+
     auto& options = Options::Get();
     if (uMsg == WM_KEYDOWN && wParam == options.ConsoleKey)
     {

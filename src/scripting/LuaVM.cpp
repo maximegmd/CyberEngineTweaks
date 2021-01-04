@@ -41,8 +41,9 @@ bool LuaVM::ExecuteLua(const std::string& command)
 {
     if (!m_initialized)
     {
-        if (Options::Get().Console)
-            Console::Get().Log("Command not executed! LuaVM is not yet initialized!");
+        Console::Get().Log("Command not executed! LuaVM is not yet initialized!");
+
+        return false;
     }
 
     return Scripting::Get().ExecuteLua(command);

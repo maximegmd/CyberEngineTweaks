@@ -76,7 +76,6 @@ LRESULT APIENTRY Window::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
         window.m_clientSize = { cr.right - cr.left, cr.bottom - cr.top };
     }
 
-    if (Options::Get().Console)
     {
         auto res = Console::Get().OnWndProc(hWnd, uMsg, wParam, lParam);
         if (res)
