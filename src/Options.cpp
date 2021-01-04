@@ -90,7 +90,6 @@ Options::Options(HMODULE aModule)
     if(configFile)
     {
         auto config = nlohmann::json::parse(configFile);
-        this->PatchAVX = config.value("avx", this->PatchAVX);
         this->PatchSMT = config.value("smt", this->PatchSMT);
         this->PatchVirtualInput = config.value("virtual_input", this->PatchVirtualInput);
         this->PatchEnableDebug = config.value("enable_debug", this->PatchEnableDebug);
@@ -117,7 +116,6 @@ Options::Options(HMODULE aModule)
     configFile.close();
 
     nlohmann::json config;
-    config["avx"] = this->PatchAVX;
     config["smt"] = this->PatchSMT;
     config["virtual_input"] = this->PatchVirtualInput;
     config["enable_debug"] = this->PatchEnableDebug;

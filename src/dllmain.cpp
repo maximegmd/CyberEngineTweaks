@@ -11,7 +11,6 @@
 void EnableDebugPatch(Image* apImage);
 void VirtualInputPatch(Image* apImage);
 void SmtAmdPatch(Image* apImage);
-void PatchAvx(Image* apImage);
 void StartScreenPatch(Image* apImage);
 void RemovePedsPatch(Image* apImage);
 void OptionsPatch(Image* apImage);
@@ -38,9 +37,6 @@ static void Initialize(HMODULE mod)
 
     if(options.PatchSMT)
         SmtAmdPatch(&options.GameImage);
-
-    if (options.PatchAVX && options.GameImage.version <= Image::MakeVersion(1, 4))
-        PatchAvx(&options.GameImage);
 
     if (options.PatchVirtualInput)
         VirtualInputPatch(&options.GameImage);

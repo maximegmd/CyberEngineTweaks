@@ -10,7 +10,6 @@ struct Options
 	bool IsCyberpunk2077() const noexcept;
 
 	bool PatchSMT{ false };
-	bool PatchAVX{ true };
 	bool PatchVirtualInput{ true };
 	bool PatchEnableDebug{ false };
 	bool PatchRemovePedestrians{ false };
