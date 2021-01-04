@@ -42,13 +42,13 @@
 //  2016-11-12: Inputs: Only call Win32 ::SetCursor(NULL) when io.MouseDrawCursor is set.
 
 // Win32 Data
-static HWND                 g_hWnd = NULL;
-static INT64                g_Time = 0;
-static INT64                g_TicksPerSecond = 0;
-static ImGuiMouseCursor     g_LastMouseCursor = ImGuiMouseCursor_COUNT;
+static HWND             g_hWnd = NULL;
+static INT64            g_Time = 0;
+static INT64            g_TicksPerSecond = 0;
+static ImGuiMouseCursor g_LastMouseCursor = ImGuiMouseCursor_COUNT;
 
 // Functions
-bool    ImGui_ImplWin32_Init(void* hwnd)
+bool ImGui_ImplWin32_Init(HWND ahWnd)
 {
     if (!::QueryPerformanceFrequency((LARGE_INTEGER*)&g_TicksPerSecond))
         return false;
@@ -56,12 +56,12 @@ bool    ImGui_ImplWin32_Init(void* hwnd)
         return false;
 
     // Setup backend capabilities flags
-    g_hWnd = (HWND)hwnd;
+    g_hWnd = ahWnd;
     ImGuiIO& io = ImGui::GetIO();
     io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;         // We can honor GetMouseCursor() values (optional)
     io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;          // We can honor io.WantSetMousePos requests (optional, rarely used)
     io.BackendPlatformName = "imgui_impl_win32";
-    io.ImeWindowHandle = hwnd;
+    io.ImeWindowHandle = ahWnd;
 
     // Keyboard mapping. ImGui will use those indices to peek into the io.KeysDown[] array that we will update during the application lifetime.
     io.KeyMap[ImGuiKey_Tab] = VK_TAB;
@@ -90,7 +90,7 @@ bool    ImGui_ImplWin32_Init(void* hwnd)
     return true;
 }
 
-void    ImGui_ImplWin32_Shutdown()
+void ImGui_ImplWin32_Shutdown()
 {
     g_hWnd = (HWND)0;
 }
@@ -128,7 +128,7 @@ static bool ImGui_ImplWin32_UpdateMouseCursor()
     return true;
 }
 
-static void ImGui_ImplWin32_UpdateMousePos(SIZE OutSize)
+static void ImGui_ImplWin32_UpdateMousePos(SIZE aOutSize)
 {
     ImGuiIO& io = ImGui::GetIO();
 
@@ -146,7 +146,7 @@ static void ImGui_ImplWin32_UpdateMousePos(SIZE OutSize)
     if (HWND active_window = ::GetForegroundWindow())
         if (active_window == g_hWnd || ::IsChild(active_window, g_hWnd))
             if (::GetCursorPos(&pos) && ::ScreenToClient(g_hWnd, &pos))
-                if (!OutSize.cx || !OutSize.cy)
+                if (!aOutSize.cx || !aOutSize.cy)
                     io.MousePos = ImVec2((float)pos.x, (float)pos.y);
                 else 
                 {
@@ -154,13 +154,13 @@ static void ImGui_ImplWin32_UpdateMousePos(SIZE OutSize)
                     ::GetClientRect(g_hWnd, &clientRect);
 
                     // scale, just to make sure coords are correct (fixes issues in fullscreen)
-                    auto xScale = static_cast<float>(OutSize.cx) / (clientRect.right - clientRect.left);
-                    auto yScale = static_cast<float>(OutSize.cy) / (clientRect.bottom - clientRect.top);
+                    auto xScale = static_cast<float>(aOutSize.cx) / (clientRect.right - clientRect.left);
+                    auto yScale = static_cast<float>(aOutSize.cy) / (clientRect.bottom - clientRect.top);
                     io.MousePos = ImVec2(pos.x * xScale, pos.y * yScale);
                 }
 }
 
-void    ImGui_ImplWin32_NewFrame(SIZE OutSize)
+void ImGui_ImplWin32_NewFrame(SIZE aOutSize)
 {
     ImGuiIO& io = ImGui::GetIO();
     IM_ASSERT(io.Fonts->IsBuilt() && "Font atlas not built! It is generally built by the renderer backend. Missing call to renderer _NewFrame() function? e.g. ImGui_ImplOpenGL3_NewFrame().");
@@ -184,7 +184,7 @@ void    ImGui_ImplWin32_NewFrame(SIZE OutSize)
     // io.KeysDown[], io.MousePos, io.MouseDown[], io.MouseWheel: filled by the WndProc handler below.
 
     // Update OS mouse position
-    ImGui_ImplWin32_UpdateMousePos(OutSize);
+    ImGui_ImplWin32_UpdateMousePos(aOutSize);
 
     // Update OS mouse cursor with the cursor requested by imgui
     ImGuiMouseCursor mouse_cursor = io.MouseDrawCursor ? ImGuiMouseCursor_None : ImGui::GetMouseCursor();
@@ -203,13 +203,13 @@ void    ImGui_ImplWin32_NewFrame(SIZE OutSize)
 // Generally you may always pass all inputs to Dear ImGui, and hide them from your application based on those two flags.
 // PS: In this Win32 handler, we use the capture API (GetCapture/SetCapture/ReleaseCapture) to be able to read mouse coordinates when dragging mouse outside of our window bounds.
 // PS: We treat DBLCLK messages as regular mouse down messages, so this code will work on windows classes that have the CS_DBLCLKS flag set. Our own example app code doesn't set this flag.
-IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam)
 {
     if (ImGui::GetCurrentContext() == NULL)
         return 0;
 
     ImGuiIO& io = ImGui::GetIO();
-    switch (msg)
+    switch (auMsg)
     {
     case WM_LBUTTONDOWN: case WM_LBUTTONDBLCLK:
     case WM_RBUTTONDOWN: case WM_RBUTTONDBLCLK:
@@ -217,12 +217,12 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARA
     case WM_XBUTTONDOWN: case WM_XBUTTONDBLCLK:
     {
         int button = 0;
-        if (msg == WM_LBUTTONDOWN || msg == WM_LBUTTONDBLCLK) { button = 0; }
-        if (msg == WM_RBUTTONDOWN || msg == WM_RBUTTONDBLCLK) { button = 1; }
-        if (msg == WM_MBUTTONDOWN || msg == WM_MBUTTONDBLCLK) { button = 2; }
-        if (msg == WM_XBUTTONDOWN || msg == WM_XBUTTONDBLCLK) { button = (GET_XBUTTON_WPARAM(wParam) == XBUTTON1) ? 3 : 4; }
+        if (auMsg == WM_LBUTTONDOWN || auMsg == WM_LBUTTONDBLCLK) { button = 0; }
+        if (auMsg == WM_RBUTTONDOWN || auMsg == WM_RBUTTONDBLCLK) { button = 1; }
+        if (auMsg == WM_MBUTTONDOWN || auMsg == WM_MBUTTONDBLCLK) { button = 2; }
+        if (auMsg == WM_XBUTTONDOWN || auMsg == WM_XBUTTONDBLCLK) { button = (GET_XBUTTON_WPARAM(awParam) == XBUTTON1) ? 3 : 4; }
         if (!ImGui::IsAnyMouseDown() && ::GetCapture() == NULL)
-            ::SetCapture(hwnd);
+            ::SetCapture(ahWnd);
         io.MouseDown[button] = true;
         return 0;
     }
@@ -232,38 +232,38 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARA
     case WM_XBUTTONUP:
     {
         int button = 0;
-        if (msg == WM_LBUTTONUP) { button = 0; }
-        if (msg == WM_RBUTTONUP) { button = 1; }
-        if (msg == WM_MBUTTONUP) { button = 2; }
-        if (msg == WM_XBUTTONUP) { button = (GET_XBUTTON_WPARAM(wParam) == XBUTTON1) ? 3 : 4; }
+        if (auMsg == WM_LBUTTONUP) { button = 0; }
+        if (auMsg == WM_RBUTTONUP) { button = 1; }
+        if (auMsg == WM_MBUTTONUP) { button = 2; }
+        if (auMsg == WM_XBUTTONUP) { button = (GET_XBUTTON_WPARAM(awParam) == XBUTTON1) ? 3 : 4; }
         io.MouseDown[button] = false;
-        if (!ImGui::IsAnyMouseDown() && ::GetCapture() == hwnd)
+        if (!ImGui::IsAnyMouseDown() && ::GetCapture() == ahWnd)
             ::ReleaseCapture();
         return 0;
     }
     case WM_MOUSEWHEEL:
-        io.MouseWheel += (float)GET_WHEEL_DELTA_WPARAM(wParam) / (float)WHEEL_DELTA;
+        io.MouseWheel += (float)GET_WHEEL_DELTA_WPARAM(awParam) / (float)WHEEL_DELTA;
         return 0;
     case WM_MOUSEHWHEEL:
-        io.MouseWheelH += (float)GET_WHEEL_DELTA_WPARAM(wParam) / (float)WHEEL_DELTA;
+        io.MouseWheelH += (float)GET_WHEEL_DELTA_WPARAM(awParam) / (float)WHEEL_DELTA;
         return 0;
     case WM_KEYDOWN:
     case WM_SYSKEYDOWN:
-        if (wParam < 256)
-            io.KeysDown[wParam] = 1;
+        if (awParam < 256)
+            io.KeysDown[awParam] = 1;
         return 0;
     case WM_KEYUP:
     case WM_SYSKEYUP:
-        if (wParam < 256)
-            io.KeysDown[wParam] = 0;
+        if (awParam < 256)
+            io.KeysDown[awParam] = 0;
         return 0;
     case WM_CHAR:
         // You can also use ToAscii()+GetKeyboardState() to retrieve characters.
-        if (wParam > 0 && wParam < 0x10000)
-            io.AddInputCharacterUTF16((unsigned short)wParam);
+        if (awParam > 0 && awParam < 0x10000)
+            io.AddInputCharacterUTF16((unsigned short)awParam);
         return 0;
     case WM_SETCURSOR:
-        if (LOWORD(lParam) == HTCLIENT && ImGui_ImplWin32_UpdateMouseCursor())
+        if (LOWORD(alParam) == HTCLIENT && ImGui_ImplWin32_UpdateMouseCursor())
             return 1;
         return 0;
     }
@@ -287,9 +287,9 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARA
 
 // Implement some of the functions and types normally declared in recent Windows SDK.
 #if !defined(_versionhelpers_H_INCLUDED_) && !defined(_INC_VERSIONHELPERS)
-static BOOL IsWindowsVersionOrGreater(WORD major, WORD minor, WORD sp)
+static BOOL IsWindowsVersionOrGreater(WORD aMajor, WORD aMinor, WORD aSP)
 {
-    OSVERSIONINFOEXW osvi = { sizeof(osvi), major, minor, 0, 0, { 0 }, sp, 0, 0, 0, 0 };
+    OSVERSIONINFOEXW osvi = { sizeof(osvi), aMajor, aMinor, 0, 0, { 0 }, aSP, 0, 0, 0, 0 };
     DWORD mask = VER_MAJORVERSION | VER_MINORVERSION | VER_SERVICEPACKMAJOR;
     ULONGLONG cond = ::VerSetConditionMask(0, VER_MAJORVERSION, VER_GREATER_EQUAL);
     cond = ::VerSetConditionMask(cond, VER_MINORVERSION, VER_GREATER_EQUAL);
@@ -344,7 +344,7 @@ void ImGui_ImplWin32_EnableDpiAwareness()
 #pragma comment(lib, "gdi32")   // Link with gdi32.lib for GetDeviceCaps()
 #endif
 
-float ImGui_ImplWin32_GetDpiScaleForMonitor(void* monitor)
+float ImGui_ImplWin32_GetDpiScaleForMonitor(HMONITOR ahMonitor)
 {
     UINT xdpi = 96, ydpi = 96;
     static BOOL bIsWindows8Point1OrGreater = IsWindows8Point1OrGreater();
@@ -352,7 +352,7 @@ float ImGui_ImplWin32_GetDpiScaleForMonitor(void* monitor)
     {
         static HINSTANCE shcore_dll = ::LoadLibraryA("shcore.dll"); // Reference counted per-process
         if (PFN_GetDpiForMonitor GetDpiForMonitorFn = (PFN_GetDpiForMonitor)::GetProcAddress(shcore_dll, "GetDpiForMonitor"))
-            GetDpiForMonitorFn((HMONITOR)monitor, MDT_EFFECTIVE_DPI, &xdpi, &ydpi);
+            GetDpiForMonitorFn(ahMonitor, MDT_EFFECTIVE_DPI, &xdpi, &ydpi);
     }
 #ifndef NOGDI
     else
@@ -367,9 +367,9 @@ float ImGui_ImplWin32_GetDpiScaleForMonitor(void* monitor)
     return xdpi / 96.0f;
 }
 
-float ImGui_ImplWin32_GetDpiScaleForHwnd(void* hwnd)
+float ImGui_ImplWin32_GetDpiScaleForHwnd(HWND ahWnd)
 {
-    HMONITOR monitor = ::MonitorFromWindow((HWND)hwnd, MONITOR_DEFAULTTONEAREST);
+    HMONITOR monitor = ::MonitorFromWindow(ahWnd, MONITOR_DEFAULTTONEAREST);
     return ImGui_ImplWin32_GetDpiScaleForMonitor(monitor);
 }
 

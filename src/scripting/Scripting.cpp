@@ -34,11 +34,11 @@ const ScriptStore& Scripting::GetStore() const
     return m_store;
 }
 
-bool Scripting::ExecuteLua(const std::string& aCommand)
+bool Scripting::ExecuteLua(const std::string& acCommand)
 {
     try
     {
-        m_lua.script(aCommand);
+        m_lua.script(acCommand);
     }
     catch(std::exception& e)
     {

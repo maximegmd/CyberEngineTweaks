@@ -38,7 +38,7 @@ void LuaVM::Update(float aDeltaTime)
     Scripting::Get().GetStore().TriggerOnUpdate(aDeltaTime);
 }
 
-bool LuaVM::ExecuteLua(const std::string& aCommand)
+bool LuaVM::ExecuteLua(const std::string& acCommand)
 {
     if (!m_initialized)
     {
@@ -46,7 +46,7 @@ bool LuaVM::ExecuteLua(const std::string& aCommand)
         return false;
     }
 
-    return Scripting::Get().ExecuteLua(aCommand);
+    return Scripting::Get().ExecuteLua(acCommand);
 }
 
 void LuaVM::PostInitialize()

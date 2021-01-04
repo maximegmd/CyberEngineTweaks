@@ -11,7 +11,7 @@ struct Scripting
 
     const ScriptStore& GetStore() const;
 	
-    bool ExecuteLua(const std::string& aCommand);
+    bool ExecuteLua(const std::string& acCommand);
 
 	static size_t Size(RED4ext::IRTTIType* apRtti);
 	static sol::object ToLua(sol::state_view aState, RED4ext::CStackType& aResult);

@@ -29,7 +29,7 @@ struct LuaVM
 	static void Shutdown();
 	static LuaVM& Get();
 	
-  bool ExecuteLua(const std::string& command);
+  bool ExecuteLua(const std::string& acCommand);
 	bool IsInitialized() const { return m_initialized; }
 
 	~LuaVM();
@@ -49,7 +49,7 @@ protected:
 	static TDBID* HookTDBIDCtorUnknown(TDBID* apThis, uint64_t apName);
 	static void HookTDBIDToStringDEBUG(REDScriptContext*, ScriptStack* apStack, void* apResult, void*);
 
-	void RegisterTDBIDString(uint64_t aValue, uint64_t aBase, const std::string& aString);
+	void RegisterTDBIDString(uint64_t aValue, uint64_t aBase, const std::string& acString);
 	std::string GetTDBIDString(uint64_t aValue);
 
 private:
