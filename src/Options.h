@@ -19,6 +19,7 @@ struct Options
     bool PatchDisableIntroMovies{ false };
     bool PatchDisableVignette{ false };
     bool PatchDisableBoundaryTeleport{ false };
+    bool PatchDisableWin7Vsync{ false };
 
     bool DumpGameOptions{ false };
     bool Console{ true };

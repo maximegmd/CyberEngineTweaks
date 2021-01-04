@@ -19,6 +19,7 @@ Works with 1.06.
 | Remove pedestrians and traffic | Removes most of the pedestrians and traffic |
 | Disable Async Compute | Disables async compute, this can give a boost on older GPUs (Nvidia 10xx series for example)|
 | Disable Antialiasing TAA | Disables antialiasing, not recommended but you do what you want! |
+| Disable Windows 7 VSync | Disables VSync on Windows 7 to bypass the 60 FPS limit |
 | Console | Adds an overlay to draw a console so you can write any kind of script command (full Lua support) |
 
 ### Upcoming
