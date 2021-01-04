@@ -447,6 +447,7 @@ void Scripting::Initialize()
             std::string str = s["tostring"]((*it).get<sol::object>());
             oss << str;
         }
+        spdlog::info(oss.str());
         Console::Get().Log(oss.str());
     };
 
