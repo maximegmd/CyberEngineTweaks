@@ -465,6 +465,9 @@ void Scripting::Initialize()
         Console::Get().Log("WARNING: missing CET autoexec.lua!");
         spdlog::warn("Scripting::Initialize() - missing CET autoexec.lua!");
     }
+
+    // set current path for following scripts to out ScriptsPath
+    std::filesystem::current_path(Options::Get().ScriptsPath);
 }
 
 sol::object Scripting::Index(const std::string& acName)
