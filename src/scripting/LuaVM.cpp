@@ -2,8 +2,6 @@
 
 #include "LuaVM.h"
 
-#include <Image.h>
-#include <Options.h>
 #include <scripting/Scripting.h>
 
 #include "console/Console.h"
@@ -31,6 +29,9 @@ LuaVM& LuaVM::Get()
 
 void LuaVM::Update(float aDeltaTime)
 {
+    if (!m_initialized && m_logCount.load(std::memory_order_relaxed) > 0)
+        PostInitialize();
+
     if (!m_initialized)
         return;
 
@@ -42,7 +43,6 @@ bool LuaVM::ExecuteLua(const std::string& aCommand)
     if (!m_initialized)
     {
         Console::Get().Log("Command not executed! LuaVM is not yet initialized!");
-
         return false;
     }
 

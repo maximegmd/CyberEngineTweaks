@@ -67,6 +67,8 @@ private:
 	TTDBIDCtorUnknown* m_realTDBIDCtorUnknown{ nullptr };
 	TSomeStringLookup* m_someStringLookup{ nullptr };
 	TScriptCall* m_realTDBIDToStringDEBUG{ nullptr };
+
+	std::atomic<uint64_t> m_logCount{ 0 };
 	
 	bool m_initialized{ false };
 };

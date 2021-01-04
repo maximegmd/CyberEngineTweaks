@@ -1,9 +1,7 @@
 #include <stdafx.h>
 
 #include "LuaVM.h"
-#include "Scripting.h"
 
-#include <Image.h>
 #include <Pattern.h>
 
 #include <console/Console.h>
@@ -41,10 +39,6 @@ void LuaVM::HookLog(REDScriptContext* apContext, ScriptStack* apStack, void*, vo
     
     if (Options::Get().Console)
         Console::Get().GameLog(text.c_str());
-
-    //auto& luavm = Get();
-    //if (!luavm.IsInitialized())
-    //    luavm.PostInitialize();
 }
 
 static const char* GetChannelStr(uint64_t hash)
@@ -99,10 +93,7 @@ void LuaVM::HookLogChannel(REDScriptContext*, ScriptStack* apStack, void*, void*
     if (Options::Get().Console)
         Console::Get().GameLog("[" + channel + "] " +text.c_str());
     
-    
-    auto& luavm = Get();
-    if (!luavm.IsInitialized())
-        luavm.PostInitialize();
+    Get().m_logCount.fetch_add(1);
 }
 
 static std::string GetTDBDIDDebugString(TDBID tdbid)
