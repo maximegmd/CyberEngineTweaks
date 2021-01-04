@@ -9,17 +9,17 @@
 
 using namespace std::chrono_literals;
 
-static BOOL CALLBACK EnumWindowsProcCP77(HWND hwnd, LPARAM lParam)
+static BOOL CALLBACK EnumWindowsProcCP77(HWND ahWnd, LPARAM alParam)
 {
     DWORD lpdwProcessId;
-    GetWindowThreadProcessId(hwnd, &lpdwProcessId);
+    GetWindowThreadProcessId(ahWnd, &lpdwProcessId);
     if (lpdwProcessId == GetCurrentProcessId())
     {
         char name[512] = { 0 };
-        GetWindowTextA(hwnd, name, 511);
+        GetWindowTextA(ahWnd, name, 511);
         if (strcmp("Cyberpunk 2077 (C) 2020 by CD Projekt RED", name) == 0)
         {
-            *reinterpret_cast<HWND*>(lParam) = hwnd;
+            *reinterpret_cast<HWND*>(alParam) = ahWnd;
             return FALSE;
         }
     }
@@ -61,34 +61,34 @@ Window& Window::Get()
     return *s_pWindow;
 }
 
-LRESULT APIENTRY Window::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT APIENTRY Window::WndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam)
 {
     auto& window = Get();
-    if (uMsg == WM_WINDOWPOSCHANGED)
+    if (auMsg == WM_WINDOWPOSCHANGED)
     {
-        auto* wp = reinterpret_cast<WINDOWPOS*>(lParam);
+        auto* wp = reinterpret_cast<WINDOWPOS*>(alParam);
         window.m_wndPos = { wp->x, wp->y };
         window.m_wndSize = { wp->cx, wp->cy };
 
         RECT cr;
-        GetClientRect(hWnd, &cr);
+        GetClientRect(ahWnd, &cr);
         window.m_clientPos = { cr.left, cr.top };
         window.m_clientSize = { cr.right - cr.left, cr.bottom - cr.top };
     }
 
     {
-        auto res = Console::Get().OnWndProc(hWnd, uMsg, wParam, lParam);
+        auto res = Console::Get().OnWndProc(ahWnd, auMsg, awParam, alParam);
         if (res)
             return 0; // Console wants this input ignored!
     }
     
     {
-        auto res = D3D12::Get().OnWndProc(hWnd, uMsg, wParam, lParam);
+        auto res = D3D12::Get().OnWndProc(ahWnd, auMsg, awParam, alParam);
         if (res)
             return 0; // D3D12 wants this input ignored!
     }
     
-    return CallWindowProc(window.m_wndProc, hWnd, uMsg, wParam, lParam);
+    return CallWindowProc(window.m_wndProc, ahWnd, auMsg, awParam, alParam);
 }
 
 Window::Window() = default;

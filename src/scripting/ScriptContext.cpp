@@ -40,10 +40,10 @@ bool ScriptContext::IsValid() const
     return m_initialized;
 }
 
-void ScriptContext::TriggerOnUpdate(float deltaTime) const
+void ScriptContext::TriggerOnUpdate(float aDeltaTime) const
 {
     if (m_onUpdate)
-        m_onUpdate(deltaTime);
+        m_onUpdate(aDeltaTime);
 }
 
 void ScriptContext::TriggerOnInit() const

@@ -43,10 +43,10 @@ void ScriptStore::LoadAll(sol::state_view aStateView)
     }
 }
 
-void ScriptStore::TriggerOnUpdate(float deltaTime) const
+void ScriptStore::TriggerOnUpdate(float aDeltaTime) const
 {
     for (const auto& kvp : m_contexts)
-        kvp.second.TriggerOnUpdate(deltaTime);
+        kvp.second.TriggerOnUpdate(aDeltaTime);
 }
 
 void ScriptStore::TriggerOnInit() const

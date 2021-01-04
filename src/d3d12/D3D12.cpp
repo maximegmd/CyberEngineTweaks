@@ -40,26 +40,26 @@ D3D12& D3D12::Get()
     return *s_pD3D12;
 }
 
-LRESULT D3D12::OnWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT D3D12::OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam)
 {
     auto& d3d12 = Get();
     if (d3d12.IsInitialized())
     {
         if (d3d12.m_passInputToImGui)
         {
-            auto res = ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);
+            auto res = ImGui_ImplWin32_WndProcHandler(ahWnd, auMsg, awParam, alParam);
             if (res)
                 return res;
 
             if (d3d12.m_catchInputInImGui) // TODO: look into io.WantCaptureMouse and io.WantCaptureKeyboard
             {
                 // ignore mouse & keyboard events
-                if ((uMsg >= WM_MOUSEFIRST && uMsg <= WM_MOUSELAST) ||
-                    (uMsg >= WM_KEYFIRST && uMsg <= WM_KEYLAST))
+                if ((auMsg >= WM_MOUSEFIRST && auMsg <= WM_MOUSELAST) ||
+                    (auMsg >= WM_KEYFIRST && auMsg <= WM_KEYLAST))
                     return 1;
 
                 // ignore specific messages
-                switch (uMsg)
+                switch (auMsg)
                 {
                     case WM_INPUT:
                         return 1;

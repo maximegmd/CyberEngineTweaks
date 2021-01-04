@@ -33,7 +33,7 @@ bool D3D12::ResetState()
     return false;
 }
 
-bool D3D12::Initialize(IDXGISwapChain* pSwapChain)
+bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
 {
     static auto checkCmdQueue = [](D3D12* d3d12) 
     {
@@ -58,7 +58,7 @@ bool D3D12::Initialize(IDXGISwapChain* pSwapChain)
         return true;
     };
 
-    if (!pSwapChain)
+    if (!apSwapChain)
         return false;
 
     HWND hWnd = Window::Get().GetWindow();
@@ -71,14 +71,14 @@ bool D3D12::Initialize(IDXGISwapChain* pSwapChain)
     if (m_initialized) 
     {
         CComPtr<IDXGISwapChain3> pSwapChain3;
-        if (FAILED(pSwapChain->QueryInterface(IID_PPV_ARGS(&pSwapChain3))))
+        if (FAILED(apSwapChain->QueryInterface(IID_PPV_ARGS(&pSwapChain3))))
         {
-            spdlog::error("D3D12::Initialize() - unable to query pSwapChain interface for IDXGISwapChain3! (pSwapChain = {0})", reinterpret_cast<void*>(pSwapChain));
+            spdlog::error("D3D12::Initialize() - unable to query pSwapChain interface for IDXGISwapChain3! (pSwapChain = {0})", reinterpret_cast<void*>(apSwapChain));
             return false;
         }
         if (m_pdxgiSwapChain != pSwapChain3)
         {
-            spdlog::warn("D3D12::Initialize() - multiple swap chains detected! Currently hooked to {0}, this call was from {1}.", reinterpret_cast<void*>(*(&m_pdxgiSwapChain)), reinterpret_cast<void*>(pSwapChain));
+            spdlog::warn("D3D12::Initialize() - multiple swap chains detected! Currently hooked to {0}, this call was from {1}.", reinterpret_cast<void*>(*(&m_pdxgiSwapChain)), reinterpret_cast<void*>(apSwapChain));
             return false;
         }
         {
@@ -96,9 +96,9 @@ bool D3D12::Initialize(IDXGISwapChain* pSwapChain)
         return true;
     }
 
-    if (FAILED(pSwapChain->QueryInterface(IID_PPV_ARGS(&m_pdxgiSwapChain))))
+    if (FAILED(apSwapChain->QueryInterface(IID_PPV_ARGS(&m_pdxgiSwapChain))))
     {
-        spdlog::error("D3D12::Initialize() - unable to query pSwapChain interface for IDXGISwapChain3! (pSwapChain = {0})", reinterpret_cast<void*>(pSwapChain));
+        spdlog::error("D3D12::Initialize() - unable to query pSwapChain interface for IDXGISwapChain3! (pSwapChain = {0})", reinterpret_cast<void*>(apSwapChain));
         return ResetState();
     }
 
@@ -185,9 +185,9 @@ bool D3D12::Initialize(IDXGISwapChain* pSwapChain)
     return true;
 }
 
-bool D3D12::InitializeDownlevel(ID3D12CommandQueue* pCommandQueue, ID3D12Resource* pSourceTex2D, HWND hWindow)
+bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resource* apSourceTex2D, HWND ahWindow)
 {
-    if (!pCommandQueue || !pSourceTex2D)
+    if (!apCommandQueue || !apSourceTex2D)
         return false;
 
     HWND hWnd = Window::Get().GetWindow();
@@ -199,28 +199,28 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* pCommandQueue, ID3D12Resourc
 
     if (m_initialized)
     {
-        if (hWnd != hWindow)
-            spdlog::warn("D3D12::InitializeDownlevel() - current output window does not match hooked window! Currently hooked to {0} while current output window is {1}.", reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(hWindow));
+        if (hWnd != ahWindow)
+            spdlog::warn("D3D12::InitializeDownlevel() - current output window does not match hooked window! Currently hooked to {0} while current output window is {1}.", reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(ahWindow));
 
         return true;
     }
 
-    auto cmdQueueDesc = pCommandQueue->GetDesc();
+    auto cmdQueueDesc = apCommandQueue->GetDesc();
     if(cmdQueueDesc.Type != D3D12_COMMAND_LIST_TYPE_DIRECT) 
     {
         spdlog::warn("D3D12::InitializeDownlevel() - ignoring command queue - invalid type of command list!");
         return false;
     }
 
-    m_pCommandQueue = pCommandQueue;
+    m_pCommandQueue = apCommandQueue;
 
-    auto st2DDesc = pSourceTex2D->GetDesc();
+    auto st2DDesc = apSourceTex2D->GetDesc();
     m_outSize = { static_cast<LONG>(st2DDesc.Width), static_cast<LONG>(st2DDesc.Height) };
     
-    if (hWnd != hWindow)
-        spdlog::warn("D3D12::InitializeDownlevel() - current output window does not match hooked window! Currently hooked to {0} while current output window is {1}.", reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(hWindow));
+    if (hWnd != ahWindow)
+        spdlog::warn("D3D12::InitializeDownlevel() - current output window does not match hooked window! Currently hooked to {0} while current output window is {1}.", reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(ahWindow));
 
-    if (FAILED(pSourceTex2D->GetDevice(IID_PPV_ARGS(&m_pd3d12Device))))
+    if (FAILED(apSourceTex2D->GetDevice(IID_PPV_ARGS(&m_pd3d12Device))))
     {
         spdlog::error("D3D12::InitializeDownlevel() - failed to get device!");
         return ResetState();
@@ -306,7 +306,7 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* pCommandQueue, ID3D12Resourc
     return true;
 }
 
-bool D3D12::InitializeImGui(size_t buffersCounts)
+bool D3D12::InitializeImGui(size_t aBuffersCounts)
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -322,7 +322,7 @@ bool D3D12::InitializeImGui(size_t buffersCounts)
         return false;
     }
 
-    if (!ImGui_ImplDX12_Init(m_pd3d12Device, static_cast<int>(buffersCounts),
+    if (!ImGui_ImplDX12_Init(m_pd3d12Device, static_cast<int>(aBuffersCounts),
         DXGI_FORMAT_R8G8B8A8_UNORM, m_pd3dSrvDescHeap,
         m_pd3dSrvDescHeap->GetCPUDescriptorHandleForHeapStart(),
         m_pd3dSrvDescHeap->GetGPUDescriptorHandleForHeapStart()))

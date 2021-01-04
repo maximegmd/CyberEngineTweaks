@@ -6,7 +6,7 @@
 #include <Pattern.h>
 #include <kiero/kiero.h>
 
-HRESULT D3D12::ResizeBuffers(IDXGISwapChain* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags)
+HRESULT D3D12::ResizeBuffers(IDXGISwapChain* apSwapChain, UINT aBufferCount, UINT aWidth, UINT aHeight, DXGI_FORMAT aNewFormat, UINT aSwapChainFlags)
 {
     auto& d3d12 = Get();
     
@@ -17,20 +17,20 @@ HRESULT D3D12::ResizeBuffers(IDXGISwapChain* pSwapChain, UINT BufferCount, UINT 
         d3d12.ResetState();
     }
 
-    return d3d12.m_realResizeBuffersD3D12(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags);
+    return d3d12.m_realResizeBuffersD3D12(apSwapChain, aBufferCount, aWidth, aHeight, aNewFormat, aSwapChainFlags);
 }
 
-HRESULT D3D12::Present(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT PresentFlags)
+HRESULT D3D12::Present(IDXGISwapChain* apSwapChain, UINT aSyncInterval, UINT aPresentFlags)
 {
     auto& d3d12 = Get();
 
-    if (d3d12.Initialize(pSwapChain))
+    if (d3d12.Initialize(apSwapChain))
         d3d12.Update(); 
     
-    return d3d12.m_realPresentD3D12(pSwapChain, SyncInterval, PresentFlags);
+    return d3d12.m_realPresentD3D12(apSwapChain, aSyncInterval, aPresentFlags);
 }
 
-HRESULT D3D12::PresentDownlevel(ID3D12CommandQueueDownlevel* pCommandQueueDownlevel, ID3D12GraphicsCommandList* pOpenCommandList, ID3D12Resource* pSourceTex2D, HWND hWindow, D3D12_DOWNLEVEL_PRESENT_FLAGS Flags)
+HRESULT D3D12::PresentDownlevel(ID3D12CommandQueueDownlevel* apCommandQueueDownlevel, ID3D12GraphicsCommandList* apOpenCommandList, ID3D12Resource* apSourceTex2D, HWND ahWindow, D3D12_DOWNLEVEL_PRESENT_FLAGS aFlags)
 {
     auto& d3d12 = Get();
 
@@ -39,33 +39,33 @@ HRESULT D3D12::PresentDownlevel(ID3D12CommandQueueDownlevel* pCommandQueueDownle
     // TODO: investigate if there isn't a better way of doing this (finding the current index in the game exe?)
     d3d12.m_downlevelBufferIndex = (!d3d12.m_initialized || d3d12.m_downlevelBufferIndex == 2) ? 0 : d3d12.m_downlevelBufferIndex + 1;
 
-    if (d3d12.InitializeDownlevel(d3d12.m_pCommandQueue, pSourceTex2D, hWindow))
+    if (d3d12.InitializeDownlevel(d3d12.m_pCommandQueue, apSourceTex2D, ahWindow))
         d3d12.Update();
 
-    return d3d12.m_realPresentD3D12Downlevel(pCommandQueueDownlevel, pOpenCommandList, pSourceTex2D, hWindow, Flags);
+    return d3d12.m_realPresentD3D12Downlevel(apCommandQueueDownlevel, apOpenCommandList, apSourceTex2D, ahWindow, aFlags);
 }
 
-HRESULT D3D12::CreateCommittedResource(ID3D12Device* pDevice, const D3D12_HEAP_PROPERTIES* pHeapProperties, D3D12_HEAP_FLAGS HeapFlags, const D3D12_RESOURCE_DESC* pDesc,
-    D3D12_RESOURCE_STATES InitialResourceState, const D3D12_CLEAR_VALUE* pOptimizedClearValue, const IID* riidResource, void** ppvResource)
+HRESULT D3D12::CreateCommittedResource(ID3D12Device* apDevice, const D3D12_HEAP_PROPERTIES* acpHeapProperties, D3D12_HEAP_FLAGS aHeapFlags, const D3D12_RESOURCE_DESC* acpDesc,
+    D3D12_RESOURCE_STATES aInitialResourceState, const D3D12_CLEAR_VALUE* acpOptimizedClearValue, const IID* acpRIID, void** appvResource)
 {
     auto& d3d12 = Get();
 
     // Check if this is a backbuffer resource being created
     bool isBackBuffer = false;
-    if (pHeapProperties != NULL && pHeapProperties->Type == D3D12_HEAP_TYPE_DEFAULT && HeapFlags == D3D12_HEAP_FLAG_NONE &&
-        pDesc != NULL && pDesc->Flags == D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET && InitialResourceState == D3D12_RESOURCE_STATE_COMMON &&
-        pOptimizedClearValue == NULL && riidResource != NULL && IsEqualGUID(*riidResource, __uuidof(ID3D12Resource)))
+    if (acpHeapProperties != NULL && acpHeapProperties->Type == D3D12_HEAP_TYPE_DEFAULT && aHeapFlags == D3D12_HEAP_FLAG_NONE &&
+        acpDesc != NULL && acpDesc->Flags == D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET && aInitialResourceState == D3D12_RESOURCE_STATE_COMMON &&
+        acpOptimizedClearValue == NULL && acpRIID != NULL && IsEqualGUID(*acpRIID, __uuidof(ID3D12Resource)))
     {
         isBackBuffer = true;
     }
 
-    HRESULT result = d3d12.m_realCreateCommittedResource(pDevice, pHeapProperties, HeapFlags, pDesc, InitialResourceState, pOptimizedClearValue, riidResource, ppvResource);
+    HRESULT result = d3d12.m_realCreateCommittedResource(apDevice, acpHeapProperties, aHeapFlags, acpDesc, aInitialResourceState, acpOptimizedClearValue, acpRIID, appvResource);
 
     if (SUCCEEDED(result) && isBackBuffer)
     {
         // Store the returned resource
-        d3d12.m_downlevelBackbuffers.emplace_back(static_cast<ID3D12Resource*>(*ppvResource));
-        spdlog::debug("D3D12::CreateCommittedResourceD3D12() - found valid backbuffer target at {0}.", *ppvResource);
+        d3d12.m_downlevelBackbuffers.emplace_back(static_cast<ID3D12Resource*>(*appvResource));
+        spdlog::debug("D3D12::CreateCommittedResourceD3D12() - found valid backbuffer target at {0}.", *appvResource);
     }
 
     // If D3D12 has been initialized, there is no need to continue hooking this function since the backbuffers are only created once.
@@ -75,7 +75,7 @@ HRESULT D3D12::CreateCommittedResource(ID3D12Device* pDevice, const D3D12_HEAP_P
     return result;
 }
 
-void D3D12::ExecuteCommandLists(ID3D12CommandQueue* apCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists)
+void D3D12::ExecuteCommandLists(ID3D12CommandQueue* apCommandQueue, UINT aNumCommandLists, ID3D12CommandList* const* apcpCommandLists)
 {
     auto& d3d12 = Get();
 
@@ -91,7 +91,7 @@ void D3D12::ExecuteCommandLists(ID3D12CommandQueue* apCommandQueue, UINT NumComm
             spdlog::info("D3D12::ExecuteCommandListsD3D12() - ignoring command queue - unusable command list type");
     }
 
-    d3d12.m_realExecuteCommandLists(apCommandQueue, NumCommandLists, ppCommandLists);
+    d3d12.m_realExecuteCommandLists(apCommandQueue, aNumCommandLists, apcpCommandLists);
 }
 
 void D3D12::Hook()

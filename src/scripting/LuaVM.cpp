@@ -29,12 +29,12 @@ LuaVM& LuaVM::Get()
     return *s_pLuaVM;
 }
 
-void LuaVM::Update(float deltaTime)
+void LuaVM::Update(float aDeltaTime)
 {
     if (!m_initialized)
         return;
 
-    Scripting::Get().GetStore().TriggerOnUpdate(deltaTime);
+    Scripting::Get().GetStore().TriggerOnUpdate(aDeltaTime);
 }
 
 bool LuaVM::ExecuteLua(const std::string& aCommand)

@@ -16,12 +16,12 @@ struct D3D12
 
 	~D3D12();
 	
-	void PassInputToImGui(bool enabled) { m_passInputToImGui = enabled; }
-	void CatchInputInImGui(bool enabled) { m_catchInputInImGui = enabled; }
+	void PassInputToImGui(bool aEnabled) { m_passInputToImGui = aEnabled; }
+	void CatchInputInImGui(bool aEnabled) { m_catchInputInImGui = aEnabled; }
 	
 	SIZE GetResolution() const { return m_outSize; }
 
-	LRESULT OnWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	LRESULT OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam);
 
 	bool IsInitialized() const { return m_initialized; }
 
@@ -38,17 +38,17 @@ protected:
 	};
 
 	bool ResetState();
-	bool Initialize(IDXGISwapChain* pSwapChain);
-	bool InitializeDownlevel(ID3D12CommandQueue* pCommandQueue, ID3D12Resource* pSourceTex2D, HWND hWindow);
-	bool InitializeImGui(size_t buffersCounts);
+	bool Initialize(IDXGISwapChain* apSwapChain);
+	bool InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resource* apSourceTex2D, HWND ahWindow);
+	bool InitializeImGui(size_t aBuffersCounts);
 
 	void Update();
 
-	static HRESULT ResizeBuffers(IDXGISwapChain* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags);
-	static HRESULT Present(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT PresentFlags);
-	static HRESULT PresentDownlevel(ID3D12CommandQueueDownlevel* pCommandQueueDownlevel, ID3D12GraphicsCommandList* pOpenCommandList, ID3D12Resource* pSourceTex2D, HWND hWindow, D3D12_DOWNLEVEL_PRESENT_FLAGS Flags);
-	static HRESULT CreateCommittedResource(ID3D12Device* pDevice, const D3D12_HEAP_PROPERTIES* pHeapProperties, D3D12_HEAP_FLAGS HeapFlags, const D3D12_RESOURCE_DESC* pDesc, D3D12_RESOURCE_STATES InitialResourceState, const D3D12_CLEAR_VALUE* pOptimizedClearValue, const IID* riidResource, void** ppvResource);
-	static void ExecuteCommandLists(ID3D12CommandQueue* pCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists);
+	static HRESULT ResizeBuffers(IDXGISwapChain* apSwapChain, UINT aBufferCount, UINT aWidth, UINT aHeight, DXGI_FORMAT aNewFormat, UINT aSwapChainFlags);
+	static HRESULT Present(IDXGISwapChain* apSwapChain, UINT aSyncInterval, UINT aPresentFlags);
+	static HRESULT PresentDownlevel(ID3D12CommandQueueDownlevel* apCommandQueueDownlevel, ID3D12GraphicsCommandList* apOpenCommandList, ID3D12Resource* apSourceTex2D, HWND ahWindow, D3D12_DOWNLEVEL_PRESENT_FLAGS aFlags);
+	static HRESULT CreateCommittedResource(ID3D12Device* apDevice, const D3D12_HEAP_PROPERTIES* acpHeapProperties, D3D12_HEAP_FLAGS aHeapFlags, const D3D12_RESOURCE_DESC* acpDesc, D3D12_RESOURCE_STATES aInitialResourceState, const D3D12_CLEAR_VALUE* acpOptimizedClearValue, const IID* acpRIID, void** appvResource);
+	static void ExecuteCommandLists(ID3D12CommandQueue* apCommandQueue, UINT aNumCommandLists, ID3D12CommandList* const* apcpCommandLists);
 	
 private:
 

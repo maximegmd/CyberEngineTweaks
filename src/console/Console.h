@@ -19,7 +19,7 @@ struct Console
 	
 	void Update();
 
-	LRESULT OnWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	LRESULT OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam);
 
 protected:
 	

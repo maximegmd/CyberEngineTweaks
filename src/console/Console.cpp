@@ -166,36 +166,36 @@ void Console::Log(const std::string& acpText)
     m_outputScroll = true;
 }
 
-LRESULT Console::OnWndProc(HWND, UINT uMsg, WPARAM wParam, LPARAM)
+LRESULT Console::OnWndProc(HWND, UINT auMsg, WPARAM awParam, LPARAM)
 {
     if (this == nullptr)
         return 0;
 
     auto& options = Options::Get();
-    if (uMsg == WM_KEYDOWN && wParam == options.ConsoleKey)
+    if (auMsg == WM_KEYDOWN && awParam == options.ConsoleKey)
     {
         Toggle();
         return 1;
     }
 
-    switch (uMsg)
+    switch (auMsg)
     {
         case WM_KEYDOWN:
         case WM_SYSKEYDOWN:
         case WM_KEYUP:
         case WM_SYSKEYUP:
-            if (wParam == options.ConsoleKey)
+            if (awParam == options.ConsoleKey)
                 return 1;
             break;
         case WM_CHAR:
-            if (options.ConsoleChar && wParam == options.ConsoleChar)
+            if (options.ConsoleChar && awParam == options.ConsoleChar)
                 return 1;
             break;
     }
 
     if (IsEnabled())
     {
-        if (uMsg == WM_KEYUP && wParam == VK_RETURN)
+        if (auMsg == WM_KEYUP && awParam == VK_RETURN)
             m_focusConsoleInput = true;
     }
 

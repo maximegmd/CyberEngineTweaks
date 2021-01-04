@@ -74,7 +74,7 @@ static const char* GetChannelStr(uint64_t hash)
     return nullptr;
 }
 
-void LuaVM::HookLogChannel(REDScriptContext* apContext, ScriptStack* apStack, void*, void*)
+void LuaVM::HookLogChannel(REDScriptContext*, ScriptStack* apStack, void*, void*)
 {
     uint8_t opcode;
 
@@ -114,19 +114,19 @@ static std::string GetTDBDIDDebugString(TDBID tdbid)
             tdbid.name_hash, tdbid.name_length, tdbid.unk5, tdbid.unk7);
 }
 
-void LuaVM::RegisterTDBIDString(uint64_t value, uint64_t base, const std::string& name)
+void LuaVM::RegisterTDBIDString(uint64_t aValue, uint64_t aBase, const std::string& aName)
 {
     std::lock_guard<std::recursive_mutex> _{ m_tdbidLock };
-    m_tdbidLookup[value] = { base, name };
+    m_tdbidLookup[aValue] = { aBase, aName };
 }
 
-std::string LuaVM::GetTDBIDString(uint64_t value)
+std::string LuaVM::GetTDBIDString(uint64_t aValue)
 {
     std::lock_guard<std::recursive_mutex> _{ m_tdbidLock };
-    auto it = m_tdbidLookup.find(value);
+    auto it = m_tdbidLookup.find(aValue);
     auto end = m_tdbidLookup.end();
     if (it == end)
-        return GetTDBDIDDebugString(TDBID{ value });
+        return GetTDBDIDDebugString(TDBID{ aValue });
     std::string string = (*it).second.name;
     uint64_t base = (*it).second.base;
     while (base)
@@ -143,27 +143,27 @@ std::string LuaVM::GetTDBIDString(uint64_t value)
     return string;
 }
 
-TDBID* LuaVM::HookTDBIDCtor(TDBID* apThis, const char* name)
+TDBID* LuaVM::HookTDBIDCtor(TDBID* apThis, const char* acpName)
 {
     auto& luavm = Get();
-    auto result = luavm.m_realTDBIDCtor(apThis, name);
-    luavm.RegisterTDBIDString(apThis->value, 0, name);
+    auto result = luavm.m_realTDBIDCtor(apThis, acpName);
+    luavm.RegisterTDBIDString(apThis->value, 0, acpName);
     return result;
 }
 
-TDBID* LuaVM::HookTDBIDCtorCString(TDBID* apThis, const RED4ext::CString* name)
+TDBID* LuaVM::HookTDBIDCtorCString(TDBID* apThis, const RED4ext::CString* acpName)
 {
     auto& luavm = Get();
-    auto result = luavm.m_realTDBIDCtorCString(apThis, name);
-    luavm.RegisterTDBIDString(apThis->value, 0, name->c_str());
+    auto result = luavm.m_realTDBIDCtorCString(apThis, acpName);
+    luavm.RegisterTDBIDString(apThis->value, 0, acpName->c_str());
     return result;
 }
 
-TDBID* LuaVM::HookTDBIDCtorDerive(TDBID* apBase, TDBID* apThis, const char* name)
+TDBID* LuaVM::HookTDBIDCtorDerive(TDBID* apBase, TDBID* apThis, const char* acpName)
 {
     auto& luavm = Get();
-    auto result = luavm.m_realTDBIDCtorDerive(apBase, apThis, name);
-    luavm.RegisterTDBIDString(apThis->value, apBase->value, std::string(name));
+    auto result = luavm.m_realTDBIDCtorDerive(apBase, apThis, acpName);
+    luavm.RegisterTDBIDString(apThis->value, apBase->value, std::string(acpName));
     return result;
 }
 
@@ -173,17 +173,17 @@ struct UnknownString
     uint32_t size;
 };
 
-TDBID* LuaVM::HookTDBIDCtorUnknown(TDBID* apThis, uint64_t name)
+TDBID* LuaVM::HookTDBIDCtorUnknown(TDBID* apThis, uint64_t aName)
 {
     auto& luavm = Get();
-    auto result = luavm.m_realTDBIDCtorUnknown(apThis, name);
+    auto result = luavm.m_realTDBIDCtorUnknown(apThis, aName);
     UnknownString unknown;
-    luavm.m_someStringLookup(&name, &unknown);
+    luavm.m_someStringLookup(&aName, &unknown);
     luavm.RegisterTDBIDString(apThis->value, 0, std::string(unknown.string, unknown.size));
     return result;
 }
 
-void LuaVM::HookTDBIDToStringDEBUG(REDScriptContext* apContext, ScriptStack* apStack, void* result, void*)
+void LuaVM::HookTDBIDToStringDEBUG(REDScriptContext*, ScriptStack* apStack, void* apResult, void*)
 {
     uint8_t opcode;
 
@@ -194,11 +194,11 @@ void LuaVM::HookTDBIDToStringDEBUG(REDScriptContext* apContext, ScriptStack* apS
     GetScriptCallArray()[opcode](apStack->m_context, apStack, &tdbid, nullptr);
     apStack->m_code++; // skip ParamEnd
 
-    if (result)
+    if (apResult)
     {
         std::string name = Get().GetTDBIDString(tdbid.value);
         RED4ext::CString s(name.c_str());
-        *static_cast<RED4ext::CString*>(result) = s;
+        *static_cast<RED4ext::CString*>(apResult) = s;
     }
 }
 
