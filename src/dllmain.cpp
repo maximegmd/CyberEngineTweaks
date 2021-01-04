@@ -25,16 +25,15 @@ static HANDLE s_modInstanceMutex = nullptr;
 static void Initialize(HMODULE mod)
 {
     s_modInstanceMutex = CreateMutex(NULL, TRUE, _T("Cyber Engine Tweaks Module Instance"));
-    if (s_modInstanceMutex == nullptr) {
+    if (s_modInstanceMutex == nullptr)
         return;
-    }
 
     MH_Initialize();
 
     Options::Initialize(mod);
     auto& options = Options::Get();
 
-    if (!options.IsCyberpunk2077())
+    if (!options.IsCyberpunk2077() || options.GameImage.version != Image::MakeVersion(1,6))
         return;
 
     if(options.PatchSMT)
