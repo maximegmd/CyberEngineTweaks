@@ -13,12 +13,17 @@ struct ScriptContext
 
     sol::object GetObject() const;
 
+protected:
+
+    void TriggerOnShutdown() const;
+
 private:
 
     sol::state_view m_lua;
     sol::environment m_env;
     sol::object m_object;
     sol::function m_onInit;
+    sol::function m_onShutdown;
     sol::function m_onUpdate;
     sol::function m_onDraw;
     bool m_initialized{false};

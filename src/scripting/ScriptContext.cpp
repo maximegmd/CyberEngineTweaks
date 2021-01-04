@@ -11,6 +11,8 @@ ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::
     {
         if(acName == "onInit")
             m_onInit = aCallback;
+        else if(acName == "onShutdown")
+            m_onShutdown = aCallback;
         else if(acName == "onUpdate")
             m_onUpdate = aCallback;
         else if(acName == "onDraw")
@@ -35,6 +37,8 @@ ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::
 
 ScriptContext::~ScriptContext()
 {
+    if (m_initialized)
+        TriggerOnShutdown();
 }
 
 bool ScriptContext::IsValid() const
@@ -46,6 +50,12 @@ void ScriptContext::TriggerOnInit() const
 {
     if (m_onInit)
         m_onInit();
+}
+
+void ScriptContext::TriggerOnShutdown() const
+{
+    if (m_onShutdown)
+        m_onShutdown();
 }
 
 void ScriptContext::TriggerOnUpdate(float aDeltaTime) const
