@@ -3,6 +3,10 @@
 struct ScriptContext
 {
     ScriptContext(sol::state_view aStateView, const std::filesystem::path& acPath);
+    ScriptContext(ScriptContext&& other) noexcept : ScriptContext(other)
+    {
+        other.m_initialized = false;
+    }
     ~ScriptContext();
 
     [[nodiscard]] bool IsValid() const;
@@ -18,6 +22,8 @@ protected:
     void TriggerOnShutdown() const;
 
 private:
+
+    ScriptContext(const ScriptContext&) = default;
 
     sol::state_view m_lua;
     sol::environment m_env;
