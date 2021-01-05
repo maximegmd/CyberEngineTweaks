@@ -225,13 +225,17 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
         return ResetState();
     }
 
-    // Limit to at most 3 buffers
-    const auto buffersCounts = std::min<size_t>(m_downlevelBackbuffers.size(), 3);
+    const size_t buffersCounts = m_downlevelBackbuffers.size();
     m_frameContexts.resize(buffersCounts);
     if (buffersCounts == 0)
     {
         spdlog::error("D3D12::InitializeDownlevel() - no backbuffers were found!");
         return ResetState();
+    }
+    if (buffersCounts < g_numDownlevelBackbuffersRequired)
+    {
+        spdlog::info("D3D12::InitializeDownlevel() - backbuffer list is not complete yet; assuming window was resized");
+        return false;
     }
 
     D3D12_DESCRIPTOR_HEAP_DESC rtvdesc;
@@ -284,12 +288,10 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
         return ResetState();
     }
 
-    // Skip the first N - 3 buffers as they are no longer in use
-    auto skip = m_downlevelBackbuffers.size() - buffersCounts;
     for (size_t i = 0; i < buffersCounts; i++)
     {
         auto& context = m_frameContexts[i];
-        context.BackBuffer = m_downlevelBackbuffers[i + skip];
+        context.BackBuffer = m_downlevelBackbuffers[i];
         m_pd3d12Device->CreateRenderTargetView(context.BackBuffer, nullptr, context.MainRenderTargetDescriptor);
     }
 
