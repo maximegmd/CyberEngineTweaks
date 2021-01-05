@@ -244,6 +244,17 @@ Type::Descriptor Type::Dump(bool aWithHashes) const
     return descriptor;
 }
 
+std::string Type::GameDump()
+{
+    RED4ext::CString str("");
+    if (m_pType)
+    {
+        m_pType->GetDebugString(GetHandle(), str);
+    }
+
+    return str.c_str();
+}
+
 sol::variadic_results Type::Execute(RED4ext::CClassFunction* apFunc, const std::string& acName, sol::variadic_args aArgs, sol::this_environment env, sol::this_state L, std::string& aReturnMessage)
 {
     std::vector<RED4ext::CStackType> args(apFunc->params.size);
@@ -299,7 +310,17 @@ sol::variadic_results Type::Execute(RED4ext::CClassFunction* apFunc, const std::
         result.type = apFunc->returnType->type;
     }
 
-    RED4ext::CStack stack(GetHandle(), args.data(), args.size(), hasReturnType ? &result : nullptr, 0);
+    // Needs more investigation, but if you do something like GetSingleton('inkMenuScenario'):GetSystemRequestsHandler()
+    // which actually does not need the 'this' object, you can trick it into calling it as long as you pass something for the handle
+    // GetSingleton('inkMenuScenario') would return nullptr handle because its not in the GI table
+    auto handle = GetHandle();
+    if (!handle)
+    {
+        const auto* engine = RED4ext::CGameEngine::Get();
+        handle = reinterpret_cast<RED4ext::IScriptable*>(engine->framework->gameInstance); // Not actually derived from IScriptable but still an "Instance"
+    }
+
+    RED4ext::CStack stack(handle, args.data(), args.size(), hasReturnType ? &result : nullptr, 0);
 
     const auto success = apFunc->Execute(&stack);
     if (!success)

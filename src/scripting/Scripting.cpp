@@ -297,6 +297,12 @@ void Scripting::Initialize()
         sol::meta_function::index, &SingletonReference::Index,
         sol::meta_function::new_index, &SingletonReference::NewIndex);
 
+    m_lua.new_usertype<ClassReference>("ClassReference",
+        sol::meta_function::construct, sol::no_constructor,
+        sol::base_classes, sol::bases<Type>(),
+        sol::meta_function::index, &ClassReference::Index,
+        sol::meta_function::new_index, &ClassReference::NewIndex);
+
     m_lua.new_usertype<GameOptions>("GameOptions",
         sol::meta_function::construct, sol::no_constructor,
         "Print", &GameOptions::Print,
@@ -453,7 +459,12 @@ void Scripting::Initialize()
         return m_store.LoadAll(m_lua);
     };
 
-    m_lua["Dump"] = [](Type* apType, bool aDetailed)
+    m_lua["GameDump"] = [this](Type* apType)
+    {
+        return apType ? apType->GameDump() : "Null";
+    };
+
+    m_lua["Dump"] = [this](Type* apType, bool aDetailed)
     {
         return apType != nullptr ? apType->Dump(aDetailed) : Type::Descriptor{};
     };

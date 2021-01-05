@@ -19,6 +19,7 @@ struct Type
     sol::protected_function InternalIndex(const std::string& acName);
     std::string GetName() const;
     Descriptor Dump(bool aWithHashes) const;
+    std::string GameDump();
     std::string FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithHashes) const;
     
     sol::variadic_results Execute(RED4ext::CClassFunction* apFunc, const std::string& acName, sol::variadic_args args, sol::this_environment env, sol::this_state L, std::string& aReturnMessage);

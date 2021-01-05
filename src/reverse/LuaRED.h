@@ -37,7 +37,7 @@ struct LuaRED
         return apRtti == m_pRtti;
     }
 
-private:
+protected:
 
     bool Resolve() const
     {
