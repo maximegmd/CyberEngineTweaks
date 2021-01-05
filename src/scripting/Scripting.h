@@ -10,6 +10,8 @@ struct Scripting
     static Scripting& Get();
 
     const ScriptStore& GetStore() const;
+
+    void ReloadAllMods() { m_store.LoadAll(m_lua); }
     
     bool ExecuteLua(const std::string& acCommand);
 

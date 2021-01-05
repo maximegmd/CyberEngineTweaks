@@ -39,6 +39,17 @@ void LuaVM::Update(float aDeltaTime)
     Scripting::Get().GetStore().TriggerOnDraw();
 }
 
+void LuaVM::ReloadAllMods()
+{
+    if (m_initialized)
+    {
+        auto& scripting = Scripting::Get();
+        scripting.ReloadAllMods();
+        scripting.GetStore().TriggerOnInit();
+        spdlog::info("LuaVM::ReloadAllMods() finished!");
+    }
+}
+
 bool LuaVM::ExecuteLua(const std::string& acCommand)
 {
     if (!m_initialized)

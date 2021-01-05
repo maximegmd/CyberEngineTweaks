@@ -35,6 +35,7 @@ struct LuaVM
     ~LuaVM();
     
     void Update(float aDeltaTime);
+    void ReloadAllMods();
 
 protected:
     
