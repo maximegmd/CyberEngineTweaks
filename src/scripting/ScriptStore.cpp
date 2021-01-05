@@ -16,6 +16,8 @@ ScriptStore::~ScriptStore()
 
 void ScriptStore::LoadAll(sol::state_view aStateView)
 {
+    m_contexts.clear();
+
     const auto cScriptsPath = Options::Get().ScriptsPath;
 
     for (const auto& file : std::filesystem::directory_iterator(cScriptsPath))
@@ -35,20 +37,28 @@ void ScriptStore::LoadAll(sol::state_view aStateView)
             m_contexts.emplace(name, std::move(ctx));
         }
         else
+        {
             spdlog::warn("Mod {} failed to load!", file.path().string());
+        }
     }
-}
-
-void ScriptStore::TriggerOnUpdate() const
-{
-    for (const auto& kvp : m_contexts)
-        kvp.second.TriggerOnUpdate();
 }
 
 void ScriptStore::TriggerOnInit() const
 {
     for (const auto& kvp : m_contexts)
         kvp.second.TriggerOnInit();
+}
+
+void ScriptStore::TriggerOnUpdate(float aDeltaTime) const
+{
+    for (const auto& kvp : m_contexts)
+        kvp.second.TriggerOnUpdate(aDeltaTime);
+}
+
+void ScriptStore::TriggerOnDraw() const
+{
+    for (const auto& kvp : m_contexts)
+        kvp.second.TriggerOnDraw();
 }
 
 sol::object ScriptStore::Get(const std::string& acName) const

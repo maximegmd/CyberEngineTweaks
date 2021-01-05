@@ -6,14 +6,14 @@
 #include "LuaRED.h"
 
 namespace TiltedPhoques {
-	struct Allocator;
+    struct Allocator;
 }
 
 namespace Converter
 {
-	size_t Size(RED4ext::IRTTIType* apRtti);
-	sol::object ToLua(RED4ext::CStackType& aResult, sol::state_view aLua);
-	RED4ext::CStackType ToRED(sol::object aObject, RED4ext::IRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator);
+    size_t Size(RED4ext::IRTTIType* apRtti);
+    sol::object ToLua(RED4ext::CStackType& aResult, sol::state_view aLua);
+    RED4ext::CStackType ToRED(sol::object aObject, RED4ext::IRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator);
 }
 
 // Specialization manages special case implicit casting

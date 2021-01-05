@@ -4,13 +4,13 @@
 
 struct SingletonReference : Type
 {
-	SingletonReference(sol::state_view aView, RED4ext::CClass* apClass);
-	~SingletonReference();
-	
+    SingletonReference(sol::state_view aView, RED4ext::CClass* apClass);
+    ~SingletonReference();
+    
 protected:
 
-	virtual RED4ext::IScriptable* GetHandle();
-	
+    virtual RED4ext::IScriptable* GetHandle();
+    
 private:
     uint64_t m_hash;
 };
