@@ -37,10 +37,28 @@ HRESULT D3D12::PresentDownlevel(ID3D12CommandQueueDownlevel* apCommandQueueDownl
 
     auto& d3d12 = Get();
 
-    // On Windows 7 there is no swap chain to query the current backbuffer index, so instead we simply count to 3 and wrap around.
-    // Increment the buffer index here even if the d3d12 is not initialized, so we stay in sync with the game's present calls.
-    // TODO: investigate if there isn't a better way of doing this (finding the current index in the game exe?)
-    d3d12.m_downlevelBufferIndex = (!d3d12.m_initialized || d3d12.m_downlevelBufferIndex == 2) ? 0 : d3d12.m_downlevelBufferIndex + 1;
+    // On Windows 7 there is no swap chain to query the current backbuffer index. Instead do a reverse lookup in the known backbuffer list
+    auto it = std::find(d3d12.m_downlevelBackbuffers.cbegin(), d3d12.m_downlevelBackbuffers.cend(), apSourceTex2D);
+    if (it == d3d12.m_downlevelBackbuffers.cend())
+    {
+        if (d3d12.m_initialized)
+        {
+            // Already initialized - assume the window was resized and reset state
+            d3d12.ResetState();
+        }
+
+        // Add the buffer to the list
+        d3d12.m_downlevelBackbuffers.emplace_back(apSourceTex2D);
+        it = d3d12.m_downlevelBackbuffers.cend() - 1;
+    }
+
+    // Limit to at most 3 buffers
+    const size_t numBackbuffers = std::min<size_t>(d3d12.m_downlevelBackbuffers.size(), g_numDownlevelBackbuffersRequired);
+    const size_t skip = d3d12.m_downlevelBackbuffers.size() - numBackbuffers;
+    d3d12.m_downlevelBackbuffers.erase(d3d12.m_downlevelBackbuffers.cbegin(), d3d12.m_downlevelBackbuffers.cbegin() + skip);
+
+    // Determine the current buffer index
+    d3d12.m_downlevelBufferIndex = static_cast<uint32_t>(std::distance(d3d12.m_downlevelBackbuffers.cbegin() + skip, it));
 
     if (d3d12.InitializeDownlevel(d3d12.m_pCommandQueue, apSourceTex2D, ahWindow))
         d3d12.Update();
