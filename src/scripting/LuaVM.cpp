@@ -50,6 +50,18 @@ void LuaVM::ReloadAllMods()
     }
 }
 
+void LuaVM::OnConsoleOpen()
+{
+    if (m_initialized)
+        Scripting::Get().GetStore().TriggerOnConsoleOpen();
+}
+
+void LuaVM::OnConsoleClose()
+{
+    if (m_initialized)
+        Scripting::Get().GetStore().TriggerOnConsoleClose();
+}
+
 bool LuaVM::ExecuteLua(const std::string& acCommand)
 {
     if (!m_initialized)

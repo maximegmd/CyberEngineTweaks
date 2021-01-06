@@ -37,6 +37,9 @@ struct LuaVM
     void Update(float aDeltaTime);
     void ReloadAllMods();
 
+    void OnConsoleOpen();
+    void OnConsoleClose();
+
 protected:
     
     void Hook();
