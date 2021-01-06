@@ -12,6 +12,9 @@ struct ScriptStore
     void TriggerOnInit() const;
     void TriggerOnUpdate(float aDeltaTime) const;
     void TriggerOnDraw() const;
+    
+    void TriggerOnConsoleOpen() const;
+    void TriggerOnConsoleClose() const;
 
     sol::object Get(const std::string& acName) const;
 

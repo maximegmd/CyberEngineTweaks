@@ -61,6 +61,18 @@ void ScriptStore::TriggerOnDraw() const
         kvp.second.TriggerOnDraw();
 }
 
+void ScriptStore::TriggerOnConsoleOpen() const
+{
+    for (const auto& kvp : m_contexts)
+        kvp.second.TriggerOnConsoleOpen();
+}
+
+void ScriptStore::TriggerOnConsoleClose() const
+{
+    for (const auto& kvp : m_contexts)
+        kvp.second.TriggerOnConsoleClose();
+}
+
 sol::object ScriptStore::Get(const std::string& acName) const
 {
     const auto itor = m_contexts.find(acName);

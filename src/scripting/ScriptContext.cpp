@@ -17,6 +17,10 @@ ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::
             m_onUpdate = aCallback;
         else if(acName == "onDraw")
             m_onDraw = aCallback;
+        else if(acName == "onConsoleOpen")
+            m_onConsoleOpen = aCallback;
+        else if(acName == "onConsoleClose")
+            m_onConsoleClose = aCallback;
     };
 
     CET_SOL_SAFE_EXEC
@@ -121,6 +125,39 @@ void ScriptContext::TriggerOnDraw() const
         {
             if (m_onDraw)
                 m_onDraw();
+        },
+        // catch
+        {
+            std::string what = e.what();
+            spdlog::error(what);
+        }
+    )
+}
+    
+void ScriptContext::TriggerOnConsoleOpen() const
+{
+    CET_SOL_SAFE_EXEC
+    (
+        // try
+        {
+            if (m_onConsoleOpen)
+                m_onConsoleOpen();
+        },
+        // catch
+        {
+            std::string what = e.what();
+            spdlog::error(what);
+        }
+    )
+}
+void ScriptContext::TriggerOnConsoleClose() const
+{
+    CET_SOL_SAFE_EXEC
+    (
+        // try
+        {
+            if (m_onConsoleClose)
+                m_onConsoleClose();
         },
         // catch
         {
