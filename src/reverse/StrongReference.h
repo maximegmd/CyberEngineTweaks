@@ -10,7 +10,7 @@ struct StrongReference : Type
     
 protected:
 
-    virtual RED4ext::IScriptable* GetHandle();
+    virtual RED4ext::ScriptInstance GetHandle();
     
 private:
     friend struct Scripting;

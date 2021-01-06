@@ -13,7 +13,7 @@ StrongReference::~StrongReference()
     // Someday maybe actually free memory
 }
 
-RED4ext::IScriptable* StrongReference::GetHandle()
+RED4ext::ScriptInstance StrongReference::GetHandle()
 {
     return m_strongHandle.handle;
 }

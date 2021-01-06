@@ -2,7 +2,7 @@
 
 #include "ClassReference.h"
 
-ClassReference::ClassReference(sol::state_view aView, RED4ext::CClass* apClass, void* apInstance)
+ClassReference::ClassReference(sol::state_view aView, RED4ext::CClass* apClass, RED4ext::ScriptInstance apInstance)
     : Type(std::move(aView), apClass)
     , m_pInstance(apInstance)
 {
@@ -10,7 +10,7 @@ ClassReference::ClassReference(sol::state_view aView, RED4ext::CClass* apClass, 
 
 ClassReference::~ClassReference() = default;
 
-RED4ext::IScriptable* ClassReference::GetHandle()
+RED4ext::ScriptInstance ClassReference::GetHandle()
 {
-    return reinterpret_cast<RED4ext::IScriptable*>(m_pInstance);
+    return m_pInstance;
 }

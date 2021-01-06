@@ -86,6 +86,7 @@ struct CName
         };
     };
 
+    std::string AsString() const noexcept;
     std::string ToString() const noexcept;
 };
 
