@@ -116,7 +116,7 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::CStackType& aResul
 
         RED4ext::CName hash;
         pType->GetName(hash);
-        if (hash)
+        if (!hash.IsEmpty())
         {
             const std::string typeName = hash.ToString();
             Console::Get().Log("Unhandled return type: " + typeName + " type : " + std::to_string((uint32_t)pType->GetType()));
@@ -652,7 +652,7 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
             auto* pType = pFunc->params[i + argOffset]->type;
 
             pType->GetName(name);
-            if (name)
+            if (!name.IsEmpty())
             {
                 const auto typeName = name.ToString();
                 aReturnMessage = "Function '" + aFuncName + "' parameter " + std::to_string(i) + " must be " + typeName + ".";
