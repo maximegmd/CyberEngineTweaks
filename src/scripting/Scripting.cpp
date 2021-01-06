@@ -39,16 +39,18 @@ const ScriptStore& Scripting::GetStore() const
 
 bool Scripting::ExecuteLua(const std::string& acCommand)
 {
-    try
-    {
-        m_lua.script(acCommand);
-    }
-    catch(std::exception& e)
-    {
-        Console::Get().Log( e.what());
-        return false;
-    }
-
+    CET_SOL_SAFE_EXEC
+    (
+        // try
+        {
+            m_lua.script(acCommand);
+        },
+        // catch
+        {
+            Console::Get().Log(e.what());
+            return false;
+        }
+    )
     return true;
 }
 

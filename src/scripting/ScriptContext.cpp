@@ -19,20 +19,31 @@ ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::
             m_onDraw = aCallback;
     };
 
-    const auto path = acPath / "init.lua";
-    const auto result = m_lua.script_file(path.string(), m_env);
+    CET_SOL_SAFE_EXEC
+    (
+        // try
+        {
+            const auto path = acPath / "init.lua";
+            const auto result = m_lua.script_file(path.string(), m_env);
 
-    if (result.valid())
-    {
-        m_initialized = true;
-        m_object = result;
-    }
-    else
-    {
-        sol::error err = result;
-        std::string what = err.what();
-        spdlog::error(what);
-    }
+            if (result.valid())
+            {
+                m_initialized = true;
+                m_object = result;
+            }
+            else
+            {
+                sol::error err = result;
+                std::string what = err.what();
+                spdlog::error(what);
+            }
+        },
+        // catch
+        {
+            std::string what = e.what();
+            spdlog::error(what);
+        }
+    )
 }
 
 ScriptContext::ScriptContext(ScriptContext&& other) noexcept : ScriptContext(other)
@@ -53,26 +64,70 @@ bool ScriptContext::IsValid() const
 
 void ScriptContext::TriggerOnInit() const
 {
-    if (m_onInit)
-        m_onInit();
+    CET_SOL_SAFE_EXEC
+    (
+        // try
+        {
+            if (m_onInit)
+                m_onInit();
+        },
+        // catch
+        {
+            std::string what = e.what();
+            spdlog::error(what);
+        }
+    )
 }
 
 void ScriptContext::TriggerOnShutdown() const
 {
-    if (m_onShutdown)
-        m_onShutdown();
+    CET_SOL_SAFE_EXEC
+    (
+        // try
+        {
+            if (m_onShutdown)
+                m_onShutdown();
+        },
+        // catch
+        {
+            std::string what = e.what();
+            spdlog::error(what);
+        }
+    )
 }
 
 void ScriptContext::TriggerOnUpdate(float aDeltaTime) const
 {
-    if (m_onUpdate)
-        m_onUpdate(aDeltaTime);
+    CET_SOL_SAFE_EXEC
+    (
+        // try
+        {
+            if (m_onUpdate)
+                m_onUpdate(aDeltaTime);
+        },
+        // catch
+        {
+            std::string what = e.what();
+            spdlog::error(what);
+        }
+    )
 }
 
 void ScriptContext::TriggerOnDraw() const
 {
-    if (m_onDraw)
-        m_onDraw();
+    CET_SOL_SAFE_EXEC
+    (
+        // try
+        {
+            if (m_onDraw)
+                m_onDraw();
+        },
+        // catch
+        {
+            std::string what = e.what();
+            spdlog::error(what);
+        }
+    )
 }
 
 sol::object ScriptContext::Object() const

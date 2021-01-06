@@ -1,5 +1,11 @@
 #pragma once
 
+#ifdef SOL_NO_EXCEPTIONS
+  #define CET_SOL_SAFE_EXEC(commands, handler) commands
+#else
+  #define CET_SOL_SAFE_EXEC(commands, handler) try commands catch(std::exception& e) handler
+#endif // SOL_NO_EXCEPTIONS
+
 struct ScriptContext
 {
     ScriptContext(sol::state_view aStateView, const std::filesystem::path& acPath);
