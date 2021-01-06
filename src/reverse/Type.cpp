@@ -164,7 +164,7 @@ std::string Type::FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithH
         {
             auto* param = apFunc->params[i];
 
-            if (param->flags.isOut)
+            if (!param->flags.isOut)
             {
                 // ignone non-out params cause we've dealt with them above
                 continue;
@@ -284,7 +284,7 @@ sol::variadic_results Type::Execute(RED4ext::CClassFunction* apFunc, const std::
             args[i].value = nullptr;
         }
 
-        if (!args[i].value && apFunc->params[i]->flags.isOptional)
+        if (!args[i].value && !apFunc->params[i]->flags.isOptional)
         {
             auto* pType = apFunc->params[i]->type;
 
@@ -333,7 +333,7 @@ sol::variadic_results Type::Execute(RED4ext::CClassFunction* apFunc, const std::
 
     for (auto i = 0; i < apFunc->params.size; ++i)
     {
-        if (apFunc->params[i]->flags.isOut)
+        if (!apFunc->params[i]->flags.isOut)
             continue;
 
         results.push_back(Scripting::ToLua(m_lua, args[i]));
