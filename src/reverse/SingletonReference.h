@@ -9,7 +9,7 @@ struct SingletonReference : Type
     
 protected:
 
-    virtual RED4ext::IScriptable* GetHandle();
+    virtual RED4ext::ScriptInstance GetHandle();
     
 private:
     uint64_t m_hash;

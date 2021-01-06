@@ -97,12 +97,11 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::CStackType& aResul
         sol::table result(aState, sol::create);
         for(auto i = 0u; i < arrayHandle.count; ++i)
         {
-            RED4ext::CStackType el;
-            el.value = arrayHandle.entries + i * Size(pArrayType);
-            el.type = pArrayType->GetInnerType();
+            auto innerType = pArrayType->GetInnerType();
 
-            RED4ext::CName hash;
-            pArrayType->GetInnerType()->GetName(hash);
+            RED4ext::CStackType el;
+            el.value = arrayHandle.entries + i * innerType->GetSize();
+            el.type = pArrayType->GetInnerType();
 
             result[i + 1] = ToLua(aState, el);
         }
@@ -227,7 +226,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
         else if (apRtti->GetType() == RED4ext::ERTTIType::Array)
         {
             if (!hasData)
-                result.value = apAllocator->New<Array<void*>>();
+                result.value = apAllocator->New<Array<RED4ext::ScriptInstance>>();
         }
         else
         {
@@ -409,7 +408,8 @@ void Scripting::Initialize()
         sol::constructors<CName(const std::string&), CName(uint32_t), CName(uint32_t, uint32_t), CName()>(),
         sol::meta_function::to_string, &CName::ToString,
         "hash_lo", &CName::hash_lo,
-        "hash_hi", &CName::hash_hi);
+        "hash_hi", &CName::hash_hi,
+        "value", sol::property(&CName::AsString));
 
     m_lua["ToCName"] = [](sol::table table) -> CName
     {
@@ -672,8 +672,7 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
         result.type = pFunc->returnType->type;
     }
 
-    auto* pScriptable = static_cast<RED4ext::IScriptable*>(unk10->GetInstance(pPlayerSystem));
-
+    auto* pScriptable = unk10->GetInstance(pPlayerSystem);
     RED4ext::CStack stack(pScriptable, args.data(), static_cast<uint32_t>(args.size()), hasReturnType ? &result : nullptr, 0);
 
     const auto success = pFunc->Execute(&stack);

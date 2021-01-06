@@ -13,7 +13,7 @@ WeakReference::~WeakReference()
     // Someday maybe actually free memory
 }
 
-RED4ext::IScriptable* WeakReference::GetHandle()
+RED4ext::ScriptInstance WeakReference::GetHandle()
 {
     return m_weakHandle.handle;
 }

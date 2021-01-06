@@ -66,7 +66,7 @@ sol::protected_function Type::InternalIndex(const std::string& acName)
         // Search the function table if it isn't found, the above function only searches by ShortName so overloads are not found
         for (uint32_t i = 0; i < m_pType->funcs.size; ++i)
         {
-            if (m_pType->funcs.entries[i]->name.hash == RED4ext::FNV1a(acName.c_str()))
+            if (m_pType->funcs.entries[i]->fullName.hash == RED4ext::FNV1a(acName.c_str()))
             {
                 pFunc = static_cast<RED4ext::CClassFunction*>(m_pType->funcs.entries[i]);
                 break;
@@ -118,7 +118,7 @@ std::string Type::FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithH
 
     // name2 seems to be a cleaner representation of the name
     // for example, name would be "DisableFootstepAudio;Bool", and name2 is just"DisableFootstepAudio"
-    const std::string funcName2 = apFunc->name2.ToString();
+    const std::string funcName2 = apFunc->shortName.ToString();
 
     ret << funcName2 << "(";
 
@@ -126,7 +126,7 @@ std::string Type::FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithH
     {
         auto* param = apFunc->params[i];
 
-        if ((param->unk28 & 0x200) != 0)
+        if (param->flags.isOut)
         {
             // 'out' param, for returning additional data
             // we hide these here so we can display them in the return types
@@ -164,7 +164,7 @@ std::string Type::FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithH
         {
             auto* param = apFunc->params[i];
 
-            if ((param->unk28 & 0x200) == 0)
+            if (param->flags.isOut)
             {
                 // ignone non-out params cause we've dealt with them above
                 continue;
@@ -195,7 +195,7 @@ std::string Type::FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithH
 
     if (aWithHashes)
     {
-        const std::string funcHashes = "Hash:(" + fmt::format("{:016x}", apFunc->name.hash) + ") / ShortName:(" + apFunc->name2.ToString() + ") Hash:(" + fmt::format("{:016x}", apFunc->name2.hash) + ")";
+        const std::string funcHashes = "Hash:(" + fmt::format("{:016x}", apFunc->fullName.hash) + ") / ShortName:(" + apFunc->shortName.ToString() + ") Hash:(" + fmt::format("{:016x}", apFunc->shortName.hash) + ")";
         ret << " # " << funcHashes;
     }
 
@@ -271,7 +271,7 @@ sol::variadic_results Type::Execute(RED4ext::CClassFunction* apFunc, const std::
 
     for (auto i = 0u; i < apFunc->params.size; ++i)
     {
-        if ((apFunc->params[i]->unk28 & 0x200) != 0) // Deal with out params
+        if (apFunc->params[i]->flags.isOut) // Deal with out params
         {
             args[i] = Scripting::ToRED(sol::nil, apFunc->params[i]->type, &s_scratchMemory);
         }
@@ -279,12 +279,12 @@ sol::variadic_results Type::Execute(RED4ext::CClassFunction* apFunc, const std::
         {
             args[i] = Scripting::ToRED(aArgs[i].get<sol::object>(), apFunc->params[i]->type, &s_scratchMemory);
         }
-        else if((apFunc->params[i]->unk28 & 0x400) != 0) // Deal with optional params
+        else if(apFunc->params[i]->flags.isOptional) // Deal with optional params
         {
             args[i].value = nullptr;
         }
 
-        if (!args[i].value && (apFunc->params[i]->unk28 & 0x400) == 0)
+        if (!args[i].value && apFunc->params[i]->flags.isOptional)
         {
             auto* pType = apFunc->params[i]->type;
 
@@ -317,7 +317,7 @@ sol::variadic_results Type::Execute(RED4ext::CClassFunction* apFunc, const std::
     if (!handle)
     {
         const auto* engine = RED4ext::CGameEngine::Get();
-        handle = reinterpret_cast<RED4ext::IScriptable*>(engine->framework->gameInstance); // Not actually derived from IScriptable but still an "Instance"
+        handle = reinterpret_cast<RED4ext::ScriptInstance>(engine->framework->gameInstance); // Not actually derived from IScriptable but still an "Instance"
     }
 
     RED4ext::CStack stack(handle, args.data(), args.size(), hasReturnType ? &result : nullptr, 0);
@@ -333,7 +333,7 @@ sol::variadic_results Type::Execute(RED4ext::CClassFunction* apFunc, const std::
 
     for (auto i = 0; i < apFunc->params.size; ++i)
     {
-        if ((apFunc->params[i]->unk28 & 0x200) == 0)
+        if (apFunc->params[i]->flags.isOut)
             continue;
 
         results.push_back(Scripting::ToLua(m_lua, args[i]));

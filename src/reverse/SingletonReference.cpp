@@ -9,12 +9,12 @@ SingletonReference::SingletonReference(sol::state_view aView, RED4ext::CClass* a
 
 SingletonReference::~SingletonReference() = default;
 
-RED4ext::IScriptable* SingletonReference::GetHandle()
+RED4ext::ScriptInstance SingletonReference::GetHandle()
 {
     auto* engine = RED4ext::CGameEngine::Get();
     auto* pGameInstance = engine->framework->gameInstance;
 
-    return static_cast<RED4ext::IScriptable*>(pGameInstance->GetInstance(m_pType));
+    return pGameInstance->GetInstance(m_pType);
 }
 
 

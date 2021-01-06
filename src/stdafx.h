@@ -12,11 +12,14 @@
 #include <RED4ext/REDhash.hpp>
 #include <RED4ext/CName.hpp>
 #include <RED4ext/CString.hpp>
-#include <RED4ext/GameEngine.hpp>
 #include <RED4ext/ISerializable.hpp>
+#include <RED4ext/Types/InstanceType.hpp>
 #include <RED4ext/RTTISystem.hpp>
 #include <RED4ext/RTTITypes.hpp>
+#include <RED4ext/GameEngine.hpp>
 #include <RED4ext/Scripting/Stack.hpp>
+#include <RED4ext/Scripting/CProperty.hpp>
+#include <RED4ext/Scripting/Functions.hpp>
 
 #include <filesystem>
 #include <iostream>

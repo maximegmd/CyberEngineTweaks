@@ -25,6 +25,11 @@ std::string Quaternion::ToString() const noexcept
     return fmt::format("ToQuaternion{{ i = {0}, j = {1}, k = {2}, r = {3} }}", i, j, k, r);
 }
 
+std::string CName::AsString() const noexcept
+{
+    return RED4ext::CName(hash).ToString();
+}
+
 std::string CName::ToString() const noexcept
 {
     RED4ext::CName internal(hash);
