@@ -35,6 +35,11 @@ ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::
     }
 }
 
+ScriptContext::ScriptContext(ScriptContext&& other) noexcept : ScriptContext(other)
+{
+    other.m_initialized = false;
+}
+
 ScriptContext::~ScriptContext()
 {
     if (m_initialized)
@@ -70,7 +75,7 @@ void ScriptContext::TriggerOnDraw() const
         m_onDraw();
 }
 
-sol::object ScriptContext::GetObject() const
+sol::object ScriptContext::Object() const
 {
     return m_object;
 }

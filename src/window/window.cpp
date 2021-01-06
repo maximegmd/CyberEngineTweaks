@@ -46,6 +46,7 @@ void Window::Initialize()
                     spdlog::info("Window::Initialize() - window hook complete.");
                 }
             }
+            window.m_initialized = true;
         });
         t.detach();
     }

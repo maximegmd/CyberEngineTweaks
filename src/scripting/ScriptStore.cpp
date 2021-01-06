@@ -65,7 +65,7 @@ sol::object ScriptStore::Get(const std::string& acName) const
 {
     const auto itor = m_contexts.find(acName);
     if (itor != std::end(m_contexts))
-        return itor->second.GetObject();
+        return itor->second.Object();
 
     return sol::nil;
 }

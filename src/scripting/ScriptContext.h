@@ -3,10 +3,7 @@
 struct ScriptContext
 {
     ScriptContext(sol::state_view aStateView, const std::filesystem::path& acPath);
-    ScriptContext(ScriptContext&& other) noexcept : ScriptContext(other)
-    {
-        other.m_initialized = false;
-    }
+    ScriptContext(ScriptContext&& other) noexcept;
     ~ScriptContext();
 
     [[nodiscard]] bool IsValid() const;
@@ -15,7 +12,7 @@ struct ScriptContext
     void TriggerOnUpdate(float aDeltaTime) const;
     void TriggerOnDraw() const;
 
-    sol::object GetObject() const;
+    sol::object Object() const;
 
 protected:
 
