@@ -100,7 +100,7 @@ std::string Type::GetName() const
     {
         RED4ext::CName name;
         m_pType->GetName(name);
-        if (name)
+        if (!name.IsEmpty())
         {
             return name.ToString();
         }
@@ -290,7 +290,7 @@ sol::variadic_results Type::Execute(RED4ext::CClassFunction* apFunc, const std::
 
             RED4ext::CName hash;
             pType->GetName(hash);
-            if (hash)
+            if (!hash.IsEmpty())
             {
                 std::string typeName = hash.ToString();
                 aReturnMessage = "Function '" + acName + "' parameter " + std::to_string(i) + " must be " + typeName + ".";

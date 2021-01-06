@@ -2,93 +2,93 @@
 
 #include "Enum.h"
 
-Enum::Enum(const RED4ext::CStackType& stackType)
+Enum::Enum(const RED4ext::CStackType& aStackType)
 {
-    Get(stackType);
+    Get(aStackType);
 }
 
-Enum::Enum(const std::string& typeName, const std::string& value)
+Enum::Enum(const std::string& acTypeName, const std::string& acValue)
 {
-    auto* pType = static_cast<RED4ext::CEnum*>(RED4ext::CRTTISystem::Get()->GetEnum(RED4ext::FNV1a(typeName.c_str())));
+    auto* pType = static_cast<RED4ext::CEnum*>(RED4ext::CRTTISystem::Get()->GetEnum(RED4ext::FNV1a(acTypeName.c_str())));
     if (pType)
     {
-        m_type = pType;
-        SetValueByName(value);
+        m_cpType = pType;
+        SetValueByName(acValue);
     }
 }
 
-Enum::Enum(const std::string& typeName, uint32_t value)
+Enum::Enum(const std::string& acTypeName, uint32_t aValue)
 {
-    auto* pType = static_cast<RED4ext::CEnum*>(RED4ext::CRTTISystem::Get()->GetEnum(RED4ext::FNV1a(typeName.c_str())));
+    auto* pType = static_cast<RED4ext::CEnum*>(RED4ext::CRTTISystem::Get()->GetEnum(RED4ext::FNV1a(acTypeName.c_str())));
     if (pType)
     {
-        m_type = pType;
-        SetValueSafe(static_cast<uint32_t>(value));
+        m_cpType = pType;
+        SetValueSafe(static_cast<uint32_t>(aValue));
     }
 }
 
 
-Enum::Enum(const RED4ext::CEnum* pType, const std::string& value)
-    : m_type(pType)
+Enum::Enum(const RED4ext::CEnum* acpType, const std::string& acValue)
+    : m_cpType(acpType)
 {
-    SetValueByName(value);
+    SetValueByName(acValue);
 }
 
 
-Enum::Enum(const RED4ext::CEnum* pType, uint32_t value)
-    : m_type(pType)
+Enum::Enum(const RED4ext::CEnum* acpType, uint32_t aValue)
+    : m_cpType(acpType)
 {
-    SetValueSafe(static_cast<uint32_t>(value));
+    SetValueSafe(static_cast<uint32_t>(aValue));
 }
 
-void Enum::SetValueSafe(uint64_t value)
+void Enum::SetValueSafe(uint64_t aValue)
 {
-    for (auto i = 0; i < m_type->valueList.size; ++i)
+    for (auto i = 0; i < m_cpType->valueList.size; ++i)
     {
-        if (m_type->valueList[i] == value)
+        if (m_cpType->valueList[i] == aValue)
         {
-            m_value = value;
+            m_value = aValue;
             break;
         }
     }
 }
 
-void Enum::Get(const RED4ext::CStackType& stackType)
+void Enum::Get(const RED4ext::CStackType& acStackType) noexcept
 {
-    m_type = static_cast<RED4ext::CEnum*>(stackType.type);
-    switch (stackType.type->GetSize())
+    m_cpType = static_cast<const RED4ext::CEnum*>(acStackType.type);
+    switch (acStackType.type->GetSize())
     {
         case sizeof(uint8_t) :
-            m_value = *static_cast<uint8_t*>(stackType.value);
+            m_value = *static_cast<uint8_t*>(acStackType.value);
             break;
         case sizeof(uint16_t):
-            m_value = *static_cast<uint16_t*>(stackType.value);
+            m_value = *static_cast<uint16_t*>(acStackType.value);
             break;
         case sizeof(uint32_t):
-            m_value = *static_cast<uint32_t*>(stackType.value);
+            m_value = *static_cast<uint32_t*>(acStackType.value);
             break;
         case sizeof(uint64_t):
-            m_value = *static_cast<uint64_t*>(stackType.value);
+            m_value = *static_cast<uint64_t*>(acStackType.value);
             break;
     }
 }
 
-void Enum::Set(RED4ext::CStackType& stackType, TiltedPhoques::Allocator* apAllocator)
+void Enum::Set(RED4ext::CStackType& aStackType, TiltedPhoques::Allocator* apAllocator) const noexcept
 {
-    stackType.type = const_cast<RED4ext::CEnum*>(m_type); // Sad cast
-    switch (m_type->GetSize())
+    aStackType.type = const_cast<RED4ext::CEnum*>(m_cpType); // Sad cast
+    switch (m_cpType->GetSize())
     {
         case sizeof(uint8_t):
-            stackType.value = apAllocator->New<uint8_t>(static_cast<uint8_t>(m_value));
+            aStackType.value = apAllocator->New<uint8_t>(static_cast<uint8_t>(m_value));
             break;
         case sizeof(uint16_t):
-            stackType.value = apAllocator->New<uint16_t>(static_cast<uint16_t>(m_value));
+            aStackType.value = apAllocator->New<uint16_t>(static_cast<uint16_t>(m_value));
             break;
         case sizeof(uint32_t):
-            stackType.value = apAllocator->New<uint32_t>(static_cast<uint32_t>(m_value));
+            aStackType.value = apAllocator->New<uint32_t>(static_cast<uint32_t>(m_value));
             break;
         case sizeof(uint64_t):
-            stackType.value = apAllocator->New<uint64_t>(static_cast<uint64_t>(m_value));
+            aStackType.value = apAllocator->New<uint64_t>(static_cast<uint64_t>(m_value));
             break;
     }
 }
@@ -96,11 +96,11 @@ void Enum::Set(RED4ext::CStackType& stackType, TiltedPhoques::Allocator* apAlloc
 
 std::string Enum::GetValueName() const
 {
-    for (auto i = 0; i < m_type->valueList.size; ++i)
+    for (auto i = 0; i < m_cpType->valueList.size; ++i)
     {
-        if (m_type->valueList[i] == m_value)
+        if (m_cpType->valueList[i] == m_value)
         {
-            return RED4ext::CName(m_type->hashList[i]).ToString();
+            return RED4ext::CName(m_cpType->hashList[i]).ToString();
         }
     }
 
@@ -108,13 +108,15 @@ std::string Enum::GetValueName() const
 }
 
 
-void Enum::SetValueByName(const std::string& value)
+void Enum::SetValueByName(const std::string& acValue)
 {
-    for (auto i = 0; i < m_type->hashList.size; ++i)
+    const RED4ext::CName cValueName(acValue.c_str());
+
+    for (auto i = 0; i < m_cpType->hashList.size; ++i)
     {
-        if (m_type->hashList[i] == RED4ext::FNV1a(value.c_str()))
+        if (m_cpType->hashList[i] == cValueName)
         {
-            m_value = m_type->valueList[i];
+            m_value = m_cpType->valueList[i];
             break;
         }
     }
@@ -122,10 +124,10 @@ void Enum::SetValueByName(const std::string& value)
 
 std::string Enum::ToString() const
 {
-    if (m_type)
+    if (m_cpType)
     {
         RED4ext::CName name;
-        m_type->GetName(name);
+        m_cpType->GetName(name);
         return name.ToString() + std::string(" : ") + GetValueName() + std::string(" (") + std::to_string(m_value) + std::string(")");
     }
 
@@ -134,6 +136,6 @@ std::string Enum::ToString() const
 
 const RED4ext::CEnum* Enum::GetType() const
 {
-    return m_type;
+    return m_cpType;
 }
 
