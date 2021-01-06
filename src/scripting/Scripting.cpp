@@ -60,9 +60,9 @@ size_t Scripting::Size(RED4ext::IRTTIType* apRtti)
     if (apRtti == pStringType)
         return sizeof(RED4ext::CString);
     if (apRtti->GetType() == RED4ext::ERTTIType::Handle)
-        return sizeof(StrongHandle);
+        return sizeof(RED4ext::Handle<RED4ext::IScriptable>);
     if (apRtti->GetType() == RED4ext::ERTTIType::WeakHandle)
-        return sizeof(WeakHandle);
+        return sizeof(RED4ext::Handle<RED4ext::IScriptable>);
 
     return Converter::Size(apRtti);
 }
