@@ -23,31 +23,29 @@ ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::
             m_onConsoleClose = aCallback;
     };
 
-    CET_SOL_SAFE_EXEC
-    (
-        // try
-        {
-            const auto path = acPath / "init.lua";
-            const auto result = m_lua.script_file(path.string(), m_env);
+    // TODO: proper exception handling!
+    try
+    {
+        const auto path = acPath / "init.lua";
+        const auto result = m_lua.script_file(path.string(), m_env);
 
-            if (result.valid())
-            {
-                m_initialized = true;
-                m_object = result;
-            }
-            else
-            {
-                sol::error err = result;
-                std::string what = err.what();
-                spdlog::error(what);
-            }
-        },
-        // catch
+        if (result.valid())
         {
-            std::string what = e.what();
+            m_initialized = true;
+            m_object = result;
+        }
+        else
+        {
+            sol::error err = result;
+            std::string what = err.what();
             spdlog::error(what);
         }
-    )
+    }
+    catch(std::exception& e)
+    {
+        std::string what = e.what();
+        spdlog::error(what);
+    }
 }
 
 ScriptContext::ScriptContext(ScriptContext&& other) noexcept : ScriptContext(other)
@@ -68,103 +66,91 @@ bool ScriptContext::IsValid() const
 
 void ScriptContext::TriggerOnInit() const
 {
-    CET_SOL_SAFE_EXEC
-    (
-        // try
-        {
-            if (m_onInit)
-                m_onInit();
-        },
-        // catch
-        {
-            std::string what = e.what();
-            spdlog::error(what);
-        }
-    )
+    // TODO: proper exception handling!
+    try
+    {
+        if (m_onInit)
+            m_onInit();
+    }
+    catch(std::exception& e)
+    {
+        std::string what = e.what();
+        spdlog::error(what);
+    }
 }
 
 void ScriptContext::TriggerOnShutdown() const
 {
-    CET_SOL_SAFE_EXEC
-    (
-        // try
-        {
-            if (m_onShutdown)
-                m_onShutdown();
-        },
-        // catch
-        {
-            std::string what = e.what();
-            spdlog::error(what);
-        }
-    )
+    // TODO: proper exception handling!
+    try
+    {
+        if (m_onShutdown)
+            m_onShutdown();
+    }
+    catch(std::exception& e)
+    {
+        std::string what = e.what();
+        spdlog::error(what);
+    }
 }
 
 void ScriptContext::TriggerOnUpdate(float aDeltaTime) const
 {
-    CET_SOL_SAFE_EXEC
-    (
-        // try
-        {
-            if (m_onUpdate)
-                m_onUpdate(aDeltaTime);
-        },
-        // catch
-        {
-            std::string what = e.what();
-            spdlog::error(what);
-        }
-    )
+    // TODO: proper exception handling!
+    try
+    {
+        if (m_onUpdate)
+            m_onUpdate(aDeltaTime);
+    }
+    catch(std::exception& e)
+    {
+        std::string what = e.what();
+        spdlog::error(what);
+    }
 }
 
 void ScriptContext::TriggerOnDraw() const
 {
-    CET_SOL_SAFE_EXEC
-    (
-        // try
-        {
-            if (m_onDraw)
-                m_onDraw();
-        },
-        // catch
-        {
-            std::string what = e.what();
-            spdlog::error(what);
-        }
-    )
+    // TODO: proper exception handling!
+    try
+    {
+        if (m_onDraw)
+            m_onDraw();
+    }
+    catch(std::exception& e)
+    {
+        std::string what = e.what();
+        spdlog::error(what);
+    }
 }
     
 void ScriptContext::TriggerOnConsoleOpen() const
 {
-    CET_SOL_SAFE_EXEC
-    (
-        // try
-        {
-            if (m_onConsoleOpen)
-                m_onConsoleOpen();
-        },
-        // catch
-        {
-            std::string what = e.what();
-            spdlog::error(what);
-        }
-    )
+    // TODO: proper exception handling!
+    try
+    {
+        if (m_onConsoleOpen)
+            m_onConsoleOpen();
+    }
+    catch(std::exception& e)
+    {
+        std::string what = e.what();
+        spdlog::error(what);
+    }
 }
 void ScriptContext::TriggerOnConsoleClose() const
 {
-    CET_SOL_SAFE_EXEC
-    (
-        // try
-        {
-            if (m_onConsoleClose)
-                m_onConsoleClose();
-        },
-        // catch
-        {
-            std::string what = e.what();
-            spdlog::error(what);
-        }
-    )
+    // TODO: proper exception handling!
+    try
+    {
+        if (m_onConsoleClose)
+            m_onConsoleClose();
+    }
+    catch(std::exception& e)
+    {
+        std::string what = e.what();
+        spdlog::error(what);
+    }
 }
 
 sol::object ScriptContext::Object() const

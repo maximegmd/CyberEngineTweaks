@@ -39,19 +39,17 @@ const ScriptStore& Scripting::GetStore() const
 
 bool Scripting::ExecuteLua(const std::string& acCommand)
 {
-    CET_SOL_SAFE_EXEC
-    (
-        // try
-        {
-            m_lua.script(acCommand);
-        },
-        // catch
-        {
-            Console::Get().Log(e.what());
-            return false;
-        }
-    )
-    return true;
+    // TODO: proper exception handling!
+    try
+    {
+        m_lua.script(acCommand);
+        return true;
+    }
+    catch(std::exception& e)
+    {
+        Console::Get().Log(e.what());
+    }
+    return false;
 }
 
 size_t Scripting::Size(RED4ext::IRTTIType* apRtti)

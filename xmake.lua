@@ -22,12 +22,7 @@ target("RED4ext.SDK")
     add_includedirs("vendor/RED4ext.SDK/include/", { public = true })
 
 target("cyber_engine_tweaks")
-    add_defines("WIN32_LEAN_AND_MEAN", "NOMINMAX")
-    if is_mode("release") then
-        add_defines("SOL_NO_EXCEPTIONS")
-    else
-        add_defines("SOL_ALL_SAFETIES_ON")
-    end
+    add_defines("WIN32_LEAN_AND_MEAN", "NOMINMAX", "SOL_ALL_SAFETIES_ON")
     set_pcxxheader("src/stdafx.h") -- see: https://github.com/xmake-io/xmake/issues/1171#issuecomment-751421178
     set_kind("shared")
     set_filename("cyber_engine_tweaks.asi")
