@@ -6,7 +6,7 @@
 #include "d3d12/D3D12.h"
 #include "console/Console.h"
 #include "scripting/LuaVM.h"
-#include "window/Window.h"
+#include "window/window.h"
 
 #pragma comment( lib, "dbghelp.lib" )
 #pragma comment(linker, "/DLL")
@@ -26,16 +26,23 @@ static HANDLE s_modInstanceMutex = nullptr;
 
 static void Initialize(HMODULE mod)
 {
-    s_modInstanceMutex = CreateMutex(NULL, TRUE, _T("Cyber Engine Tweaks Module Instance"));
-    if (s_modInstanceMutex == nullptr)
-        return;
-
     MH_Initialize();
 
     Options::Initialize(mod);
     auto& options = Options::Get();
 
-    if (!options.IsCyberpunk2077() || options.GameImage.version != Image::MakeVersion(1,6))
+    if (!options.IsCyberpunk2077())
+        return;
+
+    if(options.GameImage.GetVersion() != Image::GetSupportedVersion())
+    {
+        auto [major, minor] = Image::GetSupportedVersion();
+        spdlog::error("Unsupported game version! Only {}.{:02d} is supported.", major, minor);
+        return;
+    }
+
+    s_modInstanceMutex = CreateMutex(NULL, TRUE, _T("Cyber Engine Tweaks Module Instance"));
+    if (s_modInstanceMutex == nullptr)
         return;
 
     if(options.PatchSMT)
