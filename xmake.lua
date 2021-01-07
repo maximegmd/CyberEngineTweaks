@@ -13,7 +13,7 @@ if is_mode("release") or is_mode("releasedbg") then
 end
 
 add_cxflags("/std:c++latest", "/bigobj", "/MP")
-add_defines("RED4EXT_STATIC_LIB")
+add_defines("RED4EXT_STATIC_LIB", "UNICODE")
 
 target("RED4ext.SDK")
     set_kind("static")

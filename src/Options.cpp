@@ -27,8 +27,8 @@ Options::Options(HMODULE aModule)
             if(VerQueryValue(verInfo.get(), _T("\\VarFileInfo\\Translation"), reinterpret_cast<void**>(&pTranslations), &transBytes)) 
             {
                 UINT dummy;
-                char* productName = nullptr;
-                char subBlock[64];
+                TCHAR* productName = nullptr;
+                TCHAR subBlock[64];
                 for(UINT i = 0; i < (transBytes / sizeof(*pTranslations)); i++)
                 {
                     _stprintf(subBlock, _T("\\StringFileInfo\\%04x%04x\\ProductName"), pTranslations[i].Language, pTranslations[i].CodePage);
@@ -112,7 +112,7 @@ Options::Options(HMODULE aModule)
         if (config.value("unlock_menu", false))
             this->PatchEnableDebug = true;
 
-        this->ConsoleChar = MapVirtualKeyA(this->ConsoleKey, MAPVK_VK_TO_CHAR);
+        this->ConsoleChar = MapVirtualKey(this->ConsoleKey, MAPVK_VK_TO_CHAR);
     }
     configFile.close();
 
