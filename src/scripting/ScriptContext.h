@@ -15,24 +15,22 @@ struct ScriptContext
     void TriggerOnConsoleOpen() const;
     void TriggerOnConsoleClose() const;
 
-    sol::object Object() const;
-
-protected:
-
-    void TriggerOnShutdown() const;
+    sol::object GetRootObject() const;
 
 private:
+
+    void TriggerOnShutdown() const;
 
     ScriptContext(const ScriptContext&) = default;
 
     sol::state_view m_lua;
-    sol::environment m_env;
-    sol::object m_object;
-    sol::function m_onInit;
-    sol::function m_onShutdown;
-    sol::function m_onUpdate;
-    sol::function m_onDraw;
-    sol::function m_onConsoleOpen;
-    sol::function m_onConsoleClose;
-    bool m_initialized{false};
+    sol::environment m_env{ };
+    sol::object m_object{ };
+    sol::function m_onInit{ };
+    sol::function m_onShutdown{ };
+    sol::function m_onUpdate{ };
+    sol::function m_onDraw{ };
+    sol::function m_onConsoleOpen{ };
+    sol::function m_onConsoleClose{ };
+    bool m_initialized{ false };
 };

@@ -5,13 +5,20 @@
 
 struct Scripting
 {
-    Scripting();
+    Scripting() = default;
+    ~Scripting() = default;
+
+    void Initialize();
+
+    void TriggerOnInit() const;
+    void TriggerOnUpdate(float aDeltaTime) const;
+    void TriggerOnDraw() const;
     
-    static Scripting& Get();
+    void TriggerOnConsoleOpen() const;
+    void TriggerOnConsoleClose() const;
 
-    const ScriptStore& GetStore() const;
-
-    void ReloadAllMods() { m_store.LoadAll(m_lua); }
+    sol::object GetMod(const std::string& acName) const;
+    void ReloadAllMods();
     
     bool ExecuteLua(const std::string& acCommand);
 
@@ -21,19 +28,16 @@ struct Scripting
 
 protected:
 
-    void Initialize();
-
     sol::object Index(const std::string& acName);
     sol::object NewIndex(const std::string& acName, sol::object aParam);
     sol::object GetSingletonHandle(const std::string& acName);
-    sol::object CreateHandle(const std::string& acName, RED4ext::IScriptable* apHandle);
     sol::protected_function InternalIndex(const std::string& acName);
     
-    sol::object Execute(const std::string& aFuncName, sol::variadic_args args, sol::this_environment env, sol::this_state L, std::string& aReturnMessage);
+    sol::object Execute(const std::string& aFuncName, sol::variadic_args args, sol::this_environment env, sol::this_state L, std::string& aReturnMessage) const;
 
 private:
-    sol::state m_lua;
-    std::unordered_map<std::string, sol::object> m_properties;
-    std::unordered_map<std::string, SingletonReference> m_singletons;
-    ScriptStore m_store;
+    sol::state m_lua{ };
+    std::unordered_map<std::string, sol::object> m_properties{ };
+    std::unordered_map<std::string, SingletonReference> m_singletons{ };
+    ScriptStore m_store{ };
 };

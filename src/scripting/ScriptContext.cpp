@@ -2,7 +2,6 @@
 
 #include "ScriptContext.h"
 
-
 ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::path& acPath)
     : m_lua(aStateView)
     , m_env(aStateView, sol::create, aStateView.globals())
@@ -79,21 +78,6 @@ void ScriptContext::TriggerOnInit() const
     }
 }
 
-void ScriptContext::TriggerOnShutdown() const
-{
-    // TODO: proper exception handling!
-    try
-    {
-        if (m_onShutdown)
-            m_onShutdown();
-    }
-    catch(std::exception& e)
-    {
-        std::string what = e.what();
-        spdlog::error(what);
-    }
-}
-
 void ScriptContext::TriggerOnUpdate(float aDeltaTime) const
 {
     // TODO: proper exception handling!
@@ -153,8 +137,22 @@ void ScriptContext::TriggerOnConsoleClose() const
     }
 }
 
-sol::object ScriptContext::Object() const
+sol::object ScriptContext::GetRootObject() const
 {
     return m_object;
 }
 
+void ScriptContext::TriggerOnShutdown() const
+{
+    // TODO: proper exception handling!
+    try
+    {
+        if (m_onShutdown)
+            m_onShutdown();
+    }
+    catch(std::exception& e)
+    {
+        std::string what = e.what();
+        spdlog::error(what);
+    }
+}

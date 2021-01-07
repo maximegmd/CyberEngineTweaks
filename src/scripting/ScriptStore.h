@@ -4,8 +4,8 @@
 
 struct ScriptStore
 {
-    ScriptStore();
-    ~ScriptStore();
+    ScriptStore() = default;
+    ~ScriptStore() = default;
 
     void LoadAll(sol::state_view aStateView);
     
@@ -16,9 +16,9 @@ struct ScriptStore
     void TriggerOnConsoleOpen() const;
     void TriggerOnConsoleClose() const;
 
-    sol::object Get(const std::string& acName) const;
+    sol::object GetMod(const std::string& acName) const;
 
 private:
     
-    std::unordered_map<std::string, ScriptContext> m_contexts;
+    std::unordered_map<std::string, ScriptContext> m_contexts{ };
 };
