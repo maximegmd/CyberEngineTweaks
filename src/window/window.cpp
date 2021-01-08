@@ -15,9 +15,9 @@ static BOOL CALLBACK EnumWindowsProcCP77(HWND ahWnd, LPARAM alParam)
     GetWindowThreadProcessId(ahWnd, &lpdwProcessId);
     if (lpdwProcessId == GetCurrentProcessId())
     {
-        char name[512] = { 0 };
-        GetWindowTextA(ahWnd, name, 511);
-        if (strcmp("Cyberpunk 2077 (C) 2020 by CD Projekt RED", name) == 0)
+        TCHAR name[512] = { 0 };
+        GetWindowText(ahWnd, name, 511);
+        if (_tcscmp(_T("Cyberpunk 2077 (C) 2020 by CD Projekt RED"), name) == 0)
         {
             *reinterpret_cast<HWND*>(alParam) = ahWnd;
             return FALSE;
@@ -46,6 +46,7 @@ void Window::Initialize()
                     spdlog::info("Window::Initialize() - window hook complete.");
                 }
             }
+            window.m_initialized = true;
         });
         t.detach();
     }

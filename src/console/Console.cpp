@@ -133,6 +133,12 @@ void Console::Toggle()
     D3D12::Get().SetTrapInputInImGui(m_enabled);
     m_focusConsoleInput = m_enabled;
 
+    auto& luaVM = LuaVM::Get();
+    if (m_enabled)
+        luaVM.OnConsoleOpen();
+    else
+        luaVM.OnConsoleClose();
+    
     ClipToCenter(RED4ext::CGameEngine::Get()->unkC0);
 }
 

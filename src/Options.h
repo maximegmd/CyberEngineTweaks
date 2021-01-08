@@ -8,9 +8,7 @@ struct Options
     static Options& Get();
     
     bool IsCyberpunk2077() const noexcept;
-
-    bool PatchSMT{ false };
-    bool PatchVirtualInput{ true };
+    
     bool PatchEnableDebug{ false };
     bool PatchRemovePedestrians{ false };
     bool PatchAsyncCompute{ false };
