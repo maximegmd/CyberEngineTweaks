@@ -90,8 +90,6 @@ Options::Options(HMODULE aModule)
     if(configFile)
     {
         auto config = nlohmann::json::parse(configFile);
-        this->PatchSMT = config.value("smt", this->PatchSMT);
-        this->PatchVirtualInput = config.value("virtual_input", this->PatchVirtualInput);
         this->PatchEnableDebug = config.value("enable_debug", this->PatchEnableDebug);
         this->CPUMemoryPoolFraction = config.value("cpu_memory_pool_fraction", this->CPUMemoryPoolFraction);
         this->GPUMemoryPoolFraction = config.value("gpu_memory_pool_fraction", this->GPUMemoryPoolFraction);
@@ -117,8 +115,6 @@ Options::Options(HMODULE aModule)
     configFile.close();
 
     nlohmann::json config;
-    config["smt"] = this->PatchSMT;
-    config["virtual_input"] = this->PatchVirtualInput;
     config["enable_debug"] = this->PatchEnableDebug;
     config["cpu_memory_pool_fraction"] = this->CPUMemoryPoolFraction;
     config["gpu_memory_pool_fraction"] = this->GPUMemoryPoolFraction;
