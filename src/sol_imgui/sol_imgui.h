@@ -108,9 +108,7 @@ namespace sol_ImGui
     // Parameters stacks (shared)
     inline void PushFont(ImFont* pFont)																	{ ImGui::PushFont(pFont); }
     inline void PopFont()																				{ ImGui::PopFont(); }
-#ifdef SOL_IMGUI_USE_COLOR_U32
     inline void PushStyleColor(int idx, int col)														{ ImGui::PushStyleColor(static_cast<ImGuiCol>(idx), ImU32(col)); }
-#endif
     inline void PushStyleColor(int idx, float colR, float colG, float colB, float colA)					{ ImGui::PushStyleColor(static_cast<ImGuiCol>(idx), { colR, colG, colB, colA }); }
     inline void PopStyleColor()																			{ ImGui::PopStyleColor(); }
     inline void PopStyleColor(int count)																{ ImGui::PopStyleColor(count); }
@@ -121,12 +119,10 @@ namespace sol_ImGui
     inline std::tuple<float, float, float, float> GetStyleColorVec4(int idx)							{ const auto col{ ImGui::GetStyleColorVec4(static_cast<ImGuiCol>(idx)) };	return std::make_tuple(col.x, col.y, col.z, col.w); }
     inline ImFont* GetFont()																			{ return ImGui::GetFont(); }
     inline float GetFontSize()																			{ return ImGui::GetFontSize(); }
-    inline std::tuple<float, float> GetFontTexUvWhitePixel()											{ const auto vec2{ ImGui::GetFontTexUvWhitePixel() };	return std::make_tuple(vec2.x, vec2.y); }
-#ifdef SOL_IMGUI_USE_COLOR_U32
-    inline int GetColorU32(int idx, float alphaMul)														{ return ImGui::GetColorU32(static_cast<ImGuiCol>(idx), alphaMul); }
-    inline int GetColorU32(float colR, float colG, float colB, float colA)								{ return ImGui::GetColorU32({ colR, colG, colB, colA }); }
-    inline int GetColorU32(int col)																		{ return ImGui::GetColorU32(ImU32(col)); }
-#endif
+    inline std::tuple<float, float> GetFontTexUvWhitePixel()               { const auto vec2{ ImGui::GetFontTexUvWhitePixel() }; return std::make_tuple(vec2.x, vec2.y); }
+    inline int GetColorU32(int idx, float alphaMul)                        { return ImGui::GetColorU32(static_cast<ImGuiCol>(idx), alphaMul); }
+    inline int GetColorU32(float colR, float colG, float colB, float colA) { return ImGui::GetColorU32({ colR, colG, colB, colA }); }
+    inline int GetColorU32(int col)                                        { return ImGui::GetColorU32(ImU32(col)); }
     
     // Parameters stacks (current window)
     inline void PushItemWidth(float itemWidth)															{ ImGui::PushItemWidth(itemWidth); }
@@ -1554,7 +1550,6 @@ namespace sol_ImGui
     inline std::tuple<float, float> CalcTextSize(const std::string& text, const std::string& text_end, bool hide_text_after_double_hash, float wrap_width)	{ const auto vec2{ ImGui::CalcTextSize(text.c_str(), text_end.c_str(), hide_text_after_double_hash, wrap_width) }; return std::make_tuple(vec2.x, vec2.y); }
 
     // Color Utilities
-#ifdef SOL_IMGUI_USE_COLOR_U32
     inline sol::as_table_t<std::vector<float>> ColorConvertU32ToFloat4(unsigned int in)
     {
         const auto vec4 = ImGui::ColorConvertU32ToFloat4(in);
@@ -1573,7 +1568,6 @@ namespace sol_ImGui
         
         return ImGui::ColorConvertFloat4ToU32({ float(r), float(g), float(b), float(a) });
     }
-#endif
     inline std::tuple<float, float, float> ColorConvertRGBtoHSV(float r, float g, float b)
     {
         float h{}, s{}, v{};
@@ -2124,14 +2118,10 @@ namespace sol_ImGui
 #pragma region Parameters stacks (shared)
         ImGui.set_function("PushFont"						, PushFont);
         ImGui.set_function("PopFont"						, PopFont);
-#ifdef SOL_IMGUI_USE_COLOR_U32
         ImGui.set_function("PushStyleColor"					, sol::overload(
                                                                 sol::resolve<void(int, int)>(PushStyleColor),
                                                                 sol::resolve<void(int, float, float, float, float)>(PushStyleColor)
                                                             ));
-#else
-        ImGui.set_function("PushStyleColor"					, PushStyleColor);
-#endif
         ImGui.set_function("PopStyleColor"					, sol::overload(
                                                                 sol::resolve<void()>(PopStyleColor),
                                                                 sol::resolve<void(int)>(PopStyleColor)
@@ -2140,13 +2130,11 @@ namespace sol_ImGui
         ImGui.set_function("GetFont"						, GetFont);
         ImGui.set_function("GetFontSize"					, GetFontSize);
         ImGui.set_function("GetFontTexUvWhitePixel"			, GetFontTexUvWhitePixel);
-#ifdef SOL_IMGUI_USE_COLOR_U32
         ImGui.set_function("GetColorU32"					, sol::overload(
                                                                 sol::resolve<int(int, float)>(GetColorU32),
                                                                 sol::resolve<int(float, float, float, float)>(GetColorU32), 
                                                                 sol::resolve<int(int)>(GetColorU32)
                                                             ));
-#endif
 #pragma endregion Parameters stacks (shared)
         
 #pragma region Parameters stacks (current window)
@@ -2697,10 +2685,8 @@ namespace sol_ImGui
 #pragma endregion Text Utilities
 
 #pragma region Color Utilities
-#ifdef SOL_IMGUI_USE_COLOR_U32
         ImGui.set_function("ColorConvertU32ToFloat4"		, ColorConvertU32ToFloat4);
         ImGui.set_function("ColorConvertFloat4ToU32"		, ColorConvertFloat4ToU32);
-#endif
         ImGui.set_function("ColorConvertRGBtoHSV"			, ColorConvertRGBtoHSV);
         ImGui.set_function("ColorConvertHSVtoRGB"			, ColorConvertHSVtoRGB);
 #pragma endregion Color Utilities
