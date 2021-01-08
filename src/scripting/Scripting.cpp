@@ -364,9 +364,9 @@ size_t Scripting::Size(RED4ext::IRTTIType* apRtti)
     if (apRtti == pStringType)
         return sizeof(RED4ext::CString);
     if (apRtti->GetType() == RED4ext::ERTTIType::Handle)
-        return sizeof(StrongHandle);
+        return sizeof(RED4ext::Handle<RED4ext::IScriptable>);
     if (apRtti->GetType() == RED4ext::ERTTIType::WeakHandle)
-        return sizeof(WeakHandle);
+        return sizeof(RED4ext::WeakHandle<RED4ext::IScriptable>);
 
     return Converter::Size(apRtti);
 }
@@ -384,14 +384,14 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::CStackType& aResul
         return make_object(aState, std::string(static_cast<RED4ext::CString*>(aResult.value)->c_str()));
     if (pType->GetType() == RED4ext::ERTTIType::Handle)
     {
-        const auto handle = *static_cast<StrongHandle*>(aResult.value);
-        if (handle.handle)
+        const auto handle = *static_cast<RED4ext::Handle<RED4ext::IScriptable>*>(aResult.value);
+        if (handle)
             return make_object(aState, StrongReference(aState, handle));
     }
     else if (pType->GetType() == RED4ext::ERTTIType::WeakHandle)
     {
-        const auto handle = *static_cast<WeakHandle*>(aResult.value);
-        if (handle.handle)
+        const auto handle = *static_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(aResult.value);
+        if (handle)
             return make_object(aState, WeakReference(aState, handle));
     }
     else if (pType->GetType() == RED4ext::ERTTIType::Array)
@@ -467,9 +467,9 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
                 if (pType != nullptr)
                 {
                     if (hasData)
-                        result.value = apAllocator->New<StrongHandle>(aObject.as<StrongReference>().m_strongHandle);
+                        result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>(aObject.as<StrongReference>().m_strongHandle);
                     else
-                        result.value = apAllocator->New<StrongHandle>();
+                        result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>();
                 }
             }
             else if (aObject.is<WeakReference>()) // Handle Implicit Cast - Probably an awful conversion without proper ref handling but try anyway
@@ -484,9 +484,9 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
                 if (pType != nullptr)
                 {
                     if (hasData)
-                        result.value = apAllocator->New<StrongHandle>(*reinterpret_cast<StrongHandle*>(&aObject.as<WeakReference>().m_weakHandle));
+                        result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>(aObject.as<WeakReference>().m_weakHandle);
                     else
-                        result.value = apAllocator->New<StrongHandle>();
+                        result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>();
                 }
             }
         }
@@ -504,9 +504,9 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
                 if (pType != nullptr)
                 {
                     if (hasData)
-                        result.value = apAllocator->New<WeakHandle>(aObject.as<WeakReference>().m_weakHandle);
+                        result.value = apAllocator->New<RED4ext::WeakHandle<RED4ext::IScriptable>>(aObject.as<WeakReference>().m_weakHandle);
                     else
-                        result.value = apAllocator->New<WeakHandle>();
+                        result.value = apAllocator->New<RED4ext::WeakHandle<RED4ext::IScriptable>>();
                 }
             }
             else if (aObject.is<StrongReference>()) // Handle Implicit Cast
@@ -521,9 +521,9 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
                 if (pType != nullptr)
                 {
                     if (hasData)
-                        result.value = apAllocator->New<WeakHandle>(*reinterpret_cast<WeakHandle*>(&aObject.as<StrongReference>().m_strongHandle));
+                        result.value = apAllocator->New<RED4ext::WeakHandle<RED4ext::IScriptable>>(aObject.as<StrongReference>().m_strongHandle);
                     else
-                        result.value = apAllocator->New<WeakHandle>();
+                        result.value = apAllocator->New<RED4ext::WeakHandle<RED4ext::IScriptable>>();
                 }
             }
         }
