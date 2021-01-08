@@ -45,12 +45,6 @@ static void Initialize(HMODULE mod)
     if (s_modInstanceMutex == nullptr)
         return;
 
-    if(options.PatchSMT)
-        SmtAmdPatch(&options.GameImage);
-
-    if (options.PatchVirtualInput)
-        VirtualInputPatch(&options.GameImage);
-
     if (options.PatchEnableDebug)
         EnableDebugPatch(&options.GameImage);
 

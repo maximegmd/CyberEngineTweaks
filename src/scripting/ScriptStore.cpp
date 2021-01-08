@@ -4,16 +4,6 @@
 
 #include "Options.h"
 
-ScriptStore::ScriptStore()
-{
-    
-}
-
-ScriptStore::~ScriptStore()
-{
-
-}
-
 void ScriptStore::LoadAll(sol::state_view aStateView)
 {
     m_contexts.clear();
@@ -61,11 +51,23 @@ void ScriptStore::TriggerOnDraw() const
         kvp.second.TriggerOnDraw();
 }
 
-sol::object ScriptStore::Get(const std::string& acName) const
+void ScriptStore::TriggerOnConsoleOpen() const
+{
+    for (const auto& kvp : m_contexts)
+        kvp.second.TriggerOnConsoleOpen();
+}
+
+void ScriptStore::TriggerOnConsoleClose() const
+{
+    for (const auto& kvp : m_contexts)
+        kvp.second.TriggerOnConsoleClose();
+}
+
+sol::object ScriptStore::GetMod(const std::string& acName) const
 {
     const auto itor = m_contexts.find(acName);
     if (itor != std::end(m_contexts))
-        return itor->second.GetObject();
+        return itor->second.GetRootObject();
 
     return sol::nil;
 }

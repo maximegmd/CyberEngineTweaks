@@ -1,24 +1,13 @@
 # sol2_ImGui_Bindings
 
-Welcome to the sol2 ImGui bindings.
-I spent my time making these over the last few days.
-I hope you think they are useful as there's no others to my knowledge.
-
-If you liked what I did and have some money to spare (I'm a student, haha), you can donate to me at https://paypal.me/mattseys.
-It would be appreciated!
-
-Enjoy! 
-
-# Notes
-- This uses the latest sol2 version, the repo is located at https://github.com/ThePhD/sol2/.
-- These bindings are based on one of the latest version of ImGui Docking Branch. Comment what you don't need or breaks.
-- I've hid the U32 related function with a define (SOL_IMGUI_USE_COLOR_U32), if you wish to use these, define that!
-- There's also another define hidden (CUSTOM_IMGUI) which is for my own adapted imgui version with a few more enum values, ignore if you wish.
+## Checkout former repo here: https://github.com/MSeys/sol2_ImGui_Bindings
+This version was modified a bit to make it work properly with Cyber Engine Tweaks, docs part of README.md taken and modified to match modifications.
+If you want some sample demo, see demo in Dear ImGui master, translates almost 1:1 to Lua: https://github.com/ocornut/imgui/blob/master/imgui_demo.cpp
 
 # How to Use
 ```cpp
   // Call this function!
-  sol_ImGui::Init(lua); // lua being your sol::state
+  sol_ImGui::InitBindings(lua); // lua being your sol::state
 ```
 
 # Documentation
@@ -266,7 +255,10 @@ Note: This binding does not give functions that can obtain an ImFont* from insid
   ImGui.PopFont()
   
   -- ImGui.PushStyleColor(...)
-  -- Parameters: ImGuiCol (idx), float (color_r), float (color_g), float (color_b), float (color_a)
+  -- Parameters A: ImGuiCol (idx), int (color_u32)
+  -- Parameters B: ImGuiCol (idx), float (color_r), float (color_g), float (color_b), float (color_a)
+  -- Overloads
+  ImGui.PushStyleColor(ImGuiCol.Tab, 0xF42069FF)
   ImGui.PushStyleColor(ImGuiCol.Border, 1, 0, 0, 1)
   
   -- ImGui.PopStyleColor(...)
@@ -303,6 +295,15 @@ Note: This binding does not give functions that can obtain an ImFont* from insid
   -- ImGui.GetFontTexUvWhitePixel()
   -- Returns: float (x), float (y)
   x, y = ImGui.GetFontTexUvWhitePixel()
+
+  -- ImGui.GetColorU32(...)
+  -- Parameters A: ImGuiCol (idx), float (alphaMultiplier, usually stays at 1)
+  -- Parameters B: float (color_r), float (color_g), float (color_b), float (color_a)
+  -- Returns: int (color_u32)
+  -- Overloads
+  color_u32 = ImGui.GetColorU32(ImGuiCol.Text, 1)
+  color_u32 = ImGui.GetColorU32(0, 1, 0, 1)
+
 ```
 
 ## Parameter Stacks (Current Window)
@@ -1169,30 +1170,6 @@ selected, activated = ImGui.MenuItem("Label", "ALT+F4", selected, true)
   ImGui.SetTabItemClosed("MyDockedWindow")
 ```
 
-## Docking
-```lua
-  -- ImGui.DockSpace(...)
-  -- Parameters: unsigned int (id), float (size_x) [O], float (size_y) [O], ImGuiDockNodeFlags (flags) [O]
-  -- Overloads
-  ImGui.DockSpace(0)
-  ImGui.DockSpace(1, 200, 300)
-  ImGui.DockSpace(1, 200, 300, ImGuiDockNodeFlags.NoDockingInCentralNode)
-  
-  -- ImGui.SetNextWindowDockID(...)
-  -- Parameters: unsigned int (dock_id), ImGuiCond (cond) [O]
-  -- Overloads
-  ImGui.SetNextWindowDockID(0)
-  ImGui.SetNextWindowDockID(0, ImGuiCond.Always)
-  
-  -- ImGui.GetWindowDockID()
-  -- Returns: unsigned int (id)
-  id = ImGui.GetWindowDockID()
-  
-  -- ImGui.IsWindowDocked()
-  -- Returns: bool (docked)
-  docked = ImGui.IsWindowDocked()
-```
-
 ## Logging
 ```lua
   -- ImGui.LogToTTY(...)
@@ -1380,7 +1357,19 @@ selected, activated = ImGui.MenuItem("Label", "ALT+F4", selected, true)
   -- Parameters: float (h), float (s), float (v)
   -- Returns: float (r), float (g), float (b)
   r, g, b = ImGui.ColorConvertHSVtoRGB(1, 0, 0.5)
+
+  -- ImGui.ColorConvertU32ToFloat4(...)
+  -- Parameters: int (color_u32)
+  -- Returns: float array (color_f4={r,g,b,a})
+  color_f4 = ImGui.ColorConvertU32ToFloat4(0xF69420FF)
+
+  -- ImGui.ColorConvertFloat4ToU32(...)
+  -- Parameters: float array (color_f4={r,g,b,a})
+  -- Returns: int (color_u32)
+  -- NOTE: this function is fundamentally 
+  color_u32 = ImGui.ColorConvertFloat4ToU32({0.4, 0.2, 0, 1})
 ```
+
 ## Inputs Utilities: Keyboard
 ```lua
   -- ImGui.GetKeyIndex(...)

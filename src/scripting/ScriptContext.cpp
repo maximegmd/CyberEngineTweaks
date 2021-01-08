@@ -2,7 +2,6 @@
 
 #include "ScriptContext.h"
 
-
 ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::path& acPath)
     : m_lua(aStateView)
     , m_env(aStateView, sol::create, aStateView.globals())
@@ -17,22 +16,40 @@ ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::
             m_onUpdate = aCallback;
         else if(acName == "onDraw")
             m_onDraw = aCallback;
+        else if(acName == "onConsoleOpen")
+            m_onConsoleOpen = aCallback;
+        else if(acName == "onConsoleClose")
+            m_onConsoleClose = aCallback;
     };
 
-    const auto path = acPath / "init.lua";
-    const auto result = m_lua.script_file(path.string(), m_env);
+    // TODO: proper exception handling!
+    try
+    {
+        const auto path = acPath / "init.lua";
+        const auto result = m_lua.script_file(path.string(), m_env);
 
-    if (result.valid())
-    {
-        m_initialized = true;
-        m_object = result;
+        if (result.valid())
+        {
+            m_initialized = true;
+            m_object = result;
+        }
+        else
+        {
+            sol::error err = result;
+            std::string what = err.what();
+            spdlog::error(what);
+        }
     }
-    else
+    catch(std::exception& e)
     {
-        sol::error err = result;
-        std::string what = err.what();
+        std::string what = e.what();
         spdlog::error(what);
     }
+}
+
+ScriptContext::ScriptContext(ScriptContext&& other) noexcept : ScriptContext(other)
+{
+    other.m_initialized = false;
 }
 
 ScriptContext::~ScriptContext()
@@ -48,30 +65,94 @@ bool ScriptContext::IsValid() const
 
 void ScriptContext::TriggerOnInit() const
 {
-    if (m_onInit)
-        m_onInit();
-}
-
-void ScriptContext::TriggerOnShutdown() const
-{
-    if (m_onShutdown)
-        m_onShutdown();
+    // TODO: proper exception handling!
+    try
+    {
+        if (m_onInit)
+            m_onInit();
+    }
+    catch(std::exception& e)
+    {
+        std::string what = e.what();
+        spdlog::error(what);
+    }
 }
 
 void ScriptContext::TriggerOnUpdate(float aDeltaTime) const
 {
-    if (m_onUpdate)
-        m_onUpdate(aDeltaTime);
+    // TODO: proper exception handling!
+    try
+    {
+        if (m_onUpdate)
+            m_onUpdate(aDeltaTime);
+    }
+    catch(std::exception& e)
+    {
+        std::string what = e.what();
+        spdlog::error(what);
+    }
 }
 
 void ScriptContext::TriggerOnDraw() const
 {
-    if (m_onDraw)
-        m_onDraw();
+    // TODO: proper exception handling!
+    try
+    {
+        if (m_onDraw)
+            m_onDraw();
+    }
+    catch(std::exception& e)
+    {
+        std::string what = e.what();
+        spdlog::error(what);
+    }
+}
+    
+void ScriptContext::TriggerOnConsoleOpen() const
+{
+    // TODO: proper exception handling!
+    try
+    {
+        if (m_onConsoleOpen)
+            m_onConsoleOpen();
+    }
+    catch(std::exception& e)
+    {
+        std::string what = e.what();
+        spdlog::error(what);
+    }
+}
+void ScriptContext::TriggerOnConsoleClose() const
+{
+    // TODO: proper exception handling!
+    try
+    {
+        if (m_onConsoleClose)
+            m_onConsoleClose();
+    }
+    catch(std::exception& e)
+    {
+        std::string what = e.what();
+        spdlog::error(what);
+    }
 }
 
-sol::object ScriptContext::GetObject() const
+sol::object ScriptContext::GetRootObject() const
 {
     return m_object;
 }
 
+void ScriptContext::TriggerOnShutdown() const
+{
+    // TODO: proper exception handling!
+    try
+    {
+        if (m_onShutdown)
+            m_onShutdown();
+    }
+    catch(std::exception& e)
+    {
+        std::string what = e.what();
+        spdlog::error(what);
+    }
+}
