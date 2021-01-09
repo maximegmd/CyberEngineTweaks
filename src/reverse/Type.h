@@ -52,8 +52,8 @@ struct UnknownType : Type
     UnknownType(sol::state_view aView, RED4ext::IRTTIType* apClass, RED4ext::ScriptInstance apInstance);
 
 	virtual Descriptor Dump(bool aWithHashes) const;
-    virtual RED4ext::ScriptInstance GetHandle() { return m_pInstance; }
+    virtual RED4ext::ScriptInstance GetHandle() { return m_pInstance.get(); }
 
 private:
-	RED4ext::ScriptInstance m_pInstance;
+    std::unique_ptr<uint8_t[]> m_pInstance;
 };

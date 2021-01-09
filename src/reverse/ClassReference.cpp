@@ -4,13 +4,14 @@
 
 ClassReference::ClassReference(sol::state_view aView, RED4ext::IRTTIType* apClass, RED4ext::ScriptInstance apInstance)
     : ClassType(std::move(aView), apClass)
-    , m_pInstance(apInstance)
 {
+    // Hack for now until we use their allocators, classes can actually be pointers to structs
+    // GI just happens to be a 8-byte struct with only a pointer in it
+    m_pInstance = std::make_unique<uint8_t[]>(apClass->GetSize());
+    memcpy(m_pInstance.get(), apInstance, apClass->GetSize());
 }
-
-ClassReference::~ClassReference() = default;
 
 RED4ext::ScriptInstance ClassReference::GetHandle()
 {
-    return m_pInstance;
+    return m_pInstance.get();
 }

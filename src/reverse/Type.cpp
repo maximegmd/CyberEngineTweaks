@@ -390,7 +390,7 @@ sol::object ClassType::Index_Impl(const std::string& acName)
         return funcRet;
     });
 
-    return NewIndex(acName, std::move(obj));
+    return Type::NewIndex_Impl(acName, std::move(obj));
 }
 
 sol::object ClassType::NewIndex_Impl(const std::string& acName, sol::object aParam)
@@ -422,9 +422,10 @@ sol::object ClassType::NewIndex_Impl(const std::string& acName, sol::object aPar
 
 UnknownType::UnknownType(sol::state_view aView, RED4ext::IRTTIType* apClass, RED4ext::ScriptInstance apInstance)
     : Type(std::move(aView), apClass)
-    , m_pInstance(apInstance)
 {
-
+    // Hack for now until we use their allocators
+    m_pInstance = std::make_unique<uint8_t[]>(apClass->GetSize());
+    memcpy(m_pInstance.get(), apInstance, apClass->GetSize());
 }
 
 Type::Descriptor UnknownType::Dump(bool aWithHashes) const

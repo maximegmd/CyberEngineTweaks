@@ -525,8 +525,26 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
         }
         else if (apRtti->GetType() == RED4ext::ERTTIType::Array)
         {
-            if (!hasData)
-                result.value = apAllocator->New<Array<RED4ext::ScriptInstance>>();
+            auto* pArrayType = static_cast<RED4ext::CArray*>(apRtti);
+            auto mem = reinterpret_cast<RED4ext::DynArray<void*>*>(apAllocator->New<uint8_t>(apRtti->GetSize()));
+            apRtti->Init(mem);
+
+            if (hasData && aObject.is<sol::table>())
+            {
+                auto* pArrayInnerType = pArrayType->GetInnerType();
+
+                // Copy elements from the table into the array
+                auto tbl = aObject.as<sol::table>();
+                pArrayType->Grow(mem, tbl.size());
+                for (uint32_t i = 1; i <= tbl.size(); ++i)
+                {
+                    RED4ext::CStackType type = Converter::ToRED(tbl.get<sol::object>(i), pArrayInnerType, apAllocator);
+                    auto element = pArrayType->GetElement(mem, i - 1);
+                    pArrayInnerType->Assign(element, type.value);
+                }
+            }
+
+            result.value = mem;
         }
         else
         {
