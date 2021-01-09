@@ -22,9 +22,9 @@ struct Scripting
     
     bool ExecuteLua(const std::string& acCommand);
 
-    static size_t Size(RED4ext::IRTTIType* apRtti);
+    static size_t Size(RED4ext::IRTTIType* apRttiType);
     static sol::object ToLua(sol::state_view aState, RED4ext::CStackType& aResult);
-    static RED4ext::CStackType ToRED(sol::object aObject, RED4ext::IRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator);
+    static RED4ext::CStackType ToRED(sol::object aObject, RED4ext::IRTTIType* apRttiType, TiltedPhoques::Allocator* apAllocator);
 
 protected:
 
