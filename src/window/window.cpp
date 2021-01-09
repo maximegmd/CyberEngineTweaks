@@ -2,10 +2,8 @@
 
 #include "Window.h"
 
-#include <Options.h>
-
 #include <d3d12/D3D12.h>
-#include <console/Console.h>
+#include <toolbar/Toolbar.h>
 
 using namespace std::chrono_literals;
 
@@ -43,7 +41,7 @@ void Window::Initialize()
                 else 
                 {
                     window.m_wndProc = reinterpret_cast<WNDPROC>(SetWindowLongPtr(window.m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(WndProc)));
-                    spdlog::info("Window::Initialize() - window hook complete.");
+                    Logger::InfoToMain("Window::Initialize() - window hook complete.");
                 }
             }
             window.m_initialized = true;
@@ -59,6 +57,7 @@ void Window::Shutdown()
 
 Window& Window::Get()
 {
+    assert(s_pWindow);
     return *s_pWindow;
 }
 
@@ -78,9 +77,9 @@ LRESULT APIENTRY Window::WndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM 
     }
 
     {
-        auto res = Console::Get().OnWndProc(ahWnd, auMsg, awParam, alParam);
+        auto res = Toolbar::Get().OnWndProc(ahWnd, auMsg, awParam, alParam);
         if (res)
-            return 0; // Console wants this input ignored!
+            return 0; // Toolbar wants this input ignored!
     }
     
     {

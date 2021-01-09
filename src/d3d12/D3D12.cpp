@@ -16,11 +16,11 @@ void D3D12::Initialize()
         std::thread t([]()
         {
             if (kiero::init() != kiero::Status::Success)
-                spdlog::error("Kiero failed!");
+                Logger::ErrorToMain("Kiero failed!");
             else
             {
-                const char* d3d12type = (kiero::isDownLevelDevice()) ? ("D3D12on7") : ("D3D12");
-                spdlog::info("Kiero initialized for {0}", d3d12type);
+                std::string_view d3d12type = (kiero::isDownLevelDevice()) ? ("D3D12on7") : ("D3D12");
+                Logger::InfoToMainFmt("Kiero initialized for {0}", d3d12type);
                 Get().Hook();
             }
         });
@@ -37,6 +37,7 @@ void D3D12::Shutdown()
 
 D3D12& D3D12::Get()
 {
+    assert(s_pD3D12);
     return *s_pD3D12;
 }
 
@@ -47,17 +48,6 @@ void D3D12::SetTrapInputInImGui(bool aEnabled)
         do { showCursorState = ShowCursor(TRUE); } while (showCursorState < 0);
     else
         do { showCursorState = ShowCursor(FALSE); } while (showCursorState >= 0);
-
-    /*
-    // TODO: this does not seem to help cursor not showing when this is called from inside LuaVM 
-    if (m_trapInputInImGui != aEnabled)
-    {
-        static auto cursor = LoadCursor(nullptr, IDC_ARROW);
-        HCURSOR newCursor = (aEnabled) ? (cursor) : (nullptr);
-        SetClassLongPtr(Window::Get().GetWindow(), GCLP_HCURSOR, reinterpret_cast<LONG_PTR>(newCursor));
-        SetCursor(newCursor);
-    }
-    */
 
     m_trapInputInImGui = aEnabled;
 }

@@ -4,7 +4,7 @@
 #include "Options.h"
 
 #include "d3d12/D3D12.h"
-#include "console/Console.h"
+#include "toolbar/Toolbar.h"
 #include "scripting/LuaVM.h"
 #include "window/window.h"
 
@@ -33,6 +33,8 @@ static void Initialize(HMODULE mod)
 
     MH_Initialize();
 
+    Paths::Initialize();
+    Logger::Initialize();
     Options::Initialize(mod);
     auto& options = Options::Get();
 
@@ -42,7 +44,7 @@ static void Initialize(HMODULE mod)
     if(options.GameImage.GetVersion() != Image::GetSupportedVersion())
     {
         auto [major, minor] = Image::GetSupportedVersion();
-        spdlog::error("Unsupported game version! Only {}.{:02d} is supported.", major, minor);
+        Logger::ErrorToMainFmt("Unsupported game version! Only {}.{:02d} is supported.", major, minor);
         return;
     }
 
@@ -70,25 +72,22 @@ static void Initialize(HMODULE mod)
     OptionsInitHook(&options.GameImage);
 
     Window::Initialize();
-
+    Toolbar::Initialize();
     LuaVM::Initialize();
-
-    if(options.Console)
-        Console::Initialize();
-
     D3D12::Initialize();
 
     MH_EnableHook(MH_ALL_HOOKS);
-
-    spdlog::default_logger()->flush();
 }
 
 static void Shutdown()
 {
     if (s_modInstanceMutex)
     {
-        if(Options::Get().Console)
-            Console::Shutdown();
+        D3D12::Shutdown();
+        LuaVM::Shutdown();
+        Toolbar::Shutdown();
+        Window::Shutdown();
+        Logger::Shutdown();
 
         MH_DisableHook(MH_ALL_HOOKS);
         MH_Uninitialize();

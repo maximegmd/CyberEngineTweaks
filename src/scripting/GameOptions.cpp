@@ -1,7 +1,6 @@
 #include <stdafx.h>
 
 #include "GameOptions.h"
-#include "console/Console.h"
 
 static std::vector<GameOption*> s_gameOptions;
 
@@ -220,7 +219,7 @@ GameOption* GameOptions::Find(const std::string& category, const std::string& na
 
     if (option == s_gameOptions.end())
     {
-        Console::Get().Log("Failed to find game option '" + category + "/" + name + "'!");
+        Logger::ToConsoleFmt("Failed to find game option '{}/{}'!", category, name);
         return nullptr;;
     }
 
@@ -232,8 +231,8 @@ void GameOptions::Print(const std::string& category, const std::string& name)
     auto* option = Find(category, name);
     if (!option)
         return;
-
-    Console::Get().Log(option->GetInfo());
+    
+    Logger::ToConsole(option->GetInfo());
 }
 
 std::string GameOptions::Get(const std::string& category, const std::string& name)
@@ -255,7 +254,7 @@ bool GameOptions::GetBool(const std::string& category, const std::string& name)
     bool result = option->GetBool(value);
     if (!result)
     {
-        Console::Get().Log("Failed to read game option '" + category + "/" + name + "', not a boolean?");
+        Logger::ToConsoleFmt("Failed to read game option '{}/{}', not a boolean?", category, name);
         return false;
     }
 
@@ -272,7 +271,7 @@ int GameOptions::GetInt(const std::string& category, const std::string& name)
     bool result = option->GetInt(value);
     if (!result)
     {
-        Console::Get().Log("Failed to read game option '" + category + "/" + name + "', not an integer/color?");
+        Logger::ToConsoleFmt("Failed to read game option '{}/{}', not an integer/color?", category, name);
         return 0;
     }
 
@@ -289,7 +288,7 @@ float GameOptions::GetFloat(const std::string& category, const std::string& name
     bool result = option->GetFloat(value);
     if (!result)
     {
-        Console::Get().Log("Failed to read game option '" + category + "/" + name + "', not a float?");
+        Logger::ToConsoleFmt("Failed to read game option '{}/{}', not a float?", category, name);
         return 0.f;
     }
 
@@ -303,13 +302,13 @@ void GameOptions::Set(const std::string& category, const std::string& name, cons
         return;
 
     if (option->Set(value))
-        Console::Get().Log(option->GetInfo());
+        Logger::ToConsole(option->GetInfo());
     else
     {
         if (option->type == GameOptionType::String)
-            Console::Get().Log("Failed to set game option '" + category + "/" + name + "', can't set string options right now.");
+            Logger::ToConsoleFmt("Failed to set game option '{}/{}', can't set string options right now.", category, name);
         else
-            Console::Get().Log("Failed to set game option '" + category + "/" + name + "' due to an error (missing pointer?).");
+            Logger::ToConsoleFmt("Failed to set game option '{}/{}' due to an error (missing pointer?).", category, name);
     }
 }
 
@@ -320,13 +319,13 @@ void GameOptions::SetBool(const std::string& category, const std::string& name, 
         return;
 
     if (option->SetBool(value))
-        Console::Get().Log(option->GetInfo());
+        Logger::ToConsole(option->GetInfo());
     else
     {
         if (option->type != GameOptionType::Boolean)
-            Console::Get().Log("Failed to set game option '" + category + "/" + name + "', not a boolean.");
+            Logger::ToConsoleFmt("Failed to set game option '{}/{}', not a boolean.", category, name);
         else
-            Console::Get().Log("Failed to set game option '" + category + "/" + name + "' due to an error (missing pointer?).");
+            Logger::ToConsoleFmt("Failed to set game option '{}/{}' due to an error (missing pointer?).", category, name);
     }
 }
 
@@ -337,13 +336,13 @@ void GameOptions::SetInt(const std::string& category, const std::string& name, i
         return;
 
     if (option->SetInt(value))
-        Console::Get().Log(option->GetInfo());
+        Logger::ToConsole(option->GetInfo());
     else
     {
         if (option->type != GameOptionType::Integer && option->type != GameOptionType::Color)
-            Console::Get().Log("Failed to set game option '" + category + "/" + name + "', not an integer.");
+            Logger::ToConsoleFmt("Failed to set game option '{}/{}', not an integer.", category, name);
         else
-            Console::Get().Log("Failed to set game option '" + category + "/" + name + "' due to an error (missing pointer?).");
+            Logger::ToConsoleFmt("Failed to set game option '{}/{}' due to an error (missing pointer?).", category, name);
     }
 }
 
@@ -354,13 +353,13 @@ void GameOptions::SetFloat(const std::string& category, const std::string& name,
         return;
 
     if (option->SetFloat(value))
-        Console::Get().Log(option->GetInfo());
+        Logger::ToConsole(option->GetInfo());
     else
     {
         if (option->type != GameOptionType::Float)
-            Console::Get().Log("Failed to set game option '" + category + "/" + name + "', not a float.");
+            Logger::ToConsoleFmt("Failed to set game option '{}/{}', not a float.", category, name);
         else
-            Console::Get().Log("Failed to set game option '" + category + "/" + name + "' due to an error (missing pointer?).");
+            Logger::ToConsoleFmt("Failed to set game option '{}/{}' due to an error (missing pointer?).", category, name);
     }
 }
 
@@ -371,24 +370,22 @@ void GameOptions::Toggle(const std::string& category, const std::string& name)
         return;
 
     if (option->Toggle())
-        Console::Get().Log(option->GetInfo());
+        Logger::ToConsole(option->GetInfo());
     else
     {
         if (option->type != GameOptionType::Boolean)
-            Console::Get().Log("Failed to set game option '" + category + "/" + name + "', not a boolean.");
+            Logger::ToConsoleFmt("Failed to set game option '{}/{}', not a boolean.", category, name);
         else
-            Console::Get().Log("Failed to set game option '" + category + "/" + name + "' due to an error (missing pointer?).");
+            Logger::ToConsoleFmt("Failed to set game option '{}/{}' due to an error (missing pointer?).", category, name);
     }
 }
 
 void GameOptions::Dump()
 {
     for (auto option : s_gameOptions)
-    {
-        spdlog::info(option->GetInfo());
-    }
-
-    Console::Get().Log("Dumped " + std::to_string(s_gameOptions.size()) + " options to cyber_engine_tweaks.log");
+        Logger::InfoToMain(option->GetInfo());
+    
+    Logger::ToConsoleFmt("Dumped {} options to cyber_engine_tweaks.log", s_gameOptions.size());
 }
 
 void GameOptions::List(const std::string& category)
@@ -409,13 +406,13 @@ void GameOptions::List(const std::string& category)
 
         if (iter != s_gameOptions.end())
         {
-            Console::Get().Log((*iter)->GetInfo());
+            Logger::ToConsole((*iter)->GetInfo());
             iter++;
             count++;
         }
     }
-
-    Console::Get().Log("Found " + std::to_string(count) + " options");
+    
+    Logger::ToConsoleFmt("Found {} options", count);
 }
 
 std::vector<GameOption*>& GameOptions::GetList()

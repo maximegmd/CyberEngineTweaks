@@ -99,11 +99,11 @@ void EnableDebugPatch(Image* apImage)
                 MH_CreateHook(RealRegisterScriptMemberFunction, &HookRegisterScriptMemberFunction, reinterpret_cast<void**>(&RealRegisterScriptMemberFunction));
             }
 
-            spdlog::info("{}: success", patchType);
+            Logger::InfoToMainFmt("{}: success", patchType);
         }
         else
         {
-            spdlog::warn("{}: failed, unknown version", patchType);
+            Logger::WarningToMainFmt("{}: failed, unknown version", patchType);
         }
     }
 }

@@ -4,8 +4,6 @@
 
 #include <Pattern.h>
 
-#include <console/Console.h>
-
 struct REDScriptContext;
 
 struct ScriptStack
@@ -35,8 +33,7 @@ void LuaVM::HookLog(REDScriptContext*, ScriptStack* apStack, void*, void*)
     GetScriptCallArray()[opcode](apStack->m_context, apStack, &text, nullptr);
     apStack->m_code++; // skip ParamEnd
     
-    if (Options::Get().Console)
-        Console::Get().GameLog(text.c_str());
+    Logger::GameToConsole(text.c_str());
 }
 
 static const char* GetChannelStr(uint64_t hash)
@@ -63,7 +60,7 @@ static const char* GetChannelStr(uint64_t hash)
         HASH_CASE("Vehicles");
 #undef HASH_CASE
     }
-    return nullptr;
+    return "";
 }
 
 void LuaVM::HookLogChannel(REDScriptContext*, ScriptStack* apStack, void*, void*)
@@ -83,13 +80,13 @@ void LuaVM::HookLogChannel(REDScriptContext*, ScriptStack* apStack, void*, void*
     GetScriptCallArray()[opcode](apStack->m_context, apStack, &text, nullptr);
 
     apStack->m_code++; // skip ParamEnd
-    
-    auto channel_str = GetChannelStr(channel_hash);
-    std::string channel = channel_str == nullptr
-        ? "?" + std::to_string(channel_hash)
-        : std::string(channel_str);
-    if (Options::Get().Console)
-        Console::Get().GameLog("[" + channel + "] " +text.c_str());
+
+    std::string_view textSV = text.c_str();
+    std::string_view channelSV = GetChannelStr(channel_hash);
+    if (channelSV == "")
+        Logger::GameToConsoleFmt("[?{0:x}] {}", channel_hash, textSV);
+    else
+        Logger::GameToConsoleFmt("[{}] {}", channelSV, textSV);
     
     Get().m_logCount.fetch_add(1);
 }
@@ -202,9 +199,9 @@ void LuaVM::Hook()
     if(pLocation)
     {
         if (MH_CreateHook(pLocation, &HookLog, reinterpret_cast<void**>(&m_realLog)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-            spdlog::error("Could not hook Log function!");
+            Logger::ErrorToMain("Could not hook Log function!");
         else
-            spdlog::info("Log function hook complete!");
+            Logger::InfoToMain("Log function hook complete!");
     }
 
     pLocation = FindSignature({
@@ -223,9 +220,9 @@ void LuaVM::Hook()
     if (pLocation)
     {
         if (MH_CreateHook(pLocation, &HookLogChannel, reinterpret_cast<void**>(&m_realLogChannel)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-            spdlog::error("Could not hook LogChannel function!");
+            Logger::ErrorToMain("Could not hook LogChannel function!");
         else
-            spdlog::info("LogChannel function hook complete!");
+            Logger::InfoToMain("LogChannel function hook complete!");
     }
 
     pLocation = FindSignature({
@@ -237,9 +234,9 @@ void LuaVM::Hook()
     if (pLocation)
     {
         if (MH_CreateHook(pLocation, &HookTDBIDCtor, reinterpret_cast<void**>(&m_realTDBIDCtor)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-            spdlog::error("Could not hook TDBID::ctor function!");
+            Logger::ErrorToMain("Could not hook TDBID::ctor function!");
         else
-            spdlog::info("TDBID::ctor function hook complete!");
+            Logger::InfoToMain("TDBID::ctor function hook complete!");
     }
 
     pLocation = FindSignature({
@@ -252,9 +249,9 @@ void LuaVM::Hook()
     if (pLocation)
     {
         if (MH_CreateHook(pLocation, &HookTDBIDCtorCString, reinterpret_cast<void**>(&m_realTDBIDCtorCString)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-            spdlog::error("Could not hook TDBID::ctor[CString] function!");
+            Logger::ErrorToMain("Could not hook TDBID::ctor[CString] function!");
         else
-            spdlog::info("TDBID::ctor[CString] function hook complete!");
+            Logger::InfoToMain("TDBID::ctor[CString] function hook complete!");
     }
 
     pLocation = FindSignature({
@@ -267,9 +264,9 @@ void LuaVM::Hook()
     if (pLocation)
     {
         if (MH_CreateHook(pLocation, &HookTDBIDCtorDerive, reinterpret_cast<void**>(&m_realTDBIDCtorDerive)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-            spdlog::error("Could not hook TDBID::ctor[Derive] function!");
+            Logger::ErrorToMain("Could not hook TDBID::ctor[Derive] function!");
         else
-            spdlog::info("TDBID::ctor[Derive] function hook complete!");
+            Logger::InfoToMain("TDBID::ctor[Derive] function hook complete!");
     }
 
     pLocation = FindSignature({
@@ -282,10 +279,10 @@ void LuaVM::Hook()
     if (pLocation)
     {
         if (MH_CreateHook(pLocation, &HookTDBIDCtorUnknown, reinterpret_cast<void**>(&m_realTDBIDCtorUnknown)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-            spdlog::error("Could not hook TDBID::ctor[Unknown] function!");
+            Logger::ErrorToMain("Could not hook TDBID::ctor[Unknown] function!");
         else
         {
-            spdlog::info("TDBID::ctor[Unknown] function hook complete!");
+            Logger::InfoToMain("TDBID::ctor[Unknown] function hook complete!");
             *reinterpret_cast<void**>(&m_someStringLookup) = &pLocation[33] + *reinterpret_cast<int32_t*>(&pLocation[29]);
         }
     }
@@ -311,9 +308,9 @@ void LuaVM::Hook()
         {
             pLocation = &pLocation[28] + *reinterpret_cast<int32_t*>(&pLocation[24]);
             if (MH_CreateHook(pLocation, &HookTDBIDToStringDEBUG, reinterpret_cast<void**>(&m_realTDBIDToStringDEBUG)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-                spdlog::error("Could not hook TDBID::ToStringDEBUG function!");
+                Logger::ErrorToMain("Could not hook TDBID::ToStringDEBUG function!");
             else
-                spdlog::info("TDBID::ToStringDEBUG function hook complete!");
+                Logger::InfoToMain("TDBID::ToStringDEBUG function hook complete!");
         }
     }
 }

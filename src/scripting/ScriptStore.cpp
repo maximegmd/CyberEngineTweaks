@@ -2,13 +2,11 @@
 
 #include "ScriptStore.h"
 
-#include "Options.h"
-
 void ScriptStore::LoadAll(sol::state_view aStateView)
 {
     m_contexts.clear();
 
-    const auto cScriptsPath = Options::Get().ScriptsPath;
+    const auto cScriptsPath = Paths::ScriptsPath;
 
     for (const auto& file : std::filesystem::directory_iterator(cScriptsPath))
     {
@@ -21,14 +19,17 @@ void ScriptStore::LoadAll(sol::state_view aStateView)
         auto name = relative(file.path(), cScriptsPath).string();
 
         auto ctx = ScriptContext{ aStateView, file.path() };
+        auto fpathString = file.path().string();
         if (ctx.IsValid())
         {
-            spdlog::info("Mod {} loaded!", file.path().string());
+            Logger::ToConsoleFmt("Mod {} loaded!", fpathString);
+            Logger::InfoToModsFmt("Mod {} loaded!", fpathString);
             m_contexts.emplace(name, std::move(ctx));
         }
         else
         {
-            spdlog::warn("Mod {} failed to load!", file.path().string());
+            Logger::ToConsoleFmt("Mod {} failed loaded!", fpathString);
+            Logger::ErrorToModsFmt("Mod {} failed loaded!", fpathString);
         }
     }
 }
@@ -51,16 +52,16 @@ void ScriptStore::TriggerOnDraw() const
         kvp.second.TriggerOnDraw();
 }
 
-void ScriptStore::TriggerOnConsoleOpen() const
+void ScriptStore::TriggerOnToolbarOpen() const
 {
     for (const auto& kvp : m_contexts)
-        kvp.second.TriggerOnConsoleOpen();
+        kvp.second.TriggerOnToolbarOpen();
 }
 
-void ScriptStore::TriggerOnConsoleClose() const
+void ScriptStore::TriggerOnToolbarClose() const
 {
     for (const auto& kvp : m_contexts)
-        kvp.second.TriggerOnConsoleClose();
+        kvp.second.TriggerOnToolbarClose();
 }
 
 sol::object ScriptStore::GetMod(const std::string& acName) const

@@ -16,10 +16,12 @@ ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::
             m_onUpdate = aCallback;
         else if(acName == "onDraw")
             m_onDraw = aCallback;
-        else if(acName == "onConsoleOpen")
-            m_onConsoleOpen = aCallback;
-        else if(acName == "onConsoleClose")
-            m_onConsoleClose = aCallback;
+        else if(acName == "onToolbarOpen")
+            m_onToolbarOpen = aCallback;
+        else if(acName == "onToolbarClose")
+            m_onToolbarClose = aCallback;
+        else
+            Logger::WarningToModsFmt("Tried to register unknown handler '{}'!", acName);
     };
 
     // TODO: proper exception handling!
@@ -36,14 +38,12 @@ ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::
         else
         {
             sol::error err = result;
-            std::string what = err.what();
-            spdlog::error(what);
+            Logger::ErrorToMods(err.what());
         }
     }
     catch(std::exception& e)
     {
-        std::string what = e.what();
-        spdlog::error(what);
+        Logger::ErrorToMods(e.what());
     }
 }
 
@@ -73,8 +73,7 @@ void ScriptContext::TriggerOnInit() const
     }
     catch(std::exception& e)
     {
-        std::string what = e.what();
-        spdlog::error(what);
+        Logger::ErrorToMods(e.what());
     }
 }
 
@@ -88,8 +87,7 @@ void ScriptContext::TriggerOnUpdate(float aDeltaTime) const
     }
     catch(std::exception& e)
     {
-        std::string what = e.what();
-        spdlog::error(what);
+        Logger::ErrorToMods(e.what());
     }
 }
 
@@ -103,37 +101,34 @@ void ScriptContext::TriggerOnDraw() const
     }
     catch(std::exception& e)
     {
-        std::string what = e.what();
-        spdlog::error(what);
+        Logger::ErrorToMods(e.what());
     }
 }
     
-void ScriptContext::TriggerOnConsoleOpen() const
+void ScriptContext::TriggerOnToolbarOpen() const
 {
     // TODO: proper exception handling!
     try
     {
-        if (m_onConsoleOpen)
-            m_onConsoleOpen();
+        if (m_onToolbarOpen)
+            m_onToolbarOpen();
     }
     catch(std::exception& e)
     {
-        std::string what = e.what();
-        spdlog::error(what);
+        Logger::ErrorToMods(e.what());
     }
 }
-void ScriptContext::TriggerOnConsoleClose() const
+void ScriptContext::TriggerOnToolbarClose() const
 {
     // TODO: proper exception handling!
     try
     {
-        if (m_onConsoleClose)
-            m_onConsoleClose();
+        if (m_onToolbarClose)
+            m_onToolbarClose();
     }
     catch(std::exception& e)
     {
-        std::string what = e.what();
-        spdlog::error(what);
+        Logger::ErrorToMods(e.what());
     }
 }
 
@@ -152,7 +147,6 @@ void ScriptContext::TriggerOnShutdown() const
     }
     catch(std::exception& e)
     {
-        std::string what = e.what();
-        spdlog::error(what);
+        Logger::ErrorToMods(e.what());
     }
 }

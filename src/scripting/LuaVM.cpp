@@ -2,8 +2,6 @@
 
 #include "LuaVM.h"
 
-#include <console/Console.h>
-
 static std::unique_ptr<LuaVM> s_pLuaVM;
 
 void LuaVM::Initialize()
@@ -23,6 +21,7 @@ void LuaVM::Shutdown()
 
 LuaVM& LuaVM::Get()
 {
+    assert(s_pLuaVM);
     return *s_pLuaVM;
 }
 
@@ -30,7 +29,7 @@ bool LuaVM::ExecuteLua(const std::string& acCommand)
 {
     if (!m_initialized)
     {
-        Console::Get().Log("Command not executed! LuaVM is not yet initialized!");
+        Logger::ToConsole("Command not executed! LuaVM is not yet initialized!");
         return false;
     }
 
@@ -55,20 +54,22 @@ void LuaVM::ReloadAllMods()
     {
         m_scripting.ReloadAllMods();
         m_scripting.TriggerOnInit();
-        spdlog::info("LuaVM::ReloadAllMods() finished!");
+        Logger::InfoToMain("LuaVM: Reloaded all mods!");
+        Logger::InfoToMods("LuaVM: Reloaded all mods!");
+        Logger::ToConsole("LuaVM: Reloaded all mods!");
     }
 }
 
-void LuaVM::OnConsoleOpen()
+void LuaVM::OnToolbarOpen()
 {
     if (m_initialized)
-        m_scripting.TriggerOnConsoleOpen();
+        m_scripting.TriggerOnToolbarOpen();
 }
 
-void LuaVM::OnConsoleClose()
+void LuaVM::OnToolbarClose()
 {
     if (m_initialized)
-        m_scripting.TriggerOnConsoleClose();
+        m_scripting.TriggerOnToolbarClose();
 }
 
 bool LuaVM::IsInitialized() const
@@ -81,5 +82,6 @@ void LuaVM::PostInitialize()
     assert(!m_initialized);
     m_scripting.TriggerOnInit();
     m_initialized = true;
-    spdlog::info("LuaVM initialization complete!");
+    Logger::InfoToMain("LuaVM: initialization finished!");
+    Logger::ToConsole("LuaVM: initialization finished!");
 }

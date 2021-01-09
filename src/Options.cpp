@@ -1,21 +1,20 @@
 #include <stdafx.h>
 
-#include "Options.h"
-
 #include <spdlog/sinks/rotating_file_sink.h>
 
-static std::unique_ptr<Options> s_instance;
+static std::unique_ptr<Options> s_pOptions;
 
 Options::Options(HMODULE aModule)
 {
-    TCHAR exePathBuf[2048 + 1] = { 0 };
-    GetModuleFileName(GetModuleHandle(nullptr), exePathBuf, std::size(exePathBuf) - 1);
+    if (!Paths::Initialized)
+        return;
 
-    int verInfoSz = GetFileVersionInfoSize(exePathBuf, nullptr);
+    const auto* exePathStr = Paths::ExePath.native().c_str(); 
+    int verInfoSz = GetFileVersionInfoSize(exePathStr, nullptr);
     if(verInfoSz) 
     {
         auto verInfo = std::make_unique<BYTE[]>(verInfoSz);
-        if(GetFileVersionInfo(exePathBuf, 0, verInfoSz, verInfo.get())) 
+        if(GetFileVersionInfo(exePathStr, 0, verInfoSz, verInfo.get())) 
         {
             struct 
             {
@@ -43,44 +42,27 @@ Options::Options(HMODULE aModule)
         }
     }
     // check if exe name matches in case previous check fails
-    std::filesystem::path exePath = exePathBuf;
-    ExeValid = ExeValid || (exePath.filename() == "Cyberpunk2077.exe");
+    ExeValid = ExeValid || (Paths::ExePath.filename() == "Cyberpunk2077.exe");
 
     if (!IsCyberpunk2077())
         return;
 
-    RootPath = exePath.parent_path();
-
-    CETPath = RootPath;
-    CETPath /= "plugins";
-    CETPath /= "cyber_engine_tweaks";
-    std::filesystem::create_directories(CETPath);
-
-    ScriptsPath = CETPath / "mods";
-    std::filesystem::create_directories(ScriptsPath);
-
-    const auto rotatingLogger = std::make_shared<spdlog::sinks::rotating_file_sink_mt>((CETPath / "cyber_engine_tweaks.log").string(), 1048576 * 5, 3);
-
-    const auto logger = std::make_shared<spdlog::logger>("", spdlog::sinks_init_list{ rotatingLogger });
-    logger->flush_on(spdlog::level::debug);
-    set_default_logger(logger);
-
-    spdlog::info("Cyber Engine Tweaks is starting...");
+    Logger::InfoToMain("Cyber Engine Tweaks is starting...");
 
     GameImage.Initialize();
 
     if (GameImage.version)
     {
         auto [major, minor] = GameImage.GetVersion();
-        spdlog::info("Game version {}.{:02d}", major, minor);
-        spdlog::info("Root path: \"{}\"", RootPath.string().c_str());
-        spdlog::info("Cyber Engine Tweaks path: \"{}\"", CETPath.string().c_str());
-        spdlog::info("Lua scripts search path: \"{}\"", ScriptsPath.string().c_str());
+        Logger::InfoToMainFmt("Game version {}.{:02d}", major, minor);
+        Logger::InfoToMainFmt("Root path: \"{}\"", Paths::RootPath.string());
+        Logger::InfoToMainFmt("Cyber Engine Tweaks path: \"{}\"", Paths::CETPath.string());
+        Logger::InfoToMainFmt("Lua scripts search path: \"{}\"", Paths::ScriptsPath.string());
     }
     else
-        spdlog::info("Unknown Game Version, update the mod");
+        Logger::InfoToMain("Unknown Game Version, update the mod");
 
-    const auto configPath = CETPath / "config.json";
+    const auto configPath = Paths::CETPath / "config.json";
     
     // remove empty config.json
     if (std::filesystem::exists(configPath) && !std::filesystem::file_size(configPath))
@@ -103,14 +85,13 @@ Options::Options(HMODULE aModule)
         this->PatchDisableWin7Vsync = config.value("disable_win7_vsync", this->PatchDisableWin7Vsync);
 
         this->DumpGameOptions = config.value("dump_game_options", this->DumpGameOptions);
-        this->Console = config.value("console", this->Console);
-        this->ConsoleKey = config.value("console_key", this->ConsoleKey);
+        this->ToolbarKey = config.value("console_key", this->ToolbarKey);
 
         // check old config names
         if (config.value("unlock_menu", false))
             this->PatchEnableDebug = true;
 
-        this->ConsoleChar = MapVirtualKey(this->ConsoleKey, MAPVK_VK_TO_CHAR);
+        this->ToolbarChar = MapVirtualKey(this->ToolbarKey, MAPVK_VK_TO_CHAR);
     }
     configFile.close();
 
@@ -123,8 +104,7 @@ Options::Options(HMODULE aModule)
     config["disable_async_compute"] = this->PatchAsyncCompute;
     config["disable_antialiasing"] = this->PatchAntialiasing;
     config["dump_game_options"] = this->DumpGameOptions;
-    config["console"] = this->Console;
-    config["console_key"] = this->ConsoleKey;
+    config["console_key"] = this->ToolbarKey;
     config["disable_intro_movies"] = this->PatchDisableIntroMovies;
     config["disable_vignette"] = this->PatchDisableVignette;
     config["disable_boundary_teleport"] = this->PatchDisableBoundaryTeleport;
@@ -142,11 +122,12 @@ bool Options::IsCyberpunk2077() const noexcept
 void Options::Initialize(HMODULE aModule)
 {
     // Horrible hack because make_unique can't access private member
-    s_instance.reset(new (std::nothrow) Options(aModule));
+    s_pOptions.reset(new (std::nothrow) Options(aModule));
 }
 
 Options& Options::Get()
 {
-    return *s_instance;
+    assert(s_pOptions);
+    return *s_pOptions;
 }
 

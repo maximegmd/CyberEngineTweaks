@@ -12,8 +12,8 @@ struct ScriptContext
     void TriggerOnUpdate(float aDeltaTime) const;
     void TriggerOnDraw() const;
     
-    void TriggerOnConsoleOpen() const;
-    void TriggerOnConsoleClose() const;
+    void TriggerOnToolbarOpen() const;
+    void TriggerOnToolbarClose() const;
 
     sol::object GetRootObject() const;
 
@@ -30,7 +30,7 @@ private:
     sol::function m_onShutdown{ };
     sol::function m_onUpdate{ };
     sol::function m_onDraw{ };
-    sol::function m_onConsoleOpen{ };
-    sol::function m_onConsoleClose{ };
+    sol::function m_onToolbarOpen{ };
+    sol::function m_onToolbarClose{ };
     bool m_initialized{ false };
 };

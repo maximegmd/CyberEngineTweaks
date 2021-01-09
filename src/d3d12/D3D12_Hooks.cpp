@@ -2,8 +2,6 @@
 
 #include "D3D12.h"
 
-#include <Image.h>
-#include <Pattern.h>
 #include <kiero/kiero.h>
 
 HRESULT D3D12::ResizeBuffers(IDXGISwapChain* apSwapChain, UINT aBufferCount, UINT aWidth, UINT aHeight, DXGI_FORMAT aNewFormat, UINT aSwapChainFlags)
@@ -13,7 +11,7 @@ HRESULT D3D12::ResizeBuffers(IDXGISwapChain* apSwapChain, UINT aBufferCount, UIN
     if (d3d12.m_initialized)
     {
         // NOTE: right now, done in case of any swap chain ResizeBuffers call, which may not be ideal. We have yet to encounter multiple swap chains in use though, so should be safe
-        spdlog::info("D3D12::ResizeBuffers() called with initialized D3D12, triggering D3D12::ResetState.");
+        Logger::InfoToMain("D3D12::ResizeBuffers() called with initialized D3D12, triggering D3D12::ResetState.");
         d3d12.ResetState();
     }
 
@@ -86,7 +84,7 @@ HRESULT D3D12::CreateCommittedResource(ID3D12Device* apDevice, const D3D12_HEAP_
     {
         // Store the returned resource
         d3d12.m_downlevelBackbuffers.emplace_back(static_cast<ID3D12Resource*>(*appvResource));
-        spdlog::debug("D3D12::CreateCommittedResourceD3D12() - found valid backbuffer target at {0}.", *appvResource);
+        Logger::DebugToMainFmt("D3D12::CreateCommittedResourceD3D12() - found valid backbuffer target at {0}.", *appvResource);
     }
 
     // If D3D12 has been initialized, there is no need to continue hooking this function since the backbuffers are only created once.
@@ -106,10 +104,10 @@ void D3D12::ExecuteCommandLists(ID3D12CommandQueue* apCommandQueue, UINT aNumCom
         if(desc.Type == D3D12_COMMAND_LIST_TYPE_DIRECT) 
         {
             d3d12.m_pCommandQueue = apCommandQueue;
-            spdlog::info("D3D12::ExecuteCommandListsD3D12() - found valid command queue.");
+            Logger::InfoToMain("D3D12::ExecuteCommandListsD3D12() - found valid command queue.");
         }
         else 
-            spdlog::info("D3D12::ExecuteCommandListsD3D12() - ignoring command queue - unusable command list type");
+            Logger::InfoToMain("D3D12::ExecuteCommandListsD3D12() - ignoring command queue - unusable command list type");
     }
 
     d3d12.m_realExecuteCommandLists(apCommandQueue, aNumCommandLists, apcpCommandLists);
@@ -120,29 +118,29 @@ void D3D12::Hook()
     int d3d12FailedHooksCount = 0;
     int d3d12CompleteHooksCount = 0;
     
-    const char* d3d12type = (kiero::isDownLevelDevice()) ? ("D3D12on7") : ("D3D12");
+    std::string_view d3d12type = (kiero::isDownLevelDevice()) ? ("D3D12on7") : ("D3D12");
 
     if (kiero::isDownLevelDevice()) 
     {
         if (kiero::bind(175, reinterpret_cast<void**>(&m_realPresentD3D12Downlevel), &PresentDownlevel) != kiero::Status::Success)
         {
-            spdlog::error("{0} Downlevel Present hook failed!", d3d12type);
+            Logger::ErrorToMainFmt("{0} Downlevel Present hook failed!", d3d12type);
             ++d3d12FailedHooksCount;
         }
         else 
         {
-            spdlog::info("{0} Downlevel Present hook complete.", d3d12type);
+            Logger::InfoToMainFmt("{0} Downlevel Present hook complete.", d3d12type);
             ++d3d12CompleteHooksCount;
         }
 
         if (kiero::bind(27, reinterpret_cast<void**>(&m_realCreateCommittedResource), &CreateCommittedResource) != kiero::Status::Success)
         {
-            spdlog::error("{0} CreateCommittedResource Hook failed!", d3d12type);
+            Logger::ErrorToMainFmt("{0} CreateCommittedResource Hook failed!", d3d12type);
             ++d3d12FailedHooksCount;
         }
         else 
         {
-            spdlog::info("{0} CreateCommittedResource hook complete.", d3d12type);
+            Logger::InfoToMainFmt("{0} CreateCommittedResource hook complete.", d3d12type);
             ++d3d12CompleteHooksCount;
         }
     }
@@ -150,40 +148,40 @@ void D3D12::Hook()
     {
         if (kiero::bind(140, reinterpret_cast<void**>(&m_realPresentD3D12), &Present) != kiero::Status::Success)
         {
-            spdlog::error("{0} Present hook failed!", d3d12type);
+            Logger::ErrorToMainFmt("{0} Present hook failed!", d3d12type);
             ++d3d12FailedHooksCount;
         }
         else 
         {
-            spdlog::info("{0} Present hook complete.", d3d12type);
+            Logger::InfoToMainFmt("{0} Present hook complete.", d3d12type);
             ++d3d12CompleteHooksCount;
         }
 
         if (kiero::bind(145, reinterpret_cast<void**>(&m_realResizeBuffersD3D12), &ResizeBuffers) != kiero::Status::Success)
         {
-            spdlog::error("{0} ResizeBuffers hook failed!", d3d12type);
+            Logger::ErrorToMainFmt("{0} ResizeBuffers hook failed!", d3d12type);
             ++d3d12FailedHooksCount;
         }
         else 
         {
-            spdlog::info("{0} ResizeBuffers hook complete.", d3d12type);
+            Logger::InfoToMainFmt("{0} ResizeBuffers hook complete.", d3d12type);
             ++d3d12CompleteHooksCount;
         }
     }
 
     if (kiero::bind(54, reinterpret_cast<void**>(&m_realExecuteCommandLists), &ExecuteCommandLists) != kiero::Status::Success)
     {
-        spdlog::error("{0} ExecuteCommandLists hook failed!", d3d12type);
+        Logger::ErrorToMainFmt("{0} ExecuteCommandLists hook failed!", d3d12type);
         ++d3d12FailedHooksCount;
     }
     else 
     {
-        spdlog::info("{0} ExecuteCommandLists hook complete.", d3d12type);
+        Logger::InfoToMainFmt("{0} ExecuteCommandLists hook complete.", d3d12type);
         ++d3d12CompleteHooksCount;
     }
 
     if (d3d12FailedHooksCount == 0) 
-        spdlog::info("{0} hook complete. ({1}/{2})", d3d12type, d3d12CompleteHooksCount, d3d12CompleteHooksCount+d3d12FailedHooksCount);
+        Logger::InfoToMainFmt("{0} hook complete. ({1}/{2})", d3d12type, d3d12CompleteHooksCount, d3d12CompleteHooksCount+d3d12FailedHooksCount);
     else 
-        spdlog::error("{0} hook failed! ({1}/{2})", d3d12type, d3d12CompleteHooksCount, d3d12CompleteHooksCount+d3d12FailedHooksCount);
+        Logger::ErrorToMainFmt("{0} hook failed! ({1}/{2})", d3d12type, d3d12CompleteHooksCount, d3d12CompleteHooksCount+d3d12FailedHooksCount);
 }

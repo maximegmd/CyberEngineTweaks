@@ -13,8 +13,8 @@ struct ScriptStore
     void TriggerOnUpdate(float aDeltaTime) const;
     void TriggerOnDraw() const;
     
-    void TriggerOnConsoleOpen() const;
-    void TriggerOnConsoleClose() const;
+    void TriggerOnToolbarOpen() const;
+    void TriggerOnToolbarClose() const;
 
     sol::object GetMod(const std::string& acName) const;
 

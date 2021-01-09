@@ -2,13 +2,11 @@
 
 #include "Scripting.h"
 
-#include "Options.h"
 #include "GameOptions.h"
 
 #include <sol_imgui/sol_imgui.h>
 
 #include <d3d12/D3D12.h>
-#include <console/Console.h>
 
 #include <reverse/Type.h>
 #include <reverse/Array.h>
@@ -262,22 +260,22 @@ void Scripting::Initialize()
             std::string str = s["tostring"]((*it).get<sol::object>());
             oss << str;
         }
-        spdlog::info(oss.str());
-        Console::Get().Log(oss.str());
+        Logger::InfoToMods(oss.str());
+        Logger::ToConsole(oss.str());
     };
 
     // execute autoexec.lua inside our default script directory
-    std::filesystem::current_path(Options::Get().CETPath / "scripts");
+    std::filesystem::current_path(Paths::CETPath / "scripts");
     if (std::filesystem::exists("autoexec.lua"))
         m_lua.do_file("autoexec.lua");
     else
     {
-        Console::Get().Log("WARNING: missing CET autoexec.lua!");
-        spdlog::warn("Scripting::Initialize() - missing CET autoexec.lua!");
+        Logger::InfoToMain("Scripting::Initialize() - missing CET autoexec.lua!");
+        Logger::ToConsole("WARNING: missing CET autoexec.lua!");
     }
 
     // set current path for following scripts to out ScriptsPath
-    std::filesystem::current_path(Options::Get().ScriptsPath);
+    std::filesystem::current_path(Paths::ScriptsPath);
 
     // load mods
     ReloadAllMods();
@@ -298,14 +296,14 @@ void Scripting::TriggerOnDraw() const
     m_store.TriggerOnDraw();
 }
 
-void Scripting::TriggerOnConsoleOpen() const
+void Scripting::TriggerOnToolbarOpen() const
 {
-    m_store.TriggerOnConsoleOpen();
+    m_store.TriggerOnToolbarOpen();
 }
 
-void Scripting::TriggerOnConsoleClose() const
+void Scripting::TriggerOnToolbarClose() const
 {
-    m_store.TriggerOnConsoleClose();
+    m_store.TriggerOnToolbarClose();
 }
 
 sol::object Scripting::GetMod(const std::string& acName) const
@@ -328,7 +326,7 @@ bool Scripting::ExecuteLua(const std::string& acCommand)
     }
     catch(std::exception& e)
     {
-        Console::Get().Log(e.what());
+        Logger::ToConsole(e.what());
     }
     return false;
 }
@@ -393,8 +391,8 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::CStackType& aResul
         pType->GetName(hash);
         if (!hash.IsEmpty())
         {
-            const std::string typeName = hash.ToString();
-            Console::Get().Log("Unhandled return type: " + typeName + " type : " + std::to_string((uint32_t)pType->GetType()));
+            const std::string_view typeName = hash.ToString();
+            Logger::ToConsoleFmt("Unhandled return type: {} type: {}", typeName, (uint32_t)pType->GetType());
         }
     }
 
@@ -536,7 +534,7 @@ sol::object Scripting::GetSingletonHandle(const std::string& acName)
     auto* pType = pRtti->GetClass(RED4ext::FNV1a(acName.c_str()));
     if (!pType)
     {
-        Console::Get().Log("Type '" + acName + "' not found or is not initialized yet.");
+        Logger::ToConsoleFmt("Type '{}' not found or is not initialized yet.", acName);
         return sol::nil;
     }
 
@@ -553,7 +551,7 @@ sol::protected_function Scripting::InternalIndex(const std::string& acName)
         auto code = this->Execute(name, args, env, L, result);
         if(!code)
         {
-            Console::Get().Log("Error: " + result);
+            Logger::ToConsoleFmt("Error: {}", result);
         }
         return code;
     });

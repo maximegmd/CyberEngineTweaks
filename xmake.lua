@@ -4,6 +4,10 @@ add_requires("spdlog", "nlohmann_json", "minhook", "imgui", "sol2", "tiltedcore"
 
 add_rules("mode.debug", "mode.release")
 
+if is_mode("debug") then
+    add_defines("CET_DEBUG")
+end
+
 if is_mode("release") then
     add_ldflags("/LTCG", "/OPT:REF")
     add_cxflags("/Ot", "/GL", "/Ob2", "/Oi", "/GS-")

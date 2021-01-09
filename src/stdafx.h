@@ -45,4 +45,6 @@
 #include <TiltedCore/Allocator.hpp>
 #include <TiltedCore/ScratchAllocator.hpp>	
 
+#include "Paths.h"
 #include "Options.h"
+#include "logging/Logger.h"

@@ -20,14 +20,10 @@ struct Options
     bool PatchDisableWin7Vsync{ false };
 
     bool DumpGameOptions{ false };
-    bool Console{ true };
-    int ConsoleKey{ VK_OEM_3 };
-    int ConsoleChar{ 0 };
+    int ToolbarKey{ VK_OEM_3 };
+    int ToolbarChar{ 0 };
     float CPUMemoryPoolFraction{ 0.5f };
     float GPUMemoryPoolFraction{ 1.f };
-    std::filesystem::path CETPath;
-    std::filesystem::path RootPath;
-    std::filesystem::path ScriptsPath;
     Image GameImage;
     bool ExeValid{ false };
 

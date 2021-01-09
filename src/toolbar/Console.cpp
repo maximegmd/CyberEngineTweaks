@@ -2,39 +2,11 @@
 
 #include "Console.h"
 
-#include <Image.h>
-#include <Pattern.h>
-#include <Options.h>
-
 #include <d3d12/D3D12.h>
 #include <scripting/LuaVM.h>
 
-static std::unique_ptr<Console> s_pConsole;
-
-void Console::Initialize()
-{
-    if (!s_pConsole)
-    {
-        s_pConsole.reset(new (std::nothrow) Console);
-        s_pConsole->Hook();
-    }
-}
-
-void Console::Shutdown()
-{
-    s_pConsole = nullptr;
-}
-
-Console& Console::Get()
-{
-    return *s_pConsole;
-}
-
 void Console::Update()
 {
-    if (this == nullptr)
-        return;
-
     if (!IsEnabled())
         return;
 
@@ -111,10 +83,10 @@ void Console::Update()
         ImGui::SetItemDefaultFocus();
         if (execute)
         {
-            Log(std::string("> ") + command);
+            Logger::ToConsoleFmt("> {}", command);
             
             if (!LuaVM::Get().ExecuteLua(command))
-                Log("Command failed to execute!");
+                Logger::ToConsole("Command failed to execute!");
 
             if (m_inputClear)
                 std::memset(command, 0, sizeof(command));
@@ -129,17 +101,7 @@ void Console::Update()
 void Console::Toggle()
 {
     m_enabled = !m_enabled;
-
-    D3D12::Get().SetTrapInputInImGui(m_enabled);
     m_focusConsoleInput = m_enabled;
-
-    auto& luaVM = LuaVM::Get();
-    if (m_enabled)
-        luaVM.OnConsoleOpen();
-    else
-        luaVM.OnConsoleClose();
-    
-    ClipToCenter(RED4ext::CGameEngine::Get()->unkC0);
 }
 
 bool Console::IsEnabled() const
@@ -147,102 +109,32 @@ bool Console::IsEnabled() const
     return m_enabled;
 }
 
-void Console::Log(const std::string& acpText)
+void Console::Log(std::string_view acpText)
 {
-    if (this == nullptr)
-        return;
-
     std::lock_guard<std::recursive_mutex> _{ m_outputLock };
-    std::istringstream lines(acpText);
-    std::string line;
 
-    while (std::getline(lines, line))
+    size_t first = 0;
+    while (first < acpText.size())
     {
-        m_outputLines.emplace_back(line);
+        const auto second = acpText.find_first_of('\n', first);
+
+        if (second == std::string_view::npos)
+        {
+            m_outputLines.emplace_back(acpText.substr(first));
+            break;
+        }
+
+        if (first != second)
+            m_outputLines.emplace_back(acpText.substr(first, second-first));
+
+        first = second + 1;
     }
+
     m_outputScroll = true;
 }
 
-LRESULT Console::OnWndProc(HWND, UINT auMsg, WPARAM awParam, LPARAM)
+void Console::GameLog(std::string_view acpText)
 {
-    if (this == nullptr)
-        return 0;
-
-    auto& options = Options::Get();
-    if (auMsg == WM_KEYDOWN && awParam == options.ConsoleKey)
-    {
-        Toggle();
-        return 1;
-    }
-
-    switch (auMsg)
-    {
-        case WM_KEYDOWN:
-        case WM_SYSKEYDOWN:
-        case WM_KEYUP:
-        case WM_SYSKEYUP:
-            if (awParam == options.ConsoleKey)
-                return 1;
-            break;
-        case WM_CHAR:
-            if (options.ConsoleChar && awParam == options.ConsoleChar)
-                return 1;
-            break;
-    }
-
-    if (IsEnabled())
-    {
-        if (auMsg == WM_KEYUP && awParam == VK_RETURN)
-            m_focusConsoleInput = true;
-    }
-
-    return 0;
+    if (!m_disabledGameLog)
+        Logger::ToConsole(acpText);
 }
-
-BOOL Console::ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis)
-{
-    HWND wnd = (HWND)apThis->hWnd;
-    HWND foreground = GetForegroundWindow();
-
-    if(wnd == foreground && apThis->unk164 && !apThis->unk140 && !Get().IsEnabled())
-    {
-        RECT rect;
-        GetClientRect(wnd, &rect);
-        ClientToScreen(wnd, reinterpret_cast<POINT*>(&rect.left));
-        ClientToScreen(wnd, reinterpret_cast<POINT*>(&rect.right));
-        rect.left = (rect.left + rect.right) / 2;
-        rect.right = rect.left;
-        rect.bottom = (rect.bottom + rect.top) / 2;
-        rect.top = rect.bottom;
-        apThis->isClipped = true;
-        ShowCursor(FALSE);
-        return ClipCursor(&rect);
-    }
-
-    if(apThis->isClipped)
-    {
-        apThis->isClipped = false;
-        return ClipCursor(nullptr);
-    }
-
-    return 1;
-}
-
-void Console::Hook()
-{
-    uint8_t* pLocation = FindSignature({
-        0x48, 0x89, 0x5C, 0x24, 0x08, 0x57, 0x48, 0x83, 0xEC, 0x30, 0x48, 0x8B,
-        0x99, 0x68, 0x01, 0x00, 0x00, 0x48, 0x8B, 0xF9, 0xFF });
-
-    if (pLocation)
-    {
-        if (MH_CreateHook(pLocation, &ClipToCenter, reinterpret_cast<void**>(&m_realClipToCenter)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-            spdlog::error("Could not hook mouse clip function!");
-        else
-            spdlog::info("Hook mouse clip function!");
-    }
-}
-
-Console::Console() = default;
-
-Console::~Console() = default;
