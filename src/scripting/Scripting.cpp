@@ -37,16 +37,6 @@ void Scripting::Initialize()
         };
     };
 
-    m_lua["SetTrapInputInImGui"] = [](bool trap)
-    {
-        D3D12::Get().SetTrapInputInImGui(trap);
-    };
-
-    m_lua["IsTrapInputInImGui"] = []() -> bool
-    {
-        return D3D12::Get().IsTrapInputInImGui();
-    };
-
     m_lua["ToVector3"] = [](sol::table table) -> Vector3
     {
         return Vector3
@@ -147,11 +137,6 @@ void Scripting::Initialize()
         };
     };
 
-    m_lua["GetMod"] = [this](const std::string& acName) -> sol::object
-    {
-        return GetMod(acName);
-    };
-
     m_lua.new_usertype<EulerAngles>("EulerAngles",
         sol::constructors<EulerAngles(float, float, float), EulerAngles(float, float), EulerAngles(float), EulerAngles()>(),
         sol::meta_function::to_string, &EulerAngles::ToString,
@@ -243,11 +228,6 @@ void Scripting::Initialize()
         return this->GetSingletonHandle(acName);
     };
 
-    m_lua["ReloadAllMods"] = [this]()
-    {
-        ReloadAllMods();
-    };
-
     m_lua["GameDump"] = [this](Type* apType)
     {
         return apType ? apType->GameDump() : "Null";
@@ -284,11 +264,6 @@ void Scripting::Initialize()
         }
         spdlog::info(oss.str());
         Console::Get().Log(oss.str());
-    };
-
-    m_lua["GetAsyncKeyState"] = [](int aKeyCode) -> bool
-    {
-        return GetAsyncKeyState(aKeyCode) & 0x8000 != 0;
     };
 
     // execute autoexec.lua inside our default script directory
