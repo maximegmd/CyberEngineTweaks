@@ -40,8 +40,40 @@ void Toolbar::Update()
 {
     if (!IsEnabled())
         return;
+    
+    SIZE resolution = D3D12::Get().GetResolution();
 
-    m_console.Update();
+    ImGui::SetNextWindowPos(ImVec2(resolution.cx * 0.2f, resolution.cy * 0.2f), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(resolution.cx * 0.6f, resolution.cy * 0.3f), ImGuiCond_FirstUseEver);
+    if (ImGui::Begin("Cyber Engine Tweaks", nullptr, ImGuiWindowFlags_NoScrollbar))
+    {
+        if (ImGui::BeginTabBar("CET_TABS", ImGuiTabBarFlags_None))
+        {
+            if (ImGui::BeginTabItem("Console"))
+            {
+                m_console.Update();
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Mod widgets"))
+            {
+                if (ImGui::Button("Reload All Mods"))
+                    LuaVM::Get().ReloadAllMods();
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Keybinds"))
+            {
+                ImGui::Text("This is the Cucumber tab!\nblah blah blah blah blah");
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Settings"))
+            {
+                ImGui::Text("This is the Cucumber tab!\nblah blah blah blah blah");
+                ImGui::EndTabItem();
+            }
+            ImGui::EndTabBar();
+        }
+    }
+    ImGui::End();
 }
 
 void Toolbar::Toggle()

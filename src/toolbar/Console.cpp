@@ -2,7 +2,6 @@
 
 #include "Console.h"
 
-#include <d3d12/D3D12.h>
 #include <scripting/LuaVM.h>
 
 void Console::Update()
@@ -10,92 +9,81 @@ void Console::Update()
     if (!IsEnabled())
         return;
 
-    SIZE resolution = D3D12::Get().GetResolution();
-
-    ImGui::SetNextWindowPos(ImVec2(0.f, 0.f), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(resolution.cx, resolution.cy * 0.3f), ImGuiCond_FirstUseEver);
-
-    ImGui::Begin("Cyber Engine Tweaks");
-
-    auto [major, minor] = Options::Get().GameImage.GetVersion();
-
-    if (major == 1 && (minor >= 4 && minor <= 6))
+    ImGui::Checkbox("Clear Input", &m_inputClear);
+    ImGui::SameLine();
+    if (ImGui::Button("Clear Output"))
     {
-        ImGui::Checkbox("Clear Input", &m_inputClear);
-        ImGui::SameLine();
-        if (ImGui::Button("Clear Output"))
-        {
-            std::lock_guard<std::recursive_mutex> _{ m_outputLock };
-            m_outputLines.clear();
-        }
-        ImGui::SameLine();
-        ImGui::Checkbox("Scroll Output", &m_outputShouldScroll);
-        ImGui::SameLine();
-        ImGui::Checkbox("Disable Game Log", &m_disabledGameLog);
-        ImGui::SameLine();
-        if (ImGui::Button("Reload All Mods"))
-            LuaVM::Get().ReloadAllMods();
+        std::lock_guard<std::recursive_mutex> _{ m_outputLock };
+        m_outputLines.clear();
+    }
+    ImGui::SameLine();
+    ImGui::Checkbox("Scroll Output", &m_outputShouldScroll);
+    ImGui::SameLine();
+    ImGui::Checkbox("Disable Game Log", &m_disabledGameLog);
 
-        static char command[200000] = { 0 };
+    static char command[0x10000] = { 0 };
+    static int cmdLines = 1;
+    static float inputLineHeight = -1.0f;
+    auto& style = ImGui::GetStyle();
+    inputLineHeight = ImGui::GetTextLineHeight() * cmdLines + style.ItemInnerSpacing.y * 2;
+    
+    if (ImGui::ListBoxHeader("##ConsoleHeader", ImVec2(-1, -(inputLineHeight + style.ItemSpacing.y))))
+    {
+        std::lock_guard<std::recursive_mutex> _{ m_outputLock };
 
-        {
-            std::lock_guard<std::recursive_mutex> _{ m_outputLock };
-
-            ImVec2 listboxSize = ImGui::GetContentRegionAvail();
-            listboxSize.y -= ImGui::GetFrameHeightWithSpacing();
-            const auto result = ImGui::ListBoxHeader("##ConsoleHeader", listboxSize);
-            ImGuiListClipper clipper;
-            clipper.Begin(m_outputLines.size());
-            while (clipper.Step())
-                for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i) 
-                {
-                    auto& item = m_outputLines[i];
-                    ImGui::PushID(i);
-                    if (ImGui::Selectable(item.c_str()))
-                    {
-                        auto str = item;
-                        if (item[0] == '>' && item[1] == ' ')
-                            str = str.substr(2);
-
-                        std::strncpy(command, str.c_str(), sizeof(command) - 1);
-                        m_focusConsoleInput = true;
-                    }
-                    ImGui::PopID();
-                }
-
-            if (m_outputScroll)
+        ImGuiListClipper clipper;
+        clipper.Begin(m_outputLines.size());
+        while (clipper.Step())
+            for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i) 
             {
-                if (m_outputShouldScroll)
-                    ImGui::SetScrollHereY();
-                m_outputScroll = false;
+                auto& item = m_outputLines[i];
+                ImGui::PushID(i);
+                if (ImGui::Selectable(item.c_str()))
+                {
+                    auto str = item;
+                    if (item[0] == '>' && item[1] == ' ')
+                        str = str.substr(2);
+
+                    std::strncpy(command, str.c_str(), sizeof(command) - 1);
+                    m_focusConsoleInput = true;
+                }
+                ImGui::PopID();
             }
-            if (result)
-                ImGui::ListBoxFooter();
-        }
 
-        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-        if (m_focusConsoleInput)
+        if (m_outputScroll)
         {
-            ImGui::SetKeyboardFocusHere();
-            m_focusConsoleInput = false;
+            if (m_outputShouldScroll)
+                ImGui::SetScrollHereY();
+            m_outputScroll = false;
         }
-        const auto execute = ImGui::InputText("##InputCommand", command, std::size(command), ImGuiInputTextFlags_EnterReturnsTrue);
-        ImGui::SetItemDefaultFocus();
-        if (execute)
-        {
-            Logger::ToConsoleFmt("> {}", command);
-            
-            if (!LuaVM::Get().ExecuteLua(command))
-                Logger::ToConsole("Command failed to execute!");
+        
+        ImGui::ListBoxFooter();
+    }
+    
+    if (m_focusConsoleInput)
+    {
+        ImGui::SetKeyboardFocusHere();
+        m_focusConsoleInput = false;
+    }
+    const auto execute = ImGui::InputTextMultiline("##InputCommand", command, std::size(command), ImVec2(-1, inputLineHeight), ImGuiInputTextFlags_CtrlEnterForNewLine | ImGuiInputTextFlags_AllowTabInput| ImGuiInputTextFlags_EnterReturnsTrue);
+    ImGui::SetItemDefaultFocus();
+    if (execute)
+    {
+        Logger::ToConsoleFmt("> {}", command);
+        
+        if (!LuaVM::Get().ExecuteLua(command))
+            Logger::ToConsole("Command failed to execute!");
 
-            if (m_inputClear)
-                std::memset(command, 0, sizeof(command));
+        if (m_inputClear)
+        {
+            std::memset(command, 0, sizeof(command));
+            cmdLines = 1;
         }
     }
-    else
-        ImGui::Text("Unknown version, please update your game and the mod");
-
-    ImGui::End();
+    if (ImGui::IsKeyDown(VK_CONTROL) && ImGui::IsKeyPressed(VK_RETURN, false))
+    {
+        ++cmdLines;
+    }
 }
 
 void Console::Toggle()
