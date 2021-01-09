@@ -149,3 +149,39 @@ struct ClassConverter : public LuaRED<ClassReference, "ClassReference">
 		return false;
 	}
 };
+
+// Specialization manages wrapping RT_***
+struct RawConverter : public LuaRED<UnknownType, "UnknownType">
+{
+	sol::object ToLua(RED4ext::CStackType& aResult, sol::state_view aLua)
+	{
+		return make_object(aLua, UnknownType(aLua, aResult.type, *static_cast<void**>(aResult.value)));
+	}
+
+	RED4ext::CStackType ToRED(sol::object aObject, RED4ext::IRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator)
+	{
+		RED4ext::CStackType result;
+		result.type = apRtti;
+		if (aObject.is<UnknownType>())
+		{
+			result.value = apAllocator->New<void*>(aObject.as<UnknownType*>()->GetHandle());
+		}
+		else
+		{
+			result.value = nullptr;
+		}
+
+		return result;
+	}
+
+	size_t Size() const noexcept
+	{
+		return m_pRtti ? m_pRtti->GetSize() : 0;
+	}
+
+	bool Is(RED4ext::IRTTIType* apRtti) const
+	{
+		m_pRtti = apRtti;
+		return true;
+	}
+};

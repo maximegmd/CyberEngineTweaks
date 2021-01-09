@@ -3,7 +3,7 @@
 #include "Type.h"
 #include "BasicTypes.h"
 
-struct WeakReference : Type
+struct WeakReference : ClassType
 {
     WeakReference(sol::state_view aView, RED4ext::WeakHandle<RED4ext::IScriptable> aWeakHandle);
     ~WeakReference();

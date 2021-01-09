@@ -2,8 +2,8 @@
 
 #include "ClassReference.h"
 
-ClassReference::ClassReference(sol::state_view aView, RED4ext::CClass* apClass, RED4ext::ScriptInstance apInstance)
-    : Type(std::move(aView), apClass)
+ClassReference::ClassReference(sol::state_view aView, RED4ext::IRTTIType* apClass, RED4ext::ScriptInstance apInstance)
+    : ClassType(std::move(aView), apClass)
     , m_pInstance(apInstance)
 {
 }

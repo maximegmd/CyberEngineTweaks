@@ -2,8 +2,8 @@
 
 #include "SingletonReference.h"
 
-SingletonReference::SingletonReference(sol::state_view aView, RED4ext::CClass* apClass)
-    : Type(std::move(aView), apClass)
+SingletonReference::SingletonReference(sol::state_view aView, RED4ext::IRTTIType* apClass)
+    : ClassType(std::move(aView), apClass)
 {
 }
 

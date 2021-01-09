@@ -89,6 +89,12 @@ void Scripting::Initialize()
         sol::meta_function::index, &ClassReference::Index,
         sol::meta_function::new_index, &ClassReference::NewIndex);
 
+    m_lua.new_usertype<UnknownType>("Unknown",
+        sol::meta_function::construct, sol::no_constructor,
+        sol::base_classes, sol::bases<Type>(),
+        sol::meta_function::index, &UnknownType::Index,
+        sol::meta_function::new_index, &UnknownType::NewIndex);
+
     m_lua.new_usertype<GameOptions>("GameOptions",
         sol::meta_function::construct, sol::no_constructor,
         "Print", &GameOptions::Print,
@@ -397,14 +403,12 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::CStackType& aResul
     else if (pType->GetType() == RED4ext::ERTTIType::Array)
     {
         auto* pArrayType = static_cast<RED4ext::CArray*>(pType);
-        const auto arrayHandle = *static_cast<Array<uint8_t>*>(aResult.value);
+        uint32_t length = pArrayType->GetLength(aResult.value);
         sol::table result(aState, sol::create);
-        for(auto i = 0u; i < arrayHandle.count; ++i)
+        for(auto i = 0u; i < length; ++i)
         {
-            auto innerType = pArrayType->GetInnerType();
-
             RED4ext::CStackType el;
-            el.value = arrayHandle.entries + i * innerType->GetSize();
+            el.value = pArrayType->GetElement(aResult.value, i);
             el.type = pArrayType->GetInnerType();
 
             result[i + 1] = ToLua(aState, el);
@@ -417,14 +421,6 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::CStackType& aResul
         auto result = Converter::ToLua(aResult, aState);
         if (result != sol::nil)
             return result;
-
-        RED4ext::CName hash;
-        pType->GetName(hash);
-        if (!hash.IsEmpty())
-        {
-            const std::string typeName = hash.ToString();
-            Console::Get().Log("Unhandled return type: " + typeName + " type : " + std::to_string((uint32_t)pType->GetType()));
-        }
     }
 
     return sol::nil;
