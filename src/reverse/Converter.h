@@ -114,7 +114,7 @@ struct ClassConverter : public LuaRED<ClassReference, "ClassReference">
 {
 	sol::object ToLua(RED4ext::CStackType& aResult, sol::state_view aLua)
 	{
-		return make_object(aLua, ClassReference(aLua, static_cast<RED4ext::CClass*>(aResult.type), *static_cast<void**>(aResult.value)));
+		return make_object(aLua, ClassReference(aLua, aResult.type, aResult.value));
 	}
 
 	RED4ext::CStackType ToRED(sol::object aObject, RED4ext::IRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator)
@@ -123,7 +123,7 @@ struct ClassConverter : public LuaRED<ClassReference, "ClassReference">
 		result.type = apRtti;
 		if (aObject.is<ClassReference>())
 		{
-			result.value = apAllocator->New<void*>(aObject.as<ClassReference*>()->GetHandle());
+			result.value = aObject.as<ClassReference*>()->GetHandle();
 		}
 		else
 		{
@@ -147,5 +147,41 @@ struct ClassConverter : public LuaRED<ClassReference, "ClassReference">
 		}
 
 		return false;
+	}
+};
+
+// Specialization manages wrapping RT_***
+struct RawConverter : public LuaRED<UnknownType, "UnknownType">
+{
+	sol::object ToLua(RED4ext::CStackType& aResult, sol::state_view aLua)
+	{
+		return make_object(aLua, UnknownType(aLua, aResult.type, aResult.value));
+	}
+
+	RED4ext::CStackType ToRED(sol::object aObject, RED4ext::IRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator)
+	{
+		RED4ext::CStackType result;
+		result.type = apRtti;
+		if (aObject.is<UnknownType>())
+		{
+			result.value = aObject.as<UnknownType*>()->GetHandle();
+		}
+		else
+		{
+			result.value = nullptr;
+		}
+
+		return result;
+	}
+
+	size_t Size() const noexcept
+	{
+		return m_pRtti ? m_pRtti->GetSize() : 0;
+	}
+
+	bool Is(RED4ext::IRTTIType* apRtti) const
+	{
+		m_pRtti = apRtti;
+		return true;
 	}
 };
