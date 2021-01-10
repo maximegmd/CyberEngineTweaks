@@ -17,9 +17,14 @@ struct Paths
         CETPath /= "plugins";
         CETPath /= "cyber_engine_tweaks";
         std::filesystem::create_directories(CETPath);
+        
+        ConfigPath = CETPath / "config.json";
+        // remove empty config.json
+        if (std::filesystem::exists(Paths::ConfigPath) && !std::filesystem::file_size(Paths::ConfigPath))
+            std::filesystem::remove(Paths::ConfigPath);
 
-        ScriptsPath = CETPath / "mods";
-        std::filesystem::create_directories(ScriptsPath);
+        ModsPath = CETPath / "mods";
+        std::filesystem::create_directories(ModsPath);
 
         Initialized = true;
     }
@@ -27,7 +32,8 @@ struct Paths
     static inline std::filesystem::path ExePath{ };
     static inline std::filesystem::path RootPath{ };
     static inline std::filesystem::path CETPath{ };
-    static inline std::filesystem::path ScriptsPath{ };
+    static inline std::filesystem::path ConfigPath{ };
+    static inline std::filesystem::path ModsPath{ };
 
     static inline bool Initialized{ false };
 };

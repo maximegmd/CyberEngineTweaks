@@ -30,7 +30,7 @@ HRESULT D3D12::Present(IDXGISwapChain* apSwapChain, UINT aSyncInterval, UINT aPr
 
 HRESULT D3D12::PresentDownlevel(ID3D12CommandQueueDownlevel* apCommandQueueDownlevel, ID3D12GraphicsCommandList* apOpenCommandList, ID3D12Resource* apSourceTex2D, HWND ahWindow, D3D12_DOWNLEVEL_PRESENT_FLAGS aFlags)
 {
-    if (Options::Get().PatchDisableWin7Vsync)
+    if (Options::PatchDisableWin7Vsync)
         aFlags &= ~D3D12_DOWNLEVEL_PRESENT_FLAG_WAIT_FOR_VBLANK;
 
     auto& d3d12 = Get();

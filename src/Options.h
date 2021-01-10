@@ -4,30 +4,27 @@
 
 struct Options
 {
-    static void Initialize(HMODULE aModule);
-    static Options& Get();
+    static void Initialize();
     
-    bool IsCyberpunk2077() const noexcept;
+    static void Load();
+    static void Save();
+    static void ResetToDefaults(); 
     
-    bool PatchEnableDebug{ false };
-    bool PatchRemovePedestrians{ false };
-    bool PatchAsyncCompute{ false };
-    bool PatchAntialiasing{ false };
-    bool PatchSkipStartMenu{ true };
-    bool PatchDisableIntroMovies{ false };
-    bool PatchDisableVignette{ false };
-    bool PatchDisableBoundaryTeleport{ false };
-    bool PatchDisableWin7Vsync{ false };
+    static inline Image GameImage;
+    static inline int ToolbarKey{ 0 };
+    static inline char ToolbarChar{ 0 };
+    static inline bool PatchEnableDebug{ false };
+    static inline bool PatchRemovePedestrians{ false };
+    static inline bool PatchAsyncCompute{ false };
+    static inline bool PatchAntialiasing{ false };
+    static inline bool PatchSkipStartMenu{ false };
+    static inline bool PatchDisableIntroMovies{ false };
+    static inline bool PatchDisableVignette{ false };
+    static inline bool PatchDisableBoundaryTeleport{ false };
+    static inline bool PatchDisableWin7Vsync{ false };
+    static inline bool DumpGameOptions{ false };
+    static inline bool ExeValid{ false };
+    static inline bool IsFirstLaunch{ false };
 
-    bool DumpGameOptions{ false };
-    int ToolbarKey{ VK_OEM_3 };
-    int ToolbarChar{ 0 };
-    float CPUMemoryPoolFraction{ 0.5f };
-    float GPUMemoryPoolFraction{ 1.f };
-    Image GameImage;
-    bool ExeValid{ false };
-
-private:
-
-    Options(HMODULE aModule);
+    static inline bool Initialized{ false };
 };

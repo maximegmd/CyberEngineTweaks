@@ -274,8 +274,8 @@ void Scripting::Initialize()
         Logger::ToConsole("WARNING: missing CET autoexec.lua!");
     }
 
-    // set current path for following scripts to out ScriptsPath
-    std::filesystem::current_path(Paths::ScriptsPath);
+    // set current path for following scripts to our ModsPath
+    std::filesystem::current_path(Paths::ModsPath);
 
     // load mods
     ReloadAllMods();

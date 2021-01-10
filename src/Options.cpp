@@ -1,10 +1,6 @@
 #include <stdafx.h>
 
-#include <spdlog/sinks/rotating_file_sink.h>
-
-static std::unique_ptr<Options> s_pOptions;
-
-Options::Options(HMODULE aModule)
+void Options::Initialize()
 {
     if (!Paths::Initialized)
         return;
@@ -44,7 +40,7 @@ Options::Options(HMODULE aModule)
     // check if exe name matches in case previous check fails
     ExeValid = ExeValid || (Paths::ExePath.filename() == "Cyberpunk2077.exe");
 
-    if (!IsCyberpunk2077())
+    if (!ExeValid)
         return;
 
     Logger::InfoToMain("Cyber Engine Tweaks is starting...");
@@ -57,77 +53,81 @@ Options::Options(HMODULE aModule)
         Logger::InfoToMainFmt("Game version {}.{:02d}", major, minor);
         Logger::InfoToMainFmt("Root path: \"{}\"", Paths::RootPath.string());
         Logger::InfoToMainFmt("Cyber Engine Tweaks path: \"{}\"", Paths::CETPath.string());
-        Logger::InfoToMainFmt("Lua scripts search path: \"{}\"", Paths::ScriptsPath.string());
+        Logger::InfoToMainFmt("Lua scripts search path: \"{}\"", Paths::ModsPath.string());
     }
     else
         Logger::InfoToMain("Unknown Game Version, update the mod");
 
-    const auto configPath = Paths::CETPath / "config.json";
-    
-    // remove empty config.json
-    if (std::filesystem::exists(configPath) && !std::filesystem::file_size(configPath))
-        std::filesystem::remove(configPath);
+    Load();
 
-    std::ifstream configFile(configPath);
+    if (!IsFirstLaunch)
+        Save();
+
+    Initialized = true;
+}
+
+void Options::Load()
+{
+    IsFirstLaunch = !std::filesystem::exists(Paths::ConfigPath);
+
+    std::ifstream configFile(Paths::ConfigPath);
     if(configFile)
     {
         auto config = nlohmann::json::parse(configFile);
-        this->PatchEnableDebug = config.value("enable_debug", this->PatchEnableDebug);
-        this->CPUMemoryPoolFraction = config.value("cpu_memory_pool_fraction", this->CPUMemoryPoolFraction);
-        this->GPUMemoryPoolFraction = config.value("gpu_memory_pool_fraction", this->GPUMemoryPoolFraction);
-        this->PatchRemovePedestrians = config.value("remove_pedestrians", this->PatchRemovePedestrians);
-        this->PatchSkipStartMenu = config.value("skip_start_menu", this->PatchSkipStartMenu);
-        this->PatchAsyncCompute = config.value("disable_async_compute", this->PatchAsyncCompute);
-        this->PatchAntialiasing = config.value("disable_antialiasing", this->PatchAntialiasing);
-        this->PatchDisableIntroMovies = config.value("disable_intro_movies", this->PatchDisableIntroMovies);
-        this->PatchDisableVignette = config.value("disable_vignette", this->PatchDisableVignette);
-        this->PatchDisableBoundaryTeleport = config.value("disable_boundary_teleport", this->PatchDisableBoundaryTeleport);
-        this->PatchDisableWin7Vsync = config.value("disable_win7_vsync", this->PatchDisableWin7Vsync);
+        PatchEnableDebug = config.value("enable_debug", PatchEnableDebug);
+        PatchRemovePedestrians = config.value("remove_pedestrians", PatchRemovePedestrians);
+        PatchSkipStartMenu = config.value("skip_start_menu", PatchSkipStartMenu);
+        PatchAsyncCompute = config.value("disable_async_compute", PatchAsyncCompute);
+        PatchAntialiasing = config.value("disable_antialiasing", PatchAntialiasing);
+        PatchDisableIntroMovies = config.value("disable_intro_movies", PatchDisableIntroMovies);
+        PatchDisableVignette = config.value("disable_vignette", PatchDisableVignette);
+        PatchDisableBoundaryTeleport = config.value("disable_boundary_teleport", PatchDisableBoundaryTeleport);
+        PatchDisableWin7Vsync = config.value("disable_win7_vsync", PatchDisableWin7Vsync);
 
-        this->DumpGameOptions = config.value("dump_game_options", this->DumpGameOptions);
-        this->ToolbarKey = config.value("console_key", this->ToolbarKey);
+        DumpGameOptions = config.value("dump_game_options", DumpGameOptions);
+        ToolbarKey = config.value("toolbar_key", ToolbarKey);
+        if (ToolbarKey != 0)
+            ToolbarChar = MapVirtualKey(ToolbarKey, MAPVK_VK_TO_CHAR);
+        else
+            IsFirstLaunch = true; // is for sure in this case
 
         // check old config names
         if (config.value("unlock_menu", false))
-            this->PatchEnableDebug = true;
-
-        this->ToolbarChar = MapVirtualKey(this->ToolbarKey, MAPVK_VK_TO_CHAR);
+            PatchEnableDebug = true;
     }
     configFile.close();
+}
 
+void Options::Save()
+{
     nlohmann::json config;
-    config["enable_debug"] = this->PatchEnableDebug;
-    config["cpu_memory_pool_fraction"] = this->CPUMemoryPoolFraction;
-    config["gpu_memory_pool_fraction"] = this->GPUMemoryPoolFraction;
-    config["remove_pedestrians"] = this->PatchRemovePedestrians;
-    config["skip_start_menu"] = this->PatchSkipStartMenu;
-    config["disable_async_compute"] = this->PatchAsyncCompute;
-    config["disable_antialiasing"] = this->PatchAntialiasing;
-    config["dump_game_options"] = this->DumpGameOptions;
-    config["console_key"] = this->ToolbarKey;
-    config["disable_intro_movies"] = this->PatchDisableIntroMovies;
-    config["disable_vignette"] = this->PatchDisableVignette;
-    config["disable_boundary_teleport"] = this->PatchDisableBoundaryTeleport;
-    config["disable_win7_vsync"] = this->PatchDisableWin7Vsync;
 
-    std::ofstream o(configPath);
+    config["toolbar_key"] = ToolbarKey;
+    config["enable_debug"] = PatchEnableDebug;
+    config["remove_pedestrians"] = PatchRemovePedestrians;
+    config["disable_async_compute"] = PatchAsyncCompute;
+    config["disable_antialiasing"] = PatchAntialiasing;
+    config["skip_start_menu"] = PatchSkipStartMenu;
+    config["disable_intro_movies"] = PatchDisableIntroMovies;
+    config["disable_vignette"] = PatchDisableVignette;
+    config["disable_boundary_teleport"] = PatchDisableBoundaryTeleport;
+    config["disable_win7_vsync"] = PatchDisableWin7Vsync;
+    config["dump_game_options"] = DumpGameOptions;
+
+    std::ofstream o(Paths::ConfigPath);
     o << config.dump(4) << std::endl;
 }
 
-bool Options::IsCyberpunk2077() const noexcept
+void Options::ResetToDefaults()
 {
-    return ExeValid;
+    PatchEnableDebug = false;
+    PatchRemovePedestrians = false;
+    PatchAsyncCompute = false;
+    PatchAntialiasing = false;
+    PatchSkipStartMenu = false;
+    PatchDisableIntroMovies = false;
+    PatchDisableVignette = false;
+    PatchDisableBoundaryTeleport = false;
+    PatchDisableWin7Vsync = false;
+    DumpGameOptions = false;
 }
-
-void Options::Initialize(HMODULE aModule)
-{
-    // Horrible hack because make_unique can't access private member
-    s_pOptions.reset(new (std::nothrow) Options(aModule));
-}
-
-Options& Options::Get()
-{
-    assert(s_pOptions);
-    return *s_pOptions;
-}
-

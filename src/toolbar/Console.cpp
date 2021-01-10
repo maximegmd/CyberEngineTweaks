@@ -4,11 +4,18 @@
 
 #include <scripting/LuaVM.h>
 
+void Console::OnEnable()
+{
+    m_focusConsoleInput = true;
+}
+
+void Console::OnDisable()
+{
+    
+}
+
 void Console::Update()
 {
-    if (!IsEnabled())
-        return;
-
     ImGui::Checkbox("Clear Input", &m_inputClear);
     ImGui::SameLine();
     if (ImGui::Button("Clear Output"))
@@ -21,13 +28,10 @@ void Console::Update()
     ImGui::SameLine();
     ImGui::Checkbox("Disable Game Log", &m_disabledGameLog);
 
-    static char command[0x10000] = { 0 };
-    static int cmdLines = 1;
-    static float inputLineHeight = -1.0f;
     auto& style = ImGui::GetStyle();
-    inputLineHeight = ImGui::GetTextLineHeight() * cmdLines + style.ItemInnerSpacing.y * 2;
+    m_InputLineHeight = ImGui::GetTextLineHeight() * m_CommandLines + style.ItemInnerSpacing.y * 2;
     
-    if (ImGui::ListBoxHeader("##ConsoleHeader", ImVec2(-1, -(inputLineHeight + style.ItemSpacing.y))))
+    if (ImGui::ListBoxHeader("##ConsoleHeader", ImVec2(-1, -(m_InputLineHeight + style.ItemSpacing.y))))
     {
         std::lock_guard<std::recursive_mutex> _{ m_outputLock };
 
@@ -44,7 +48,7 @@ void Console::Update()
                     if (item[0] == '>' && item[1] == ' ')
                         str = str.substr(2);
 
-                    std::strncpy(command, str.c_str(), sizeof(command) - 1);
+                    std::strncpy(m_Command, str.c_str(), sizeof(m_Command) - 1);
                     m_focusConsoleInput = true;
                 }
                 ImGui::PopID();
@@ -65,36 +69,27 @@ void Console::Update()
         ImGui::SetKeyboardFocusHere();
         m_focusConsoleInput = false;
     }
-    const auto execute = ImGui::InputTextMultiline("##InputCommand", command, std::size(command), ImVec2(-1, inputLineHeight), ImGuiInputTextFlags_CtrlEnterForNewLine | ImGuiInputTextFlags_AllowTabInput| ImGuiInputTextFlags_EnterReturnsTrue);
+    const auto execute = ImGui::InputTextMultiline("##InputCommand", m_Command, std::size(m_Command), ImVec2(-1, m_InputLineHeight), ImGuiInputTextFlags_CtrlEnterForNewLine | ImGuiInputTextFlags_AllowTabInput| ImGuiInputTextFlags_EnterReturnsTrue);
     ImGui::SetItemDefaultFocus();
     if (execute)
     {
-        Logger::ToConsoleFmt("> {}", command);
+        Logger::ToConsoleFmt("> {}", m_Command);
         
-        if (!LuaVM::Get().ExecuteLua(command))
+        if (!LuaVM::Get().ExecuteLua(m_Command))
             Logger::ToConsole("Command failed to execute!");
 
         if (m_inputClear)
         {
-            std::memset(command, 0, sizeof(command));
-            cmdLines = 1;
+            std::memset(m_Command, 0, sizeof(m_Command));
+            m_CommandLines = 1;
         }
-    }
-    if (ImGui::IsKeyDown(VK_CONTROL) && ImGui::IsKeyPressed(VK_RETURN, false))
-    {
-        ++cmdLines;
-    }
-}
 
-void Console::Toggle()
-{
-    m_enabled = !m_enabled;
-    m_focusConsoleInput = m_enabled;
-}
-
-bool Console::IsEnabled() const
-{
-    return m_enabled;
+        m_focusConsoleInput = true;
+    }
+    //if (ImGui::IsKeyDown(VK_CONTROL) && ImGui::IsKeyPressed(VK_RETURN, false))
+    //{
+    //    ++m_CommandLines;
+    //}
 }
 
 void Console::Log(std::string_view acpText)

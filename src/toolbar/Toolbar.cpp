@@ -30,10 +30,28 @@ Toolbar& Toolbar::Get()
     return *s_pToolbar;
 }
 
+ModWidgets& Toolbar::GetModWidgets()
+{
+    assert(s_pToolbar);
+    return s_pToolbar->m_mods;
+}
+
 Console& Toolbar::GetConsole()
 {
     assert(s_pToolbar);
     return s_pToolbar->m_console;
+}
+
+Keybinds& Toolbar::GetKeybinds()
+{
+    assert(s_pToolbar);
+    return s_pToolbar->m_keybinds;
+}
+
+Settings& Toolbar::GetSettings()
+{
+    assert(s_pToolbar);
+    return s_pToolbar->m_settings;
 }
 
 void Toolbar::Update()
@@ -44,30 +62,33 @@ void Toolbar::Update()
     SIZE resolution = D3D12::Get().GetResolution();
 
     ImGui::SetNextWindowPos(ImVec2(resolution.cx * 0.2f, resolution.cy * 0.2f), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(resolution.cx * 0.6f, resolution.cy * 0.3f), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(resolution.cx * 0.6f, resolution.cy * 0.6f), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Cyber Engine Tweaks", nullptr, ImGuiWindowFlags_NoScrollbar))
     {
         if (ImGui::BeginTabBar("CET_TABS", ImGuiTabBarFlags_None))
         {
-            if (ImGui::BeginTabItem("Console"))
-            {
-                m_console.Update();
-                ImGui::EndTabItem();
-            }
             if (ImGui::BeginTabItem("Mod widgets"))
             {
-                if (ImGui::Button("Reload All Mods"))
-                    LuaVM::Get().ReloadAllMods();
+                SetActiveWidget(ToolbarWidgetID::MODS);
+                m_mods.Update();
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Console"))
+            {
+                SetActiveWidget(ToolbarWidgetID::CONSOLE);
+                m_console.Update();
                 ImGui::EndTabItem();
             }
             if (ImGui::BeginTabItem("Keybinds"))
             {
-                ImGui::Text("This is the Cucumber tab!\nblah blah blah blah blah");
+                SetActiveWidget(ToolbarWidgetID::KEYBINDS);
+                m_keybinds.Update();
                 ImGui::EndTabItem();
             }
             if (ImGui::BeginTabItem("Settings"))
             {
-                ImGui::Text("This is the Cucumber tab!\nblah blah blah blah blah");
+                SetActiveWidget(ToolbarWidgetID::SETTINGS);
+                m_settings.Update();
                 ImGui::EndTabItem();
             }
             ImGui::EndTabBar();
@@ -89,8 +110,6 @@ void Toolbar::Toggle()
         luaVM.OnToolbarClose();
     
     ClipToCenter(RED4ext::CGameEngine::Get()->unkC0);
-
-    m_console.Toggle();
 }
 
 bool Toolbar::IsEnabled() const
@@ -100,24 +119,26 @@ bool Toolbar::IsEnabled() const
 
 LRESULT Toolbar::OnWndProc(HWND, UINT auMsg, WPARAM awParam, LPARAM)
 {
-    auto& options = Options::Get();
-    if (auMsg == WM_KEYDOWN && awParam == options.ToolbarKey)
-    {
-        Toggle();
-        return 1;
-    }
+    if (Options::IsFirstLaunch)
+        return 0; // do not handle anything until user sets his settings for the first time
 
     switch (auMsg)
     {
         case WM_KEYDOWN:
         case WM_SYSKEYDOWN:
+            if (awParam == Options::ToolbarKey)
+            {
+                Toggle();
+                return 1;
+            }
+            break;
         case WM_KEYUP:
         case WM_SYSKEYUP:
-            if (awParam == options.ToolbarKey)
+            if (awParam == Options::ToolbarKey)
                 return 1;
             break;
         case WM_CHAR:
-            if (options.ToolbarChar && awParam == options.ToolbarChar)
+            if (awParam == Options::ToolbarChar)
                 return 1;
             break;
     }
@@ -169,6 +190,28 @@ void Toolbar::Hook()
     }
 }
 
-Toolbar::Toolbar() = default;
+Toolbar::Toolbar()
+{
+    m_widgets[ToolbarWidgetID::MODS] = &m_mods;
+    m_widgets[ToolbarWidgetID::CONSOLE] = &m_console;
+    m_widgets[ToolbarWidgetID::KEYBINDS] = &m_keybinds;
+    m_widgets[ToolbarWidgetID::SETTINGS] = &m_settings;
 
-Toolbar::~Toolbar() = default;
+    if (Options::IsFirstLaunch)
+    {
+        Toggle();
+        m_activeWidgetID = ToolbarWidgetID::SETTINGS;
+    }
+
+    m_widgets[m_activeWidgetID]->OnEnable();
+}
+
+void Toolbar::SetActiveWidget(ToolbarWidgetID aNewActive)
+{
+    if (m_activeWidgetID != aNewActive)
+    {
+        m_widgets[m_activeWidgetID]->OnDisable();
+        m_activeWidgetID = aNewActive;
+        m_widgets[m_activeWidgetID]->OnEnable();
+    }
+}

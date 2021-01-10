@@ -6,9 +6,9 @@ void ScriptStore::LoadAll(sol::state_view aStateView)
 {
     m_contexts.clear();
 
-    const auto cScriptsPath = Paths::ScriptsPath;
+    const auto cModsPath = Paths::ModsPath;
 
-    for (const auto& file : std::filesystem::directory_iterator(cScriptsPath))
+    for (const auto& file : std::filesystem::directory_iterator(cModsPath))
     {
         if (!file.is_directory())
             continue;
@@ -16,7 +16,7 @@ void ScriptStore::LoadAll(sol::state_view aStateView)
         if (!exists(file.path() / "init.lua"))
             continue;
 
-        auto name = relative(file.path(), cScriptsPath).string();
+        auto name = relative(file.path(), cModsPath).string();
 
         auto ctx = ScriptContext{ aStateView, file.path() };
         auto fpathString = file.path().string();

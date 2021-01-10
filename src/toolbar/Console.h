@@ -1,17 +1,18 @@
 #pragma once
 
-struct Console
+#include "ToolbarWidget.h"
+
+struct Console : public ToolbarWidget
 {
     Console() = default;
-    ~Console() = default;
+    ~Console() override = default;
 
-    void Toggle();
-    bool IsEnabled() const;
+    void OnEnable() override;
+    void OnDisable() override;
+    void Update() override;
     
     void Log(std::string_view acpText);
     void GameLog(std::string_view acpText);
-    
-    void Update();
 
 private:
     std::recursive_mutex m_outputLock{ };
@@ -20,7 +21,9 @@ private:
     bool m_outputScroll{ false };
     bool m_inputClear{ true };
     bool m_disabledGameLog{ true };
-    
-    bool m_enabled{ false };
     bool m_focusConsoleInput{ false };
+
+    char m_Command[0x10000]{ 0 };
+    int m_CommandLines{ 1 };
+    float m_InputLineHeight{ -1.0f };
 };

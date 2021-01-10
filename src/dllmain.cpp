@@ -35,41 +35,40 @@ static void Initialize(HMODULE mod)
 
     Paths::Initialize();
     Logger::Initialize();
-    Options::Initialize(mod);
-    auto& options = Options::Get();
+    Options::Initialize();
 
-    if (!options.IsCyberpunk2077())
+    if (!Options::Initialized || !Options::ExeValid)
         return;
 
-    if(options.GameImage.GetVersion() != Image::GetSupportedVersion())
+    if(Options::GameImage.GetVersion() != Image::GetSupportedVersion())
     {
         auto [major, minor] = Image::GetSupportedVersion();
         Logger::ErrorToMainFmt("Unsupported game version! Only {}.{:02d} is supported.", major, minor);
         return;
     }
 
-    if (options.PatchEnableDebug)
-        EnableDebugPatch(&options.GameImage);
+    if (Options::PatchEnableDebug)
+        EnableDebugPatch(&Options::GameImage);
 
-    if(options.PatchSkipStartMenu)
-        StartScreenPatch(&options.GameImage);
+    if(Options::PatchSkipStartMenu)
+        StartScreenPatch(&Options::GameImage);
 
-    if(options.PatchRemovePedestrians)
-        RemovePedsPatch(&options.GameImage);
+    if(Options::PatchRemovePedestrians)
+        RemovePedsPatch(&Options::GameImage);
 
-    if(options.PatchAsyncCompute || options.PatchAntialiasing)
-        OptionsPatch(&options.GameImage);
+    if(Options::PatchAsyncCompute || Options::PatchAntialiasing)
+        OptionsPatch(&Options::GameImage);
 
-    if (options.PatchDisableIntroMovies)
-        DisableIntroMoviesPatch(&options.GameImage);
+    if (Options::PatchDisableIntroMovies)
+        DisableIntroMoviesPatch(&Options::GameImage);
 
-    if (options.PatchDisableVignette)
-        DisableVignettePatch(&options.GameImage);
+    if (Options::PatchDisableVignette)
+        DisableVignettePatch(&Options::GameImage);
 
-    if (options.PatchDisableBoundaryTeleport)
-        DisableBoundaryTeleportPatch(&options.GameImage);
+    if (Options::PatchDisableBoundaryTeleport)
+        DisableBoundaryTeleportPatch(&Options::GameImage);
 
-    OptionsInitHook(&options.GameImage);
+    OptionsInitHook(&Options::GameImage);
 
     Window::Initialize();
     Toolbar::Initialize();

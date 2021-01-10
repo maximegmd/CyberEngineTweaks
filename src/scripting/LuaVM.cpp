@@ -2,6 +2,8 @@
 
 #include "LuaVM.h"
 
+#include "toolbar/Toolbar.h"
+
 static std::unique_ptr<LuaVM> s_pLuaVM;
 
 void LuaVM::Initialize()
@@ -54,6 +56,9 @@ void LuaVM::ReloadAllMods()
     {
         m_scripting.ReloadAllMods();
         m_scripting.TriggerOnInit();
+        if (Toolbar::Get().IsEnabled())
+            m_scripting.TriggerOnToolbarOpen();
+
         Logger::InfoToMain("LuaVM: Reloaded all mods!");
         Logger::InfoToMods("LuaVM: Reloaded all mods!");
         Logger::ToConsole("LuaVM: Reloaded all mods!");
@@ -80,8 +85,13 @@ bool LuaVM::IsInitialized() const
 void LuaVM::PostInitialize()
 {
     assert(!m_initialized);
+
     m_scripting.TriggerOnInit();
-    m_initialized = true;
+    if (Toolbar::Get().IsEnabled())
+        m_scripting.TriggerOnToolbarOpen();
+
     Logger::InfoToMain("LuaVM: initialization finished!");
     Logger::ToConsole("LuaVM: initialization finished!");
+
+    m_initialized = true;
 }
