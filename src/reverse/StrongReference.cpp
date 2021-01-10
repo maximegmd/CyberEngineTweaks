@@ -2,8 +2,8 @@
 
 #include "StrongReference.h"
 
-StrongReference::StrongReference(sol::state_view aView, StrongHandle aStrongHandle)
-    : Type(aView, static_cast<RED4ext::CClass*>(aStrongHandle.handle->GetParentType()))
+StrongReference::StrongReference(sol::state_view aView, RED4ext::Handle<RED4ext::IScriptable> aStrongHandle)
+    : ClassType(aView, aStrongHandle->GetParentType())
     , m_strongHandle(aStrongHandle)
 {
 }
@@ -15,5 +15,5 @@ StrongReference::~StrongReference()
 
 RED4ext::ScriptInstance StrongReference::GetHandle()
 {
-    return m_strongHandle.handle;
+    return m_strongHandle.instance;
 }

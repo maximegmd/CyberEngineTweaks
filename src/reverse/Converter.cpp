@@ -23,7 +23,8 @@ auto s_metaVisitor = [](auto... args) {
     LuaRED<TweakDBID, "TweakDBID">(),
     CNameConverter(),
     EnumConverter(),
-    ClassConverter()
+    ClassConverter(),
+    RawConverter() // Should always be last resort
     );
 
 size_t Converter::Size(RED4ext::IRTTIType* apRtti)

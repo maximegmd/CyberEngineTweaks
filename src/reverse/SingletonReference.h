@@ -2,9 +2,9 @@
 
 #include "Type.h"
 
-struct SingletonReference : Type
+struct SingletonReference : ClassType
 {
-    SingletonReference(sol::state_view aView, RED4ext::CClass* apClass);
+    SingletonReference(sol::state_view aView, RED4ext::IRTTIType* apClass);
     ~SingletonReference();
     
 protected:

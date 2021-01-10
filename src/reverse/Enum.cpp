@@ -58,7 +58,7 @@ void Enum::Get(const RED4ext::CStackType& acStackType) noexcept
     m_cpType = static_cast<const RED4ext::CEnum*>(acStackType.type);
     switch (acStackType.type->GetSize())
     {
-        case sizeof(uint8_t) :
+        case sizeof(uint8_t):
             m_value = *static_cast<uint8_t*>(acStackType.value);
             break;
         case sizeof(uint16_t):
@@ -100,7 +100,7 @@ std::string Enum::GetValueName() const
     {
         if (m_cpType->valueList[i] == m_value)
         {
-            return RED4ext::CName(m_cpType->hashList[i]).ToString();
+            return m_cpType->hashList[i].ToString();
         }
     }
 

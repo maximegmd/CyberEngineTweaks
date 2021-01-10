@@ -3,9 +3,9 @@
 #include "Type.h"
 #include "BasicTypes.h"
 
-struct StrongReference : Type
+struct StrongReference : ClassType
 {
-    StrongReference(sol::state_view aView, StrongHandle aStrongHandle);
+    StrongReference(sol::state_view aView, RED4ext::Handle<RED4ext::IScriptable> aStrongHandle);
     ~StrongReference();
     
 protected:
@@ -15,5 +15,5 @@ protected:
 private:
     friend struct Scripting;
     
-    StrongHandle m_strongHandle;
+    RED4ext::Handle<RED4ext::IScriptable> m_strongHandle;
 };

@@ -56,20 +56,6 @@ struct Quaternion
 
 uint32_t crc32(const char* buf, size_t len, uint32_t seed);
 
-// - But yamyam these two are exactly the same why you do this?
-// - We have to implement different destructors but we are lazy
-struct StrongHandle
-{
-    RED4ext::IScriptable* handle{nullptr};
-    uint32_t* refCount{nullptr};
-};
-
-struct WeakHandle
-{
-    RED4ext::IScriptable* handle{nullptr};
-    uint32_t* refCount{nullptr};
-};
-
 struct CName
 {
     CName(uint64_t aHash = 0) : hash(aHash){}

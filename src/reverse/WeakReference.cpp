@@ -2,8 +2,8 @@
 
 #include "WeakReference.h"
 
-WeakReference::WeakReference(sol::state_view aView, WeakHandle aWeakHandle)
-    : Type(aView, static_cast<RED4ext::CClass*>(aWeakHandle.handle->GetParentType()))
+WeakReference::WeakReference(sol::state_view aView, RED4ext::WeakHandle<RED4ext::IScriptable> aWeakHandle)
+    : ClassType(aView, aWeakHandle->GetParentType())
     , m_weakHandle(aWeakHandle)
 {
 }
@@ -15,5 +15,5 @@ WeakReference::~WeakReference()
 
 RED4ext::ScriptInstance WeakReference::GetHandle()
 {
-    return m_weakHandle.handle;
+    return m_weakHandle.instance;
 }
