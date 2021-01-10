@@ -2,9 +2,7 @@
 
 #include "LuaVM.h"
 
-#include <scripting/Scripting.h>
-
-#include "console/Console.h"
+#include <console/Console.h>
 
 static std::unique_ptr<LuaVM> s_pLuaVM;
 
@@ -14,6 +12,7 @@ void LuaVM::Initialize()
     {
         s_pLuaVM.reset(new (std::nothrow) LuaVM);
         s_pLuaVM->Hook();
+        s_pLuaVM->m_scripting.Initialize();
     }
 }
 
@@ -27,29 +26,6 @@ LuaVM& LuaVM::Get()
     return *s_pLuaVM;
 }
 
-void LuaVM::Update(float aDeltaTime)
-{
-    if (!m_initialized && m_logCount.load(std::memory_order_relaxed) > 0)
-        PostInitialize();
-
-    if (!m_initialized)
-        return;
-    
-    Scripting::Get().GetStore().TriggerOnUpdate(aDeltaTime);
-    Scripting::Get().GetStore().TriggerOnDraw();
-}
-
-void LuaVM::ReloadAllMods()
-{
-    if (m_initialized)
-    {
-        auto& scripting = Scripting::Get();
-        scripting.ReloadAllMods();
-        scripting.GetStore().TriggerOnInit();
-        spdlog::info("LuaVM::ReloadAllMods() finished!");
-    }
-}
-
 bool LuaVM::ExecuteLua(const std::string& acCommand)
 {
     if (!m_initialized)
@@ -58,17 +34,52 @@ bool LuaVM::ExecuteLua(const std::string& acCommand)
         return false;
     }
 
-    return Scripting::Get().ExecuteLua(acCommand);
+    return m_scripting.ExecuteLua(acCommand);
+}
+
+void LuaVM::Update(float aDeltaTime)
+{
+    if (!m_initialized && m_logCount.load(std::memory_order_relaxed) > 0)
+        PostInitialize();
+
+    if (!m_initialized)
+        return;
+    
+    m_scripting.TriggerOnUpdate(aDeltaTime);
+    m_scripting.TriggerOnDraw();
+}
+
+void LuaVM::ReloadAllMods()
+{
+    if (m_initialized)
+    {
+        m_scripting.ReloadAllMods();
+        m_scripting.TriggerOnInit();
+        spdlog::info("LuaVM::ReloadAllMods() finished!");
+    }
+}
+
+void LuaVM::OnConsoleOpen()
+{
+    if (m_initialized)
+        m_scripting.TriggerOnConsoleOpen();
+}
+
+void LuaVM::OnConsoleClose()
+{
+    if (m_initialized)
+        m_scripting.TriggerOnConsoleClose();
+}
+
+bool LuaVM::IsInitialized() const
+{
+    return m_initialized;
 }
 
 void LuaVM::PostInitialize()
 {
     assert(!m_initialized);
-    Scripting::Get().GetStore().TriggerOnInit();
+    m_scripting.TriggerOnInit();
     m_initialized = true;
     spdlog::info("LuaVM initialization complete!");
 }
-
-LuaVM::LuaVM() = default;
-
-LuaVM::~LuaVM() = default;

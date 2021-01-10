@@ -6,9 +6,7 @@
 
 #include <console/Console.h>
 
-struct REDScriptContext
-{
-};
+struct REDScriptContext;
 
 struct ScriptStack
 {
@@ -28,7 +26,7 @@ static TScriptCall** GetScriptCallArray()
     return reinterpret_cast<TScriptCall**>(finalLocation);
 }
 
-void LuaVM::HookLog(REDScriptContext* apContext, ScriptStack* apStack, void*, void*)
+void LuaVM::HookLog(REDScriptContext*, ScriptStack* apStack, void*, void*)
 {
     RED4ext::CString text("");
     apStack->unk30 = nullptr;

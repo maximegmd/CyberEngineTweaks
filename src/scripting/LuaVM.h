@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Scripting.h"
 #include "reverse/BasicTypes.h"
 
 typedef TweakDBID TDBID;
@@ -25,17 +26,21 @@ struct TDBIDLookupEntry
 struct Image;
 struct LuaVM
 {
+    ~LuaVM() = default;
+
     static void Initialize();
     static void Shutdown();
     static LuaVM& Get();
     
     bool ExecuteLua(const std::string& acCommand);
-    bool IsInitialized() const { return m_initialized; }
-
-    ~LuaVM();
-    
+        
     void Update(float aDeltaTime);
     void ReloadAllMods();
+
+    void OnConsoleOpen();
+    void OnConsoleClose();
+
+    bool IsInitialized() const;
 
 protected:
     
@@ -54,11 +59,11 @@ protected:
     std::string GetTDBIDString(uint64_t aValue);
 
 private:
-
-    LuaVM();
+  
+    LuaVM() = default;
     
-    std::recursive_mutex m_tdbidLock;
-    std::unordered_map<uint64_t, TDBIDLookupEntry> m_tdbidLookup;
+    std::recursive_mutex m_tdbidLock{ };
+    std::unordered_map<uint64_t, TDBIDLookupEntry> m_tdbidLookup{ };
     
     TScriptCall* m_realLog{ nullptr };
     TScriptCall* m_realLogChannel{ nullptr };
@@ -70,6 +75,8 @@ private:
     TScriptCall* m_realTDBIDToStringDEBUG{ nullptr };
 
     std::atomic<uint64_t> m_logCount{ 0 };
-    
+
+    Scripting m_scripting{ };
+
     bool m_initialized{ false };
 };

@@ -19,224 +19,6 @@
 #include <reverse/WeakReference.h>
 #include <reverse/Enum.h>
 
-Scripting::Scripting()
-{
-    Initialize();
-
-    ReloadAllMods();
-}
-
-Scripting& Scripting::Get()
-{
-    static Scripting s_instance;
-    return s_instance;
-}
-
-const ScriptStore& Scripting::GetStore() const
-{
-    return m_store;
-}
-
-bool Scripting::ExecuteLua(const std::string& acCommand)
-{
-    try
-    {
-        m_lua.script(acCommand);
-    }
-    catch(std::exception& e)
-    {
-        Console::Get().Log( e.what());
-        return false;
-    }
-
-    return true;
-}
-
-size_t Scripting::Size(RED4ext::IRTTIType* apRtti)
-{
-    static auto* pRtti = RED4ext::CRTTISystem::Get();
-    static auto* pStringType = pRtti->GetType(RED4ext::FNV1a("String"));
-
-    if (apRtti == pStringType)
-        return sizeof(RED4ext::CString);
-    if (apRtti->GetType() == RED4ext::ERTTIType::Handle)
-        return sizeof(StrongHandle);
-    if (apRtti->GetType() == RED4ext::ERTTIType::WeakHandle)
-        return sizeof(WeakHandle);
-
-    return Converter::Size(apRtti);
-}
-
-sol::object Scripting::ToLua(sol::state_view aState, RED4ext::CStackType& aResult)
-{
-    static auto* pRtti = RED4ext::CRTTISystem::Get();
-    static auto* pStringType = pRtti->GetType(RED4ext::FNV1a("String"));
-
-    auto* pType = aResult.type;
-
-    if (pType == nullptr)
-        return sol::nil;
-    if (pType == pStringType)
-        return make_object(aState, std::string(static_cast<RED4ext::CString*>(aResult.value)->c_str()));
-    if (pType->GetType() == RED4ext::ERTTIType::Handle)
-    {
-        const auto handle = *static_cast<StrongHandle*>(aResult.value);
-        if (handle.handle)
-            return make_object(aState, StrongReference(aState, handle));
-    }
-    else if (pType->GetType() == RED4ext::ERTTIType::WeakHandle)
-    {
-        const auto handle = *static_cast<WeakHandle*>(aResult.value);
-        if (handle.handle)
-            return make_object(aState, WeakReference(aState, handle));
-    }
-    else if (pType->GetType() == RED4ext::ERTTIType::Array)
-    {
-        auto* pArrayType = static_cast<RED4ext::CArray*>(pType);
-        const auto arrayHandle = *static_cast<Array<uint8_t>*>(aResult.value);
-        sol::table result(aState, sol::create);
-        for(auto i = 0u; i < arrayHandle.count; ++i)
-        {
-            auto innerType = pArrayType->GetInnerType();
-
-            RED4ext::CStackType el;
-            el.value = arrayHandle.entries + i * innerType->GetSize();
-            el.type = pArrayType->GetInnerType();
-
-            result[i + 1] = ToLua(aState, el);
-        }
-
-        return result;
-    }
-    else
-    {
-        auto result = Converter::ToLua(aResult, aState);
-        if (result != sol::nil)
-            return result;
-
-        RED4ext::CName hash;
-        pType->GetName(hash);
-        if (!hash.IsEmpty())
-        {
-            const std::string typeName = hash.ToString();
-            Console::Get().Log("Unhandled return type: " + typeName + " type : " + std::to_string((uint32_t)pType->GetType()));
-        }
-    }
-
-    return sol::nil;
-}
-
-RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator)
-{
-    static auto* pRtti = RED4ext::CRTTISystem::Get();
-    static auto* pStringType = pRtti->GetType(RED4ext::FNV1a("String"));
-
-    RED4ext::CStackType result;
-
-    bool hasData = aObject != sol::nil;
-
-    if (apRtti)
-    {
-        result.type = apRtti;
-
-        if (apRtti == pStringType)
-        {
-            std::string str;
-            if (hasData)
-            {
-                sol::state_view v(aObject.lua_state());
-                str = v["tostring"](aObject);
-            }
-            result.value = apAllocator->New<RED4ext::CString>(str.c_str());
-        }
-        else if (apRtti->GetType() == RED4ext::ERTTIType::Handle)
-        {
-            if (aObject.is<StrongReference>())
-            {
-                auto* pSubType = static_cast<RED4ext::CClass*>(apRtti)->parent;
-                RED4ext::IRTTIType* pType = aObject.as<StrongReference*>()->m_pType;
-                while (pType != nullptr && pType != pSubType)
-                {
-                    pType = static_cast<RED4ext::CClass*>(pType)->parent;
-                }
-
-                if (pType != nullptr)
-                {
-                    if (hasData)
-                        result.value = apAllocator->New<StrongHandle>(aObject.as<StrongReference>().m_strongHandle);
-                    else
-                        result.value = apAllocator->New<StrongHandle>();
-                }
-            }
-            else if (aObject.is<WeakReference>()) // Handle Implicit Cast - Probably an awful conversion without proper ref handling but try anyway
-            {
-                auto* pSubType = static_cast<RED4ext::CClass*>(apRtti)->parent;
-                RED4ext::IRTTIType* pType = aObject.as<WeakReference*>()->m_pType;
-                while (pType != nullptr && pType != pSubType)
-                {
-                    pType = static_cast<RED4ext::CClass*>(pType)->parent;
-                }
-
-                if (pType != nullptr)
-                {
-                    if (hasData)
-                        result.value = apAllocator->New<StrongHandle>(*reinterpret_cast<StrongHandle*>(&aObject.as<WeakReference>().m_weakHandle));
-                    else
-                        result.value = apAllocator->New<StrongHandle>();
-                }
-            }
-        }
-        else if (apRtti->GetType() == RED4ext::ERTTIType::WeakHandle)
-        {
-            if (aObject.is<WeakReference>())
-            {
-                auto* pSubType = static_cast<RED4ext::CClass*>(apRtti)->parent;
-                RED4ext::IRTTIType* pType = aObject.as<WeakReference*>()->m_pType;
-                while (pType != nullptr && pType != pSubType)
-                {
-                    pType = static_cast<RED4ext::CClass*>(pType)->parent;
-                }
-
-                if (pType != nullptr)
-                {
-                    if (hasData)
-                        result.value = apAllocator->New<WeakHandle>(aObject.as<WeakReference>().m_weakHandle);
-                    else
-                        result.value = apAllocator->New<WeakHandle>();
-                }
-            }
-            else if (aObject.is<StrongReference>()) // Handle Implicit Cast
-            {
-                auto* pSubType = static_cast<RED4ext::CClass*>(apRtti)->parent;
-                RED4ext::IRTTIType* pType = aObject.as<StrongReference*>()->m_pType;
-                while (pType != nullptr && pType != pSubType)
-                {
-                    pType = static_cast<RED4ext::CClass*>(pType)->parent;
-                }
-
-                if (pType != nullptr)
-                {
-                    if (hasData)
-                        result.value = apAllocator->New<WeakHandle>(*reinterpret_cast<WeakHandle*>(&aObject.as<StrongReference>().m_strongHandle));
-                    else
-                        result.value = apAllocator->New<WeakHandle>();
-                }
-            }
-        }
-        else if (apRtti->GetType() == RED4ext::ERTTIType::Array)
-        {
-            if (!hasData)
-                result.value = apAllocator->New<Array<RED4ext::ScriptInstance>>();
-        }
-        else
-        {
-            return Converter::ToRED(aObject, apRtti, apAllocator);
-        }
-    }
-
-    return result;
-}
-
 void Scripting::Initialize()
 {
     m_lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::io, sol::lib::math, sol::lib::package, sol::lib::os, sol::lib::table);
@@ -365,7 +147,7 @@ void Scripting::Initialize()
 
     m_lua["GetMod"] = [this](const std::string& acName) -> sol::object
     {
-        return GetStore().Get(acName);
+        return GetMod(acName);
     };
 
     m_lua.new_usertype<EulerAngles>("EulerAngles",
@@ -519,6 +301,244 @@ void Scripting::Initialize()
 
     // set current path for following scripts to out ScriptsPath
     std::filesystem::current_path(Options::Get().ScriptsPath);
+
+    // load mods
+    ReloadAllMods();
+}
+
+void Scripting::TriggerOnInit() const
+{
+    m_store.TriggerOnInit();
+}
+
+void Scripting::TriggerOnUpdate(float aDeltaTime) const
+{
+    m_store.TriggerOnUpdate(aDeltaTime);
+}
+
+void Scripting::TriggerOnDraw() const
+{
+    m_store.TriggerOnDraw();
+}
+
+void Scripting::TriggerOnConsoleOpen() const
+{
+    m_store.TriggerOnConsoleOpen();
+}
+
+void Scripting::TriggerOnConsoleClose() const
+{
+    m_store.TriggerOnConsoleClose();
+}
+
+sol::object Scripting::GetMod(const std::string& acName) const
+{
+    return m_store.GetMod(acName);
+}
+
+void Scripting::ReloadAllMods()
+{
+    m_store.LoadAll(m_lua);
+}
+
+bool Scripting::ExecuteLua(const std::string& acCommand)
+{
+    // TODO: proper exception handling!
+    try
+    {
+        m_lua.script(acCommand);
+        return true;
+    }
+    catch(std::exception& e)
+    {
+        Console::Get().Log(e.what());
+    }
+    return false;
+}
+
+size_t Scripting::Size(RED4ext::IRTTIType* apRtti)
+{
+    static auto* pRtti = RED4ext::CRTTISystem::Get();
+    static auto* pStringType = pRtti->GetType(RED4ext::FNV1a("String"));
+
+    if (apRtti == pStringType)
+        return sizeof(RED4ext::CString);
+    if (apRtti->GetType() == RED4ext::ERTTIType::Handle)
+        return sizeof(RED4ext::Handle<RED4ext::IScriptable>);
+    if (apRtti->GetType() == RED4ext::ERTTIType::WeakHandle)
+        return sizeof(RED4ext::WeakHandle<RED4ext::IScriptable>);
+
+    return Converter::Size(apRtti);
+}
+
+sol::object Scripting::ToLua(sol::state_view aState, RED4ext::CStackType& aResult)
+{
+    static auto* pRtti = RED4ext::CRTTISystem::Get();
+    static auto* pStringType = pRtti->GetType(RED4ext::FNV1a("String"));
+
+    auto* pType = aResult.type;
+
+    if (pType == nullptr)
+        return sol::nil;
+    if (pType == pStringType)
+        return make_object(aState, std::string(static_cast<RED4ext::CString*>(aResult.value)->c_str()));
+    if (pType->GetType() == RED4ext::ERTTIType::Handle)
+    {
+        const auto handle = *static_cast<RED4ext::Handle<RED4ext::IScriptable>*>(aResult.value);
+        if (handle)
+            return make_object(aState, StrongReference(aState, handle));
+    }
+    else if (pType->GetType() == RED4ext::ERTTIType::WeakHandle)
+    {
+        const auto handle = *static_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(aResult.value);
+        if (handle)
+            return make_object(aState, WeakReference(aState, handle));
+    }
+    else if (pType->GetType() == RED4ext::ERTTIType::Array)
+    {
+        auto* pArrayType = static_cast<RED4ext::CArray*>(pType);
+        const auto arrayHandle = *static_cast<Array<uint8_t>*>(aResult.value);
+        sol::table result(aState, sol::create);
+        for(auto i = 0u; i < arrayHandle.count; ++i)
+        {
+            auto innerType = pArrayType->GetInnerType();
+
+            RED4ext::CStackType el;
+            el.value = arrayHandle.entries + i * innerType->GetSize();
+            el.type = pArrayType->GetInnerType();
+
+            result[i + 1] = ToLua(aState, el);
+        }
+
+        return result;
+    }
+    else
+    {
+        auto result = Converter::ToLua(aResult, aState);
+        if (result != sol::nil)
+            return result;
+
+        RED4ext::CName hash;
+        pType->GetName(hash);
+        if (!hash.IsEmpty())
+        {
+            const std::string typeName = hash.ToString();
+            Console::Get().Log("Unhandled return type: " + typeName + " type : " + std::to_string((uint32_t)pType->GetType()));
+        }
+    }
+
+    return sol::nil;
+}
+
+RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator)
+{
+    static auto* pRtti = RED4ext::CRTTISystem::Get();
+    static auto* pStringType = pRtti->GetType(RED4ext::FNV1a("String"));
+
+    RED4ext::CStackType result;
+
+    bool hasData = aObject != sol::nil;
+
+    if (apRtti)
+    {
+        result.type = apRtti;
+
+        if (apRtti == pStringType)
+        {
+            std::string str;
+            if (hasData)
+            {
+                sol::state_view v(aObject.lua_state());
+                str = v["tostring"](aObject);
+            }
+            result.value = apAllocator->New<RED4ext::CString>(str.c_str());
+        }
+        else if (apRtti->GetType() == RED4ext::ERTTIType::Handle)
+        {
+            if (aObject.is<StrongReference>())
+            {
+                auto* pSubType = static_cast<RED4ext::CClass*>(apRtti)->parent;
+                RED4ext::IRTTIType* pType = aObject.as<StrongReference*>()->m_pType;
+                while (pType != nullptr && pType != pSubType)
+                {
+                    pType = static_cast<RED4ext::CClass*>(pType)->parent;
+                }
+
+                if (pType != nullptr)
+                {
+                    if (hasData)
+                        result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>(aObject.as<StrongReference>().m_strongHandle);
+                    else
+                        result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>();
+                }
+            }
+            else if (aObject.is<WeakReference>()) // Handle Implicit Cast - Probably an awful conversion without proper ref handling but try anyway
+            {
+                auto* pSubType = static_cast<RED4ext::CClass*>(apRtti)->parent;
+                RED4ext::IRTTIType* pType = aObject.as<WeakReference*>()->m_pType;
+                while (pType != nullptr && pType != pSubType)
+                {
+                    pType = static_cast<RED4ext::CClass*>(pType)->parent;
+                }
+
+                if (pType != nullptr)
+                {
+                    if (hasData)
+                        result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>(aObject.as<WeakReference>().m_weakHandle);
+                    else
+                        result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>();
+                }
+            }
+        }
+        else if (apRtti->GetType() == RED4ext::ERTTIType::WeakHandle)
+        {
+            if (aObject.is<WeakReference>())
+            {
+                auto* pSubType = static_cast<RED4ext::CClass*>(apRtti)->parent;
+                RED4ext::IRTTIType* pType = aObject.as<WeakReference*>()->m_pType;
+                while (pType != nullptr && pType != pSubType)
+                {
+                    pType = static_cast<RED4ext::CClass*>(pType)->parent;
+                }
+
+                if (pType != nullptr)
+                {
+                    if (hasData)
+                        result.value = apAllocator->New<RED4ext::WeakHandle<RED4ext::IScriptable>>(aObject.as<WeakReference>().m_weakHandle);
+                    else
+                        result.value = apAllocator->New<RED4ext::WeakHandle<RED4ext::IScriptable>>();
+                }
+            }
+            else if (aObject.is<StrongReference>()) // Handle Implicit Cast
+            {
+                auto* pSubType = static_cast<RED4ext::CClass*>(apRtti)->parent;
+                RED4ext::IRTTIType* pType = aObject.as<StrongReference*>()->m_pType;
+                while (pType != nullptr && pType != pSubType)
+                {
+                    pType = static_cast<RED4ext::CClass*>(pType)->parent;
+                }
+
+                if (pType != nullptr)
+                {
+                    if (hasData)
+                        result.value = apAllocator->New<RED4ext::WeakHandle<RED4ext::IScriptable>>(aObject.as<StrongReference>().m_strongHandle);
+                    else
+                        result.value = apAllocator->New<RED4ext::WeakHandle<RED4ext::IScriptable>>();
+                }
+            }
+        }
+        else if (apRtti->GetType() == RED4ext::ERTTIType::Array)
+        {
+            if (!hasData)
+                result.value = apAllocator->New<Array<RED4ext::ScriptInstance>>();
+        }
+        else
+        {
+            return Converter::ToRED(aObject, apRtti, apAllocator);
+        }
+    }
+
+    return result;
 }
 
 sol::object Scripting::Index(const std::string& acName)
@@ -573,7 +593,7 @@ sol::protected_function Scripting::InternalIndex(const std::string& acName)
     return NewIndex(acName, std::move(obj));
 }
 
-sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args aArgs, sol::this_environment env, sol::this_state L, std::string& aReturnMessage)
+sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args aArgs, sol::this_environment env, sol::this_state L, std::string& aReturnMessage) const
 {
     auto* pRtti = RED4ext::CRTTISystem::Get();
 

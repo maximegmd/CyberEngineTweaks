@@ -5,7 +5,7 @@
 
 struct WeakReference : Type
 {
-    WeakReference(sol::state_view aView, WeakHandle aWeakHandle);
+    WeakReference(sol::state_view aView, RED4ext::WeakHandle<RED4ext::IScriptable> aWeakHandle);
     ~WeakReference();
     
 protected:
@@ -15,5 +15,5 @@ protected:
 private:
     friend struct Scripting;
     
-    WeakHandle m_weakHandle;
+    RED4ext::WeakHandle<RED4ext::IScriptable> m_weakHandle;
 };

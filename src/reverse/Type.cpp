@@ -38,6 +38,23 @@ Type::Type(sol::state_view aView, RED4ext::CClass* apClass)
 
 sol::object Type::Index(const std::string& acName)
 {
+    auto handle = GetHandle();
+    if (handle)
+    {
+        auto* pRtti = RED4ext::CRTTISystem::Get();
+        auto* scriptable = pRtti->GetClass(RED4ext::FNV1a("IScriptable"));
+        if (m_pType->IsA(scriptable))
+        {
+            auto prop = m_pType->GetProperty(acName.c_str());
+            if (prop)
+            {
+                auto value = prop->GetValue<uintptr_t>(handle);
+                RED4ext::CStackType stackType(prop->type, &value);
+                return Scripting::ToLua(m_lua, stackType);
+            }
+        }
+    }
+
     if(const auto itor = m_properties.find(acName); itor != m_properties.end())
     {
         return itor->second;
@@ -48,6 +65,32 @@ sol::object Type::Index(const std::string& acName)
 
 sol::object Type::NewIndex(const std::string& acName, sol::object aParam)
 {
+    auto handle = GetHandle();
+    if (handle)
+    {
+        auto* pRtti = RED4ext::CRTTISystem::Get();
+        auto* scriptable = pRtti->GetClass(RED4ext::FNV1a("IScriptable"));
+        if (m_pType->IsA(scriptable))
+        {
+            auto prop = m_pType->GetProperty(acName.c_str());
+            if (prop)
+            {
+                static thread_local TiltedPhoques::ScratchAllocator s_propScratchMemory(1 << 10);
+                struct ResetAllocator
+                {
+                    ~ResetAllocator()
+                    {
+                        s_propScratchMemory.Reset();
+                    }
+                };
+                ResetAllocator ___allocatorReset;
+                RED4ext::CStackType stackType = Scripting::ToRED(aParam, prop->type, &s_propScratchMemory);
+                prop->SetValue<uintptr_t>(handle, *static_cast<uintptr_t*>(stackType.value));
+                return aParam;
+            }
+        }
+    }
+
     auto& property = m_properties[acName];
     property = std::move(aParam);
     return property;
