@@ -1,5 +1,7 @@
 #include <stdafx.h>
 
+#include <toolbar/Toolbar.h>
+
 void Options::Initialize()
 {
     if (!Paths::Initialized)
@@ -88,7 +90,10 @@ void Options::Load()
             DumpGameOptions = config.value("dump_game_options", DumpGameOptions);
             ToolbarKey = config.value("toolbar_key", ToolbarKey);
             if (ToolbarKey != 0)
+            {
+                VKBindings::Bind(ToolbarKey, Toolbar::ToggleBind);
                 ToolbarChar = MapVirtualKey(ToolbarKey, MAPVK_VK_TO_CHAR);
+            }
             else
                 IsFirstLaunch = true; // is for sure in this case
 

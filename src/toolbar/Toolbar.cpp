@@ -47,26 +47,47 @@ Toolbar& Toolbar::Get()
 
 ModWidgets& Toolbar::GetModWidgets()
 {
-    assert(s_pToolbar);
-    return s_pToolbar->m_mods;
+    return Get().m_mods;
 }
 
 Console& Toolbar::GetConsole()
 {
-    assert(s_pToolbar);
-    return s_pToolbar->m_console;
+    return Get().m_console;
 }
 
 Keybinds& Toolbar::GetKeybinds()
 {
-    assert(s_pToolbar);
-    return s_pToolbar->m_keybinds;
+    return Get().m_keybinds;
 }
 
 Settings& Toolbar::GetSettings()
 {
-    assert(s_pToolbar);
-    return s_pToolbar->m_settings;
+    return Get().m_settings;
+}
+
+void Toolbar::ToggleBind()
+{
+    Get().Toggle();
+}
+
+void Toolbar::Toggle()
+{
+    m_enabled = !m_enabled;
+
+    D3D12::Get().SetTrapInputInImGui(m_enabled);
+
+    auto& luaVM = LuaVM::Get();
+    if (m_enabled)
+        luaVM.OnToolbarOpen();
+    else
+        luaVM.OnToolbarClose();
+    
+    ClipToCenter(RED4ext::CGameEngine::Get()->unkC0);
+}
+
+bool Toolbar::IsEnabled() const
+{
+    return m_initialized && m_enabled;
 }
 
 void Toolbar::Update()
@@ -117,24 +138,9 @@ void Toolbar::Update()
     ImGui::End();
 }
 
-void Toolbar::Toggle()
+bool Toolbar::IsInitialized() const
 {
-    m_enabled = !m_enabled;
-
-    D3D12::Get().SetTrapInputInImGui(m_enabled);
-
-    auto& luaVM = LuaVM::Get();
-    if (m_enabled)
-        luaVM.OnToolbarOpen();
-    else
-        luaVM.OnToolbarClose();
-    
-    ClipToCenter(RED4ext::CGameEngine::Get()->unkC0);
-}
-
-bool Toolbar::IsEnabled() const
-{
-    return m_initialized && m_enabled;
+    return m_initialized;
 }
 
 LRESULT Toolbar::OnWndProc(HWND, UINT auMsg, WPARAM awParam, LPARAM)

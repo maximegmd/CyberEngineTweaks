@@ -46,5 +46,6 @@
 #include <TiltedCore/ScratchAllocator.hpp>	
 
 #include "Paths.h"
+#include "VKBindings.h"
 #include "Options.h"
 #include "logging/Logger.h"

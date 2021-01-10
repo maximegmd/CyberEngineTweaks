@@ -29,10 +29,12 @@ struct Toolbar
     static Keybinds& GetKeybinds();
     static Settings& GetSettings();
 
+    static void ToggleBind();
+
     ~Toolbar() = default;
     
     bool IsInitialized() const;
-
+    
     void Toggle();
     bool IsEnabled() const;
 
