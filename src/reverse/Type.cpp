@@ -175,7 +175,7 @@ Type::Descriptor Type::Dump(bool aWithHashes) const
 {
     Descriptor descriptor;
 
-    if(m_pType)
+    if (m_pType)
     {
         RED4ext::CName name;
         m_pType->GetName(name);
@@ -226,7 +226,7 @@ sol::variadic_results Type::Execute(RED4ext::CBaseFunction* apFunc, const std::s
         {
             args[i] = Scripting::ToRED(aArgs[i].get<sol::object>(), apFunc->params[i]->type, &s_scratchMemory);
         }
-        else if(apFunc->params[i]->flags.isOptional) // Deal with optional params
+        else if (apFunc->params[i]->flags.isOptional) // Deal with optional params
         {
             args[i].value = nullptr;
         }
@@ -249,7 +249,7 @@ sol::variadic_results Type::Execute(RED4ext::CBaseFunction* apFunc, const std::s
 
     const bool hasReturnType = (apFunc->returnType) != nullptr && (apFunc->returnType->type) != nullptr;
 
-    uint8_t buffer[1000]{0};
+    uint8_t buffer[1000]{ 0 };
     RED4ext::CStackType result;
     if (hasReturnType)
     {

@@ -25,6 +25,6 @@ struct Enum
     const RED4ext::CEnum* GetType() const;
 
 protected:
-    const RED4ext::CEnum*	m_cpType{ nullptr };
-    uint64_t				m_value{ 0 };
+    const RED4ext::CEnum*   m_cpType{ nullptr };
+    uint64_t                m_value{ 0 };
 };
