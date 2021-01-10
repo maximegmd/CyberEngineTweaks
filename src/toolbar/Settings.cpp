@@ -2,24 +2,25 @@
 
 #include "Settings.h"
 
+#include <toolbar/Toolbar.h>
+
 void Settings::OnEnable()
 {
     Load();
     
-    m_wasBindingKey = false;
     m_bindingKey = false;
 }
 
 void Settings::OnDisable()
 {
-    m_wasBindingKey = false;
     m_bindingKey = false;
 }
 
 void Settings::Update()
 {
-    if (m_wasBindingKey && !m_bindingKey && Options::IsFirstLaunch)
+    if (m_bindingKey && !VKBindings::IsRecordingBind() && Options::IsFirstLaunch)
     {
+        m_toolbarKeyBind = VKBindings::GetLastRecordingResult();
         Save();
         Load();
     }
@@ -40,27 +41,28 @@ void Settings::Update()
     // Toolbar Key
     {
         curTextColor = ImGui::GetStyleColorVec4(ImGuiCol_Text);
-        if (m_toolbarKey == 0)
+        if (m_toolbarKeyBind == 0)
             curTextColor = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
-        if (m_toolbarKey != Options::ToolbarKey)
+        if (m_toolbarKeyBind != Options::ToolbarKeyBind)
             curTextColor = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
         
         ImGui::PushStyleColor(ImGuiCol_Text, curTextColor);
         ImGui::Text("Toolbar Key:");
         ImGui::PopStyleColor();
 
+        // TODO - add multi HK support
         char vkChar[64] = { 0 };
         if (!m_bindingKey)
         {
-            if (m_toolbarKey == 0)
+            if (m_toolbarKeyBind == 0)
                 strncpy(vkChar, "NOT BOUND", std::size(vkChar));
             else
             {
-                const auto* specialName = GetSpecialKeyName(m_toolbarKey);
+                const auto* specialName = GetSpecialKeyName(m_toolbarKeyBind);
                 if (specialName)
                     strncpy(vkChar, specialName, std::size(vkChar));
-                else if (m_toolbarChar)
-                    vkChar[0] = m_toolbarChar;
+                else if (m_toolbarKeyBind)
+                    vkChar[0] = m_toolbarKeyBind;
                 else
                     strncpy(vkChar, "UNKNOWN", std::size(vkChar));
             }
@@ -71,11 +73,11 @@ void Settings::Update()
         ImGui::SameLine();
         if (ImGui::Button(vkChar))
         {
-            if (!m_wasBindingKey)
-                m_bindingKey = true;
+            if (!m_bindingKey)
+                VKBindings::StartRecordingBind(Toolbar::VKBToolbar);
         }
     
-        m_wasBindingKey = m_bindingKey;
+        m_bindingKey = VKBindings::IsRecordingBind();
     }
 
     // Enable Debug Menu
@@ -229,29 +231,11 @@ void Settings::Update()
     }
 }
 
-bool Settings::IsBindingKey() const
-{
-    return m_wasBindingKey;
-}
-
-void Settings::RecordKeyDown(UINT aVKCode)
-{
-    m_toolbarKey = aVKCode;
-    m_toolbarChar = MapVirtualKey(aVKCode, MAPVK_VK_TO_CHAR);
-}
-
-void Settings::RecordKeyUp(UINT aVKCode)
-{
-    if (m_toolbarKey == aVKCode)
-        m_bindingKey = false;
-}
-
 void Settings::Load()
 {
     Options::Load();
 
-    m_toolbarKey = Options::ToolbarKey;
-    m_toolbarChar = Options::ToolbarChar;
+    m_toolbarKeyBind = Options::ToolbarKeyBind;
     m_patchEnableDebug = Options::PatchEnableDebug;
     m_patchRemovePedestrians = Options::PatchRemovePedestrians;
     m_patchAsyncCompute = Options::PatchAsyncCompute;
@@ -266,7 +250,7 @@ void Settings::Load()
 
 void Settings::Save()
 {
-    Options::ToolbarKey = m_toolbarKey;
+    Options::ToolbarKeyBind = m_toolbarKeyBind;
     Options::PatchEnableDebug = m_patchEnableDebug;
     Options::PatchRemovePedestrians = m_patchRemovePedestrians;
     Options::PatchAsyncCompute = m_patchAsyncCompute;

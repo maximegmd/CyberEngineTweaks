@@ -65,11 +65,6 @@ Settings& Toolbar::GetSettings()
     return Get().m_settings;
 }
 
-void Toolbar::ToggleBind()
-{
-    Get().Toggle();
-}
-
 void Toolbar::Toggle()
 {
     m_enabled = !m_enabled;
@@ -145,49 +140,7 @@ bool Toolbar::IsInitialized() const
 
 LRESULT Toolbar::OnWndProc(HWND, UINT auMsg, WPARAM awParam, LPARAM)
 {
-    if (!m_initialized)
-        return 0; // we have not yet fully initialized!
-
-    if (m_settings.IsBindingKey())
-    {
-        switch (auMsg)
-        {
-            case WM_KEYDOWN:
-            case WM_SYSKEYDOWN:
-                m_settings.RecordKeyDown(awParam);
-                return 1;
-            case WM_KEYUP:
-            case WM_SYSKEYUP:
-                m_settings.RecordKeyUp(awParam);
-                return 1;
-        }
-        return 0;
-    }
-
-    if (Options::IsFirstLaunch)
-        return 0; // do not handle anything until user sets his settings for the first time
-
-    switch (auMsg)
-    {
-        case WM_KEYDOWN:
-        case WM_SYSKEYDOWN:
-            if (awParam == Options::ToolbarKey)
-            {
-                Toggle();
-                return 1;
-            }
-            break;
-        case WM_KEYUP:
-        case WM_SYSKEYUP:
-            if (awParam == Options::ToolbarKey)
-                return 1;
-            break;
-        case WM_CHAR:
-            if (awParam == Options::ToolbarChar)
-                return 1;
-            break;
-    }
-
+    // TODO - is this useful now?
     return 0;
 }
 

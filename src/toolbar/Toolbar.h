@@ -29,8 +29,6 @@ struct Toolbar
     static Keybinds& GetKeybinds();
     static Settings& GetSettings();
 
-    static void ToggleBind();
-
     ~Toolbar() = default;
     
     bool IsInitialized() const;
@@ -41,6 +39,8 @@ struct Toolbar
     void Update();
 
     LRESULT OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam);
+
+    static VKBind VKBToolbar;
 
 protected:
     
@@ -67,3 +67,5 @@ private:
     bool m_enabled{ false };
     bool m_initialized{ false };
 };
+
+inline VKBind Toolbar::VKBToolbar = { "toolbar_toggle",  [](){ Get().Toggle(); } };

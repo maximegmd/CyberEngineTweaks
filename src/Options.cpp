@@ -88,12 +88,9 @@ void Options::Load()
             PatchDisableWin7Vsync = config.value("disable_win7_vsync", PatchDisableWin7Vsync);
 
             DumpGameOptions = config.value("dump_game_options", DumpGameOptions);
-            ToolbarKey = config.value("toolbar_key", ToolbarKey);
-            if (ToolbarKey != 0)
-            {
-                VKBindings::Bind(ToolbarKey, Toolbar::ToggleBind);
-                ToolbarChar = MapVirtualKey(ToolbarKey, MAPVK_VK_TO_CHAR);
-            }
+            ToolbarKeyBind = config.value("toolbar_key", ToolbarKeyBind);
+            if (ToolbarKeyBind != 0)
+                VKBindings::Bind(ToolbarKeyBind, Toolbar::VKBToolbar);
             else
                 IsFirstLaunch = true; // is for sure in this case
 
@@ -109,7 +106,7 @@ void Options::Save()
 {
     nlohmann::json config;
 
-    config["toolbar_key"] = ToolbarKey;
+    config["toolbar_key"] = ToolbarKeyBind;
     config["enable_debug"] = PatchEnableDebug;
     config["remove_pedestrians"] = PatchRemovePedestrians;
     config["disable_async_compute"] = PatchAsyncCompute;
