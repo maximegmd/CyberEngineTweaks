@@ -11,8 +11,19 @@ struct Settings : public ToolbarWidget
     void OnDisable() override;
     void Update() override;
 
+    bool IsBindingKey() const;
+    void RecordKeyDown(UINT aVKCode);
+    void RecordKeyUp(UINT aVKCode);
+    
+    void Load();
+    void Save();
+    void ResetToDefaults(); 
+
+protected:
+    static const char* GetSpecialKeyName(UINT aVKCode);
+
 private:
-    int m_toolbarKey{ 0 };
+    UINT m_toolbarKey{ 0 };
     char m_toolbarChar{ 0 };
     bool m_patchEnableDebug{ false };
     bool m_patchRemovePedestrians{ false };
@@ -24,6 +35,9 @@ private:
     bool m_patchDisableBoundaryTeleport{ false };
     bool m_patchDisableWin7Vsync{ false };
     bool m_dumpGameOptions{ false };
+    
+    bool m_wasBindingKey{ false };
+    bool m_bindingKey{ false };
 
     bool m_isDirty{ false };
 };

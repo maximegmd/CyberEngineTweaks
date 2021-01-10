@@ -11,7 +11,7 @@ struct Options
     static void ResetToDefaults(); 
     
     static inline Image GameImage;
-    static inline int ToolbarKey{ 0 };
+    static inline UINT ToolbarKey{ 0 };
     static inline char ToolbarChar{ 0 };
     static inline bool PatchEnableDebug{ false };
     static inline bool PatchRemovePedestrians{ false };

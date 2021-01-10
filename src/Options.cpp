@@ -69,33 +69,35 @@ void Options::Initialize()
 void Options::Load()
 {
     IsFirstLaunch = !std::filesystem::exists(Paths::ConfigPath);
-
-    std::ifstream configFile(Paths::ConfigPath);
-    if(configFile)
+    if (!IsFirstLaunch)
     {
-        auto config = nlohmann::json::parse(configFile);
-        PatchEnableDebug = config.value("enable_debug", PatchEnableDebug);
-        PatchRemovePedestrians = config.value("remove_pedestrians", PatchRemovePedestrians);
-        PatchSkipStartMenu = config.value("skip_start_menu", PatchSkipStartMenu);
-        PatchAsyncCompute = config.value("disable_async_compute", PatchAsyncCompute);
-        PatchAntialiasing = config.value("disable_antialiasing", PatchAntialiasing);
-        PatchDisableIntroMovies = config.value("disable_intro_movies", PatchDisableIntroMovies);
-        PatchDisableVignette = config.value("disable_vignette", PatchDisableVignette);
-        PatchDisableBoundaryTeleport = config.value("disable_boundary_teleport", PatchDisableBoundaryTeleport);
-        PatchDisableWin7Vsync = config.value("disable_win7_vsync", PatchDisableWin7Vsync);
+        std::ifstream configFile(Paths::ConfigPath);
+        if(configFile)
+        {
+            auto config = nlohmann::json::parse(configFile);
+            PatchEnableDebug = config.value("enable_debug", PatchEnableDebug);
+            PatchRemovePedestrians = config.value("remove_pedestrians", PatchRemovePedestrians);
+            PatchSkipStartMenu = config.value("skip_start_menu", PatchSkipStartMenu);
+            PatchAsyncCompute = config.value("disable_async_compute", PatchAsyncCompute);
+            PatchAntialiasing = config.value("disable_antialiasing", PatchAntialiasing);
+            PatchDisableIntroMovies = config.value("disable_intro_movies", PatchDisableIntroMovies);
+            PatchDisableVignette = config.value("disable_vignette", PatchDisableVignette);
+            PatchDisableBoundaryTeleport = config.value("disable_boundary_teleport", PatchDisableBoundaryTeleport);
+            PatchDisableWin7Vsync = config.value("disable_win7_vsync", PatchDisableWin7Vsync);
 
-        DumpGameOptions = config.value("dump_game_options", DumpGameOptions);
-        ToolbarKey = config.value("toolbar_key", ToolbarKey);
-        if (ToolbarKey != 0)
-            ToolbarChar = MapVirtualKey(ToolbarKey, MAPVK_VK_TO_CHAR);
-        else
-            IsFirstLaunch = true; // is for sure in this case
+            DumpGameOptions = config.value("dump_game_options", DumpGameOptions);
+            ToolbarKey = config.value("toolbar_key", ToolbarKey);
+            if (ToolbarKey != 0)
+                ToolbarChar = MapVirtualKey(ToolbarKey, MAPVK_VK_TO_CHAR);
+            else
+                IsFirstLaunch = true; // is for sure in this case
 
-        // check old config names
-        if (config.value("unlock_menu", false))
-            PatchEnableDebug = true;
+            // check old config names
+            if (config.value("unlock_menu", false))
+                PatchEnableDebug = true;
+        }
+        configFile.close();
     }
-    configFile.close();
 }
 
 void Options::Save()

@@ -180,6 +180,8 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
         return false;
     }
 
+    Toolbar::Get().PostInitialize();
+
     return true;
 }
 
@@ -302,6 +304,8 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
 
     Logger::InfoToMain("D3D12::InitializeDownlevel() - initialization successful!");
     m_initialized = true;
+
+    Toolbar::Get().PostInitialize();
 
     return true;
 }

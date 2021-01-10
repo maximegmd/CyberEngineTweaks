@@ -19,6 +19,21 @@ void Toolbar::Initialize()
     }
 }
 
+void Toolbar::PostInitialize()
+{
+    assert(s_pToolbar);
+    if (!s_pToolbar->m_initialized)
+    {
+        if (Options::IsFirstLaunch)
+        {
+            s_pToolbar->Toggle();
+            s_pToolbar->m_activeWidgetID = ToolbarWidgetID::SETTINGS;
+        }
+        s_pToolbar->m_widgets[s_pToolbar->m_activeWidgetID]->OnEnable();
+        s_pToolbar->m_initialized = true;
+    }
+}
+
 void Toolbar::Shutdown()
 {
     s_pToolbar = nullptr;
@@ -67,25 +82,29 @@ void Toolbar::Update()
     {
         if (ImGui::BeginTabBar("CET_TABS", ImGuiTabBarFlags_None))
         {
-            if (ImGui::BeginTabItem("Mod widgets"))
+            constexpr int tabFlags = ImGuiTabItemFlags_NoReorder | ImGuiTabItemFlags_NoCloseWithMiddleMouseButton;
+            if (!Options::IsFirstLaunch)
             {
-                SetActiveWidget(ToolbarWidgetID::MODS);
-                m_mods.Update();
-                ImGui::EndTabItem();
+                if (ImGui::BeginTabItem("Mod widgets", nullptr, tabFlags))
+                {
+                    SetActiveWidget(ToolbarWidgetID::MODS);
+                    m_mods.Update();
+                    ImGui::EndTabItem();
+                }
+                if (ImGui::BeginTabItem("Console", nullptr, tabFlags))
+                {
+                    SetActiveWidget(ToolbarWidgetID::CONSOLE);
+                    m_console.Update();
+                    ImGui::EndTabItem();
+                }
+                if (ImGui::BeginTabItem("Keybinds", nullptr, tabFlags))
+                {
+                    SetActiveWidget(ToolbarWidgetID::KEYBINDS);
+                    m_keybinds.Update();
+                    ImGui::EndTabItem();
+                }
             }
-            if (ImGui::BeginTabItem("Console"))
-            {
-                SetActiveWidget(ToolbarWidgetID::CONSOLE);
-                m_console.Update();
-                ImGui::EndTabItem();
-            }
-            if (ImGui::BeginTabItem("Keybinds"))
-            {
-                SetActiveWidget(ToolbarWidgetID::KEYBINDS);
-                m_keybinds.Update();
-                ImGui::EndTabItem();
-            }
-            if (ImGui::BeginTabItem("Settings"))
+            if (ImGui::BeginTabItem("Settings", nullptr, tabFlags | ImGuiTabItemFlags_Trailing))
             {
                 SetActiveWidget(ToolbarWidgetID::SETTINGS);
                 m_settings.Update();
@@ -114,11 +133,30 @@ void Toolbar::Toggle()
 
 bool Toolbar::IsEnabled() const
 {
-    return m_enabled;
+    return m_initialized && m_enabled;
 }
 
 LRESULT Toolbar::OnWndProc(HWND, UINT auMsg, WPARAM awParam, LPARAM)
 {
+    if (!m_initialized)
+        return 0; // we have not yet fully initialized!
+
+    if (m_settings.IsBindingKey())
+    {
+        switch (auMsg)
+        {
+            case WM_KEYDOWN:
+            case WM_SYSKEYDOWN:
+                m_settings.RecordKeyDown(awParam);
+                return 1;
+            case WM_KEYUP:
+            case WM_SYSKEYUP:
+                m_settings.RecordKeyUp(awParam);
+                return 1;
+        }
+        return 0;
+    }
+
     if (Options::IsFirstLaunch)
         return 0; // do not handle anything until user sets his settings for the first time
 
@@ -196,14 +234,6 @@ Toolbar::Toolbar()
     m_widgets[ToolbarWidgetID::CONSOLE] = &m_console;
     m_widgets[ToolbarWidgetID::KEYBINDS] = &m_keybinds;
     m_widgets[ToolbarWidgetID::SETTINGS] = &m_settings;
-
-    if (Options::IsFirstLaunch)
-    {
-        Toggle();
-        m_activeWidgetID = ToolbarWidgetID::SETTINGS;
-    }
-
-    m_widgets[m_activeWidgetID]->OnEnable();
 }
 
 void Toolbar::SetActiveWidget(ToolbarWidgetID aNewActive)

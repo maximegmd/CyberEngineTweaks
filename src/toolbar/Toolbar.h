@@ -20,6 +20,7 @@ enum ToolbarWidgetID
 struct Toolbar
 {
     static void Initialize();
+    static void PostInitialize();
     static void Shutdown();
     static Toolbar& Get();
 
@@ -29,6 +30,8 @@ struct Toolbar
     static Settings& GetSettings();
 
     ~Toolbar() = default;
+    
+    bool IsInitialized() const;
 
     void Toggle();
     bool IsEnabled() const;
@@ -58,6 +61,7 @@ private:
     TClipToCenter* m_realClipToCenter{ nullptr };
 
     ToolbarWidgetID m_activeWidgetID{ ToolbarWidgetID::MODS };
-
+    
     bool m_enabled{ false };
+    bool m_initialized{ false };
 };
