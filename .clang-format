@@ -1,0 +1,31 @@
+---
+BasedOnStyle: Microsoft
+---
+Language: Cpp
+
+AccessModifierOffset: -4
+AlwaysBreakTemplateDeclarations: Yes
+BreakConstructorInitializers: BeforeComma
+BreakInheritanceList: BeforeComma
+KeepEmptyLinesAtTheStartOfBlocks: false
+NamespaceIndentation: Inner
+PointerAlignment: Left
+SpaceAfterTemplateKeyword: false
+
+BreakBeforeBraces: Custom
+BraceWrapping:
+    AfterCaseLabel: true
+    AfterClass: true
+    AfterControlStatement: Always
+    AfterEnum: true
+    AfterFunction: true
+    AfterNamespace: true
+    AfterStruct: true
+    AfterUnion: true
+    AfterExternBlock: true
+    BeforeCatch: true
+    BeforeElse: true
+    IndentBraces: false
+    SplitEmptyFunction: true
+    SplitEmptyRecord: true
+    SplitEmptyNamespace: true
