@@ -38,6 +38,4 @@ private:
     
     bool m_wasBindingKey{ false };
     bool m_bindingKey{ false };
-
-    bool m_isDirty{ false };
 };

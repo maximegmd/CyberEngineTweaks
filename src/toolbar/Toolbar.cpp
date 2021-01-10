@@ -78,7 +78,8 @@ void Toolbar::Update()
 
     ImGui::SetNextWindowPos(ImVec2(resolution.cx * 0.2f, resolution.cy * 0.2f), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(resolution.cx * 0.6f, resolution.cy * 0.6f), ImGuiCond_FirstUseEver);
-    if (ImGui::Begin("Cyber Engine Tweaks", nullptr, ImGuiWindowFlags_NoScrollbar))
+    ImGui::SetNextWindowSizeConstraints(ImVec2(256, 128), ImVec2(FLT_MAX, FLT_MAX));
+    if (ImGui::Begin("Cyber Engine Tweaks"))
     {
         if (ImGui::BeginTabBar("CET_TABS", ImGuiTabBarFlags_None))
         {

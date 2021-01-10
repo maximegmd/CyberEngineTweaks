@@ -132,4 +132,6 @@ void Options::ResetToDefaults()
     PatchDisableBoundaryTeleport = false;
     PatchDisableWin7Vsync = false;
     DumpGameOptions = false;
+
+    Save();
 }
