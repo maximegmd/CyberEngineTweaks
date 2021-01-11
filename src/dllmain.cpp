@@ -35,6 +35,7 @@ static void Initialize(HMODULE mod)
 
     Paths::Initialize();
     Logger::Initialize();
+    VKBindings::Initialize();
     Options::Initialize();
 
     if (!Options::Initialized || !Options::ExeValid)
@@ -82,6 +83,10 @@ static void Shutdown()
 {
     if (s_modInstanceMutex)
     {
+        // shutduwn these two first always, so we know for sure they got saved properly! (they are not invalidated by this)
+        //Options::Shutdown();
+        //VKBindings::Shutdown();
+
         D3D12::Shutdown();
         LuaVM::Shutdown();
         Toolbar::Shutdown();

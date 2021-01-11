@@ -8,9 +8,34 @@ struct VKBind
     TVKBindCallback* Handler { nullptr };
 };
 
+struct VKBindInfo
+{
+    VKBind Bind { };
+    UINT SavedCodeBind { 0 };
+    UINT CodeBind { 0 };
+    bool IsBinding{ false };
+
+    void Fill(UINT aVKCodeBind, const VKBind& aVKBind)
+    {
+        Bind = aVKBind;
+        SavedCodeBind = aVKCodeBind;
+        CodeBind = aVKCodeBind;
+        IsBinding = false;
+    }
+
+    UINT Apply()
+    {
+        SavedCodeBind = CodeBind;
+        return CodeBind;
+    }
+};
+
 struct VKBindings
 {
     static void Initialize();
+    static void InitializeMods(std::vector<VKBindInfo>& aVKBindInfos);
+    static void Shutdown();
+    static bool IsInitialized();
     
     static void Load();
     static void Save();
@@ -20,6 +45,11 @@ struct VKBindings
     static bool UnBind(const std::string& aID);
     static bool IsBound(UINT aVKCodeBind);
     static bool IsBound(const std::string& aID);
+    
+    static UINT GetBindCodeForID(const std::string& aID);
+    static std::string GetIDForBindCode(UINT aVKCodeBind);
+
+    static std::array<UINT, 4> DecodeVKCodeBind(UINT aVKCodeBind);
 
     static void StartRecordingBind(const VKBind& aBind);
 
@@ -30,19 +60,20 @@ struct VKBindings
 
 private:
     static bool IsLastRecordingKey(UINT aVKCode);
-    static void RecordKeyDown(UINT aVKCode);
-    static void RecordKeyUp(UINT aVKCode);
+    static bool RecordKeyDown(UINT aVKCode);
+    static bool RecordKeyUp(UINT aVKCode);
     static UINT CreateVKCodeBindFromRecording();
+
+    static LRESULT HandleRAWInput(HRAWINPUT ahRAWInput);
     
     static inline std::map<UINT, VKBind> Binds{ };
     static inline std::unordered_map<std::string, UINT> IDToBinds{ };
     
     static inline std::array<UINT, 4> Recording{ };
-    static inline std::array<bool, 4> RecordingUp{ };
     static inline size_t RecordingLength{ 0 };
     static inline VKBind RecordingBind { };
     static inline UINT RecordingResult{ 0 };
-    static inline bool IsRecording{ false };
+    static inline bool IsBindRecording{ false };
 
-    static inline bool IsInitialized{ true }; // TODO -> to false!
+    static inline bool Initialized{ false };
 };

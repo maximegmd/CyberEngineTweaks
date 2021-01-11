@@ -5,6 +5,7 @@
 struct Options
 {
     static void Initialize();
+    static void Shutdown();
     
     static void Load();
     static void Save();

@@ -68,6 +68,11 @@ void Options::Initialize()
     Initialized = true;
 }
 
+void Options::Shutdown()
+{
+    Save(); // just in case, save config on exit
+}
+
 void Options::Load()
 {
     IsFirstLaunch = !std::filesystem::exists(Paths::ConfigPath);

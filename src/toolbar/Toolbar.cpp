@@ -94,41 +94,64 @@ void Toolbar::Update()
 
     ImGui::SetNextWindowPos(ImVec2(resolution.cx * 0.2f, resolution.cy * 0.2f), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(resolution.cx * 0.6f, resolution.cy * 0.6f), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSizeConstraints(ImVec2(256, 128), ImVec2(FLT_MAX, FLT_MAX));
+    ImGui::SetNextWindowSizeConstraints(ImVec2(420, 315), ImVec2(FLT_MAX, FLT_MAX));
     if (ImGui::Begin("Cyber Engine Tweaks"))
     {
-        if (ImGui::BeginTabBar("CET_TABS", ImGuiTabBarFlags_None))
+        ToolbarWidgetID selectedID = ToolbarWidgetID::COUNT;
+        if (!Options::IsFirstLaunch)
         {
-            constexpr int tabFlags = ImGuiTabItemFlags_NoReorder | ImGuiTabItemFlags_NoCloseWithMiddleMouseButton;
-            if (!Options::IsFirstLaunch)
-            {
-                if (ImGui::BeginTabItem("Mod widgets", nullptr, tabFlags))
-                {
-                    SetActiveWidget(ToolbarWidgetID::MODS);
-                    m_mods.Update();
-                    ImGui::EndTabItem();
-                }
-                if (ImGui::BeginTabItem("Console", nullptr, tabFlags))
-                {
-                    SetActiveWidget(ToolbarWidgetID::CONSOLE);
-                    m_console.Update();
-                    ImGui::EndTabItem();
-                }
-                if (ImGui::BeginTabItem("Keybinds", nullptr, tabFlags))
-                {
-                    SetActiveWidget(ToolbarWidgetID::KEYBINDS);
-                    m_keybinds.Update();
-                    ImGui::EndTabItem();
-                }
-            }
-            if (ImGui::BeginTabItem("Settings", nullptr, tabFlags | ImGuiTabItemFlags_Trailing))
-            {
-                SetActiveWidget(ToolbarWidgetID::SETTINGS);
-                m_settings.Update();
-                ImGui::EndTabItem();
-            }
-            ImGui::EndTabBar();
+            if (ImGui::Button("Mod Widgets"))
+                selectedID = ToolbarWidgetID::MODS;
+            ImGui::SameLine();
+            if (ImGui::Button("Console"))
+                selectedID = ToolbarWidgetID::CONSOLE;
+            ImGui::SameLine();
+            if (ImGui::Button("Keybinds"))
+                selectedID = ToolbarWidgetID::KEYBINDS;
+            ImGui::SameLine();
+            if (ImGui::Button("Settings"))
+                selectedID = ToolbarWidgetID::SETTINGS;
+            ImGui::Spacing();
         }
+        if (selectedID < ToolbarWidgetID::COUNT)
+            SetActiveWidget(selectedID);
+        
+        int activeCount = 0;
+        ImVec2 zeroVec = {0, 0};
+        if (!Options::IsFirstLaunch)
+        {
+            if (m_activeWidgetID == ToolbarWidgetID::MODS)
+            {
+                if (ImGui::BeginChild("Mod widgets", zeroVec, true))
+                    m_mods.Update();
+                ImGui::EndChild();
+                ++activeCount;
+            }
+            if (m_activeWidgetID == ToolbarWidgetID::CONSOLE)
+            {
+                if (ImGui::BeginChild("Console", zeroVec, true))
+                    m_console.Update();
+                ImGui::EndChild();
+                ++activeCount;
+            }
+            if (m_activeWidgetID == ToolbarWidgetID::KEYBINDS)
+            {
+                if (ImGui::BeginChild("Keybinds", zeroVec, true))
+                    m_keybinds.Update();
+                ImGui::EndChild();
+                ++activeCount;
+            }
+        }
+        if (m_activeWidgetID == ToolbarWidgetID::SETTINGS)
+        {
+            if (ImGui::BeginChild("Settings", zeroVec, true))
+                m_settings.Update();
+            ImGui::EndChild();
+            ++activeCount;
+        }
+
+        if (activeCount == 0)
+            SetActiveWidget(ToolbarWidgetID::COUNT);
     }
     ImGui::End();
 }
@@ -200,8 +223,10 @@ void Toolbar::SetActiveWidget(ToolbarWidgetID aNewActive)
 {
     if (m_activeWidgetID != aNewActive)
     {
-        m_widgets[m_activeWidgetID]->OnDisable();
+        if (m_activeWidgetID < ToolbarWidgetID::COUNT)
+            m_widgets[m_activeWidgetID]->OnDisable();
         m_activeWidgetID = aNewActive;
-        m_widgets[m_activeWidgetID]->OnEnable();
+        if (m_activeWidgetID < ToolbarWidgetID::COUNT)
+            m_widgets[m_activeWidgetID]->OnEnable();
     }
 }

@@ -15,11 +15,8 @@ struct Settings : public ToolbarWidget
     void Save();
     void ResetToDefaults(); 
 
-protected:
-    static const char* GetSpecialKeyName(UINT aVKCode);
-
 private:
-    UINT m_toolbarKeyBind{ 0 };
+    VKBindInfo m_toolbarKeyBindInfo{ };
     bool m_patchEnableDebug{ false };
     bool m_patchRemovePedestrians{ false };
     bool m_patchAsyncCompute{ false };

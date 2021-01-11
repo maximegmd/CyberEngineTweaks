@@ -20,8 +20,13 @@ struct Paths
         
         ConfigPath = CETPath / "config.json";
         // remove empty config.json
-        if (std::filesystem::exists(Paths::ConfigPath) && !std::filesystem::file_size(Paths::ConfigPath))
-            std::filesystem::remove(Paths::ConfigPath);
+        if (std::filesystem::exists(ConfigPath) && !std::filesystem::file_size(ConfigPath))
+            std::filesystem::remove(ConfigPath);
+
+        VKBindingsPath = CETPath / "vkbindings.json";
+        // remove empty vkbindings.json
+        if (std::filesystem::exists(VKBindingsPath) && !std::filesystem::file_size(VKBindingsPath))
+            std::filesystem::remove(VKBindingsPath);
 
         ModsPath = CETPath / "mods";
         std::filesystem::create_directories(ModsPath);
@@ -33,6 +38,7 @@ struct Paths
     static inline std::filesystem::path RootPath{ };
     static inline std::filesystem::path CETPath{ };
     static inline std::filesystem::path ConfigPath{ };
+    static inline std::filesystem::path VKBindingsPath{ };
     static inline std::filesystem::path ModsPath{ };
 
     static inline bool Initialized{ false };
