@@ -20,6 +20,8 @@
 #include <RED4ext/Scripting/Stack.hpp>
 #include <RED4ext/Scripting/CProperty.hpp>
 #include <RED4ext/Scripting/Functions.hpp>
+#include <RED4ext/Types/CharacterCustomization.hpp>
+#include <RED4ext/IMemoryAllocator.hpp>
 
 #include <filesystem>
 #include <iostream>

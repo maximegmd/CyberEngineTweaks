@@ -19,6 +19,10 @@
 #include <reverse/WeakReference.h>
 #include <reverse/Enum.h>
 
+#ifndef NDEBUG
+#include "Game_Hooks.h"
+#endif
+
 void Scripting::Initialize()
 {
     m_lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::io, sol::lib::math, sol::lib::package, sol::lib::os, sol::lib::table);
@@ -211,7 +215,8 @@ void Scripting::Initialize()
     m_lua.new_usertype<TweakDBID>("TweakDBID",
         sol::constructors<TweakDBID(const std::string&), TweakDBID(const TweakDBID&, const std::string&), TweakDBID(uint32_t, uint8_t), TweakDBID()>(),
         sol::meta_function::to_string, &TweakDBID::ToString,
-        "hash", &TweakDBID::name_hash);
+        "hash", &TweakDBID::name_hash,
+        "length", &TweakDBID::name_length);
 
     m_lua["ToTweakDBID"] = [](sol::table table) -> TweakDBID
     {
@@ -225,7 +230,11 @@ void Scripting::Initialize()
     m_lua.new_usertype<ItemID>("ItemID",
         sol::constructors<ItemID(const TweakDBID&, uint32_t, uint16_t, uint8_t), ItemID(const TweakDBID&, uint32_t, uint16_t), ItemID(const TweakDBID&, uint32_t), ItemID(const TweakDBID&), ItemID()>(),
         sol::meta_function::to_string, &ItemID::ToString,
-        "tdbid", &ItemID::id);
+        "id", &ItemID::id,
+        "tdbid", &ItemID::id,
+        "rng_seed", &ItemID::rng_seed,
+        "unknown", &ItemID::unknown,
+        "maybe_type", &ItemID::maybe_type);
 
     m_lua["ToItemID"] = [](sol::table table) -> ItemID
     {
@@ -294,6 +303,132 @@ void Scripting::Initialize()
     {
         return GetAsyncKeyState(aKeyCode) & 0x8000 != 0;
     };
+
+#ifndef NDEBUG
+    m_lua["DumpRTTI"] = [this]()
+    {
+        // Hacky RTTI dump, this should technically only dump IScriptable instances and RTTI types as they are guaranteed to have a vtable
+        // but there can occasionally be Class types that are not IScriptable derived that still have a vtable
+        // some hierarchies may also not be accurately reflected due to hash ordering
+        // technically this table is flattened and contains all hierarchy, but traversing the hierarchy first reduces
+        // error when there are classes that instantiate a parent class but don't actually have a subclass instance
+
+        struct DumpRTTITask : MainThreadTask
+        {
+            virtual void Run() override
+            {
+                std::unordered_map<uintptr_t, std::string> vtableMap;
+
+                HMODULE ModuleBase = GetModuleHandle(nullptr);
+                uintptr_t begin = reinterpret_cast<uintptr_t>(ModuleBase);
+                const IMAGE_DOS_HEADER* dosHeader = reinterpret_cast<const IMAGE_DOS_HEADER*>(ModuleBase);
+                const IMAGE_NT_HEADERS* ntHeader = reinterpret_cast<const IMAGE_NT_HEADERS*>(
+                    reinterpret_cast<const std::uint8_t*>(dosHeader) + dosHeader->e_lfanew);
+                uintptr_t end =
+                    begin + ntHeader->OptionalHeader.SizeOfCode + ntHeader->OptionalHeader.SizeOfInitializedData;
+
+                auto rttiSystem = RED4ext::CRTTISystem::Get();
+                auto* scriptable = rttiSystem->GetClass("IScriptable");
+
+                auto dumpClass = [scriptable, begin, end](auto& vtableMap, RED4ext::IRTTIType* type) {
+                    uintptr_t vtable = *(uintptr_t*)type;
+                    RED4ext::CName typeName;
+                    type->GetName(typeName);
+                    std::string name = typeName.ToString();
+                    if (vtable >= begin && vtable <= end)
+                    {
+                        vtableMap.emplace(vtable, "VT_RTTI_" + name);
+                    }
+
+                    // Construct an empty instance of this class and dump that
+                    if (type->GetType() == RED4ext::ERTTIType::Class)
+                    {
+                        auto classType = static_cast<RED4ext::CClass*>(type);
+                        uint32_t size = type->GetSize();
+                        
+                        // We aren't borrowing the game's allocator on purpose because some classes have Abstract
+                        // allocators and they assert
+                        std::unique_ptr<char[]> mem = std::make_unique<char[]>(size);
+
+                        memset(mem.get(), 0, size);
+
+                        type->Init(mem.get());
+
+                        if (!classType->flags.isAbstract)
+                        {
+                            for (auto i = 0; i < classType->unk118.size; ++i)
+                            {
+                                auto prop = classType->unk118.entries[i];
+                                if (!prop->flags.b21)
+                                {
+                                    RED4ext::CName propTypeName;
+                                    prop->type->GetName(propTypeName);
+
+                                    auto valueOffset = prop->valueOffset;
+                                    auto propAddress =
+                                        reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(mem.get()) + valueOffset);
+                                    spdlog::info("{} {} Type: {} Offset {:08X} Address {:16p}", name,
+                                                 prop->name.ToString(), propTypeName.ToString(), valueOffset,
+                                                 propAddress);
+                                }
+                            }
+                        }
+                            
+                        if (size >= sizeof(uintptr_t))
+                        {
+                            vtable = *(uintptr_t*)mem.get();
+
+                            if (vtable >= begin && vtable <= end)
+                            {
+                                vtableMap.emplace(vtable, "VT_" + name);
+                            }
+                        }
+
+                        // Lets just leak memory from nested objects for now, this is broken on certain classes,
+                        // havent determined why
+                        // type->Destroy(buffer);
+                        
+                    }
+                };
+
+                rttiSystem->types.for_each(
+                    [&dumpClass, &vtableMap, begin, end](RED4ext::CName n, RED4ext::IRTTIType*& type) {
+                        uintptr_t vtable = *(uintptr_t*)type;
+
+                        std::string name = n.ToString();
+
+                        dumpClass(vtableMap, type);
+
+                        if (type->GetType() == RED4ext::ERTTIType::Class)
+                        {
+                            auto parent = static_cast<RED4ext::CClass*>(type)->parent;
+                            while (parent)
+                            {
+                                dumpClass(vtableMap, parent);
+
+                                parent = parent->parent;
+                                if (!parent || parent->GetType() != RED4ext::ERTTIType::Class)
+                                {
+                                    break;
+                                }
+                            }
+                        }
+                    });
+
+                for (auto p : vtableMap)
+                {
+                    spdlog::info("{:016X},{}", p.first, p.second);
+                }
+            }
+            virtual void Dispose() override
+            {
+                delete this;
+            }
+        };
+
+        GameMainThread::Get().AddTask(new DumpRTTITask);
+    };
+#endif
 
     // execute autoexec.lua inside our default script directory
     std::filesystem::current_path(Options::Get().CETPath / "scripts");
@@ -647,49 +782,48 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
     auto* unk10 = engine->framework->gameInstance;
 
     RED4ext::CName name;
-    uint8_t argOffset = 0;
 
+    std::vector<CStackType> args(pFunc->params.size);
+
+    uint32_t argOffset = 0u;
     if (pFunc->params.size > 0)
     {
         auto* pType = pFunc->params[0]->type;
         // check if the first argument is expected to be ScriptGameInstance
         if (pType == pGIType)
         {
-            argOffset = 1;
+            argOffset = 1u;
+            args[0].type = pGIType;
+            args[0].value = &unk10;
         }
     }
 
-    std::vector<CStackType> args(aArgs.size() + argOffset);
-
-    if (pFunc->params.size - argOffset != aArgs.size())
+    for (auto i = argOffset; i < pFunc->params.size; ++i)
     {
-        aReturnMessage = "Function '" + aFuncName + "' expects " +
-            std::to_string(pFunc->params.size - argOffset) + " parameters, not " +
-            std::to_string(aArgs.size()) + ".";
-
-        return sol::nil;
-    }
-
-    if (argOffset > 0)
-    {
-        // Inject the ScriptGameInstance into first argument
-        args[0].type = pFunc->params[0]->type;
-        args[0].value = &unk10;
-    }
-
-    for (auto i = 0ull; i < aArgs.size(); ++i)
-    {
-        args[i + argOffset] = ToRED(aArgs[i].get<sol::object>(), pFunc->params[i + argOffset]->type, &s_scratchMemory);
-
-        if(!args[i + argOffset].value)
+        if (pFunc->params[i]->flags.isOut) // Deal with out params
         {
-            auto* pType = pFunc->params[i + argOffset]->type;
+            args[i] = Scripting::ToRED(sol::nil, pFunc->params[i]->type, &s_scratchMemory);
+        }
+        else if (aArgs.size() > i)
+        {
+            args[i] = Scripting::ToRED(aArgs[i].get<sol::object>(), pFunc->params[i]->type, &s_scratchMemory);
+        }
+        else if (pFunc->params[i]->flags.isOptional) // Deal with optional params
+        {
+            args[i].value = nullptr;
+        }
 
-            pType->GetName(name);
-            if (!name.IsEmpty())
+        if (!args[i].value && !pFunc->params[i]->flags.isOptional)
+        {
+            auto* pType = pFunc->params[i]->type;
+
+            RED4ext::CName hash;
+            pType->GetName(hash);
+            if (!hash.IsEmpty())
             {
-                const auto typeName = name.ToString();
-                aReturnMessage = "Function '" + aFuncName + "' parameter " + std::to_string(i) + " must be " + typeName + ".";
+                std::string typeName = hash.ToString();
+                aReturnMessage =
+                    "Function '" + aFuncName + "' parameter " + std::to_string(i - argOffset) + " must be " + typeName + ".";
             }
 
             return sol::nil;
