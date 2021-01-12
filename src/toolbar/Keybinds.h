@@ -10,4 +10,10 @@ struct Keybinds : public ToolbarWidget
     void OnEnable() override;
     void OnDisable() override;
     void Update() override;
+    
+    void Load();
+    void Save();
+
+private:
+    std::vector<VKBindInfo> m_vkBindInfos{ };
 };

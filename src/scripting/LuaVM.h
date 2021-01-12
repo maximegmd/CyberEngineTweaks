@@ -31,6 +31,8 @@ struct LuaVM
     static void Initialize();
     static void Shutdown();
     static LuaVM& Get();
+
+    std::vector<VKBindInfo>& GetBinds();
     
     bool ExecuteLua(const std::string& acCommand);
         

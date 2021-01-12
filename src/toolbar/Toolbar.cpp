@@ -111,6 +111,7 @@ void Toolbar::Update()
             ImGui::SameLine();
             if (ImGui::Button("Settings"))
                 selectedID = ToolbarWidgetID::SETTINGS;
+
             ImGui::Spacing();
         }
         if (selectedID < ToolbarWidgetID::COUNT)

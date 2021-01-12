@@ -7,6 +7,8 @@ struct ScriptContext
     ~ScriptContext();
 
     [[nodiscard]] bool IsValid() const;
+
+    std::vector<VKBindInfo>& GetBinds();
     
     void TriggerOnInit() const;
     void TriggerOnUpdate(float aDeltaTime) const;
@@ -24,7 +26,7 @@ private:
     ScriptContext(const ScriptContext&) = default;
 
     sol::state_view m_lua;
-    sol::environment m_env{ };
+    sol::environment m_env;
     sol::object m_object{ };
     sol::function m_onInit{ };
     sol::function m_onShutdown{ };
@@ -32,5 +34,7 @@ private:
     sol::function m_onDraw{ };
     sol::function m_onToolbarOpen{ };
     sol::function m_onToolbarClose{ };
+    std::vector<VKBindInfo> m_vkBindInfos{ };
+    std::string m_name{ };
     bool m_initialized{ false };
 };

@@ -100,7 +100,7 @@ void VKBindings::Save()
     nlohmann::json config;
 
     for (auto& idToBind : IDToBinds)
-        config[idToBind.first] = idToBind.second;
+        config[idToBind.first.c_str()] = idToBind.second;
 
     std::ofstream ofs{ Paths::VKBindingsPath };
     ofs << config.dump(4) << std::endl;
@@ -205,26 +205,45 @@ std::string VKBindings::GetIDForBindCode(UINT aVKCodeBind)
     return bind->second.ID;
 }
 
-std::array<UINT, 4> VKBindings::DecodeVKCodeBind(UINT aVKCodeBind)
+VKCodeBindDecoded VKBindings::DecodeVKCodeBind(UINT aVKCodeBind)
 {
     if (aVKCodeBind == 0)
         return {};
 
-    std::array<UINT, 4> res{ };
-    
-    UINT shift = 24;
-    for (size_t i = 0; i < 4; ++i, shift -= 8)
-        res[i] = (aVKCodeBind >> shift) & 0xFF;
-
+    VKCodeBindDecoded res{ };
+    *reinterpret_cast<UINT*>(res.data()) = _byteswap_ulong(aVKCodeBind);
     return res;
 }
 
-void VKBindings::StartRecordingBind(const VKBind& aBind)
+UINT VKBindings::EncodeVKCodeBind(const VKCodeBindDecoded& aVKCodeBindDecoded)
 {
+    assert(aVKCodeBindDecoded[0] != 0); // we never want 0 here!!!
+    return _byteswap_ulong(*reinterpret_cast<const UINT*>(aVKCodeBindDecoded.data()));
+}
+
+bool VKBindings::StartRecordingBind(const VKBind& aBind)
+{
+    if (IsBindRecording)
+        return false;
+
     Recording.fill(0);
     RecordingLength = 0;
     RecordingBind = aBind;
     IsBindRecording = true;
+
+    return true;
+}
+
+bool VKBindings::StopRecordingBind()
+{
+    if (!IsBindRecording)
+        return false;
+
+    IsBindRecording = false;
+    Recording.fill(0);
+    RecordingLength = 0;
+
+    return true;
 }
 
 bool VKBindings::IsRecordingBind()
@@ -297,7 +316,7 @@ bool VKBindings::RecordKeyDown(UINT aVKCode)
 {
     for (size_t i = 0; i < RecordingLength; ++i)
         if (Recording[i] == aVKCode)
-            return true; // ignore repeats
+            return false; // ignore repeats
 
     if (RecordingLength >= Recording.size())
     {
@@ -351,17 +370,7 @@ UINT VKBindings::CreateVKCodeBindFromRecording()
     if (RecordingLength == 0)
         return 0;
 
-    UINT res = 0;
-    auto* cur = Recording.data();
-    auto shift = 24;
-    do
-    {
-        res |= *(cur++) << shift;
-        shift -= 8;
-    }
-    while (--RecordingLength);
-
-    return res;
+    return _byteswap_ulong(*reinterpret_cast<UINT*>(Recording.data()));
 }
 
 LRESULT VKBindings::HandleRAWInput(HRAWINPUT ahRAWInput)
@@ -375,26 +384,26 @@ LRESULT VKBindings::HandleRAWInput(HRAWINPUT ahRAWInput)
 
     auto* raw = reinterpret_cast<RAWINPUT*>(lpb.get());
     if (raw->header.dwType == RIM_TYPEKEYBOARD) 
-        return IsLastRecordingKey(raw->data.keyboard.VKey);
+        return IsBindRecording && IsLastRecordingKey(raw->data.keyboard.VKey);
     if (raw->header.dwType == RIM_TYPEMOUSE) 
     {
         switch (raw->data.mouse.usButtonFlags)
         {
             case RI_MOUSE_LEFT_BUTTON_DOWN:
             case RI_MOUSE_LEFT_BUTTON_UP:
-                return IsLastRecordingKey(VK_LBUTTON);
+                return IsBindRecording && IsLastRecordingKey(VK_LBUTTON);
             case RI_MOUSE_RIGHT_BUTTON_DOWN:
             case RI_MOUSE_RIGHT_BUTTON_UP:
-                return IsLastRecordingKey(VK_RBUTTON);
+                return IsBindRecording && IsLastRecordingKey(VK_RBUTTON);
             case RI_MOUSE_MIDDLE_BUTTON_DOWN:
             case RI_MOUSE_MIDDLE_BUTTON_UP:
-                return IsLastRecordingKey(VK_MBUTTON);
+                return IsBindRecording && IsLastRecordingKey(VK_MBUTTON);
             case RI_MOUSE_BUTTON_4_DOWN:
             case RI_MOUSE_BUTTON_4_UP:
-                return IsLastRecordingKey(VK_XBUTTON1);
+                return IsBindRecording && IsLastRecordingKey(VK_XBUTTON1);
             case RI_MOUSE_BUTTON_5_DOWN:
             case RI_MOUSE_BUTTON_5_UP:
-                return IsLastRecordingKey(VK_XBUTTON2);
+                return IsBindRecording && IsLastRecordingKey(VK_XBUTTON2);
         }
     }
 

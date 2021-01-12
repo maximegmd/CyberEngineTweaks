@@ -27,6 +27,4 @@ private:
     bool m_patchDisableBoundaryTeleport{ false };
     bool m_patchDisableWin7Vsync{ false };
     bool m_dumpGameOptions{ false };
-    
-    bool m_bindingKey{ false };
 };

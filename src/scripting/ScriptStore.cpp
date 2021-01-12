@@ -4,34 +4,53 @@
 
 void ScriptStore::LoadAll(sol::state_view aStateView)
 {
+    m_vkBindInfos.clear();
     m_contexts.clear();
 
-    const auto cModsPath = Paths::ModsPath;
-
-    for (const auto& file : std::filesystem::directory_iterator(cModsPath))
+    for (const auto& file : std::filesystem::directory_iterator(Paths::ModsPath))
     {
         if (!file.is_directory())
             continue;
 
-        if (!exists(file.path() / "init.lua"))
+        auto fPath = file.path();
+        auto fPathStr = fPath.string();
+        if (!std::filesystem::exists(fPath / "init.lua"))
+        {
+            Logger::ToConsoleFmt("Ignoring directory which misses init.lua! ('{}')", fPathStr);
+            Logger::WarningToModsFmt("Ignoring directory which misses init.lua! ('{}')", fPathStr);
             continue;
+        }
 
-        auto name = relative(file.path(), cModsPath).string();
-
+        auto name = std::filesystem::relative(fPath, Paths::ModsPath).string();
+        if (name.find('.') != std::string::npos)
+        {
+            Logger::ToConsoleFmt("Ignoring directory with '.', as this is reserved character! ('{}')", fPathStr);
+            Logger::WarningToModsFmt("Ignoring directory with '.', as this is reserved character! ('{}')", fPathStr);
+            continue;
+        }
+        
         auto ctx = ScriptContext{ aStateView, file.path() };
-        auto fpathString = file.path().string();
         if (ctx.IsValid())
         {
-            Logger::ToConsoleFmt("Mod {} loaded!", fpathString);
-            Logger::InfoToModsFmt("Mod {} loaded!", fpathString);
+            auto& ctxBinds = ctx.GetBinds();
+            m_vkBindInfos.insert(m_vkBindInfos.cend(), ctxBinds.cbegin(), ctxBinds.cend());
             m_contexts.emplace(name, std::move(ctx));
+            Logger::ToConsoleFmt("Mod {} loaded! ('{}')", name, fPathStr);
+            Logger::InfoToModsFmt("Mod {} loaded! ('{}')", name, fPathStr);
         }
         else
         {
-            Logger::ToConsoleFmt("Mod {} failed loaded!", fpathString);
-            Logger::ErrorToModsFmt("Mod {} failed loaded!", fpathString);
+            Logger::ToConsoleFmt("Mod {} failed loaded! ('{}')", name, fPathStr);
+            Logger::ErrorToModsFmt("Mod {} failed loaded! ('{}')", name, fPathStr);
         }
     }
+
+    VKBindings::InitializeMods(m_vkBindInfos);
+}
+
+std::vector<VKBindInfo>& ScriptStore::GetBinds()
+{
+    return m_vkBindInfos;
 }
 
 void ScriptStore::TriggerOnInit() const

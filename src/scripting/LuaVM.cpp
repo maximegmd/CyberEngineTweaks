@@ -27,6 +27,11 @@ LuaVM& LuaVM::Get()
     return *s_pLuaVM;
 }
 
+std::vector<VKBindInfo>& LuaVM::GetBinds()
+{
+    return m_scripting.GetBinds();
+}
+
 bool LuaVM::ExecuteLua(const std::string& acCommand)
 {
     if (!m_initialized)

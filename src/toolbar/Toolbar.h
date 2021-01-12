@@ -68,4 +68,4 @@ private:
     bool m_initialized{ false };
 };
 
-inline VKBind Toolbar::VKBToolbar = { "toolbar_toggle",  [](){ Get().Toggle(); } };
+inline VKBind Toolbar::VKBToolbar = { "cet.toolbar_toggle",  "Toolbar Key", [](){ Get().Toggle(); } };

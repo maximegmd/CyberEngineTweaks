@@ -2,24 +2,27 @@
 
 using TVKBindCallback = void();
 
+using VKCodeBindDecoded = std::array<uint8_t, 4>;
+
 struct VKBind
 {
     std::string ID { };
-    TVKBindCallback* Handler { nullptr };
+    std::string Description { };
+    std::function<TVKBindCallback> Handler { nullptr };
 };
 
 struct VKBindInfo
 {
     VKBind Bind { };
-    UINT SavedCodeBind { 0 };
     UINT CodeBind { 0 };
+    UINT SavedCodeBind { 0 };
     bool IsBinding{ false };
 
     void Fill(UINT aVKCodeBind, const VKBind& aVKBind)
     {
         Bind = aVKBind;
-        SavedCodeBind = aVKCodeBind;
         CodeBind = aVKCodeBind;
+        SavedCodeBind = aVKCodeBind;
         IsBinding = false;
     }
 
@@ -49,9 +52,11 @@ struct VKBindings
     static UINT GetBindCodeForID(const std::string& aID);
     static std::string GetIDForBindCode(UINT aVKCodeBind);
 
-    static std::array<UINT, 4> DecodeVKCodeBind(UINT aVKCodeBind);
-
-    static void StartRecordingBind(const VKBind& aBind);
+    static VKCodeBindDecoded DecodeVKCodeBind(UINT aVKCodeBind);
+    static UINT EncodeVKCodeBind(const VKCodeBindDecoded& aVKCodeBindDecoded);
+    
+    static bool StartRecordingBind(const VKBind& aBind);
+    static bool StopRecordingBind();
 
     static bool IsRecordingBind();
     static UINT GetLastRecordingResult();
@@ -69,7 +74,7 @@ private:
     static inline std::map<UINT, VKBind> Binds{ };
     static inline std::unordered_map<std::string, UINT> IDToBinds{ };
     
-    static inline std::array<UINT, 4> Recording{ };
+    static inline VKCodeBindDecoded Recording{ };
     static inline size_t RecordingLength{ 0 };
     static inline VKBind RecordingBind { };
     static inline UINT RecordingResult{ 0 };

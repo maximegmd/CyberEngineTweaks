@@ -117,7 +117,7 @@ inline const char* GetSpecialKeyName(UINT aVKCode)
     }
 }
 
-inline void BindWidget(const std::string& label, VKBindInfo& aVKBindInfo)
+inline void BindWidget(VKBindInfo& aVKBindInfo)
 {
     if (aVKBindInfo.IsBinding && !VKBindings::IsRecordingBind())
     {
@@ -130,9 +130,12 @@ inline void BindWidget(const std::string& label, VKBindInfo& aVKBindInfo)
         curTextColor = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
     if (aVKBindInfo.CodeBind != aVKBindInfo.SavedCodeBind)
         curTextColor = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
-    
+
+    std::string label = aVKBindInfo.Bind.Description + ':';
     ImGui::PushStyleColor(ImGuiCol_Text, curTextColor);
+    ImGui::PushID(&aVKBindInfo.Bind.Description);
     ImGui::Text(label.c_str());
+    ImGui::PopID();
     ImGui::PopStyleColor();
     
     std::string vkStr = { };
@@ -168,6 +171,7 @@ inline void BindWidget(const std::string& label, VKBindInfo& aVKBindInfo)
         vkStr = "BINDING...";
     
     ImGui::SameLine();
+    ImGui::PushID(&aVKBindInfo.Bind.ID);
     if (ImGui::Button(vkStr.c_str()))
     {
         if (!aVKBindInfo.IsBinding)
@@ -176,6 +180,7 @@ inline void BindWidget(const std::string& label, VKBindInfo& aVKBindInfo)
             aVKBindInfo.IsBinding = true;
         }
     }
+    ImGui::PopID();
 }
 
 inline void BoolWidget(const std::string& label, bool& current, bool saved)

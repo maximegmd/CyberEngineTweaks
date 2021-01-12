@@ -10,6 +10,8 @@ struct Scripting
 
     void Initialize();
 
+    std::vector<VKBindInfo>& GetBinds();
+
     void TriggerOnInit() const;
     void TriggerOnUpdate(float aDeltaTime) const;
     void TriggerOnDraw() const;

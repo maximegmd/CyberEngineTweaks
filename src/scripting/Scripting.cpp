@@ -287,6 +287,11 @@ void Scripting::Initialize()
     ReloadAllMods();
 }
 
+std::vector<VKBindInfo>& Scripting::GetBinds()
+{
+    return m_store.GetBinds();
+}
+
 void Scripting::TriggerOnInit() const
 {
     m_store.TriggerOnInit();

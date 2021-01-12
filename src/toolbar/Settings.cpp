@@ -10,12 +10,12 @@ void Settings::OnEnable()
 {
     Load();
     
-    m_bindingKey = false;
+    VKBindings::StopRecordingBind();
 }
 
 void Settings::OnDisable()
 {
-    m_bindingKey = false;
+    VKBindings::StopRecordingBind();
 }
 
 void Settings::Update()
@@ -30,8 +30,11 @@ void Settings::Update()
         ResetToDefaults();
 
     ImGui::Spacing();
-       
-    BindWidget("Toolbar Key:", m_toolbarKeyBindInfo);
+
+    if (!Options::IsFirstLaunch)
+        ImGui::BeginChild("##SETTINGS_ACTUAL", ImVec2(0,0), true);
+
+    BindWidget(m_toolbarKeyBindInfo);
     if (Options::IsFirstLaunch && (m_toolbarKeyBindInfo.SavedCodeBind != m_toolbarKeyBindInfo.CodeBind))
     {
         Save();
@@ -48,6 +51,9 @@ void Settings::Update()
     BoolWidget("Disable Boundary Teleport:", m_patchDisableBoundaryTeleport, Options::PatchDisableBoundaryTeleport);
     BoolWidget("Disable V-Sync (Windows 7 only):", m_patchDisableWin7Vsync, Options::PatchDisableWin7Vsync);
     BoolWidget("Dump Game Options:", m_dumpGameOptions, Options::DumpGameOptions);
+
+    if (!Options::IsFirstLaunch)
+        ImGui::EndChild();
 }
 
 void Settings::Load()

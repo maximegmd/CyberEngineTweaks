@@ -8,6 +8,8 @@ struct ScriptStore
     ~ScriptStore() = default;
 
     void LoadAll(sol::state_view aStateView);
+
+    std::vector<VKBindInfo>& GetBinds();
     
     void TriggerOnInit() const;
     void TriggerOnUpdate(float aDeltaTime) const;
@@ -21,4 +23,5 @@ struct ScriptStore
 private:
     
     std::unordered_map<std::string, ScriptContext> m_contexts{ };
+    std::vector<VKBindInfo> m_vkBindInfos{ };
 };
