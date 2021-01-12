@@ -88,7 +88,9 @@ void VKBindings::Load()
         auto config = nlohmann::json::parse(ifs);
         for (auto& it : config.items())
         {
-            auto ret = Bind(it.value(), { it.key() });
+            // properly auto-bind Toolbar if it is present here (could be this is first start so it may not be in here yet)
+            auto vkBind = (it.key() == Toolbar::VKBToolbar.ID) ? (Toolbar::VKBToolbar) : (VKBind{ it.key() });
+            auto ret = Bind(it.value(), vkBind);
             assert(ret); // we want this to never fail!
         }
     }
@@ -217,7 +219,6 @@ VKCodeBindDecoded VKBindings::DecodeVKCodeBind(UINT aVKCodeBind)
 
 UINT VKBindings::EncodeVKCodeBind(const VKCodeBindDecoded& aVKCodeBindDecoded)
 {
-    assert(aVKCodeBindDecoded[0] != 0); // we never want 0 here!!!
     return _byteswap_ulong(*reinterpret_cast<const UINT*>(aVKCodeBindDecoded.data()));
 }
 
@@ -287,11 +288,14 @@ LRESULT VKBindings::RecordKeyDown(UINT aVKCode)
     {
         for (size_t i = 1; i < RecordingLength; ++i)
             Recording[i-1] = Recording[i];
+
         --RecordingLength;
     }
 
-    Recording[RecordingLength] = aVKCode;
-    ++RecordingLength;
+    Recording[RecordingLength++] = aVKCode;
+
+    VerifyRecording(); // we doesnt care about result of this here, we just want it corrected :P
+
     return 0;
 }
 
@@ -301,9 +305,11 @@ LRESULT VKBindings::RecordKeyUp(UINT aVKCode)
     {
         if (Recording[i] == aVKCode)
         {
-            RecordingResult = CreateVKCodeBindFromRecording();
-            Recording.fill(0);
-            RecordingLength = 0;
+            RecordingResult = EncodeVKCodeBind(Recording);
+            RecordingLength = i;
+            for (; i < Recording.size(); ++i)
+                Recording[i] = 0;
+            while (!VerifyRecording()) {} // fix recording for future use, so user can use HKs like Ctrl+C, Ctrl+V without the need of pressing again Ctrl for example
             if (IsBindRecording)
             {
                 if (!Bind(RecordingResult, RecordingBind))
@@ -327,13 +333,32 @@ LRESULT VKBindings::RecordKeyUp(UINT aVKCode)
     return 0;
 }
 
-UINT VKBindings::CreateVKCodeBindFromRecording()
+bool VKBindings::VerifyRecording()
 {
-    assert(RecordingLength != 0); // we never really want RecordingLength == 0 here... but leave some fallback for release!
-    if (RecordingLength == 0)
-        return 0;
+    if (IsBindRecording)
+        return true; // always valid for bind recordings
 
-    return _byteswap_ulong(*reinterpret_cast<UINT*>(Recording.data()));
+    if (RecordingLength == 0)
+        return true; // always valid when empty
+
+    auto possibleBind = Binds.lower_bound(EncodeVKCodeBind(Recording));
+    if (possibleBind == Binds.end())
+    {
+        Recording[--RecordingLength] = 0;
+        return false; // seems like there is no possible HK here
+    }
+
+    VKCodeBindDecoded pbCodeDec = DecodeVKCodeBind(possibleBind->first);
+    for (size_t i = 0; i < RecordingLength; ++i)
+    {
+        if (pbCodeDec[i] != Recording[i])
+        {
+            Recording[--RecordingLength] = 0;
+            return false; // seems like there is no possible HK here
+        }
+    }
+
+    return true; // valid recording
 }
 
 LRESULT VKBindings::HandleRAWInput(HRAWINPUT ahRAWInput)

@@ -67,7 +67,7 @@ private:
     static bool IsLastRecordingKey(UINT aVKCode);
     static LRESULT RecordKeyDown(UINT aVKCode);
     static LRESULT RecordKeyUp(UINT aVKCode);
-    static UINT CreateVKCodeBindFromRecording();
+    static bool VerifyRecording();
 
     static LRESULT HandleRAWInput(HRAWINPUT ahRAWInput);
     
