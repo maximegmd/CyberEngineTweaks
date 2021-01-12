@@ -297,8 +297,6 @@ LRESULT VKBindings::OnWndProc(HWND, UINT auMsg, WPARAM awParam, LPARAM alParam)
         case WM_KEYUP:
         case WM_SYSKEYUP:
             return RecordKeyUp(awParam);
-        case WM_CHAR:
-            return IsLastRecordingKey(MapVirtualKey(awParam, MAPVK_VSC_TO_VK));
         case WM_INPUT:
             return HandleRAWInput(reinterpret_cast<HRAWINPUT>(alParam));
     }
@@ -312,11 +310,11 @@ bool VKBindings::IsLastRecordingKey(UINT aVKCode)
 
     return (Recording[RecordingLength-1] == aVKCode);
 }
-bool VKBindings::RecordKeyDown(UINT aVKCode)
+LRESULT VKBindings::RecordKeyDown(UINT aVKCode)
 {
     for (size_t i = 0; i < RecordingLength; ++i)
         if (Recording[i] == aVKCode)
-            return false; // ignore repeats
+            return 0; // ignore repeats
 
     if (RecordingLength >= Recording.size())
     {
@@ -327,10 +325,10 @@ bool VKBindings::RecordKeyDown(UINT aVKCode)
 
     Recording[RecordingLength] = aVKCode;
     ++RecordingLength;
-    return IsBindRecording;
+    return 0;
 }
 
-bool VKBindings::RecordKeyUp(UINT aVKCode)
+LRESULT VKBindings::RecordKeyUp(UINT aVKCode)
 {
     for (size_t i = 0; i < RecordingLength; ++i)
     {
@@ -344,24 +342,22 @@ bool VKBindings::RecordKeyUp(UINT aVKCode)
                 if (!Bind(RecordingResult, RecordingBind))
                     RecordingResult = 0;
                 IsBindRecording = false;
-                return true;
+                return 0;
             }
             auto bind = Binds.find(RecordingResult);
             if (bind != Binds.end())
             {
                 if (Toolbar::Get().IsEnabled() && (bind->second.ID != Toolbar::VKBToolbar.ID))
-                    return false; // we dont want to handle bindings if toolbar is open!
+                    return 0; // we dont want to handle bindings if toolbar is open!
 
                 if (bind->second.Handler) // prevention for freshly loaded bind from file without rebinding
                     bind->second.Handler();
-
-                return true;
             }
-            return false;
+            return 0;
         }
     }
     // if we got here, aVKCode is not recorded key or there is no bind, so we ignore this event
-    return false;
+    return 0;
 }
 
 UINT VKBindings::CreateVKCodeBindFromRecording()
@@ -384,26 +380,26 @@ LRESULT VKBindings::HandleRAWInput(HRAWINPUT ahRAWInput)
 
     auto* raw = reinterpret_cast<RAWINPUT*>(lpb.get());
     if (raw->header.dwType == RIM_TYPEKEYBOARD) 
-        return IsBindRecording && IsLastRecordingKey(raw->data.keyboard.VKey);
+        return 0; //IsBindRecording && IsLastRecordingKey(raw->data.keyboard.VKey);
     if (raw->header.dwType == RIM_TYPEMOUSE) 
     {
         switch (raw->data.mouse.usButtonFlags)
         {
             case RI_MOUSE_LEFT_BUTTON_DOWN:
             case RI_MOUSE_LEFT_BUTTON_UP:
-                return IsBindRecording && IsLastRecordingKey(VK_LBUTTON);
+                return 0; //IsBindRecording && IsLastRecordingKey(VK_LBUTTON);
             case RI_MOUSE_RIGHT_BUTTON_DOWN:
             case RI_MOUSE_RIGHT_BUTTON_UP:
-                return IsBindRecording && IsLastRecordingKey(VK_RBUTTON);
+                return 0; //IsBindRecording && IsLastRecordingKey(VK_RBUTTON);
             case RI_MOUSE_MIDDLE_BUTTON_DOWN:
             case RI_MOUSE_MIDDLE_BUTTON_UP:
-                return IsBindRecording && IsLastRecordingKey(VK_MBUTTON);
+                return 0; //IsBindRecording && IsLastRecordingKey(VK_MBUTTON);
             case RI_MOUSE_BUTTON_4_DOWN:
             case RI_MOUSE_BUTTON_4_UP:
-                return IsBindRecording && IsLastRecordingKey(VK_XBUTTON1);
+                return 0; //IsBindRecording && IsLastRecordingKey(VK_XBUTTON1);
             case RI_MOUSE_BUTTON_5_DOWN:
             case RI_MOUSE_BUTTON_5_UP:
-                return IsBindRecording && IsLastRecordingKey(VK_XBUTTON2);
+                return 0; //IsBindRecording && IsLastRecordingKey(VK_XBUTTON2);
         }
     }
 

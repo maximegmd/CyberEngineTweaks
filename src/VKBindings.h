@@ -65,8 +65,8 @@ struct VKBindings
 
 private:
     static bool IsLastRecordingKey(UINT aVKCode);
-    static bool RecordKeyDown(UINT aVKCode);
-    static bool RecordKeyUp(UINT aVKCode);
+    static LRESULT RecordKeyDown(UINT aVKCode);
+    static LRESULT RecordKeyUp(UINT aVKCode);
     static UINT CreateVKCodeBindFromRecording();
 
     static LRESULT HandleRAWInput(HRAWINPUT ahRAWInput);
