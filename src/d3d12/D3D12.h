@@ -66,15 +66,15 @@ private:
     
     bool m_initialized{ false };
 
-    std::vector<FrameContext> m_frameContexts;
-    std::vector<CComPtr<ID3D12Resource>> m_downlevelBackbuffers;
-    CComPtr<IDXGISwapChain3> m_pdxgiSwapChain;
-    CComPtr<ID3D12Device> m_pd3d12Device;
-    CComPtr<ID3D12DescriptorHeap> m_pd3dRtvDescHeap;
-    CComPtr<ID3D12DescriptorHeap> m_pd3dSrvDescHeap;
-    CComPtr<ID3D12GraphicsCommandList> m_pd3dCommandList;
-    CComPtr<ID3D12CommandQueue> m_pCommandQueue;
-    uint32_t m_downlevelBufferIndex;
+    std::vector<FrameContext> m_frameContexts{ };
+    std::vector<CComPtr<ID3D12Resource>> m_downlevelBackbuffers{ };
+    CComPtr<IDXGISwapChain3> m_pdxgiSwapChain{ };
+    CComPtr<ID3D12Device> m_pd3d12Device{ };
+    CComPtr<ID3D12DescriptorHeap> m_pd3dRtvDescHeap{ };
+    CComPtr<ID3D12DescriptorHeap> m_pd3dSrvDescHeap{ };
+    CComPtr<ID3D12GraphicsCommandList> m_pd3dCommandList{ };
+    CComPtr<ID3D12CommandQueue> m_pCommandQueue{ };
+    uint32_t m_downlevelBufferIndex{ 0 };
     
     SIZE m_outSize{ };
     

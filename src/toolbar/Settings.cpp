@@ -75,7 +75,12 @@ void Settings::Load()
 
 void Settings::Save()
 {
-    Options::ToolbarKeyBind = m_toolbarKeyBindInfo.Apply();
+    if (m_toolbarKeyBindInfo.SavedCodeBind != m_toolbarKeyBindInfo.CodeBind)
+    {
+        Options::ToolbarKeyBind = m_toolbarKeyBindInfo.Apply();
+        VKBindings::Save(); // also save bindings in this case!
+    }
+
     Options::PatchEnableDebug = m_patchEnableDebug;
     Options::PatchRemovePedestrians = m_patchRemovePedestrians;
     Options::PatchAsyncCompute = m_patchAsyncCompute;
