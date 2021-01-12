@@ -30,6 +30,7 @@ target("cyber_engine_tweaks")
     set_pcxxheader("src/stdafx.h") -- see: https://github.com/xmake-io/xmake/issues/1171#issuecomment-751421178
     set_kind("shared")
     set_filename("cyber_engine_tweaks.asi")
+    add_files("src/**.c")
     add_files("src/**.cpp")
     add_headerfiles("src/**.h")
     add_includedirs("src/")

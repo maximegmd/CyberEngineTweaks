@@ -5,6 +5,7 @@
 #include "GameOptions.h"
 
 #include <sol_imgui/sol_imgui.h>
+#include <lsqlite3/lsqlite3.h>
 
 #include <d3d12/D3D12.h>
 
@@ -22,7 +23,8 @@ static RED4ext::IRTTIType* s_pStringType = nullptr;
 void Scripting::Initialize()
 {
     m_lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::io, sol::lib::math, sol::lib::package, sol::lib::os, sol::lib::table);
-    
+    m_lua.require("sqlite3", luaopen_lsqlite3);
+
     sol_ImGui::InitBindings(m_lua);
     
     m_lua["GetDisplayResolution"] = []() -> std::tuple<float, float>
