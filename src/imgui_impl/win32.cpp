@@ -166,9 +166,7 @@ void ImGui_ImplWin32_NewFrame(SIZE aOutSize)
     IM_ASSERT(io.Fonts->IsBuilt() && "Font atlas not built! It is generally built by the renderer backend. Missing call to renderer _NewFrame() function? e.g. ImGui_ImplOpenGL3_NewFrame().");
 
     // Setup display size (every frame to accommodate for window resizing)
-    RECT rect = { 0, 0, 0, 0 };
-    ::GetClientRect(g_hWnd, &rect);
-    io.DisplaySize = ImVec2((float)(rect.right - rect.left), (float)(rect.bottom - rect.top));
+    io.DisplaySize = { static_cast<float>(aOutSize.cx), static_cast<float>(aOutSize.cy) };
 
     // Setup time step
     INT64 current_time = 0;
