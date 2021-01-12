@@ -15,7 +15,7 @@ namespace sol_ImGui
             ImGui::End();
             return std::make_tuple(false, false);
         }
-        
+
         return std::make_tuple(open, shouldDraw);
     }
     inline std::tuple<bool, bool> Begin(const std::string& name, bool open, int flags)
@@ -28,11 +28,11 @@ namespace sol_ImGui
             ImGui::End();
             return std::make_tuple(false, false);
         }
-        
+
         return std::make_tuple(open, shouldDraw);
     }
     inline void End()																					{ ImGui::End(); }
-    
+
     // Child Windows
     inline bool BeginChild(const std::string& name)														{ return ImGui::BeginChild(name.c_str()); }
     inline bool BeginChild(const std::string& name, float sizeX)										{ return ImGui::BeginChild(name.c_str(), { sizeX, 0 }); }
@@ -99,7 +99,7 @@ namespace sol_ImGui
     inline void SetScrollHereX()																		{ ImGui::SetScrollHereX(); }
     inline void SetScrollHereX(float centerXRatio)														{ ImGui::SetScrollHereX(centerXRatio); }
     inline void SetScrollHereY()																		{ ImGui::SetScrollHereY(); }
-    inline void SetScrollHereY(float centerYRatio)														{ ImGui::SetScrollHereY(centerYRatio); }	
+    inline void SetScrollHereY(float centerYRatio)														{ ImGui::SetScrollHereY(centerYRatio); }
     inline void SetScrollFromPosX(float localX)															{ ImGui::SetScrollFromPosX(localX); }
     inline void SetScrollFromPosX(float localX, float centerXRatio)										{ ImGui::SetScrollFromPosX(localX, centerXRatio); }
     inline void SetScrollFromPosY(float localY)															{ ImGui::SetScrollFromPosY(localY); }
@@ -127,7 +127,7 @@ namespace sol_ImGui
     inline int GetColorU32(float colR, float colG, float colB, float colA)								{ return ImGui::GetColorU32({ colR, colG, colB, colA }); }
     inline int GetColorU32(int col)																		{ return ImGui::GetColorU32(ImU32(col)); }
 #endif
-    
+
     // Parameters stacks (current window)
     inline void PushItemWidth(float itemWidth)															{ ImGui::PushItemWidth(itemWidth); }
     inline void PopItemWidth()																			{ ImGui::PopItemWidth(); }
@@ -225,11 +225,11 @@ namespace sol_ImGui
             const auto& stringItem = items.get<sol::optional<std::string>>(i);
             strings.push_back(stringItem.value_or("Missing"));
         }
-        
+
         std::vector<const char*> cstrings;
         for (auto& string : strings)
             cstrings.push_back(string.c_str());
-            
+
         bool clicked = ImGui::Combo(label.c_str(), &currentItem, cstrings.data(), itemsCount);
         return std::make_tuple(currentItem, clicked);
     }
@@ -1489,7 +1489,7 @@ namespace sol_ImGui
     inline std::tuple<bool, bool> BeginTabItem(const std::string& label, bool open, int flags)			{ bool selected = ImGui::BeginTabItem(label.c_str(), &open, static_cast<ImGuiTabItemFlags>(flags)); return std::make_tuple(open, selected); }
     inline void EndTabItem()																			{ ImGui::EndTabItem(); }
     inline void SetTabItemClosed(const std::string& tab_or_docked_window_label)							{ ImGui::SetTabItemClosed(tab_or_docked_window_label.c_str()); }
-        
+
     // Logging
     inline void LogToTTY()																				{ ImGui::LogToTTY(); }
     inline void LogToTTY(int auto_open_depth)															{ ImGui::LogToTTY(auto_open_depth); }
@@ -1570,7 +1570,7 @@ namespace sol_ImGui
                             g{ rgba[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                             b{ rgba[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                             a{ rgba[4].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
-        
+
         return ImGui::ColorConvertFloat4ToU32({ float(r), float(g), float(b), float(a) });
     }
 #endif
@@ -1624,7 +1624,7 @@ namespace sol_ImGui
     // Clipboard Utilities
     inline std::string GetClipboardText()																{ return std::string(ImGui::GetClipboardText()); }
     inline void SetClipboardText(const std::string& text)												{ ImGui::SetClipboardText(text.c_str()); }
-    
+
     inline void InitEnums(sol::state& lua)
     {
 #pragma region Window Flags
@@ -2002,17 +2002,17 @@ namespace sol_ImGui
         );
 #pragma endregion MouseCursor
     }
-    
+
     inline void InitBindings(sol::state& lua)
     {
         InitEnums(lua);
-        
+
         sol::table ImGui = lua.create_named_table("ImGui");
 
 #pragma region Windows
         ImGui.set_function("Begin"							, sol::overload(
                                                                 sol::resolve<bool(const std::string&)>(Begin),
-                                                                sol::resolve<std::tuple<bool, bool>(const std::string&, bool)>(Begin), 
+                                                                sol::resolve<std::tuple<bool, bool>(const std::string&, bool)>(Begin),
                                                                 sol::resolve<std::tuple<bool, bool>(const std::string&, bool, int)>(Begin)
                                                             ));
         ImGui.set_function("End"							, End);
@@ -2020,10 +2020,10 @@ namespace sol_ImGui
 
 #pragma region Child Windows
         ImGui.set_function("BeginChild"						, sol::overload(
-                                                                sol::resolve<bool(const std::string&)>(BeginChild), 
-                                                                sol::resolve<bool(const std::string&, float)>(BeginChild), 
+                                                                sol::resolve<bool(const std::string&)>(BeginChild),
+                                                                sol::resolve<bool(const std::string&, float)>(BeginChild),
                                                                 sol::resolve<bool(const std::string&, float, float)>(BeginChild),
-                                                                sol::resolve<bool(const std::string&, float, float, bool)>(BeginChild), 
+                                                                sol::resolve<bool(const std::string&, float, float, bool)>(BeginChild),
                                                                 sol::resolve<bool(const std::string&, float, float, bool, int)>(BeginChild)
                                                             ));
         ImGui.set_function("EndChild"						, EndChild);
@@ -2047,8 +2047,8 @@ namespace sol_ImGui
 
         // Prefer  SetNext...
         ImGui.set_function("SetNextWindowPos"				, sol::overload(
-                                                                sol::resolve<void(float, float)>(SetNextWindowPos), 
-                                                                sol::resolve<void(float, float, int)>(SetNextWindowPos), 
+                                                                sol::resolve<void(float, float)>(SetNextWindowPos),
+                                                                sol::resolve<void(float, float, int)>(SetNextWindowPos),
                                                                 sol::resolve<void(float, float, int, float, float)>(SetNextWindowPos)
                                                             ));
         ImGui.set_function("SetNextWindowSize"				, sol::overload(
@@ -2087,7 +2087,7 @@ namespace sol_ImGui
                                                             ));
         ImGui.set_function("SetWindowFontScale"				, SetWindowFontScale);
 #pragma endregion Window Utilities
-        
+
 #pragma region Content Region
         ImGui.set_function("GetContentRegionMax"			, GetContentRegionMax);
         ImGui.set_function("GetContentRegionAvail"			, GetContentRegionAvail);
@@ -2095,7 +2095,7 @@ namespace sol_ImGui
         ImGui.set_function("GetWindowContentRegionMax"		, GetWindowContentRegionMax);
         ImGui.set_function("GetWindowContentRegionWidth"	, GetWindowContentRegionWidth);
 #pragma endregion Content Region
-        
+
 #pragma region Windows Scrolling
         ImGui.set_function("GetScrollX"						, GetScrollX);
         ImGui.set_function("GetScrollY"						, GetScrollY);
@@ -2120,7 +2120,7 @@ namespace sol_ImGui
                                                                 sol::resolve<void(float, float)>(SetScrollFromPosY)
                                                             ));
 #pragma endregion Windows Scrolling
-        
+
 #pragma region Parameters stacks (shared)
         ImGui.set_function("PushFont"						, PushFont);
         ImGui.set_function("PopFont"						, PopFont);
@@ -2143,12 +2143,12 @@ namespace sol_ImGui
 #ifdef SOL_IMGUI_USE_COLOR_U32
         ImGui.set_function("GetColorU32"					, sol::overload(
                                                                 sol::resolve<int(int, float)>(GetColorU32),
-                                                                sol::resolve<int(float, float, float, float)>(GetColorU32), 
+                                                                sol::resolve<int(float, float, float, float)>(GetColorU32),
                                                                 sol::resolve<int(int)>(GetColorU32)
                                                             ));
 #endif
 #pragma endregion Parameters stacks (shared)
-        
+
 #pragma region Parameters stacks (current window)
         ImGui.set_function("PushItemWidth"					, PushItemWidth);
         ImGui.set_function("PopItemWidth"					, PopItemWidth);
@@ -2164,18 +2164,18 @@ namespace sol_ImGui
         ImGui.set_function("PushButtonRepeat"				, PushButtonRepeat);
         ImGui.set_function("PopButtonRepeat"				, PopButtonRepeat);
 #pragma endregion Parameters stacks (current window)
-        
+
 #pragma region Cursor / Layout
         ImGui.set_function("Separator"						, Separator);
         ImGui.set_function("SameLine"						, sol::overload(
-                                                                sol::resolve<void()>(SameLine), 
+                                                                sol::resolve<void()>(SameLine),
                                                                 sol::resolve<void(float)>(SameLine)
                                                             ));
         ImGui.set_function("NewLine"						, NewLine);
         ImGui.set_function("Spacing"						, Spacing);
         ImGui.set_function("Dummy"							, Dummy);
         ImGui.set_function("Indent"							, sol::overload(
-                                                                sol::resolve<void()>(Indent), 
+                                                                sol::resolve<void()>(Indent),
                                                                 sol::resolve<void(float)>(Indent)
                                                             ));
         ImGui.set_function("Unindent"						, sol::overload(
@@ -2199,23 +2199,23 @@ namespace sol_ImGui
         ImGui.set_function("GetFrameHeight"					, GetFrameHeight);
         ImGui.set_function("GetFrameHeightWithSpacing"		, GetFrameHeightWithSpacing);
 #pragma endregion Cursor / Layout
-        
+
 #pragma region ID stack / scopes
         ImGui.set_function("PushID"							, sol::overload(
-                                                                sol::resolve<void(const std::string&)>(PushID), 
-                                                                sol::resolve<void(const std::string&, const std::string&)>(PushID), 
+                                                                sol::resolve<void(const std::string&)>(PushID),
+                                                                sol::resolve<void(const std::string&, const std::string&)>(PushID),
                                                                 sol::resolve<void(int)>(PushID)
                                                             ));
         ImGui.set_function("PopID"							, PopID);
         ImGui.set_function("GetID"							, sol::overload(
-                                                                sol::resolve<int(const std::string&)>(GetID), 
+                                                                sol::resolve<int(const std::string&)>(GetID),
                                                                 sol::resolve<int(const std::string&, const std::string&)>(GetID)
                                                             ));
 #pragma endregion ID stack / scopes
-        
+
 #pragma region Widgets: Text
         ImGui.set_function("TextUnformatted"				, sol::overload(
-                                                                sol::resolve<void(const std::string&)>(TextUnformatted), 
+                                                                sol::resolve<void(const std::string&)>(TextUnformatted),
                                                                 sol::resolve<void(const std::string&, const std::string&)>(TextUnformatted)
                                                             ));
         ImGui.set_function("Text"							, Text);
@@ -2225,10 +2225,10 @@ namespace sol_ImGui
         ImGui.set_function("LabelText"						, LabelText);
         ImGui.set_function("BulletText"						, BulletText);
 #pragma endregion Widgets: Text
-        
+
 #pragma region Widgets: Main
         ImGui.set_function("Button"							, sol::overload(
-                                                                sol::resolve<bool(const std::string&)>(Button), 
+                                                                sol::resolve<bool(const std::string&)>(Button),
                                                                 sol::resolve<bool(const std::string&, float, float)>(Button)
                                                             ));
         ImGui.set_function("SmallButton"					, SmallButton);
@@ -2236,27 +2236,27 @@ namespace sol_ImGui
         ImGui.set_function("ArrowButton"					, ArrowButton);
         ImGui.set_function("Checkbox"						, Checkbox);
         ImGui.set_function("RadioButton"					, sol::overload(
-                                                                sol::resolve<bool(const std::string&, bool)>(RadioButton), 
+                                                                sol::resolve<bool(const std::string&, bool)>(RadioButton),
                                                                 sol::resolve<std::tuple<int, bool>(const std::string&, int, int)>(RadioButton)
                                                             ));
         ImGui.set_function("ProgressBar"					, sol::overload(
-                                                                sol::resolve<void(float)>(ProgressBar), 
-                                                                sol::resolve<void(float, float, float)>(ProgressBar), 
+                                                                sol::resolve<void(float)>(ProgressBar),
+                                                                sol::resolve<void(float, float, float)>(ProgressBar),
                                                                 sol::resolve<void(float, float, float, const std::string&)>(ProgressBar)
                                                             ));
         ImGui.set_function("Bullet"							, Bullet);
 #pragma endregion Widgets: Main
-        
+
 #pragma region Widgets: Combo Box
         ImGui.set_function("BeginCombo"						, sol::overload(
-                                                                sol::resolve<bool(const std::string&, const std::string&)>(BeginCombo), 
+                                                                sol::resolve<bool(const std::string&, const std::string&)>(BeginCombo),
                                                                 sol::resolve<bool(const std::string&, const std::string&, int)>(BeginCombo)
                                                             ));
         ImGui.set_function("EndCombo"						, EndCombo);
         ImGui.set_function("Combo"							, sol::overload(
-                                                                sol::resolve<std::tuple<int, bool>(const std::string&, int, const sol::table&, int)>(Combo), 
-                                                                sol::resolve<std::tuple<int, bool>(const std::string&, int, const sol::table&, int, int)>(Combo), 
-                                                                sol::resolve<std::tuple<int, bool>(const std::string&, int, const std::string&)>(Combo), 
+                                                                sol::resolve<std::tuple<int, bool>(const std::string&, int, const sol::table&, int)>(Combo),
+                                                                sol::resolve<std::tuple<int, bool>(const std::string&, int, const sol::table&, int, int)>(Combo),
+                                                                sol::resolve<std::tuple<int, bool>(const std::string&, int, const std::string&)>(Combo),
                                                                 sol::resolve<std::tuple<int, bool>(const std::string&, int, const std::string&, int)>(Combo)
                                                             ));
 #pragma endregion Widgets: Combo Box
@@ -2307,15 +2307,15 @@ namespace sol_ImGui
                                                                 sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, float, int)>(DragInt2),
                                                                 sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, float, int, int)>(DragInt2),
                                                                 sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, float, int, int, const std::string&)>(DragInt2)
-                                                            ));											
-        ImGui.set_function("DragInt3"						, sol::overload(			
+                                                            ));
+        ImGui.set_function("DragInt3"						, sol::overload(
                                                                 sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&)>(DragInt3),
                                                                 sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, float)>(DragInt3),
                                                                 sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, float, int)>(DragInt3),
                                                                 sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, float, int, int)>(DragInt3),
                                                                 sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, float, int, int, const std::string&)>(DragInt3)
-                                                            ));														
-        ImGui.set_function("DragInt4"						, sol::overload(			
+                                                            ));
+        ImGui.set_function("DragInt4"						, sol::overload(
                                                                 sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&)>(DragInt4),
                                                                 sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, float)>(DragInt4),
                                                                 sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, float, int)>(DragInt4),
@@ -2754,10 +2754,75 @@ namespace sol_ImGui
                                                                 sol::resolve<void(bool)>(CaptureMouseFromApp)
                                                             ));
 #pragma endregion Inputs Utilities: Mouse
-        
+
 #pragma region Clipboard Utilities
         ImGui.set_function("GetClipboardText"				, GetClipboardText);
         ImGui.set_function("SetClipboardText"				, SetClipboardText);
 #pragma endregion Clipboard Utilities
+    }
+}
+
+
+namespace sol_FontUtils {
+    inline ImFont* AddFontFromFileTTF(const std::string &filename, float size_pixels, const ImFontConfig* font_cfg_template=NULL, const ImWchar* glyph_ranges=NULL)
+    {
+        ImGuiIO& io = ImGui::GetIO();
+        return io.Fonts->AddFontFromFileTTF(filename.c_str(), size_pixels, font_cfg_template, glyph_ranges);
+    }
+
+    inline const ImWchar* GetGlyphRangesDefault()
+    {
+        ImGuiIO& io = ImGui::GetIO();
+        return io.Fonts->GetGlyphRangesDefault();
+    }
+
+    inline const ImWchar* GetGlyphRangesKorean()
+    {
+        ImGuiIO& io = ImGui::GetIO();
+        return io.Fonts->GetGlyphRangesKorean();
+    }
+
+    inline const ImWchar* GetGlyphRangesChineseFull()
+    {
+        ImGuiIO& io = ImGui::GetIO();
+        return io.Fonts->GetGlyphRangesChineseFull();
+    }
+
+    inline const ImWchar* GetGlyphRangesChineseSimplifiedCommon()
+    {
+        ImGuiIO& io = ImGui::GetIO();
+        return io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
+    }
+
+    inline const ImWchar* GetGlyphRangesJapanese()
+    {
+        ImGuiIO& io = ImGui::GetIO();
+        return io.Fonts->GetGlyphRangesJapanese();
+    }
+
+    inline const ImWchar* GetGlyphRangesThai()
+    {
+        ImGuiIO& io = ImGui::GetIO();
+        return io.Fonts->GetGlyphRangesThai();
+    }
+
+    inline const ImWchar* GetGlyphRangesVietnamese()
+    {
+        ImGuiIO& io = ImGui::GetIO();
+        return io.Fonts->GetGlyphRangesVietnamese();
+    }
+
+    inline void InitBindings(sol::state& lua)
+    {
+        sol::table FontUtils = lua.create_named_table("FontUtils");
+
+        FontUtils.set_function("AddFontFromFileTTF", AddFontFromFileTTF);
+        FontUtils.set_function("GetGlyphRangesDefault", GetGlyphRangesDefault);
+        FontUtils.set_function("GetGlyphRangesKorean", GetGlyphRangesKorean);
+        FontUtils.set_function("GetGlyphRangesChineseFull", GetGlyphRangesChineseFull);
+        FontUtils.set_function("GetGlyphRangesChineseSimplifiedCommon", GetGlyphRangesChineseSimplifiedCommon);
+        FontUtils.set_function("GetGlyphRangesJapanese", GetGlyphRangesJapanese);
+        FontUtils.set_function("GetGlyphRangesThai", GetGlyphRangesThai);
+        FontUtils.set_function("GetGlyphRangesVietnamese", GetGlyphRangesVietnamese);
     }
 }
