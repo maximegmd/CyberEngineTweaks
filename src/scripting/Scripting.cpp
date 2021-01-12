@@ -346,9 +346,9 @@ size_t Scripting::Size(RED4ext::IRTTIType* apRttiType)
 {
     if (apRttiType == s_pStringType)
         return sizeof(RED4ext::CString);
-    if (apRttiType->GetType() == RED4ext::ERTTIType::Handle)
+    if (apRtti->GetType() == RED4ext::ERTTIType::Handle)
         return sizeof(RED4ext::Handle<RED4ext::IScriptable>);
-    if (apRttiType->GetType() == RED4ext::ERTTIType::WeakHandle)
+    if (apRtti->GetType() == RED4ext::ERTTIType::WeakHandle)
         return sizeof(RED4ext::WeakHandle<RED4ext::IScriptable>);
 
     return Converter::Size(apRttiType);
@@ -496,9 +496,9 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
         }
         else if (apRttiType->GetType() == RED4ext::ERTTIType::Array)
         {
-            auto* pArrayType = static_cast<RED4ext::CArray*>(apRttiType);
-            auto mem = reinterpret_cast<RED4ext::DynArray<void*>*>(apAllocator->New<uint8_t>(apRttiType->GetSize()));
-            apRttiType->Init(mem);
+            auto* pArrayType = static_cast<RED4ext::CArray*>(apRtti);
+            auto mem = reinterpret_cast<RED4ext::DynArray<void*>*>(apAllocator->New<uint8_t>(apRtti->GetSize()));
+            apRtti->Init(mem);
 
             if (hasData && aObject.is<sol::table>())
             {
