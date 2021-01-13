@@ -1,11 +1,11 @@
 #pragma once
 
-#include "ToolbarWidget.h"
+#include "Widget.h"
 
-struct Keybinds : public ToolbarWidget
+struct Hotkeys : public Widget
 {
-    Keybinds() = default;
-    ~Keybinds() override = default;
+    Hotkeys() = default;
+    ~Hotkeys() override = default;
 
     void OnEnable() override;
     void OnDisable() override;

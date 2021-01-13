@@ -4,7 +4,7 @@
 
 #include "HelperWidgets.h"
 
-#include <toolbar/Toolbar.h>
+#include <overlay/Overlay.h>
 
 void Settings::OnEnable()
 {
@@ -34,23 +34,23 @@ void Settings::Update()
     if (!Options::IsFirstLaunch)
         ImGui::BeginChild("##SETTINGS_ACTUAL", ImVec2(0,0), true);
 
-    BindWidget(m_toolbarKeyBindInfo);
-    if (Options::IsFirstLaunch && (m_toolbarKeyBindInfo.SavedCodeBind != m_toolbarKeyBindInfo.CodeBind))
+    HelperWidgets::BindWidget(m_overlayKeyBindInfo);
+    if (Options::IsFirstLaunch && (m_overlayKeyBindInfo.SavedCodeBind != m_overlayKeyBindInfo.CodeBind))
     {
         Save();
         Load();
     }
 
-    BoolWidget("Enable Debug Menu:", m_patchEnableDebug, Options::PatchEnableDebug);
-    BoolWidget("Remove Pedestrians:", m_patchRemovePedestrians, Options::PatchRemovePedestrians);
-    BoolWidget("Disable Async Compute:", m_patchAsyncCompute, Options::PatchAsyncCompute);
-    BoolWidget("Disable Antialiasing:", m_patchAntialiasing, Options::PatchAntialiasing);
-    BoolWidget("Skip Start Menu:", m_patchSkipStartMenu, Options::PatchSkipStartMenu);
-    BoolWidget("Suppress Intro Movies:", m_patchDisableIntroMovies, Options::PatchDisableIntroMovies);
-    BoolWidget("Disable Vignette:", m_patchDisableVignette, Options::PatchDisableVignette);
-    BoolWidget("Disable Boundary Teleport:", m_patchDisableBoundaryTeleport, Options::PatchDisableBoundaryTeleport);
-    BoolWidget("Disable V-Sync (Windows 7 only):", m_patchDisableWin7Vsync, Options::PatchDisableWin7Vsync);
-    BoolWidget("Dump Game Options:", m_dumpGameOptions, Options::DumpGameOptions);
+    HelperWidgets::BoolWidget("Enable Debug Menu:", m_patchEnableDebug, Options::PatchEnableDebug);
+    HelperWidgets::BoolWidget("Remove Pedestrians:", m_patchRemovePedestrians, Options::PatchRemovePedestrians);
+    HelperWidgets::BoolWidget("Disable Async Compute:", m_patchAsyncCompute, Options::PatchAsyncCompute);
+    HelperWidgets::BoolWidget("Disable Antialiasing:", m_patchAntialiasing, Options::PatchAntialiasing);
+    HelperWidgets::BoolWidget("Skip Start Menu:", m_patchSkipStartMenu, Options::PatchSkipStartMenu);
+    HelperWidgets::BoolWidget("Suppress Intro Movies:", m_patchDisableIntroMovies, Options::PatchDisableIntroMovies);
+    HelperWidgets::BoolWidget("Disable Vignette:", m_patchDisableVignette, Options::PatchDisableVignette);
+    HelperWidgets::BoolWidget("Disable Boundary Teleport:", m_patchDisableBoundaryTeleport, Options::PatchDisableBoundaryTeleport);
+    HelperWidgets::BoolWidget("Disable V-Sync (Windows 7 only):", m_patchDisableWin7Vsync, Options::PatchDisableWin7Vsync);
+    HelperWidgets::BoolWidget("Dump Game Options:", m_dumpGameOptions, Options::DumpGameOptions);
 
     if (!Options::IsFirstLaunch)
         ImGui::EndChild();
@@ -60,7 +60,7 @@ void Settings::Load()
 {
     Options::Load();
 
-    m_toolbarKeyBindInfo.Fill(Options::ToolbarKeyBind, Toolbar::VKBToolbar);
+    m_overlayKeyBindInfo.Fill(Options::OverlayKeyBind, Overlay::VKBOverlay);
     m_patchEnableDebug = Options::PatchEnableDebug;
     m_patchRemovePedestrians = Options::PatchRemovePedestrians;
     m_patchAsyncCompute = Options::PatchAsyncCompute;
@@ -75,9 +75,9 @@ void Settings::Load()
 
 void Settings::Save()
 {
-    if (m_toolbarKeyBindInfo.SavedCodeBind != m_toolbarKeyBindInfo.CodeBind)
+    if (m_overlayKeyBindInfo.SavedCodeBind != m_overlayKeyBindInfo.CodeBind)
     {
-        Options::ToolbarKeyBind = m_toolbarKeyBindInfo.Apply();
+        Options::OverlayKeyBind = m_overlayKeyBindInfo.Apply();
         VKBindings::Save(); // also save bindings in this case!
     }
 

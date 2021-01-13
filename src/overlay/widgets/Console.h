@@ -1,8 +1,8 @@
 #pragma once
 
-#include "ToolbarWidget.h"
+#include "Widget.h"
 
-struct Console : public ToolbarWidget
+struct Console : public Widget
 {
     Console() = default;
     ~Console() override = default;

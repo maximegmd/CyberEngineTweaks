@@ -1,8 +1,8 @@
 #pragma once
 
-#include "ToolbarWidget.h"
+#include "Widget.h"
 
-struct ModWidgets : public ToolbarWidget
+struct ModWidgets : public Widget
 {
     ModWidgets() = default;
     ~ModWidgets() override = default;

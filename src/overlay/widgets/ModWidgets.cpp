@@ -16,8 +16,9 @@ void ModWidgets::OnDisable()
 
 void ModWidgets::Update()
 {    
-    ImGui::Text("ModWidgets widget here!");
-
     if (ImGui::Button("Reload All Mods"))
         LuaVM::Get().ReloadAllMods();
+
+    ImGui::Spacing();
+    ImGui::Text("Mod Widgets in construction! :P");
 }

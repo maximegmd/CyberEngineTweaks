@@ -1,24 +1,24 @@
 #include <stdafx.h>
 
-#include "Keybinds.h"
+#include "Hotkeys.h"
 
 #include "HelperWidgets.h"
 
 #include <scripting/LuaVM.h>
 
-void Keybinds::OnEnable()
+void Hotkeys::OnEnable()
 {
     Load();
     
     VKBindings::StopRecordingBind();
 }
 
-void Keybinds::OnDisable()
+void Hotkeys::OnDisable()
 {
     VKBindings::StopRecordingBind();
 }
 
-void Keybinds::Update()
+void Hotkeys::Update()
 {
     if (ImGui::Button("Load"))
         Load();
@@ -51,7 +51,7 @@ void Keybinds::Update()
                     prevMod = curMod;
                 }
 
-                BindWidget(vkBindInfo);
+                HelperWidgets::BindWidget(vkBindInfo);
             }
         }
     }
@@ -59,7 +59,7 @@ void Keybinds::Update()
     
 }
 
-void Keybinds::Load()
+void Hotkeys::Load()
 {
     auto& luaVM = LuaVM::Get();
     if (!luaVM.IsInitialized())
@@ -73,7 +73,7 @@ void Keybinds::Load()
     m_vkBindInfos = luaVMBinds;
 }
 
-void Keybinds::Save()
+void Hotkeys::Save()
 {
     auto& luaVM = LuaVM::Get();
     if (!luaVM.IsInitialized())

@@ -16,8 +16,8 @@ struct Scripting
     void TriggerOnUpdate(float aDeltaTime) const;
     void TriggerOnDraw() const;
     
-    void TriggerOnToolbarOpen() const;
-    void TriggerOnToolbarClose() const;
+    void TriggerOnOverlayOpen() const;
+    void TriggerOnOverlayClose() const;
 
     sol::object GetMod(const std::string& acName) const;
     void ReloadAllMods();

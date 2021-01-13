@@ -14,8 +14,8 @@ struct ScriptContext
     void TriggerOnUpdate(float aDeltaTime) const;
     void TriggerOnDraw() const;
     
-    void TriggerOnToolbarOpen() const;
-    void TriggerOnToolbarClose() const;
+    void TriggerOnOverlayOpen() const;
+    void TriggerOnOverlayClose() const;
 
     sol::object GetRootObject() const;
 
@@ -32,8 +32,8 @@ private:
     sol::function m_onShutdown{ };
     sol::function m_onUpdate{ };
     sol::function m_onDraw{ };
-    sol::function m_onToolbarOpen{ };
-    sol::function m_onToolbarClose{ };
+    sol::function m_onOverlayOpen{ };
+    sol::function m_onOverlayClose{ };
     std::vector<VKBindInfo> m_vkBindInfos{ };
     std::string m_name{ };
     bool m_initialized{ false };

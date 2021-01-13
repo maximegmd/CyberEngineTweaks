@@ -6,7 +6,7 @@
 #include <imgui_impl/dx12.h>
 #include <imgui_impl/win32.h>
 
-#include <toolbar/Toolbar.h>
+#include <overlay/Overlay.h>
 #include <scripting/LuaVM.h>
 #include <window/Window.h>
 
@@ -180,7 +180,7 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
         return false;
     }
 
-    Toolbar::Get().PostInitialize();
+    Overlay::Get().PostInitialize();
 
     return true;
 }
@@ -305,7 +305,7 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
     Logger::InfoToMain("D3D12::InitializeDownlevel() - initialization successful!");
     m_initialized = true;
 
-    Toolbar::Get().PostInitialize();
+    Overlay::Get().PostInitialize();
 
     return true;
 }
@@ -364,7 +364,7 @@ void D3D12::Update()
     ImGui_ImplWin32_NewFrame(m_outSize);
     ImGui::NewFrame();
     
-    Toolbar::Get().Update();
+    Overlay::Get().Update();
 
     // TODO: better deltaTime! now, we abuse ImGui's IO here...
     LuaVM::Get().Update(ImGui::GetIO().DeltaTime);

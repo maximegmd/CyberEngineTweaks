@@ -71,16 +71,16 @@ void ScriptStore::TriggerOnDraw() const
         kvp.second.TriggerOnDraw();
 }
 
-void ScriptStore::TriggerOnToolbarOpen() const
+void ScriptStore::TriggerOnOverlayOpen() const
 {
     for (const auto& kvp : m_contexts)
-        kvp.second.TriggerOnToolbarOpen();
+        kvp.second.TriggerOnOverlayOpen();
 }
 
-void ScriptStore::TriggerOnToolbarClose() const
+void ScriptStore::TriggerOnOverlayClose() const
 {
     for (const auto& kvp : m_contexts)
-        kvp.second.TriggerOnToolbarClose();
+        kvp.second.TriggerOnOverlayClose();
 }
 
 sol::object ScriptStore::GetMod(const std::string& acName) const

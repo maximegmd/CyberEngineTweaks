@@ -2,7 +2,7 @@
 
 #include "LuaVM.h"
 
-#include "toolbar/Toolbar.h"
+#include "overlay/Overlay.h"
 
 static std::unique_ptr<LuaVM> s_pLuaVM;
 
@@ -61,8 +61,8 @@ void LuaVM::ReloadAllMods()
     {
         m_scripting.ReloadAllMods();
         m_scripting.TriggerOnInit();
-        if (Toolbar::Get().IsEnabled())
-            m_scripting.TriggerOnToolbarOpen();
+        if (Overlay::Get().IsEnabled())
+            m_scripting.TriggerOnOverlayOpen();
 
         Logger::InfoToMain("LuaVM: Reloaded all mods!");
         Logger::InfoToMods("LuaVM: Reloaded all mods!");
@@ -70,16 +70,16 @@ void LuaVM::ReloadAllMods()
     }
 }
 
-void LuaVM::OnToolbarOpen()
+void LuaVM::OnOverlayOpen()
 {
     if (m_initialized)
-        m_scripting.TriggerOnToolbarOpen();
+        m_scripting.TriggerOnOverlayOpen();
 }
 
-void LuaVM::OnToolbarClose()
+void LuaVM::OnOverlayClose()
 {
     if (m_initialized)
-        m_scripting.TriggerOnToolbarClose();
+        m_scripting.TriggerOnOverlayClose();
 }
 
 bool LuaVM::IsInitialized() const
@@ -92,8 +92,8 @@ void LuaVM::PostInitialize()
     assert(!m_initialized);
 
     m_scripting.TriggerOnInit();
-    if (Toolbar::Get().IsEnabled())
-        m_scripting.TriggerOnToolbarOpen();
+    if (Overlay::Get().IsEnabled())
+        m_scripting.TriggerOnOverlayOpen();
 
     Logger::InfoToMain("LuaVM: initialization finished!");
     Logger::ToConsole("LuaVM: initialization finished!");

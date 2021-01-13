@@ -314,14 +314,14 @@ void Scripting::TriggerOnDraw() const
     m_store.TriggerOnDraw();
 }
 
-void Scripting::TriggerOnToolbarOpen() const
+void Scripting::TriggerOnOverlayOpen() const
 {
-    m_store.TriggerOnToolbarOpen();
+    m_store.TriggerOnOverlayOpen();
 }
 
-void Scripting::TriggerOnToolbarClose() const
+void Scripting::TriggerOnOverlayClose() const
 {
-    m_store.TriggerOnToolbarClose();
+    m_store.TriggerOnOverlayClose();
 }
 
 sol::object Scripting::GetMod(const std::string& acName) const

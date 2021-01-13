@@ -5,7 +5,7 @@
 ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::path& acPath)
     : m_lua(aStateView)
     , m_env(aStateView, sol::create, aStateView.globals())
-    , m_name(std::filesystem::relative(acPath, Paths::ModsPath).string())
+    , m_name(relative(acPath, Paths::ModsPath).string())
 {
     m_env["registerForEvent"] = [this](const std::string& acName, sol::function aCallback)
     {
@@ -17,32 +17,32 @@ ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::
             m_onUpdate = aCallback;
         else if(acName == "onDraw")
             m_onDraw = aCallback;
-        else if(acName == "onToolbarOpen")
-            m_onToolbarOpen = aCallback;
-        else if(acName == "onToolbarClose")
-            m_onToolbarClose = aCallback;
+        else if(acName == "onOverlayOpen")
+            m_onOverlayOpen = aCallback;
+        else if(acName == "onOverlayClose")
+            m_onOverlayClose = aCallback;
         else
             Logger::ErrorToModsFmt("Tried to register unknown handler '{}'!", acName);
     };
 
-    m_env["registerVKBind"] = [this](const std::string& acID, const std::string& acDescription, sol::table aVKBindCode, sol::function aCallback)
+    m_env["registerHotkey"] = [this](const std::string& acID, const std::string& acDescription, sol::table aVKBindCode, sol::function aCallback)
     {
         if (acID.empty() ||
             (std::find_if(acID.cbegin(), acID.cend(), [](char c){ return !(isalpha(c) || isdigit(c) || c == '_'); }) != acID.cend()))
         {
-            Logger::ErrorToModsFmt("Tried to register VKBind with incorrect ID format '{}'! ID needs to be alphanumeric without any whitespace or special characters ('_' excluded)!", acID);
+            Logger::ErrorToModsFmt("Tried to register hotkey with incorrect ID format '{}'! ID needs to be alphanumeric without any whitespace or special characters ('_' excluded)!", acID);
             return;
         }
 
         if (acDescription.empty())
         {
-            Logger::ErrorToModsFmt("Tried to register VKBind with empty description!! (ID of VKBind handler: {})", acID);
+            Logger::ErrorToModsFmt("Tried to register hotkey with empty description!! (ID of hotkey handler: {})", acID);
             return;
         }
 
         if (aVKBindCode.size() > 4)
         {
-            Logger::ErrorToModsFmt("Tried to register VKBind with too many keys! Maximum 4-key combos allowed! (ID of VKBind handler: {})", acID);
+            Logger::ErrorToModsFmt("Tried to register hotkey with too many keys! Maximum 4-key combos allowed! (ID of hotkey handler: {})", acID);
             return;
         }
         
@@ -157,26 +157,26 @@ void ScriptContext::TriggerOnDraw() const
     }
 }
     
-void ScriptContext::TriggerOnToolbarOpen() const
+void ScriptContext::TriggerOnOverlayOpen() const
 {
     // TODO: proper exception handling!
     try
     {
-        if (m_onToolbarOpen)
-            m_onToolbarOpen();
+        if (m_onOverlayOpen)
+            m_onOverlayOpen();
     }
     catch(std::exception& e)
     {
         Logger::ErrorToMods(e.what());
     }
 }
-void ScriptContext::TriggerOnToolbarClose() const
+void ScriptContext::TriggerOnOverlayClose() const
 {
     // TODO: proper exception handling!
     try
     {
-        if (m_onToolbarClose)
-            m_onToolbarClose();
+        if (m_onOverlayClose)
+            m_onOverlayClose();
     }
     catch(std::exception& e)
     {

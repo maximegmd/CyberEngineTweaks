@@ -39,8 +39,8 @@ struct LuaVM
     void Update(float aDeltaTime);
     void ReloadAllMods();
 
-    void OnToolbarOpen();
-    void OnToolbarClose();
+    void OnOverlayOpen();
+    void OnOverlayClose();
 
     bool IsInitialized() const;
 

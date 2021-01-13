@@ -16,20 +16,20 @@ struct Paths
         CETPath = RootPath;
         CETPath /= "plugins";
         CETPath /= "cyber_engine_tweaks";
-        std::filesystem::create_directories(CETPath);
+        create_directories(CETPath);
         
         ConfigPath = CETPath / "config.json";
         // remove empty config.json
-        if (std::filesystem::exists(ConfigPath) && !std::filesystem::file_size(ConfigPath))
+        if (exists(ConfigPath) && !file_size(ConfigPath))
             std::filesystem::remove(ConfigPath);
 
-        VKBindingsPath = CETPath / "vkbindings.json";
+        VKBindingsPath = CETPath / "hotkeys.json";
         // remove empty vkbindings.json
-        if (std::filesystem::exists(VKBindingsPath) && !std::filesystem::file_size(VKBindingsPath))
+        if (exists(VKBindingsPath) && !file_size(VKBindingsPath))
             std::filesystem::remove(VKBindingsPath);
 
         ModsPath = CETPath / "mods";
-        std::filesystem::create_directories(ModsPath);
+        create_directories(ModsPath);
 
         Initialized = true;
     }

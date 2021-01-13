@@ -1,6 +1,6 @@
 #include <stdafx.h>
 
-#include <toolbar/Toolbar.h>
+#include <overlay/Overlay.h>
 
 void Options::Initialize()
 {
@@ -93,9 +93,9 @@ void Options::Load()
             PatchDisableWin7Vsync = config.value("disable_win7_vsync", PatchDisableWin7Vsync);
 
             DumpGameOptions = config.value("dump_game_options", DumpGameOptions);
-            ToolbarKeyBind = config.value("toolbar_key", ToolbarKeyBind);
-            if (ToolbarKeyBind != 0)
-                VKBindings::Bind(ToolbarKeyBind, Toolbar::VKBToolbar);
+            OverlayKeyBind = config.value("toolbar_key", OverlayKeyBind);
+            if (OverlayKeyBind != 0)
+                VKBindings::Bind(OverlayKeyBind, Overlay::VKBOverlay);
             else
                 IsFirstLaunch = true; // is for sure in this case
 
@@ -111,7 +111,7 @@ void Options::Save()
 {
     nlohmann::json config;
 
-    config["toolbar_key"] = ToolbarKeyBind;
+    config["toolbar_key"] = OverlayKeyBind;
     config["enable_debug"] = PatchEnableDebug;
     config["remove_pedestrians"] = PatchRemovePedestrians;
     config["disable_async_compute"] = PatchAsyncCompute;

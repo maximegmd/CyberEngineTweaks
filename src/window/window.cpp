@@ -3,7 +3,7 @@
 #include "Window.h"
 
 #include <d3d12/D3D12.h>
-#include <toolbar/Toolbar.h>
+#include <overlay/Overlay.h>
 
 using namespace std::chrono_literals;
 
@@ -83,7 +83,7 @@ LRESULT APIENTRY Window::WndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM 
     }
 
     {
-        auto res = Toolbar::Get().OnWndProc(ahWnd, auMsg, awParam, alParam);
+        auto res = Overlay::Get().OnWndProc(ahWnd, auMsg, awParam, alParam);
         if (res)
             return 0; // Toolbar wants this input ignored!
     }

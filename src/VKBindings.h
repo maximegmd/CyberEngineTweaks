@@ -60,7 +60,9 @@ struct VKBindings
 
     static bool IsRecordingBind();
     static UINT GetLastRecordingResult();
-    
+
+    static const char* GetSpecialKeyName(UINT aVKCode);
+
     static LRESULT OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam);
 
 private:

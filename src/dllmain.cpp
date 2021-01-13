@@ -4,7 +4,7 @@
 #include "Options.h"
 
 #include "d3d12/D3D12.h"
-#include "toolbar/Toolbar.h"
+#include "overlay/Overlay.h"
 #include "scripting/LuaVM.h"
 #include "window/window.h"
 
@@ -72,7 +72,7 @@ static void Initialize(HMODULE mod)
     OptionsInitHook(&Options::GameImage);
 
     Window::Initialize();
-    Toolbar::Initialize();
+    Overlay::Initialize();
     LuaVM::Initialize();
     D3D12::Initialize();
 
@@ -89,7 +89,7 @@ static void Shutdown()
 
         D3D12::Shutdown();
         LuaVM::Shutdown();
-        Toolbar::Shutdown();
+        Overlay::Shutdown();
         Window::Shutdown();
         Logger::Shutdown();
 

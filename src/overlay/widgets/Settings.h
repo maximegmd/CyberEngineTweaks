@@ -1,8 +1,8 @@
 #pragma once
 
-#include "ToolbarWidget.h"
+#include "Widget.h"
 
-struct Settings : public ToolbarWidget
+struct Settings : public Widget
 {
     Settings() = default;
     ~Settings() override = default;
@@ -16,7 +16,7 @@ struct Settings : public ToolbarWidget
     void ResetToDefaults(); 
 
 private:
-    VKBindInfo m_toolbarKeyBindInfo{ };
+    VKBindInfo m_overlayKeyBindInfo{ };
     bool m_patchEnableDebug{ false };
     bool m_patchRemovePedestrians{ false };
     bool m_patchAsyncCompute{ false };

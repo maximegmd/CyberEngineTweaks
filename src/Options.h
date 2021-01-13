@@ -12,7 +12,7 @@ struct Options
     static void ResetToDefaults(); 
     
     static inline Image GameImage;
-    static inline UINT ToolbarKeyBind{ 0 };
+    static inline UINT OverlayKeyBind{ 0 };
     static inline bool PatchEnableDebug{ false };
     static inline bool PatchRemovePedestrians{ false };
     static inline bool PatchAsyncCompute{ false };

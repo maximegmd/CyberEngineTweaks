@@ -2,7 +2,7 @@
 
 #include <spdlog/sinks/rotating_file_sink.h>
 
-#include "toolbar/Toolbar.h"
+#include "overlay/Overlay.h"
 
 using namespace std::chrono_literals;
 
@@ -56,14 +56,14 @@ void Logger::Shutdown()
     
 void Logger::GameToConsole(std::string_view aMsg)
 {
-    //Toolbar::GetConsole().GameLog(aMsg);
-    Toolbar::GetConsole().GameLog(aMsg);
+    //Overlay::GetConsole().GameLog(aMsg);
+    Overlay::GetConsole().GameLog(aMsg);
 }
     
 void Logger::ToConsole(std::string_view aMsg)
 {
     s_consoleLogger->log(spdlog::level::info, aMsg);
-    Toolbar::GetConsole().Log(aMsg);
+    Overlay::GetConsole().Log(aMsg);
 }
 
 void Logger::TraceToMain(std::string_view aMsg)

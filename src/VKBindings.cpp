@@ -1,6 +1,6 @@
 #include <stdafx.h>
 
-#include <toolbar/Toolbar.h>
+#include <overlay/Overlay.h>
 
 void VKBindings::Initialize()
 {
@@ -42,8 +42,8 @@ void VKBindings::InitializeMods(std::vector<VKBindInfo>& aVKBindInfos)
     std::vector<std::pair<std::string, UINT>> deadIDToBinds;
     for (auto& idToBind : IDToBinds)
     {
-        // always ignore Toolbar bind here!
-        if (idToBind.first == Toolbar::VKBToolbar.ID)
+        // always ignore Overlay bind here!
+        if (idToBind.first == Overlay::VKBOverlay.ID)
             continue;
 
         // TODO - try to avoid O(n^2) situation here
@@ -83,13 +83,13 @@ bool VKBindings::IsInitialized()
 void VKBindings::Load()
 {
     std::ifstream ifs{ Paths::VKBindingsPath };
-    if(ifs)
+    if (ifs)
     {
         auto config = nlohmann::json::parse(ifs);
         for (auto& it : config.items())
         {
-            // properly auto-bind Toolbar if it is present here (could be this is first start so it may not be in here yet)
-            auto vkBind = (it.key() == Toolbar::VKBToolbar.ID) ? (Toolbar::VKBToolbar) : (VKBind{ it.key() });
+            // properly auto-bind Overlay if it is present here (could be this is first start so it may not be in here yet)
+            auto vkBind = (it.key() == Overlay::VKBOverlay.ID) ? (Overlay::VKBOverlay) : (VKBind{ it.key() });
             auto ret = Bind(it.value(), vkBind);
             assert(ret); // we want this to never fail!
         }
@@ -258,6 +258,123 @@ UINT VKBindings::GetLastRecordingResult()
     return RecordingResult;
 }
 
+const char* VKBindings::GetSpecialKeyName(UINT aVKCode)
+{
+    switch (aVKCode)
+    {
+        case VK_LBUTTON:
+            return "Mouse LB";
+        case VK_RBUTTON:
+            return "Mouse RB";
+        case VK_MBUTTON:
+            return "Mouse MB";
+        case VK_XBUTTON1:
+            return "Mouse X1";
+        case VK_XBUTTON2:
+            return "Mouse X2";
+        case VK_BACK:
+            return "Backspace";
+        case VK_TAB:
+            return "Tab";
+        case VK_CLEAR:
+            return "Clear";
+        case VK_RETURN:
+            return "Enter";
+        case VK_SHIFT:
+            return "Shift";
+        case VK_CONTROL:
+            return "Ctrl";
+        case VK_MENU:
+            return "Alt";
+        case VK_PAUSE:
+            return "Pause";
+        case VK_CAPITAL:
+            return "Caps Lock";
+        case VK_ESCAPE:
+            return "Esc";
+        case VK_SPACE:
+            return "Space";
+        case VK_PRIOR:
+            return "Page Up";
+        case VK_NEXT:
+            return "Page Down";
+        case VK_END:
+            return "End";
+        case VK_HOME:
+            return "Home";
+        case VK_LEFT:
+            return "Left Arrow";
+        case VK_UP:
+            return "Up Arrow";
+        case VK_RIGHT:
+            return "Right Arrow";
+        case VK_DOWN:
+            return "Down Arrow";
+        case VK_SELECT:
+            return "Select";
+        case VK_PRINT:
+            return "Print";
+        case VK_EXECUTE:
+            return "Execute";
+        case VK_INSERT:
+            return "Insert";
+        case VK_DELETE:
+            return "Delete";
+        case VK_HELP:
+            return "Help";
+        case VK_NUMPAD0:
+            return "Numpad 0";
+        case VK_NUMPAD1:
+            return "Numpad 1";
+        case VK_NUMPAD2:
+            return "Numpad 2";
+        case VK_NUMPAD3:
+            return "Numpad 3";
+        case VK_NUMPAD4:
+            return "Numpad 4";
+        case VK_NUMPAD5:
+            return "Numpad 5";
+        case VK_NUMPAD6:
+            return "Numpad 6";
+        case VK_NUMPAD7:
+            return "Numpad 7";
+        case VK_NUMPAD8:
+            return "Numpad 8";
+        case VK_NUMPAD9:
+            return "Numpad 9";
+        case VK_F1:
+            return "F1";
+        case VK_F2:
+            return "F2";
+        case VK_F3:
+            return "F3";
+        case VK_F4:
+            return "F4";
+        case VK_F5:
+            return "F5";
+        case VK_F6:
+            return "F6";
+        case VK_F7:
+            return "F7";
+        case VK_F8:
+            return "F8";
+        case VK_F9:
+            return "F9";
+        case VK_F10:
+            return "F10";
+        case VK_F11:
+            return "F11";
+        case VK_F12:
+            return "F12";
+        case VK_NUMLOCK:
+            return "Num Lock";
+        case VK_SCROLL:
+            return "Scroll Lock";
+        default:
+            return nullptr;
+    }
+}
+
 LRESULT VKBindings::OnWndProc(HWND, UINT auMsg, WPARAM awParam, LPARAM alParam)
 {
     if (!Initialized)
@@ -320,7 +437,7 @@ LRESULT VKBindings::RecordKeyUp(UINT aVKCode)
             auto bind = Binds.find(RecordingResult);
             if (bind != Binds.end())
             {
-                if (Toolbar::Get().IsEnabled() && (bind->second.ID != Toolbar::VKBToolbar.ID))
+                if (Overlay::Get().IsEnabled() && (bind->second.ID != Overlay::VKBOverlay.ID))
                     return 0; // we dont want to handle bindings if toolbar is open and we are not in binding state!
 
                 if (bind->second.Handler) // prevention for freshly loaded bind from file without rebinding
@@ -386,7 +503,7 @@ LRESULT VKBindings::HandleRAWInput(HRAWINPUT ahRAWInput)
     }
     else if (raw->header.dwType == RIM_TYPEMOUSE) 
     {
-        if (IsBindRecording && (RecordingBind.ID == Toolbar::VKBToolbar.ID))
+        if (IsBindRecording && (RecordingBind.ID == Overlay::VKBOverlay.ID))
             return 0; // ignore mouse keys for toolbar key binding!
 
         auto& m = raw->data.mouse;

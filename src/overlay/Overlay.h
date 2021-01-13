@@ -1,35 +1,26 @@
 #pragma once
 
-#include "ToolbarWidget.h"
-#include "ModWidgets.h"
-#include "Console.h"
-#include "Keybinds.h"
-#include "Settings.h"
+#include "widgets/Widget.h"
+#include "widgets/ModWidgets.h"
+#include "widgets/Console.h"
+#include "widgets/Hotkeys.h"
+#include "widgets/Settings.h"
 
 using TClipToCenter = HWND(RED4ext::CGameEngine::UnkC0*);
 
-enum ToolbarWidgetID
-{
-    MODS,
-    CONSOLE,
-    KEYBINDS,
-    SETTINGS,
-    COUNT
-};
-
-struct Toolbar
+struct Overlay
 {
     static void Initialize();
     static void PostInitialize();
     static void Shutdown();
-    static Toolbar& Get();
-
+    static Overlay& Get();
+    
     static ModWidgets& GetModWidgets();
     static Console& GetConsole();
-    static Keybinds& GetKeybinds();
+    static Hotkeys& GetHotkeys();
     static Settings& GetSettings();
 
-    ~Toolbar() = default;
+    ~Overlay() = default;
     
     bool IsInitialized() const;
     
@@ -40,7 +31,7 @@ struct Toolbar
 
     LRESULT OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam);
 
-    static VKBind VKBToolbar;
+    static VKBind VKBOverlay;
 
 protected:
     
@@ -50,22 +41,22 @@ protected:
 
 private:
 
-    Toolbar();
+    Overlay();
 
-    void SetActiveWidget(ToolbarWidgetID aNewActive);
-
+    void SetActiveWidget(WidgetID aNewActive);
+    
     ModWidgets m_mods{ };
     Console m_console{ };
-    Keybinds m_keybinds{ };
+    Hotkeys m_hotkeys{ };
     Settings m_settings{ };
-    std::array<ToolbarWidget*, ToolbarWidgetID::COUNT> m_widgets{ }; 
+    std::array<Widget*, WidgetID::COUNT> m_widgets{ }; 
 
     TClipToCenter* m_realClipToCenter{ nullptr };
 
-    ToolbarWidgetID m_activeWidgetID{ ToolbarWidgetID::MODS };
+    WidgetID m_activeWidgetID{ WidgetID::MODS };
     
     bool m_enabled{ false };
     bool m_initialized{ false };
 };
 
-inline VKBind Toolbar::VKBToolbar = { "cet.toolbar_toggle",  "Toolbar Key", [](){ Get().Toggle(); } };
+inline VKBind Overlay::VKBOverlay = { "cet.overlay_key",  "Overlay Key", [](){ Get().Toggle(); } };
