@@ -77,7 +77,7 @@ namespace HelperWidgets
             vkStr = "BINDING...";
         
         ImGui::SameLine();
-        ImGui::PushID(&aVKBindInfo.Bind.ID);
+        ImGui::PushID(&aVKBindInfo.Bind.ID[0]); // ensure we have unique ID by using pointer to ID, is OK, pointer will not be used inside ImGui :P
         if (ImGui::Button(vkStr.c_str()))
         {
             if (!aVKBindInfo.IsBinding)
@@ -87,6 +87,23 @@ namespace HelperWidgets
             }
         }
         ImGui::PopID();
+        
+        if (aVKBindInfo.CodeBind)
+        {
+            ImGui::PushID(&aVKBindInfo.Bind.ID[1]); // same as the above, just make pointer a bit bigger :)
+            ImGui::SameLine();
+            if (ImGui::Button("UNBIND"))
+            {
+                if (aVKBindInfo.IsBinding)
+                {
+                    VKBindings::StopRecordingBind();
+                    aVKBindInfo.IsBinding = false;
+                }
+                VKBindings::UnBind(aVKBindInfo.CodeBind);
+                aVKBindInfo.CodeBind = 0;
+            }
+            ImGui::PopID();
+        }
     }
 
     void BoolWidget(const std::string& label, bool& current, bool saved)
