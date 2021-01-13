@@ -25,7 +25,7 @@ ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::
             Logger::ErrorToModsFmt("Tried to register unknown handler '{}'!", acName);
     };
 
-    m_env["registerHotkey"] = [this](const std::string& acID, const std::string& acDescription, sol::table aVKBindCode, sol::function aCallback)
+    m_env["registerHotkey"] = [this](const std::string& acID, const std::string& acDescription, sol::function aCallback)
     {
         if (acID.empty() ||
             (std::find_if(acID.cbegin(), acID.cend(), [](char c){ return !(isalpha(c) || isdigit(c) || c == '_'); }) != acID.cend()))
@@ -39,21 +39,8 @@ ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::
             Logger::ErrorToModsFmt("Tried to register hotkey with empty description!! (ID of hotkey handler: {})", acID);
             return;
         }
-
-        if (aVKBindCode.size() > 4)
-        {
-            Logger::ErrorToModsFmt("Tried to register hotkey with too many keys! Maximum 4-key combos allowed! (ID of hotkey handler: {})", acID);
-            return;
-        }
         
         std::string vkBindID = m_name + '.' + acID;
-        VKCodeBindDecoded vkCodeBindDec{ };
-        for (size_t i = 0; i < 4; ++i)
-        {
-            auto codePart = aVKBindCode[i + 1];
-            if (codePart.valid())
-                vkCodeBindDec[i] = static_cast<uint8_t>(codePart.get_or<UINT>(0));
-        }
         VKBind vkBind = { vkBindID, acDescription, [aCallback]()
         {
             // TODO: proper exception handling!
@@ -67,8 +54,7 @@ ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::
                 Logger::ErrorToMods(e.what());
             }
         }};
-        UINT vkCodeBind = VKBindings::EncodeVKCodeBind(vkCodeBindDec);
-        m_vkBindInfos.emplace_back(VKBindInfo{vkBind, vkCodeBind});
+        m_vkBindInfos.emplace_back(VKBindInfo{vkBind});
     };
 
     // TODO: proper exception handling!
