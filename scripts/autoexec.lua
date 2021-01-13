@@ -1,3 +1,5 @@
+json = require 'json/json'
+
 Game['DebugGiveHotkeys'] = Game['DebugGiveHotkeys;GameInstance']
 Game['DebugNPCs_NonExec'] = Game['DebugNPCs_NonExec;GameInstanceStringStringString;GameInstance']
 Game['GetPlayer'] = Game['GetPlayer;GameInstance']

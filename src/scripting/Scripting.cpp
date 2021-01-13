@@ -37,6 +37,11 @@ void Scripting::Initialize()
         };
     };
 
+    m_lua["GetMod"] = [this](const std::string& acName) -> sol::object
+    {
+        return GetMod(acName);
+    };
+
     m_lua["ToVector3"] = [](sol::table table) -> Vector3
     {
         return Vector3
