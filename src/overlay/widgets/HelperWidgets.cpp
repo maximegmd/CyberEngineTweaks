@@ -2,6 +2,8 @@
 
 #include "HelperWidgets.h"
 
+#include "overlay/Overlay.h"
+
 namespace HelperWidgets
 {
 
@@ -39,7 +41,7 @@ namespace HelperWidgets
 
         std::string label = aVKBindInfo.Bind.Description + ':';
         ImGui::PushStyleColor(ImGuiCol_Text, curTextColor);
-        ImGui::PushID(&aVKBindInfo.Bind.Description);
+        ImGui::PushID(&aVKBindInfo.Bind.Description); // ensure we have unique ID by using pointer to Description, is OK, pointer will not be used inside ImGui :P
         ImGui::Text(label.c_str());
         ImGui::PopID();
         ImGui::PopStyleColor();
@@ -77,7 +79,7 @@ namespace HelperWidgets
             vkStr = "BINDING...";
         
         ImGui::SameLine();
-        ImGui::PushID(&aVKBindInfo.Bind.ID[0]); // ensure we have unique ID by using pointer to ID, is OK, pointer will not be used inside ImGui :P
+        ImGui::PushID(&aVKBindInfo.Bind.ID[0]); // same as PushID before, just make it pointer to ID and make sure we point to first char (so we can make one more unique ID from this pointer)
         if (ImGui::Button(vkStr.c_str()))
         {
             if (!aVKBindInfo.IsBinding)
@@ -88,9 +90,9 @@ namespace HelperWidgets
         }
         ImGui::PopID();
         
-        if (aVKBindInfo.CodeBind)
+        if (aVKBindInfo.CodeBind && (aVKBindInfo.Bind.ID != Overlay::VKBOverlay.ID)) // make an exception for Overlay key
         {
-            ImGui::PushID(&aVKBindInfo.Bind.ID[1]); // same as the above, just make pointer a bit bigger :)
+            ImGui::PushID(&aVKBindInfo.Bind.ID[1]); // same as PushID before, just make pointer a bit bigger :)
             ImGui::SameLine();
             if (ImGui::Button("UNBIND"))
             {

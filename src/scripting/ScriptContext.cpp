@@ -30,13 +30,13 @@ ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::
         if (acID.empty() ||
             (std::find_if(acID.cbegin(), acID.cend(), [](char c){ return !(isalpha(c) || isdigit(c) || c == '_'); }) != acID.cend()))
         {
-            Logger::ErrorToModsFmt("Tried to register hotkey with incorrect ID format '{}'! ID needs to be alphanumeric without any whitespace or special characters ('_' excluded)!", acID);
+            Logger::ErrorToModsFmt("Tried to register hotkey with incorrect ID format '{}'! ID needs to be alphanumeric without any whitespace or special characters (exception being '_' which is allowed in ID)!", acID);
             return;
         }
 
         if (acDescription.empty())
         {
-            Logger::ErrorToModsFmt("Tried to register hotkey with empty description!! (ID of hotkey handler: {})", acID);
+            Logger::ErrorToModsFmt("Tried to register hotkey with empty description! (ID of hotkey handler: {})", acID);
             return;
         }
         
