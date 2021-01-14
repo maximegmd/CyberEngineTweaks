@@ -316,7 +316,9 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO();
         ImGui::StyleColorsDark();
-        io.Fonts->AddFontDefault();
+        io.Fonts->AddFontFromFileTTF("c:/windows/fonts/simhei.ttf", 13.0f, NULL,
+                                     io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
+        /*io.Fonts->AddFontDefault();*/
         io.IniFilename = NULL;
     }
     
