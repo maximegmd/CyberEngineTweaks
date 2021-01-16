@@ -243,7 +243,6 @@ void Scripting::Initialize()
     m_lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::io, sol::lib::math, sol::lib::package, sol::lib::os, sol::lib::table);
 
     sol_ImGui::InitBindings(m_lua);
-    sol_FontUtils::InitBindings(m_lua);
 
     m_lua["GetDisplayResolution"] = []() -> std::tuple<float, float>
     {
