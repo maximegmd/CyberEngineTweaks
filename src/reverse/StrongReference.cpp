@@ -3,14 +3,13 @@
 #include "StrongReference.h"
 
 StrongReference::StrongReference(sol::state_view aView, RED4ext::Handle<RED4ext::IScriptable> aStrongHandle)
-    : ClassType(aView, aStrongHandle->GetParentType())
+    : ClassType(aView, nullptr)
     , m_strongHandle(aStrongHandle)
 {
-}
-
-StrongReference::~StrongReference()
-{
-    // Someday maybe actually free memory
+    if (aStrongHandle)
+    {
+        m_pType = aStrongHandle->GetType();
+    }
 }
 
 RED4ext::ScriptInstance StrongReference::GetHandle()
