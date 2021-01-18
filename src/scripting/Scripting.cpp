@@ -732,7 +732,7 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
         }
     }
 
-    if (aArgs.size() < minArgs)
+    if (minArgs > aArgs.size())
     {
         aReturnMessage = "Function '" + aFuncName + "' requires at least " + std::to_string(minArgs) + " parameter(s).";
         return sol::nil;
@@ -744,9 +744,9 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
         {
             args[i] = Scripting::ToRED(sol::nil, pFunc->params[i]->type, &s_scratchMemory);
         }
-        else if (aArgs.size() > i)
+        else if (i - argOffset < aArgs.size())
         {
-            args[i] = Scripting::ToRED(aArgs[i].get<sol::object>(), pFunc->params[i]->type, &s_scratchMemory);
+            args[i] = Scripting::ToRED(aArgs[i - argOffset].get<sol::object>(), pFunc->params[i]->type, &s_scratchMemory);
         }
         else if (pFunc->params[i]->flags.isOptional) // Deal with optional params
         {

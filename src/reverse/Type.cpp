@@ -225,7 +225,7 @@ sol::variadic_results Type::Execute(RED4ext::CBaseFunction* apFunc, const std::s
         }
     }
 
-    if (aArgs.size() < minArgs)
+    if (minArgs > aArgs.size())
     {
         aReturnMessage = "Function '" + acName + "' requires at least " + std::to_string(minArgs) + " parameter(s).";
         return {};
@@ -237,7 +237,7 @@ sol::variadic_results Type::Execute(RED4ext::CBaseFunction* apFunc, const std::s
         {
             args[i] = Scripting::ToRED(sol::nil, apFunc->params[i]->type, &s_scratchMemory);
         }
-        else if (aArgs.size() > i)
+        else if (i < aArgs.size())
         {
             args[i] = Scripting::ToRED(aArgs[i].get<sol::object>(), apFunc->params[i]->type, &s_scratchMemory);
         }
