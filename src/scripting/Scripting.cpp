@@ -11,7 +11,6 @@
 #include <console/Console.h>
 
 #include <reverse/Type.h>
-#include <reverse/Array.h>
 #include <reverse/BasicTypes.h>
 #include <reverse/SingletonReference.h>
 #include <reverse/StrongReference.h>
@@ -27,7 +26,7 @@
 void Scripting::Initialize()
 {
     m_lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::io, sol::lib::math, sol::lib::package, sol::lib::os, sol::lib::table);
-    
+
     sol_ImGui::InitBindings(m_lua);
     
     m_lua["GetDisplayResolution"] = []() -> std::tuple<float, float>
@@ -477,6 +476,9 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::CStackType& aResul
     else if (pType->GetType() == RED4ext::ERTTIType::WeakHandle)
     {
          return make_object(aState, WeakReference(aState, *static_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(aResult.value)));
+        const auto handle = *static_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(aResult.value);
+        if (!handle.Expired())
+            return make_object(aState, WeakReference(aState, handle));
     }
     else if (pType->GetType() == RED4ext::ERTTIType::Array)
     {
