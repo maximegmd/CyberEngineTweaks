@@ -8,6 +8,7 @@
 
 #include <console/Console.h>
 #include <scripting/LuaVM.h>
+#include "Options.h"
 
 #include "window/Window.h"
 
@@ -318,6 +319,39 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         ImGui::StyleColorsDark();
         io.Fonts->AddFontDefault();
         io.IniFilename = NULL;
+        
+        auto& options = Options::Get();
+        if (!options.FontPath.empty())
+        {
+            std::filesystem::path fontPath(options.FontPath);
+            if (!fontPath.is_absolute())
+            {
+                fontPath = options.CETPath / fontPath;
+            }
+            if (std::filesystem::exists(fontPath))
+            {
+                const ImWchar* glyph_ranges = io.Fonts->GetGlyphRangesDefault();
+                if (options.FontGlyphRanges == "ChineseFull")
+                    glyph_ranges = io.Fonts->GetGlyphRangesChineseFull();
+                else if (options.FontGlyphRanges == "ChineseSimplifiedCommon")
+                    glyph_ranges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
+                else if (options.FontGlyphRanges == "Japanese")
+                    glyph_ranges = io.Fonts->GetGlyphRangesJapanese();
+                else if (options.FontGlyphRanges == "Korean")
+                    glyph_ranges = io.Fonts->GetGlyphRangesKorean();
+                else if (options.FontGlyphRanges == "Cyrillic")
+                    glyph_ranges = io.Fonts->GetGlyphRangesCyrillic();
+                else if (options.FontGlyphRanges == "Thai")
+                    glyph_ranges = io.Fonts->GetGlyphRangesThai();
+                else if (options.FontGlyphRanges == "Vietnamese")
+                    glyph_ranges = io.Fonts->GetGlyphRangesVietnamese();
+                ImFont* font = io.Fonts->AddFontFromFileTTF(fontPath.string().c_str(), options.FontSize, NULL, glyph_ranges);
+                if (font != NULL)
+                {
+                    io.FontDefault = font;
+                }
+            }
+        }
     }
     
     if (!ImGui_ImplWin32_Init(Window::Get().GetWindow())) 

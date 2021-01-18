@@ -106,6 +106,11 @@ Options::Options(HMODULE aModule)
         this->Console = config.value("console", this->Console);
         this->ConsoleKey = config.value("console_key", this->ConsoleKey);
 
+        // font config
+        this->FontPath = config.value("font_path", this->FontPath);
+        this->FontGlyphRanges = config.value("font_glyph_ranges", this->FontGlyphRanges);
+        this->FontSize = config.value("font_size", this->FontSize);
+
         // check old config names
         if (config.value("unlock_menu", false))
             this->PatchEnableDebug = true;
@@ -129,6 +134,9 @@ Options::Options(HMODULE aModule)
     config["disable_vignette"] = this->PatchDisableVignette;
     config["disable_boundary_teleport"] = this->PatchDisableBoundaryTeleport;
     config["disable_win7_vsync"] = this->PatchDisableWin7Vsync;
+    config["font_path"] = this->FontPath;
+    config["font_glyph_ranges"] = this->FontGlyphRanges;
+    config["font_size"] = this->FontSize;
 
     std::ofstream o(configPath);
     o << config.dump(4) << std::endl;

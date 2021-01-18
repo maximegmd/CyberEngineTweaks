@@ -22,9 +22,9 @@
 void Scripting::Initialize()
 {
     m_lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::io, sol::lib::math, sol::lib::package, sol::lib::os, sol::lib::table);
-    
+
     sol_ImGui::InitBindings(m_lua);
-    
+
     m_lua["GetDisplayResolution"] = []() -> std::tuple<float, float>
     {
         auto resolution = D3D12::Get().GetResolution();
