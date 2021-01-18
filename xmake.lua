@@ -1,4 +1,4 @@
-set_languages("cxx20")
+set_languages("cxx17")
 
 add_requires("spdlog", "nlohmann_json", "minhook", "imgui", "lua", "sol2", "tiltedcore", {configs = {cxflags = "/DNDEBUG"}, external = false }) -- configs = {cxflags = "/DNDEBUG"} should not be needed when 'debug' is 'false' (default), but for some reason we still pull in debug packages!!!
 
@@ -12,7 +12,7 @@ if is_mode("release") then
     set_optimize("fastest")
 end
 
-add_cxflags("/bigobj", "/MP")
+add_cxflags("/std:c++latest", "/bigobj", "/MP")
 add_defines("RED4EXT_STATIC_LIB", "UNICODE")
 
 target("RED4ext.SDK")
