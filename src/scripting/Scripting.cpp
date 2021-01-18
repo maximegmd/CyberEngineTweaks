@@ -18,13 +18,9 @@
 #include <reverse/WeakReference.h>
 #include <reverse/Enum.h>
 
-extern "C" int luaopen_socket_core(lua_State* L);
-
 void Scripting::Initialize()
 {
     m_lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::io, sol::lib::math, sol::lib::package, sol::lib::os, sol::lib::table);
-
-    luaopen_socket_core(m_lua.lua_state());
 
     sol_ImGui::InitBindings(m_lua);
     

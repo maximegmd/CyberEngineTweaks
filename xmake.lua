@@ -1,6 +1,6 @@
 set_languages("cxx17")
 
-add_requires("spdlog", "nlohmann_json", "minhook", "imgui", "lua", "sol2", "tiltedcore", {configs = {cxflags = "/DNDEBUG"}, external = false }) -- configs = {cxflags = "/DNDEBUG"} should not be needed when 'debug' is 'false' (default), but for some reason we still pull in debug packages!!!
+add_requires("spdlog", "nlohmann_json", "minhook", "imgui", "sol2", "tiltedcore", {configs = {cxflags = "/DNDEBUG"}, external = false }) -- configs = {cxflags = "/DNDEBUG"} should not be needed when 'debug' is 'false' (default), but for some reason we still pull in debug packages!!!
 
 add_rules("mode.debug", "mode.release")
 
@@ -21,16 +21,6 @@ target("RED4ext.SDK")
     add_headerfiles("vendor/RED4ext.SDK/include/**.hpp")
     add_includedirs("vendor/RED4ext.SDK/include/", { public = true })
 
-target("luasocket")
-    set_kind("static")
-    add_defines("LUASOCKET_API=;")
-    add_packages("lua")
-    add_files("vendor/luasocket/src/*.c")
-    del_files("vendor/luasocket/src/unix*.c", "vendor/luasocket/src/usocket.c", "vendor/luasocket/src/serial.c")
-    add_headerfiles("vendor/luasocket/src/*.h")
-    add_includedirs("vendor/luasocket/src/")
-    add_syslinks("ws2_32")
-
 target("cyber_engine_tweaks")
     add_defines("WIN32_LEAN_AND_MEAN", "NOMINMAX", "SOL_ALL_SAFETIES_ON")
     set_pcxxheader("src/stdafx.h") -- see: https://github.com/xmake-io/xmake/issues/1171#issuecomment-751421178
@@ -41,4 +31,15 @@ target("cyber_engine_tweaks")
     add_includedirs("src/")
     add_syslinks("User32", "Version", "d3d11")
     add_packages("spdlog", "nlohmann_json", "minhook", "imgui", "sol2", "tiltedcore")
-    add_deps("RED4ext.SDK", "luasocket")
+    add_deps("RED4ext.SDK")
+
+--[[ target("luasocket")
+    set_kind("static")
+    add_defines("LUASOCKET_API=;")
+    add_packages("lua")
+    add_files("vendor/luasocket/src/*.c")
+    del_files("vendor/luasocket/src/unix*.c", "vendor/luasocket/src/usocket.c", "vendor/luasocket/src/serial.c")
+    add_headerfiles("vendor/luasocket/src/*.h")
+    add_includedirs("vendor/luasocket/src/")
+    add_syslinks("ws2_32")
+]]--
