@@ -400,7 +400,7 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::CStackType& aResul
     else if (pType->GetType() == RED4ext::ERTTIType::WeakHandle)
     {
         const auto handle = *static_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(aResult.value);
-        if (handle)
+        if (!handle.Expired())
             return make_object(aState, WeakReference(aState, handle));
     }
     else if (pType->GetType() == RED4ext::ERTTIType::Array)
@@ -538,7 +538,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
 
                 // Copy elements from the table into the array
                 auto tbl = aObject.as<sol::table>();
-                pArrayType->Grow(mem, tbl.size());
+                pArrayType->Resize(mem, tbl.size());
                 for (uint32_t i = 1; i <= tbl.size(); ++i)
                 {
                     RED4ext::CStackType type = Converter::ToRED(tbl.get<sol::object>(i), pArrayInnerType, apAllocator);

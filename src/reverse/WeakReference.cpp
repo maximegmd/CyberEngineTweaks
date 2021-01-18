@@ -3,7 +3,7 @@
 #include "WeakReference.h"
 
 WeakReference::WeakReference(sol::state_view aView, RED4ext::WeakHandle<RED4ext::IScriptable> aWeakHandle)
-    : ClassType(aView, aWeakHandle->GetParentType())
+    : ClassType(aView, aWeakHandle.Lock()->GetParentType())
     , m_weakHandle(aWeakHandle)
 {
 }
