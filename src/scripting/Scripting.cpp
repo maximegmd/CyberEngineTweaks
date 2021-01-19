@@ -257,7 +257,7 @@ void Scripting::Initialize()
             RED4ext::CClass* pClass = nullptr;
             if (pType->GetType() == RED4ext::ERTTIType::Handle)
             {
-                const auto* pInnerType = static_cast<RED4ext::CHandle*>(pType)->GetInnerType();
+                auto* pInnerType = static_cast<RED4ext::CHandle*>(pType)->GetInnerType();
                 pClass = pInnerType->GetType() == RED4ext::ERTTIType::Class ? static_cast<RED4ext::CClass*>(pInnerType)
                                                                        : nullptr;
             }

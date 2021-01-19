@@ -47,5 +47,6 @@
 #include <TiltedCore/Allocator.hpp>
 #include <TiltedCore/ScratchAllocator.hpp>
 #include <TiltedCore/TaskQueue.hpp>
+#include <TiltedCore/Platform.hpp>
 
 #include "Options.h"

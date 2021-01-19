@@ -17,24 +17,23 @@ void DumpVTablesTask::Run()
         reinterpret_cast<const std::uint8_t*>(dosHeader) + dosHeader->e_lfanew);
     uintptr_t end = begin + ntHeader->OptionalHeader.SizeOfCode + ntHeader->OptionalHeader.SizeOfInitializedData;
 
-    auto rttiSystem = RED4ext::CRTTISystem::Get();
-    auto* scriptable = rttiSystem->GetClass("IScriptable");
+    auto* pRttiSystem = RED4ext::CRTTISystem::Get();
 
-    auto dumpClass = [scriptable, begin, end](auto& vtableMap, RED4ext::IRTTIType* type) {
-        uintptr_t vtable = *(uintptr_t*)type;
+    auto dumpClass = [begin, end](auto& aVtableMap, RED4ext::IRTTIType* apType)
+    {
+        uintptr_t vtable = *reinterpret_cast<uintptr_t*>(apType);
         RED4ext::CName typeName;
-        type->GetName(typeName);
-        std::string name = typeName.ToString();
+        apType->GetName(typeName);
+        const std::string name = typeName.ToString();
         if (vtable >= begin && vtable <= end)
         {
-            vtableMap.emplace(vtable, "VT_RTTI_" + name);
+            aVtableMap.emplace(vtable, "VT_RTTI_" + name);
         }
 
         // Construct an empty instance of this class and dump that
-        if (type->GetType() == RED4ext::ERTTIType::Class)
+        if (apType->GetType() == RED4ext::ERTTIType::Class)
         {
-            auto classType = static_cast<RED4ext::CClass*>(type);
-            uint32_t size = type->GetSize();
+            const uint32_t size = apType->GetSize();
 
             // We aren't borrowing the game's allocator on purpose because some classes have Abstract
             // allocators and they assert
@@ -42,15 +41,15 @@ void DumpVTablesTask::Run()
 
             memset(mem.get(), 0, size);
 
-            type->Init(mem.get());
+            apType->Init(mem.get());
 
             if (size >= sizeof(uintptr_t))
             {
-                vtable = *(uintptr_t*)mem.get();
+                vtable = *reinterpret_cast<uintptr_t*>(mem.get());
 
                 if (vtable >= begin && vtable <= end)
                 {
-                    vtableMap.emplace(vtable, "VT_" + name);
+                    aVtableMap.emplace(vtable, "VT_" + name);
                 }
             }
 
@@ -60,22 +59,21 @@ void DumpVTablesTask::Run()
         }
     };
 
-    rttiSystem->types.for_each([&dumpClass, &vtableMap, begin, end](RED4ext::CName n, RED4ext::IRTTIType*& type) {
-        uintptr_t vtable = *(uintptr_t*)type;
+    pRttiSystem->types.for_each([&dumpClass, &vtableMap](RED4ext::CName aName, RED4ext::IRTTIType*& apType)
+    {
+        TP_UNUSED(aName);
 
-        std::string name = n.ToString();
+        dumpClass(vtableMap, apType);
 
-        dumpClass(vtableMap, type);
-
-        if (type->GetType() == RED4ext::ERTTIType::Class)
+        if (apType->GetType() == RED4ext::ERTTIType::Class)
         {
-            auto parent = static_cast<RED4ext::CClass*>(type)->parent;
-            while (parent)
+            auto* pParent = static_cast<RED4ext::CClass*>(apType)->parent;
+            while (pParent)
             {
-                dumpClass(vtableMap, parent);
+                dumpClass(vtableMap, pParent);
 
-                parent = parent->parent;
-                if (!parent || parent->GetType() != RED4ext::ERTTIType::Class)
+                pParent = pParent->parent;
+                if (!pParent || pParent->GetType() != RED4ext::ERTTIType::Class)
                 {
                     break;
                 }
@@ -83,9 +81,9 @@ void DumpVTablesTask::Run()
         }
     });
 
-    for (auto p : vtableMap)
+    for (auto& [key, value] : vtableMap)
     {
-        spdlog::info("{:016X},{}", p.first, p.second);
+        spdlog::info("{:016X},{}", key, value);
     }
 }
 } // namespace GameDump
