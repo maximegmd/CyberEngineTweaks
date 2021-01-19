@@ -2,75 +2,32 @@
 
 #include <overlay/Overlay.h>
 
+static std::unique_ptr<Options> s_pOptions;
+
 void Options::Initialize()
 {
+    if (s_pOptions)
+        return;
+
     if (!Paths::Initialized)
         return;
-
-    const auto* exePathStr = Paths::ExePath.native().c_str(); 
-    int verInfoSz = GetFileVersionInfoSize(exePathStr, nullptr);
-    if(verInfoSz) 
-    {
-        auto verInfo = std::make_unique<BYTE[]>(verInfoSz);
-        if(GetFileVersionInfo(exePathStr, 0, verInfoSz, verInfo.get())) 
-        {
-            struct 
-            {
-                WORD Language;
-                WORD CodePage;
-            } *pTranslations;
-
-            UINT transBytes = 0;
-            if(VerQueryValue(verInfo.get(), _T("\\VarFileInfo\\Translation"), reinterpret_cast<void**>(&pTranslations), &transBytes)) 
-            {
-                UINT dummy;
-                TCHAR* productName = nullptr;
-                TCHAR subBlock[64];
-                for(UINT i = 0; i < (transBytes / sizeof(*pTranslations)); i++)
-                {
-                    _stprintf(subBlock, _T("\\StringFileInfo\\%04x%04x\\ProductName"), pTranslations[i].Language, pTranslations[i].CodePage);
-                    if(VerQueryValue(verInfo.get(), subBlock, reinterpret_cast<void**>(&productName), &dummy)) 
-                        if (_tcscmp(productName, _T("Cyberpunk 2077")) == 0) 
-                        {
-                            ExeValid = true;
-                            break;
-                        }
-                }
-            }
-        }
-    }
-    // check if exe name matches in case previous check fails
-    ExeValid = ExeValid || (Paths::ExePath.filename() == "Cyberpunk2077.exe");
-
-    if (!ExeValid)
-        return;
-
-    Logger::InfoToMain("Cyber Engine Tweaks is starting...");
-
-    GameImage.Initialize();
-
-    if (GameImage.version)
-    {
-        auto [major, minor] = GameImage.GetVersion();
-        Logger::InfoToMainFmt("Game version {}.{:02d}", major, minor);
-        Logger::InfoToMainFmt("Root path: \"{}\"", Paths::RootPath.string());
-        Logger::InfoToMainFmt("Cyber Engine Tweaks path: \"{}\"", Paths::CETPath.string());
-        Logger::InfoToMainFmt("Lua scripts search path: \"{}\"", Paths::ModsPath.string());
-    }
-    else
-        Logger::InfoToMain("Unknown Game Version, update the mod");
-
-    Load();
-
-    if (!IsFirstLaunch)
-        Save();
-
-    Initialized = true;
+    
+    s_pOptions.reset(new (std::nothrow) Options);
 }
 
 void Options::Shutdown()
 {
-    Save(); // just in case, save config on exit
+    Get().Save(); // just in case, save config on exit
+
+    s_pOptions.reset();
+}
+
+Options& Options::Get()
+{
+    assert(s_pOptions);
+    assert(s_pOptions->m_initialized);
+
+    return *s_pOptions;
 }
 
 void Options::Load()
@@ -141,4 +98,67 @@ void Options::ResetToDefaults()
     DumpGameOptions = false;
 
     Save();
+}
+
+Options::Options()
+{
+    const auto* exePathStr = Paths::ExePath.native().c_str(); 
+    int verInfoSz = GetFileVersionInfoSize(exePathStr, nullptr);
+    if(verInfoSz) 
+    {
+        auto verInfo = std::make_unique<BYTE[]>(verInfoSz);
+        if(GetFileVersionInfo(exePathStr, 0, verInfoSz, verInfo.get())) 
+        {
+            struct 
+            {
+                WORD Language;
+                WORD CodePage;
+            } *pTranslations;
+
+            UINT transBytes = 0;
+            if(VerQueryValue(verInfo.get(), _T("\\VarFileInfo\\Translation"), reinterpret_cast<void**>(&pTranslations), &transBytes)) 
+            {
+                UINT dummy;
+                TCHAR* productName = nullptr;
+                TCHAR subBlock[64];
+                for(UINT i = 0; i < (transBytes / sizeof(*pTranslations)); i++)
+                {
+                    _stprintf(subBlock, _T("\\StringFileInfo\\%04x%04x\\ProductName"), pTranslations[i].Language, pTranslations[i].CodePage);
+                    if(VerQueryValue(verInfo.get(), subBlock, reinterpret_cast<void**>(&productName), &dummy)) 
+                        if (_tcscmp(productName, _T("Cyberpunk 2077")) == 0) 
+                        {
+                            ExeValid = true;
+                            break;
+                        }
+                }
+            }
+        }
+    }
+    // check if exe name matches in case previous check fails
+    ExeValid = ExeValid || (Paths::ExePath.filename() == "Cyberpunk2077.exe");
+
+    if (!ExeValid)
+        return;
+
+    Logger::InfoToMain("Cyber Engine Tweaks is starting...");
+
+    GameImage.Initialize();
+
+    if (GameImage.version)
+    {
+        auto [major, minor] = GameImage.GetVersion();
+        Logger::InfoToMainFmt("Game version {}.{:02d}", major, minor);
+        Logger::InfoToMainFmt("Root path: \"{}\"", Paths::RootPath.string());
+        Logger::InfoToMainFmt("Cyber Engine Tweaks path: \"{}\"", Paths::CETPath.string());
+        Logger::InfoToMainFmt("Lua scripts search path: \"{}\"", Paths::ModsPath.string());
+    }
+    else
+        Logger::InfoToMain("Unknown Game Version, update the mod");
+
+    Load();
+
+    if (!IsFirstLaunch)
+        Save();
+
+    m_initialized = true;
 }

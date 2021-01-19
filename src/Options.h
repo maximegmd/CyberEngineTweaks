@@ -4,27 +4,33 @@
 
 struct Options
 {
+    ~Options() = default;
+
     static void Initialize();
     static void Shutdown();
+    static Options& Get();
     
-    static void Load();
-    static void Save();
-    static void ResetToDefaults(); 
+    void Load();
+    void Save();
+    void ResetToDefaults(); 
     
-    static inline Image GameImage;
-    static inline UINT OverlayKeyBind{ 0 };
-    static inline bool PatchEnableDebug{ false };
-    static inline bool PatchRemovePedestrians{ false };
-    static inline bool PatchAsyncCompute{ false };
-    static inline bool PatchAntialiasing{ false };
-    static inline bool PatchSkipStartMenu{ false };
-    static inline bool PatchDisableIntroMovies{ false };
-    static inline bool PatchDisableVignette{ false };
-    static inline bool PatchDisableBoundaryTeleport{ false };
-    static inline bool PatchDisableWin7Vsync{ false };
-    static inline bool DumpGameOptions{ false };
-    static inline bool ExeValid{ false };
-    static inline bool IsFirstLaunch{ false };
+    Image GameImage;
+    UINT OverlayKeyBind{ 0 };
+    bool PatchEnableDebug{ false };
+    bool PatchRemovePedestrians{ false };
+    bool PatchAsyncCompute{ false };
+    bool PatchAntialiasing{ false };
+    bool PatchSkipStartMenu{ false };
+    bool PatchDisableIntroMovies{ false };
+    bool PatchDisableVignette{ false };
+    bool PatchDisableBoundaryTeleport{ false };
+    bool PatchDisableWin7Vsync{ false };
+    bool DumpGameOptions{ false };
+    bool ExeValid{ false };
+    bool IsFirstLaunch{ false };
 
-    static inline bool Initialized{ false };
+private:
+    Options();
+
+    bool m_initialized{ false };
 };

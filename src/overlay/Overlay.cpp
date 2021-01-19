@@ -26,7 +26,7 @@ void Overlay::PostInitialize()
     assert(s_pOverlay);
     if (!s_pOverlay->m_initialized)
     {
-        if (Options::IsFirstLaunch)
+        if (Options::Get().IsFirstLaunch)
         {
             s_pOverlay->Toggle();
             s_pOverlay->m_activeWidgetID = WidgetID::SETTINGS;
@@ -101,16 +101,13 @@ void Overlay::Update()
     {
         ImVec2 zeroVec = {0, 0};
 
-        WidgetID selectedID = WidgetID::COUNT;
-        if (!Options::IsFirstLaunch)
+        if (!Options::Get().IsFirstLaunch)
         {
+            WidgetID selectedID = WidgetID::COUNT;
             selectedID = HelperWidgets::ToolbarWidget();
-        }
-        if (selectedID < WidgetID::COUNT)
-            SetActiveWidget(selectedID);
-        
-        if (!Options::IsFirstLaunch)
-        {
+            if (selectedID < WidgetID::COUNT)
+                SetActiveWidget(selectedID);
+
             if (m_activeWidgetID == WidgetID::MODS)
             {
                 if (ImGui::BeginChild("Mod widgets", zeroVec, true))

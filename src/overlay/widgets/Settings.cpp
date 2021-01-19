@@ -31,72 +31,78 @@ void Settings::Update()
 
     ImGui::Spacing();
 
-    if (!Options::IsFirstLaunch)
+    auto& options = Options::Get();
+
+    if (!options.IsFirstLaunch)
         ImGui::BeginChild("##SETTINGS_ACTUAL", ImVec2(0,0), true);
 
     HelperWidgets::BindWidget(m_overlayKeyBindInfo);
-    if (Options::IsFirstLaunch && (m_overlayKeyBindInfo.SavedCodeBind != m_overlayKeyBindInfo.CodeBind))
+    if (options.IsFirstLaunch && (m_overlayKeyBindInfo.SavedCodeBind != m_overlayKeyBindInfo.CodeBind))
     {
         Save();
         Load();
     }
 
-    HelperWidgets::BoolWidget("Enable Debug Menu:", m_patchEnableDebug, Options::PatchEnableDebug);
-    HelperWidgets::BoolWidget("Remove Pedestrians:", m_patchRemovePedestrians, Options::PatchRemovePedestrians);
-    HelperWidgets::BoolWidget("Disable Async Compute:", m_patchAsyncCompute, Options::PatchAsyncCompute);
-    HelperWidgets::BoolWidget("Disable Antialiasing:", m_patchAntialiasing, Options::PatchAntialiasing);
-    HelperWidgets::BoolWidget("Skip Start Menu:", m_patchSkipStartMenu, Options::PatchSkipStartMenu);
-    HelperWidgets::BoolWidget("Suppress Intro Movies:", m_patchDisableIntroMovies, Options::PatchDisableIntroMovies);
-    HelperWidgets::BoolWidget("Disable Vignette:", m_patchDisableVignette, Options::PatchDisableVignette);
-    HelperWidgets::BoolWidget("Disable Boundary Teleport:", m_patchDisableBoundaryTeleport, Options::PatchDisableBoundaryTeleport);
-    HelperWidgets::BoolWidget("Disable V-Sync (Windows 7 only):", m_patchDisableWin7Vsync, Options::PatchDisableWin7Vsync);
-    HelperWidgets::BoolWidget("Dump Game Options:", m_dumpGameOptions, Options::DumpGameOptions);
+    HelperWidgets::BoolWidget("Enable Debug Menu:", m_patchEnableDebug, options.PatchEnableDebug);
+    HelperWidgets::BoolWidget("Remove Pedestrians:", m_patchRemovePedestrians, options.PatchRemovePedestrians);
+    HelperWidgets::BoolWidget("Disable Async Compute:", m_patchAsyncCompute, options.PatchAsyncCompute);
+    HelperWidgets::BoolWidget("Disable Antialiasing:", m_patchAntialiasing, options.PatchAntialiasing);
+    HelperWidgets::BoolWidget("Skip Start Menu:", m_patchSkipStartMenu, options.PatchSkipStartMenu);
+    HelperWidgets::BoolWidget("Suppress Intro Movies:", m_patchDisableIntroMovies, options.PatchDisableIntroMovies);
+    HelperWidgets::BoolWidget("Disable Vignette:", m_patchDisableVignette, options.PatchDisableVignette);
+    HelperWidgets::BoolWidget("Disable Boundary Teleport:", m_patchDisableBoundaryTeleport, options.PatchDisableBoundaryTeleport);
+    HelperWidgets::BoolWidget("Disable V-Sync (Windows 7 only):", m_patchDisableWin7Vsync, options.PatchDisableWin7Vsync);
+    HelperWidgets::BoolWidget("Dump Game Options:", m_dumpGameOptions, options.DumpGameOptions);
 
-    if (!Options::IsFirstLaunch)
+    if (!options.IsFirstLaunch)
         ImGui::EndChild();
 }
 
 void Settings::Load()
 {
-    Options::Load();
+    auto& options = Options::Get();
 
-    m_overlayKeyBindInfo.Fill(Options::OverlayKeyBind, Overlay::VKBOverlay);
-    m_patchEnableDebug = Options::PatchEnableDebug;
-    m_patchRemovePedestrians = Options::PatchRemovePedestrians;
-    m_patchAsyncCompute = Options::PatchAsyncCompute;
-    m_patchAntialiasing = Options::PatchAntialiasing;
-    m_patchSkipStartMenu = Options::PatchSkipStartMenu;
-    m_patchDisableIntroMovies = Options::PatchDisableIntroMovies;
-    m_patchDisableVignette = Options::PatchDisableVignette;
-    m_patchDisableBoundaryTeleport = Options::PatchDisableBoundaryTeleport;
-    m_patchDisableWin7Vsync = Options::PatchDisableWin7Vsync;
-    m_dumpGameOptions = Options::DumpGameOptions;
+    options.Load();
+
+    m_overlayKeyBindInfo.Fill(options.OverlayKeyBind, Overlay::VKBOverlay);
+    m_patchEnableDebug = options.PatchEnableDebug;
+    m_patchRemovePedestrians = options.PatchRemovePedestrians;
+    m_patchAsyncCompute = options.PatchAsyncCompute;
+    m_patchAntialiasing = options.PatchAntialiasing;
+    m_patchSkipStartMenu = options.PatchSkipStartMenu;
+    m_patchDisableIntroMovies = options.PatchDisableIntroMovies;
+    m_patchDisableVignette = options.PatchDisableVignette;
+    m_patchDisableBoundaryTeleport = options.PatchDisableBoundaryTeleport;
+    m_patchDisableWin7Vsync = options.PatchDisableWin7Vsync;
+    m_dumpGameOptions = options.DumpGameOptions;
 }
 
 void Settings::Save()
 {
+    auto& options = Options::Get();
+
     if (m_overlayKeyBindInfo.SavedCodeBind != m_overlayKeyBindInfo.CodeBind)
     {
-        Options::OverlayKeyBind = m_overlayKeyBindInfo.Apply();
+        options.OverlayKeyBind = m_overlayKeyBindInfo.Apply();
         VKBindings::Get().Save(); // also save bindings in this case!
     }
 
-    Options::PatchEnableDebug = m_patchEnableDebug;
-    Options::PatchRemovePedestrians = m_patchRemovePedestrians;
-    Options::PatchAsyncCompute = m_patchAsyncCompute;
-    Options::PatchAntialiasing = m_patchAntialiasing;
-    Options::PatchSkipStartMenu = m_patchSkipStartMenu;
-    Options::PatchDisableIntroMovies = m_patchDisableIntroMovies;
-    Options::PatchDisableVignette = m_patchDisableVignette;
-    Options::PatchDisableBoundaryTeleport = m_patchDisableBoundaryTeleport;
-    Options::PatchDisableWin7Vsync = m_patchDisableWin7Vsync;
-    Options::DumpGameOptions = m_dumpGameOptions;
+    options.PatchEnableDebug = m_patchEnableDebug;
+    options.PatchRemovePedestrians = m_patchRemovePedestrians;
+    options.PatchAsyncCompute = m_patchAsyncCompute;
+    options.PatchAntialiasing = m_patchAntialiasing;
+    options.PatchSkipStartMenu = m_patchSkipStartMenu;
+    options.PatchDisableIntroMovies = m_patchDisableIntroMovies;
+    options.PatchDisableVignette = m_patchDisableVignette;
+    options.PatchDisableBoundaryTeleport = m_patchDisableBoundaryTeleport;
+    options.PatchDisableWin7Vsync = m_patchDisableWin7Vsync;
+    options.DumpGameOptions = m_dumpGameOptions;
 
-    Options::Save();
+    options.Save();
 }
 
 void Settings::ResetToDefaults()
 {
-    Options::ResetToDefaults();
+    Options::Get().ResetToDefaults();
     Load();
 }

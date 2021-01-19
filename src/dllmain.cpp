@@ -8,7 +8,7 @@
 #include "scripting/LuaVM.h"
 #include "window/window.h"
 
-#pragma comment( lib, "dbghelp.lib" )
+#pragma comment(lib, "dbghelp.lib")
 #pragma comment(linker, "/DLL")
 
 void EnableDebugPatch(Image* apImage);
@@ -31,10 +31,12 @@ static void Initialize(HMODULE mod)
     VKBindings::Initialize();
     Options::Initialize();
 
-    if (!Options::Initialized || !Options::ExeValid)
+    auto& options = Options::Get();
+
+    if (!options.ExeValid)
         return;
 
-    if(Options::GameImage.GetVersion() != Image::GetSupportedVersion())
+    if(options.GameImage.GetVersion() != Image::GetSupportedVersion())
     {
         auto [major, minor] = Image::GetSupportedVersion();
         Logger::ErrorToMainFmt("Unsupported game version! Only {}.{:02d} is supported.", major, minor);
@@ -47,28 +49,28 @@ static void Initialize(HMODULE mod)
 
     MH_Initialize();
 
-    if (Options::PatchEnableDebug)
-        EnableDebugPatch(&Options::GameImage);
+    if (options.PatchEnableDebug)
+        EnableDebugPatch(&options.GameImage);
 
-    if(Options::PatchSkipStartMenu)
-        StartScreenPatch(&Options::GameImage);
+    if(options.PatchSkipStartMenu)
+        StartScreenPatch(&options.GameImage);
 
-    if(Options::PatchRemovePedestrians)
-        RemovePedsPatch(&Options::GameImage);
+    if(options.PatchRemovePedestrians)
+        RemovePedsPatch(&options.GameImage);
 
-    if(Options::PatchAsyncCompute || Options::PatchAntialiasing)
-        OptionsPatch(&Options::GameImage);
+    if(options.PatchAsyncCompute || options.PatchAntialiasing)
+        OptionsPatch(&options.GameImage);
 
-    if (Options::PatchDisableIntroMovies)
-        DisableIntroMoviesPatch(&Options::GameImage);
+    if (options.PatchDisableIntroMovies)
+        DisableIntroMoviesPatch(&options.GameImage);
 
-    if (Options::PatchDisableVignette)
-        DisableVignettePatch(&Options::GameImage);
+    if (options.PatchDisableVignette)
+        DisableVignettePatch(&options.GameImage);
 
-    if (Options::PatchDisableBoundaryTeleport)
-        DisableBoundaryTeleportPatch(&Options::GameImage);
+    if (options.PatchDisableBoundaryTeleport)
+        DisableBoundaryTeleportPatch(&options.GameImage);
 
-    OptionsInitHook(&Options::GameImage);
+    OptionsInitHook(&options.GameImage);
 
     Window::Initialize();
     Overlay::Initialize();
@@ -82,21 +84,21 @@ static void Shutdown()
 {
     if (s_modInstanceMutex)
     {
-        // shutduwn these two first always, so we know for sure they got saved properly! (they are not invalidated by this)
-        //Options::Shutdown();
-        //VKBindings::Shutdown();
-
         D3D12::Shutdown();
         LuaVM::Shutdown();
         Overlay::Shutdown();
         Window::Shutdown();
-        Logger::Shutdown();
 
         MH_DisableHook(MH_ALL_HOOKS);
         MH_Uninitialize();
 
         ReleaseMutex(s_modInstanceMutex);
     }
+
+    Logger::Shutdown();
+    VKBindings::Shutdown();
+    Options::Shutdown();
+    //Paths::Shutdown();
 }
 
 BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID) 

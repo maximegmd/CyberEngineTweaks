@@ -10,16 +10,17 @@ bool HookGameOptionGetBoolean(GameOption* apThis, uint8_t* apVariable, GameOptio
     auto* pVariable = apThis->pBoolean;
     if (!pVariable)
         return false;
-    
-    if (Options::PatchAsyncCompute && strcmp(apThis->pCategory, "Rendering/AsyncCompute") == 0)
+
+    auto& options = Options::Get();
+    if (options.PatchAsyncCompute && strcmp(apThis->pCategory, "Rendering/AsyncCompute") == 0)
     {
         *pVariable = false;
     }
-    else if (Options::PatchAntialiasing && strcmp(apThis->pName, "Antialiasing") == 0)
+    else if (options.PatchAntialiasing && strcmp(apThis->pName, "Antialiasing") == 0)
     {
         *pVariable = false;
     }
-    else if (Options::PatchAntialiasing && strcmp(apThis->pName, "ScreenSpaceReflection") == 0)
+    else if (options.PatchAntialiasing && strcmp(apThis->pName, "ScreenSpaceReflection") == 0)
     {
         *pVariable = false;
     }
@@ -76,7 +77,7 @@ void* HookGameOptionInit(GameOption* apThis)
         // GameOptionInit seems to be called twice per option, value isn't set until after the first call though
         // Since we've already seen this option once we can now grab the value
 
-        if(Options::DumpGameOptions)
+        if(Options::Get().DumpGameOptions)
             Logger::InfoToMain(apThis->GetInfo());
     }
 
