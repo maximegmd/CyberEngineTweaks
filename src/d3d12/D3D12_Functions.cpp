@@ -8,6 +8,7 @@
 
 #include <console/Console.h>
 #include <scripting/LuaVM.h>
+#include "Options.h"
 
 #include "window/Window.h"
 
@@ -316,8 +317,46 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO();
         ImGui::StyleColorsDark();
-        io.Fonts->AddFontDefault();
+        auto& options = Options::Get();
+        ImFontConfig config;
+        config.SizePixels = options.FontSize;
+        config.OversampleH = config.OversampleV = 1;
+        config.PixelSnapH = true;
+        io.Fonts->AddFontDefault(&config);
         io.IniFilename = NULL;
+        
+        if (!options.FontPath.empty())
+        {
+            std::filesystem::path fontPath(options.FontPath);
+            if (!fontPath.is_absolute())
+            {
+                fontPath = options.CETPath / fontPath;
+            }
+            if (std::filesystem::exists(fontPath))
+            {
+                const ImWchar* cpGlyphRanges = io.Fonts->GetGlyphRangesDefault();
+                if (options.FontGlyphRanges == "ChineseFull")
+                    cpGlyphRanges = io.Fonts->GetGlyphRangesChineseFull();
+                else if (options.FontGlyphRanges == "ChineseSimplifiedCommon")
+                    cpGlyphRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
+                else if (options.FontGlyphRanges == "Japanese")
+                    cpGlyphRanges = io.Fonts->GetGlyphRangesJapanese();
+                else if (options.FontGlyphRanges == "Korean")
+                    cpGlyphRanges = io.Fonts->GetGlyphRangesKorean();
+                else if (options.FontGlyphRanges == "Cyrillic")
+                    cpGlyphRanges = io.Fonts->GetGlyphRangesCyrillic();
+                else if (options.FontGlyphRanges == "Thai")
+                    cpGlyphRanges = io.Fonts->GetGlyphRangesThai();
+                else if (options.FontGlyphRanges == "Vietnamese")
+                    cpGlyphRanges = io.Fonts->GetGlyphRangesVietnamese();
+                ImFont* pFont =
+                    io.Fonts->AddFontFromFileTTF(fontPath.string().c_str(), options.FontSize, nullptr, cpGlyphRanges);
+                if (pFont != nullptr)
+                {
+                    io.FontDefault = pFont;
+                }
+            }
+        }
     }
     
     if (!ImGui_ImplWin32_Init(Window::Get().GetWindow())) 

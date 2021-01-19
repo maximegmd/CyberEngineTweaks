@@ -28,6 +28,9 @@ struct Options
     std::filesystem::path CETPath;
     std::filesystem::path RootPath;
     std::filesystem::path ScriptsPath;
+    std::string FontPath;
+    std::string FontGlyphRanges{""};
+    float FontSize{ 13.0f };
     Image GameImage;
     bool ExeValid{ false };
 
