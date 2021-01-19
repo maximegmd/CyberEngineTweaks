@@ -257,7 +257,7 @@ void Scripting::Initialize()
             RED4ext::CClass* pClass = nullptr;
             if (pType->GetType() == RED4ext::ERTTIType::Handle)
             {
-                const auto pInnerType = static_cast<RED4ext::CHandle*>(pType)->GetInnerType();
+                const auto* pInnerType = static_cast<RED4ext::CHandle*>(pType)->GetInnerType();
                 pClass = pInnerType->GetType() == RED4ext::ERTTIType::Class ? static_cast<RED4ext::CClass*>(pInnerType)
                                                                        : nullptr;
             }
@@ -483,9 +483,9 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::CStackType& aResul
     else if (pType->GetType() == RED4ext::ERTTIType::Array)
     {
         auto* pArrayType = static_cast<RED4ext::CArray*>(pType);
-        uint32_t length = pArrayType->GetLength(aResult.value);
+        const uint32_t cLength = pArrayType->GetLength(aResult.value);
         sol::table result(aState, sol::create);
-        for(auto i = 0u; i < length; ++i)
+        for (auto i = 0u; i < cLength; ++i)
         {
             RED4ext::CStackType el;
             el.value = pArrayType->GetElement(aResult.value, i);
@@ -586,8 +586,8 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
         else if (apRtti->GetType() == RED4ext::ERTTIType::Array)
         {
             auto* pArrayType = static_cast<RED4ext::CArray*>(apRtti);
-            auto mem = reinterpret_cast<RED4ext::DynArray<void*>*>(apAllocator->New<uint8_t>(apRtti->GetSize()));
-            apRtti->Init(mem);
+            const auto pMemory = static_cast<RED4ext::DynArray<void*>*>(apAllocator->Allocate(apRtti->GetSize()));
+            apRtti->Init(pMemory);
 
             if (hasData && aObject.is<sol::table>())
             {
@@ -595,16 +595,16 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
 
                 // Copy elements from the table into the array
                 auto tbl = aObject.as<sol::table>();
-                pArrayType->Resize(mem, tbl.size());
+                pArrayType->Resize(pMemory, tbl.size());
                 for (uint32_t i = 1; i <= tbl.size(); ++i)
                 {
-                    RED4ext::CStackType type = Scripting::ToRED(tbl.get<sol::object>(i), pArrayInnerType, apAllocator);
-                    auto element = pArrayType->GetElement(mem, i - 1);
-                    pArrayInnerType->Assign(element, type.value);
+                    RED4ext::CStackType type = ToRED(tbl.get<sol::object>(i), pArrayInnerType, apAllocator);
+                    const auto pElement = pArrayType->GetElement(pMemory, i - 1);
+                    pArrayInnerType->Assign(pElement, type.value);
                 }
             }
 
-            result.value = mem;
+            result.value = pMemory;
         }
         else
         {
@@ -628,7 +628,7 @@ sol::object Scripting::Index(const std::string& acName)
 sol::object Scripting::NewIndex(const std::string& acName, sol::object aParam)
 {
     auto& property = m_properties[acName];
-    property = aParam;
+    property = std::move(aParam);
     return property;
 }
 
@@ -656,7 +656,7 @@ sol::protected_function Scripting::InternalIndex(const std::string& acName)
     auto obj = make_object(state, [this, name = acName](sol::variadic_args args, sol::this_environment env, sol::this_state L)
     {
         std::string result;
-        auto code = this->Execute(name, args, env, L, result);
+        auto code = this->Execute(name, args, std::move(env), L, result);
         if(!code)
         {
             Console::Get().Log("Error: " + result);
@@ -742,11 +742,11 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
     {
         if (pFunc->params[i]->flags.isOut) // Deal with out params
         {
-            args[i] = Scripting::ToRED(sol::nil, pFunc->params[i]->type, &s_scratchMemory);
+            args[i] = ToRED(sol::nil, pFunc->params[i]->type, &s_scratchMemory);
         }
         else if (i - argOffset < aArgs.size())
         {
-            args[i] = Scripting::ToRED(aArgs[i - argOffset].get<sol::object>(), pFunc->params[i]->type, &s_scratchMemory);
+            args[i] = ToRED(aArgs[i - argOffset].get<sol::object>(), pFunc->params[i]->type, &s_scratchMemory);
         }
         else if (pFunc->params[i]->flags.isOptional) // Deal with optional params
         {
