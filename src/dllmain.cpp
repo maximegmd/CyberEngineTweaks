@@ -69,12 +69,12 @@ static void Initialize(HMODULE mod)
 
     OptionsInitHook(&options.GameImage);
 
+    if (options.Console)
+        Console::Initialize();
+
     Window::Initialize();
 
     LuaVM::Initialize();
-
-    if(options.Console)
-        Console::Initialize();
 
     D3D12::Initialize();
 
