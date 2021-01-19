@@ -10,12 +10,12 @@ void Settings::OnEnable()
 {
     Load();
     
-    VKBindings::StopRecordingBind();
+    VKBindings::Get().StopRecordingBind();
 }
 
 void Settings::OnDisable()
 {
-    VKBindings::StopRecordingBind();
+    VKBindings::Get().StopRecordingBind();
 }
 
 void Settings::Update()
@@ -78,7 +78,7 @@ void Settings::Save()
     if (m_overlayKeyBindInfo.SavedCodeBind != m_overlayKeyBindInfo.CodeBind)
     {
         Options::OverlayKeyBind = m_overlayKeyBindInfo.Apply();
-        VKBindings::Save(); // also save bindings in this case!
+        VKBindings::Get().Save(); // also save bindings in this case!
     }
 
     Options::PatchEnableDebug = m_patchEnableDebug;

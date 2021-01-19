@@ -27,9 +27,11 @@ namespace HelperWidgets
 
     void BindWidget(VKBindInfo& aVKBindInfo)
     {
-        if (aVKBindInfo.IsBinding && !VKBindings::IsRecordingBind())
+        VKBindings& vkb = VKBindings::Get();
+
+        if (aVKBindInfo.IsBinding && !vkb.IsRecordingBind())
         {
-            aVKBindInfo.CodeBind = VKBindings::GetLastRecordingResult();
+            aVKBindInfo.CodeBind = vkb.GetLastRecordingResult();
             aVKBindInfo.IsBinding = false;
         }
 
@@ -84,7 +86,7 @@ namespace HelperWidgets
         {
             if (!aVKBindInfo.IsBinding)
             {
-                VKBindings::StartRecordingBind(aVKBindInfo.Bind);
+                vkb.StartRecordingBind(aVKBindInfo.Bind);
                 aVKBindInfo.IsBinding = true;
             }
         }
@@ -98,10 +100,10 @@ namespace HelperWidgets
             {
                 if (aVKBindInfo.IsBinding)
                 {
-                    VKBindings::StopRecordingBind();
+                    vkb.StopRecordingBind();
                     aVKBindInfo.IsBinding = false;
                 }
-                VKBindings::UnBind(aVKBindInfo.CodeBind);
+                vkb.UnBind(aVKBindInfo.CodeBind);
                 aVKBindInfo.CodeBind = 0;
             }
             ImGui::PopID();

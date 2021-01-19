@@ -77,7 +77,7 @@ LRESULT APIENTRY Window::WndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM 
     }
 
     {
-        auto res = VKBindings::OnWndProc(ahWnd, auMsg, awParam, alParam);
+        auto res = VKBindings::Get().OnWndProc(ahWnd, auMsg, awParam, alParam);
         if (res)
             return 0; // VKBindings wants this input ignored!
     }

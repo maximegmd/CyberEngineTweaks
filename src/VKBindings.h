@@ -39,48 +39,49 @@ struct VKBindings
     static void InitializeMods(std::vector<VKBindInfo>& aVKBindInfos);
     static void Shutdown();
     static bool IsInitialized();
-    
-    static void Load();
-    static void Save();
-    
-    static bool Bind(UINT aVKCodeBind, const VKBind& aBind);
-    static bool UnBind(UINT aVKCodeBind);
-    static bool UnBind(const std::string& aID);
-    static bool IsBound(UINT aVKCodeBind);
-    static bool IsBound(const std::string& aID);
-    
-    static UINT GetBindCodeForID(const std::string& aID);
-    static std::string GetIDForBindCode(UINT aVKCodeBind);
+    static VKBindings& Get();
 
     static VKCodeBindDecoded DecodeVKCodeBind(UINT aVKCodeBind);
     static UINT EncodeVKCodeBind(const VKCodeBindDecoded& aVKCodeBindDecoded);
-    
-    static bool StartRecordingBind(const VKBind& aBind);
-    static bool StopRecordingBind();
-
-    static bool IsRecordingBind();
-    static UINT GetLastRecordingResult();
 
     static const char* GetSpecialKeyName(UINT aVKCode);
+    
+    void Load();
+    void Save();
+    
+    bool Bind(UINT aVKCodeBind, const VKBind& aBind);
+    bool UnBind(UINT aVKCodeBind);
+    bool UnBind(const std::string& aID);
+    bool IsBound(UINT aVKCodeBind);
+    bool IsBound(const std::string& aID);
+    
+    UINT GetBindCodeForID(const std::string& aID);
+    std::string GetIDForBindCode(UINT aVKCodeBind);
+    
+    bool StartRecordingBind(const VKBind& aBind);
+    bool StopRecordingBind();
 
-    static LRESULT OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam);
+    bool IsRecordingBind();
+    UINT GetLastRecordingResult();
+
+    LRESULT OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam);
 
 private:
-    static bool IsLastRecordingKey(UINT aVKCode);
-    static LRESULT RecordKeyDown(UINT aVKCode);
-    static LRESULT RecordKeyUp(UINT aVKCode);
-    static bool VerifyRecording();
+    bool IsLastRecordingKey(UINT aVKCode);
+    LRESULT RecordKeyDown(UINT aVKCode);
+    LRESULT RecordKeyUp(UINT aVKCode);
+    bool VerifyRecording();
 
-    static LRESULT HandleRAWInput(HRAWINPUT ahRAWInput);
+    LRESULT HandleRAWInput(HRAWINPUT ahRAWInput);
     
-    static inline std::map<UINT, VKBind> Binds{ };
-    static inline std::unordered_map<std::string, UINT> IDToBinds{ };
+    std::map<UINT, VKBind> Binds{ };
+    std::unordered_map<std::string, UINT> IDToBinds{ };
     
-    static inline VKCodeBindDecoded Recording{ };
-    static inline size_t RecordingLength{ 0 };
-    static inline VKBind RecordingBind { };
-    static inline UINT RecordingResult{ 0 };
-    static inline bool IsBindRecording{ false };
+    VKCodeBindDecoded m_recording{ };
+    size_t m_recordingLength{ 0 };
+    VKBind m_recordingBind { };
+    UINT m_recordingResult{ 0 };
+    bool m_isBindRecording{ false };
 
-    static inline bool Initialized{ false };
+    bool m_initialized{ false };
 };

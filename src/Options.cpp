@@ -95,7 +95,7 @@ void Options::Load()
             DumpGameOptions = config.value("dump_game_options", DumpGameOptions);
             OverlayKeyBind = config.value("toolbar_key", OverlayKeyBind);
             if (OverlayKeyBind != 0)
-                VKBindings::Bind(OverlayKeyBind, Overlay::VKBOverlay);
+                VKBindings::Get().Bind(OverlayKeyBind, Overlay::VKBOverlay);
             else
                 IsFirstLaunch = true; // is for sure in this case
 

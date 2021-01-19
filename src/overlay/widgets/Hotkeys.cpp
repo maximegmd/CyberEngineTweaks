@@ -10,12 +10,12 @@ void Hotkeys::OnEnable()
 {
     Load();
     
-    VKBindings::StopRecordingBind();
+    VKBindings::Get().StopRecordingBind();
 }
 
 void Hotkeys::OnDisable()
 {
-    VKBindings::StopRecordingBind();
+    VKBindings::Get().StopRecordingBind();
 }
 
 void Hotkeys::Update()
@@ -67,7 +67,7 @@ void Hotkeys::Load()
 
     auto& luaVMBinds = luaVM.GetBinds();
     
-    VKBindings::Load();
+    VKBindings::Get().Load();
     VKBindings::InitializeMods(luaVMBinds);
 
     m_vkBindInfos = luaVMBinds;
@@ -87,5 +87,5 @@ void Hotkeys::Save()
             luaVMBinds[i].SavedCodeBind = vkBindInfo.Apply();
     }
     
-    VKBindings::Save();
+    VKBindings::Get().Save();
 }

@@ -26,13 +26,6 @@ static HANDLE s_modInstanceMutex = nullptr;
 
 static void Initialize(HMODULE mod)
 {
-
-    s_modInstanceMutex = CreateMutex(NULL, TRUE, _T("Cyber Engine Tweaks Module Instance"));
-    if (s_modInstanceMutex == nullptr)
-        return;
-
-    MH_Initialize();
-
     Paths::Initialize();
     Logger::Initialize();
     VKBindings::Initialize();
@@ -47,6 +40,12 @@ static void Initialize(HMODULE mod)
         Logger::ErrorToMainFmt("Unsupported game version! Only {}.{:02d} is supported.", major, minor);
         return;
     }
+
+    s_modInstanceMutex = CreateMutex(NULL, TRUE, _T("Cyber Engine Tweaks Module Instance"));
+    if (s_modInstanceMutex == nullptr)
+        return;
+
+    MH_Initialize();
 
     if (Options::PatchEnableDebug)
         EnableDebugPatch(&Options::GameImage);
