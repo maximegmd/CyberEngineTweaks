@@ -49,7 +49,7 @@ void ScriptStore::LoadAll(sol::state_view aStateView)
     VKBindings::InitializeMods(m_vkBindInfos);
 }
 
-std::vector<VKBindInfo>& ScriptStore::GetBinds()
+const std::vector<VKBindInfo>& ScriptStore::GetBinds() const
 {
     return m_vkBindInfos;
 }

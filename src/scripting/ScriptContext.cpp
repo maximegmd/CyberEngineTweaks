@@ -96,7 +96,7 @@ bool ScriptContext::IsValid() const
     return m_initialized;
 }
 
-std::vector<VKBindInfo>& ScriptContext::GetBinds()
+const std::vector<VKBindInfo>& ScriptContext::GetBinds() const
 {
     return m_vkBindInfos;
 }

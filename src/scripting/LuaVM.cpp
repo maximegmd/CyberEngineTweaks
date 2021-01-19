@@ -27,7 +27,7 @@ LuaVM& LuaVM::Get()
     return *s_pLuaVM;
 }
 
-std::vector<VKBindInfo>& LuaVM::GetBinds()
+const std::vector<VKBindInfo>& LuaVM::GetBinds() const
 {
     return m_scripting.GetBinds();
 }

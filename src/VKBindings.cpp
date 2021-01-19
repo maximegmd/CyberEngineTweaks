@@ -14,7 +14,7 @@ void VKBindings::Initialize()
     }
 }
 
-void VKBindings::InitializeMods(std::vector<VKBindInfo>& aVKBindInfos)
+std::vector<VKBindInfo> VKBindings::InitializeMods(std::vector<VKBindInfo> aVKBindInfos)
 {
     VKBindings& vkb = Get();
 
@@ -50,8 +50,8 @@ void VKBindings::InitializeMods(std::vector<VKBindInfo>& aVKBindInfos)
     std::vector<std::pair<std::string, UINT>> deadIDToBinds;
     for (auto& idToBind : vkb.IDToBinds)
     {
-        // always ignore Overlay bind here!
-        if (idToBind.first == Overlay::VKBOverlay.ID)
+        // always ignore internal CET binds here!
+        if (!idToBind.first.compare(0, 4, "cet."))
             continue;
 
         // TODO - try to avoid O(n^2) situation here
@@ -76,6 +76,9 @@ void VKBindings::InitializeMods(std::vector<VKBindInfo>& aVKBindInfos)
 
     // finally, save our filtered bindings back to not lose them
     vkb.Save();
+
+    // return corrected bindings
+    return aVKBindInfos;
 }
 
 void VKBindings::Shutdown()

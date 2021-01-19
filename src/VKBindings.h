@@ -36,7 +36,7 @@ struct VKBindInfo
 struct VKBindings
 {
     static void Initialize();
-    static void InitializeMods(std::vector<VKBindInfo>& aVKBindInfos);
+    static std::vector<VKBindInfo> InitializeMods(std::vector<VKBindInfo> aVKBindInfos);
     static void Shutdown();
     static bool IsInitialized();
     static VKBindings& Get();

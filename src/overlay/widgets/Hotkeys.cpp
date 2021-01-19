@@ -64,28 +64,14 @@ void Hotkeys::Load()
     auto& luaVM = LuaVM::Get();
     if (!luaVM.IsInitialized())
         return;
-
-    auto& luaVMBinds = luaVM.GetBinds();
     
     VKBindings::Get().Load();
-    VKBindings::InitializeMods(luaVMBinds);
 
-    m_vkBindInfos = luaVMBinds;
+    // this step is mandatory during Load, no need for this to happen other way around during Save
+    m_vkBindInfos = VKBindings::InitializeMods(luaVM.GetBinds());
 }
 
 void Hotkeys::Save()
 {
-    auto& luaVM = LuaVM::Get();
-    if (!luaVM.IsInitialized())
-        return;
-
-    auto& luaVMBinds = luaVM.GetBinds();
-    for (size_t i = 0; i < m_vkBindInfos.size(); ++i)
-    {
-        auto& vkBindInfo = m_vkBindInfos[i];
-        if (vkBindInfo.CodeBind != vkBindInfo.SavedCodeBind)
-            luaVMBinds[i].SavedCodeBind = vkBindInfo.Apply();
-    }
-    
     VKBindings::Get().Save();
 }

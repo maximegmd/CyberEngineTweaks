@@ -10,7 +10,7 @@ struct Scripting
 
     void Initialize();
 
-    std::vector<VKBindInfo>& GetBinds();
+    const std::vector<VKBindInfo>& GetBinds() const;
 
     void TriggerOnInit() const;
     void TriggerOnUpdate(float aDeltaTime) const;

@@ -32,7 +32,7 @@ struct LuaVM
     static void Shutdown();
     static LuaVM& Get();
 
-    std::vector<VKBindInfo>& GetBinds();
+    const std::vector<VKBindInfo>& GetBinds() const;
     
     bool ExecuteLua(const std::string& acCommand);
         

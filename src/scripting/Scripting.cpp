@@ -294,7 +294,7 @@ void Scripting::Initialize()
     ReloadAllMods();
 }
 
-std::vector<VKBindInfo>& Scripting::GetBinds()
+const std::vector<VKBindInfo>& Scripting::GetBinds() const
 {
     return m_store.GetBinds();
 }
