@@ -316,7 +316,7 @@ void Scripting::Initialize()
         const Type type(m_lua, pType);
         return type.Dump(aDetailed);
     };
-
+    
     m_lua["DumpAllTypeNames"] = [this]()
     {
         auto* pRtti = RED4ext::CRTTISystem::Get();
@@ -327,7 +327,7 @@ void Scripting::Initialize()
             spdlog::info(name.ToString());
             count++;
         });
-        Logger::ToConsoleFmt("Dumped {} types", count);
+        spdlog::get("console")->info("Dumped {} types", count);
     };
 
     m_lua["print"] = [](sol::variadic_args aArgs, sol::this_state aState)
@@ -343,7 +343,7 @@ void Scripting::Initialize()
             std::string str = s["tostring"]((*it).get<sol::object>());
             oss << str;
         }
-        Logger::ToConsole(oss.str());
+        spdlog::get("console")->info(oss.str());
     };
 
 #ifndef NDEBUG
@@ -369,7 +369,7 @@ void Scripting::Initialize()
     else
     {
         spdlog::info("Scripting::Initialize() - missing CET autoexec.lua!");
-        Logger::ToConsole("WARNING: missing CET autoexec.lua!");
+        spdlog::get("console")->info("WARNING: missing CET autoexec.lua!");
     }
 
     // set current path for following scripts to our ModsPath
@@ -429,7 +429,7 @@ bool Scripting::ExecuteLua(const std::string& acCommand)
     }
     catch(std::exception& e)
     {
-        Logger::ToConsole(e.what());
+        spdlog::get("console")->info(e.what());
     }
     return false;
 }
@@ -623,7 +623,7 @@ sol::object Scripting::GetSingletonHandle(const std::string& acName)
     auto* pType = pRtti->GetClass(RED4ext::FNV1a(acName.c_str()));
     if (!pType)
     {
-        Logger::ToConsoleFmt("Type '{}' not found or is not initialized yet.", acName);
+        spdlog::get("console")->info("Type '{}' not found or is not initialized yet.", acName);
         return sol::nil;
     }
 
@@ -640,7 +640,7 @@ sol::protected_function Scripting::InternalIndex(const std::string& acName)
         auto code = this->Execute(name, args, std::move(env), L, result);
         if(!code)
         {
-            Logger::ToConsoleFmt("Error: {}", result);
+            spdlog::get("console")->info("Error: {}", result);
         }
         return code;
     });

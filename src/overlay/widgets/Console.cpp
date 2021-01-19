@@ -73,10 +73,11 @@ void Console::Update()
     ImGui::SetItemDefaultFocus();
     if (execute)
     {
-        Logger::ToConsoleFmt("> {}", m_Command);
+        auto consoleLogger = spdlog::get("console");
+        consoleLogger->info("> {}", m_Command);
         
         if (!LuaVM::Get().ExecuteLua(m_Command))
-            Logger::ToConsole("Command failed to execute!");
+            consoleLogger->info("Command failed to execute!");
 
         if (m_inputClear)
         {
@@ -92,7 +93,7 @@ void Console::Update()
     //}
 }
 
-void Console::Log(std::string_view acpText)
+void Console::Log(const std::string& acpText)
 {
     std::lock_guard<std::recursive_mutex> _{ m_outputLock };
 
@@ -116,8 +117,7 @@ void Console::Log(std::string_view acpText)
     m_outputScroll = true;
 }
 
-void Console::GameLog(std::string_view acpText)
+bool Console::GameLogEnabled() const
 {
-    if (!m_disabledGameLog)
-        Logger::ToConsole(acpText);
+    return !m_disabledGameLog;
 }

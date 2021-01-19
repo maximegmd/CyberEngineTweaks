@@ -11,8 +11,8 @@ struct Console : public Widget
     void OnDisable() override;
     void Update() override;
     
-    void Log(std::string_view acpText);
-    void GameLog(std::string_view acpText);
+    void Log(const std::string& acpText);
+    bool GameLogEnabled() const;
 
 private:
     std::recursive_mutex m_outputLock{ };

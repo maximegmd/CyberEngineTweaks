@@ -36,7 +36,7 @@ bool LuaVM::ExecuteLua(const std::string& acCommand)
 {
     if (!m_initialized)
     {
-        Logger::ToConsole("Command not executed! LuaVM is not yet initialized!");
+        spdlog::get("console")->info("Command not executed! LuaVM is not yet initialized!");
         return false;
     }
 
@@ -65,7 +65,7 @@ void LuaVM::ReloadAllMods()
             m_scripting.TriggerOnOverlayOpen();
 
         spdlog::info("LuaVM: Reloaded all mods!");
-        Logger::ToConsole("LuaVM: Reloaded all mods!");
+        spdlog::get("console")->info("LuaVM: Reloaded all mods!");
     }
 }
 
@@ -95,7 +95,7 @@ void LuaVM::PostInitialize()
         m_scripting.TriggerOnOverlayOpen();
 
     spdlog::info("LuaVM: initialization finished!");
-    Logger::ToConsole("LuaVM: initialization finished!");
+    spdlog::get("console")->info("LuaVM: initialization finished!");
 
     m_initialized = true;
 }

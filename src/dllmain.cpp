@@ -24,7 +24,7 @@ void DisableIntroMoviesPatch(Image* apImage);
 void DisableVignettePatch(Image* apImage);
 void DisableBoundaryTeleportPatch(Image* apImage);
 
-static HANDLE s_modInstanceMutex = nullptr; 
+static HANDLE s_modInstanceMutex = nullptr;
 
 using namespace std::chrono_literals;
 
@@ -33,16 +33,21 @@ static void Initialize()
     // paths need to be initialized first
     Paths::Initialize();
 
-    // initialize main logger as second thing, so we can log main CET messages
+    // initialize main logger and set it as defualt
     set_default_logger(CreateLogger(Paths::Get().CETRoot() / "cyber_engine_tweaks.log", "main"));
+
+    // initialize console logger
+    const auto consoleSink = CreateCustomSink([](const std::string& msg){ Overlay::Get().GetConsole().Log(msg); });
+    CreateLogger(Paths::Get().CETRoot() / "console.log", "console", consoleSink, "[%H:%M:%S %z] %v");
     spdlog::flush_every(3s);
 
-    Logger::Initialize();
+    // initialize bindings and settings
     VKBindings::Initialize();
     Options::Initialize();
 
     auto& options = Options::Get();
 
+    // check if we are hooked to valid process
     if (!options.ExeValid)
         return;
 
@@ -53,12 +58,14 @@ static void Initialize()
         return;
     }
 
+    // single instance check
     s_modInstanceMutex = CreateMutex(NULL, TRUE, _T("Cyber Engine Tweaks Module Instance"));
     if (s_modInstanceMutex == nullptr)
         return;
 
     MH_Initialize();
 
+    // initialize patches
     if (options.PatchEnableDebug)
         EnableDebugPatch(&options.GameImage);
 
@@ -82,6 +89,7 @@ static void Initialize()
 
     OptionsInitHook(&options.GameImage);
 
+    // initialize rest of the systems
     Window::Initialize();
     Overlay::Initialize();
     LuaVM::Initialize();
@@ -110,14 +118,14 @@ static void Shutdown()
 
         ReleaseMutex(s_modInstanceMutex);
     }
-
-    Logger::Shutdown();
+    
     VKBindings::Shutdown();
     Options::Shutdown();
-    //Paths::Shutdown();
+    Paths::Shutdown();
 
     // flush main log (== default logger)
     spdlog::default_logger()->flush();
+    spdlog::get("console")->flush();
 }
 
 BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID) 

@@ -4,6 +4,8 @@
 
 #include <Pattern.h>
 
+#include <overlay/Overlay.h>
+
 struct REDScriptContext;
 
 struct ScriptStack
@@ -32,8 +34,10 @@ void LuaVM::HookLog(REDScriptContext*, ScriptStack* apStack, void*, void*)
     auto opcode = *(apStack->m_code++);
     GetScriptCallArray()[opcode](apStack->m_context, apStack, &text, nullptr);
     apStack->m_code++; // skip ParamEnd
-    
-    Logger::GameToConsole(text.c_str());
+
+    auto& console = Overlay::Get().GetConsole();
+    if (console.GameLogEnabled())
+        spdlog::get("console")->info(text.c_str());
 }
 
 static const char* GetChannelStr(uint64_t hash)
@@ -81,12 +85,18 @@ void LuaVM::HookLogChannel(REDScriptContext*, ScriptStack* apStack, void*, void*
 
     apStack->m_code++; // skip ParamEnd
 
-    std::string_view textSV = text.c_str();
-    std::string_view channelSV = GetChannelStr(channel_hash);
-    if (channelSV == "")
-        Logger::GameToConsoleFmt("[?{0:x}] {}", channel_hash, textSV);
-    else
-        Logger::GameToConsoleFmt("[{}] {}", channelSV, textSV);
+    auto& console = Overlay::Get().GetConsole();
+    if (console.GameLogEnabled())
+    {
+        auto consoleLogger = spdlog::get("console");
+
+        std::string_view textSV = text.c_str();
+        std::string_view channelSV = GetChannelStr(channel_hash);
+        if (channelSV == "")
+            consoleLogger->info("[?{0:x}] {}", channel_hash, textSV);
+        else
+            consoleLogger->info("[{}] {}", channelSV, textSV);
+    }
     
     Get().m_logCount.fetch_add(1);
 }

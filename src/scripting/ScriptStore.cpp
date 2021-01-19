@@ -7,6 +7,8 @@ void ScriptStore::LoadAll(sol::state_view aStateView)
     m_vkBindInfos.clear();
     m_contexts.clear();
 
+    auto consoleLogger = spdlog::get("console");
+
     const auto& cModsRoot = Paths::Get().ModsRoot();
     for (const auto& file : std::filesystem::directory_iterator(cModsRoot))
     {
@@ -17,7 +19,7 @@ void ScriptStore::LoadAll(sol::state_view aStateView)
         auto fPathStr = fPath.string();
         if (!exists(fPath / "init.lua"))
         {
-            Logger::ToConsoleFmt("Ignoring directory which misses init.lua! ('{}')", fPathStr);
+            consoleLogger->info("Ignoring directory which misses init.lua! ('{}')", fPathStr);
             spdlog::warn("Ignoring directory which misses init.lua! ('{}')", fPathStr);
             continue;
         }
@@ -25,7 +27,7 @@ void ScriptStore::LoadAll(sol::state_view aStateView)
         auto name = relative(fPath, cModsRoot).string();
         if (name.find('.') != std::string::npos)
         {
-            Logger::ToConsoleFmt("Ignoring directory with '.', as this is reserved character! ('{}')", fPathStr);
+            consoleLogger->info("Ignoring directory with '.', as this is reserved character! ('{}')", fPathStr);
             spdlog::warn("Ignoring directory with '.', as this is reserved character! ('{}')", fPathStr);
             continue;
         }
@@ -36,12 +38,12 @@ void ScriptStore::LoadAll(sol::state_view aStateView)
             auto& ctxBinds = ctx.GetBinds();
             m_vkBindInfos.insert(m_vkBindInfos.cend(), ctxBinds.cbegin(), ctxBinds.cend());
             m_contexts.emplace(name, std::move(ctx));
-            Logger::ToConsoleFmt("Mod {} loaded! ('{}')", name, fPathStr);
+            consoleLogger->info("Mod {} loaded! ('{}')", name, fPathStr);
             spdlog::info("Mod {} loaded! ('{}')", name, fPathStr);
         }
         else
         {
-            Logger::ToConsoleFmt("Mod {} failed loaded! ('{}')", name, fPathStr);
+            consoleLogger->info("Mod {} failed loaded! ('{}')", name, fPathStr);
             spdlog::error("Mod {} failed loaded! ('{}')", name, fPathStr);
         }
     }

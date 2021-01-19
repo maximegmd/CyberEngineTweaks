@@ -2,4 +2,5 @@ void ltrim(std::string& s);
 void rtrim(std::string& s);
 void trim(std::string& s);
 
-std::shared_ptr<spdlog::logger> CreateLogger(const std::filesystem::path& path, const std::string& id, const std::string& pattern = "[%H:%M:%S %z][%l] %v");
+spdlog::sink_ptr CreateCustomSink(std::function<void(const std::string&)> aSinkItHandler, std::function<void()> aFlushHandler = nullptr);
+std::shared_ptr<spdlog::logger> CreateLogger(const std::filesystem::path& aPath, const std::string& aID, spdlog::sink_ptr aExtraSink = nullptr, const std::string& aPattern = "[%H:%M:%S %z][%l] %v");
