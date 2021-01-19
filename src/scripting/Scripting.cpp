@@ -19,6 +19,8 @@
 #include <reverse/WeakReference.h>
 #include <reverse/Enum.h>
 
+#include "CETVersion.h"
+
 #ifndef NDEBUG
 #include "GameDump.h"
 #include <RED4ext/Dump/Reflection.hpp>
@@ -33,11 +35,12 @@ void Scripting::Initialize()
     m_lua["GetDisplayResolution"] = []() -> std::tuple<float, float>
     {
         const auto resolution = D3D12::Get().GetResolution();
-        return
-        {
-            static_cast<float>(resolution.cx),
-            static_cast<float>(resolution.cy)
-        };
+        return {static_cast<float>(resolution.cx), static_cast<float>(resolution.cy)};
+    };
+
+    m_lua["GetVersion"] = []() -> std::string
+    {
+        return CET_BUILD_COMMIT;
     };
 
     m_lua["SetTrapInputInImGui"] = [](bool trap)

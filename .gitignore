@@ -12,3 +12,4 @@ vs2019/*
 build/*
 .xmake/*
 *.asi
+src/CETVersion.h

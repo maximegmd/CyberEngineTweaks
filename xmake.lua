@@ -15,6 +15,49 @@ end
 add_cxflags("/std:c++latest", "/bigobj", "/MP")
 add_defines("RED4EXT_STATIC_LIB", "UNICODE")
 
+before_build(function (target)
+		local host = os.host()
+		local subhost = os.subhost()
+
+		local system
+		if (host ~= subhost) then
+			system = host .. "/" .. subhost
+		else
+			system = host
+		end
+
+		local branch = "unknown-branch"
+		local commitHash = "unknown-commit"
+		try
+		{
+			function ()
+				import("detect.tools.find_git")
+				local git = find_git()
+				if (git) then
+					branch = os.iorunv(git, {"rev-parse", "--abbrev-ref", "HEAD"}):trim()
+					commitHash = os.iorunv(git, {"describe", "--tags"}):trim()
+				else
+					error("git not found")
+				end
+			end,
+
+			catch
+			{
+				function (err)
+					print(string.format("Failed to retrieve git data: %s", err))
+				end
+			}
+		}
+
+		io.writefile("src/CETVersion.h", string.format([[
+#pragma once
+
+#define CET_BUILD_BRANCH "%s";
+#define CET_BUILD_COMMIT "%s";
+#define CET_BUILD_TIME "%s";
+]], branch, commitHash, os.date("%Y-%m-%d %H:%M:%S")))
+	end)
+
 target("RED4ext.SDK")
     set_kind("static")
     add_files("vendor/RED4ext.SDK/src/**.cpp")
