@@ -55,10 +55,10 @@ void OptionsPatch(Image* apImage)
         pLocation[11] = 0xE0;
         VirtualProtect(pLocation, 32, oldProtect, nullptr);
         
-        Logger::InfoToMain("Hidden options patch: success");
+        spdlog::info("Hidden options patch: success");
     }
     else
-        Logger::WarningToMain("Hidden options patch: failed");
+        spdlog::warn("Hidden options patch: failed");
 }
 
 using TGameOptionInit = void*(void*);
@@ -78,7 +78,7 @@ void* HookGameOptionInit(GameOption* apThis)
         // Since we've already seen this option once we can now grab the value
 
         if(Options::Get().DumpGameOptions)
-            Logger::InfoToMain(apThis->GetInfo());
+            spdlog::info(apThis->GetInfo());
     }
 
     return RealGameOptionInit(apThis);
@@ -96,8 +96,8 @@ void OptionsInitHook(Image* apImage)
         MH_CreateHook(GameOptionInit, &HookGameOptionInit, reinterpret_cast<void**>(&RealGameOptionInit));
         MH_EnableHook(GameOptionInit);
 
-        Logger::InfoToMain("Hidden options hook: success");
+        spdlog::info("Hidden options hook: success");
     }
     else
-        Logger::WarningToMain("Hidden options hook: failed");
+        spdlog::warn("Hidden options hook: failed");
 }

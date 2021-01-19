@@ -46,12 +46,12 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
                 if(desc.Type != D3D12_COMMAND_LIST_TYPE_DIRECT) 
                 {
                     d3d12->m_pCommandQueue = nullptr;
-                    Logger::WarningToMain("D3D12::Initialize() - invalid type of command list!");
+                    spdlog::warn("D3D12::Initialize() - invalid type of command list!");
                     return false;
                 }
                 return true;
             }
-            Logger::WarningToMain("D3D12::Initialize() - swap chain is missing command queue!");
+            spdlog::warn("D3D12::Initialize() - swap chain is missing command queue!");
             return false;
         }
         return true;
@@ -63,7 +63,7 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
     HWND hWnd = Window::Get().GetWindow();
     if (!hWnd)
     {
-        Logger::WarningToMain("D3D12::InitializeDownlevel() - window not yet hooked!");
+        spdlog::warn("D3D12::InitializeDownlevel() - window not yet hooked!");
         return false;
     }
 
@@ -72,12 +72,12 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
         CComPtr<IDXGISwapChain3> pSwapChain3;
         if (FAILED(apSwapChain->QueryInterface(IID_PPV_ARGS(&pSwapChain3))))
         {
-            Logger::ErrorToMainFmt("D3D12::Initialize() - unable to query pSwapChain interface for IDXGISwapChain3! (pSwapChain = {0})", reinterpret_cast<void*>(apSwapChain));
+            spdlog::error("D3D12::Initialize() - unable to query pSwapChain interface for IDXGISwapChain3! (pSwapChain = {0})", reinterpret_cast<void*>(apSwapChain));
             return false;
         }
         if (m_pdxgiSwapChain != pSwapChain3)
         {
-            Logger::WarningToMainFmt("D3D12::Initialize() - multiple swap chains detected! Currently hooked to {0}, this call was from {1}.", reinterpret_cast<void*>(*(&m_pdxgiSwapChain)), reinterpret_cast<void*>(apSwapChain));
+            spdlog::warn("D3D12::Initialize() - multiple swap chains detected! Currently hooked to {0}, this call was from {1}.", reinterpret_cast<void*>(*(&m_pdxgiSwapChain)), reinterpret_cast<void*>(apSwapChain));
             return false;
         }
         {
@@ -85,11 +85,11 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
             m_pdxgiSwapChain->GetDesc(&sdesc);
             
             if (hWnd != sdesc.OutputWindow)
-                Logger::WarningToMainFmt("D3D12::Initialize() - output window of current swap chain does not match hooked window! Currently hooked to {0} while swap chain output window is {1}.", reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(sdesc.OutputWindow));            
+                spdlog::warn("D3D12::Initialize() - output window of current swap chain does not match hooked window! Currently hooked to {0} while swap chain output window is {1}.", reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(sdesc.OutputWindow));            
         }
         if (!checkCmdQueue(this))
         {
-            Logger::ErrorToMain("D3D12::Initialize() - missing command queue!");
+            spdlog::error("D3D12::Initialize() - missing command queue!");
             return false;
         }
         return true;
@@ -97,13 +97,13 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
 
     if (FAILED(apSwapChain->QueryInterface(IID_PPV_ARGS(&m_pdxgiSwapChain))))
     {
-        Logger::ErrorToMainFmt("D3D12::Initialize() - unable to query pSwapChain interface for IDXGISwapChain3! (pSwapChain = {0})", reinterpret_cast<void*>(apSwapChain));
+        spdlog::error("D3D12::Initialize() - unable to query pSwapChain interface for IDXGISwapChain3! (pSwapChain = {0})", reinterpret_cast<void*>(apSwapChain));
         return ResetState();
     }
 
     if (FAILED(m_pdxgiSwapChain->GetDevice(IID_PPV_ARGS(&m_pd3d12Device))))
     {
-        Logger::ErrorToMain("D3D12::Initialize() - failed to get device!");
+        spdlog::error("D3D12::Initialize() - failed to get device!");
         return ResetState();
     }
 
@@ -111,7 +111,7 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
     m_pdxgiSwapChain->GetDesc(&sdesc);
     
     if (hWnd != sdesc.OutputWindow)
-        Logger::WarningToMainFmt("D3D12::Initialize() - output window of current swap chain does not match hooked window! Currently hooked to {0} while swap chain output window is {1}.", reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(sdesc.OutputWindow));
+        spdlog::warn("D3D12::Initialize() - output window of current swap chain does not match hooked window! Currently hooked to {0} while swap chain output window is {1}.", reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(sdesc.OutputWindow));
 
     m_outSize = { static_cast<LONG>(sdesc.BufferDesc.Width), static_cast<LONG>(sdesc.BufferDesc.Height) };
 
@@ -127,7 +127,7 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
     rtvdesc.NodeMask = 1;
     if (FAILED(m_pd3d12Device->CreateDescriptorHeap(&rtvdesc, IID_PPV_ARGS(&m_pd3dRtvDescHeap))))
     {
-        Logger::ErrorToMain("D3D12::Initialize() - failed to create RTV descriptor heap!");
+        spdlog::error("D3D12::Initialize() - failed to create RTV descriptor heap!");
         return ResetState();
     }
 
@@ -145,21 +145,21 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
     srvdesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     if (FAILED(m_pd3d12Device->CreateDescriptorHeap(&srvdesc, IID_PPV_ARGS(&m_pd3dSrvDescHeap))))
     {
-        Logger::ErrorToMain("D3D12::Initialize() - failed to create SRV descriptor heap!");
+        spdlog::error("D3D12::Initialize() - failed to create SRV descriptor heap!");
         return ResetState();
     }
     
     for (auto& context : m_frameContexts)
         if (FAILED(m_pd3d12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&context.CommandAllocator))))
         {
-            Logger::ErrorToMain("D3D12::Initialize() - failed to create command allocator!");
+            spdlog::error("D3D12::Initialize() - failed to create command allocator!");
             return ResetState();
         }
 
     if (FAILED(m_pd3d12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_frameContexts[0].CommandAllocator, nullptr, IID_PPV_ARGS(&m_pd3dCommandList))) ||
         FAILED(m_pd3dCommandList->Close()))
     {
-        Logger::ErrorToMain("D3D12::Initialize() - failed to create command list!");
+        spdlog::error("D3D12::Initialize() - failed to create command list!");
         return ResetState();
     }
 
@@ -168,16 +168,16 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
 
     if (!InitializeImGui(buffersCounts))
     {
-        Logger::ErrorToMain("D3D12::Initialize() - failed to initialize ImGui!");
+        spdlog::error("D3D12::Initialize() - failed to initialize ImGui!");
         return ResetState();
     }
 
-    Logger::InfoToMain("D3D12::Initialize() - initialization successful!");
+    spdlog::info("D3D12::Initialize() - initialization successful!");
     m_initialized = true;
 
     if (!checkCmdQueue(this))
     {
-        Logger::ErrorToMain("D3D12::Initialize() - missing command queue!");
+        spdlog::error("D3D12::Initialize() - missing command queue!");
         return false;
     }
 
@@ -194,14 +194,14 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
     HWND hWnd = Window::Get().GetWindow();
     if (!hWnd)
     {
-        Logger::WarningToMain("D3D12::InitializeDownlevel() - window not yet hooked!");
+        spdlog::warn("D3D12::InitializeDownlevel() - window not yet hooked!");
         return false;
     }
 
     if (m_initialized)
     {
         if (hWnd != ahWindow)
-            Logger::WarningToMainFmt("D3D12::InitializeDownlevel() - current output window does not match hooked window! Currently hooked to {0} while current output window is {1}.", reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(ahWindow));
+            spdlog::warn("D3D12::InitializeDownlevel() - current output window does not match hooked window! Currently hooked to {0} while current output window is {1}.", reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(ahWindow));
 
         return true;
     }
@@ -209,7 +209,7 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
     auto cmdQueueDesc = apCommandQueue->GetDesc();
     if(cmdQueueDesc.Type != D3D12_COMMAND_LIST_TYPE_DIRECT) 
     {
-        Logger::WarningToMain("D3D12::InitializeDownlevel() - ignoring command queue - invalid type of command list!");
+        spdlog::warn("D3D12::InitializeDownlevel() - ignoring command queue - invalid type of command list!");
         return false;
     }
 
@@ -219,11 +219,11 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
     m_outSize = { static_cast<LONG>(st2DDesc.Width), static_cast<LONG>(st2DDesc.Height) };
     
     if (hWnd != ahWindow)
-        Logger::WarningToMainFmt("D3D12::InitializeDownlevel() - current output window does not match hooked window! Currently hooked to {0} while current output window is {1}.", reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(ahWindow));
+        spdlog::warn("D3D12::InitializeDownlevel() - current output window does not match hooked window! Currently hooked to {0} while current output window is {1}.", reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(ahWindow));
 
     if (FAILED(apSourceTex2D->GetDevice(IID_PPV_ARGS(&m_pd3d12Device))))
     {
-        Logger::ErrorToMain("D3D12::InitializeDownlevel() - failed to get device!");
+        spdlog::error("D3D12::InitializeDownlevel() - failed to get device!");
         return ResetState();
     }
 
@@ -231,12 +231,12 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
     m_frameContexts.resize(buffersCounts);
     if (buffersCounts == 0)
     {
-        Logger::ErrorToMain("D3D12::InitializeDownlevel() - no backbuffers were found!");
+        spdlog::error("D3D12::InitializeDownlevel() - no backbuffers were found!");
         return ResetState();
     }
     if (buffersCounts < g_numDownlevelBackbuffersRequired)
     {
-        Logger::InfoToMain("D3D12::InitializeDownlevel() - backbuffer list is not complete yet; assuming window was resized");
+        spdlog::info("D3D12::InitializeDownlevel() - backbuffer list is not complete yet; assuming window was resized");
         return false;
     }
 
@@ -247,7 +247,7 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
     rtvdesc.NodeMask = 1;
     if (FAILED(m_pd3d12Device->CreateDescriptorHeap(&rtvdesc, IID_PPV_ARGS(&m_pd3dRtvDescHeap))))
     {
-        Logger::ErrorToMain("D3D12::InitializeDownlevel() - failed to create RTV descriptor heap!");
+        spdlog::error("D3D12::InitializeDownlevel() - failed to create RTV descriptor heap!");
         return ResetState();
     }
 
@@ -265,7 +265,7 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
     srvdesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     if (FAILED(m_pd3d12Device->CreateDescriptorHeap(&srvdesc, IID_PPV_ARGS(&m_pd3dSrvDescHeap))))
     {
-        Logger::ErrorToMain("D3D12::InitializeDownlevel() - failed to create SRV descriptor heap!");
+        spdlog::error("D3D12::InitializeDownlevel() - failed to create SRV descriptor heap!");
         return ResetState();
     }
     
@@ -273,20 +273,20 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
     {
         if (FAILED(m_pd3d12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&context.CommandAllocator))))
         {
-            Logger::ErrorToMain("D3D12::InitializeDownlevel() - failed to create command allocator!");
+            spdlog::error("D3D12::InitializeDownlevel() - failed to create command allocator!");
             return ResetState();
         }
     }
 
     if (FAILED(m_pd3d12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_frameContexts[0].CommandAllocator, nullptr, IID_PPV_ARGS(&m_pd3dCommandList))))
     {
-        Logger::ErrorToMain("D3D12::InitializeDownlevel() - failed to create command list!");
+        spdlog::error("D3D12::InitializeDownlevel() - failed to create command list!");
         return ResetState();
     }
 
     if (FAILED(m_pd3dCommandList->Close()))
     {
-        Logger::ErrorToMain("D3D12::InitializeDownlevel() - failed to close command list!");
+        spdlog::error("D3D12::InitializeDownlevel() - failed to close command list!");
         return ResetState();
     }
 
@@ -299,11 +299,11 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
 
     if (!InitializeImGui(buffersCounts))
     {
-        Logger::ErrorToMain("D3D12::InitializeDownlevel() - failed to initialize ImGui!");
+        spdlog::error("D3D12::InitializeDownlevel() - failed to initialize ImGui!");
         return ResetState();
     }
 
-    Logger::InfoToMain("D3D12::InitializeDownlevel() - initialization successful!");
+    spdlog::info("D3D12::InitializeDownlevel() - initialization successful!");
     m_initialized = true;
 
     Overlay::Get().PostInitialize();
@@ -376,7 +376,7 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
     
     if (!ImGui_ImplWin32_Init(Window::Get().GetWindow())) 
     {
-        Logger::ErrorToMain("D3D12::InitializeImGui() - ImGui_ImplWin32_Init call failed!");
+        spdlog::error("D3D12::InitializeImGui() - ImGui_ImplWin32_Init call failed!");
         return false;
     }
 
@@ -385,14 +385,14 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         m_pd3dSrvDescHeap->GetCPUDescriptorHandleForHeapStart(),
         m_pd3dSrvDescHeap->GetGPUDescriptorHandleForHeapStart()))
     {
-        Logger::ErrorToMain("D3D12::InitializeImGui() - ImGui_ImplDX12_Init call failed!");
+        spdlog::error("D3D12::InitializeImGui() - ImGui_ImplDX12_Init call failed!");
         ImGui_ImplWin32_Shutdown();
         return false;
     }
 
     if (!ImGui_ImplDX12_CreateDeviceObjects()) 
     {
-        Logger::ErrorToMain("D3D12::InitializeImGui() - ImGui_ImplDX12_CreateDeviceObjects call failed!");
+        spdlog::error("D3D12::InitializeImGui() - ImGui_ImplDX12_CreateDeviceObjects call failed!");
         ImGui_ImplDX12_Shutdown();
         ImGui_ImplWin32_Shutdown();
         return false;

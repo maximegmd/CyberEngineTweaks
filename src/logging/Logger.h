@@ -23,43 +23,6 @@ struct Logger
     {
         ToConsole(fmt::format(aFormat, aArgs...));
     }
-
-    static void TraceToMain(std::string_view aMsg);
-    template<typename FormatString, typename... Args>
-    static void TraceToMainFmt(const FormatString &aFormat, Args&&... aArgs)
-    {
-        TraceToMain(fmt::format(aFormat, aArgs...));
-    }
-    static void DebugToMain(std::string_view aMsg);
-    template<typename FormatString, typename... Args>
-    static void DebugToMainFmt(const FormatString &aFormat, Args&&... aArgs)
-    {
-        DebugToMain(fmt::format(aFormat, aArgs...));
-    }
-    static void InfoToMain(std::string_view aMsg);
-    template<typename FormatString, typename... Args>
-    static void InfoToMainFmt(const FormatString &aFormat, Args&&... aArgs)
-    {
-        InfoToMain(fmt::format(aFormat, aArgs...));
-    }
-    static void WarningToMain(std::string_view aMsg);
-    template<typename FormatString, typename... Args>
-    static void WarningToMainFmt(const FormatString &aFormat, Args&&... aArgs)
-    {
-        WarningToMain(fmt::format(aFormat, aArgs...));
-    }
-    static void ErrorToMain(std::string_view aMsg);
-    template<typename FormatString, typename... Args>
-    static void ErrorToMainFmt(const FormatString &aFormat, Args&&... aArgs)
-    {
-        ErrorToMain(fmt::format(aFormat, aArgs...));
-    }
-    static void CriticalToMain(std::string_view aMsg);
-    template<typename FormatString, typename... Args>
-    static void CriticalToMainFmt(const FormatString &aFormat, Args&&... aArgs)
-    {
-        CriticalToMain(fmt::format(aFormat, aArgs...));
-    }
         
     static inline bool Initialized{ false };
 };

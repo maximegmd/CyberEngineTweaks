@@ -146,20 +146,20 @@ Options::Options()
     if (!ExeValid)
         return;
 
-    Logger::InfoToMain("Cyber Engine Tweaks is starting...");
+    spdlog::info("Cyber Engine Tweaks is starting...");
 
     GameImage.Initialize();
 
     if (GameImage.version)
     {
         auto [major, minor] = GameImage.GetVersion();
-        Logger::InfoToMainFmt("Game version {}.{:02d}", major, minor);
-        Logger::InfoToMainFmt("Root path: \"{}\"", paths.GameRoot().string());
-        Logger::InfoToMainFmt("Cyber Engine Tweaks path: \"{}\"", paths.CETRoot().string());
-        Logger::InfoToMainFmt("Lua scripts search path: \"{}\"", paths.ModsRoot().string());
+        spdlog::info("Game version {}.{:02d}", major, minor);
+        spdlog::info("Root path: \"{}\"", paths.GameRoot().string());
+        spdlog::info("Cyber Engine Tweaks path: \"{}\"", paths.CETRoot().string());
+        spdlog::info("Lua scripts search path: \"{}\"", paths.ModsRoot().string());
     }
     else
-        Logger::InfoToMain("Unknown Game Version, update the mod");
+        spdlog::info("Unknown Game Version, update the mod");
 
     Load();
 

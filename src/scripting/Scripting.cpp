@@ -368,7 +368,7 @@ void Scripting::Initialize()
         m_lua.do_file("autoexec.lua");
     else
     {
-        Logger::InfoToMain("Scripting::Initialize() - missing CET autoexec.lua!");
+        spdlog::info("Scripting::Initialize() - missing CET autoexec.lua!");
         Logger::ToConsole("WARNING: missing CET autoexec.lua!");
     }
 

@@ -383,7 +383,7 @@ void GameOptions::Toggle(const std::string& category, const std::string& name)
 void GameOptions::Dump()
 {
     for (auto option : s_gameOptions)
-        Logger::InfoToMain(option->GetInfo());
+        spdlog::info(option->GetInfo());
     
     Logger::ToConsoleFmt("Dumped {} options to cyber_engine_tweaks.log", s_gameOptions.size());
 }

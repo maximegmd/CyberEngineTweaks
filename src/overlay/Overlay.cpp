@@ -186,9 +186,9 @@ void Overlay::Hook()
     if (pLocation)
     {
         if (MH_CreateHook(pLocation, &ClipToCenter, reinterpret_cast<void**>(&m_realClipToCenter)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-            Logger::ErrorToMain("Could not hook mouse clip function!");
+            spdlog::error("Could not hook mouse clip function!");
         else
-            Logger::InfoToMain("Hook mouse clip function!");
+            spdlog::info("Hook mouse clip function!");
     }
 }
 

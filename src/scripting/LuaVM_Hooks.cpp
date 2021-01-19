@@ -199,9 +199,9 @@ void LuaVM::Hook()
     if(pLocation)
     {
         if (MH_CreateHook(pLocation, &HookLog, reinterpret_cast<void**>(&m_realLog)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-            Logger::ErrorToMain("Could not hook Log function!");
+            spdlog::error("Could not hook Log function!");
         else
-            Logger::InfoToMain("Log function hook complete!");
+            spdlog::info("Log function hook complete!");
     }
 
     pLocation = FindSignature({
@@ -220,9 +220,9 @@ void LuaVM::Hook()
     if (pLocation)
     {
         if (MH_CreateHook(pLocation, &HookLogChannel, reinterpret_cast<void**>(&m_realLogChannel)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-            Logger::ErrorToMain("Could not hook LogChannel function!");
+            spdlog::error("Could not hook LogChannel function!");
         else
-            Logger::InfoToMain("LogChannel function hook complete!");
+            spdlog::info("LogChannel function hook complete!");
     }
 
     pLocation = FindSignature({
@@ -234,9 +234,9 @@ void LuaVM::Hook()
     if (pLocation)
     {
         if (MH_CreateHook(pLocation, &HookTDBIDCtor, reinterpret_cast<void**>(&m_realTDBIDCtor)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-            Logger::ErrorToMain("Could not hook TDBID::ctor function!");
+            spdlog::error("Could not hook TDBID::ctor function!");
         else
-            Logger::InfoToMain("TDBID::ctor function hook complete!");
+            spdlog::info("TDBID::ctor function hook complete!");
     }
 
     pLocation = FindSignature({
@@ -249,9 +249,9 @@ void LuaVM::Hook()
     if (pLocation)
     {
         if (MH_CreateHook(pLocation, &HookTDBIDCtorCString, reinterpret_cast<void**>(&m_realTDBIDCtorCString)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-            Logger::ErrorToMain("Could not hook TDBID::ctor[CString] function!");
+            spdlog::error("Could not hook TDBID::ctor[CString] function!");
         else
-            Logger::InfoToMain("TDBID::ctor[CString] function hook complete!");
+            spdlog::info("TDBID::ctor[CString] function hook complete!");
     }
 
     pLocation = FindSignature({
@@ -264,9 +264,9 @@ void LuaVM::Hook()
     if (pLocation)
     {
         if (MH_CreateHook(pLocation, &HookTDBIDCtorDerive, reinterpret_cast<void**>(&m_realTDBIDCtorDerive)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-            Logger::ErrorToMain("Could not hook TDBID::ctor[Derive] function!");
+            spdlog::error("Could not hook TDBID::ctor[Derive] function!");
         else
-            Logger::InfoToMain("TDBID::ctor[Derive] function hook complete!");
+            spdlog::info("TDBID::ctor[Derive] function hook complete!");
     }
 
     pLocation = FindSignature({
@@ -279,10 +279,10 @@ void LuaVM::Hook()
     if (pLocation)
     {
         if (MH_CreateHook(pLocation, &HookTDBIDCtorUnknown, reinterpret_cast<void**>(&m_realTDBIDCtorUnknown)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-            Logger::ErrorToMain("Could not hook TDBID::ctor[Unknown] function!");
+            spdlog::error("Could not hook TDBID::ctor[Unknown] function!");
         else
         {
-            Logger::InfoToMain("TDBID::ctor[Unknown] function hook complete!");
+            spdlog::info("TDBID::ctor[Unknown] function hook complete!");
             *reinterpret_cast<void**>(&m_someStringLookup) = &pLocation[33] + *reinterpret_cast<int32_t*>(&pLocation[29]);
         }
     }
@@ -308,9 +308,9 @@ void LuaVM::Hook()
         {
             pLocation = &pLocation[28] + *reinterpret_cast<int32_t*>(&pLocation[24]);
             if (MH_CreateHook(pLocation, &HookTDBIDToStringDEBUG, reinterpret_cast<void**>(&m_realTDBIDToStringDEBUG)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-                Logger::ErrorToMain("Could not hook TDBID::ToStringDEBUG function!");
+                spdlog::error("Could not hook TDBID::ToStringDEBUG function!");
             else
-                Logger::InfoToMain("TDBID::ToStringDEBUG function hook complete!");
+                spdlog::info("TDBID::ToStringDEBUG function hook complete!");
         }
     }
 }

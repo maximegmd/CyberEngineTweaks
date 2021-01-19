@@ -41,7 +41,7 @@ void Window::Initialize()
                 else 
                 {
                     window.m_wndProc = reinterpret_cast<WNDPROC>(SetWindowLongPtr(window.m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(WndProc)));
-                    Logger::InfoToMain("Window::Initialize() - window hook complete.");
+                    spdlog::info("Window::Initialize() - window hook complete.");
                 }
             }
             window.m_initialized = true;

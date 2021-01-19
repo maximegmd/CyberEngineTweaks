@@ -504,7 +504,7 @@ LRESULT VKBindings::HandleRAWInput(HRAWINPUT ahRAWInput)
 
     auto lpb = std::make_unique<BYTE[]>(dwSize);
     if (GetRawInputData(ahRAWInput, RID_INPUT, lpb.get(), &dwSize, sizeof(RAWINPUTHEADER)) != dwSize )
-         Logger::WarningToMain("VKBindings::HandleRAWInput() - GetRawInputData() does not return correct size !");
+         spdlog::warn("VKBindings::HandleRAWInput() - GetRawInputData() does not return correct size !");
 
     auto* raw = reinterpret_cast<RAWINPUT*>(lpb.get());
     if (raw->header.dwType == RIM_TYPEKEYBOARD)

@@ -2,6 +2,7 @@
 
 #include "Image.h"
 #include "Options.h"
+#include "Utils.h"
 
 #include "d3d12/D3D12.h"
 #include "overlay/Overlay.h"
@@ -25,9 +26,17 @@ void DisableBoundaryTeleportPatch(Image* apImage);
 
 static HANDLE s_modInstanceMutex = nullptr; 
 
-static void Initialize(HMODULE mod)
+using namespace std::chrono_literals;
+
+static void Initialize()
 {
+    // paths need to be initialized first
     Paths::Initialize();
+
+    // initialize main logger as second thing, so we can log main CET messages
+    set_default_logger(CreateLogger(Paths::Get().CETRoot() / "cyber_engine_tweaks.log", "main"));
+    spdlog::flush_every(3s);
+
     Logger::Initialize();
     VKBindings::Initialize();
     Options::Initialize();
@@ -40,7 +49,7 @@ static void Initialize(HMODULE mod)
     if(options.GameImage.GetVersion() != Image::GetSupportedVersion())
     {
         auto [major, minor] = Image::GetSupportedVersion();
-        Logger::ErrorToMainFmt("Unsupported game version! Only {}.{:02d} is supported.", major, minor);
+        spdlog::error("Unsupported game version! Only {}.{:02d} is supported.", major, minor);
         return;
     }
 
@@ -106,6 +115,9 @@ static void Shutdown()
     VKBindings::Shutdown();
     Options::Shutdown();
     //Paths::Shutdown();
+
+    // flush main log (== default logger)
+    spdlog::default_logger()->flush();
 }
 
 BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID) 
@@ -115,7 +127,7 @@ BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID)
     switch(ul_reason_for_call) 
     {
         case DLL_PROCESS_ATTACH:
-            Initialize(mod);
+            Initialize();
             break;
         case DLL_PROCESS_DETACH:
             Shutdown();

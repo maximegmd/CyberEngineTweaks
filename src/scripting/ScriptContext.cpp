@@ -2,7 +2,7 @@
 
 #include "ScriptContext.h"
 
-#include <spdlog/sinks/rotating_file_sink.h>
+#include <Utils.h>
 
 ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::path& acPath)
     : m_lua(aStateView)
@@ -10,14 +10,7 @@ ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::
     , m_name(relative(acPath, Paths::Get().ModsRoot()).string())
 {
     // initialize logger for this mod
-    const auto modRotSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>((acPath / (m_name + ".log")).string(), 1048576 * 5, 3);
-    m_logger = std::make_shared<spdlog::logger>("mods." + m_name, spdlog::sinks_init_list{ modRotSink });
-    m_logger->set_pattern("[%H:%M:%S %z][%l] %v");
-#ifdef CET_DEBUG
-    m_logger->flush_on(spdlog::level::trace);
-#else
-    m_logger->flush_on(spdlog::level::err);
-#endif
+    m_logger = CreateLogger(acPath / (m_name + ".log"), "mods." + m_name);
 
     m_env["registerForEvent"] = [this](const std::string& acName, sol::function aCallback)
     {

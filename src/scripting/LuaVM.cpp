@@ -64,7 +64,7 @@ void LuaVM::ReloadAllMods()
         if (Overlay::Get().IsEnabled())
             m_scripting.TriggerOnOverlayOpen();
 
-        Logger::InfoToMain("LuaVM: Reloaded all mods!");
+        spdlog::info("LuaVM: Reloaded all mods!");
         Logger::ToConsole("LuaVM: Reloaded all mods!");
     }
 }
@@ -94,7 +94,7 @@ void LuaVM::PostInitialize()
     if (Overlay::Get().IsEnabled())
         m_scripting.TriggerOnOverlayOpen();
 
-    Logger::InfoToMain("LuaVM: initialization finished!");
+    spdlog::info("LuaVM: initialization finished!");
     Logger::ToConsole("LuaVM: initialization finished!");
 
     m_initialized = true;

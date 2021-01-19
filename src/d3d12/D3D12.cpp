@@ -16,11 +16,11 @@ void D3D12::Initialize()
         std::thread t([]()
         {
             if (kiero::init() != kiero::Status::Success)
-                Logger::ErrorToMain("Kiero failed!");
+                spdlog::error("Kiero failed!");
             else
             {
                 std::string_view d3d12type = (kiero::isDownLevelDevice()) ? ("D3D12on7") : ("D3D12");
-                Logger::InfoToMainFmt("Kiero initialized for {0}", d3d12type);
+                spdlog::info("Kiero initialized for {0}", d3d12type);
                 Get().Hook();
             }
         });
