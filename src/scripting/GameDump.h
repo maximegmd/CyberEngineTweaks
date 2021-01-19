@@ -1,12 +1,5 @@
 #pragma once
 
-#include "Game_Hooks.h"
-#include "common/Meta.h"
-
-#include <map>
-#include <set>
-#include <unordered_set>
-
 namespace RED4ext
 {
 struct CClass;
@@ -16,10 +9,8 @@ struct CProperty;
 
 namespace GameDump
 {
-struct DumpVTablesTask : MainThreadTask
+struct DumpVTablesTask
 {
-    virtual void Run() override;
-    virtual void Dispose() override;
+    static void Run();
 };
-
 } // namespace GameDump

@@ -2,7 +2,6 @@
 
 #include "GameDump.h"
 
-#include <stack>
 #include <unordered_map>
 
 namespace GameDump
@@ -89,10 +88,4 @@ void DumpVTablesTask::Run()
         spdlog::info("{:016X},{}", p.first, p.second);
     }
 }
-
-void DumpVTablesTask::Dispose()
-{
-    delete this;
-}
-
 } // namespace GameDump

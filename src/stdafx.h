@@ -45,6 +45,7 @@
 #include <DbgHelp.h>
 
 #include <TiltedCore/Allocator.hpp>
-#include <TiltedCore/ScratchAllocator.hpp>	
+#include <TiltedCore/ScratchAllocator.hpp>
+#include <TiltedCore/TaskQueue.hpp>
 
 #include "Options.h"

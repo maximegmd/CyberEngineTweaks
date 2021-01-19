@@ -2,6 +2,7 @@
 
 #include "Scripting.h"
 
+#include "GameHooks.h"
 #include "Options.h"
 #include "GameOptions.h"
 
@@ -31,7 +32,7 @@ void Scripting::Initialize()
     
     m_lua["GetDisplayResolution"] = []() -> std::tuple<float, float>
     {
-        auto resolution = D3D12::Get().GetResolution();
+        const auto resolution = D3D12::Get().GetResolution();
         return
         {
             static_cast<float>(resolution.cx),
@@ -253,36 +254,36 @@ void Scripting::Initialize()
         auto* pType = pRtti->GetType(RED4ext::FNV1a(acName.c_str()));
         if (pType)
         {
-            RED4ext::CClass* cl = nullptr;
+            RED4ext::CClass* pClass = nullptr;
             if (pType->GetType() == RED4ext::ERTTIType::Handle)
             {
-                auto innerType = static_cast<RED4ext::CHandle*>(pType)->GetInnerType();
-                cl = innerType->GetType() == RED4ext::ERTTIType::Class ? static_cast<RED4ext::CClass*>(innerType)
+                const auto pInnerType = static_cast<RED4ext::CHandle*>(pType)->GetInnerType();
+                pClass = pInnerType->GetType() == RED4ext::ERTTIType::Class ? static_cast<RED4ext::CClass*>(pInnerType)
                                                                        : nullptr;
             }
             else if (pType->GetType() == RED4ext::ERTTIType::Class)
             {
-                cl = static_cast<RED4ext::CClass*>(pType);
+                pClass = static_cast<RED4ext::CClass*>(pType);
             }
 
-            if (cl && !cl->flags.isAbstract)
+            if (pClass && !pClass->flags.isAbstract)
             {
                 const sol::state_view state(m_lua);
                 
                 if (pType->GetType() == RED4ext::ERTTIType::Handle)
                 {
                     RED4ext::CStackType stackType;
-                    RED4ext::Handle<RED4ext::IScriptable> clsHandle(cl->AllocInstance());
+                    RED4ext::Handle<RED4ext::IScriptable> clsHandle(pClass->AllocInstance());
                     stackType.type = pType;
                     stackType.value = &clsHandle;
-                    return Scripting::ToLua(state, stackType);
+                    return ToLua(state, stackType);
                 }
                 else
                 {
                     RED4ext::CStackType stackType;
-                    stackType.type = cl;
-                    stackType.value = cl->AllocInstance();
-                    return Scripting::ToLua(state, stackType);
+                    stackType.type = pClass;
+                    stackType.value = pClass->AllocInstance();
+                    return ToLua(state, stackType);
                 }
             }
         }
@@ -368,7 +369,7 @@ void Scripting::Initialize()
         // some hierarchies may also not be accurately reflected due to hash ordering
         // technically this table is flattened and contains all hierarchy, but traversing the hierarchy first reduces
         // error when there are classes that instantiate a parent class but don't actually have a subclass instance
-        GameMainThread::Get().AddTask(new GameDump::DumpVTablesTask);
+        GameMainThread::Get().AddTask(&GameDump::DumpVTablesTask::Run);
     };
     m_lua["DumpReflection"] = [this]()
     {
@@ -377,7 +378,7 @@ void Scripting::Initialize()
 #endif
 
     // execute autoexec.lua inside our default script directory
-    std::filesystem::current_path(Options::Get().CETPath / "scripts");
+    current_path(Options::Get().CETPath / "scripts");
     if (std::filesystem::exists("autoexec.lua"))
         m_lua.do_file("autoexec.lua");
     else
@@ -387,7 +388,7 @@ void Scripting::Initialize()
     }
 
     // set current path for following scripts to out ScriptsPath
-    std::filesystem::current_path(Options::Get().ScriptsPath);
+    current_path(Options::Get().ScriptsPath);
 
     // load mods
     ReloadAllMods();
@@ -475,10 +476,9 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::CStackType& aResul
     }
     else if (pType->GetType() == RED4ext::ERTTIType::WeakHandle)
     {
-         return make_object(aState, WeakReference(aState, *static_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(aResult.value)));
-        const auto handle = *static_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(aResult.value);
-        if (!handle.Expired())
-            return make_object(aState, WeakReference(aState, handle));
+         const auto handle = *static_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(aResult.value);
+         if (!handle.Expired())
+             return make_object(aState, WeakReference(aState, handle));
     }
     else if (pType->GetType() == RED4ext::ERTTIType::Array)
     {
@@ -513,7 +513,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
 
     RED4ext::CStackType result;
 
-    bool hasData = aObject != sol::nil;
+    const bool hasData = aObject != sol::nil;
 
     if (apRtti)
     {

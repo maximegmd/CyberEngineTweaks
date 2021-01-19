@@ -7,7 +7,7 @@
 #include "console/Console.h"
 #include "scripting/LuaVM.h"
 #include "window/window.h"
-#include "scripting/Game_Hooks.h"
+#include "scripting/GameHooks.h"
 
 #pragma comment( lib, "dbghelp.lib" )
 #pragma comment(linker, "/DLL")
