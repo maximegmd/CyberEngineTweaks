@@ -12,10 +12,7 @@ static std::shared_ptr<spdlog::logger> s_modsLogger{ };
 
 void Logger::Initialize()
 {
-    if (!Paths::Initialized)
-        return;
-
-    const auto mainRotSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>((Paths::CETPath / "cyber_engine_tweaks.log").string(), 1048576 * 5, 3);
+    const auto mainRotSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>((Paths::Get().CETRoot() / "cyber_engine_tweaks.log").string(), 1048576 * 5, 3);
     s_mainLogger = std::make_shared<spdlog::logger>("main", spdlog::sinks_init_list{ mainRotSink });
     s_mainLogger->set_pattern("[%H:%M:%S %z][%l] %v");
 #ifdef CET_DEBUG
@@ -24,12 +21,12 @@ void Logger::Initialize()
     s_mainLogger->flush_on(spdlog::level::err);
 #endif
 
-    const auto consoleRotSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>((Paths::CETPath / "console_dump.log").string(), 1048576 * 5, 3);
+    const auto consoleRotSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>((Paths::Get().CETRoot() / "console_dump.log").string(), 1048576 * 5, 3);
     s_consoleLogger = std::make_shared<spdlog::logger>("console", spdlog::sinks_init_list{ consoleRotSink });
     s_consoleLogger->set_pattern("[%H:%M:%S %z] %v");
     s_consoleLogger->flush_on(spdlog::level::info);
 
-    const auto modsRotSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>((Paths::CETPath / "mods_dump.log").string(), 1048576 * 5, 3);
+    const auto modsRotSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>((Paths::Get().CETRoot() / "mods_dump.log").string(), 1048576 * 5, 3);
     s_modsLogger = std::make_shared<spdlog::logger>("mods", spdlog::sinks_init_list{ modsRotSink });
     s_modsLogger->set_pattern("[%H:%M:%S %z][%l] %v");
 #ifdef CET_DEBUG

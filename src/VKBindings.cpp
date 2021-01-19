@@ -99,7 +99,7 @@ VKBindings& VKBindings::Get()
 
 void VKBindings::Load()
 {
-    std::ifstream ifs{ Paths::VKBindingsPath };
+    std::ifstream ifs{ Paths::Get().VKBindings() };
     if (ifs)
     {
         auto config = nlohmann::json::parse(ifs);
@@ -121,7 +121,7 @@ void VKBindings::Save()
     for (auto& idToBind : IDToBinds)
         config[idToBind.first.c_str()] = idToBind.second;
 
-    std::ofstream ofs{ Paths::VKBindingsPath };
+    std::ofstream ofs{ Paths::Get().VKBindings() };
     ofs << config.dump(4) << std::endl;
 }
 

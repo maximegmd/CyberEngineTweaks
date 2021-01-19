@@ -5,7 +5,7 @@
 ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::path& acPath)
     : m_lua(aStateView)
     , m_env(aStateView, sol::create, aStateView.globals())
-    , m_name(relative(acPath, Paths::ModsPath).string())
+    , m_name(relative(acPath, Paths::Get().ModsRoot()).string())
 {
     m_env["registerForEvent"] = [this](const std::string& acName, sol::function aCallback)
     {

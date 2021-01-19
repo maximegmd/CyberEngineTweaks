@@ -7,21 +7,22 @@ void ScriptStore::LoadAll(sol::state_view aStateView)
     m_vkBindInfos.clear();
     m_contexts.clear();
 
-    for (const auto& file : std::filesystem::directory_iterator(Paths::ModsPath))
+    const auto& cModsRoot = Paths::Get().ModsRoot();
+    for (const auto& file : std::filesystem::directory_iterator(cModsRoot))
     {
         if (!file.is_directory())
             continue;
 
         auto fPath = file.path();
         auto fPathStr = fPath.string();
-        if (!std::filesystem::exists(fPath / "init.lua"))
+        if (!exists(fPath / "init.lua"))
         {
             Logger::ToConsoleFmt("Ignoring directory which misses init.lua! ('{}')", fPathStr);
             Logger::WarningToModsFmt("Ignoring directory which misses init.lua! ('{}')", fPathStr);
             continue;
         }
 
-        auto name = std::filesystem::relative(fPath, Paths::ModsPath).string();
+        auto name = relative(fPath, cModsRoot).string();
         if (name.find('.') != std::string::npos)
         {
             Logger::ToConsoleFmt("Ignoring directory with '.', as this is reserved character! ('{}')", fPathStr);

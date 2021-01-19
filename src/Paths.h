@@ -2,44 +2,26 @@
 
 struct Paths
 {
-    Paths() = delete;
-    ~Paths() = delete;
+    ~Paths() = default;
 
-    static void Initialize()
-    {
-        TCHAR exePathBuf[MAX_PATH] = { 0 };
-        GetModuleFileName(GetModuleHandle(nullptr), exePathBuf, std::size(exePathBuf));
-        ExePath = exePathBuf;
-
-        RootPath = ExePath.parent_path();
-
-        CETPath = RootPath;
-        CETPath /= "plugins";
-        CETPath /= "cyber_engine_tweaks";
-        create_directories(CETPath);
-        
-        ConfigPath = CETPath / "config.json";
-        // remove empty config.json
-        if (exists(ConfigPath) && !file_size(ConfigPath))
-            std::filesystem::remove(ConfigPath);
-
-        VKBindingsPath = CETPath / "hotkeys.json";
-        // remove empty vkbindings.json
-        if (exists(VKBindingsPath) && !file_size(VKBindingsPath))
-            std::filesystem::remove(VKBindingsPath);
-
-        ModsPath = CETPath / "mods";
-        create_directories(ModsPath);
-
-        Initialized = true;
-    }
+    static void Initialize();
+    static void Shutdown();
+    static Paths& Get();
     
-    static inline std::filesystem::path ExePath{ };
-    static inline std::filesystem::path RootPath{ };
-    static inline std::filesystem::path CETPath{ };
-    static inline std::filesystem::path ConfigPath{ };
-    static inline std::filesystem::path VKBindingsPath{ };
-    static inline std::filesystem::path ModsPath{ };
+    const std::filesystem::path& Executable() const;
+    const std::filesystem::path& GameRoot() const;
+    const std::filesystem::path& CETRoot() const;
+    const std::filesystem::path& Config() const;
+    const std::filesystem::path& VKBindings() const;
+    const std::filesystem::path& ModsRoot() const;
 
-    static inline bool Initialized{ false };
+private:
+    Paths();
+    
+    std::filesystem::path m_exe{ };
+    std::filesystem::path m_gameRoot{ };
+    std::filesystem::path m_cetRoot{ };
+    std::filesystem::path m_config{ };
+    std::filesystem::path m_vkBindings{ };
+    std::filesystem::path m_modsRoot{ };
 };

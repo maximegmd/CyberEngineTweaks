@@ -8,9 +8,6 @@ void Options::Initialize()
 {
     if (s_pOptions)
         return;
-
-    if (!Paths::Initialized)
-        return;
     
     s_pOptions.reset(new (std::nothrow) Options);
 }
@@ -25,17 +22,17 @@ void Options::Shutdown()
 Options& Options::Get()
 {
     assert(s_pOptions);
-    assert(s_pOptions->m_initialized);
-
     return *s_pOptions;
 }
 
 void Options::Load()
 {
-    IsFirstLaunch = !std::filesystem::exists(Paths::ConfigPath);
+    auto& paths = Paths::Get();
+
+    IsFirstLaunch = !exists(paths.Config());
     if (!IsFirstLaunch)
     {
-        std::ifstream configFile(Paths::ConfigPath);
+        std::ifstream configFile(paths.Config());
         if(configFile)
         {
             auto config = nlohmann::json::parse(configFile);
@@ -80,7 +77,7 @@ void Options::Save()
     config["disable_win7_vsync"] = PatchDisableWin7Vsync;
     config["dump_game_options"] = DumpGameOptions;
 
-    std::ofstream o(Paths::ConfigPath);
+    std::ofstream o(Paths::Get().Config());
     o << config.dump(4) << std::endl;
 }
 
@@ -102,7 +99,9 @@ void Options::ResetToDefaults()
 
 Options::Options()
 {
-    const auto* exePathStr = Paths::ExePath.native().c_str(); 
+    auto& paths = Paths::Get();
+
+    const auto* exePathStr = paths.Executable().native().c_str(); 
     int verInfoSz = GetFileVersionInfoSize(exePathStr, nullptr);
     if(verInfoSz) 
     {
@@ -135,7 +134,7 @@ Options::Options()
         }
     }
     // check if exe name matches in case previous check fails
-    ExeValid = ExeValid || (Paths::ExePath.filename() == "Cyberpunk2077.exe");
+    ExeValid = ExeValid || (paths.Executable().filename() == "Cyberpunk2077.exe");
 
     if (!ExeValid)
         return;
@@ -148,9 +147,9 @@ Options::Options()
     {
         auto [major, minor] = GameImage.GetVersion();
         Logger::InfoToMainFmt("Game version {}.{:02d}", major, minor);
-        Logger::InfoToMainFmt("Root path: \"{}\"", Paths::RootPath.string());
-        Logger::InfoToMainFmt("Cyber Engine Tweaks path: \"{}\"", Paths::CETPath.string());
-        Logger::InfoToMainFmt("Lua scripts search path: \"{}\"", Paths::ModsPath.string());
+        Logger::InfoToMainFmt("Root path: \"{}\"", paths.GameRoot().string());
+        Logger::InfoToMainFmt("Cyber Engine Tweaks path: \"{}\"", paths.CETRoot().string());
+        Logger::InfoToMainFmt("Lua scripts search path: \"{}\"", paths.ModsRoot().string());
     }
     else
         Logger::InfoToMain("Unknown Game Version, update the mod");
@@ -159,6 +158,4 @@ Options::Options()
 
     if (!IsFirstLaunch)
         Save();
-
-    m_initialized = true;
 }

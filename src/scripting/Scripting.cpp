@@ -278,7 +278,7 @@ void Scripting::Initialize()
     };
 
     // execute autoexec.lua inside our default script directory
-    std::filesystem::current_path(Paths::CETPath / "scripts");
+    current_path(Paths::Get().CETRoot() / "scripts");
     if (std::filesystem::exists("autoexec.lua"))
         m_lua.do_file("autoexec.lua");
     else
@@ -288,7 +288,7 @@ void Scripting::Initialize()
     }
 
     // set current path for following scripts to our ModsPath
-    std::filesystem::current_path(Paths::ModsPath);
+    current_path(Paths::Get().ModsRoot());
 
     // load mods
     ReloadAllMods();

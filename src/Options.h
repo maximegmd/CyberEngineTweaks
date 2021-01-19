@@ -31,6 +31,4 @@ struct Options
 
 private:
     Options();
-
-    bool m_initialized{ false };
 };
