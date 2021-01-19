@@ -47,11 +47,6 @@ Overlay& Overlay::Get()
     return *s_pOverlay;
 }
 
-ModWidgets& Overlay::GetModWidgets()
-{
-    return Get().m_mods;
-}
-
 Console& Overlay::GetConsole()
 {
     return Get().m_console;
@@ -103,17 +98,10 @@ void Overlay::Update()
 
         if (!Options::Get().IsFirstLaunch)
         {
-            WidgetID selectedID = WidgetID::COUNT;
-            selectedID = HelperWidgets::ToolbarWidget();
+            WidgetID selectedID = HelperWidgets::ToolbarWidget();
             if (selectedID < WidgetID::COUNT)
                 SetActiveWidget(selectedID);
-
-            if (m_activeWidgetID == WidgetID::MODS)
-            {
-                if (ImGui::BeginChild("Mod widgets", zeroVec, true))
-                    m_mods.Update();
-                ImGui::EndChild();
-            }
+            
             if (m_activeWidgetID == WidgetID::CONSOLE)
             {
                 if (ImGui::BeginChild("Console", zeroVec, true))
@@ -194,7 +182,6 @@ void Overlay::Hook()
 
 Overlay::Overlay()
 {
-    m_widgets[WidgetID::MODS] = &m_mods;
     m_widgets[WidgetID::CONSOLE] = &m_console;
     m_widgets[WidgetID::HOTKEYS] = &m_hotkeys;
     m_widgets[WidgetID::SETTINGS] = &m_settings;

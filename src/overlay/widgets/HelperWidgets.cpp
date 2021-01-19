@@ -10,8 +10,6 @@ namespace HelperWidgets
     WidgetID ToolbarWidget()
     {
         WidgetID activeID = WidgetID::COUNT;
-        if (ImGui::Button("Mod Widgets"))
-            activeID = WidgetID::MODS;
         ImGui::SameLine();
         if (ImGui::Button("Console"))
             activeID = WidgetID::CONSOLE;

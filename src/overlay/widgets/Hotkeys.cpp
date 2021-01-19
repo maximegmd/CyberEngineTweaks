@@ -66,12 +66,17 @@ void Hotkeys::Load()
         return;
     
     VKBindings::Get().Load();
-
-    // this step is mandatory during Load, no need for this to happen other way around during Save
+    
     m_vkBindInfos = VKBindings::InitializeMods(luaVM.GetBinds());
 }
 
 void Hotkeys::Save()
 {
     VKBindings::Get().Save();
+
+    auto& luaVM = LuaVM::Get();
+    if (!luaVM.IsInitialized())
+        return;
+    
+    m_vkBindInfos = VKBindings::InitializeMods(luaVM.GetBinds());
 }

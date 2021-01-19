@@ -25,11 +25,12 @@ void trim(std::string& s)
     rtrim(s);
 }
 
-class CustomSink final : public spdlog::sinks::base_sink<spdlog::details::null_mutex>
+template <typename Mutex>
+class CustomSink : public spdlog::sinks::base_sink<Mutex>
 {
 public:
     CustomSink(std::function<void(const std::string&)> aSinkItHandler, std::function<void()> aFlushHandler)
-        : base_sink()
+        : spdlog::sinks::base_sink<Mutex>()
         , m_sinkItHandler(aSinkItHandler)
         , m_flushHandler(aFlushHandler)
     {}
@@ -41,7 +42,7 @@ protected:
             return;
             
         spdlog::memory_buf_t formatted;
-        formatter_->format(msg, formatted);
+        spdlog::sinks::base_sink<Mutex>::formatter_->format(msg, formatted);
         m_sinkItHandler(fmt::to_string(formatted));
     }
 
@@ -57,13 +58,28 @@ private:
     std::function<void()> m_flushHandler{ nullptr };
 };
 
+template <typename Mutex>
 spdlog::sink_ptr CreateCustomSink(std::function<void(const std::string&)> aSinkItHandler, std::function<void()> aFlushHandler)
 {
-    return std::make_shared<CustomSink>(aSinkItHandler, aFlushHandler);
+    return std::make_shared<CustomSink<Mutex>>(aSinkItHandler, aFlushHandler);
+}
+
+spdlog::sink_ptr CreateCustomSinkST(std::function<void(const std::string&)> aSinkItHandler, std::function<void()> aFlushHandler)
+{
+    return CreateCustomSink<spdlog::details::null_mutex>(aSinkItHandler, aFlushHandler);
+}
+
+spdlog::sink_ptr CreateCustomSinkMT(std::function<void(const std::string&)> aSinkItHandler, std::function<void()> aFlushHandler)
+{
+    return CreateCustomSink<std::mutex>(aSinkItHandler, aFlushHandler);
 }
 
 std::shared_ptr<spdlog::logger> CreateLogger(const std::filesystem::path& aPath, const std::string& aID, spdlog::sink_ptr aExtraSink, const std::string& aPattern)
 {
+    auto existingLogger = spdlog::get(aID);
+    if (existingLogger)
+        return existingLogger;
+
     const auto rotSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(aPath.string(), 1048576 * 5, 3);
     auto logger = std::make_shared<spdlog::logger>(aID, spdlog::sinks_init_list{ rotSink });
 

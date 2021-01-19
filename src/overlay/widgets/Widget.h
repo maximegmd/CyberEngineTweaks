@@ -2,7 +2,6 @@
 
 enum WidgetID
 {
-    MODS,
     CONSOLE,
     HOTKEYS,
     SETTINGS,

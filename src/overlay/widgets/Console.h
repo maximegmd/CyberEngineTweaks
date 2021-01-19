@@ -24,6 +24,4 @@ private:
     bool m_focusConsoleInput{ false };
 
     char m_Command[0x10000]{ 0 };
-    int m_CommandLines{ 1 };
-    float m_InputLineHeight{ -1.0f };
 };

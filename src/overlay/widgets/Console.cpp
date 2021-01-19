@@ -27,11 +27,14 @@ void Console::Update()
     ImGui::Checkbox("Scroll Output", &m_outputShouldScroll);
     ImGui::SameLine();
     ImGui::Checkbox("Disable Game Log", &m_disabledGameLog);
-
+    ImGui::SameLine();
+    if (ImGui::Button("Reload All Mods"))
+        LuaVM::Get().ReloadAllMods();
+        
     auto& style = ImGui::GetStyle();
-    m_InputLineHeight = ImGui::GetTextLineHeight() * m_CommandLines + style.ItemInnerSpacing.y * 2;
+    auto inputLineHeight = ImGui::GetTextLineHeight() + style.ItemInnerSpacing.y * 2;
     
-    if (ImGui::ListBoxHeader("##ConsoleHeader", ImVec2(-1, -(m_InputLineHeight + style.ItemSpacing.y))))
+    if (ImGui::ListBoxHeader("##ConsoleHeader", ImVec2(-1, -(inputLineHeight + style.ItemSpacing.y))))
     {
         std::lock_guard<std::recursive_mutex> _{ m_outputLock };
 
@@ -69,7 +72,9 @@ void Console::Update()
         ImGui::SetKeyboardFocusHere();
         m_focusConsoleInput = false;
     }
-    const auto execute = ImGui::InputTextMultiline("##InputCommand", m_Command, std::size(m_Command), ImVec2(-1, m_InputLineHeight), ImGuiInputTextFlags_CtrlEnterForNewLine | ImGuiInputTextFlags_AllowTabInput| ImGuiInputTextFlags_EnterReturnsTrue);
+    ImGui::PushItemWidth(-1);
+    const auto execute = ImGui::InputText("##InputCommand", m_Command, std::size(m_Command), ImGuiInputTextFlags_EnterReturnsTrue);
+    ImGui::PopItemWidth();
     ImGui::SetItemDefaultFocus();
     if (execute)
     {
@@ -82,15 +87,10 @@ void Console::Update()
         if (m_inputClear)
         {
             std::memset(m_Command, 0, sizeof(m_Command));
-            m_CommandLines = 1;
         }
 
         m_focusConsoleInput = true;
     }
-    //if (ImGui::IsKeyDown(VK_CONTROL) && ImGui::IsKeyPressed(VK_RETURN, false))
-    //{
-    //    ++m_CommandLines;
-    //}
 }
 
 void Console::Log(const std::string& acpText)

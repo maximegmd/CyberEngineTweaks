@@ -11,7 +11,6 @@ ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::
 {
     // initialize logger for this mod
     m_logger = CreateLogger(acPath / (m_name + ".log"), "mods." + m_name);
-
     m_env["registerForEvent"] = [this](const std::string& acName, sol::function aCallback)
     {
         if(acName == "onInit")

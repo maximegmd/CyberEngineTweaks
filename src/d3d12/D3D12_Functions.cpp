@@ -320,18 +320,8 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO();
         ImGui::StyleColorsDark();
-        //io.IniFilename = nullptr;
-        //io.FontAllowUserScaling = true;
-        //ImFontConfig fontCfg{}; 
-        //fontCfg.SizePixels =  20.0f;
-        //fontCfg.OversampleH = 5; 
-        //fontCfg.OversampleV = 5;
-        //if (std::filesystem::exists(_T("C:\\Windows\\Fonts\\SegoeUI.ttf")))
-        //    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\SegoeUI.ttf", 20.0f, &fontCfg);
-        //else
-        //    io.Fonts->AddFontDefault(&fontCfg);
-        
-        // TODO - make this a bit nicer as a whole... better would be to get glyphs from language itself via codepage for example
+        io.IniFilename = nullptr;
+
         auto& options = Options::Get();
         ImFontConfig config;
         config.SizePixels = options.FontSize;
