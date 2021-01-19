@@ -47,7 +47,12 @@ void Options::Load()
             PatchDisableWin7Vsync = config.value("disable_win7_vsync", PatchDisableWin7Vsync);
 
             DumpGameOptions = config.value("dump_game_options", DumpGameOptions);
-            OverlayKeyBind = config.value("toolbar_key", OverlayKeyBind);
+            
+            // font config
+            FontPath = config.value("font_path", FontPath);
+            FontGlyphRanges = config.value("font_glyph_ranges", FontGlyphRanges);
+            FontSize = config.value("font_size", FontSize);
+
             if (OverlayKeyBind != 0)
                 VKBindings::Get().Bind(OverlayKeyBind, Overlay::VKBOverlay);
             else
@@ -76,6 +81,9 @@ void Options::Save()
     config["disable_boundary_teleport"] = PatchDisableBoundaryTeleport;
     config["disable_win7_vsync"] = PatchDisableWin7Vsync;
     config["dump_game_options"] = DumpGameOptions;
+    config["font_path"] = FontPath;
+    config["font_glyph_ranges"] = FontGlyphRanges;
+    config["font_size"] = FontSize;
 
     std::ofstream o(Paths::Get().Config());
     o << config.dump(4) << std::endl;

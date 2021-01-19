@@ -6,8 +6,7 @@
 struct WeakReference : ClassType
 {
     WeakReference(sol::state_view aView, RED4ext::WeakHandle<RED4ext::IScriptable> aWeakHandle);
-    ~WeakReference();
-    
+
 protected:
 
     virtual RED4ext::ScriptInstance GetHandle();

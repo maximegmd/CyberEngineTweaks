@@ -6,8 +6,7 @@
 struct StrongReference : ClassType
 {
     StrongReference(sol::state_view aView, RED4ext::Handle<RED4ext::IScriptable> aStrongHandle);
-    ~StrongReference();
-    
+
 protected:
 
     virtual RED4ext::ScriptInstance GetHandle();

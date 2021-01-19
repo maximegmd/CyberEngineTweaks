@@ -2,6 +2,8 @@
 
 #include "Scripting.h"
 
+#include "GameHooks.h"
+#include "Options.h"
 #include "GameOptions.h"
 
 #include <sol_imgui/sol_imgui.h>
@@ -10,13 +12,19 @@
 #include <d3d12/D3D12.h>
 
 #include <reverse/Type.h>
-#include <reverse/Array.h>
 #include <reverse/BasicTypes.h>
 #include <reverse/SingletonReference.h>
 #include <reverse/StrongReference.h>
 #include <reverse/Converter.h>
 #include <reverse/WeakReference.h>
 #include <reverse/Enum.h>
+
+#include "CETVersion.h"
+
+#ifndef NDEBUG
+#include "GameDump.h"
+#include <RED4ext/Dump/Reflection.hpp>
+#endif
 
 static RED4ext::IRTTIType* s_pStringType = nullptr;
 
@@ -26,15 +34,16 @@ void Scripting::Initialize()
     m_lua.require("sqlite3", luaopen_lsqlite3);
 
     sol_ImGui::InitBindings(m_lua);
-    
+
     m_lua["GetDisplayResolution"] = []() -> std::tuple<float, float>
     {
-        auto resolution = D3D12::Get().GetResolution();
-        return
-        {
-            static_cast<float>(resolution.cx),
-            static_cast<float>(resolution.cy)
-        };
+        const auto resolution = D3D12::Get().GetResolution();
+        return {static_cast<float>(resolution.cx), static_cast<float>(resolution.cy)};
+    };
+
+    m_lua["GetVersion"] = []() -> std::string
+    {
+        return CET_BUILD_COMMIT;
     };
 
     m_lua["GetMod"] = [this](const std::string& acName) -> sol::object
@@ -203,7 +212,8 @@ void Scripting::Initialize()
     m_lua.new_usertype<TweakDBID>("TweakDBID",
         sol::constructors<TweakDBID(const std::string&), TweakDBID(const TweakDBID&, const std::string&), TweakDBID(uint32_t, uint8_t), TweakDBID()>(),
         sol::meta_function::to_string, &TweakDBID::ToString,
-        "hash", &TweakDBID::name_hash);
+        "hash", &TweakDBID::name_hash,
+        "length", &TweakDBID::name_length);
 
     m_lua["ToTweakDBID"] = [](sol::table table) -> TweakDBID
     {
@@ -217,7 +227,11 @@ void Scripting::Initialize()
     m_lua.new_usertype<ItemID>("ItemID",
         sol::constructors<ItemID(const TweakDBID&, uint32_t, uint16_t, uint8_t), ItemID(const TweakDBID&, uint32_t, uint16_t), ItemID(const TweakDBID&, uint32_t), ItemID(const TweakDBID&), ItemID()>(),
         sol::meta_function::to_string, &ItemID::ToString,
-        "tdbid", &ItemID::id);
+        "id", &ItemID::id,
+        "tdbid", &ItemID::id,
+        "rng_seed", &ItemID::rng_seed,
+        "unknown", &ItemID::unknown,
+        "maybe_type", &ItemID::maybe_type);
 
     m_lua["ToItemID"] = [](sol::table table) -> ItemID
     {
@@ -228,6 +242,49 @@ void Scripting::Initialize()
             table["unknown"].get_or<uint16_t>(0),
             table["maybe_type"].get_or<uint8_t>(0),
         };
+    };
+
+    m_lua["NewObject"] = [this](const std::string& acName) -> sol::object
+    {
+        auto* pRtti = RED4ext::CRTTISystem::Get();
+        auto* pType = pRtti->GetType(RED4ext::FNV1a(acName.c_str()));
+        if (pType)
+        {
+            RED4ext::CClass* pClass = nullptr;
+            if (pType->GetType() == RED4ext::ERTTIType::Handle)
+            {
+                auto* pInnerType = static_cast<RED4ext::CHandle*>(pType)->GetInnerType();
+                pClass = pInnerType->GetType() == RED4ext::ERTTIType::Class ? static_cast<RED4ext::CClass*>(pInnerType)
+                                                                       : nullptr;
+            }
+            else if (pType->GetType() == RED4ext::ERTTIType::Class)
+            {
+                pClass = static_cast<RED4ext::CClass*>(pType);
+            }
+
+            if (pClass && !pClass->flags.isAbstract)
+            {
+                const sol::state_view state(m_lua);
+                
+                if (pType->GetType() == RED4ext::ERTTIType::Handle)
+                {
+                    RED4ext::CStackType stackType;
+                    RED4ext::Handle<RED4ext::IScriptable> clsHandle(pClass->AllocInstance());
+                    stackType.type = pType;
+                    stackType.value = &clsHandle;
+                    return ToLua(state, stackType);
+                }
+                else
+                {
+                    RED4ext::CStackType stackType;
+                    stackType.type = pClass;
+                    stackType.value = pClass->AllocInstance();
+                    return ToLua(state, stackType);
+                }
+            }
+        }
+
+        return sol::nil;
     };
 
     m_lua.new_usertype<Type::Descriptor>("Descriptor",
@@ -260,7 +317,20 @@ void Scripting::Initialize()
         return type.Dump(aDetailed);
     };
 
-    m_lua["print"] = [](sol::variadic_args aArgs, sol::this_environment aEnvironment, sol::this_state aState)
+    m_lua["DumpAllTypeNames"] = [this]()
+    {
+        auto* pRtti = RED4ext::CRTTISystem::Get();
+
+        uint32_t count = 0;
+        pRtti->types.for_each([&count](RED4ext::CName name, RED4ext::IRTTIType*& type)
+        {
+            spdlog::info(name.ToString());
+            count++;
+        });
+        Console::Get().Log(fmt::format("Dumped {} types", count));
+    };
+
+    m_lua["print"] = [](sol::variadic_args aArgs, sol::this_state aState)
     {
         std::ostringstream oss;
         sol::state_view s(aState);
@@ -275,6 +345,22 @@ void Scripting::Initialize()
         }
         Logger::ToConsole(oss.str());
     };
+
+#ifndef NDEBUG
+    m_lua["DumpVtables"] = [this]()
+    {
+        // Hacky RTTI dump, this should technically only dump IScriptable instances and RTTI types as they are guaranteed to have a vtable
+        // but there can occasionally be Class types that are not IScriptable derived that still have a vtable
+        // some hierarchies may also not be accurately reflected due to hash ordering
+        // technically this table is flattened and contains all hierarchy, but traversing the hierarchy first reduces
+        // error when there are classes that instantiate a parent class but don't actually have a subclass instance
+        GameMainThread::Get().AddTask(&GameDump::DumpVTablesTask::Run);
+    };
+    m_lua["DumpReflection"] = [this]()
+    {
+        RED4ext::GameReflection::Dump(Options::Get().CETPath / "dumps");
+    };
+#endif
 
     // execute autoexec.lua inside our default script directory
     current_path(Paths::Get().CETRoot() / "scripts");
@@ -370,22 +456,20 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::CStackType& aResul
         return make_object(aState, std::string(static_cast<RED4ext::CString*>(aResult.value)->c_str()));
     if (pType->GetType() == RED4ext::ERTTIType::Handle)
     {
-        const auto handle = *static_cast<RED4ext::Handle<RED4ext::IScriptable>*>(aResult.value);
-        if (handle)
-            return make_object(aState, StrongReference(aState, handle));
+         return make_object(aState, StrongReference(aState, *static_cast<RED4ext::Handle<RED4ext::IScriptable>*>(aResult.value)));
     }
     else if (pType->GetType() == RED4ext::ERTTIType::WeakHandle)
     {
-        const auto handle = *static_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(aResult.value);
-        if (handle)
-            return make_object(aState, WeakReference(aState, handle));
+         const auto handle = *static_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(aResult.value);
+         if (!handle.Expired())
+             return make_object(aState, WeakReference(aState, handle));
     }
     else if (pType->GetType() == RED4ext::ERTTIType::Array)
     {
         auto* pArrayType = static_cast<RED4ext::CArray*>(pType);
-        uint32_t length = pArrayType->GetLength(aResult.value);
+        const uint32_t cLength = pArrayType->GetLength(aResult.value);
         sol::table result(aState, sol::create);
-        for(auto i = 0u; i < length; ++i)
+        for (auto i = 0u; i < cLength; ++i)
         {
             RED4ext::CStackType el;
             el.value = pArrayType->GetElement(aResult.value, i);
@@ -410,7 +494,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
 {
     RED4ext::CStackType result;
 
-    bool hasData = aObject != sol::nil;
+    const bool hasData = aObject != sol::nil;
 
     if (apRttiType)
     {
@@ -430,14 +514,9 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
         {
             if (aObject.is<StrongReference>())
             {
-                auto* pSubType = static_cast<RED4ext::CClass*>(apRttiType)->parent;
-                RED4ext::IRTTIType* pType = aObject.as<StrongReference*>()->m_pType;
-                while (pType != nullptr && pType != pSubType)
-                {
-                    pType = static_cast<RED4ext::CClass*>(pType)->parent;
-                }
-
-                if (pType != nullptr)
+                auto* pSubType = static_cast<RED4ext::CClass*>(apRtti)->parent;
+                auto* pType = static_cast<RED4ext::CClass*>(aObject.as<StrongReference*>()->m_pType);
+                if (pType && pType->IsA(pSubType))
                 {
                     if (hasData)
                         result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>(aObject.as<StrongReference>().m_strongHandle);
@@ -445,16 +524,11 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
                         result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>();
                 }
             }
-            else if (aObject.is<WeakReference>()) // Handle Implicit Cast - Probably an awful conversion without proper ref handling but try anyway
+            else if (aObject.is<WeakReference>())
             {
-                auto* pSubType = static_cast<RED4ext::CClass*>(apRttiType)->parent;
-                RED4ext::IRTTIType* pType = aObject.as<WeakReference*>()->m_pType;
-                while (pType != nullptr && pType != pSubType)
-                {
-                    pType = static_cast<RED4ext::CClass*>(pType)->parent;
-                }
-
-                if (pType != nullptr)
+                auto* pSubType = static_cast<RED4ext::CClass*>(apRtti)->parent;
+                auto* pType = static_cast<RED4ext::CClass*>(aObject.as<WeakReference*>()->m_pType);
+                if (pType && pType->IsA(pSubType))
                 {
                     if (hasData)
                         result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>(aObject.as<WeakReference>().m_weakHandle);
@@ -467,14 +541,9 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
         {
             if (aObject.is<WeakReference>())
             {
-                auto* pSubType = static_cast<RED4ext::CClass*>(apRttiType)->parent;
-                RED4ext::IRTTIType* pType = aObject.as<WeakReference*>()->m_pType;
-                while (pType != nullptr && pType != pSubType)
-                {
-                    pType = static_cast<RED4ext::CClass*>(pType)->parent;
-                }
-
-                if (pType != nullptr)
+                auto* pSubType = static_cast<RED4ext::CClass*>(apRtti)->parent;
+                auto* pType = static_cast<RED4ext::CClass*>(aObject.as<WeakReference*>()->m_pType);
+                if (pType && pType->IsA(pSubType))
                 {
                     if (hasData)
                         result.value = apAllocator->New<RED4ext::WeakHandle<RED4ext::IScriptable>>(aObject.as<WeakReference>().m_weakHandle);
@@ -484,14 +553,9 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
             }
             else if (aObject.is<StrongReference>()) // Handle Implicit Cast
             {
-                auto* pSubType = static_cast<RED4ext::CClass*>(apRttiType)->parent;
-                RED4ext::IRTTIType* pType = aObject.as<StrongReference*>()->m_pType;
-                while (pType != nullptr && pType != pSubType)
-                {
-                    pType = static_cast<RED4ext::CClass*>(pType)->parent;
-                }
-
-                if (pType != nullptr)
+                auto* pSubType = static_cast<RED4ext::CClass*>(apRtti)->parent;
+                auto* pType = static_cast<RED4ext::CClass*>(aObject.as<StrongReference*>()->m_pType);
+                if (pType && pType->IsA(pSubType))
                 {
                     if (hasData)
                         result.value = apAllocator->New<RED4ext::WeakHandle<RED4ext::IScriptable>>(aObject.as<StrongReference>().m_strongHandle);
@@ -502,9 +566,9 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
         }
         else if (apRttiType->GetType() == RED4ext::ERTTIType::Array)
         {
-            auto* pArrayType = static_cast<RED4ext::CArray*>(apRttiType);
-            auto mem = reinterpret_cast<RED4ext::DynArray<void*>*>(apAllocator->New<uint8_t>(apRttiType->GetSize()));
-            apRttiType->Init(mem);
+            auto* pArrayType = static_cast<RED4ext::CArray*>(apRtti);
+            const auto pMemory = static_cast<RED4ext::DynArray<void*>*>(apAllocator->Allocate(apRtti->GetSize()));
+            apRtti->Init(pMemory);
 
             if (hasData && aObject.is<sol::table>())
             {
@@ -512,16 +576,16 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
 
                 // Copy elements from the table into the array
                 auto tbl = aObject.as<sol::table>();
-                pArrayType->Grow(mem, tbl.size());
+                pArrayType->Resize(pMemory, tbl.size());
                 for (uint32_t i = 1; i <= tbl.size(); ++i)
                 {
-                    RED4ext::CStackType type = Converter::ToRED(tbl.get<sol::object>(i), pArrayInnerType, apAllocator);
-                    auto element = pArrayType->GetElement(mem, i - 1);
-                    pArrayInnerType->Assign(element, type.value);
+                    RED4ext::CStackType type = ToRED(tbl.get<sol::object>(i), pArrayInnerType, apAllocator);
+                    const auto pElement = pArrayType->GetElement(pMemory, i - 1);
+                    pArrayInnerType->Assign(pElement, type.value);
                 }
             }
 
-            result.value = mem;
+            result.value = pMemory;
         }
         else
         {
@@ -545,7 +609,7 @@ sol::object Scripting::Index(const std::string& acName)
 sol::object Scripting::NewIndex(const std::string& acName, sol::object aParam)
 {
     auto& property = m_properties[acName];
-    property = aParam;
+    property = std::move(aParam);
     return property;
 }
 
@@ -573,7 +637,7 @@ sol::protected_function Scripting::InternalIndex(const std::string& acName)
     auto obj = make_object(state, [this, name = acName](sol::variadic_args args, sol::this_environment env, sol::this_state L)
     {
         std::string result;
-        auto code = this->Execute(name, args, env, L, result);
+        auto code = this->Execute(name, args, std::move(env), L, result);
         if(!code)
         {
             Logger::ToConsoleFmt("Error: {}", result);
@@ -663,49 +727,63 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
     }
 
     RED4ext::CName name;
-    uint8_t argOffset = 0;
 
+    std::vector<CStackType> args(pFunc->params.size);
+
+    uint32_t argOffset = 0u;
     if (pFunc->params.size > 0)
     {
         auto* pType = pFunc->params[0]->type;
         // check if the first argument is expected to be ScriptGameInstance
         if (pType == pGIType)
         {
-            argOffset = 1;
+            argOffset = 1u;
+            args[0].type = pGIType;
+            args[0].value = &unk10;
         }
     }
 
-    std::vector<CStackType> args(aArgs.size() + argOffset);
-
-    if (pFunc->params.size - argOffset != aArgs.size())
+    int32_t minArgs = 0;
+    for (auto i = argOffset; i < pFunc->params.size; ++i)
     {
-        aReturnMessage = "Function '" + aFuncName + "' expects " +
-            std::to_string(pFunc->params.size - argOffset) + " parameters, not " +
-            std::to_string(aArgs.size()) + ".";
+        if (!pFunc->params[i]->flags.isOut && !pFunc->params[i]->flags.isOptional)
+        {
+            minArgs++;
+        }
+    }
 
+    if (minArgs > aArgs.size())
+    {
+        aReturnMessage = "Function '" + aFuncName + "' requires at least " + std::to_string(minArgs) + " parameter(s).";
         return sol::nil;
     }
 
-    if (argOffset > 0)
+    for (auto i = argOffset; i < pFunc->params.size; ++i)
     {
-        // Inject the ScriptGameInstance into first argument
-        args[0].type = pFunc->params[0]->type;
-        args[0].value = &gameInstance;
-    }
-    
-    for (auto i = 0ull; i < aArgs.size(); ++i)
-    {
-        args[i + argOffset] = ToRED(aArgs[i].get<sol::object>(), pFunc->params[i + argOffset]->type, &s_scratchMemory); // TODO - check!
-
-        if(!args[i + argOffset].value)
+        if (pFunc->params[i]->flags.isOut) // Deal with out params
         {
-            auto* pType = pFunc->params[i + argOffset]->type;
+            args[i] = ToRED(sol::nil, pFunc->params[i]->type, &s_scratchMemory);
+        }
+        else if (i - argOffset < aArgs.size())
+        {
+            args[i] = ToRED(aArgs[i - argOffset].get<sol::object>(), pFunc->params[i]->type, &s_scratchMemory);
+        }
+        else if (pFunc->params[i]->flags.isOptional) // Deal with optional params
+        {
+            args[i].value = nullptr;
+        }
 
-            pType->GetName(name);
-            if (!name.IsEmpty())
+        if (!args[i].value && !pFunc->params[i]->flags.isOptional)
+        {
+            auto* pType = pFunc->params[i]->type;
+
+            RED4ext::CName hash;
+            pType->GetName(hash);
+            if (!hash.IsEmpty())
             {
-                const auto typeName = name.ToString();
-                aReturnMessage = "Function '" + aFuncName + "' parameter " + std::to_string(i) + " must be " + typeName + ".";
+                std::string typeName = hash.ToString();
+                aReturnMessage =
+                    "Function '" + aFuncName + "' parameter " + std::to_string(i - argOffset) + " must be " + typeName + ".";
             }
 
             return sol::nil;

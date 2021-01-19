@@ -26,6 +26,9 @@ struct Options
     bool PatchDisableBoundaryTeleport{ false };
     bool PatchDisableWin7Vsync{ false };
     bool DumpGameOptions{ false };
+    std::string FontPath;
+    std::string FontGlyphRanges{""};
+    float FontSize{ 13.0f };
     bool ExeValid{ false };
     bool IsFirstLaunch{ false };
 

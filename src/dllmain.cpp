@@ -7,6 +7,7 @@
 #include "overlay/Overlay.h"
 #include "scripting/LuaVM.h"
 #include "window/window.h"
+#include "scripting/GameHooks.h"
 
 #pragma comment(lib, "dbghelp.lib")
 #pragma comment(linker, "/DLL")
@@ -76,6 +77,12 @@ static void Initialize(HMODULE mod)
     Overlay::Initialize();
     LuaVM::Initialize();
     D3D12::Initialize();
+
+#ifndef NDEBUG
+    // We only need to hook the game thread right now to do RTTI Dump, which is Debug-only
+    // if we need to queue tasks to the mainthread remove the debug check
+    GameMainThread::Initialize();
+#endif
 
     MH_EnableHook(MH_ALL_HOOKS);
 }

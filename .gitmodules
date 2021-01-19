@@ -1,3 +1,6 @@
 [submodule "vendor/RED4ext.SDK"]
 	path = vendor/RED4ext.SDK
 	url = https://github.com/yamashi/RED4ext.SDK
+[submodule "vendor/luasocket"]
+	path = vendor/luasocket
+	url = https://github.com/diegonehab/luasocket.git

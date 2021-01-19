@@ -20,6 +20,8 @@
 #include <RED4ext/Scripting/Stack.hpp>
 #include <RED4ext/Scripting/CProperty.hpp>
 #include <RED4ext/Scripting/Functions.hpp>
+#include <RED4ext/Types/CharacterCustomization.hpp>
+#include <RED4ext/IMemoryAllocator.hpp>
 
 #include <filesystem>
 #include <iostream>
@@ -43,7 +45,9 @@
 #include <DbgHelp.h>
 
 #include <TiltedCore/Allocator.hpp>
-#include <TiltedCore/ScratchAllocator.hpp>	
+#include <TiltedCore/ScratchAllocator.hpp>
+#include <TiltedCore/TaskQueue.hpp>
+#include <TiltedCore/Platform.hpp>
 
 #include "Paths.h"
 #include "VKBindings.h"
