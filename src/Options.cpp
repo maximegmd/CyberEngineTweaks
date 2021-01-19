@@ -14,8 +14,6 @@ void Options::Initialize()
 
 void Options::Shutdown()
 {
-    Get().Save(); // just in case, save config on exit
-
     s_pOptions.reset();
 }
 
@@ -53,6 +51,7 @@ void Options::Load()
             FontGlyphRanges = config.value("font_glyph_ranges", FontGlyphRanges);
             FontSize = config.value("font_size", FontSize);
 
+            OverlayKeyBind = config.value("overlay_key", OverlayKeyBind);
             if (OverlayKeyBind != 0)
                 VKBindings::Get().Bind(OverlayKeyBind, Overlay::VKBOverlay);
             else
@@ -70,7 +69,7 @@ void Options::Save()
 {
     nlohmann::json config;
 
-    config["toolbar_key"] = OverlayKeyBind;
+    config["overlay_key"] = OverlayKeyBind;
     config["enable_debug"] = PatchEnableDebug;
     config["remove_pedestrians"] = PatchRemovePedestrians;
     config["disable_async_compute"] = PatchAsyncCompute;

@@ -83,7 +83,6 @@ std::vector<VKBindInfo> VKBindings::InitializeMods(std::vector<VKBindInfo> aVKBi
 
 void VKBindings::Shutdown()
 {
-    Get().Save(); // just in case, save bindings on exit
     s_pVKBindings.reset();
 }
 

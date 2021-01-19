@@ -327,7 +327,7 @@ void Scripting::Initialize()
             spdlog::info(name.ToString());
             count++;
         });
-        Console::Get().Log(fmt::format("Dumped {} types", count));
+        Logger::ToConsoleFmt("Dumped {} types", count);
     };
 
     m_lua["print"] = [](sol::variadic_args aArgs, sol::this_state aState)
@@ -358,7 +358,7 @@ void Scripting::Initialize()
     };
     m_lua["DumpReflection"] = [this]()
     {
-        RED4ext::GameReflection::Dump(Options::Get().CETPath / "dumps");
+        RED4ext::GameReflection::Dump(Paths::Get().CETRoot() / "dumps");
     };
 #endif
 
@@ -514,7 +514,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
         {
             if (aObject.is<StrongReference>())
             {
-                auto* pSubType = static_cast<RED4ext::CClass*>(apRtti)->parent;
+                auto* pSubType = static_cast<RED4ext::CClass*>(apRttiType)->parent;
                 auto* pType = static_cast<RED4ext::CClass*>(aObject.as<StrongReference*>()->m_pType);
                 if (pType && pType->IsA(pSubType))
                 {
@@ -526,7 +526,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
             }
             else if (aObject.is<WeakReference>())
             {
-                auto* pSubType = static_cast<RED4ext::CClass*>(apRtti)->parent;
+                auto* pSubType = static_cast<RED4ext::CClass*>(apRttiType)->parent;
                 auto* pType = static_cast<RED4ext::CClass*>(aObject.as<WeakReference*>()->m_pType);
                 if (pType && pType->IsA(pSubType))
                 {
@@ -541,7 +541,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
         {
             if (aObject.is<WeakReference>())
             {
-                auto* pSubType = static_cast<RED4ext::CClass*>(apRtti)->parent;
+                auto* pSubType = static_cast<RED4ext::CClass*>(apRttiType)->parent;
                 auto* pType = static_cast<RED4ext::CClass*>(aObject.as<WeakReference*>()->m_pType);
                 if (pType && pType->IsA(pSubType))
                 {
@@ -553,7 +553,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
             }
             else if (aObject.is<StrongReference>()) // Handle Implicit Cast
             {
-                auto* pSubType = static_cast<RED4ext::CClass*>(apRtti)->parent;
+                auto* pSubType = static_cast<RED4ext::CClass*>(apRttiType)->parent;
                 auto* pType = static_cast<RED4ext::CClass*>(aObject.as<StrongReference*>()->m_pType);
                 if (pType && pType->IsA(pSubType))
                 {
@@ -566,9 +566,9 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
         }
         else if (apRttiType->GetType() == RED4ext::ERTTIType::Array)
         {
-            auto* pArrayType = static_cast<RED4ext::CArray*>(apRtti);
-            const auto pMemory = static_cast<RED4ext::DynArray<void*>*>(apAllocator->Allocate(apRtti->GetSize()));
-            apRtti->Init(pMemory);
+            auto* pArrayType = static_cast<RED4ext::CArray*>(apRttiType);
+            const auto pMemory = static_cast<RED4ext::DynArray<void*>*>(apAllocator->Allocate(apRttiType->GetSize()));
+            apRttiType->Init(pMemory);
 
             if (hasData && aObject.is<sol::table>())
             {
@@ -739,7 +739,7 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
         {
             argOffset = 1u;
             args[0].type = pGIType;
-            args[0].value = &unk10;
+            args[0].value = &gameInstance;
         }
     }
 

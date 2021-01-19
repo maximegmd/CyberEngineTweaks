@@ -338,16 +338,16 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         config.OversampleH = config.OversampleV = 1;
         config.PixelSnapH = true;
         io.Fonts->AddFontDefault(&config);
-        io.IniFilename = NULL;
+        io.IniFilename = nullptr;
         
         if (!options.FontPath.empty())
         {
             std::filesystem::path fontPath(options.FontPath);
             if (!fontPath.is_absolute())
             {
-                fontPath = options.CETPath / fontPath;
+                fontPath = Paths::Get().CETRoot() / fontPath;
             }
-            if (std::filesystem::exists(fontPath))
+            if (exists(fontPath))
             {
                 const ImWchar* cpGlyphRanges = io.Fonts->GetGlyphRangesDefault();
                 if (options.FontGlyphRanges == "ChineseFull")
