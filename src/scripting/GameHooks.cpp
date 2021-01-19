@@ -23,9 +23,9 @@ GameMainThread& GameMainThread::Get()
     return *s_pGameMainThread;
 }
 
-void GameMainThread::AddTask(const std::function<void()> aFunction)
+void GameMainThread::AddTask(std::function<void()> aFunction)
 {
-    m_taskQueue.Add(aFunction);
+    m_taskQueue.Add(std::move(aFunction));
 }
 
 GameMainThread::GameMainThread()
