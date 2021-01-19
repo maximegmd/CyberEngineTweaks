@@ -273,7 +273,6 @@ void Scripting::Initialize()
             std::string str = s["tostring"]((*it).get<sol::object>());
             oss << str;
         }
-        Logger::InfoToMods(oss.str());
         Logger::ToConsole(oss.str());
     };
 

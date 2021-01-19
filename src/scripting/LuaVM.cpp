@@ -65,7 +65,6 @@ void LuaVM::ReloadAllMods()
             m_scripting.TriggerOnOverlayOpen();
 
         Logger::InfoToMain("LuaVM: Reloaded all mods!");
-        Logger::InfoToMods("LuaVM: Reloaded all mods!");
         Logger::ToConsole("LuaVM: Reloaded all mods!");
     }
 }

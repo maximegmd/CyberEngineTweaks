@@ -2,11 +2,23 @@
 
 #include "ScriptContext.h"
 
+#include <spdlog/sinks/rotating_file_sink.h>
+
 ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::path& acPath)
     : m_lua(aStateView)
     , m_env(aStateView, sol::create, aStateView.globals())
     , m_name(relative(acPath, Paths::Get().ModsRoot()).string())
 {
+    // initialize logger for this mod
+    const auto modRotSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>((acPath / (m_name + ".log")).string(), 1048576 * 5, 3);
+    m_logger = std::make_shared<spdlog::logger>("mods." + m_name, spdlog::sinks_init_list{ modRotSink });
+    m_logger->set_pattern("[%H:%M:%S %z][%l] %v");
+#ifdef CET_DEBUG
+    m_logger->flush_on(spdlog::level::trace);
+#else
+    m_logger->flush_on(spdlog::level::err);
+#endif
+
     m_env["registerForEvent"] = [this](const std::string& acName, sol::function aCallback)
     {
         if(acName == "onInit")
@@ -22,7 +34,7 @@ ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::
         else if(acName == "onOverlayClose")
             m_onOverlayClose = aCallback;
         else
-            Logger::ErrorToModsFmt("Tried to register unknown handler '{}'!", acName);
+            m_logger->error("Tried to register unknown handler '{}'!", acName);
     };
 
     m_env["registerHotkey"] = [this](const std::string& acID, const std::string& acDescription, sol::function aCallback)
@@ -30,18 +42,19 @@ ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::
         if (acID.empty() ||
             (std::find_if(acID.cbegin(), acID.cend(), [](char c){ return !(isalpha(c) || isdigit(c) || c == '_'); }) != acID.cend()))
         {
-            Logger::ErrorToModsFmt("Tried to register hotkey with incorrect ID format '{}'! ID needs to be alphanumeric without any whitespace or special characters (exception being '_' which is allowed in ID)!", acID);
+            m_logger->error("Tried to register hotkey with incorrect ID format '{}'! ID needs to be alphanumeric without any whitespace or special characters (exception being '_' which is allowed in ID)!", acID);
             return;
         }
 
         if (acDescription.empty())
         {
-            Logger::ErrorToModsFmt("Tried to register hotkey with empty description! (ID of hotkey handler: {})", acID);
+            m_logger->error("Tried to register hotkey with empty description! (ID of hotkey handler: {})", acID);
             return;
         }
-        
+
+        auto loggerRef = m_logger;
         std::string vkBindID = m_name + '.' + acID;
-        VKBind vkBind = { vkBindID, acDescription, [aCallback]()
+        VKBind vkBind = { vkBindID, acDescription, [loggerRef, aCallback]()
         {
             // TODO: proper exception handling!
             try
@@ -51,11 +64,38 @@ ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::
             }
             catch(std::exception& e)
             {
-                Logger::ErrorToMods(e.what());
+                loggerRef->error(e.what());
             }
         }};
         m_vkBindInfos.emplace_back(VKBindInfo{vkBind});
     };
+
+    // assign logger to mod so it can be used from within it too
+    {
+        auto loggerRef = m_logger; // ref for lambdas
+        sol::table spdlog(m_lua, sol::create);
+        spdlog["trace"] = [loggerRef](const std::string& message)
+        {
+            loggerRef->trace(message);
+        };
+        spdlog["debug"] = [loggerRef](const std::string& message)
+        {
+            loggerRef->debug(message);
+        };
+        spdlog["warning"] = [loggerRef](const std::string& message)
+        {
+            loggerRef->warn(message);
+        };
+        spdlog["error"] = [loggerRef](const std::string& message)
+        {
+            loggerRef->error(message);
+        };
+        spdlog["critical"] = [loggerRef](const std::string& message)
+        {
+            loggerRef->critical(message);
+        };
+        m_env["spdlog"] = spdlog;
+    }
 
     // TODO: proper exception handling!
     try
@@ -71,12 +111,12 @@ ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::
         else
         {
             sol::error err = result;
-            Logger::ErrorToMods(err.what());
+            m_logger->error(err.what());
         }
     }
     catch(std::exception& e)
     {
-        Logger::ErrorToMods(e.what());
+        m_logger->error(e.what());
     }
 }
 
@@ -89,6 +129,8 @@ ScriptContext::~ScriptContext()
 {
     if (m_initialized)
         TriggerOnShutdown();
+
+    m_logger->flush();
 }
 
 bool ScriptContext::IsValid() const
@@ -111,7 +153,7 @@ void ScriptContext::TriggerOnInit() const
     }
     catch(std::exception& e)
     {
-        Logger::ErrorToMods(e.what());
+        m_logger->error(e.what());
     }
 }
 
@@ -125,7 +167,7 @@ void ScriptContext::TriggerOnUpdate(float aDeltaTime) const
     }
     catch(std::exception& e)
     {
-        Logger::ErrorToMods(e.what());
+        m_logger->error(e.what());
     }
 }
 
@@ -139,7 +181,7 @@ void ScriptContext::TriggerOnDraw() const
     }
     catch(std::exception& e)
     {
-        Logger::ErrorToMods(e.what());
+        m_logger->error(e.what());
     }
 }
     
@@ -153,7 +195,7 @@ void ScriptContext::TriggerOnOverlayOpen() const
     }
     catch(std::exception& e)
     {
-        Logger::ErrorToMods(e.what());
+        m_logger->error(e.what());
     }
 }
 void ScriptContext::TriggerOnOverlayClose() const
@@ -166,7 +208,7 @@ void ScriptContext::TriggerOnOverlayClose() const
     }
     catch(std::exception& e)
     {
-        Logger::ErrorToMods(e.what());
+        m_logger->error(e.what());
     }
 }
 
@@ -185,6 +227,6 @@ void ScriptContext::TriggerOnShutdown() const
     }
     catch(std::exception& e)
     {
-        Logger::ErrorToMods(e.what());
+        m_logger->error(e.what());
     }
 }

@@ -36,5 +36,6 @@ private:
     sol::function m_onOverlayClose{ };
     std::vector<VKBindInfo> m_vkBindInfos{ };
     std::string m_name{ };
+    std::shared_ptr<spdlog::logger> m_logger{ nullptr };
     bool m_initialized{ false };
 };

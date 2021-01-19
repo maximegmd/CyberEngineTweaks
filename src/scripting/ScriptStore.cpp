@@ -18,7 +18,7 @@ void ScriptStore::LoadAll(sol::state_view aStateView)
         if (!exists(fPath / "init.lua"))
         {
             Logger::ToConsoleFmt("Ignoring directory which misses init.lua! ('{}')", fPathStr);
-            Logger::WarningToModsFmt("Ignoring directory which misses init.lua! ('{}')", fPathStr);
+            Logger::WarningToMainFmt("Ignoring directory which misses init.lua! ('{}')", fPathStr);
             continue;
         }
 
@@ -26,7 +26,7 @@ void ScriptStore::LoadAll(sol::state_view aStateView)
         if (name.find('.') != std::string::npos)
         {
             Logger::ToConsoleFmt("Ignoring directory with '.', as this is reserved character! ('{}')", fPathStr);
-            Logger::WarningToModsFmt("Ignoring directory with '.', as this is reserved character! ('{}')", fPathStr);
+            Logger::WarningToMainFmt("Ignoring directory with '.', as this is reserved character! ('{}')", fPathStr);
             continue;
         }
         
@@ -37,12 +37,12 @@ void ScriptStore::LoadAll(sol::state_view aStateView)
             m_vkBindInfos.insert(m_vkBindInfos.cend(), ctxBinds.cbegin(), ctxBinds.cend());
             m_contexts.emplace(name, std::move(ctx));
             Logger::ToConsoleFmt("Mod {} loaded! ('{}')", name, fPathStr);
-            Logger::InfoToModsFmt("Mod {} loaded! ('{}')", name, fPathStr);
+            Logger::InfoToMainFmt("Mod {} loaded! ('{}')", name, fPathStr);
         }
         else
         {
             Logger::ToConsoleFmt("Mod {} failed loaded! ('{}')", name, fPathStr);
-            Logger::ErrorToModsFmt("Mod {} failed loaded! ('{}')", name, fPathStr);
+            Logger::ErrorToMainFmt("Mod {} failed loaded! ('{}')", name, fPathStr);
         }
     }
 

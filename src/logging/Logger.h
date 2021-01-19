@@ -60,43 +60,6 @@ struct Logger
     {
         CriticalToMain(fmt::format(aFormat, aArgs...));
     }
-
-    static void TraceToMods(std::string_view aMsg);
-    template<typename FormatString, typename... Args>
-    static void TraceToModsFmt(const FormatString &aFormat, Args&&... aArgs)
-    {
-        TraceToMods(fmt::format(aFormat, aArgs...));
-    }
-    static void DebugToMods(std::string_view aMsg);
-    template<typename FormatString, typename... Args>
-    static void DebugToModsFmt(const FormatString &aFormat, Args&&... aArgs)
-    {
-        DebugToMods(fmt::format(aFormat, aArgs...));
-    }
-    static void InfoToMods(std::string_view aMsg);
-    template<typename FormatString, typename... Args>
-    static void InfoToModsFmt(const FormatString &aFormat, Args&&... aArgs)
-    {
-        InfoToMods(fmt::format(aFormat, aArgs...));
-    }
-    static void WarningToMods(std::string_view aMsg);
-    template<typename FormatString, typename... Args>
-    static void WarningToModsFmt(const FormatString &aFormat, Args&&... aArgs)
-    {
-        WarningToMods(fmt::format(aFormat, aArgs...));
-    }
-    static void ErrorToMods(std::string_view aMsg);
-    template<typename FormatString, typename... Args>
-    static void ErrorToModsFmt(const FormatString &aFormat, Args&&... aArgs)
-    {
-        ErrorToMods(fmt::format(aFormat, aArgs...));
-    }
-    static void CriticalToMods(std::string_view aMsg);
-    template<typename FormatString, typename... Args>
-    static void CriticalToModsFmt(const FormatString &aFormat, Args&&... aArgs)
-    {
-        CriticalToMods(fmt::format(aFormat, aArgs...));
-    }
-    
+        
     static inline bool Initialized{ false };
 };
