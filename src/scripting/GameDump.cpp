@@ -37,15 +37,15 @@ void DumpVTablesTask::Run()
 
             // We aren't borrowing the game's allocator on purpose because some classes have Abstract
             // allocators and they assert
-            std::unique_ptr<char[]> mem = std::make_unique<char[]>(size);
+            const std::unique_ptr<char[]> pMemory = std::make_unique<char[]>(size);
 
-            memset(mem.get(), 0, size);
+            memset(pMemory.get(), 0, size);
 
-            apType->Init(mem.get());
+            apType->Init(pMemory.get());
 
             if (size >= sizeof(uintptr_t))
             {
-                vtable = *reinterpret_cast<uintptr_t*>(mem.get());
+                vtable = *reinterpret_cast<uintptr_t*>(pMemory.get());
 
                 if (vtable >= begin && vtable <= end)
                 {
