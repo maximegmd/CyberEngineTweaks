@@ -317,10 +317,14 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO();
         ImGui::StyleColorsDark();
-        io.Fonts->AddFontDefault();
+        auto& options = Options::Get();
+        ImFontConfig config;
+        config.SizePixels = options.FontSize;
+        config.OversampleH = config.OversampleV = 1;
+        config.PixelSnapH = true;
+        io.Fonts->AddFontDefault(&config);
         io.IniFilename = NULL;
         
-        auto& options = Options::Get();
         if (!options.FontPath.empty())
         {
             std::filesystem::path fontPath(options.FontPath);
@@ -330,25 +334,26 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
             }
             if (std::filesystem::exists(fontPath))
             {
-                const ImWchar* glyph_ranges = io.Fonts->GetGlyphRangesDefault();
+                const ImWchar* cpGlyphRanges = io.Fonts->GetGlyphRangesDefault();
                 if (options.FontGlyphRanges == "ChineseFull")
-                    glyph_ranges = io.Fonts->GetGlyphRangesChineseFull();
+                    cpGlyphRanges = io.Fonts->GetGlyphRangesChineseFull();
                 else if (options.FontGlyphRanges == "ChineseSimplifiedCommon")
-                    glyph_ranges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
+                    cpGlyphRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
                 else if (options.FontGlyphRanges == "Japanese")
-                    glyph_ranges = io.Fonts->GetGlyphRangesJapanese();
+                    cpGlyphRanges = io.Fonts->GetGlyphRangesJapanese();
                 else if (options.FontGlyphRanges == "Korean")
-                    glyph_ranges = io.Fonts->GetGlyphRangesKorean();
+                    cpGlyphRanges = io.Fonts->GetGlyphRangesKorean();
                 else if (options.FontGlyphRanges == "Cyrillic")
-                    glyph_ranges = io.Fonts->GetGlyphRangesCyrillic();
+                    cpGlyphRanges = io.Fonts->GetGlyphRangesCyrillic();
                 else if (options.FontGlyphRanges == "Thai")
-                    glyph_ranges = io.Fonts->GetGlyphRangesThai();
+                    cpGlyphRanges = io.Fonts->GetGlyphRangesThai();
                 else if (options.FontGlyphRanges == "Vietnamese")
-                    glyph_ranges = io.Fonts->GetGlyphRangesVietnamese();
-                ImFont* font = io.Fonts->AddFontFromFileTTF(fontPath.string().c_str(), options.FontSize, NULL, glyph_ranges);
-                if (font != NULL)
+                    cpGlyphRanges = io.Fonts->GetGlyphRangesVietnamese();
+                ImFont* pFont =
+                    io.Fonts->AddFontFromFileTTF(fontPath.string().c_str(), options.FontSize, nullptr, cpGlyphRanges);
+                if (pFont != nullptr)
                 {
-                    io.FontDefault = font;
+                    io.FontDefault = pFont;
                 }
             }
         }

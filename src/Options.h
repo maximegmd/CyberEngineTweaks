@@ -30,7 +30,7 @@ struct Options
     std::filesystem::path ScriptsPath;
     std::string FontPath;
     std::string FontGlyphRanges{""};
-    float FontSize{ 16.0f };
+    float FontSize{ 13.0f };
     Image GameImage;
     bool ExeValid{ false };
 

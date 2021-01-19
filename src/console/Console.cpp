@@ -43,7 +43,7 @@ void Console::Update()
     ImGui::SetNextWindowPos(ImVec2(0.f, 0.f), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(resolution.cx, resolution.cy * 0.3f), ImGuiCond_FirstUseEver);
 
-    ImGui::Begin("Cyber Engine Tweaks (support fonts)");
+    ImGui::Begin("Cyber Engine Tweaks");
 
     auto [major, minor] = Options::Get().GameImage.GetVersion();
 
