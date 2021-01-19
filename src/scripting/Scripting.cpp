@@ -475,13 +475,15 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::CStackType& aResul
         return make_object(aState, std::string(static_cast<RED4ext::CString*>(aResult.value)->c_str()));
     if (pType->GetType() == RED4ext::ERTTIType::Handle)
     {
-         return make_object(aState, StrongReference(aState, *static_cast<RED4ext::Handle<RED4ext::IScriptable>*>(aResult.value)));
+        const auto handle = *static_cast<RED4ext::Handle<RED4ext::IScriptable>*>(aResult.value);
+        if (handle)
+            return make_object(aState, StrongReference(aState, handle));
     }
     else if (pType->GetType() == RED4ext::ERTTIType::WeakHandle)
     {
-         const auto handle = *static_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(aResult.value);
-         if (!handle.Expired())
-             return make_object(aState, WeakReference(aState, handle));
+        const auto handle = *static_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(aResult.value);
+        if (!handle.Expired())
+            return make_object(aState, WeakReference(aState, handle));
     }
     else if (pType->GetType() == RED4ext::ERTTIType::Array)
     {

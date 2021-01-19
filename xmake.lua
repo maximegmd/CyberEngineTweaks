@@ -2,7 +2,7 @@ set_languages("cxx17")
 
 add_requires("spdlog", "nlohmann_json", "minhook", "imgui", "sol2", "tiltedcore", {configs = {cxflags = "/DNDEBUG"}, external = false }) -- configs = {cxflags = "/DNDEBUG"} should not be needed when 'debug' is 'false' (default), but for some reason we still pull in debug packages!!!
 
-add_rules("mode.debug", "mode.release")
+add_rules("mode.releasedbg", "mode.release")
 
 if is_mode("release") then
     add_ldflags("/LTCG", "/OPT:REF")
