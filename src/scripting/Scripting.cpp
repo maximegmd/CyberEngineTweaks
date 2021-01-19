@@ -342,7 +342,7 @@ void Scripting::Initialize()
         Console::Get().Log(fmt::format("Dumped {} types", count));
     };
 
-    m_lua["print"] = [](sol::variadic_args aArgs, sol::this_environment aEnvironment, sol::this_state aState)
+    m_lua["print"] = [](sol::variadic_args aArgs, sol::this_state aState)
     {
         std::ostringstream oss;
         sol::state_view s(aState);
