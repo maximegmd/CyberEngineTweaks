@@ -3,17 +3,23 @@
 #include "WeakReference.h"
 
 WeakReference::WeakReference(sol::state_view aView, RED4ext::WeakHandle<RED4ext::IScriptable> aWeakHandle)
-    : ClassType(aView, aWeakHandle.Lock()->GetParentType())
+    : ClassType(aView, nullptr)
     , m_weakHandle(aWeakHandle)
 {
-}
-
-WeakReference::~WeakReference()
-{
-    // Someday maybe actually free memory
+    auto ref = aWeakHandle.Lock();
+    if (ref)
+    {
+        m_pType = ref->GetType();
+    }
 }
 
 RED4ext::ScriptInstance WeakReference::GetHandle()
 {
-    return m_weakHandle.instance;
+    auto ref = m_weakHandle.Lock();
+    if (ref)
+    {
+        return m_weakHandle.instance;
+    }
+
+    return nullptr;
 }

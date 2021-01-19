@@ -216,13 +216,28 @@ sol::variadic_results Type::Execute(RED4ext::CBaseFunction* apFunc, const std::s
     };
     ResetAllocator ___allocatorReset;
 
+    int32_t minArgs = 0;
+    for (auto i = 0; i < apFunc->params.size; ++i)
+    {
+        if (!apFunc->params[i]->flags.isOut && !apFunc->params[i]->flags.isOptional)
+        {
+            minArgs++;
+        }
+    }
+
+    if (minArgs > aArgs.size())
+    {
+        aReturnMessage = "Function '" + acName + "' requires at least " + std::to_string(minArgs) + " parameter(s).";
+        return {};
+    }
+
     for (auto i = 0u; i < apFunc->params.size; ++i)
     {
         if (apFunc->params[i]->flags.isOut) // Deal with out params
         {
             args[i] = Scripting::ToRED(sol::nil, apFunc->params[i]->type, &s_scratchMemory);
         }
-        else if (aArgs.size() > i)
+        else if (i < aArgs.size())
         {
             args[i] = Scripting::ToRED(aArgs[i].get<sol::object>(), apFunc->params[i]->type, &s_scratchMemory);
         }
@@ -342,8 +357,8 @@ sol::object ClassType::Index_Impl(const std::string& acName)
         auto prop = pType->GetProperty(acName.c_str());
         if (prop)
         {
-            auto value = prop->GetValue<uintptr_t>(handle);
-            RED4ext::CStackType stackType(prop->type, &value);
+            auto value = prop->GetValue<uintptr_t*>(handle);
+            RED4ext::CStackType stackType(prop->type, value);
             return Scripting::ToLua(m_lua, stackType);
         }
     }
@@ -412,7 +427,7 @@ sol::object ClassType::NewIndex_Impl(const std::string& acName, sol::object aPar
             };
             ResetAllocator ___allocatorReset;
             RED4ext::CStackType stackType = Scripting::ToRED(aParam, prop->type, &s_propScratchMemory);
-            prop->SetValue<uintptr_t>(handle, *static_cast<uintptr_t*>(stackType.value));
+            prop->SetValue<uintptr_t*>(handle, static_cast<uintptr_t*>(stackType.value));
             return aParam;
         }
     }
