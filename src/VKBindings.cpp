@@ -456,7 +456,7 @@ LRESULT VKBindings::RecordKeyUp(UINT aVKCode)
                 return 0;
             }
 
-            const auto bind = m_binds.lower_bound(m_recordingResult);
+            const auto bind = m_binds.find(m_recordingResult);
             if (bind != m_binds.end())
             {
                 if (m_pOverlay && m_pOverlay->IsEnabled() && (bind->second.ID != m_pOverlay->GetBind().ID))
@@ -480,7 +480,7 @@ bool VKBindings::VerifyRecording()
     if (m_recordingLength == 0)
         return true; // always valid when empty
 
-    const auto possibleBind = m_binds.find(EncodeVKCodeBind(m_recording));
+    const auto possibleBind = m_binds.lower_bound(EncodeVKCodeBind(m_recording));
     if (possibleBind == m_binds.end())
     {
         m_recording[--m_recordingLength] = 0;
