@@ -12,21 +12,12 @@ Works with 1.06.
 
 | Patches      | Description     |
 | :------------- | :------------------------------ |
-| AMD SMT  | Improves performance on AMD CPUs by enabling all cores. |
 | Debug Menu | Enables the debug menus in game so you can ~~cheat~~, investigate...  |
-| Steam Input (up to 1.04) | Enables the use of more gamepads (such as the Steam gamepad) |
 | Skip start menu | Skips the menu asking you to press space bar to continue (Breaching...) |
 | Remove pedestrians and traffic | Removes most of the pedestrians and traffic |
 | Disable Async Compute | Disables async compute, this can give a boost on older GPUs (Nvidia 10xx series for example)|
 | Disable Antialiasing TAA | Disables antialiasing, not recommended but you do what you want! |
 | Disable Windows 7 VSync | Disables VSync on Windows 7 to bypass the 60 FPS limit |
-| Console | Adds an overlay to draw a console so you can write any kind of script command (full Lua support) |
-
-### Upcoming
-
-* Memory allocation performance
-* Skip conditions that never fail
-* Probably some pattern conversion to SIMD
 
 ## Usage and configuration
 
