@@ -81,12 +81,11 @@ std::shared_ptr<spdlog::logger> CreateLogger(const std::filesystem::path& aPath,
         return existingLogger;
 
     const auto rotSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(aPath.string(), 1048576 * 5, 3);
+    rotSink->set_pattern(aPattern);
     auto logger = std::make_shared<spdlog::logger>(aID, spdlog::sinks_init_list{ rotSink });
 
     if (aExtraSink)
         logger->sinks().emplace_back(aExtraSink);
-
-    logger->set_pattern(aPattern);
 
 #ifdef CET_DEBUG
     logger->flush_on(spdlog::level::trace);
@@ -94,6 +93,6 @@ std::shared_ptr<spdlog::logger> CreateLogger(const std::filesystem::path& aPath,
     logger->flush_on(spdlog::level::err);
 #endif
 
-    initialize_logger(logger);
+    register_logger(logger);
     return logger;
 }

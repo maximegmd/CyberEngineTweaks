@@ -38,7 +38,8 @@ static void Initialize()
 
     // initialize console logger (note: sink is initialized as single-threaded because we already handle conflicts in console, no need for multiple mutexes)
     const auto consoleSink = CreateCustomSinkST([](const std::string& msg){ Overlay::Get().GetConsole().Log(msg); });
-    CreateLogger(Paths::Get().CETRoot() / "console.log", "console", consoleSink, "[%H:%M:%S %z] %v");
+    consoleSink->set_pattern("%v");
+    CreateLogger(Paths::Get().CETRoot() / "console.log", "console", consoleSink);
     spdlog::flush_every(3s);
 
     // initialize bindings and settings
