@@ -62,6 +62,8 @@ CET::CET()
     , m_overlay(m_d3d12, m_bindings, m_options, m_vm)
 {
     m_bindings.Bind(m_options.OverlayKeyBind, m_overlay.GetBind());
+
+    m_vm.Initialize();
 }
 
 CET::~CET() = default;

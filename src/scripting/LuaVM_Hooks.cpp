@@ -145,8 +145,6 @@ LuaVM::LuaVM(Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12, Options& aOpti
     , m_d3d12(aD3D12)
 {
     Hook(aOptions);
-    m_scripting.Initialize();
-    m_initialized = true;
 
     m_connectUpdate = aD3D12.OnUpdate.Connect([this]() { Update(ImGui::GetIO().DeltaTime); });
 }

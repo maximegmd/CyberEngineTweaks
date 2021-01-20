@@ -57,6 +57,15 @@ void LuaVM::OnOverlayClose()
         m_scripting.TriggerOnOverlayClose();
 }
 
+void LuaVM::Initialize()
+{
+    if (!IsInitialized())
+    {
+        m_scripting.Initialize();
+        m_initialized = true;
+    }
+}
+
 bool LuaVM::IsInitialized() const
 {
     return m_initialized;

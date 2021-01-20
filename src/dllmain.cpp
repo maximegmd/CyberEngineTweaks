@@ -30,9 +30,6 @@ static void Initialize()
     {
         MH_Initialize();
 
-        while (!IsDebuggerPresent())
-            Sleep(1000);
-
         CET::Initialize();
 
         const auto& options = CET::Get().GetOptions();

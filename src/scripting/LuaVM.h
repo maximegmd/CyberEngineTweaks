@@ -39,6 +39,8 @@ struct LuaVM
     void OnOverlayOpen();
     void OnOverlayClose();
 
+    void Initialize();
+
     bool IsInitialized() const;
 
 protected:
