@@ -7,9 +7,9 @@
 #include "GameOptions.h"
 
 #include <sol_imgui/sol_imgui.h>
+#include <lsqlite3/lsqlite3.h>
 
 #include <d3d12/D3D12.h>
-#include <console/Console.h>
 
 #include <reverse/Type.h>
 #include <reverse/BasicTypes.h>
@@ -26,9 +26,12 @@
 #include <RED4ext/Dump/Reflection.hpp>
 #endif
 
+static RED4ext::IRTTIType* s_pStringType = nullptr;
+
 void Scripting::Initialize()
 {
     m_lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::io, sol::lib::math, sol::lib::package, sol::lib::os, sol::lib::table);
+    m_lua.require("sqlite3", luaopen_lsqlite3);
 
     sol_ImGui::InitBindings(m_lua);
 
@@ -43,14 +46,9 @@ void Scripting::Initialize()
         return CET_BUILD_COMMIT;
     };
 
-    m_lua["SetTrapInputInImGui"] = [](bool trap)
+    m_lua["GetMod"] = [this](const std::string& acName) -> sol::object
     {
-        D3D12::Get().SetTrapInputInImGui(trap);
-    };
-
-    m_lua["IsTrapInputInImGui"] = []() -> bool
-    {
-        return D3D12::Get().IsTrapInputInImGui();
+        return GetMod(acName);
     };
 
     m_lua["ToVector3"] = [](sol::table table) -> Vector3
@@ -157,11 +155,6 @@ void Scripting::Initialize()
             table["z"].get_or(0.f),
             table["w"].get_or(0.f)
         };
-    };
-
-    m_lua["GetMod"] = [this](const std::string& acName) -> sol::object
-    {
-        return GetMod(acName);
     };
 
     m_lua.new_usertype<EulerAngles>("EulerAngles",
@@ -303,11 +296,6 @@ void Scripting::Initialize()
         return this->GetSingletonHandle(acName);
     };
 
-    m_lua["ReloadAllMods"] = [this]()
-    {
-        ReloadAllMods();
-    };
-
     m_lua["GameDump"] = [this](Type* apType)
     {
         return apType ? apType->GameDump() : "Null";
@@ -328,7 +316,7 @@ void Scripting::Initialize()
         const Type type(m_lua, pType);
         return type.Dump(aDetailed);
     };
-
+    
     m_lua["DumpAllTypeNames"] = [this]()
     {
         auto* pRtti = RED4ext::CRTTISystem::Get();
@@ -339,7 +327,7 @@ void Scripting::Initialize()
             spdlog::info(name.ToString());
             count++;
         });
-        Console::Get().Log(fmt::format("Dumped {} types", count));
+        spdlog::get("console")->info("Dumped {} types", count);
     };
 
     m_lua["print"] = [](sol::variadic_args aArgs, sol::this_state aState)
@@ -355,13 +343,7 @@ void Scripting::Initialize()
             std::string str = s["tostring"]((*it).get<sol::object>());
             oss << str;
         }
-        spdlog::info(oss.str());
-        Console::Get().Log(oss.str());
-    };
-
-    m_lua["GetAsyncKeyState"] = [](int aKeyCode) -> bool
-    {
-        return GetAsyncKeyState(aKeyCode) & 0x8000 != 0;
+        spdlog::get("console")->info(oss.str());
     };
 
 #ifndef NDEBUG
@@ -376,25 +358,30 @@ void Scripting::Initialize()
     };
     m_lua["DumpReflection"] = [this]()
     {
-        RED4ext::GameReflection::Dump(Options::Get().CETPath / "dumps");
+        RED4ext::GameReflection::Dump(Paths::Get().CETRoot() / "dumps");
     };
 #endif
 
     // execute autoexec.lua inside our default script directory
-    current_path(Options::Get().CETPath / "scripts");
+    current_path(Paths::Get().CETRoot() / "scripts");
     if (std::filesystem::exists("autoexec.lua"))
         m_lua.do_file("autoexec.lua");
     else
     {
-        Console::Get().Log("WARNING: missing CET autoexec.lua!");
-        spdlog::warn("Scripting::Initialize() - missing CET autoexec.lua!");
+        spdlog::info("Scripting::Initialize() - missing CET autoexec.lua!");
+        spdlog::get("console")->info("WARNING: missing CET autoexec.lua!");
     }
 
-    // set current path for following scripts to out ScriptsPath
-    current_path(Options::Get().ScriptsPath);
+    // set current path for following scripts to our ModsPath
+    current_path(Paths::Get().ModsRoot());
 
     // load mods
     ReloadAllMods();
+}
+
+const std::vector<VKBindInfo>& Scripting::GetBinds() const
+{
+    return m_store.GetBinds();
 }
 
 void Scripting::TriggerOnInit() const
@@ -412,14 +399,14 @@ void Scripting::TriggerOnDraw() const
     m_store.TriggerOnDraw();
 }
 
-void Scripting::TriggerOnConsoleOpen() const
+void Scripting::TriggerOnOverlayOpen() const
 {
-    m_store.TriggerOnConsoleOpen();
+    m_store.TriggerOnOverlayOpen();
 }
 
-void Scripting::TriggerOnConsoleClose() const
+void Scripting::TriggerOnOverlayClose() const
 {
-    m_store.TriggerOnConsoleClose();
+    m_store.TriggerOnOverlayClose();
 }
 
 sol::object Scripting::GetMod(const std::string& acName) const
@@ -442,36 +429,30 @@ bool Scripting::ExecuteLua(const std::string& acCommand)
     }
     catch(std::exception& e)
     {
-        Console::Get().Log(e.what());
+        spdlog::get("console")->info(e.what());
     }
     return false;
 }
 
-size_t Scripting::Size(RED4ext::IRTTIType* apRtti)
+size_t Scripting::Size(RED4ext::IRTTIType* apRttiType)
 {
-    static auto* pRtti = RED4ext::CRTTISystem::Get();
-    static auto* pStringType = pRtti->GetType(RED4ext::FNV1a("String"));
-
-    if (apRtti == pStringType)
+    if (apRttiType == s_pStringType)
         return sizeof(RED4ext::CString);
-    if (apRtti->GetType() == RED4ext::ERTTIType::Handle)
+    if (apRttiType->GetType() == RED4ext::ERTTIType::Handle)
         return sizeof(RED4ext::Handle<RED4ext::IScriptable>);
-    if (apRtti->GetType() == RED4ext::ERTTIType::WeakHandle)
+    if (apRttiType->GetType() == RED4ext::ERTTIType::WeakHandle)
         return sizeof(RED4ext::WeakHandle<RED4ext::IScriptable>);
 
-    return Converter::Size(apRtti);
+    return Converter::Size(apRttiType);
 }
 
 sol::object Scripting::ToLua(sol::state_view aState, RED4ext::CStackType& aResult)
 {
-    static auto* pRtti = RED4ext::CRTTISystem::Get();
-    static auto* pStringType = pRtti->GetType(RED4ext::FNV1a("String"));
-
     auto* pType = aResult.type;
 
     if (pType == nullptr)
         return sol::nil;
-    if (pType == pStringType)
+    if (pType == s_pStringType)
         return make_object(aState, std::string(static_cast<RED4ext::CString*>(aResult.value)->c_str()));
     if (pType->GetType() == RED4ext::ERTTIType::Handle)
     {
@@ -511,20 +492,17 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::CStackType& aResul
     return sol::nil;
 }
 
-RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator)
+RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* apRttiType, TiltedPhoques::Allocator* apAllocator)
 {
-    static auto* pRtti = RED4ext::CRTTISystem::Get();
-    static auto* pStringType = pRtti->GetType(RED4ext::FNV1a("String"));
-
     RED4ext::CStackType result;
 
     const bool hasData = aObject != sol::nil;
 
-    if (apRtti)
+    if (apRttiType)
     {
-        result.type = apRtti;
+        result.type = apRttiType;
 
-        if (apRtti == pStringType)
+        if (apRttiType == s_pStringType)
         {
             std::string str;
             if (hasData)
@@ -534,11 +512,11 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
             }
             result.value = apAllocator->New<RED4ext::CString>(str.c_str());
         }
-        else if (apRtti->GetType() == RED4ext::ERTTIType::Handle)
+        else if (apRttiType->GetType() == RED4ext::ERTTIType::Handle)
         {
             if (aObject.is<StrongReference>())
             {
-                auto* pSubType = static_cast<RED4ext::CClass*>(apRtti)->parent;
+                auto* pSubType = static_cast<RED4ext::CClass*>(apRttiType)->parent;
                 auto* pType = static_cast<RED4ext::CClass*>(aObject.as<StrongReference*>()->m_pType);
                 if (pType && pType->IsA(pSubType))
                 {
@@ -550,7 +528,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
             }
             else if (aObject.is<WeakReference>())
             {
-                auto* pSubType = static_cast<RED4ext::CClass*>(apRtti)->parent;
+                auto* pSubType = static_cast<RED4ext::CClass*>(apRttiType)->parent;
                 auto* pType = static_cast<RED4ext::CClass*>(aObject.as<WeakReference*>()->m_pType);
                 if (pType && pType->IsA(pSubType))
                 {
@@ -561,11 +539,11 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
                 }
             }
         }
-        else if (apRtti->GetType() == RED4ext::ERTTIType::WeakHandle)
+        else if (apRttiType->GetType() == RED4ext::ERTTIType::WeakHandle)
         {
             if (aObject.is<WeakReference>())
             {
-                auto* pSubType = static_cast<RED4ext::CClass*>(apRtti)->parent;
+                auto* pSubType = static_cast<RED4ext::CClass*>(apRttiType)->parent;
                 auto* pType = static_cast<RED4ext::CClass*>(aObject.as<WeakReference*>()->m_pType);
                 if (pType && pType->IsA(pSubType))
                 {
@@ -577,7 +555,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
             }
             else if (aObject.is<StrongReference>()) // Handle Implicit Cast
             {
-                auto* pSubType = static_cast<RED4ext::CClass*>(apRtti)->parent;
+                auto* pSubType = static_cast<RED4ext::CClass*>(apRttiType)->parent;
                 auto* pType = static_cast<RED4ext::CClass*>(aObject.as<StrongReference*>()->m_pType);
                 if (pType && pType->IsA(pSubType))
                 {
@@ -588,11 +566,11 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
                 }
             }
         }
-        else if (apRtti->GetType() == RED4ext::ERTTIType::Array)
+        else if (apRttiType->GetType() == RED4ext::ERTTIType::Array)
         {
-            auto* pArrayType = static_cast<RED4ext::CArray*>(apRtti);
-            const auto pMemory = static_cast<RED4ext::DynArray<void*>*>(apAllocator->Allocate(apRtti->GetSize()));
-            apRtti->Init(pMemory);
+            auto* pArrayType = static_cast<RED4ext::CArray*>(apRttiType);
+            const auto pMemory = static_cast<RED4ext::DynArray<void*>*>(apAllocator->Allocate(apRttiType->GetSize()));
+            apRttiType->Init(pMemory);
 
             if (hasData && aObject.is<sol::table>())
             {
@@ -613,7 +591,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
         }
         else
         {
-            return Converter::ToRED(aObject, apRtti, apAllocator);
+            return Converter::ToRED(aObject, apRttiType, apAllocator);
         }
     }
 
@@ -647,7 +625,7 @@ sol::object Scripting::GetSingletonHandle(const std::string& acName)
     auto* pType = pRtti->GetClass(RED4ext::FNV1a(acName.c_str()));
     if (!pType)
     {
-        Console::Get().Log("Type '" + acName + "' not found or is not initialized yet.");
+        spdlog::get("console")->info("Type '{}' not found or is not initialized yet.", acName);
         return sol::nil;
     }
 
@@ -664,7 +642,7 @@ sol::protected_function Scripting::InternalIndex(const std::string& acName)
         auto code = this->Execute(name, args, std::move(env), L, result);
         if(!code)
         {
-            Console::Get().Log("Error: " + result);
+            spdlog::get("console")->info("Error: {}", result);
         }
         return code;
     });
@@ -675,6 +653,17 @@ sol::protected_function Scripting::InternalIndex(const std::string& acName)
 sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args aArgs, sol::this_environment env, sol::this_state L, std::string& aReturnMessage) const
 {
     auto* pRtti = RED4ext::CRTTISystem::Get();
+    if (pRtti == nullptr)
+    {
+        aReturnMessage = "Could not retrieve RTTISystem instance.";
+        return sol::nil;
+    }
+    s_pStringType = pRtti->GetType(RED4ext::FNV1a("String"));
+    if (s_pStringType == nullptr)
+    {
+        aReturnMessage = "Could not retrieve String type instance.";
+        return sol::nil;
+    }
 
     RED4ext::CBaseFunction* pFunc = pRtti->GetFunction(RED4ext::FNV1a(aFuncName.c_str()));
 
@@ -683,7 +672,18 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
     auto* pGIType = pRtti->GetType(RED4ext::FNV1a("ScriptGameInstance"));
 
     auto* pPlayerSystem = pRtti->GetClass(hashcpPlayerSystem);
+    if (pPlayerSystem == nullptr)
+    {
+        aReturnMessage = "Could not retrieve cpPlayerSystem class.";
+        return sol::nil;
+    }
+
     auto* gameInstanceType = pRtti->GetClass(hashGameInstance);
+    if (gameInstanceType == nullptr)
+    {
+        aReturnMessage = "Could not retrieve ScriptGameInstance class.";
+        return sol::nil;
+    }
 
     if (!pFunc)
     {
@@ -691,7 +691,6 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
         if (!pFunc)
         {
             aReturnMessage = "Function '" + aFuncName + "' not found or is not a global.";
-
             return sol::nil;
         }
     }
@@ -709,7 +708,25 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
 
     using CStackType = RED4ext::CStackType;
     const auto* engine = RED4ext::CGameEngine::Get();
-    auto* unk10 = engine->framework->gameInstance;
+    if (engine == nullptr)
+    {
+        aReturnMessage = "Could not retrieve GameEngine instance.";
+        return sol::nil;
+    }
+
+    auto* framework = engine->framework;
+    if (framework == nullptr)
+    {
+        aReturnMessage = "Could not retrieve GameFramework instance.";
+        return sol::nil;
+    }
+
+    auto* gameInstance = framework->gameInstance;
+    if (gameInstance == nullptr)
+    {
+        aReturnMessage = "Could not retrieve GameInstance instance.";
+        return sol::nil;
+    }
 
     RED4ext::CName name;
 
@@ -724,7 +741,7 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
         {
             argOffset = 1u;
             args[0].type = pGIType;
-            args[0].value = &unk10;
+            args[0].value = &gameInstance;
         }
     }
 
@@ -785,12 +802,20 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
         result.type = pFunc->returnType->type;
     }
 
-    auto* pScriptable = unk10->GetInstance(pPlayerSystem);
+    auto* pScriptable = gameInstance->GetInstance(pPlayerSystem);
+    if (pScriptable == nullptr)
+    {
+        aReturnMessage = "Could not retrieve ScriptInstance from cpPlayerSystem instance.";
+        return sol::nil;
+    }
     RED4ext::CStack stack(pScriptable, args.data(), static_cast<uint32_t>(args.size()), hasReturnType ? &result : nullptr, 0);
 
     const auto success = pFunc->Execute(&stack);
     if (!success)
+    {
+        aReturnMessage = "Function '" + aFuncName + "' failed to execute!";
         return sol::nil;
+    }
 
     if(hasReturnType)
         return ToLua(m_lua, result);

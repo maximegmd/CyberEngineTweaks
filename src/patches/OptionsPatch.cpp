@@ -58,7 +58,7 @@ void OptionsPatch(Image* apImage)
         spdlog::info("Hidden options patch: success");
     }
     else
-        spdlog::info("Hidden options patch: failed");
+        spdlog::warn("Hidden options patch: failed");
 }
 
 using TGameOptionInit = void*(void*);
@@ -99,5 +99,5 @@ void OptionsInitHook(Image* apImage)
         spdlog::info("Hidden options hook: success");
     }
     else
-        spdlog::info("Hidden options hook: failed");
+        spdlog::warn("Hidden options hook: failed");
 }

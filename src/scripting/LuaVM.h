@@ -31,14 +31,16 @@ struct LuaVM
     static void Initialize();
     static void Shutdown();
     static LuaVM& Get();
+
+    const std::vector<VKBindInfo>& GetBinds() const;
     
     bool ExecuteLua(const std::string& acCommand);
         
     void Update(float aDeltaTime);
     void ReloadAllMods();
 
-    void OnConsoleOpen();
-    void OnConsoleClose();
+    void OnOverlayOpen();
+    void OnOverlayClose();
 
     bool IsInitialized() const;
 

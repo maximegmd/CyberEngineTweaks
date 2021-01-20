@@ -2,8 +2,6 @@
 
 #include "D3D12.h"
 
-#include <Image.h>
-#include <Pattern.h>
 #include <kiero/kiero.h>
 
 HRESULT D3D12::ResizeBuffers(IDXGISwapChain* apSwapChain, UINT aBufferCount, UINT aWidth, UINT aHeight, DXGI_FORMAT aNewFormat, UINT aSwapChainFlags)
@@ -120,7 +118,7 @@ void D3D12::Hook()
     int d3d12FailedHooksCount = 0;
     int d3d12CompleteHooksCount = 0;
     
-    const char* d3d12type = (kiero::isDownLevelDevice()) ? ("D3D12on7") : ("D3D12");
+    std::string_view d3d12type = (kiero::isDownLevelDevice()) ? ("D3D12on7") : ("D3D12");
 
     if (kiero::isDownLevelDevice()) 
     {

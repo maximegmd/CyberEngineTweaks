@@ -4,7 +4,7 @@
 
 #include <Pattern.h>
 
-#include <console/Console.h>
+#include <overlay/Overlay.h>
 
 struct REDScriptContext;
 
@@ -34,9 +34,10 @@ void LuaVM::HookLog(REDScriptContext*, ScriptStack* apStack, void*, void*)
     auto opcode = *(apStack->m_code++);
     GetScriptCallArray()[opcode](apStack->m_context, apStack, &text, nullptr);
     apStack->m_code++; // skip ParamEnd
-    
-    if (Options::Get().Console)
-        Console::Get().GameLog(text.c_str());
+
+    auto& console = Overlay::Get().GetConsole();
+    if (console.GameLogEnabled())
+        spdlog::get("console")->info(text.c_str());
 }
 
 static const char* GetChannelStr(uint64_t hash)
@@ -63,7 +64,7 @@ static const char* GetChannelStr(uint64_t hash)
         HASH_CASE("Vehicles");
 #undef HASH_CASE
     }
-    return nullptr;
+    return "";
 }
 
 void LuaVM::HookLogChannel(REDScriptContext*, ScriptStack* apStack, void*, void*)
@@ -83,13 +84,19 @@ void LuaVM::HookLogChannel(REDScriptContext*, ScriptStack* apStack, void*, void*
     GetScriptCallArray()[opcode](apStack->m_context, apStack, &text, nullptr);
 
     apStack->m_code++; // skip ParamEnd
-    
-    auto channel_str = GetChannelStr(channel_hash);
-    std::string channel = channel_str == nullptr
-        ? "?" + std::to_string(channel_hash)
-        : std::string(channel_str);
-    if (Options::Get().Console)
-        Console::Get().GameLog("[" + channel + "] " +text.c_str());
+
+    auto& console = Overlay::Get().GetConsole();
+    if (console.GameLogEnabled())
+    {
+        auto consoleLogger = spdlog::get("console");
+
+        std::string_view textSV = text.c_str();
+        std::string_view channelSV = GetChannelStr(channel_hash);
+        if (channelSV == "")
+            consoleLogger->info("[?{0:x}] {}", channel_hash, textSV);
+        else
+            consoleLogger->info("[{}] {}", channelSV, textSV);
+    }
     
     Get().m_logCount.fetch_add(1);
 }

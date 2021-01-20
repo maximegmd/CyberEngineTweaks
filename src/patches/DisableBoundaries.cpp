@@ -13,7 +13,7 @@ void DisableBoundaryTeleportPatch(Image* apImage)
 
     if (pLocation == nullptr)
     {
-        spdlog::info("Disable boundary teleport: failed, could not be found");
+        spdlog::warn("Disable boundary teleport: failed, could not be found");
         return;
     }
 

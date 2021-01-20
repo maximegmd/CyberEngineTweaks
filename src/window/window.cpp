@@ -2,10 +2,8 @@
 
 #include "Window.h"
 
-#include <Options.h>
-
 #include <d3d12/D3D12.h>
-#include <console/Console.h>
+#include <overlay/Overlay.h>
 
 using namespace std::chrono_literals;
 
@@ -59,6 +57,7 @@ void Window::Shutdown()
 
 Window& Window::Get()
 {
+    assert(s_pWindow);
     return *s_pWindow;
 }
 
@@ -78,9 +77,15 @@ LRESULT APIENTRY Window::WndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM 
     }
 
     {
-        auto res = Console::Get().OnWndProc(ahWnd, auMsg, awParam, alParam);
+        auto res = VKBindings::Get().OnWndProc(ahWnd, auMsg, awParam, alParam);
         if (res)
-            return 0; // Console wants this input ignored!
+            return 0; // VKBindings wants this input ignored!
+    }
+
+    {
+        auto res = Overlay::Get().OnWndProc(ahWnd, auMsg, awParam, alParam);
+        if (res)
+            return 0; // Toolbar wants this input ignored!
     }
     
     {

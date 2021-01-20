@@ -2,7 +2,11 @@ set_languages("cxx17")
 
 add_requires("spdlog", "nlohmann_json", "minhook", "imgui", "sol2", "tiltedcore", {configs = {cxflags = "/DNDEBUG"}, external = false }) -- configs = {cxflags = "/DNDEBUG"} should not be needed when 'debug' is 'false' (default), but for some reason we still pull in debug packages!!!
 
-add_rules("mode.releasedbg", "mode.release")
+add_rules("mode.debug","mode.releasedbg", "mode.release")
+
+if is_mode("debug") or is_mode("releasedbg") then
+    add_defines("CET_DEBUG")
+end
 
 if is_mode("release") then
     add_ldflags("/LTCG", "/OPT:REF")
@@ -69,6 +73,7 @@ target("cyber_engine_tweaks")
     set_pcxxheader("src/stdafx.h") -- see: https://github.com/xmake-io/xmake/issues/1171#issuecomment-751421178
     set_kind("shared")
     set_filename("cyber_engine_tweaks.asi")
+    add_files("src/**.c")
     add_files("src/**.cpp")
     add_headerfiles("src/**.h")
     add_includedirs("src/")

@@ -6,11 +6,10 @@
 #include <imgui_impl/dx12.h>
 #include <imgui_impl/win32.h>
 
-#include <console/Console.h>
+#include <overlay/Overlay.h>
 #include <scripting/LuaVM.h>
+#include <window/Window.h>
 #include "Options.h"
-
-#include "window/Window.h"
 
 bool D3D12::ResetState()
 {
@@ -182,6 +181,8 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
         return false;
     }
 
+    Overlay::Get().PostInitialize();
+
     return true;
 }
 
@@ -305,6 +306,8 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
     spdlog::info("D3D12::InitializeDownlevel() - initialization successful!");
     m_initialized = true;
 
+    Overlay::Get().PostInitialize();
+
     return true;
 }
 
@@ -317,22 +320,24 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO();
         ImGui::StyleColorsDark();
+        io.IniFilename = nullptr;
+
         auto& options = Options::Get();
         ImFontConfig config;
         config.SizePixels = options.FontSize;
         config.OversampleH = config.OversampleV = 1;
         config.PixelSnapH = true;
         io.Fonts->AddFontDefault(&config);
-        io.IniFilename = NULL;
+        io.IniFilename = nullptr;
         
         if (!options.FontPath.empty())
         {
             std::filesystem::path fontPath(options.FontPath);
             if (!fontPath.is_absolute())
             {
-                fontPath = options.CETPath / fontPath;
+                fontPath = Paths::Get().CETRoot() / fontPath;
             }
-            if (std::filesystem::exists(fontPath))
+            if (exists(fontPath))
             {
                 const ImWchar* cpGlyphRanges = io.Fonts->GetGlyphRangesDefault();
                 if (options.FontGlyphRanges == "ChineseFull")
@@ -391,11 +396,11 @@ void D3D12::Update()
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplWin32_NewFrame(m_outSize);
     ImGui::NewFrame();
+    
+    Overlay::Get().Update();
 
     // TODO: better deltaTime! now, we abuse ImGui's IO here...
     LuaVM::Get().Update(ImGui::GetIO().DeltaTime);
-    
-    Console::Get().Update();
 
     const auto bufferIndex = (m_pdxgiSwapChain != nullptr) ? (m_pdxgiSwapChain->GetCurrentBackBufferIndex()) : (m_downlevelBufferIndex);
     auto& frameContext = m_frameContexts[bufferIndex];

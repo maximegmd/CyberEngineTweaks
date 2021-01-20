@@ -11,7 +11,7 @@ void DisableVignettePatch(Image* apImage)
 
     if (pLocation == nullptr)
     {
-        spdlog::info("Disable vignette patch: failed, could not be found");
+        spdlog::warn("Disable vignette patch: failed, could not be found");
         return;
     }
 

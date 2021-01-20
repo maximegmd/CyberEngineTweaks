@@ -49,4 +49,6 @@
 #include <TiltedCore/TaskQueue.hpp>
 #include <TiltedCore/Platform.hpp>
 
+#include "Paths.h"
+#include "VKBindings.h"
 #include "Options.h"

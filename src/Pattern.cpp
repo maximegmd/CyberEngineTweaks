@@ -49,5 +49,6 @@ uint8_t* FindSignature(uint8_t* apStart, uint8_t* apEnd, std::vector<uint8_t> aS
 
 uint8_t* FindSignature(std::vector<uint8_t> aSignature) noexcept
 {
-    return FindSignature(Options::Get().GameImage.pTextStart, Options::Get().GameImage.pTextEnd, std::move(aSignature));
+    auto& gameImage = Options::Get().GameImage;
+    return FindSignature(gameImage.pTextStart, gameImage.pTextEnd, std::move(aSignature));
 }

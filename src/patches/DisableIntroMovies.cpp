@@ -37,7 +37,7 @@ void DisableIntroMoviesPatch(Image* apImage)
 
     if (RealInitScriptMemberVariable == nullptr)
     {
-        spdlog::info("Disable intro movies patch: failed, could not be found");
+        spdlog::warn("Disable intro movies patch: failed, could not be found");
         return;
     }
 

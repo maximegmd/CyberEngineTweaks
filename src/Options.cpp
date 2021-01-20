@@ -1,21 +1,119 @@
 #include <stdafx.h>
 
-#include "Options.h"
+#include <overlay/Overlay.h>
 
-#include <spdlog/sinks/rotating_file_sink.h>
+static std::unique_ptr<Options> s_pOptions;
 
-static std::unique_ptr<Options> s_instance;
-
-Options::Options(HMODULE aModule)
+void Options::Initialize()
 {
-    TCHAR exePathBuf[2048 + 1] = { 0 };
-    GetModuleFileName(GetModuleHandle(nullptr), exePathBuf, std::size(exePathBuf) - 1);
+    if (s_pOptions)
+        return;
+    
+    s_pOptions.reset(new (std::nothrow) Options);
+}
 
-    int verInfoSz = GetFileVersionInfoSize(exePathBuf, nullptr);
+void Options::Shutdown()
+{
+    s_pOptions.reset();
+}
+
+Options& Options::Get()
+{
+    assert(s_pOptions);
+    return *s_pOptions;
+}
+
+void Options::Load()
+{
+    auto& paths = Paths::Get();
+
+    IsFirstLaunch = !exists(paths.Config());
+    if (!IsFirstLaunch)
+    {
+        std::ifstream configFile(paths.Config());
+        if(configFile)
+        {
+            auto config = nlohmann::json::parse(configFile);
+            PatchEnableDebug = config.value("enable_debug", PatchEnableDebug);
+            PatchRemovePedestrians = config.value("remove_pedestrians", PatchRemovePedestrians);
+            PatchSkipStartMenu = config.value("skip_start_menu", PatchSkipStartMenu);
+            PatchAsyncCompute = config.value("disable_async_compute", PatchAsyncCompute);
+            PatchAntialiasing = config.value("disable_antialiasing", PatchAntialiasing);
+            PatchDisableIntroMovies = config.value("disable_intro_movies", PatchDisableIntroMovies);
+            PatchDisableVignette = config.value("disable_vignette", PatchDisableVignette);
+            PatchDisableBoundaryTeleport = config.value("disable_boundary_teleport", PatchDisableBoundaryTeleport);
+            PatchDisableWin7Vsync = config.value("disable_win7_vsync", PatchDisableWin7Vsync);
+
+            DumpGameOptions = config.value("dump_game_options", DumpGameOptions);
+            
+            // font config
+            FontPath = config.value("font_path", FontPath);
+            FontGlyphRanges = config.value("font_glyph_ranges", FontGlyphRanges);
+            FontSize = config.value("font_size", FontSize);
+
+            OverlayKeyBind = config.value("overlay_key", OverlayKeyBind);
+            if (OverlayKeyBind != 0)
+                VKBindings::Get().Bind(OverlayKeyBind, Overlay::VKBOverlay);
+            else
+                IsFirstLaunch = true; // is for sure in this case
+
+            // check old config names
+            if (config.value("unlock_menu", false))
+                PatchEnableDebug = true;
+        }
+        configFile.close();
+    }
+}
+
+void Options::Save()
+{
+    nlohmann::json config;
+
+    config["overlay_key"] = OverlayKeyBind;
+    config["enable_debug"] = PatchEnableDebug;
+    config["remove_pedestrians"] = PatchRemovePedestrians;
+    config["disable_async_compute"] = PatchAsyncCompute;
+    config["disable_antialiasing"] = PatchAntialiasing;
+    config["skip_start_menu"] = PatchSkipStartMenu;
+    config["disable_intro_movies"] = PatchDisableIntroMovies;
+    config["disable_vignette"] = PatchDisableVignette;
+    config["disable_boundary_teleport"] = PatchDisableBoundaryTeleport;
+    config["disable_win7_vsync"] = PatchDisableWin7Vsync;
+    config["dump_game_options"] = DumpGameOptions;
+    config["font_path"] = FontPath;
+    config["font_glyph_ranges"] = FontGlyphRanges;
+    config["font_size"] = FontSize;
+
+    std::ofstream o(Paths::Get().Config());
+    o << config.dump(4) << std::endl;
+}
+
+void Options::ResetToDefaults()
+{
+    PatchEnableDebug = false;
+    PatchRemovePedestrians = false;
+    PatchAsyncCompute = false;
+    PatchAntialiasing = false;
+    PatchSkipStartMenu = false;
+    PatchDisableIntroMovies = false;
+    PatchDisableVignette = false;
+    PatchDisableBoundaryTeleport = false;
+    PatchDisableWin7Vsync = false;
+    DumpGameOptions = false;
+
+    Save();
+}
+
+Options::Options()
+{
+    auto& paths = Paths::Get();
+
+    const auto* exePathStr = paths.Executable().native().c_str(); 
+    int verInfoSz = GetFileVersionInfoSize(exePathStr, nullptr);
     if(verInfoSz) 
     {
         auto verInfo = std::make_unique<BYTE[]>(verInfoSz);
-        if(GetFileVersionInfo(exePathBuf, 0, verInfoSz, verInfo.get())) 
+        if(GetFileVersionInfo(exePathStr, 0, verInfoSz, verInfo.get())) 
         {
             struct 
             {
@@ -43,27 +141,10 @@ Options::Options(HMODULE aModule)
         }
     }
     // check if exe name matches in case previous check fails
-    std::filesystem::path exePath = exePathBuf;
-    ExeValid = ExeValid || (exePath.filename() == "Cyberpunk2077.exe");
+    ExeValid = ExeValid || (paths.Executable().filename() == "Cyberpunk2077.exe");
 
-    if (!IsCyberpunk2077())
+    if (!ExeValid)
         return;
-
-    RootPath = exePath.parent_path();
-
-    CETPath = RootPath;
-    CETPath /= "plugins";
-    CETPath /= "cyber_engine_tweaks";
-    std::filesystem::create_directories(CETPath);
-
-    ScriptsPath = CETPath / "mods";
-    std::filesystem::create_directories(ScriptsPath);
-
-    const auto rotatingLogger = std::make_shared<spdlog::sinks::rotating_file_sink_mt>((CETPath / "cyber_engine_tweaks.log").string(), 1048576 * 5, 3);
-
-    const auto logger = std::make_shared<spdlog::logger>("", spdlog::sinks_init_list{ rotatingLogger });
-    logger->flush_on(spdlog::level::debug);
-    set_default_logger(logger);
 
     spdlog::info("Cyber Engine Tweaks is starting...");
 
@@ -73,88 +154,15 @@ Options::Options(HMODULE aModule)
     {
         auto [major, minor] = GameImage.GetVersion();
         spdlog::info("Game version {}.{:02d}", major, minor);
-        spdlog::info("Root path: \"{}\"", RootPath.string().c_str());
-        spdlog::info("Cyber Engine Tweaks path: \"{}\"", CETPath.string().c_str());
-        spdlog::info("Lua scripts search path: \"{}\"", ScriptsPath.string().c_str());
+        spdlog::info("Root path: \"{}\"", paths.GameRoot().string());
+        spdlog::info("Cyber Engine Tweaks path: \"{}\"", paths.CETRoot().string());
+        spdlog::info("Lua scripts search path: \"{}\"", paths.ModsRoot().string());
     }
     else
         spdlog::info("Unknown Game Version, update the mod");
 
-    const auto configPath = CETPath / "config.json";
-    
-    // remove empty config.json
-    if (std::filesystem::exists(configPath) && !std::filesystem::file_size(configPath))
-        std::filesystem::remove(configPath);
+    Load();
 
-    std::ifstream configFile(configPath);
-    if(configFile)
-    {
-        auto config = nlohmann::json::parse(configFile);
-        this->PatchEnableDebug = config.value("enable_debug", this->PatchEnableDebug);
-        this->CPUMemoryPoolFraction = config.value("cpu_memory_pool_fraction", this->CPUMemoryPoolFraction);
-        this->GPUMemoryPoolFraction = config.value("gpu_memory_pool_fraction", this->GPUMemoryPoolFraction);
-        this->PatchRemovePedestrians = config.value("remove_pedestrians", this->PatchRemovePedestrians);
-        this->PatchSkipStartMenu = config.value("skip_start_menu", this->PatchSkipStartMenu);
-        this->PatchAsyncCompute = config.value("disable_async_compute", this->PatchAsyncCompute);
-        this->PatchAntialiasing = config.value("disable_antialiasing", this->PatchAntialiasing);
-        this->PatchDisableIntroMovies = config.value("disable_intro_movies", this->PatchDisableIntroMovies);
-        this->PatchDisableVignette = config.value("disable_vignette", this->PatchDisableVignette);
-        this->PatchDisableBoundaryTeleport = config.value("disable_boundary_teleport", this->PatchDisableBoundaryTeleport);
-        this->PatchDisableWin7Vsync = config.value("disable_win7_vsync", this->PatchDisableWin7Vsync);
-
-        this->DumpGameOptions = config.value("dump_game_options", this->DumpGameOptions);
-        this->Console = config.value("console", this->Console);
-        this->ConsoleKey = config.value("console_key", this->ConsoleKey);
-
-        // font config
-        this->FontPath = config.value("font_path", this->FontPath);
-        this->FontGlyphRanges = config.value("font_glyph_ranges", this->FontGlyphRanges);
-        this->FontSize = config.value("font_size", this->FontSize);
-
-        // check old config names
-        if (config.value("unlock_menu", false))
-            this->PatchEnableDebug = true;
-
-        this->ConsoleChar = MapVirtualKey(this->ConsoleKey, MAPVK_VK_TO_CHAR);
-    }
-    configFile.close();
-
-    nlohmann::json config;
-    config["enable_debug"] = this->PatchEnableDebug;
-    config["cpu_memory_pool_fraction"] = this->CPUMemoryPoolFraction;
-    config["gpu_memory_pool_fraction"] = this->GPUMemoryPoolFraction;
-    config["remove_pedestrians"] = this->PatchRemovePedestrians;
-    config["skip_start_menu"] = this->PatchSkipStartMenu;
-    config["disable_async_compute"] = this->PatchAsyncCompute;
-    config["disable_antialiasing"] = this->PatchAntialiasing;
-    config["dump_game_options"] = this->DumpGameOptions;
-    config["console"] = this->Console;
-    config["console_key"] = this->ConsoleKey;
-    config["disable_intro_movies"] = this->PatchDisableIntroMovies;
-    config["disable_vignette"] = this->PatchDisableVignette;
-    config["disable_boundary_teleport"] = this->PatchDisableBoundaryTeleport;
-    config["disable_win7_vsync"] = this->PatchDisableWin7Vsync;
-    config["font_path"] = this->FontPath;
-    config["font_glyph_ranges"] = this->FontGlyphRanges;
-    config["font_size"] = this->FontSize;
-
-    std::ofstream o(configPath);
-    o << config.dump(4) << std::endl;
+    if (!IsFirstLaunch)
+        Save();
 }
-
-bool Options::IsCyberpunk2077() const noexcept
-{
-    return ExeValid;
-}
-
-void Options::Initialize(HMODULE aModule)
-{
-    // Horrible hack because make_unique can't access private member
-    s_instance.reset(new (std::nothrow) Options(aModule));
-}
-
-Options& Options::Get()
-{
-    return *s_instance;
-}
-
