@@ -1,26 +1,5 @@
 #include <stdafx.h>
 
-static std::unique_ptr<Paths> s_pPaths;
-
-void Paths::Initialize()
-{
-    if (s_pPaths)
-        return;
-    
-    s_pPaths.reset(new (std::nothrow) Paths);
-}
-
-void Paths::Shutdown()
-{
-    s_pPaths.reset();
-}
-
-Paths& Paths::Get()
-{
-    assert(s_pPaths);
-    return *s_pPaths;
-}
-
 const std::filesystem::path& Paths::Executable() const 
 { 
     return m_exe; 

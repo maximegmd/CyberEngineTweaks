@@ -1,21 +1,29 @@
 #include <stdafx.h>
 
 #include "Hotkeys.h"
-
 #include "HelperWidgets.h"
+#include "overlay/Overlay.h"
+
 
 #include <scripting/LuaVM.h>
+
+Hotkeys::Hotkeys(VKBindings& aBindings, Overlay& aOverlay, LuaVM& aVm)
+    : m_bindings(aBindings)
+    , m_overlay(aOverlay)
+    , m_vm(aVm)
+{
+}
 
 void Hotkeys::OnEnable()
 {
     Load();
     
-    VKBindings::Get().StopRecordingBind();
+    m_bindings.StopRecordingBind();
 }
 
 void Hotkeys::OnDisable()
 {
-    VKBindings::Get().StopRecordingBind();
+    m_bindings.StopRecordingBind();
 }
 
 void Hotkeys::Update()
@@ -51,7 +59,7 @@ void Hotkeys::Update()
                     prevMod = curMod;
                 }
 
-                HelperWidgets::BindWidget(vkBindInfo);
+                HelperWidgets::BindWidget(vkBindInfo, m_overlay.GetBind().ID);
             }
         }
     }
@@ -61,22 +69,20 @@ void Hotkeys::Update()
 
 void Hotkeys::Load()
 {
-    auto& luaVM = LuaVM::Get();
-    if (!luaVM.IsInitialized())
+    if (!m_vm.IsInitialized())
         return;
     
-    VKBindings::Get().Load();
+    m_bindings.Load(m_overlay);
     
-    m_vkBindInfos = VKBindings::InitializeMods(luaVM.GetBinds());
+    m_vkBindInfos = m_bindings.InitializeMods(m_vm.GetBinds());
 }
 
 void Hotkeys::Save()
 {
-    VKBindings::Get().Save();
+    m_bindings.Save();
 
-    auto& luaVM = LuaVM::Get();
-    if (!luaVM.IsInitialized())
+    if (!m_vm.IsInitialized())
         return;
     
-    m_vkBindInfos = VKBindings::InitializeMods(luaVM.GetBinds());
+    m_vkBindInfos = m_bindings.InitializeMods(m_vm.GetBinds());
 }

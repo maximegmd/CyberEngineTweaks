@@ -6,7 +6,6 @@
 #include <imgui_impl/dx12.h>
 #include <imgui_impl/win32.h>
 
-#include <overlay/Overlay.h>
 #include <scripting/LuaVM.h>
 #include <window/Window.h>
 #include "Options.h"
@@ -60,7 +59,7 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
     if (!apSwapChain)
         return false;
 
-    HWND hWnd = Window::Get().GetWindow();
+    HWND hWnd = m_window.GetWindow();
     if (!hWnd)
     {
         spdlog::warn("D3D12::InitializeDownlevel() - window not yet hooked!");
@@ -181,7 +180,7 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
         return false;
     }
 
-    Overlay::Get().PostInitialize();
+    OnInitialized.Emit();
 
     return true;
 }
@@ -191,7 +190,7 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
     if (!apCommandQueue || !apSourceTex2D)
         return false;
 
-    HWND hWnd = Window::Get().GetWindow();
+    HWND hWnd = m_window.GetWindow();
     if (!hWnd)
     {
         spdlog::warn("D3D12::InitializeDownlevel() - window not yet hooked!");
@@ -306,7 +305,7 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
     spdlog::info("D3D12::InitializeDownlevel() - initialization successful!");
     m_initialized = true;
 
-    Overlay::Get().PostInitialize();
+    OnInitialized.Emit();
 
     return true;
 }
@@ -321,39 +320,38 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         ImGuiIO& io = ImGui::GetIO();
         ImGui::StyleColorsDark();
 
-        auto& options = Options::Get();
         ImFontConfig config;
-        config.SizePixels = options.FontSize;
+        config.SizePixels = m_options.FontSize;
         config.OversampleH = config.OversampleV = 1;
         config.PixelSnapH = true;
         io.Fonts->AddFontDefault(&config);
         
-        if (!options.FontPath.empty())
+        if (!m_options.FontPath.empty())
         {
-            std::filesystem::path fontPath(options.FontPath);
+            std::filesystem::path fontPath(m_options.FontPath);
             if (!fontPath.is_absolute())
             {
-                fontPath = Paths::Get().CETRoot() / fontPath;
+                fontPath = m_paths.CETRoot() / fontPath;
             }
             if (exists(fontPath))
             {
                 const ImWchar* cpGlyphRanges = io.Fonts->GetGlyphRangesDefault();
-                if (options.FontGlyphRanges == "ChineseFull")
+                if (m_options.FontGlyphRanges == "ChineseFull")
                     cpGlyphRanges = io.Fonts->GetGlyphRangesChineseFull();
-                else if (options.FontGlyphRanges == "ChineseSimplifiedCommon")
+                else if (m_options.FontGlyphRanges == "ChineseSimplifiedCommon")
                     cpGlyphRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
-                else if (options.FontGlyphRanges == "Japanese")
+                else if (m_options.FontGlyphRanges == "Japanese")
                     cpGlyphRanges = io.Fonts->GetGlyphRangesJapanese();
-                else if (options.FontGlyphRanges == "Korean")
+                else if (m_options.FontGlyphRanges == "Korean")
                     cpGlyphRanges = io.Fonts->GetGlyphRangesKorean();
-                else if (options.FontGlyphRanges == "Cyrillic")
+                else if (m_options.FontGlyphRanges == "Cyrillic")
                     cpGlyphRanges = io.Fonts->GetGlyphRangesCyrillic();
-                else if (options.FontGlyphRanges == "Thai")
+                else if (m_options.FontGlyphRanges == "Thai")
                     cpGlyphRanges = io.Fonts->GetGlyphRangesThai();
-                else if (options.FontGlyphRanges == "Vietnamese")
+                else if (m_options.FontGlyphRanges == "Vietnamese")
                     cpGlyphRanges = io.Fonts->GetGlyphRangesVietnamese();
                 ImFont* pFont =
-                    io.Fonts->AddFontFromFileTTF(fontPath.string().c_str(), options.FontSize, nullptr, cpGlyphRanges);
+                    io.Fonts->AddFontFromFileTTF(fontPath.string().c_str(), m_options.FontSize, nullptr, cpGlyphRanges);
                 if (pFont != nullptr)
                 {
                     io.FontDefault = pFont;
@@ -362,7 +360,7 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         }
     }
     
-    if (!ImGui_ImplWin32_Init(Window::Get().GetWindow())) 
+    if (!ImGui_ImplWin32_Init(m_window.GetWindow())) 
     {
         spdlog::error("D3D12::InitializeImGui() - ImGui_ImplWin32_Init call failed!");
         return false;
@@ -395,10 +393,7 @@ void D3D12::Update()
     ImGui_ImplWin32_NewFrame(m_outSize);
     ImGui::NewFrame();
     
-    Overlay::Get().Update();
-
-    // TODO: better deltaTime! now, we abuse ImGui's IO here...
-    LuaVM::Get().Update(ImGui::GetIO().DeltaTime);
+    OnUpdate.Emit();
 
     const auto bufferIndex = (m_pdxgiSwapChain != nullptr) ? (m_pdxgiSwapChain->GetCurrentBackBufferIndex()) : (m_downlevelBufferIndex);
     auto& frameContext = m_frameContexts[bufferIndex];

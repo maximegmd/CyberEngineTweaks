@@ -2,6 +2,7 @@
 
 #include "Overlay.h"
 
+#include "CET.h"
 #include "widgets/HelperWidgets.h"
 
 #include <Pattern.h>
@@ -10,95 +11,80 @@
 #include <d3d12/D3D12.h>
 #include <scripting/LuaVM.h>
 
-static std::unique_ptr<Overlay> s_pOverlay;
-
-void Overlay::Initialize()
-{
-    if (!s_pOverlay)
-    {
-        s_pOverlay.reset(new (std::nothrow) Overlay);
-        s_pOverlay->Hook();
-    }
-}
-
 void Overlay::PostInitialize()
 {
-    assert(s_pOverlay);
-    if (!s_pOverlay->m_initialized)
+    if (!m_initialized)
     {
-        if (Options::Get().IsFirstLaunch)
+        if (m_options.IsFirstLaunch)
         {
-            s_pOverlay->Toggle();
-            s_pOverlay->m_activeWidgetID = WidgetID::SETTINGS;
+            Toggle();
+            m_activeWidgetID = WidgetID::SETTINGS;
         }
-        s_pOverlay->m_widgets[s_pOverlay->m_activeWidgetID]->OnEnable();
-        s_pOverlay->m_initialized = true;
+        m_widgets[static_cast<size_t>(m_activeWidgetID)]->OnEnable();
+        m_initialized = true;
     }
-}
-
-void Overlay::Shutdown()
-{
-    s_pOverlay = nullptr;
-}
-
-Overlay& Overlay::Get()
-{
-    assert(s_pOverlay);
-    return *s_pOverlay;
 }
 
 Console& Overlay::GetConsole()
 {
-    return Get().m_console;
+    return m_console;
 }
 
 Hotkeys& Overlay::GetHotkeys()
 {
-    return Get().m_hotkeys;
+    return m_hotkeys;
 }
 
 Settings& Overlay::GetSettings()
 {
-    return Get().m_settings;
+    return m_settings;
 }
 
 void Overlay::Toggle()
 {
     m_enabled = !m_enabled;
 
-    D3D12::Get().SetTrapInputInImGui(m_enabled);
+    auto& d3d12 = CET::Get().GetD3D12();
 
-    auto& luaVM = LuaVM::Get();
+    d3d12.SetTrapInputInImGui(m_enabled);
+
     if (m_enabled)
-        luaVM.OnOverlayOpen();
+        m_vm.OnOverlayOpen();
     else
-        luaVM.OnOverlayClose();
+        m_vm.OnOverlayClose();
     
     ClipToCenter(RED4ext::CGameEngine::Get()->unkC0);
 }
 
-bool Overlay::IsEnabled() const
+bool Overlay::IsEnabled() const noexcept
 {
     return m_initialized && m_enabled;
+}
+
+VKBind Overlay::GetBind() const noexcept
+{
+    return m_VKBOverlay;
 }
 
 void Overlay::Update()
 {
     if (!IsEnabled())
         return;
-    
-    SIZE resolution = D3D12::Get().GetResolution();
+
+    auto& d3d12 = CET::Get().GetD3D12();
+
+    const SIZE resolution = d3d12.GetResolution();
 
     ImGui::SetNextWindowPos(ImVec2(resolution.cx * 0.2f, resolution.cy * 0.2f), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(resolution.cx * 0.6f, resolution.cy * 0.6f), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSizeConstraints(ImVec2(420, 315), ImVec2(FLT_MAX, FLT_MAX));
     if (ImGui::Begin("Cyber Engine Tweaks"))
     {
-        ImVec2 zeroVec = {0, 0};
+        const ImVec2 zeroVec = {0, 0};
 
-        if (!Options::Get().IsFirstLaunch)
+        if (!m_options.IsFirstLaunch)
         {
-            WidgetID selectedID = HelperWidgets::ToolbarWidget();
+            const WidgetID selectedID = HelperWidgets::ToolbarWidget();
             if (selectedID < WidgetID::COUNT)
                 SetActiveWidget(selectedID);
             
@@ -125,7 +111,7 @@ void Overlay::Update()
     ImGui::End();
 }
 
-bool Overlay::IsInitialized() const
+bool Overlay::IsInitialized() const noexcept
 {
     return m_initialized;
 }
@@ -141,7 +127,9 @@ BOOL Overlay::ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis)
     HWND wnd = (HWND)apThis->hWnd;
     HWND foreground = GetForegroundWindow();
 
-    if(wnd == foreground && apThis->unk164 && !apThis->unk140 && !Get().IsEnabled())
+    auto& overlay = CET::Get().GetOverlay();
+
+    if (wnd == foreground && apThis->unk164 && !apThis->unk140 && !overlay.IsEnabled())
     {
         RECT rect;
         GetClientRect(wnd, &rect);
@@ -167,7 +155,7 @@ BOOL Overlay::ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis)
 
 void Overlay::Hook()
 {
-    uint8_t* pLocation = FindSignature({
+    uint8_t* pLocation = FindSignature(m_options.GameImage.pTextStart, m_options.GameImage.pTextEnd, {
         0x48, 0x89, 0x5C, 0x24, 0x08, 0x57, 0x48, 0x83, 0xEC, 0x30, 0x48, 0x8B,
         0x99, 0x68, 0x01, 0x00, 0x00, 0x48, 0x8B, 0xF9, 0xFF });
 
@@ -180,11 +168,31 @@ void Overlay::Hook()
     }
 }
 
-Overlay::Overlay()
+Overlay::Overlay(D3D12& aD3D12, VKBindings& aBindings, Options& aOptions, LuaVM& aVm)
+    : m_console(aVm)
+    , m_hotkeys(aBindings, *this, aVm)
+    , m_settings(*this, aBindings, aOptions)
+    , m_VKBOverlay{"cet.overlay_key", "Overlay Key", [this]() { Toggle(); }}
+    , m_d3d12(aD3D12)
+    , m_options(aOptions)
+    , m_vm(aVm)
 {
-    m_widgets[WidgetID::CONSOLE] = &m_console;
-    m_widgets[WidgetID::HOTKEYS] = &m_hotkeys;
-    m_widgets[WidgetID::SETTINGS] = &m_settings;
+    m_widgets[static_cast<size_t>(WidgetID::CONSOLE)] = &m_console;
+    m_widgets[static_cast<size_t>(WidgetID::HOTKEYS)] = &m_hotkeys;
+    m_widgets[static_cast<size_t>(WidgetID::SETTINGS)] = &m_settings;
+
+    Hook();
+
+    aBindings.Load(*this);
+
+    m_connectInitialized = aD3D12.OnInitialized.Connect([this]() { PostInitialize(); });
+    m_connectUpdate = aD3D12.OnUpdate.Connect([this]() { Update(); });
+}
+
+Overlay::~Overlay()
+{
+    m_d3d12.OnInitialized.Disconnect(m_connectInitialized);
+    m_d3d12.OnUpdate.Disconnect(m_connectUpdate);
 }
 
 void Overlay::SetActiveWidget(WidgetID aNewActive)
@@ -192,9 +200,9 @@ void Overlay::SetActiveWidget(WidgetID aNewActive)
     if (m_activeWidgetID != aNewActive)
     {
         if (m_activeWidgetID < WidgetID::COUNT)
-            m_widgets[m_activeWidgetID]->OnDisable();
+            m_widgets[static_cast<size_t>(m_activeWidgetID)]->OnDisable();
         m_activeWidgetID = aNewActive;
         if (m_activeWidgetID < WidgetID::COUNT)
-            m_widgets[m_activeWidgetID]->OnEnable();
+            m_widgets[static_cast<size_t>(m_activeWidgetID)]->OnEnable();
     }
 }

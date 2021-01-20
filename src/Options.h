@@ -2,14 +2,13 @@
 
 #include "Image.h"
 
+struct Paths;
+
 struct Options
 {
+    Options(Paths& aPaths);
     ~Options() = default;
-
-    static void Initialize();
-    static void Shutdown();
-    static Options& Get();
-    
+   
     void Load();
     void Save();
     void ResetToDefaults(); 
@@ -33,5 +32,6 @@ struct Options
     bool IsFirstLaunch{ false };
 
 private:
-    Options();
+
+    Paths& m_paths;
 };

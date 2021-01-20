@@ -1,31 +1,43 @@
 #include <stdafx.h>
 
+#include "CET.h"
+
 #include <overlay/Overlay.h>
 
-static std::unique_ptr<VKBindings> s_pVKBindings;
-
-void VKBindings::Initialize()
+void VKBindInfo::Fill(UINT aVKCodeBind, const VKBind& aVKBind)
 {
-    if (!s_pVKBindings)
-    {
-        s_pVKBindings.reset(new (std::nothrow) VKBindings);
-        s_pVKBindings->Load();
-        s_pVKBindings->m_initialized = true;
-    }
+    Bind = aVKBind;
+    CodeBind = aVKCodeBind;
+    SavedCodeBind = aVKCodeBind;
+    IsBinding = false;
+}
+
+UINT VKBindInfo::Apply()
+{
+    SavedCodeBind = CodeBind;
+    return CodeBind;
+}
+
+VKBindings::VKBindings(Paths& aPaths)
+    : m_paths(aPaths)
+{
+}
+
+bool VKBindings::IsInitialized() const noexcept
+{
+    return m_initialized;
 }
 
 std::vector<VKBindInfo> VKBindings::InitializeMods(std::vector<VKBindInfo> aVKBindInfos)
 {
-    VKBindings& vkb = Get();
-
     // first, check existing bindings and try to bind in case there is no binding
     for (auto& vkBindInfo : aVKBindInfos)
     {
-        auto bind = vkb.GetBindCodeForID(vkBindInfo.Bind.ID);
+        const auto bind = GetBindCodeForID(vkBindInfo.Bind.ID);
         if (bind != 0)
         {
-            auto ret = vkb.Bind(bind, vkBindInfo.Bind); // rebind
-            assert(ret); // we never really want ret == false here!
+            const auto ret = Bind(bind, vkBindInfo.Bind); // rebind
+            assert(ret);                            // we never really want ret == false here!
             vkBindInfo.SavedCodeBind = bind;
             vkBindInfo.CodeBind = bind;
             continue;
@@ -33,7 +45,7 @@ std::vector<VKBindInfo> VKBindings::InitializeMods(std::vector<VKBindInfo> aVKBi
         // VKBind not bound yet - try to bind to default key (if any was chosen)
         if (vkBindInfo.CodeBind != 0)
         {
-            auto ret = vkb.Bind(vkBindInfo.CodeBind, vkBindInfo.Bind);
+            const auto ret = Bind(vkBindInfo.CodeBind, vkBindInfo.Bind);
             if (ret)
             {
                 // we successfully bound!
@@ -48,14 +60,14 @@ std::vector<VKBindInfo> VKBindings::InitializeMods(std::vector<VKBindInfo> aVKBi
 
     // now, find all dead bindings
     std::vector<std::pair<std::string, UINT>> deadIDToBinds;
-    for (auto& idToBind : vkb.IDToBinds)
+    for (auto& idToBind : m_idToBind)
     {
         // always ignore internal CET binds here!
         if (!idToBind.first.compare(0, 4, "cet."))
             continue;
 
         // TODO - try to avoid O(n^2) situation here
-        bool found = false;
+        auto found = false;
         for (auto& vkBindInfo : aVKBindInfos)
         {
             found = (idToBind.first == vkBindInfo.Bind.ID);
@@ -70,60 +82,44 @@ std::vector<VKBindInfo> VKBindings::InitializeMods(std::vector<VKBindInfo> aVKBi
     // and remove them
     for (auto& idToBind : deadIDToBinds)
     {
-        vkb.IDToBinds.erase(idToBind.first);
-        vkb.Binds.erase(idToBind.second);
+        m_idToBind.erase(idToBind.first);
+        m_binds.erase(idToBind.second);
     }
 
     // finally, save our filtered bindings back to not lose them
-    vkb.Save();
+    Save();
 
     // return corrected bindings
     return aVKBindInfos;
 }
 
-void VKBindings::Shutdown()
+void VKBindings::Load(Overlay& aOverlay)
 {
-    s_pVKBindings.reset();
-}
-
-bool VKBindings::IsInitialized()
-{
-    return s_pVKBindings->m_initialized;
-}
-
-VKBindings& VKBindings::Get()
-{
-    assert(s_pVKBindings);
-    assert(s_pVKBindings->m_initialized);
-
-    return *s_pVKBindings;
-}
-
-void VKBindings::Load()
-{
-    std::ifstream ifs{ Paths::Get().VKBindings() };
+    std::ifstream ifs{ m_paths.VKBindings() };
     if (ifs)
     {
         auto config = nlohmann::json::parse(ifs);
         for (auto& it : config.items())
         {
             // properly auto-bind Overlay if it is present here (could be this is first start so it may not be in here yet)
-            auto vkBind = (it.key() == Overlay::VKBOverlay.ID) ? (Overlay::VKBOverlay) : (VKBind{ it.key() });
-            auto ret = Bind(it.value(), vkBind);
+            auto vkBind = (it.key() == aOverlay.GetBind().ID) ? aOverlay.GetBind() : VKBind{it.key()};
+            const auto ret = Bind(it.value(), vkBind);
             assert(ret); // we want this to never fail!
         }
     }
-    ifs.close();
+
+    m_pOverlay = &aOverlay;
+    m_initialized = true;
 }
 
 void VKBindings::Save()
 {
     nlohmann::json config;
 
-    for (auto& idToBind : IDToBinds)
+    for (auto& idToBind : m_idToBind)
         config[idToBind.first.c_str()] = idToBind.second;
 
-    std::ofstream ofs{ Paths::Get().VKBindings() };
+    std::ofstream ofs{m_paths.VKBindings()};
     ofs << config.dump(4) << std::endl;
 }
 
@@ -131,8 +127,8 @@ bool VKBindings::Bind(UINT aVKCodeBind, const VKBind& aBind)
 {
     // bind check 1
     {
-        auto bind = Binds.find(aVKCodeBind);
-        if (bind != Binds.end())
+        auto bind = m_binds.find(aVKCodeBind);
+        if (bind != m_binds.end())
         {
             if (bind->second.ID == aBind.ID)
             {
@@ -145,11 +141,11 @@ bool VKBindings::Bind(UINT aVKCodeBind, const VKBind& aBind)
 
     // bind check 2 (includes unbind in case it is probably desired)
     {
-        auto idToBind = IDToBinds.find(aBind.ID);
-        if (idToBind != IDToBinds.end())
+        const auto idToBind = m_idToBind.find(aBind.ID);
+        if (idToBind != m_idToBind.end())
         {
-            auto bind = Binds.find(idToBind->second);
-            assert (bind != Binds.end()); // if these are not true for some reason, we have Fd up binding maps!
+            auto bind = m_binds.find(idToBind->second);
+            assert (bind != m_binds.end()); // if these are not true for some reason, we have Fd up binding maps!
             assert (bind->second.ID == aBind.ID); // if these are not true for some reason, we have Fd up binding maps!
             if (bind->second.Handler == nullptr)
             {
@@ -157,47 +153,47 @@ bool VKBindings::Bind(UINT aVKCodeBind, const VKBind& aBind)
                 return true;
             }
             // this is not a rebind, this is new combo assignment to handler
-            Binds.erase(bind);
-            IDToBinds.erase(idToBind);
+            m_binds.erase(bind);
+            m_idToBind.erase(idToBind);
             // dont return or anything in this case, continue!
         }
     }
 
-    Binds[aVKCodeBind] = aBind;
-    IDToBinds[aBind.ID] = aVKCodeBind;
+    m_binds[aVKCodeBind] = aBind;
+    m_idToBind[aBind.ID] = aVKCodeBind;
     return true;
 }
 
 bool VKBindings::UnBind(UINT aVKCodeBind)
 {
-    auto bind = Binds.find(aVKCodeBind);
-    if (bind == Binds.end())
+    auto bind = m_binds.find(aVKCodeBind);
+    if (bind == m_binds.end())
         return false;
 
-    IDToBinds.erase(bind->second.ID);
-    Binds.erase(bind);
+    m_idToBind.erase(bind->second.ID);
+    m_binds.erase(bind);
     return true;
 }
 
 bool VKBindings::UnBind(const std::string& aID)
 {
-    auto idToBind = IDToBinds.find(aID);
-    if (idToBind == IDToBinds.end())
+    const auto idToBind = m_idToBind.find(aID);
+    if (idToBind == m_idToBind.end())
         return false;
     
-    Binds.erase(idToBind->second);
-    IDToBinds.erase(idToBind);
+    m_binds.erase(idToBind->second);
+    m_idToBind.erase(idToBind);
     return true;
 }
 
-bool VKBindings::IsBound(UINT aVKCodeBind)
+bool VKBindings::IsBound(UINT aVKCodeBind) const
 {
-    return Binds.count(aVKCodeBind);
+    return m_binds.count(aVKCodeBind);
 }
 
-bool VKBindings::IsBound(const std::string& aID)
+bool VKBindings::IsBound(const std::string& aID) const
 {
-    return IDToBinds.count(aID);
+    return m_idToBind.count(aID);
 }
     
 UINT VKBindings::GetBindCodeForID(const std::string& aID)
@@ -206,8 +202,8 @@ UINT VKBindings::GetBindCodeForID(const std::string& aID)
     if (aID.empty())
         return 0;
 
-    auto idToBind = IDToBinds.find(aID);
-    if (idToBind == IDToBinds.end())
+    const auto idToBind = m_idToBind.find(aID);
+    if (idToBind == m_idToBind.end())
         return 0;
 
     return idToBind->second;
@@ -219,8 +215,8 @@ std::string VKBindings::GetIDForBindCode(UINT aVKCodeBind)
     if (aVKCodeBind == 0)
         return { };
 
-    auto bind = Binds.find(aVKCodeBind);
-    if (bind == Binds.end())
+    const auto bind = m_binds.find(aVKCodeBind);
+    if (bind == m_binds.end())
         return { };
 
     return bind->second.ID;
@@ -229,7 +225,7 @@ std::string VKBindings::GetIDForBindCode(UINT aVKCodeBind)
 VKCodeBindDecoded VKBindings::DecodeVKCodeBind(UINT aVKCodeBind)
 {
     if (aVKCodeBind == 0)
-        return {};
+        return { };
 
     VKCodeBindDecoded res{ };
     *reinterpret_cast<UINT*>(res.data()) = _byteswap_ulong(aVKCodeBind);
@@ -267,12 +263,12 @@ bool VKBindings::StopRecordingBind()
     return true;
 }
 
-bool VKBindings::IsRecordingBind()
+bool VKBindings::IsRecordingBind() const
 {
     return m_isBindRecording;
 }
 
-UINT VKBindings::GetLastRecordingResult()
+UINT VKBindings::GetLastRecordingResult() const
 {
     return m_recordingResult;
 }
@@ -414,15 +410,16 @@ bool VKBindings::IsLastRecordingKey(UINT aVKCode)
 
     return (m_recording[m_recordingLength-1] == aVKCode);
 }
+
 LRESULT VKBindings::RecordKeyDown(UINT aVKCode)
 {
     for (size_t i = 0; i < m_recordingLength; ++i)
         if (m_recording[i] == aVKCode)
             return 0; // ignore repeats
 
-    if (m_recordingLength >= m_recording.size())
+    while (m_recordingLength >= m_recording.size())
     {
-        for (size_t i = 1; i < m_recordingLength; ++i)
+        for (size_t i = 1; i < m_recording.size(); ++i)
             m_recording[i-1] = m_recording[i];
 
         --m_recordingLength;
@@ -430,7 +427,7 @@ LRESULT VKBindings::RecordKeyDown(UINT aVKCode)
 
     m_recording[m_recordingLength++] = aVKCode;
 
-    VerifyRecording(); // we doesnt care about result of this here, we just want it corrected :P
+    VerifyRecording(); // we don't care about result of this here, we just want it corrected :P
 
     return 0;
 }
@@ -453,10 +450,10 @@ LRESULT VKBindings::RecordKeyUp(UINT aVKCode)
                 m_isBindRecording = false;
                 return 0;
             }
-            auto bind = Binds.find(m_recordingResult);
-            if (bind != Binds.end())
+            const auto bind = m_binds.find(m_recordingResult);
+            if (bind != m_binds.end())
             {
-                if (Overlay::Get().IsEnabled() && (bind->second.ID != Overlay::VKBOverlay.ID))
+                if (m_pOverlay && m_pOverlay->IsEnabled() && (bind->second.ID != m_pOverlay->GetBind().ID))
                     return 0; // we dont want to handle bindings if toolbar is open and we are not in binding state!
 
                 if (bind->second.Handler) // prevention for freshly loaded bind from file without rebinding
@@ -477,8 +474,8 @@ bool VKBindings::VerifyRecording()
     if (m_recordingLength == 0)
         return true; // always valid when empty
 
-    auto possibleBind = Binds.lower_bound(EncodeVKCodeBind(m_recording));
-    if (possibleBind == Binds.end())
+    const auto possibleBind = m_binds.find(EncodeVKCodeBind(m_recording));
+    if (possibleBind == m_binds.end())
     {
         m_recording[--m_recordingLength] = 0;
         return false; // seems like there is no possible HK here
@@ -502,7 +499,7 @@ LRESULT VKBindings::HandleRAWInput(HRAWINPUT ahRAWInput)
     UINT dwSize;
     GetRawInputData(ahRAWInput, RID_INPUT, nullptr, &dwSize, sizeof(RAWINPUTHEADER));
 
-    auto lpb = std::make_unique<BYTE[]>(dwSize);
+    const auto lpb = std::make_unique<BYTE[]>(dwSize);
     if (GetRawInputData(ahRAWInput, RID_INPUT, lpb.get(), &dwSize, sizeof(RAWINPUTHEADER)) != dwSize )
          spdlog::warn("VKBindings::HandleRAWInput() - GetRawInputData() does not return correct size !");
 
@@ -522,7 +519,7 @@ LRESULT VKBindings::HandleRAWInput(HRAWINPUT ahRAWInput)
     }
     else if (raw->header.dwType == RIM_TYPEMOUSE) 
     {
-        if (m_isBindRecording && (m_recordingBind.ID == Overlay::VKBOverlay.ID))
+        if (m_pOverlay && m_isBindRecording && (m_recordingBind.ID == m_pOverlay->GetBind().ID))
             return 0; // ignore mouse keys for toolbar key binding!
 
         auto& m = raw->data.mouse;

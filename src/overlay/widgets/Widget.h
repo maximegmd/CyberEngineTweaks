@@ -1,6 +1,6 @@
 #pragma once
 
-enum WidgetID
+enum class WidgetID
 {
     CONSOLE,
     HOTKEYS,

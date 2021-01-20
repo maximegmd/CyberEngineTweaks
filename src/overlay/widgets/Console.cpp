@@ -1,8 +1,18 @@
 #include <stdafx.h>
 
 #include "Console.h"
+#include "Utils.h"
 
 #include <scripting/LuaVM.h>
+
+Console::Console(LuaVM& aVm)
+    : m_vm(aVm)
+{
+    const auto consoleSink = CreateCustomSinkST([this](const std::string& msg) { Log(msg); });
+    consoleSink->set_pattern("%v");
+
+    spdlog::get("scripting")->sinks().push_back(consoleSink);
+}
 
 void Console::OnEnable()
 {
@@ -11,7 +21,6 @@ void Console::OnEnable()
 
 void Console::OnDisable()
 {
-    
 }
 
 void Console::Update()
@@ -29,7 +38,7 @@ void Console::Update()
     ImGui::Checkbox("Disable Game Log", &m_disabledGameLog);
     ImGui::SameLine();
     if (ImGui::Button("Reload All Mods"))
-        LuaVM::Get().ReloadAllMods();
+        m_vm.ReloadAllMods();
         
     auto& style = ImGui::GetStyle();
     auto inputLineHeight = ImGui::GetTextLineHeight() + style.ItemInnerSpacing.y * 2;
@@ -78,10 +87,10 @@ void Console::Update()
     ImGui::SetItemDefaultFocus();
     if (execute)
     {
-        auto consoleLogger = spdlog::get("console");
+        auto consoleLogger = spdlog::get("scripting");
         consoleLogger->info("> {}", m_Command);
         
-        if (!LuaVM::Get().ExecuteLua(m_Command))
+        if (!m_vm.ExecuteLua(m_Command))
             consoleLogger->info("Command failed to execute!");
 
         if (m_inputClear)

@@ -13,21 +13,18 @@ struct D3D12
 {
     static const uint32_t g_numDownlevelBackbuffersRequired = 3; // Windows 7 only: number of buffers needed before we start rendering
 
-    static void Initialize();
-    static void Shutdown();
-    static D3D12& Get();
-
+    D3D12(Window& aWindow, Paths& aPaths, Options& aOptions);
     ~D3D12();
     
     void SetTrapInputInImGui(bool aEnabled);
-    
-    bool IsTrapInputInImGui() const { return m_trapInputInImGui; }
-    
-    SIZE GetResolution() const { return m_outSize; }
+    [[nodiscard]] bool IsTrapInputInImGui() const noexcept { return m_trapInputInImGui; }
+    [[nodiscard]] bool IsInitialized() const noexcept { return m_initialized; }
+    [[nodiscard]] SIZE GetResolution() const noexcept { return m_outSize; }
 
     LRESULT OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam);
 
-    bool IsInitialized() const { return m_initialized; }
+    TiltedPhoques::Signal<void()> OnInitialized;
+    TiltedPhoques::Signal<void()> OnUpdate;
 
 protected:
     
@@ -56,8 +53,6 @@ protected:
     
 private:
 
-    D3D12();
-
     TResizeBuffersD3D12* m_realResizeBuffersD3D12{ nullptr };
     TPresentD3D12* m_realPresentD3D12{ nullptr };
     TPresentD3D12Downlevel* m_realPresentD3D12Downlevel{ nullptr };
@@ -79,4 +74,8 @@ private:
     SIZE m_outSize{ };
     
     bool m_trapInputInImGui{ false };
+
+    Paths& m_paths;
+    Window& m_window;
+    Options& m_options;
 };

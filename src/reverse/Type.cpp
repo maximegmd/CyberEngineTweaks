@@ -388,7 +388,7 @@ sol::object ClassType::Index_Impl(const std::string& acName)
 
         if (!pFunc)
         {
-            spdlog::get("console")->info("Function '{}' not found in system '{}'.", acName, GetName());
+            spdlog::get("scripting")->info("Function '{}' not found in system '{}'.", acName, GetName());
             return sol::nil;
         }
     }
@@ -399,7 +399,7 @@ sol::object ClassType::Index_Impl(const std::string& acName)
         auto funcRet = apType->Execute(pFunc, name, args, env, L, result);
         if (!result.empty())
         {
-            spdlog::get("console")->info("Error: {}", result);
+            spdlog::get("scripting")->info("Error: {}", result);
         }
         return funcRet;
     });

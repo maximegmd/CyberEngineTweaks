@@ -3,9 +3,11 @@
 #include "ScriptStore.h"
 #include "reverse/SingletonReference.h"
 
+struct D3D12;
+
 struct Scripting
 {
-    Scripting() = default;
+    Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12);
     ~Scripting() = default;
 
     void Initialize();
@@ -41,5 +43,7 @@ private:
     sol::state m_lua{ };
     std::unordered_map<std::string, sol::object> m_properties{ };
     std::unordered_map<std::string, SingletonReference> m_singletons{ };
-    ScriptStore m_store{ };
+    ScriptStore m_store;
+    const Paths& m_paths;
+    D3D12& m_d3d12;
 };

@@ -2,9 +2,13 @@
 
 #include "Widget.h"
 
-struct Settings : public Widget
+struct VKBindings;
+struct Overlay;
+struct Options;
+
+struct Settings : Widget
 {
-    Settings() = default;
+    Settings(Overlay& aOverlay, VKBindings& aBindings, Options& aOptions);
     ~Settings() override = default;
 
     void OnEnable() override;
@@ -27,4 +31,7 @@ private:
     bool m_patchDisableBoundaryTeleport{ false };
     bool m_patchDisableWin7Vsync{ false };
     bool m_dumpGameOptions{ false };
+    VKBindings& m_bindings;
+    Overlay& m_overlay;
+    Options& m_options;
 };

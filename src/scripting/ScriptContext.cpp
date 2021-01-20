@@ -7,7 +7,7 @@
 ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::path& acPath)
     : m_lua(aStateView)
     , m_env(aStateView, sol::create, aStateView.globals())
-    , m_name(relative(acPath, Paths::Get().ModsRoot()).string())
+    , m_name(acPath.string())
 {
     // initialize logger for this mod
     m_logger = CreateLogger(acPath / (m_name + ".log"), "mods." + m_name);

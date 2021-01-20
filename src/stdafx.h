@@ -48,6 +48,7 @@
 #include <TiltedCore/ScratchAllocator.hpp>
 #include <TiltedCore/TaskQueue.hpp>
 #include <TiltedCore/Platform.hpp>
+#include <TiltedCore/Signal.hpp>
 
 #include "Paths.h"
 #include "VKBindings.h"

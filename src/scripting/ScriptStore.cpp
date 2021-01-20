@@ -2,14 +2,20 @@
 
 #include "ScriptStore.h"
 
+ScriptStore::ScriptStore(const Paths& aPaths, VKBindings& aBindings)
+    : m_paths(aPaths)
+    , m_bindings(aBindings)
+{
+}
+
 void ScriptStore::LoadAll(sol::state_view aStateView)
 {
     m_vkBindInfos.clear();
     m_contexts.clear();
 
-    auto consoleLogger = spdlog::get("console");
+    auto consoleLogger = spdlog::get("scripting");
 
-    const auto& cModsRoot = Paths::Get().ModsRoot();
+    const auto& cModsRoot = m_paths.ModsRoot();
     for (const auto& file : std::filesystem::directory_iterator(cModsRoot))
     {
         if (!file.is_directory())
@@ -19,8 +25,7 @@ void ScriptStore::LoadAll(sol::state_view aStateView)
         auto fPathStr = fPath.string();
         if (!exists(fPath / "init.lua"))
         {
-            consoleLogger->info("Ignoring directory which misses init.lua! ('{}')", fPathStr);
-            spdlog::warn("Ignoring directory which misses init.lua! ('{}')", fPathStr);
+            consoleLogger->warn("Ignoring directory which misses init.lua! ('{}')", fPathStr);
             continue;
         }
 
@@ -28,27 +33,24 @@ void ScriptStore::LoadAll(sol::state_view aStateView)
         if (name.find('.') != std::string::npos)
         {
             consoleLogger->info("Ignoring directory with '.', as this is reserved character! ('{}')", fPathStr);
-            spdlog::warn("Ignoring directory with '.', as this is reserved character! ('{}')", fPathStr);
             continue;
         }
-        
-        auto ctx = ScriptContext{ aStateView, file.path() };
+
+        auto ctx = ScriptContext{aStateView, relative(file.path(), cModsRoot)};
         if (ctx.IsValid())
         {
             auto& ctxBinds = ctx.GetBinds();
             m_vkBindInfos.insert(m_vkBindInfos.cend(), ctxBinds.cbegin(), ctxBinds.cend());
             m_contexts.emplace(name, std::move(ctx));
             consoleLogger->info("Mod {} loaded! ('{}')", name, fPathStr);
-            spdlog::info("Mod {} loaded! ('{}')", name, fPathStr);
         }
         else
         {
-            consoleLogger->info("Mod {} failed loaded! ('{}')", name, fPathStr);
-            spdlog::error("Mod {} failed loaded! ('{}')", name, fPathStr);
+            consoleLogger->error("Mod {} failed loaded! ('{}')", name, fPathStr);
         }
     }
 
-    VKBindings::InitializeMods(m_vkBindInfos);
+    m_bindings.InitializeMods(m_vkBindInfos);
 }
 
 const std::vector<VKBindInfo>& ScriptStore::GetBinds() const
