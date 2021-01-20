@@ -320,7 +320,6 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO();
         ImGui::StyleColorsDark();
-        io.IniFilename = nullptr;
 
         auto& options = Options::Get();
         ImFontConfig config;
@@ -328,7 +327,6 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         config.OversampleH = config.OversampleV = 1;
         config.PixelSnapH = true;
         io.Fonts->AddFontDefault(&config);
-        io.IniFilename = nullptr;
         
         if (!options.FontPath.empty())
         {
