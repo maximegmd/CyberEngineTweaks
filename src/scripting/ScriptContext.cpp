@@ -4,13 +4,222 @@
 
 #include <Utils.h>
 
+#include <lua.h>
+
+// TODO: refactor this, prolly put sandboxing stuff into separate class, so we could reuse most of this for console later (also is just messy rn, refactor is in place in general :P )
 ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::path& acPath)
     : m_lua(aStateView)
-    , m_env(aStateView, sol::create, aStateView.globals())
-    , m_name(relative(acPath, Paths::Get().ModsRoot()).string())
-{
+    , m_env(aStateView, sol::create)
+    , m_path(acPath)
+    , m_name(relative(m_path, Paths::Get().ModsRoot()).string())
+{    
     // initialize logger for this mod
     m_logger = CreateLogger(acPath / (m_name + ".log"), "mods." + m_name);
+
+    // copy whitelisted things from global table
+    constexpr std::array<std::string_view, 55> whitelistedGlobals =
+    {
+	    "assert",
+	    "error",
+	    "getmetatable", //< Used to extend string class
+	    "ipairs",
+	    "next",
+	    "pairs",
+	    "pcall",
+	    "print",
+
+	    // TODO: replace these
+	    //"package",
+	    //"require",
+
+	    // Required for implementing classes
+	    "rawequal",
+	    "rawget",
+	    "rawset",
+
+	    "select",
+	    "setmetatable", //< Required for implementing classes
+	    "tonumber",
+	    "tostring",
+	    "type",
+	    "unpack",
+	    "_VERSION",
+	    "xpcall",
+
+        // CET specific
+        "NewObject",
+        "DumpReflection",
+        "DumpVtables",
+        "GetVersion",
+        "DumpAllTypeNames",
+        "ClassReference",
+        "GetDisplayResolution",
+        "Dump",
+        "ToVector3",
+        "Vector4",
+        "Game",
+        "DumpType",
+        "Enum",
+        "ToEulerAngles",
+        "GameOptions",
+        "GameDump",
+        "GetSingleton",
+        "Descriptor",
+        "ItemID",
+        "ToItemID",
+        "TweakDBID",
+        "ToCName",
+        "CName",
+        "Vector3",
+        "Quaternion",
+        "EulerAngles",
+        "ToVector4",
+        "Unknown",
+        "ToQuaternion",
+        "SingletonReference",
+        "StrongReference",
+        "ToTweakDBID",
+        "WeakReference",
+        "GetMod",
+        "__Game",
+        "__Type",
+	};
+    const auto globals = m_lua.globals();
+    for (const auto& key : whitelistedGlobals)
+		m_env[key].set(globals[key].get<sol::object>());
+
+    // copy whitelisted libs from global table
+	constexpr std::array<std::string_view, 20> whitelistedTables =
+    {
+	    "string",
+	    "table",
+	    "math",
+        "ImGui",
+        "ImGuiCond",
+        "ImGuiTreeNodeFlags",
+        "ImGuiSelectableFlags",
+        "ImGuiInputTextFlags",
+        "ImGuiColorEditFlags",
+        "ImGuiComboFlags",
+        "ImGuiHoveredFlags",
+        "ImGuiFocusedFlags",
+        "ImGuiPopupFlags",
+        "ImGuiTabItemFlags",
+        "ImGuiWindowFlags",
+        "ImGuiStyleVar",
+        "ImGuiTabBarFlags",
+        "ImGuiCol",
+        "ImGuiDir",
+        "json"
+	};
+    for (const auto &tableKey : whitelistedTables)
+    {
+        sol::table table = globals[tableKey].get<sol::table>();
+        sol::table tableCopy(m_lua, sol::create);
+	    for (auto kv : table)
+		    tableCopy[kv.first] = kv.second;
+		m_env[tableKey] = tableCopy;
+	}
+    
+    // copy sqlite3 without open functions
+    {
+        sol::table sqlite3 = globals["sqlite3"].get<sol::table>();
+        sol::table sqlite3Copy(m_lua, sol::create);
+	    for (auto kv : sqlite3)
+	    {
+            std::string keyStr = kv.first.as<std::string>();
+            if (keyStr.compare(0, 4, "open"))
+		        sqlite3Copy[kv.first] = kv.second;
+	    }
+		m_env["sqlite3"] = sqlite3Copy;
+	}
+    
+    // copy safe os functions
+    {
+        sol::table os = globals["os"].get<sol::table>();
+        sol::table osCopy(m_lua, sol::create);
+	    osCopy["clock"] = os["clock"];
+	    osCopy["date"] = os["date"];
+	    osCopy["difftime"] = os["difftime"];
+	    osCopy["time"] = os["time"];
+		m_env["os"] = osCopy;
+	}
+    
+    // copy safe io functions + replace selected unsafe ones
+    {
+        std::filesystem::path rootPath = m_path; // copy of path we can pass to lambda, as 'this' can be invalid afterwards
+        sol::table io = globals["io"].get<sol::table>();
+        sol::table ioCopy(m_lua, sol::create);
+        ioCopy["close"] = io["close"];
+        ioCopy["lines"] = [io, rootPath](std::string path)
+        {
+            auto absPath = absolute(rootPath / path).make_preferred();
+            auto relPath = relative(absPath, path);
+            auto relPathStr =  relPath.string();
+            if (relPathStr.find("..") == std::string::npos)
+                return io["lines"](absPath.string());
+            return io["lines"](""); // simulate invalid input even though it may be valid - we dont want mod access outside!
+        };
+        ioCopy["open"] = [io, rootPath](std::string path, std::string mode)
+        {
+            auto absPath = absolute(rootPath / path).make_preferred();
+            auto relPath = relative(absPath, path);
+            auto relPathStr =  relPath.string();
+            if (relPathStr.find("..") == std::string::npos)
+                return io["open"](absPath.string(), mode);
+            return io["open"]("", mode); // simulate invalid input even though it may be valid - we dont want mod access outside!
+        };
+		m_env["io"] = ioCopy;
+	}
+
+    // TODO - finish these + replacements for require/package
+    /*{
+        std::filesystem::path rootPath = m_path; // copy of path we can pass to lambda, as 'this' can be invalid afterwards
+        sol::state_view lua = m_lua;
+        sol::environment env = m_env;
+
+        auto loadstring = [env, lua](const std::string& aStr, const std::string &aChunkName) -> std::tuple<sol::object, sol::object>
+        {
+	        if (!aStr.empty() && (aStr[0] == LUA_SIGNATURE[0]))
+		        return std::make_tuple(sol::nil, sol::make_object(lua, "Bytecode prohibited!"));
+
+	        auto result = lua.load(aStr, aChunkName, sol::load_mode::text);
+	        if (result.valid())
+            {
+		        sol::function func = result.get<sol::function>();
+		        env.set_on(func);
+		        return std::make_tuple(func, sol::nil);
+	        }
+
+	        return std::make_tuple(sol::nil, sol::make_object(lua, result.get<sol::error>().what()));
+        };
+
+        auto loadfile = [lua, rootPath, loadstring](const std::string& acPath) -> std::tuple<sol::object, sol::object>
+        {
+            std::filesystem::path prefixedPath = absolute(rootPath / acPath);
+	        if (!exists(prefixedPath))
+		        return std::make_tuple(sol::nil, sol::make_object(lua, "Invalid path!"));
+
+	        std::ifstream t(prefixedPath);
+	        std::string str((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
+	        return loadstring(str, "@" + prefixedPath.string());
+        };
+        m_env["loadfile"] = loadfile;
+
+        auto dofile = [loadfile](const std::string& acPath) -> sol::object
+        {
+	        std::tuple<sol::object, sol::object> ret = loadfile(acPath);
+	        if (std::get<0>(ret) == sol::nil)
+		        throw sol::error(std::get<1>(ret).as<std::string>());
+
+	        sol::function func = std::get<0>(ret);
+	        return func().get<sol::object>();
+        };
+        m_env["dofile"] = dofile;
+    }*/
+    
+    m_env["db"] = m_lua["sqlite3"]["open"]((m_path / "db").string()); // preassign database if mod requires it
+
     m_env["registerForEvent"] = [this](const std::string& acName, sol::function aCallback)
     {
         if(acName == "onInit")
