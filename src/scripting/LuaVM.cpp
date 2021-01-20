@@ -38,6 +38,7 @@ void LuaVM::ReloadAllMods()
     {
         m_scripting.ReloadAllMods();
         m_scripting.TriggerOnInit();
+
         if (CET::Get().GetOverlay().IsEnabled())
             m_scripting.TriggerOnOverlayOpen();
 
@@ -45,13 +46,13 @@ void LuaVM::ReloadAllMods()
     }
 }
 
-void LuaVM::OnOverlayOpen()
+void LuaVM::OnOverlayOpen() const
 {
     if (m_initialized)
         m_scripting.TriggerOnOverlayOpen();
 }
 
-void LuaVM::OnOverlayClose()
+void LuaVM::OnOverlayClose() const
 {
     if (m_initialized)
         m_scripting.TriggerOnOverlayClose();
@@ -62,7 +63,6 @@ void LuaVM::Initialize()
     if (!IsInitialized())
     {
         m_scripting.Initialize();
-        m_initialized = true;
     }
 }
 

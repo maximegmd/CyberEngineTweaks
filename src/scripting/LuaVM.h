@@ -36,8 +36,8 @@ struct LuaVM
     void Update(float aDeltaTime);
     void ReloadAllMods();
 
-    void OnOverlayOpen();
-    void OnOverlayClose();
+    void OnOverlayOpen() const;
+    void OnOverlayClose() const;
 
     void Initialize();
 
