@@ -13,6 +13,7 @@ void LuaVM::Initialize()
         s_pLuaVM.reset(new (std::nothrow) LuaVM);
         s_pLuaVM->Hook();
         s_pLuaVM->m_scripting.Initialize();
+        s_pLuaVM->m_initialized.fetch_add(1);
     }
 }
 
@@ -34,7 +35,7 @@ const std::vector<VKBindInfo>& LuaVM::GetBinds() const
 
 bool LuaVM::ExecuteLua(const std::string& acCommand)
 {
-    if (!m_initialized)
+    if (!IsInitialized())
     {
         spdlog::get("console")->info("Command not executed! LuaVM is not yet initialized!");
         return false;
@@ -45,10 +46,10 @@ bool LuaVM::ExecuteLua(const std::string& acCommand)
 
 void LuaVM::Update(float aDeltaTime)
 {
-    if (!m_initialized && m_logCount.load(std::memory_order_relaxed) > 0)
+    if (m_logCount.load(std::memory_order_relaxed) > 0)
         PostInitialize();
 
-    if (!m_initialized)
+    if (!IsInitialized())
         return;
     
     m_scripting.TriggerOnUpdate(aDeltaTime);
@@ -57,7 +58,7 @@ void LuaVM::Update(float aDeltaTime)
 
 void LuaVM::ReloadAllMods()
 {
-    if (m_initialized)
+    if (IsInitialized())
     {
         m_scripting.ReloadAllMods();
         m_scripting.TriggerOnInit();
@@ -71,24 +72,25 @@ void LuaVM::ReloadAllMods()
 
 void LuaVM::OnOverlayOpen()
 {
-    if (m_initialized)
+    if (IsInitialized())
         m_scripting.TriggerOnOverlayOpen();
 }
 
 void LuaVM::OnOverlayClose()
 {
-    if (m_initialized)
+    if (IsInitialized())
         m_scripting.TriggerOnOverlayClose();
 }
 
 bool LuaVM::IsInitialized() const
 {
-    return m_initialized;
+    return m_initialized.load(std::memory_order_relaxed) > 1;
 }
 
 void LuaVM::PostInitialize()
 {
-    assert(!m_initialized);
+    if (m_initialized.load(std::memory_order_relaxed) != 1)
+        return
 
     m_scripting.TriggerOnInit();
     if (Overlay::Get().IsEnabled())
@@ -97,5 +99,5 @@ void LuaVM::PostInitialize()
     spdlog::info("LuaVM: initialization finished!");
     spdlog::get("console")->info("LuaVM: initialization finished!");
 
-    m_initialized = true;
+    m_initialized.fetch_add(1);;
 }

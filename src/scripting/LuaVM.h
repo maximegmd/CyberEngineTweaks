@@ -80,5 +80,5 @@ private:
 
     Scripting m_scripting{ };
 
-    bool m_initialized{ false };
+    std::atomic_int m_initialized{ 0 };
 };
