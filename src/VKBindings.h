@@ -67,7 +67,7 @@ private:
 
     LRESULT HandleRAWInput(HRAWINPUT ahRAWInput);
     
-    TiltedPhoques::Map<UINT, VKBind> m_binds{};
+    std::map<UINT, VKBind> m_binds{};
     TiltedPhoques::Map<std::string, UINT> m_idToBind{ };
     
     VKCodeBindDecoded m_recording{ };

@@ -440,17 +440,23 @@ LRESULT VKBindings::RecordKeyUp(UINT aVKCode)
         {
             m_recordingResult = EncodeVKCodeBind(m_recording);
             m_recordingLength = i;
+
             for (; i < m_recording.size(); ++i)
                 m_recording[i] = 0;
+
             while (!VerifyRecording()) {} // fix recording for future use, so user can use HKs like Ctrl+C, Ctrl+V without the need of pressing again Ctrl for example
+
             if (m_isBindRecording)
             {
                 if (!Bind(m_recordingResult, m_recordingBind))
                     m_recordingResult = 0;
+
                 m_isBindRecording = false;
+
                 return 0;
             }
-            const auto bind = m_binds.find(m_recordingResult);
+
+            const auto bind = m_binds.lower_bound(m_recordingResult);
             if (bind != m_binds.end())
             {
                 if (m_pOverlay && m_pOverlay->IsEnabled() && (bind->second.ID != m_pOverlay->GetBind().ID))
