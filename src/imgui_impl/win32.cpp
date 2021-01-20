@@ -46,6 +46,7 @@ static HWND             g_hWnd = NULL;
 static INT64            g_Time = 0;
 static INT64            g_TicksPerSecond = 0;
 static ImGuiMouseCursor g_LastMouseCursor = ImGuiMouseCursor_COUNT;
+static std::string      g_LayoutPath = "";
 
 // Functions
 bool ImGui_ImplWin32_Init(HWND ahWnd)
@@ -62,6 +63,10 @@ bool ImGui_ImplWin32_Init(HWND ahWnd)
     io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;          // We can honor io.WantSetMousePos requests (optional, rarely used)
     io.BackendPlatformName = "imgui_impl_win32";
     io.ImeWindowHandle = ahWnd;
+
+    // Setup ini path
+    g_LayoutPath = (Paths::Get().CETRoot() / "layout.ini").string();
+    io.IniFilename = g_LayoutPath.c_str();
 
     // Keyboard mapping. ImGui will use those indices to peek into the io.KeysDown[] array that we will update during the application lifetime.
     io.KeyMap[ImGuiKey_Tab] = VK_TAB;
