@@ -6,7 +6,7 @@
 
 using namespace std::chrono_literals;
 
-static std::unique_ptr<CET> s_pInstance;
+static std::unique_ptr<CET> s_pInstance{ nullptr };
 
 void CET::Initialize()
 {

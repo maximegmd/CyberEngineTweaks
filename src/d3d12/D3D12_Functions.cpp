@@ -68,7 +68,7 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
 
     if (m_initialized) 
     {
-        CComPtr<IDXGISwapChain3> pSwapChain3;
+        IDXGISwapChain3* pSwapChain3{ nullptr };
         if (FAILED(apSwapChain->QueryInterface(IID_PPV_ARGS(&pSwapChain3))))
         {
             spdlog::error("D3D12::Initialize() - unable to query pSwapChain interface for IDXGISwapChain3! (pSwapChain = {0})", reinterpret_cast<void*>(apSwapChain));
