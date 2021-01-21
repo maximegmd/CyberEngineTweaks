@@ -1,36 +1,14 @@
 #include <stdafx.h>
 
-#include <overlay/Overlay.h>
-
-static std::unique_ptr<Options> s_pOptions;
-
-void Options::Initialize()
-{
-    if (s_pOptions)
-        return;
-    
-    s_pOptions.reset(new (std::nothrow) Options);
-}
-
-void Options::Shutdown()
-{
-    s_pOptions.reset();
-}
-
-Options& Options::Get()
-{
-    assert(s_pOptions);
-    return *s_pOptions;
-}
+#include "Paths.h"
+#include "Utils.h"
 
 void Options::Load()
 {
-    auto& paths = Paths::Get();
-
-    IsFirstLaunch = !exists(paths.Config());
+    IsFirstLaunch = !exists(m_paths.Config());
     if (!IsFirstLaunch)
     {
-        std::ifstream configFile(paths.Config());
+        std::ifstream configFile(m_paths.Config());
         if(configFile)
         {
             auto config = nlohmann::json::parse(configFile);
@@ -52,9 +30,7 @@ void Options::Load()
             FontSize = config.value("font_size", FontSize);
 
             OverlayKeyBind = config.value("overlay_key", OverlayKeyBind);
-            if (OverlayKeyBind != 0)
-                VKBindings::Get().Bind(OverlayKeyBind, Overlay::VKBOverlay);
-            else
+            if (OverlayKeyBind == 0)
                 IsFirstLaunch = true; // is for sure in this case
 
             // check old config names
@@ -84,7 +60,7 @@ void Options::Save()
     config["font_glyph_ranges"] = FontGlyphRanges;
     config["font_size"] = FontSize;
 
-    std::ofstream o(Paths::Get().Config());
+    std::ofstream o(m_paths.Config());
     o << config.dump(4) << std::endl;
 }
 
@@ -104,11 +80,10 @@ void Options::ResetToDefaults()
     Save();
 }
 
-Options::Options()
+Options::Options(Paths& aPaths)
+    : m_paths(aPaths)
 {
-    auto& paths = Paths::Get();
-
-    const auto* exePathStr = paths.Executable().native().c_str(); 
+    const auto* exePathStr = aPaths.Executable().native().c_str(); 
     int verInfoSz = GetFileVersionInfoSize(exePathStr, nullptr);
     if(verInfoSz) 
     {
@@ -141,10 +116,13 @@ Options::Options()
         }
     }
     // check if exe name matches in case previous check fails
-    ExeValid = ExeValid || (paths.Executable().filename() == "Cyberpunk2077.exe");
+    ExeValid = ExeValid || (aPaths.Executable().filename() == "Cyberpunk2077.exe");
 
     if (!ExeValid)
-        return;
+        throw std::runtime_error("Not Cyberpunk2077.exe");
+
+    set_default_logger(CreateLogger(m_paths.CETRoot() / "cyber_engine_tweaks.log", "main"));
+    spdlog::flush_every(std::chrono::seconds(3));
 
     spdlog::info("Cyber Engine Tweaks is starting...");
 
@@ -152,11 +130,12 @@ Options::Options()
 
     if (GameImage.version)
     {
+        spdlog::info("CET version {} [{}]", CET_BUILD_COMMIT, CET_BUILD_BRANCH);
         auto [major, minor] = GameImage.GetVersion();
         spdlog::info("Game version {}.{:02d}", major, minor);
-        spdlog::info("Root path: \"{}\"", paths.GameRoot().string());
-        spdlog::info("Cyber Engine Tweaks path: \"{}\"", paths.CETRoot().string());
-        spdlog::info("Lua scripts search path: \"{}\"", paths.ModsRoot().string());
+        spdlog::info("Root path: \"{}\"", aPaths.GameRoot().string());
+        spdlog::info("Cyber Engine Tweaks path: \"{}\"", aPaths.CETRoot().string());
+        spdlog::info("Lua scripts search path: \"{}\"", aPaths.ModsRoot().string());
     }
     else
         spdlog::info("Unknown Game Version, update the mod");

@@ -2,9 +2,11 @@
 
 #include "Widget.h"
 
-struct Console : public Widget
+struct LuaVM;
+
+struct Console : Widget
 {
-    Console() = default;
+    Console(LuaVM& aVm);
     ~Console() override = default;
     
     void OnEnable() override;
@@ -22,6 +24,7 @@ private:
     bool m_inputClear{ true };
     bool m_disabledGameLog{ true };
     bool m_focusConsoleInput{ false };
+    LuaVM& m_vm;
 
     char m_Command[0x10000]{ 0 };
 };

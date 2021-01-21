@@ -2,6 +2,7 @@
 
 #include "HelperWidgets.h"
 
+#include "CET.h"
 #include "overlay/Overlay.h"
 
 namespace HelperWidgets
@@ -23,9 +24,9 @@ namespace HelperWidgets
         return activeID;
     }
 
-    void BindWidget(VKBindInfo& aVKBindInfo)
+    void BindWidget(VKBindInfo& aVKBindInfo, const std::string& acId)
     {
-        VKBindings& vkb = VKBindings::Get();
+        VKBindings& vkb = CET::Get().GetBindings();
 
         if (aVKBindInfo.IsBinding && !vkb.IsRecordingBind())
         {
@@ -39,7 +40,7 @@ namespace HelperWidgets
         if (aVKBindInfo.CodeBind != aVKBindInfo.SavedCodeBind)
             curTextColor = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
 
-        std::string label = aVKBindInfo.Bind.Description + ':';
+        const std::string label = aVKBindInfo.Bind.Description + ':';
         ImGui::PushStyleColor(ImGuiCol_Text, curTextColor);
         ImGui::PushID(&aVKBindInfo.Bind.Description); // ensure we have unique ID by using pointer to Description, is OK, pointer will not be used inside ImGui :P
         ImGui::Text(label.c_str());
@@ -90,7 +91,7 @@ namespace HelperWidgets
         }
         ImGui::PopID();
         
-        if (aVKBindInfo.CodeBind && (aVKBindInfo.Bind.ID != Overlay::VKBOverlay.ID)) // make an exception for Overlay key
+        if (aVKBindInfo.CodeBind && (aVKBindInfo.Bind.ID != acId)) // make an exception for Overlay key
         {
             ImGui::PushID(&aVKBindInfo.Bind.ID[1]); // same as PushID before, just make pointer a bit bigger :)
             ImGui::SameLine();

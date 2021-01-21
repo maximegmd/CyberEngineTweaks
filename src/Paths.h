@@ -4,10 +4,6 @@ struct Paths
 {
     ~Paths() = default;
 
-    static void Initialize();
-    static void Shutdown();
-    static Paths& Get();
-    
     const std::filesystem::path& Executable() const;
     const std::filesystem::path& GameRoot() const;
     const std::filesystem::path& CETRoot() const;
@@ -16,6 +12,9 @@ struct Paths
     const std::filesystem::path& ModsRoot() const;
 
 private:
+
+    friend struct CET;
+
     Paths();
     
     std::filesystem::path m_exe{ };

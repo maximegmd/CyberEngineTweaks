@@ -26,11 +26,8 @@ struct TDBIDLookupEntry
 struct Image;
 struct LuaVM
 {
-    ~LuaVM() = default;
-
-    static void Initialize();
-    static void Shutdown();
-    static LuaVM& Get();
+    LuaVM(Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12, Options& aOptions);
+    ~LuaVM();
 
     const std::vector<VKBindInfo>& GetBinds() const;
     
@@ -39,14 +36,16 @@ struct LuaVM
     void Update(float aDeltaTime);
     void ReloadAllMods();
 
-    void OnOverlayOpen();
-    void OnOverlayClose();
+    void OnOverlayOpen() const;
+    void OnOverlayClose() const;
+
+    void Initialize();
 
     bool IsInitialized() const;
 
 protected:
     
-    void Hook();
+    void Hook(Options& aOptions);
     void PostInitialize();
     
     static void HookLog(REDScriptContext*, ScriptStack* apStack, void*, void*);
@@ -62,8 +61,6 @@ protected:
 
 private:
   
-    LuaVM() = default;
-    
     std::recursive_mutex m_tdbidLock{ };
     std::unordered_map<uint64_t, TDBIDLookupEntry> m_tdbidLookup{ };
     
@@ -78,7 +75,10 @@ private:
 
     std::atomic<uint64_t> m_logCount{ 0 };
 
-    Scripting m_scripting{ };
+    Scripting m_scripting;
 
     bool m_initialized{ false };
+
+    D3D12& m_d3d12;
+    size_t m_connectUpdate;
 };

@@ -1,31 +1,8 @@
 #include <stdafx.h>
 
 #include "LuaVM.h"
-
+#include "CET.h"
 #include "overlay/Overlay.h"
-
-static std::unique_ptr<LuaVM> s_pLuaVM;
-
-void LuaVM::Initialize()
-{
-    if (!s_pLuaVM)
-    {
-        s_pLuaVM.reset(new (std::nothrow) LuaVM);
-        s_pLuaVM->Hook();
-        s_pLuaVM->m_scripting.Initialize();
-    }
-}
-
-void LuaVM::Shutdown()
-{
-    s_pLuaVM = nullptr;
-}
-
-LuaVM& LuaVM::Get()
-{
-    assert(s_pLuaVM);
-    return *s_pLuaVM;
-}
 
 const std::vector<VKBindInfo>& LuaVM::GetBinds() const
 {
@@ -36,7 +13,7 @@ bool LuaVM::ExecuteLua(const std::string& acCommand)
 {
     if (!m_initialized)
     {
-        spdlog::get("console")->info("Command not executed! LuaVM is not yet initialized!");
+        spdlog::get("scripting")->info("Command not executed! LuaVM is not yet initialized!");
         return false;
     }
 
@@ -61,24 +38,32 @@ void LuaVM::ReloadAllMods()
     {
         m_scripting.ReloadAllMods();
         m_scripting.TriggerOnInit();
-        if (Overlay::Get().IsEnabled())
+
+        if (CET::Get().GetOverlay().IsEnabled())
             m_scripting.TriggerOnOverlayOpen();
 
-        spdlog::info("LuaVM: Reloaded all mods!");
-        spdlog::get("console")->info("LuaVM: Reloaded all mods!");
+        spdlog::get("scripting")->info("LuaVM: Reloaded all mods!");
     }
 }
 
-void LuaVM::OnOverlayOpen()
+void LuaVM::OnOverlayOpen() const
 {
     if (m_initialized)
         m_scripting.TriggerOnOverlayOpen();
 }
 
-void LuaVM::OnOverlayClose()
+void LuaVM::OnOverlayClose() const
 {
     if (m_initialized)
         m_scripting.TriggerOnOverlayClose();
+}
+
+void LuaVM::Initialize()
+{
+    if (!IsInitialized())
+    {
+        m_scripting.Initialize();
+    }
 }
 
 bool LuaVM::IsInitialized() const
@@ -91,11 +76,10 @@ void LuaVM::PostInitialize()
     assert(!m_initialized);
 
     m_scripting.TriggerOnInit();
-    if (Overlay::Get().IsEnabled())
+    if (CET::Get().GetOverlay().IsEnabled())
         m_scripting.TriggerOnOverlayOpen();
 
-    spdlog::info("LuaVM: initialization finished!");
-    spdlog::get("console")->info("LuaVM: initialization finished!");
+    spdlog::get("scripting")->info("LuaVM: initialization finished!");
 
     m_initialized = true;
 }

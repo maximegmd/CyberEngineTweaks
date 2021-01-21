@@ -2,9 +2,12 @@
 
 #include "Widget.h"
 
-struct Hotkeys : public Widget
+struct Overlay;
+struct LuaVM;
+
+struct Hotkeys : Widget
 {
-    Hotkeys() = default;
+    Hotkeys(VKBindings& aBindings, Overlay& aOverlay, LuaVM& aVm);
     ~Hotkeys() override = default;
 
     void OnEnable() override;
@@ -16,4 +19,7 @@ struct Hotkeys : public Widget
 
 private:
     std::vector<VKBindInfo> m_vkBindInfos{ };
+    VKBindings& m_bindings;
+    Overlay& m_overlay;
+    LuaVM& m_vm;
 };

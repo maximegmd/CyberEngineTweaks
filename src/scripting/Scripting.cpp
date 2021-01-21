@@ -3,7 +3,6 @@
 #include "Scripting.h"
 
 #include "GameHooks.h"
-#include "Options.h"
 #include "GameOptions.h"
 
 #include <sol_imgui/sol_imgui.h>
@@ -19,7 +18,7 @@
 #include <reverse/WeakReference.h>
 #include <reverse/Enum.h>
 
-#include "CETVersion.h"
+#include "Utils.h"
 
 #ifndef NDEBUG
 #include "GameDump.h"
@@ -28,6 +27,14 @@
 
 static RED4ext::IRTTIType* s_pStringType = nullptr;
 
+Scripting::Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12)
+    : m_store(aPaths, aBindings)
+    , m_paths(aPaths)
+    , m_d3d12(aD3D12)
+{
+    CreateLogger(aPaths.CETRoot() / "scripting.log", "scripting");
+}
+
 void Scripting::Initialize()
 {
     m_lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::io, sol::lib::math, sol::lib::package, sol::lib::os, sol::lib::table);
@@ -35,9 +42,9 @@ void Scripting::Initialize()
 
     sol_ImGui::InitBindings(m_lua);
 
-    m_lua["GetDisplayResolution"] = []() -> std::tuple<float, float>
+    m_lua["GetDisplayResolution"] = [this]() -> std::tuple<float, float>
     {
-        const auto resolution = D3D12::Get().GetResolution();
+        const auto resolution = m_d3d12.GetResolution();
         return {static_cast<float>(resolution.cx), static_cast<float>(resolution.cy)};
     };
 
@@ -327,7 +334,8 @@ void Scripting::Initialize()
             spdlog::info(name.ToString());
             count++;
         });
-        spdlog::get("console")->info("Dumped {} types", count);
+
+        spdlog::get("scripting")->info("Dumped {} types", count);
     };
 
     m_lua["print"] = [](sol::variadic_args aArgs, sol::this_state aState)
@@ -343,7 +351,8 @@ void Scripting::Initialize()
             std::string str = s["tostring"]((*it).get<sol::object>());
             oss << str;
         }
-        spdlog::get("console")->info(oss.str());
+
+        spdlog::get("scripting")->info(oss.str());
     };
 
 #ifndef NDEBUG
@@ -358,22 +367,21 @@ void Scripting::Initialize()
     };
     m_lua["DumpReflection"] = [this]()
     {
-        RED4ext::GameReflection::Dump(Paths::Get().CETRoot() / "dumps");
+        RED4ext::GameReflection::Dump(m_paths.CETRoot() / "dumps");
     };
 #endif
 
     // execute autoexec.lua inside our default script directory
-    current_path(Paths::Get().CETRoot() / "scripts");
+    current_path(m_paths.CETRoot() / "scripts");
     if (std::filesystem::exists("autoexec.lua"))
         m_lua.do_file("autoexec.lua");
     else
     {
-        spdlog::info("Scripting::Initialize() - missing CET autoexec.lua!");
-        spdlog::get("console")->info("WARNING: missing CET autoexec.lua!");
+        spdlog::get("scripting")->info("WARNING: missing CET autoexec.lua!");
     }
 
     // set current path for following scripts to our ModsPath
-    current_path(Paths::Get().ModsRoot());
+    current_path(m_paths.ModsRoot());
 
     // load mods
     ReloadAllMods();
@@ -429,7 +437,7 @@ bool Scripting::ExecuteLua(const std::string& acCommand)
     }
     catch(std::exception& e)
     {
-        spdlog::get("console")->info(e.what());
+        spdlog::get("scripting")->info(e.what());
     }
     return false;
 }
@@ -625,7 +633,7 @@ sol::object Scripting::GetSingletonHandle(const std::string& acName)
     auto* pType = pRtti->GetClass(RED4ext::FNV1a(acName.c_str()));
     if (!pType)
     {
-        spdlog::get("console")->info("Type '{}' not found or is not initialized yet.", acName);
+        spdlog::get("scripting")->info("Type '{}' not found or is not initialized yet.", acName);
         return sol::nil;
     }
 
@@ -642,7 +650,7 @@ sol::protected_function Scripting::InternalIndex(const std::string& acName)
         auto code = this->Execute(name, args, std::move(env), L, result);
         if(!code)
         {
-            spdlog::get("console")->info("Error: {}", result);
+            spdlog::get("scripting")->info("Error: {}", result);
         }
         return code;
     });

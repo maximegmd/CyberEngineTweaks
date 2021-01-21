@@ -1,3 +1,5 @@
+#include "CET.h"
+
 #include <stdafx.h>
 
 #include "Image.h"
@@ -11,7 +13,7 @@ bool HookGameOptionGetBoolean(GameOption* apThis, uint8_t* apVariable, GameOptio
     if (!pVariable)
         return false;
 
-    auto& options = Options::Get();
+    auto& options = CET::Get().GetOptions();
     if (options.PatchAsyncCompute && strcmp(apThis->pCategory, "Rendering/AsyncCompute") == 0)
     {
         *pVariable = false;
@@ -33,7 +35,7 @@ bool HookGameOptionGetBoolean(GameOption* apThis, uint8_t* apVariable, GameOptio
     return true;
 }
 
-void OptionsPatch(Image* apImage)
+void OptionsPatch(const Image* apImage)
 {
     uint8_t* pLocation = FindSignature(apImage->pTextStart, apImage->pTextEnd,
         { 0x44, 0x3A, 0x41, 0x28, 0x75, 0x11, 0x48, 0x8B, 0x41, 0x30, 0x48, 0x85, 0xC0 });
@@ -77,14 +79,14 @@ void* HookGameOptionInit(GameOption* apThis)
         // GameOptionInit seems to be called twice per option, value isn't set until after the first call though
         // Since we've already seen this option once we can now grab the value
 
-        if(Options::Get().DumpGameOptions)
+        if (CET::Get().GetOptions().DumpGameOptions)
             spdlog::info(apThis->GetInfo());
     }
 
     return RealGameOptionInit(apThis);
 }
 
-void OptionsInitHook(Image* apImage)
+void OptionsInitHook(const Image* apImage)
 {
     void* GameOptionInit = FindSignature(apImage->pTextStart, apImage->pTextEnd,
         { 0x48, 0x89, 0x5C, 0x24, 0x08, 0x48, 0x89, 0x74, 0x24, 0x10, 0x57,
