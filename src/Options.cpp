@@ -130,6 +130,7 @@ Options::Options(Paths& aPaths)
 
     if (GameImage.version)
     {
+        spdlog::info("CET version {} [{}]", CET_BUILD_COMMIT, CET_BUILD_BRANCH);
         auto [major, minor] = GameImage.GetVersion();
         spdlog::info("Game version {}.{:02d}", major, minor);
         spdlog::info("Root path: \"{}\"", aPaths.GameRoot().string());

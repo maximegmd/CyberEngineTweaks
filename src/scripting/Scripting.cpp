@@ -18,7 +18,6 @@
 #include <reverse/WeakReference.h>
 #include <reverse/Enum.h>
 
-#include "CETVersion.h"
 #include "Utils.h"
 
 #ifndef NDEBUG

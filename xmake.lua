@@ -52,14 +52,27 @@ before_build(function (target)
 				end
 			}
 		}
-
-		io.writefile("src/CETVersion.h", string.format([[
+		
+		local cetVersionString = string.format([[
 #pragma once
 
-#define CET_BUILD_BRANCH "%s";
-#define CET_BUILD_COMMIT "%s";
-#define CET_BUILD_TIME "%s";
-]], branch, commitHash, os.date("%Y-%m-%d %H:%M:%S")))
+#define CET_BUILD_BRANCH "%s"
+#define CET_BUILD_COMMIT "%s"
+]], branch, commitHash)
+		local cetVersionCurrent = try
+		{
+			function()
+				return io.open("src/CETVersion.h", "r")
+			end
+		}
+		if cetVersionCurrent~=nil then 
+			local cetVersionCurrentString = cetVersionCurrent:read("*a")
+			cetVersionCurrent:close()
+			if (cetVersionCurrentString == cetVersionString) then
+				return
+			end
+		end
+		io.writefile("src/CETVersion.h", cetVersionString)
 	end)
 
 target("RED4ext.SDK")
