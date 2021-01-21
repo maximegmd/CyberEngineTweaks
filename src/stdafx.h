@@ -53,3 +53,4 @@
 #include "Paths.h"
 #include "VKBindings.h"
 #include "Options.h"
+#include "CETVersion.h"
