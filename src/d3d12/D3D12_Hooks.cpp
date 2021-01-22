@@ -1,14 +1,14 @@
+#include "CET.h"
+
 #include <stdafx.h>
 
 #include "D3D12.h"
 
-#include <Image.h>
-#include <Pattern.h>
 #include <kiero/kiero.h>
 
 HRESULT D3D12::ResizeBuffers(IDXGISwapChain* apSwapChain, UINT aBufferCount, UINT aWidth, UINT aHeight, DXGI_FORMAT aNewFormat, UINT aSwapChainFlags)
 {
-    auto& d3d12 = Get();
+    auto& d3d12 = CET::Get().GetD3D12();
     
     if (d3d12.m_initialized)
     {
@@ -22,7 +22,7 @@ HRESULT D3D12::ResizeBuffers(IDXGISwapChain* apSwapChain, UINT aBufferCount, UIN
 
 HRESULT D3D12::Present(IDXGISwapChain* apSwapChain, UINT aSyncInterval, UINT aPresentFlags)
 {
-    auto& d3d12 = Get();
+    auto& d3d12 = CET::Get().GetD3D12();
 
     if (d3d12.Initialize(apSwapChain))
         d3d12.Update(); 
@@ -32,10 +32,10 @@ HRESULT D3D12::Present(IDXGISwapChain* apSwapChain, UINT aSyncInterval, UINT aPr
 
 HRESULT D3D12::PresentDownlevel(ID3D12CommandQueueDownlevel* apCommandQueueDownlevel, ID3D12GraphicsCommandList* apOpenCommandList, ID3D12Resource* apSourceTex2D, HWND ahWindow, D3D12_DOWNLEVEL_PRESENT_FLAGS aFlags)
 {
-    if (Options::Get().PatchDisableWin7Vsync)
+    if (CET::Get().GetOptions().PatchDisableWin7Vsync)
         aFlags &= ~D3D12_DOWNLEVEL_PRESENT_FLAG_WAIT_FOR_VBLANK;
 
-    auto& d3d12 = Get();
+    auto& d3d12 = CET::Get().GetD3D12();
 
     // On Windows 7 there is no swap chain to query the current backbuffer index. Instead do a reverse lookup in the known backbuffer list
     auto it = std::find(d3d12.m_downlevelBackbuffers.cbegin(), d3d12.m_downlevelBackbuffers.cend(), apSourceTex2D);
@@ -69,7 +69,7 @@ HRESULT D3D12::PresentDownlevel(ID3D12CommandQueueDownlevel* apCommandQueueDownl
 HRESULT D3D12::CreateCommittedResource(ID3D12Device* apDevice, const D3D12_HEAP_PROPERTIES* acpHeapProperties, D3D12_HEAP_FLAGS aHeapFlags, const D3D12_RESOURCE_DESC* acpDesc,
     D3D12_RESOURCE_STATES aInitialResourceState, const D3D12_CLEAR_VALUE* acpOptimizedClearValue, const IID* acpRIID, void** appvResource)
 {
-    auto& d3d12 = Get();
+    auto& d3d12 = CET::Get().GetD3D12();
 
     // Check if this is a backbuffer resource being created
     bool isBackBuffer = false;
@@ -98,7 +98,7 @@ HRESULT D3D12::CreateCommittedResource(ID3D12Device* apDevice, const D3D12_HEAP_
 
 void D3D12::ExecuteCommandLists(ID3D12CommandQueue* apCommandQueue, UINT aNumCommandLists, ID3D12CommandList* const* apcpCommandLists)
 {
-    auto& d3d12 = Get();
+    auto& d3d12 = CET::Get().GetD3D12();
 
     if (d3d12.m_pCommandQueue == nullptr)
     {
@@ -120,7 +120,7 @@ void D3D12::Hook()
     int d3d12FailedHooksCount = 0;
     int d3d12CompleteHooksCount = 0;
     
-    const char* d3d12type = (kiero::isDownLevelDevice()) ? ("D3D12on7") : ("D3D12");
+    std::string_view d3d12type = (kiero::isDownLevelDevice()) ? ("D3D12on7") : ("D3D12");
 
     if (kiero::isDownLevelDevice()) 
     {

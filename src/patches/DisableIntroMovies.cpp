@@ -29,7 +29,7 @@ void* HookInitScriptMemberVariable(void* a1, void* a2, uint64_t a3, uint64_t nam
     return RealInitScriptMemberVariable(a1, a2, a3, nameHash, a5, a6, a7);
 }
 
-void DisableIntroMoviesPatch(Image* apImage)
+void DisableIntroMoviesPatch(const Image* apImage)
 {
     RealInitScriptMemberVariable = reinterpret_cast<TInitScriptMemberVariable*>(FindSignature(apImage->pTextStart, apImage->pTextEnd, {
         0x48, 0x89, 0x5C, 0x24, 0x08, 0x57, 0x48, 0x83, 0xEC, 0x20, 0x48, 0x8B, 0x44, 0x24, 0x50, 0x48, 0x8B, 0xD9, 0x48, 0x89, 0x41, 0x08
@@ -37,7 +37,7 @@ void DisableIntroMoviesPatch(Image* apImage)
 
     if (RealInitScriptMemberVariable == nullptr)
     {
-        spdlog::info("Disable intro movies patch: failed, could not be found");
+        spdlog::warn("Disable intro movies patch: failed, could not be found");
         return;
     }
 

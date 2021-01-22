@@ -15,6 +15,8 @@
 
 #include "win32.h"
 
+#include "CET.h"
+
 // CHANGELOG
 // (minor and older changes stripped away, please see git history for details)
 //  2020-12-04: Misc: Fixed setting of io.DisplaySize to invalid/uninitialized data when after hwnd has been closed.
@@ -46,6 +48,7 @@ static HWND             g_hWnd = NULL;
 static INT64            g_Time = 0;
 static INT64            g_TicksPerSecond = 0;
 static ImGuiMouseCursor g_LastMouseCursor = ImGuiMouseCursor_COUNT;
+static std::string      g_LayoutPath = "";
 
 // Functions
 bool ImGui_ImplWin32_Init(HWND ahWnd)
@@ -62,6 +65,10 @@ bool ImGui_ImplWin32_Init(HWND ahWnd)
     io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;          // We can honor io.WantSetMousePos requests (optional, rarely used)
     io.BackendPlatformName = "imgui_impl_win32";
     io.ImeWindowHandle = ahWnd;
+
+    // Setup ini path
+    g_LayoutPath = (CET::Get().GetPaths().CETRoot() / "layout.ini").string();
+    io.IniFilename = g_LayoutPath.c_str();
 
     // Keyboard mapping. ImGui will use those indices to peek into the io.KeysDown[] array that we will update during the application lifetime.
     io.KeyMap[ImGuiKey_Tab] = VK_TAB;
@@ -166,9 +173,7 @@ void ImGui_ImplWin32_NewFrame(SIZE aOutSize)
     IM_ASSERT(io.Fonts->IsBuilt() && "Font atlas not built! It is generally built by the renderer backend. Missing call to renderer _NewFrame() function? e.g. ImGui_ImplOpenGL3_NewFrame().");
 
     // Setup display size (every frame to accommodate for window resizing)
-    RECT rect = { 0, 0, 0, 0 };
-    ::GetClientRect(g_hWnd, &rect);
-    io.DisplaySize = ImVec2((float)(rect.right - rect.left), (float)(rect.bottom - rect.top));
+    io.DisplaySize = { static_cast<float>(aOutSize.cx), static_cast<float>(aOutSize.cy) };
 
     // Setup time step
     INT64 current_time = 0;

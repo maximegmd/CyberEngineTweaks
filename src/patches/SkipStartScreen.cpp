@@ -3,12 +3,12 @@
 #include "Image.h"
 #include "Pattern.h"
 
-void StartScreenPatch(Image* apImage)
+void StartScreenPatch(const Image* apImage)
 {
     auto pLocation = FindSignature(apImage->pTextStart, apImage->pTextEnd, { 0x48, 0xBB , 0xE6 , 0xF8 , 0xA5, 0xA3, 0x36, 0x56, 0x4E, 0xA7, 0xC6 , 0x85, 0xB0, 0xCC, 0xCC, 0xCC, 0x01 });
     if(pLocation == nullptr)
     {
-        spdlog::info("Start screen patch: failed, could not be found");
+        spdlog::warn("Start screen patch: failed, could not be found");
         return;
     }
 

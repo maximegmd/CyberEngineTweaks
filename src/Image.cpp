@@ -57,7 +57,7 @@ void Image::Initialize()
             else
             {
                 for (auto c : pdb_info->Guid)
-                    spdlog::info("{:X}", (uint32_t)c);
+                    spdlog::error("{:X}", (uint32_t)c);
             }
         }
     }

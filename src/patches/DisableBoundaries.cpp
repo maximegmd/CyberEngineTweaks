@@ -3,7 +3,7 @@
 #include "Image.h"
 #include "Pattern.h"
 
-void DisableBoundaryTeleportPatch(Image* apImage)
+void DisableBoundaryTeleportPatch(const Image* apImage)
 {
     // Disarm the WorldBoundarySystem/Tick function
     // Going out of bounds will still play the glitchy-screen effect that normally happens when game teleports you, but the actual teleport won't happen
@@ -13,7 +13,7 @@ void DisableBoundaryTeleportPatch(Image* apImage)
 
     if (pLocation == nullptr)
     {
-        spdlog::info("Disable boundary teleport: failed, could not be found");
+        spdlog::warn("Disable boundary teleport: failed, could not be found");
         return;
     }
 

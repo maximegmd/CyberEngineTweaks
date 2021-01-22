@@ -3,28 +3,32 @@
 #include "ScriptStore.h"
 #include "reverse/SingletonReference.h"
 
+struct D3D12;
+
 struct Scripting
 {
-    Scripting() = default;
+    Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12);
     ~Scripting() = default;
 
     void Initialize();
+
+    const std::vector<VKBindInfo>& GetBinds() const;
 
     void TriggerOnInit() const;
     void TriggerOnUpdate(float aDeltaTime) const;
     void TriggerOnDraw() const;
     
-    void TriggerOnConsoleOpen() const;
-    void TriggerOnConsoleClose() const;
+    void TriggerOnOverlayOpen() const;
+    void TriggerOnOverlayClose() const;
 
     sol::object GetMod(const std::string& acName) const;
     void ReloadAllMods();
     
     bool ExecuteLua(const std::string& acCommand);
 
-    static size_t Size(RED4ext::IRTTIType* apRtti);
+    static size_t Size(RED4ext::IRTTIType* apRttiType);
     static sol::object ToLua(sol::state_view aState, RED4ext::CStackType& aResult);
-    static RED4ext::CStackType ToRED(sol::object aObject, RED4ext::IRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator);
+    static RED4ext::CStackType ToRED(sol::object aObject, RED4ext::IRTTIType* apRttiType, TiltedPhoques::Allocator* apAllocator);
 
 protected:
 
@@ -39,5 +43,7 @@ private:
     sol::state m_lua{ };
     std::unordered_map<std::string, sol::object> m_properties{ };
     std::unordered_map<std::string, SingletonReference> m_singletons{ };
-    ScriptStore m_store{ };
+    ScriptStore m_store;
+    const Paths& m_paths;
+    D3D12& m_d3d12;
 };

@@ -1,10 +1,11 @@
 #include <stdafx.h>
 
+#include "CET.h"
 #include "LuaVM.h"
 
 #include <Pattern.h>
 
-#include <console/Console.h>
+#include <overlay/Overlay.h>
 
 struct REDScriptContext;
 
@@ -20,7 +21,9 @@ static_assert(offsetof(ScriptStack, m_context) == 0x40);
 
 static TScriptCall** GetScriptCallArray()
 {
-    static uint8_t* pLocation = FindSignature({ 0x4C, 0x8D, 0x15, 0xCC, 0xCC, 0xCC, 0xCC, 0x48, 0x89, 0x42, 0x38, 0x49, 0x8B, 0xF8, 0x48, 0x8B, 0x02, 0x4C, 0x8D, 0x44, 0x24, 0x20, 0xC7 }) + 3;
+    auto& gameImage = CET::Get().GetOptions().GameImage;
+
+    static uint8_t* pLocation = FindSignature(gameImage.pTextStart, gameImage.pTextEnd, { 0x4C, 0x8D, 0x15, 0xCC, 0xCC, 0xCC, 0xCC, 0x48, 0x89, 0x42, 0x38, 0x49, 0x8B, 0xF8, 0x48, 0x8B, 0x02, 0x4C, 0x8D, 0x44, 0x24, 0x20, 0xC7 }) + 3;
     static uintptr_t finalLocation = (uintptr_t)pLocation + 4 + *reinterpret_cast<uint32_t*>(pLocation);
 
     return reinterpret_cast<TScriptCall**>(finalLocation);
@@ -31,12 +34,13 @@ void LuaVM::HookLog(REDScriptContext*, ScriptStack* apStack, void*, void*)
     RED4ext::CString text("");
     apStack->unk30 = nullptr;
     apStack->unk38 = nullptr;
-    auto opcode = *(apStack->m_code++);
+    const auto opcode = *(apStack->m_code++);
     GetScriptCallArray()[opcode](apStack->m_context, apStack, &text, nullptr);
     apStack->m_code++; // skip ParamEnd
-    
-    if (Options::Get().Console)
-        Console::Get().GameLog(text.c_str());
+
+    auto& console = CET::Get().GetOverlay().GetConsole();
+    if (console.GameLogEnabled())
+        spdlog::get("scripting")->info(text.c_str());
 }
 
 static const char* GetChannelStr(uint64_t hash)
@@ -63,17 +67,15 @@ static const char* GetChannelStr(uint64_t hash)
         HASH_CASE("Vehicles");
 #undef HASH_CASE
     }
-    return nullptr;
+    return "";
 }
 
 void LuaVM::HookLogChannel(REDScriptContext*, ScriptStack* apStack, void*, void*)
 {
-    uint8_t opcode;
-
     uint64_t channel_hash = 0;
     apStack->unk30 = nullptr;
     apStack->unk38 = nullptr;
-    opcode = *(apStack->m_code++);
+    uint8_t opcode = *(apStack->m_code++);
     GetScriptCallArray()[opcode](apStack->m_context, apStack, &channel_hash, nullptr);
 
     RED4ext::CString text("");
@@ -83,15 +85,21 @@ void LuaVM::HookLogChannel(REDScriptContext*, ScriptStack* apStack, void*, void*
     GetScriptCallArray()[opcode](apStack->m_context, apStack, &text, nullptr);
 
     apStack->m_code++; // skip ParamEnd
+
+    auto& console = CET::Get().GetOverlay().GetConsole();
+    if (console.GameLogEnabled())
+    {
+        auto consoleLogger = spdlog::get("scripting");
+
+        std::string_view textSV = text.c_str();
+        std::string_view channelSV = GetChannelStr(channel_hash);
+        if (channelSV == "")
+            consoleLogger->info("[?{0:x}] {}", channel_hash, textSV);
+        else
+            consoleLogger->info("[{}] {}", channelSV, textSV);
+    }
     
-    auto channel_str = GetChannelStr(channel_hash);
-    std::string channel = channel_str == nullptr
-        ? "?" + std::to_string(channel_hash)
-        : std::string(channel_str);
-    if (Options::Get().Console)
-        Console::Get().GameLog("[" + channel + "] " +text.c_str());
-    
-    Get().m_logCount.fetch_add(1);
+    CET::Get().GetVM().m_logCount.fetch_add(1);
 }
 
 static std::string GetTDBDIDDebugString(TDBID tdbid)
@@ -132,9 +140,23 @@ std::string LuaVM::GetTDBIDString(uint64_t aValue)
     return string;
 }
 
+LuaVM::LuaVM(Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12, Options& aOptions)
+    : m_scripting(aPaths, aBindings, aD3D12)
+    , m_d3d12(aD3D12)
+{
+    Hook(aOptions);
+
+    m_connectUpdate = aD3D12.OnUpdate.Connect([this]() { Update(ImGui::GetIO().DeltaTime); });
+}
+
+LuaVM::~LuaVM()
+{
+    m_d3d12.OnUpdate.Disconnect(m_connectUpdate);
+}
+
 TDBID* LuaVM::HookTDBIDCtor(TDBID* apThis, const char* acpName)
 {
-    auto& luavm = Get();
+    auto& luavm = CET::Get().GetVM();
     auto result = luavm.m_realTDBIDCtor(apThis, acpName);
     luavm.RegisterTDBIDString(apThis->value, 0, acpName);
     return result;
@@ -142,7 +164,7 @@ TDBID* LuaVM::HookTDBIDCtor(TDBID* apThis, const char* acpName)
 
 TDBID* LuaVM::HookTDBIDCtorCString(TDBID* apThis, const RED4ext::CString* acpName)
 {
-    auto& luavm = Get();
+    auto& luavm = CET::Get().GetVM();
     auto result = luavm.m_realTDBIDCtorCString(apThis, acpName);
     luavm.RegisterTDBIDString(apThis->value, 0, acpName->c_str());
     return result;
@@ -150,7 +172,7 @@ TDBID* LuaVM::HookTDBIDCtorCString(TDBID* apThis, const RED4ext::CString* acpNam
 
 TDBID* LuaVM::HookTDBIDCtorDerive(TDBID* apBase, TDBID* apThis, const char* acpName)
 {
-    auto& luavm = Get();
+    auto& luavm = CET::Get().GetVM();
     auto result = luavm.m_realTDBIDCtorDerive(apBase, apThis, acpName);
     luavm.RegisterTDBIDString(apThis->value, apBase->value, std::string(acpName));
     return result;
@@ -164,7 +186,7 @@ struct UnknownString
 
 TDBID* LuaVM::HookTDBIDCtorUnknown(TDBID* apThis, uint64_t aName)
 {
-    auto& luavm = Get();
+    auto& luavm = CET::Get().GetVM();
     auto result = luavm.m_realTDBIDCtorUnknown(apThis, aName);
     UnknownString unknown;
     luavm.m_someStringLookup(&aName, &unknown);
@@ -174,26 +196,27 @@ TDBID* LuaVM::HookTDBIDCtorUnknown(TDBID* apThis, uint64_t aName)
 
 void LuaVM::HookTDBIDToStringDEBUG(REDScriptContext*, ScriptStack* apStack, void* apResult, void*)
 {
-    uint8_t opcode;
-
     TDBID tdbid;
     apStack->unk30 = nullptr;
     apStack->unk38 = nullptr;
-    opcode = *(apStack->m_code++);
+    uint8_t opcode = *(apStack->m_code++);
     GetScriptCallArray()[opcode](apStack->m_context, apStack, &tdbid, nullptr);
     apStack->m_code++; // skip ParamEnd
 
     if (apResult)
     {
-        std::string name = Get().GetTDBIDString(tdbid.value);
+        std::string name = CET::Get().GetVM().GetTDBIDString(tdbid.value);
         RED4ext::CString s(name.c_str());
         *static_cast<RED4ext::CString*>(apResult) = s;
     }
 }
 
-void LuaVM::Hook()
+void LuaVM::Hook(Options& aOptions)
 {
-    uint8_t* pLocation = FindSignature({
+    auto& gameImage = aOptions.GameImage;
+
+    uint8_t* pLocation = FindSignature(gameImage.pTextStart, gameImage.pTextEnd,
+                                       {
         0x40, 0x53, 0x48, 0x83, 0xEC, 0x40, 0x48, 0x8B,
         0xDA, 0xE8, 0xCC, 0xCC, 0xCC, 0xCC, 0x48, 0x8B,
         0xD0, 0x48, 0x8D, 0x4C, 0x24, 0x20
@@ -207,7 +230,9 @@ void LuaVM::Hook()
             spdlog::info("Log function hook complete!");
     }
 
-    pLocation = FindSignature({
+    pLocation =
+        FindSignature(gameImage.pTextStart, gameImage.pTextEnd,
+                      {
         0x48, 0x89, 0x5C, 0x24, 0x08, 0x48, 0x89, 0x74,
         0x24, 0x18, 0x57, 0x48, 0x83, 0xEC, 0x40, 0x48,
         0x8B, 0x02, 0x48, 0x8D, 0x3D, 0xCC, 0xCC, 0xCC,
@@ -228,7 +253,8 @@ void LuaVM::Hook()
             spdlog::info("LogChannel function hook complete!");
     }
 
-    pLocation = FindSignature({
+    pLocation = FindSignature(gameImage.pTextStart, gameImage.pTextEnd,
+                              {
         0x48, 0x89, 0x5C, 0x24, 0x08, 0x48, 0x89, 0x74,
         0x24, 0x10, 0x57, 0x48, 0x83, 0xEC, 0x40, 0x80,
         0x3A, 0x00, 0x48, 0x8B, 0xFA
@@ -242,7 +268,9 @@ void LuaVM::Hook()
             spdlog::info("TDBID::ctor function hook complete!");
     }
 
-    pLocation = FindSignature({
+    pLocation =
+        FindSignature(gameImage.pTextStart, gameImage.pTextEnd,
+                      {
         0x48, 0x89, 0x5C, 0x24, 0x08, 0x48, 0x89, 0x74,
         0x24, 0x10, 0x57, 0x48, 0x83, 0xEC, 0x30, 0x48,
         0x8B, 0xF1, 0x48, 0x8B, 0xDA, 0x48, 0x8B, 0xCA,
@@ -257,7 +285,8 @@ void LuaVM::Hook()
             spdlog::info("TDBID::ctor[CString] function hook complete!");
     }
 
-    pLocation = FindSignature({
+    pLocation = FindSignature(gameImage.pTextStart, gameImage.pTextEnd,
+                              {
         0x48, 0x89, 0x5C, 0x24, 0x10, 0x48, 0x89, 0x74,
         0x24, 0x18, 0x57, 0x48, 0x83, 0xEC, 0x20, 0x33,
         0xC0, 0x4D, 0x8B, 0xC8, 0x48, 0x8B, 0xF2, 0x4D,
@@ -272,7 +301,8 @@ void LuaVM::Hook()
             spdlog::info("TDBID::ctor[Derive] function hook complete!");
     }
 
-    pLocation = FindSignature({
+    pLocation = FindSignature(gameImage.pTextStart, gameImage.pTextEnd,
+                              {
         0x48, 0x89, 0x5C, 0x24, 0x08, 0x48, 0x89, 0x54,
         0x24, 0x10, 0x57, 0x48, 0x83, 0xEC, 0x50, 0x48,
         0x8B, 0xF9, 0x48, 0x8D, 0x54, 0x24, 0x20, 0x48,
@@ -290,7 +320,8 @@ void LuaVM::Hook()
         }
     }
 
-    pLocation = FindSignature({
+    pLocation = FindSignature(gameImage.pTextStart, gameImage.pTextEnd,
+                              {
         0x48, 0xBF, 0x58, 0xD1, 0x78, 0xA0, 0x18, 0x09,
         0xBA, 0xEC, 0x75, 0x16, 0x48, 0x8D, 0x15, 0xCC,
         0xCC, 0xCC, 0xCC, 0x48, 0x8B, 0xCF, 0xE8, 0xCC,

@@ -3,7 +3,7 @@
 #include "Image.h"
 #include "Pattern.h"
 
-void DisableVignettePatch(Image* apImage)
+void DisableVignettePatch(const Image* apImage)
 {
     auto* pLocation = FindSignature(apImage->pTextStart, apImage->pTextEnd, {
         0x48, 0x8B, 0x41, 0x30, 0x48, 0x83, 0x78, 0x68, 0x00, 0x74
@@ -11,7 +11,7 @@ void DisableVignettePatch(Image* apImage)
 
     if (pLocation == nullptr)
     {
-        spdlog::info("Disable vignette patch: failed, could not be found");
+        spdlog::warn("Disable vignette patch: failed, could not be found");
         return;
     }
 

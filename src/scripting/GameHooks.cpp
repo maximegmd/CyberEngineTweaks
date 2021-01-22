@@ -1,6 +1,7 @@
 #include <stdafx.h>
 
 #include "GameHooks.h"
+#include "CET.h"
 #include <Pattern.h>
 
 static std::unique_ptr<GameMainThread> s_pGameMainThread;
@@ -51,9 +52,11 @@ void GameMainThread::Hook()
 {
     if (!m_pMainThreadLocation)
     {
+        auto& gameImage = CET::Get().GetOptions().GameImage;
+
         // 40 55 57 41 57 48 81 EC ? ? ? ? 
         m_pMainThreadLocation = 
-            FindSignature({0x40, 0x55, 0x57, 0x41, 0x57, 0x48, 0x81, 0xEC });
+            FindSignature(gameImage.pTextStart, gameImage.pTextEnd, {0x40, 0x55, 0x57, 0x41, 0x57, 0x48, 0x81, 0xEC});
     }
 
     if (m_pMainThreadLocation)

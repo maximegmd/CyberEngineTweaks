@@ -2,7 +2,6 @@
 
 #include "Pattern.h"
 
-#include "Options.h"
 
 bool CompareByteArray(uint8_t* Data, const std::vector<uint8_t>& aSignature)
 {
@@ -45,9 +44,4 @@ uint8_t* FindSignature(uint8_t* apStart, uint8_t* apEnd, std::vector<uint8_t> aS
     }
 
     return nullptr;
-}
-
-uint8_t* FindSignature(std::vector<uint8_t> aSignature) noexcept
-{
-    return FindSignature(Options::Get().GameImage.pTextStart, Options::Get().GameImage.pTextEnd, std::move(aSignature));
 }

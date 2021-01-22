@@ -106,8 +106,10 @@ namespace sol_ImGui
     inline void SetScrollFromPosY(float localY, float centerYRatio)										{ ImGui::SetScrollFromPosY(localY, centerYRatio); }
 
     // Parameters stacks (shared)
+#ifdef SOL_IMGUI_ENABLE_FONT_MANIPULATORS
     inline void PushFont(ImFont* pFont)																	{ ImGui::PushFont(pFont); }
     inline void PopFont()																				{ ImGui::PopFont(); }
+#endif // SOL_IMGUI_ENABLE_FONT_MANIPULATORS
     inline void PushStyleColor(int idx, int col)														{ ImGui::PushStyleColor(static_cast<ImGuiCol>(idx), ImU32(col)); }
     inline void PushStyleColor(int idx, float colR, float colG, float colB, float colA)					{ ImGui::PushStyleColor(static_cast<ImGuiCol>(idx), { colR, colG, colB, colA }); }
     inline void PopStyleColor()																			{ ImGui::PopStyleColor(); }
@@ -117,7 +119,9 @@ namespace sol_ImGui
     inline void PopStyleVar()																			{ ImGui::PopStyleVar(); }
     inline void PopStyleVar(int count)																	{ ImGui::PopStyleVar(count); }
     inline std::tuple<float, float, float, float> GetStyleColorVec4(int idx)							{ const auto col{ ImGui::GetStyleColorVec4(static_cast<ImGuiCol>(idx)) };	return std::make_tuple(col.x, col.y, col.z, col.w); }
+#ifdef SOL_IMGUI_ENABLE_FONT_MANIPULATORS
     inline ImFont* GetFont()																			{ return ImGui::GetFont(); }
+#endif // SOL_IMGUI_ENABLE_FONT_MANIPULATORS
     inline float GetFontSize()																			{ return ImGui::GetFontSize(); }
     inline std::tuple<float, float> GetFontTexUvWhitePixel()               { const auto vec2{ ImGui::GetFontTexUvWhitePixel() }; return std::make_tuple(vec2.x, vec2.y); }
     inline int GetColorU32(int idx, float alphaMul)                        { return ImGui::GetColorU32(static_cast<ImGuiCol>(idx), alphaMul); }
@@ -966,13 +970,13 @@ namespace sol_ImGui
     inline void VSliderScalar()																																							{ /* TODO: VSliderScalar(...) ==> UNSUPPORTED */ }
 
     // Widgets: Input with Keyboard
-    inline std::tuple<std::string, bool> InputText(const std::string& label, std::string text, unsigned int buf_size)																	{ text.resize(buf_size); bool selected = ImGui::InputText(label.c_str(), &text[0], buf_size); return std::make_tuple(text, selected); }
-    inline std::tuple<std::string, bool> InputText(const std::string& label, std::string text, unsigned int buf_size, int flags)														{ text.resize(buf_size); bool selected = ImGui::InputText(label.c_str(), &text[0], buf_size, static_cast<ImGuiInputTextFlags>(flags)); return std::make_tuple(text, selected); }
-    inline std::tuple<std::string, bool> InputTextMultiline(const std::string& label, std::string text, unsigned int buf_size)															{ text.resize(buf_size); bool selected = ImGui::InputTextMultiline(label.c_str(), &text[0], buf_size); return std::make_tuple(text, selected); }
-    inline std::tuple<std::string, bool> InputTextMultiline(const std::string& label, std::string text, unsigned int buf_size, float sizeX, float sizeY)								{ text.resize(buf_size); bool selected = ImGui::InputTextMultiline(label.c_str(), &text[0], buf_size, { sizeX, sizeY }); return std::make_tuple(text, selected); }
-    inline std::tuple<std::string, bool> InputTextMultiline(const std::string& label, std::string text, unsigned int buf_size, float sizeX, float sizeY, int flags)						{ text.resize(buf_size); bool selected = ImGui::InputTextMultiline(label.c_str(), &text[0], buf_size, { sizeX, sizeY }, static_cast<ImGuiInputTextFlags>(flags)); return std::make_tuple(text, selected); }
-    inline std::tuple<std::string, bool> InputTextWithHint(const std::string& label, const std::string& hint, std::string text, unsigned int buf_size)									{ text.resize(buf_size); bool selected = ImGui::InputTextWithHint(label.c_str(), hint.c_str(), &text[0], buf_size); return std::make_tuple(text, selected); }
-    inline std::tuple<std::string, bool> InputTextWithHint(const std::string& label, const std::string& hint, std::string text, unsigned int buf_size, int flags)						{ text.resize(buf_size); bool selected = ImGui::InputTextWithHint(label.c_str(), hint.c_str(), &text[0], buf_size, static_cast<ImGuiInputTextFlags>(flags)); return std::make_tuple(text, selected); }
+    inline std::tuple<std::string, bool> InputText(const std::string& label, std::string text, unsigned int buf_size)																	{ text.resize(buf_size); bool selected = ImGui::InputText(label.c_str(), &text[0], buf_size); return std::make_tuple(text.c_str(), selected); }
+    inline std::tuple<std::string, bool> InputText(const std::string& label, std::string text, unsigned int buf_size, int flags)														{ text.resize(buf_size); bool selected = ImGui::InputText(label.c_str(), &text[0], buf_size, static_cast<ImGuiInputTextFlags>(flags)); return std::make_tuple(text.c_str(), selected); }
+    inline std::tuple<std::string, bool> InputTextMultiline(const std::string& label, std::string text, unsigned int buf_size)															{ text.resize(buf_size); bool selected = ImGui::InputTextMultiline(label.c_str(), &text[0], buf_size); return std::make_tuple(text.c_str(), selected); }
+    inline std::tuple<std::string, bool> InputTextMultiline(const std::string& label, std::string text, unsigned int buf_size, float sizeX, float sizeY)								{ text.resize(buf_size); bool selected = ImGui::InputTextMultiline(label.c_str(), &text[0], buf_size, { sizeX, sizeY }); return std::make_tuple(text.c_str(), selected); }
+    inline std::tuple<std::string, bool> InputTextMultiline(const std::string& label, std::string text, unsigned int buf_size, float sizeX, float sizeY, int flags)						{ text.resize(buf_size); bool selected = ImGui::InputTextMultiline(label.c_str(), &text[0], buf_size, { sizeX, sizeY }, static_cast<ImGuiInputTextFlags>(flags)); return std::make_tuple(text.c_str(), selected); }
+    inline std::tuple<std::string, bool> InputTextWithHint(const std::string& label, const std::string& hint, std::string text, unsigned int buf_size)									{ text.resize(buf_size); bool selected = ImGui::InputTextWithHint(label.c_str(), hint.c_str(), &text[0], buf_size); return std::make_tuple(text.c_str(), selected); }
+    inline std::tuple<std::string, bool> InputTextWithHint(const std::string& label, const std::string& hint, std::string text, unsigned int buf_size, int flags)						{ text.resize(buf_size); bool selected = ImGui::InputTextWithHint(label.c_str(), hint.c_str(), &text[0], buf_size, static_cast<ImGuiInputTextFlags>(flags)); return std::make_tuple(text.c_str(), selected); }
     inline std::tuple<float, bool> InputFloat(const std::string& label, float v)																										{ bool selected = ImGui::InputFloat(label.c_str(), &v); return std::make_tuple(v, selected); }
     inline std::tuple<float, bool> InputFloat(const std::string& label, float v, float step)																							{ bool selected = ImGui::InputFloat(label.c_str(), &v, step); return std::make_tuple(v, selected); }
     inline std::tuple<float, bool> InputFloat(const std::string& label, float v, float step, float step_fast)																			{ bool selected = ImGui::InputFloat(label.c_str(), &v, step, step_fast); return std::make_tuple(v, selected); }
@@ -1580,7 +1584,8 @@ namespace sol_ImGui
         ImGui::ColorConvertHSVtoRGB(h, s, v, r, g, b);
         return std::make_tuple(r, g, b);
     }
-
+    
+#ifdef SOL_IMGUI_ENABLE_INPUT_FUNCTIONS
     // Inputs Utilities: Keyboard
     inline int GetKeyIndex(int imgui_key)																{ return ImGui::GetKeyIndex(static_cast<ImGuiKey>(imgui_key)); }
     inline bool IsKeyDown(int user_key_index)															{ return ImGui::IsKeyDown(user_key_index); }
@@ -1614,6 +1619,7 @@ namespace sol_ImGui
     inline void SetMouseCursor(int cursor_type)															{ ImGui::SetMouseCursor(static_cast<ImGuiMouseCursor>(cursor_type)); }
     inline void CaptureMouseFromApp()																	{ ImGui::CaptureMouseFromApp(); }
     inline void CaptureMouseFromApp(bool want_capture_mouse_value)										{ ImGui::CaptureMouseFromApp(want_capture_mouse_value); }
+#endif // SOL_IMGUI_ENABLE_INPUT_FUNCTIONS
 
     // Clipboard Utilities
     inline std::string GetClipboardText()																{ return std::string(ImGui::GetClipboardText()); }
@@ -1942,7 +1948,8 @@ namespace sol_ImGui
             "NoTooltip"						, ImGuiTabItemFlags_NoTooltip
         );
 #pragma endregion TabItem Flags
-
+        
+#ifdef SOL_IMGUI_ENABLE_INPUT_FUNCTIONS
 #pragma region MouseButton
         lua.new_enum("ImGuiMouseButton",
             "ImGuiMouseButton_Left"			, ImGuiMouseButton_Left,
@@ -1995,6 +2002,7 @@ namespace sol_ImGui
             "COUNT"							, ImGuiMouseCursor_COUNT
         );
 #pragma endregion MouseCursor
+#endif // SOL_IMGUI_ENABLE_INPUT_FUNCTIONS
     }
 
     inline void InitBindings(sol::state& lua)
@@ -2116,8 +2124,10 @@ namespace sol_ImGui
 #pragma endregion Windows Scrolling
 
 #pragma region Parameters stacks (shared)
+#ifdef SOL_IMGUI_ENABLE_FONT_MANIPULATORS
         ImGui.set_function("PushFont"						, PushFont);
         ImGui.set_function("PopFont"						, PopFont);
+#endif // SOL_IMGUI_ENABLE_FONT_MANIPULATORS
         ImGui.set_function("PushStyleColor"					, sol::overload(
                                                                 sol::resolve<void(int, int)>(PushStyleColor),
                                                                 sol::resolve<void(int, float, float, float, float)>(PushStyleColor)
@@ -2135,7 +2145,9 @@ namespace sol_ImGui
                                                                 sol::resolve<void(int)>(PopStyleVar)
                                                             ));
         ImGui.set_function("GetStyleColorVec4"				, GetStyleColorVec4);
+#ifdef SOL_IMGUI_ENABLE_FONT_MANIPULATORS
         ImGui.set_function("GetFont"						, GetFont);
+#endif // SOL_IMGUI_ENABLE_FONT_MANIPULATORS
         ImGui.set_function("GetFontSize"					, GetFontSize);
         ImGui.set_function("GetFontTexUvWhitePixel"			, GetFontTexUvWhitePixel);
         ImGui.set_function("GetColorU32"					, sol::overload(
@@ -2698,7 +2710,8 @@ namespace sol_ImGui
         ImGui.set_function("ColorConvertRGBtoHSV"			, ColorConvertRGBtoHSV);
         ImGui.set_function("ColorConvertHSVtoRGB"			, ColorConvertHSVtoRGB);
 #pragma endregion Color Utilities
-
+        
+#ifdef SOL_IMGUI_ENABLE_INPUT_FUNCTIONS
 #pragma region Inputs Utilities: Keyboard
         ImGui.set_function("GetKeyIndex"					, GetKeyIndex);
         ImGui.set_function("IsKeyDown"						, IsKeyDown);
@@ -2748,7 +2761,8 @@ namespace sol_ImGui
                                                                 sol::resolve<void(bool)>(CaptureMouseFromApp)
                                                             ));
 #pragma endregion Inputs Utilities: Mouse
-
+#endif // SOL_IMGUI_ENABLE_INPUT_FUNCTIONS
+        
 #pragma region Clipboard Utilities
         ImGui.set_function("GetClipboardText"				, GetClipboardText);
         ImGui.set_function("SetClipboardText"				, SetClipboardText);

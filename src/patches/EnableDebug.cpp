@@ -58,7 +58,7 @@ void HookRegisterScriptMemberFunction(void* a, void* parentClass, uint64_t hash,
     RealRegisterScriptMemberFunction(a, parentClass, hash, hash2, func, flag);
 }
 
-void EnableDebugPatch(Image* apImage)
+void EnableDebugPatch(const Image* apImage)
 {
     uint8_t* pChecksumLocations[] = { 0, 0 };
 

@@ -2,10 +2,15 @@
 
 #include "ScriptContext.h"
 
+#include <Utils.h>
+
 ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::path& acPath)
     : m_lua(aStateView)
     , m_env(aStateView, sol::create, aStateView.globals())
+    , m_name(acPath.string())
 {
+    // initialize logger for this mod
+    m_logger = CreateLogger(acPath / (m_name + ".log"), "mods." + m_name);
     m_env["registerForEvent"] = [this](const std::string& acName, sol::function aCallback)
     {
         if(acName == "onInit")
@@ -16,11 +21,73 @@ ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::
             m_onUpdate = aCallback;
         else if(acName == "onDraw")
             m_onDraw = aCallback;
-        else if(acName == "onConsoleOpen")
-            m_onConsoleOpen = aCallback;
-        else if(acName == "onConsoleClose")
-            m_onConsoleClose = aCallback;
+        else if(acName == "onOverlayOpen")
+            m_onOverlayOpen = aCallback;
+        else if(acName == "onOverlayClose")
+            m_onOverlayClose = aCallback;
+        else
+            m_logger->error("Tried to register unknown handler '{}'!", acName);
     };
+
+    m_env["registerHotkey"] = [this](const std::string& acID, const std::string& acDescription, sol::function aCallback)
+    {
+        if (acID.empty() ||
+            (std::find_if(acID.cbegin(), acID.cend(), [](char c){ return !(isalpha(c) || isdigit(c) || c == '_'); }) != acID.cend()))
+        {
+            m_logger->error("Tried to register hotkey with incorrect ID format '{}'! ID needs to be alphanumeric without any whitespace or special characters (exception being '_' which is allowed in ID)!", acID);
+            return;
+        }
+
+        if (acDescription.empty())
+        {
+            m_logger->error("Tried to register hotkey with empty description! (ID of hotkey handler: {})", acID);
+            return;
+        }
+
+        auto loggerRef = m_logger;
+        std::string vkBindID = m_name + '.' + acID;
+        VKBind vkBind = { vkBindID, acDescription, [loggerRef, aCallback]()
+        {
+            // TODO: proper exception handling!
+            try
+            {
+                if (aCallback)
+                    aCallback();
+            }
+            catch(std::exception& e)
+            {
+                loggerRef->error(e.what());
+            }
+        }};
+        m_vkBindInfos.emplace_back(VKBindInfo{vkBind});
+    };
+
+    // assign logger to mod so it can be used from within it too
+    {
+        auto loggerRef = m_logger; // ref for lambdas
+        sol::table spdlog(m_lua, sol::create);
+        spdlog["trace"] = [loggerRef](const std::string& message)
+        {
+            loggerRef->trace(message);
+        };
+        spdlog["debug"] = [loggerRef](const std::string& message)
+        {
+            loggerRef->debug(message);
+        };
+        spdlog["warning"] = [loggerRef](const std::string& message)
+        {
+            loggerRef->warn(message);
+        };
+        spdlog["error"] = [loggerRef](const std::string& message)
+        {
+            loggerRef->error(message);
+        };
+        spdlog["critical"] = [loggerRef](const std::string& message)
+        {
+            loggerRef->critical(message);
+        };
+        m_env["spdlog"] = spdlog;
+    }
 
     // TODO: proper exception handling!
     try
@@ -36,14 +103,12 @@ ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::
         else
         {
             sol::error err = result;
-            std::string what = err.what();
-            spdlog::error(what);
+            m_logger->error(err.what());
         }
     }
     catch(std::exception& e)
     {
-        std::string what = e.what();
-        spdlog::error(what);
+        m_logger->error(e.what());
     }
 }
 
@@ -56,11 +121,18 @@ ScriptContext::~ScriptContext()
 {
     if (m_initialized)
         TriggerOnShutdown();
+
+    m_logger->flush();
 }
 
 bool ScriptContext::IsValid() const
 {
     return m_initialized;
+}
+
+const std::vector<VKBindInfo>& ScriptContext::GetBinds() const
+{
+    return m_vkBindInfos;
 }
 
 void ScriptContext::TriggerOnInit() const
@@ -73,8 +145,7 @@ void ScriptContext::TriggerOnInit() const
     }
     catch(std::exception& e)
     {
-        std::string what = e.what();
-        spdlog::error(what);
+        m_logger->error(e.what());
     }
 }
 
@@ -88,8 +159,7 @@ void ScriptContext::TriggerOnUpdate(float aDeltaTime) const
     }
     catch(std::exception& e)
     {
-        std::string what = e.what();
-        spdlog::error(what);
+        m_logger->error(e.what());
     }
 }
 
@@ -103,37 +173,34 @@ void ScriptContext::TriggerOnDraw() const
     }
     catch(std::exception& e)
     {
-        std::string what = e.what();
-        spdlog::error(what);
+        m_logger->error(e.what());
     }
 }
     
-void ScriptContext::TriggerOnConsoleOpen() const
+void ScriptContext::TriggerOnOverlayOpen() const
 {
     // TODO: proper exception handling!
     try
     {
-        if (m_onConsoleOpen)
-            m_onConsoleOpen();
+        if (m_onOverlayOpen)
+            m_onOverlayOpen();
     }
     catch(std::exception& e)
     {
-        std::string what = e.what();
-        spdlog::error(what);
+        m_logger->error(e.what());
     }
 }
-void ScriptContext::TriggerOnConsoleClose() const
+void ScriptContext::TriggerOnOverlayClose() const
 {
     // TODO: proper exception handling!
     try
     {
-        if (m_onConsoleClose)
-            m_onConsoleClose();
+        if (m_onOverlayClose)
+            m_onOverlayClose();
     }
     catch(std::exception& e)
     {
-        std::string what = e.what();
-        spdlog::error(what);
+        m_logger->error(e.what());
     }
 }
 
@@ -152,7 +219,6 @@ void ScriptContext::TriggerOnShutdown() const
     }
     catch(std::exception& e)
     {
-        std::string what = e.what();
-        spdlog::error(what);
+        m_logger->error(e.what());
     }
 }
