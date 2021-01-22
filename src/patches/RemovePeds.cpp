@@ -1,11 +1,14 @@
 #include <stdafx.h>
 
 #include "Image.h"
-#include "Pattern.h"
 
 void RemovePedsPatch(const Image* apImage)
 {
-    auto pLocation = FindSignature(apImage->pTextStart, apImage->pTextEnd, { 0x3B, 0xD8, 0x0F, 0x4E, 0xC3, 0x8B, 0xD8, 0x85, 0xDB, 0x0F, 0x8E });
+    const mem::pattern cPattern("3B D8 0F 4E C3 8B D8 85 DB 0F 8E");
+    const mem::default_scanner scanner(cPattern);
+
+    const auto pLocation = scanner(apImage->TextRegion).as<uint8_t*>();
+
     if(pLocation == nullptr)
     {
         spdlog::warn("Remove peds patch: failed, could not be found");

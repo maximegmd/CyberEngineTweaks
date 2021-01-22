@@ -123,6 +123,12 @@ void VKBindings::Save()
     ofs << config.dump(4) << std::endl;
 }
 
+void VKBindings::Clear()
+{
+    m_binds.clear();
+    m_recordingBind = {};
+}
+
 bool VKBindings::Bind(UINT aVKCodeBind, const VKBind& aBind)
 {
     // bind check 1

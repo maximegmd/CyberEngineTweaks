@@ -1,0 +1,4 @@
+#define MEM_CONSTEXPR_14
+
+#define MEM_STRONG_INLINE
+#define MEM_NOINLINE

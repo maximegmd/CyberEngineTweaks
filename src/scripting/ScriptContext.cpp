@@ -59,6 +59,7 @@ ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::
                 loggerRef->error(e.what());
             }
         }};
+
         m_vkBindInfos.emplace_back(VKBindInfo{vkBind});
     };
 

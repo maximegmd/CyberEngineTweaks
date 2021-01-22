@@ -5,7 +5,6 @@
 #include "CET.h"
 #include "widgets/HelperWidgets.h"
 
-#include <Pattern.h>
 #include <Options.h>
 
 #include <d3d12/D3D12.h>
@@ -155,9 +154,10 @@ BOOL Overlay::ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis)
 
 void Overlay::Hook()
 {
-    uint8_t* pLocation = FindSignature(m_options.GameImage.pTextStart, m_options.GameImage.pTextEnd, {
-        0x48, 0x89, 0x5C, 0x24, 0x08, 0x57, 0x48, 0x83, 0xEC, 0x30, 0x48, 0x8B,
-        0x99, 0x68, 0x01, 0x00, 0x00, 0x48, 0x8B, 0xF9, 0xFF });
+    const mem::pattern cClipToCenterPattern("48 89 5C 24 08 57 48 83 EC 30 48 8B 99 68 01 00 00 48 8B F9 FF");
+    const mem::default_scanner scanner(cClipToCenterPattern);
+
+    uint8_t* pLocation = scanner(m_options.GameImage.TextRegion).as<uint8_t*>();
 
     if (pLocation)
     {

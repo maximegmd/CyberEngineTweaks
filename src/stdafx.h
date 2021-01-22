@@ -50,6 +50,9 @@
 #include <TiltedCore/Platform.hpp>
 #include <TiltedCore/Signal.hpp>
 
+#include <mem/module.h>
+#include <mem/pattern.h>
+
 #include "Paths.h"
 #include "VKBindings.h"
 #include "Options.h"

@@ -1,11 +1,13 @@
 #include <stdafx.h>
 
 #include "Image.h"
-#include "Pattern.h"
 
 void StartScreenPatch(const Image* apImage)
 {
-    auto pLocation = FindSignature(apImage->pTextStart, apImage->pTextEnd, { 0x48, 0xBB , 0xE6 , 0xF8 , 0xA5, 0xA3, 0x36, 0x56, 0x4E, 0xA7, 0xC6 , 0x85, 0xB0, 0xCC, 0xCC, 0xCC, 0x01 });
+    const mem::pattern cPattern("48 BB E6 F8 A5 A3 36 56 4E A7 C6 85 B0 ?? ?? ?? 01");
+    const mem::default_scanner cScanner(cPattern);
+    auto pLocation = cScanner(apImage->TextRegion).as<uint8_t*>();
+
     if(pLocation == nullptr)
     {
         spdlog::warn("Start screen patch: failed, could not be found");

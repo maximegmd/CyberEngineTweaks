@@ -66,4 +66,7 @@ CET::CET()
     m_vm.Initialize();
 }
 
-CET::~CET() = default;
+CET::~CET()
+{
+    m_bindings.Clear();
+}
