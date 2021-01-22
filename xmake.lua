@@ -1,6 +1,6 @@
 set_languages("cxx20")
 
-add_requires("spdlog", "nlohmann_json", "minhook", "imgui", "sol2", "tiltedcore", {configs = {cxflags = "/DNDEBUG"}, external = false }) -- configs = {cxflags = "/DNDEBUG"} should not be needed when 'debug' is 'false' (default), but for some reason we still pull in debug packages!!!
+add_requires("spdlog", "nlohmann_json", "sqlite3", "minhook", "imgui", "sol2", "tiltedcore", {configs = {cxflags = "/DNDEBUG"}, external = false }) -- configs = {cxflags = "/DNDEBUG"} should not be needed when 'debug' is 'false' (default), but for some reason we still pull in debug packages!!!
 
 add_rules("mode.debug","mode.releasedbg", "mode.release")
 add_rules("plugin.vsxmake.autoupdate")
@@ -93,7 +93,7 @@ target("cyber_engine_tweaks")
     add_headerfiles("src/**.h")
     add_includedirs("src/")
     add_syslinks("User32", "Version", "d3d11")
-    add_packages("spdlog", "nlohmann_json", "minhook", "imgui", "sol2", "tiltedcore")
+    add_packages("spdlog", "nlohmann_json", "sqlite3", "minhook", "imgui", "sol2", "tiltedcore")
     add_deps("RED4ext.SDK")
 
 --[[ target("luasocket")
