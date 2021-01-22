@@ -374,9 +374,9 @@ void Scripting::Initialize()
         // error when there are classes that instantiate a parent class but don't actually have a subclass instance
         GameMainThread::Get().AddTask(&GameDump::DumpVTablesTask::Run);
     };
-    m_lua["DumpReflection"] = [this]()
+    m_lua["DumpReflection"] = [this](bool aVerbose, bool aExtendedPath, bool aPropertyHolders)
     {
-        RED4ext::GameReflection::Dump(Options::Get().CETPath / "dumps");
+        RED4ext::GameReflection::Dump(Options::Get().CETPath / "dumps", aVerbose, aExtendedPath, aPropertyHolders);
     };
 #endif
 
