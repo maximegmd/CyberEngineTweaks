@@ -47,7 +47,7 @@ void Console::Update()
 
     auto [major, minor] = Options::Get().GameImage.GetVersion();
 
-    if (major == 1 && (minor >= 4 && minor <= 6))
+    if (major == 1 && (minor >= 4 && minor <= 10))
     {
         ImGui::Checkbox("Clear Input", &m_inputClear);
         ImGui::SameLine();
