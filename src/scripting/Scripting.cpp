@@ -367,7 +367,8 @@ void Scripting::Initialize()
     };
     m_lua["DumpReflection"] = [this](bool aVerbose, bool aExtendedPath, bool aPropertyHolders)
     {
-        RED4ext::GameReflection::Dump(Options::Get().CETPath / "dumps", aVerbose, aExtendedPath, aPropertyHolders);
+        
+        RED4ext::GameReflection::Dump(m_paths.CETRoot() / "dumps", aVerbose, aExtendedPath, aPropertyHolders);
     };
 #endif
 
@@ -379,9 +380,6 @@ void Scripting::Initialize()
     {
         spdlog::get("scripting")->info("WARNING: missing CET autoexec.lua!");
     }
-
-    // set current path for following scripts to our ModsPath
-    current_path(m_paths.ModsRoot());
 
     // load mods
     ReloadAllMods();
@@ -424,6 +422,9 @@ sol::object Scripting::GetMod(const std::string& acName) const
 
 void Scripting::ReloadAllMods()
 {
+    // set current path for following scripts to our ModsPath
+    current_path(m_paths.ModsRoot());
+
     m_store.LoadAll(m_lua);
 }
 
