@@ -2,7 +2,6 @@
 
 #include "Scripting.h"
 
-#include "GameHooks.h"
 #include "GameOptions.h"
 
 #include <sol_imgui/sol_imgui.h>
