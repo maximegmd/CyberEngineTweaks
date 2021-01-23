@@ -13,3 +13,4 @@ build/*
 .xmake/*
 *.asi
 src/CETVersion.h
+package/*
