@@ -25,14 +25,14 @@ void ScriptStore::LoadAll(sol::state_view aStateView)
         auto fPathStr = fPath.string();
         if (!exists(fPath / "init.lua"))
         {
-            consoleLogger->warn("Ignoring directory which misses init.lua! ('{}')", fPathStr);
+            consoleLogger->warn("Ignoring directory that does not contain init.lua! ('{}')", fPathStr);
             continue;
         }
 
         auto name = relative(fPath, cModsRoot).string();
         if (name.find('.') != std::string::npos)
         {
-            consoleLogger->info("Ignoring directory with '.', as this is reserved character! ('{}')", fPathStr);
+            consoleLogger->info("Ignoring directory containing '.', as this is reserved character! ('{}')", fPathStr);
             continue;
         }
 
@@ -46,7 +46,7 @@ void ScriptStore::LoadAll(sol::state_view aStateView)
         }
         else
         {
-            consoleLogger->error("Mod {} failed loaded! ('{}')", name, fPathStr);
+            consoleLogger->error("Mod {} failed to load! ('{}')", name, fPathStr);
         }
     }
 

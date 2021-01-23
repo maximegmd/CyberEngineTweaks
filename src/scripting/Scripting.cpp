@@ -377,7 +377,7 @@ void Scripting::Initialize()
         m_lua.do_file("autoexec.lua");
     else
     {
-        spdlog::get("scripting")->info("WARNING: missing CET autoexec.lua!");
+        spdlog::get("scripting")->warn("WARNING: missing CET autoexec.lua!");
     }
 
     // load mods
