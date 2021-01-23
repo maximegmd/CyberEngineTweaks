@@ -1,13 +1,13 @@
 #include <stdafx.h>
 
 #include "Image.h"
-#include "Pattern.h"
 
 void DisableVignettePatch(const Image* apImage)
 {
-    auto* pLocation = FindSignature(apImage->pTextStart, apImage->pTextEnd, {
-        0x48, 0x8B, 0x41, 0x30, 0x48, 0x83, 0x78, 0x68, 0x00, 0x74
-        });
+    const mem::pattern cPattern("48 8B 41 30 48 83 78 68 00 74");
+    const mem::default_scanner scanner(cPattern);
+
+    const auto pLocation = scanner(apImage->TextRegion).as<uint8_t*>();
 
     if (pLocation == nullptr)
     {

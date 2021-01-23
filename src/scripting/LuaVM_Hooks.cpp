@@ -3,8 +3,6 @@
 #include "CET.h"
 #include "LuaVM.h"
 
-#include <Pattern.h>
-
 #include <overlay/Overlay.h>
 
 struct REDScriptContext;
@@ -23,7 +21,10 @@ static TScriptCall** GetScriptCallArray()
 {
     auto& gameImage = CET::Get().GetOptions().GameImage;
 
-    static uint8_t* pLocation = FindSignature(gameImage.pTextStart, gameImage.pTextEnd, { 0x4C, 0x8D, 0x15, 0xCC, 0xCC, 0xCC, 0xCC, 0x48, 0x89, 0x42, 0x38, 0x49, 0x8B, 0xF8, 0x48, 0x8B, 0x02, 0x4C, 0x8D, 0x44, 0x24, 0x20, 0xC7 }) + 3;
+    const mem::pattern cPattern("4C 8D 15 ?? ?? ?? ?? 48 89 42 38 49 8B F8 48 8B 02 4C 8D 44 24 20 C7");
+    const mem::default_scanner cScanner(cPattern);
+
+    static uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>() + 3;
     static uintptr_t finalLocation = (uintptr_t)pLocation + 4 + *reinterpret_cast<uint32_t*>(pLocation);
 
     return reinterpret_cast<TScriptCall**>(finalLocation);
@@ -215,136 +216,128 @@ void LuaVM::Hook(Options& aOptions)
 {
     auto& gameImage = aOptions.GameImage;
 
-    uint8_t* pLocation = FindSignature(gameImage.pTextStart, gameImage.pTextEnd,
-                                       {
-        0x40, 0x53, 0x48, 0x83, 0xEC, 0x40, 0x48, 0x8B,
-        0xDA, 0xE8, 0xCC, 0xCC, 0xCC, 0xCC, 0x48, 0x8B,
-        0xD0, 0x48, 0x8D, 0x4C, 0x24, 0x20
-    });
-
-    if(pLocation)
     {
-        if (MH_CreateHook(pLocation, &HookLog, reinterpret_cast<void**>(&m_realLog)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-            spdlog::error("Could not hook Log function!");
-        else
-            spdlog::info("Log function hook complete!");
-    }
+        const mem::pattern cPattern("40 53 48 83 EC 40 48 8B DA E8 ?? ?? ?? ?? 48 8B D0 48 8D 4C 24 20");
+        const mem::default_scanner cScanner(cPattern);
+        uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
 
-    pLocation =
-        FindSignature(gameImage.pTextStart, gameImage.pTextEnd,
-                      {
-        0x48, 0x89, 0x5C, 0x24, 0x08, 0x48, 0x89, 0x74,
-        0x24, 0x18, 0x57, 0x48, 0x83, 0xEC, 0x40, 0x48,
-        0x8B, 0x02, 0x48, 0x8D, 0x3D, 0xCC, 0xCC, 0xCC,
-        0xCC, 0x33, 0xF6, 0x4C, 0x8D, 0x44, 0x24, 0x58,
-        0x48, 0x89, 0x74, 0x24, 0x58, 0x45, 0x33, 0xC9,
-        0x48, 0x89, 0x72, 0x30, 0x48, 0x8B, 0xDA, 0x48,
-        0x89, 0x72, 0x38, 0x0F, 0xB6, 0x08, 0x48, 0xFF,
-        0xC0, 0x48, 0x89, 0x02, 0x8B, 0xC1, 0x48, 0x8B,
-        0x4A, 0x40, 0xFF, 0x14, 0xC7, 0xE8, 0xCC, 0xCC,
-        0xCC, 0xCC, 0x48, 0x8B, 0xD0
-        });
-
-    if (pLocation)
-    {
-        if (MH_CreateHook(pLocation, &HookLogChannel, reinterpret_cast<void**>(&m_realLogChannel)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-            spdlog::error("Could not hook LogChannel function!");
-        else
-            spdlog::info("LogChannel function hook complete!");
-    }
-
-    pLocation = FindSignature(gameImage.pTextStart, gameImage.pTextEnd,
-                              {
-        0x48, 0x89, 0x5C, 0x24, 0x08, 0x48, 0x89, 0x74,
-        0x24, 0x10, 0x57, 0x48, 0x83, 0xEC, 0x40, 0x80,
-        0x3A, 0x00, 0x48, 0x8B, 0xFA
-        });
-
-    if (pLocation)
-    {
-        if (MH_CreateHook(pLocation, &HookTDBIDCtor, reinterpret_cast<void**>(&m_realTDBIDCtor)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-            spdlog::error("Could not hook TDBID::ctor function!");
-        else
-            spdlog::info("TDBID::ctor function hook complete!");
-    }
-
-    pLocation =
-        FindSignature(gameImage.pTextStart, gameImage.pTextEnd,
-                      {
-        0x48, 0x89, 0x5C, 0x24, 0x08, 0x48, 0x89, 0x74,
-        0x24, 0x10, 0x57, 0x48, 0x83, 0xEC, 0x30, 0x48,
-        0x8B, 0xF1, 0x48, 0x8B, 0xDA, 0x48, 0x8B, 0xCA,
-        0xE8, 0xCC, 0xCC, 0xCC, 0xCC, 0x48, 0x8B, 0xCB
-        });
-
-    if (pLocation)
-    {
-        if (MH_CreateHook(pLocation, &HookTDBIDCtorCString, reinterpret_cast<void**>(&m_realTDBIDCtorCString)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-            spdlog::error("Could not hook TDBID::ctor[CString] function!");
-        else
-            spdlog::info("TDBID::ctor[CString] function hook complete!");
-    }
-
-    pLocation = FindSignature(gameImage.pTextStart, gameImage.pTextEnd,
-                              {
-        0x48, 0x89, 0x5C, 0x24, 0x10, 0x48, 0x89, 0x74,
-        0x24, 0x18, 0x57, 0x48, 0x83, 0xEC, 0x20, 0x33,
-        0xC0, 0x4D, 0x8B, 0xC8, 0x48, 0x8B, 0xF2, 0x4D,
-        0x85, 0xC0, 0x74, 0x0F, 0x41, 0x38, 0x00,
-        });
-
-    if (pLocation)
-    {
-        if (MH_CreateHook(pLocation, &HookTDBIDCtorDerive, reinterpret_cast<void**>(&m_realTDBIDCtorDerive)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-            spdlog::error("Could not hook TDBID::ctor[Derive] function!");
-        else
-            spdlog::info("TDBID::ctor[Derive] function hook complete!");
-    }
-
-    pLocation = FindSignature(gameImage.pTextStart, gameImage.pTextEnd,
-                              {
-        0x48, 0x89, 0x5C, 0x24, 0x08, 0x48, 0x89, 0x54,
-        0x24, 0x10, 0x57, 0x48, 0x83, 0xEC, 0x50, 0x48,
-        0x8B, 0xF9, 0x48, 0x8D, 0x54, 0x24, 0x20, 0x48,
-        0x8D, 0x4C, 0x24, 0x68, 0xE8
-        });
-
-    if (pLocation)
-    {
-        if (MH_CreateHook(pLocation, &HookTDBIDCtorUnknown, reinterpret_cast<void**>(&m_realTDBIDCtorUnknown)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-            spdlog::error("Could not hook TDBID::ctor[Unknown] function!");
-        else
+        if (pLocation)
         {
-            spdlog::info("TDBID::ctor[Unknown] function hook complete!");
-            *reinterpret_cast<void**>(&m_someStringLookup) = &pLocation[33] + *reinterpret_cast<int32_t*>(&pLocation[29]);
+            if (MH_CreateHook(pLocation, &HookLog, reinterpret_cast<void**>(&m_realLog)) != MH_OK ||
+                MH_EnableHook(pLocation) != MH_OK)
+                spdlog::error("Could not hook Log function!");
+            else
+                spdlog::info("Log function hook complete!");
         }
     }
 
-    pLocation = FindSignature(gameImage.pTextStart, gameImage.pTextEnd,
-                              {
-        0x48, 0xBF, 0x58, 0xD1, 0x78, 0xA0, 0x18, 0x09,
-        0xBA, 0xEC, 0x75, 0x16, 0x48, 0x8D, 0x15, 0xCC,
-        0xCC, 0xCC, 0xCC, 0x48, 0x8B, 0xCF, 0xE8, 0xCC,
-        0xCC, 0xCC, 0xCC, 0xC6, 0x05, 0xCC, 0xCC, 0xCC,
-        0xCC, 0x01, 0x41, 0x8B, 0x06, 0x39, 0x05, 0xCC,
-        0xCC, 0xCC, 0xCC, 0x7F
-        });
-
-    if (pLocation)
     {
-        pLocation = &pLocation[45] + static_cast<int8_t>(pLocation[44]);
-        pLocation = FindSignature(pLocation, pLocation + 45, {
-            0x48, 0x8D, 0x0D, 0xCC, 0xCC, 0xCC, 0xCC, 0xE8,
-            0xCC, 0xCC, 0xCC, 0xCC, 0x83, 0x3D, 0xCC, 0xCC,
-            0xCC, 0xCC, 0xFF, 0x75, 0xCC, 0x48, 0x8D, 0x05,
-            });
+        const mem::pattern cPattern("48 89 5C 24 08 48 89 74 24 18 57 48 83 EC 40 48 8B 02 48 8D 3D ?? ?? ?? ?? 33 F6 4C 8D 44 24 58 48 89 74 24 58 45 33 C9 48 89 72 30 48 8B DA 48 89 72 38 0F B6 08 48 FF C0 48 89 02 8B C1 48 8B 4A 40 FF 14 C7 E8 ?? ?? ?? ?? 48 8B D0");
+        const mem::default_scanner cScanner(cPattern);
+        uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
+
         if (pLocation)
         {
-            pLocation = &pLocation[28] + *reinterpret_cast<int32_t*>(&pLocation[24]);
-            if (MH_CreateHook(pLocation, &HookTDBIDToStringDEBUG, reinterpret_cast<void**>(&m_realTDBIDToStringDEBUG)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-                spdlog::error("Could not hook TDBID::ToStringDEBUG function!");
+            if (MH_CreateHook(pLocation, &HookLogChannel, reinterpret_cast<void**>(&m_realLogChannel)) != MH_OK ||
+                MH_EnableHook(pLocation) != MH_OK)
+                spdlog::error("Could not hook LogChannel function!");
             else
-                spdlog::info("TDBID::ToStringDEBUG function hook complete!");
+                spdlog::info("LogChannel function hook complete!");
+        }
+    }
+
+    {
+        const mem::pattern cPattern("48 89 5C 24 08 48 89 74 24 10 57 48 83 EC 40 80 3A 00 48 8B FA");
+        const mem::default_scanner cScanner(cPattern);
+        uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
+
+        if (pLocation)
+        {
+            if (MH_CreateHook(pLocation, &HookTDBIDCtor, reinterpret_cast<void**>(&m_realTDBIDCtor)) != MH_OK ||
+                MH_EnableHook(pLocation) != MH_OK)
+                spdlog::error("Could not hook TDBID::ctor function!");
+            else
+                spdlog::info("TDBID::ctor function hook complete!");
+        }
+    }
+
+    {
+        const mem::pattern cPattern("48 89 5C 24 08 48 89 74 24 10 57 48 83 EC 30 48 8B F1 48 8B DA 48 8B CA E8 ?? ?? ?? ?? 48 8B CB");
+        const mem::default_scanner cScanner(cPattern);
+        uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
+
+        if (pLocation)
+        {
+            if (MH_CreateHook(pLocation, &HookTDBIDCtorCString, reinterpret_cast<void**>(&m_realTDBIDCtorCString)) !=
+                    MH_OK ||
+                MH_EnableHook(pLocation) != MH_OK)
+                spdlog::error("Could not hook TDBID::ctor[CString] function!");
+            else
+                spdlog::info("TDBID::ctor[CString] function hook complete!");
+        }
+    }
+
+    {
+        const mem::pattern cPattern("48 89 5C 24 10 48 89 74 24 18 57 48 83 EC 20 33 C0 4D 8B C8 48 8B F2 4D 85 C0 74 0F 41 38 00");
+        const mem::default_scanner cScanner(cPattern);
+        uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
+
+        if (pLocation)
+        {
+            if (MH_CreateHook(pLocation, &HookTDBIDCtorDerive, reinterpret_cast<void**>(&m_realTDBIDCtorDerive)) !=
+                    MH_OK ||
+                MH_EnableHook(pLocation) != MH_OK)
+                spdlog::error("Could not hook TDBID::ctor[Derive] function!");
+            else
+                spdlog::info("TDBID::ctor[Derive] function hook complete!");
+        }
+    }
+
+    {
+        const mem::pattern cPattern("48 89 5C 24 08 48 89 54 24 10 57 48 83 EC 50 48 8B F9 48 8D 54 24 20 48 8D 4C 24 68 E8");
+        const mem::default_scanner cScanner(cPattern);
+        uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
+
+        if (pLocation)
+        {
+            if (MH_CreateHook(pLocation, &HookTDBIDCtorUnknown, reinterpret_cast<void**>(&m_realTDBIDCtorUnknown)) !=
+                    MH_OK ||
+                MH_EnableHook(pLocation) != MH_OK)
+                spdlog::error("Could not hook TDBID::ctor[Unknown] function!");
+            else
+            {
+                spdlog::info("TDBID::ctor[Unknown] function hook complete!");
+                *reinterpret_cast<void**>(&m_someStringLookup) =
+                    &pLocation[33] + *reinterpret_cast<int32_t*>(&pLocation[29]);
+            }
+        }
+    }
+
+    {
+        const mem::pattern cPattern("48 BF 58 D1 78 A0 18 09 BA EC 75 16 48 8D 15 ?? ?? ?? ?? 48 8B CF E8 ?? ?? ?? ?? C6 05 ?? ?? ?? ?? 01 41 8B 06 39 05 ?? ?? ?? ?? 7F");
+        const mem::default_scanner cScanner(cPattern);
+        uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
+
+        if (pLocation)
+        {
+            pLocation = &pLocation[45] + static_cast<int8_t>(pLocation[44]);
+
+            mem::region reg(pLocation, 45);
+            const mem::pattern cSecondaryPattern("48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 83 3D ?? ?? ?? ?? FF 75 ?? 48 8D 05");
+            const mem::default_scanner cSecondaryScanner(cSecondaryPattern);
+
+            pLocation = cSecondaryScanner(reg).as<uint8_t*>();
+
+            if (pLocation)
+            {
+                pLocation = &pLocation[28] + *reinterpret_cast<int32_t*>(&pLocation[24]);
+                if (MH_CreateHook(pLocation, &HookTDBIDToStringDEBUG,
+                                  reinterpret_cast<void**>(&m_realTDBIDToStringDEBUG)) != MH_OK ||
+                    MH_EnableHook(pLocation) != MH_OK)
+                    spdlog::error("Could not hook TDBID::ToStringDEBUG function!");
+                else
+                    spdlog::info("TDBID::ToStringDEBUG function hook complete!");
+            }
         }
     }
 }

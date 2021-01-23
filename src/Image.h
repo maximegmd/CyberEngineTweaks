@@ -21,6 +21,5 @@ struct Image
 
     uint64_t version{0};
     uintptr_t base_address;
-    uint8_t* pTextStart;
-    uint8_t* pTextEnd;
+    mem::region TextRegion;
 };

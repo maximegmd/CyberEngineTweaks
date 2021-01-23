@@ -17,25 +17,26 @@ void Image::Initialize()
     static uint8_t s_Guid106[] = { 0x67, 0xFB, 0x96, 0x6B, 0xAA, 0x3D, 0x57, 0x4E, 0x93, 0x8F, 0x1C, 0xC5, 0x85, 0xc6, 0xF5, 0x29 };
     static uint8_t s_Guid110[] = { 0xE0, 0xC2, 0x94, 0x64, 0x5C, 0xB4, 0x32, 0x45, 0x95, 0x10, 0x09, 0xA1, 0x0F, 0xB2, 0x53, 0xF8 };
 
+    mem::module mainModule = mem::module::main();
+
     auto* pImage = GetModuleHandle(nullptr);
-    IMAGE_NT_HEADERS* pHeader = ImageNtHeader(pImage);
-    auto* pSectionHeaders = reinterpret_cast<IMAGE_SECTION_HEADER*>(pHeader + 1);
+    
+    auto sectionHeaders = mainModule.section_headers();
 
     base_address = reinterpret_cast<uintptr_t>(pImage);
 
-    for (auto count = 0u; count < pHeader->FileHeader.NumberOfSections; ++count)
+    for (const auto& cHeader : sectionHeaders)
     {
-        if (memcmp(pSectionHeaders->Name, ".text", 5) == 0)
+        if (memcmp(cHeader.Name, ".text", 5) == 0)
         {
-            pTextStart = reinterpret_cast<uint8_t*>(base_address + pSectionHeaders->VirtualAddress);
-            pTextEnd = reinterpret_cast<uint8_t*>(base_address + pSectionHeaders->VirtualAddress + pSectionHeaders->Misc.VirtualSize);
+            TextRegion = mem::region(reinterpret_cast<uint8_t*>(base_address + cHeader.VirtualAddress),
+                                  cHeader.Misc.VirtualSize);
+            break;
         }
-
-        ++pSectionHeaders;
     }
 
-    auto* pDosHeader = reinterpret_cast<IMAGE_DOS_HEADER*>(base_address);
-    auto* pFileHeader = reinterpret_cast<IMAGE_FILE_HEADER*>(base_address + pDosHeader->e_lfanew + 4);
+    auto& dosHeader = mainModule.dos_header();
+    auto* pFileHeader = reinterpret_cast<IMAGE_FILE_HEADER*>(base_address + dosHeader.e_lfanew + 4);
     auto* pOptionalHeader = reinterpret_cast<IMAGE_OPTIONAL_HEADER*>(((char*)pFileHeader) + sizeof(IMAGE_FILE_HEADER));
     auto* pDataDirectory = &pOptionalHeader->DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG];
     auto* pDebugDirectory = reinterpret_cast<IMAGE_DEBUG_DIRECTORY*>(base_address + pDataDirectory->VirtualAddress);

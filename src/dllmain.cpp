@@ -5,7 +5,6 @@
 #include "Image.h"
 #include "Options.h"
 
-#include "scripting/LuaVM.h"
 #include "scripting/GameHooks.h"
 
 #pragma comment(lib, "dbghelp.lib")

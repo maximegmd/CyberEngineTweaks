@@ -1,7 +1,6 @@
 #include <stdafx.h>
 
 #include "Image.h"
-#include "Pattern.h"
 
 using ScriptExecutionPointer = uint64_t;
 
@@ -62,8 +61,14 @@ void EnableDebugPatch(const Image* apImage)
 {
     uint8_t* pChecksumLocations[] = { 0, 0 };
 
-    pChecksumLocations[0] = FindSignature(apImage->pTextStart, apImage->pTextEnd, { 0x48, 0xBB, 0x87, 0xC9, 0xB1, 0x63, 0x33, 0x01, 0x15, 0x75 }); // "IsFinal", helps us find RegisterScriptFunction
-    pChecksumLocations[1] = FindSignature(apImage->pTextStart, apImage->pTextEnd, { 0x48, 0xBB, 0xC3, 0x63, 0xE3, 0x32, 0x7C, 0xA2, 0x3C, 0xC1 }); // "CanDebugTeleport", to find RegisterScriptMemberFunction
+    const mem::pattern cIsFinalPattern("48 BB 87 C9 B1 63 33 01 15 75");
+    const mem::pattern cCanDebugTeleportPattern("48 BB C3 63 E3 32 7C A2 3C C1");
+
+    const mem::default_scanner cIsFinalScanner(cIsFinalPattern);
+    const mem::default_scanner cCanDebugTeleportScanner(cCanDebugTeleportPattern);
+
+    pChecksumLocations[0] = cIsFinalScanner(apImage->TextRegion).as<uint8_t*>(); // "IsFinal", helps us find RegisterScriptFunction
+    pChecksumLocations[1] = cCanDebugTeleportScanner(apImage->TextRegion).as<uint8_t*>(); // "CanDebugTeleport", to find RegisterScriptMemberFunction
 
     for (int i = 0; i < 2; i++)
     {
@@ -72,10 +77,20 @@ void EnableDebugPatch(const Image* apImage)
         uint8_t* pCallLocation = nullptr;
         if (pChecksumLocations[i])
         {
+            mem::region reg(pChecksumLocations[i], 0x1000);
+
             if (i == 0)
-                pCallLocation = FindSignature(pChecksumLocations[i], pChecksumLocations[i] + 0x1000, { 0x48, 0x8D, 0x0D, 0xCC, 0xCC, 0xCC, 0xCC, 0xE8, 0xCC, 0xCC, 0xCC, 0xCC, 0x48, 0x8D, 0x0D });
+            {
+                const mem::pattern cPattern("48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8D 0D");
+                const mem::default_scanner cScanner(cPattern);
+                pCallLocation = cScanner(reg).as<uint8_t*>();
+            }
             else
-                pCallLocation = FindSignature(pChecksumLocations[i], pChecksumLocations[i] + 0x1000, { 0x48, 0x8D, 0x0D, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xE8, 0xCC, 0xCC, 0xCC, 0xCC, 0x48, 0x8D, 0x0D });
+            {
+                const mem::pattern cPattern("48 8D 0D ?? ?? ?? ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8D 0D");
+                const mem::default_scanner cScanner(cPattern);
+                pCallLocation = cScanner(reg).as<uint8_t*>();
+            }
 
             if (pCallLocation)
                 pCallLocation += (i == 0 ? 8 : 11);
