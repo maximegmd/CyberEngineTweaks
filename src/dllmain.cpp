@@ -1,14 +1,9 @@
-#include "CET.h"
-
 #include <stdafx.h>
+
+#include "CET.h"
 
 #include "Image.h"
 #include "Options.h"
-
-#include "scripting/GameHooks.h"
-
-#pragma comment(lib, "dbghelp.lib")
-#pragma comment(linker, "/DLL")
 
 void EnableDebugPatch(const Image* apImage);
 void StartScreenPatch(const Image* apImage);

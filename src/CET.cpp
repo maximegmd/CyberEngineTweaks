@@ -1,8 +1,7 @@
+#include <stdafx.h>
+
 #include "CET.h"
-
 #include "Options.h"
-
-#include <spdlog/spdlog.h>
 
 using namespace std::chrono_literals;
 
