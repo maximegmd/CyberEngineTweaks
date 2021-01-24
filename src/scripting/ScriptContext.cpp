@@ -75,6 +75,10 @@ ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::
         {
             loggerRef->debug(message);
         };
+        spdlog["info"] = [loggerRef](const std::string& message)
+        {
+            loggerRef->info(message);
+        };
         spdlog["warning"] = [loggerRef](const std::string& message)
         {
             loggerRef->warn(message);
