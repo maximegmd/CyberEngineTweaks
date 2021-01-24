@@ -32,9 +32,8 @@ protected:
 
     struct FrameContext
     {
-        ID3D12CommandAllocator* CommandAllocator { nullptr };
-        ID3D12Resource* BackBuffer { nullptr };
-        ID3D12Resource* MainRenderTargetResource { nullptr };
+        CComPtr<ID3D12CommandAllocator> CommandAllocator { nullptr };
+        CComPtr<ID3D12Resource> BackBuffer { nullptr };
         D3D12_CPU_DESCRIPTOR_HANDLE MainRenderTargetDescriptor{ 0 };
     };
 
@@ -64,10 +63,10 @@ private:
     std::vector<FrameContext> m_frameContexts{ };
     std::vector<ID3D12Resource*> m_downlevelBackbuffers{ };
     IDXGISwapChain3* m_pdxgiSwapChain{ nullptr };
-    ID3D12Device* m_pd3d12Device{ nullptr };
-    ID3D12DescriptorHeap* m_pd3dRtvDescHeap{ nullptr };
-    ID3D12DescriptorHeap* m_pd3dSrvDescHeap{ nullptr };
-    ID3D12GraphicsCommandList* m_pd3dCommandList{ nullptr };
+    CComPtr<ID3D12Device> m_pd3d12Device{ nullptr };
+    CComPtr<ID3D12DescriptorHeap> m_pd3dRtvDescHeap{ nullptr };
+    CComPtr<ID3D12DescriptorHeap> m_pd3dSrvDescHeap{ nullptr };
+    CComPtr<ID3D12GraphicsCommandList> m_pd3dCommandList{ nullptr };
     ID3D12CommandQueue* m_pCommandQueue{ nullptr };
     uint32_t m_downlevelBufferIndex{ 0 };
     
