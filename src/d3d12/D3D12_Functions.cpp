@@ -6,7 +6,6 @@
 #include <imgui_impl/dx12.h>
 #include <imgui_impl/win32.h>
 
-#include <scripting/LuaVM.h>
 #include <window/Window.h>
 #include "Options.h"
 
