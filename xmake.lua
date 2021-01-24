@@ -82,6 +82,7 @@ target("cyber_engine_tweaks")
 		local branch, commitHash = version()
 
 		-- This is a hack provided by ruki until find_7z returns the full path
+		--[[
 		import("core.platform.environment")
 		function do_zip()
 			environment.enter("toolchains")
@@ -91,5 +92,6 @@ target("cyber_engine_tweaks")
 		end
 
 		do_zip()
+		]]--
 
 	end)
