@@ -5,6 +5,10 @@
 #include "Image.h"
 #include "Options.h"
 
+#ifndef NDEBUG
+#include "scripting/GameHooks.h"
+#endif
+
 void EnableDebugPatch(const Image* apImage);
 void StartScreenPatch(const Image* apImage);
 void RemovePedsPatch(const Image* apImage);

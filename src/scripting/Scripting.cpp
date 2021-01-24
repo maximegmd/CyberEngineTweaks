@@ -20,6 +20,7 @@
 #include "Utils.h"
 
 #ifndef NDEBUG
+#include "GameHooks.h"
 #include "GameDump.h"
 #include <RED4ext/Dump/Reflection.hpp>
 #endif
