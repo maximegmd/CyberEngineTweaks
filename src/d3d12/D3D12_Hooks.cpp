@@ -38,7 +38,10 @@ HRESULT D3D12::PresentDownlevel(ID3D12CommandQueueDownlevel* apCommandQueueDownl
     auto& d3d12 = CET::Get().GetD3D12();
 
     // On Windows 7 there is no swap chain to query the current backbuffer index. Instead do a reverse lookup in the known backbuffer list
-    auto it = std::find(d3d12.m_downlevelBackbuffers.cbegin(), d3d12.m_downlevelBackbuffers.cend(), apSourceTex2D);
+    const auto cbegin = d3d12.m_downlevelBackbuffers.size() >= g_numDownlevelBackbuffersRequired
+        ? d3d12.m_downlevelBackbuffers.cend() - g_numDownlevelBackbuffersRequired
+        : d3d12.m_downlevelBackbuffers.cbegin();
+    auto it = std::find(cbegin, d3d12.m_downlevelBackbuffers.cend(), apSourceTex2D);
     if (it == d3d12.m_downlevelBackbuffers.cend())
     {
         if (d3d12.m_initialized)
