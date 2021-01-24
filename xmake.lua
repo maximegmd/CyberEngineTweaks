@@ -10,9 +10,8 @@ add_rules("plugin.vsxmake.autoupdate")
 
 if is_mode("debug") or is_mode("releasedbg") then
     add_defines("CET_DEBUG")
-end
 
-if is_mode("release") then
+elseif is_mode("release") then
     add_ldflags("/LTCG", "/OPT:REF")
     add_cxflags("/Ot", "/GL", "/Ob2", "/Oi", "/GS-")
     add_defines("NDEBUG")
@@ -24,38 +23,9 @@ add_cxflags("/bigobj", "/MP")
 add_defines("RED4EXT_STATIC_LIB", "UNICODE")
 
 before_build(function (target)
-	local host = os.host()
-	local subhost = os.subhost()
+	import("modules.version")
 
-	local system
-	if (host ~= subhost) then
-		system = host .. "/" .. subhost
-	else
-		system = host
-	end
-
-	local branch = "unknown-branch"
-	local commitHash = "unknown-commit"
-	try
-	{
-		function ()
-			import("detect.tools.find_git")
-			local git = find_git()
-			if (git) then
-				branch = os.iorunv(git, {"rev-parse", "--abbrev-ref", "HEAD"}):trim()
-				commitHash = os.iorunv(git, {"describe", "--tags"}):trim()
-			else
-				error("git not found")
-			end
-		end,
-
-		catch
-		{
-			function (err)
-				print(string.format("Failed to retrieve git data: %s", err))
-			end
-		}
-	}
+	local branch, commitHash = version()
 
 	local cetVersionString = string.format([[
 #pragma once
@@ -88,7 +58,7 @@ target("RED4ext.SDK")
 
 target("cyber_engine_tweaks")
     add_defines("WIN32_LEAN_AND_MEAN", "NOMINMAX", "SOL_ALL_SAFETIES_ON")
-    set_pcxxheader("src/stdafx.h") -- see: https://github.com/xmake-io/xmake/issues/1171#issuecomment-751421178
+    set_pcxxheader("src/stdafx.h")
     set_kind("shared")
     set_filename("cyber_engine_tweaks.asi")
     add_files("src/**.c")
@@ -107,38 +77,9 @@ target("cyber_engine_tweaks")
 		os.cp("scripts/*", "package/bin/x64/plugins/cyber_engine_tweaks/scripts")
 		os.rm("package/*.zip")
 
-		local host = os.host()
-		local subhost = os.subhost()
+		import("modules.version")
 
-		local system
-		if (host ~= subhost) then
-			system = host .. "/" .. subhost
-		else
-			system = host
-		end
-
-		local branch = "unknown-branch"
-		local commitHash = "unknown-commit"
-		try
-		{
-			function ()
-				import("detect.tools.find_git")
-				local git = find_git()
-				if (git) then
-					branch = os.iorunv(git, {"rev-parse", "--abbrev-ref", "HEAD"}):trim()
-					commitHash = os.iorunv(git, {"describe", "--tags"}):trim()
-				else
-					error("git not found")
-				end
-			end,
-
-			catch
-			{
-				function (err)
-					print(string.format("Failed to retrieve git data: %s", err))
-				end
-			}
-		}
+		local branch, commitHash = version()
 
 		os.cd("package/")
 		os.runv("zip", {"-r", "cet_"..commitHash..".zip", "."})
