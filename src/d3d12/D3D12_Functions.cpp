@@ -9,7 +9,7 @@
 #include <window/Window.h>
 #include "Options.h"
 
-bool D3D12::ResetState()
+bool D3D12::ResetState(bool aClearDownlevelBackbuffers)
 {
     if (m_initialized)
     {   
@@ -18,7 +18,8 @@ bool D3D12::ResetState()
         ImGui_ImplWin32_Shutdown();
     }
     m_frameContexts.clear();
-    m_downlevelBackbuffers.clear();
+    if (aClearDownlevelBackbuffers)
+        m_downlevelBackbuffers.clear();
     m_pdxgiSwapChain = nullptr;
     m_pd3d12Device = nullptr;
     m_pd3dRtvDescHeap = nullptr;

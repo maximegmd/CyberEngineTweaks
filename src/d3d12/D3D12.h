@@ -37,7 +37,7 @@ protected:
         D3D12_CPU_DESCRIPTOR_HANDLE MainRenderTargetDescriptor{ 0 };
     };
 
-    bool ResetState();
+    bool ResetState(bool aClearDownlevelBackbuffers = true);
     bool Initialize(IDXGISwapChain* apSwapChain);
     bool InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resource* apSourceTex2D, HWND ahWindow);
     bool InitializeImGui(size_t aBuffersCounts);

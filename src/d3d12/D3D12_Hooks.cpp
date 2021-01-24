@@ -90,11 +90,13 @@ HRESULT D3D12::CreateCommittedResource(ID3D12Device* apDevice, const D3D12_HEAP_
         // Store the returned resource
         d3d12.m_downlevelBackbuffers.emplace_back(static_cast<ID3D12Resource*>(*appvResource));
         spdlog::debug("D3D12::CreateCommittedResourceD3D12() - found valid backbuffer target at {0}.", *appvResource);
-    }
 
-    // If D3D12 has been initialized, there is no need to continue hooking this function since the backbuffers are only created once.
-    if (d3d12.m_initialized)
-        kiero::unbind(27);
+        if (d3d12.m_initialized)
+        {
+            // Reset state (a resize may have happened), but don't touch the backbuffer list. The downlevel Present hook will take care of this
+            d3d12.ResetState(false);
+        }
+    }
 
     return result;
 }
