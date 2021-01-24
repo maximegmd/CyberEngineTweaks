@@ -1,6 +1,7 @@
 set_xmakever("2.5.1")
 
 set_languages("cxx20")
+set_arch("x64")
 
 add_requires("spdlog", "nlohmann_json", "hopscotch-map", "minhook", "mem", "imgui", "sol2", "tiltedcore")
 add_requireconfs("imgui", { configs = {cxflags = "/DNDEBUG"} })
@@ -80,6 +81,15 @@ target("cyber_engine_tweaks")
 
 		local branch, commitHash = version()
 
-		os.cd("package/")
-		os.runv("zip", {"-r", "cet_"..commitHash..".zip", "."})
+		-- This is a hack provided by ruki until find_7z returns the full path
+		import("core.platform.environment")
+		function do_zip()
+			environment.enter("toolchains")
+			os.cd("package/")
+			os.vrunv("7z", {"a", "cet_"..commitHash..".zip", "."})
+			environment.leave("toolchains")
+		end
+
+		do_zip()
+
 	end)
