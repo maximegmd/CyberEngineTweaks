@@ -87,8 +87,12 @@ static void Initialize()
 
 static void Shutdown()
 {
+    bool inGameProcess = false;
+
     if (s_modInstanceMutex)
     {
+        inGameProcess = CET::Get().GetOptions().ExeValid;
+
         MH_DisableHook(MH_ALL_HOOKS);
         MH_Uninitialize();
 
@@ -97,9 +101,12 @@ static void Shutdown()
         ReleaseMutex(s_modInstanceMutex);
     }
 
-    // flush main log (== default logger)
-    spdlog::default_logger()->flush();
-    spdlog::get("scripting")->flush();
+    if (inGameProcess)
+    {
+        // flush main log (== default logger)
+        spdlog::default_logger()->flush();
+        spdlog::get("scripting")->flush();
+    }
 }
 
 BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID) 
