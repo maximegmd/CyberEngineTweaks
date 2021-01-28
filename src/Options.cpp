@@ -138,7 +138,8 @@ Options::Options(Paths& aPaths)
 
         if (GameImage.GetVersion() != GameImage.GetSupportedVersion())
         {
-            spdlog::error("Unsupported game version! Only {}.{:02d} is supported.", major, minor);
+            auto [smajor, sminor] = GameImage.GetSupportedVersion();
+            spdlog::error("Unsupported game version! Only {}.{:02d} is supported.", smajor, sminor);
             throw std::runtime_error("Unsupported version");
         }
             
