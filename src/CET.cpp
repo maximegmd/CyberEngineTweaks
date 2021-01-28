@@ -9,7 +9,7 @@ static std::unique_ptr<CET> s_pInstance{ nullptr };
 
 void CET::Initialize()
 {
-    s_pInstance.reset(new (std::nothrow) CET);
+    s_pInstance.reset(new CET);
 }
 
 void CET::Shutdown()

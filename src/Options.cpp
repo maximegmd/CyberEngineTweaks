@@ -135,9 +135,19 @@ Options::Options(Paths& aPaths)
         spdlog::info("Root path: \"{}\"", aPaths.GameRoot().string());
         spdlog::info("Cyber Engine Tweaks path: \"{}\"", aPaths.CETRoot().string());
         spdlog::info("Lua scripts search path: \"{}\"", aPaths.ModsRoot().string());
+
+        if (GameImage.GetVersion() != GameImage.GetSupportedVersion())
+        {
+            spdlog::error("Unsupported game version! Only {}.{:02d} is supported.", major, minor);
+            throw std::runtime_error("Unsupported version");
+        }
+            
     }
     else
+    {
         spdlog::info("Unknown Game Version, update the mod");
+        throw std::runtime_error("Unknown version");
+    }
 
     Load();
 

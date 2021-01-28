@@ -32,17 +32,6 @@ static void Initialize()
 
         const auto& options = CET::Get().GetOptions();
 
-        // check if we are hooked to valid process
-        if (!options.ExeValid)
-            return;
-
-        if (options.GameImage.GetVersion() != Image::GetSupportedVersion())
-        {
-            auto [major, minor] = Image::GetSupportedVersion();
-            spdlog::error("Unsupported game version! Only {}.{:02d} is supported.", major, minor);
-            return;
-        }
-
         // single instance check
         s_modInstanceMutex = CreateMutex(NULL, TRUE, _T("Cyber Engine Tweaks Module Instance"));
         if (s_modInstanceMutex == nullptr)
