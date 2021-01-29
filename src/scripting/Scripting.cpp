@@ -16,6 +16,7 @@
 #include <reverse/Converter.h>
 #include <reverse/WeakReference.h>
 #include <reverse/Enum.h>
+#include <reverse/TweakDB.h>
 
 #include "Utils.h"
 
@@ -354,6 +355,15 @@ void Scripting::Initialize()
 
         spdlog::get("scripting")->info(oss.str());
     };
+
+    m_lua.new_usertype<TweakDB>("__TweakDB",
+        sol::meta_function::construct, sol::no_constructor,
+        "GetRecord", &TweakDB::GetRecord,
+        "Query", &TweakDB::Query,
+        "GetFlat", &TweakDB::GetFlat,
+        "SetFlat", &TweakDB::SetFlat);
+
+    m_lua["TweakDB"] = TweakDB(m_lua);
 
 #ifndef NDEBUG
     m_lua["DumpVtables"] = [this]()
