@@ -1325,13 +1325,12 @@ selected, activated = ImGui.MenuItem("Label", "ALT+F4", selected, true)
 ## Text Utilities
 ```lua
   -- ImGui.CalcTextSize(...)
-  -- Parameters: text (text), text (text_end) [O], bool (hide_text_after_double_hash) [O], float (wrap_width) [O]
+  -- Parameters: text (text), bool (hide_text_after_double_hash) [O], float (wrap_width) [O]
   -- Returns: float (x), float (y)
   -- Overloads
   x, y = ImGui.CalcTextSize("Calculate me")
-  x, y = ImGui.CalcTextSize("Calculate me", " with an ending?")
-  x, y = ImGui.CalcTextSize("Calculate me", " with an ending?", true)
-  x, y = ImGui.CalcTextSize("Calculate me", " with an ending?", true, 100)
+  x, y = ImGui.CalcTextSize("Calculate me", true)
+  x, y = ImGui.CalcTextSize("Calculate me", true, 100)
 ```
 
 ## Color Utilities

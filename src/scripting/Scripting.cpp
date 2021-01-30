@@ -20,6 +20,7 @@
 #include "Utils.h"
 
 #ifndef NDEBUG
+#include "GameHooks.h"
 #include "GameDump.h"
 #include <RED4ext/Dump/Reflection.hpp>
 #endif
@@ -596,6 +597,18 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
             }
 
             result.value = pMemory;
+        }
+        else if (apRttiType->GetType() == RED4ext::ERTTIType::ScriptReference)
+        {
+            if (aObject.is<ClassReference>())
+            {
+                auto* pClassRef = aObject.as<ClassReference*>();
+                auto* pScriptRef = apAllocator->New<RED4ext::ScriptRef<void>>();
+                pScriptRef->innerType = pClassRef->m_pType;
+                pScriptRef->ref = pClassRef->GetHandle();
+                apRttiType->GetName(pScriptRef->hash);
+                result.value = pScriptRef;
+            }
         }
         else
         {
