@@ -63,6 +63,7 @@ bool ImGui_ImplWin32_Init(HWND ahWnd)
     ImGuiIO& io = ImGui::GetIO();
     io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;         // We can honor GetMouseCursor() values (optional)
     io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;          // We can honor io.WantSetMousePos requests (optional, rarely used)
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.BackendPlatformName = "imgui_impl_win32";
     io.ImeWindowHandle = ahWnd;
 
@@ -155,7 +156,7 @@ static void ImGui_ImplWin32_UpdateMousePos(SIZE aOutSize)
             if (::GetCursorPos(&pos) && ::ScreenToClient(g_hWnd, &pos))
                 if (!aOutSize.cx || !aOutSize.cy)
                     io.MousePos = ImVec2((float)pos.x, (float)pos.y);
-                else 
+                else
                 {
                     RECT clientRect;
                     ::GetClientRect(g_hWnd, &clientRect);
