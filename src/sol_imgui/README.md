@@ -31,7 +31,7 @@ You can find all the supported functions and overloads below.
 ## Child Windows
 ```lua
   -- ImGui.BeginChild(...)
-  -- Parameters: text (name), float (size_x) [O], float (size_y) [O], ImGuiWindowFlags (flags) [O]
+  -- Parameters: text (name), float (size_x) [O], float (size_y) [O], bool (border) [O], ImGuiWindowFlags (flags) [O]
   -- Returns: bool (shouldDraw)
   -- Overloads
   shouldDraw = ImGui.BeginChild("Name", 100)
@@ -604,7 +604,7 @@ You can find all the supported functions and overloads below.
   values, used = ImGui.DragFloat4("Label", values, 0.01, -10, 10, "%.1f", ImGuiSliderFlags.Logarithmic)
 
   -- ImGui.DragInt(...)
-  -- Parameters: text (label), int (value), float (value_speed) [O], int (value_min) [O], int (value_max) [O], text (format) [O]
+  -- Parameters: text (label), int (value), float (value_speed) [O], int (value_min) [O], int (value_max) [O], text (format) [O], ImGuiSliderFlags (flags) [O]
   -- Returns: int (value), bool (used)
   -- Overloads
   value, used = ImGui.DragInt("Label", value)
@@ -612,9 +612,10 @@ You can find all the supported functions and overloads below.
   value, used = ImGui.DragInt("Label", value, 0.01, -10)
   value, used = ImGui.DragInt("Label", value, 0.01, -10, 10)
   value, used = ImGui.DragInt("Label", value, 0.01, -10, 10, "%d")
+  value, used = ImGui.DragInt("Label", value, 0.01, -10, 10, "%d", ImGuiSliderFlags.Logarithmic)
 
   -- ImGui.DragInt2(...)
-  -- Parameters: text (label), table (values), float (value_speed) [O], int (value_min) [O], int (value_max) [O], text (format) [O]
+  -- Parameters: text (label), table (values), float (value_speed) [O], int (value_min) [O], int (value_max) [O], text (format) [O], ImGuiSliderFlags (flags) [O]
   -- Returns: table (values), bool (used)
   -- Overloads
   values, used = ImGui.DragInt2("Label", values)
@@ -622,9 +623,10 @@ You can find all the supported functions and overloads below.
   values, used = ImGui.DragInt2("Label", values, 0.01, -10)
   values, used = ImGui.DragInt2("Label", values, 0.01, -10, 10)
   values, used = ImGui.DragInt2("Label", values, 0.01, -10, 10, "%d")
+  values, used = ImGui.DragInt2("Label", values, 0.01, -10, 10, "%d", ImGuiSliderFlags.Logarithmic)
 
   -- ImGui.DragInt3(...)
-  -- Parameters: text (label), table (values), float (value_speed) [O], int (value_min) [O], int (value_max) [O], text (format) [O]
+  -- Parameters: text (label), table (values), float (value_speed) [O], int (value_min) [O], int (value_max) [O], text (format) [O], ImGuiSliderFlags (flags) [O]
   -- Returns: table (values), bool (used)
   -- Overloads
   values, used = ImGui.DragInt3("Label", values)
@@ -632,9 +634,10 @@ You can find all the supported functions and overloads below.
   values, used = ImGui.DragInt3("Label", values, 0.01, -10)
   values, used = ImGui.DragInt3("Label", values, 0.01, -10, 10)
   values, used = ImGui.DragInt3("Label", values, 0.01, -10, 10, "%d")
+  values, used = ImGui.DragInt3("Label", values, 0.01, -10, 10, "%d", ImGuiSliderFlags.Logarithmic)
 
   -- ImGui.DragInt4(...)
-  -- Parameters: text (label), table (values), float (value_speed) [O], int (value_min) [O], int (value_max) [O], text (format) [O]
+  -- Parameters: text (label), table (values), float (value_speed) [O], int (value_min) [O], int (value_max) [O], text (format) [O], ImGuiSliderFlags (flags) [O]
   -- Returns: table (values), bool (used)
   -- Overloads
   values, used = ImGui.DragInt4("Label", values)
@@ -642,6 +645,7 @@ You can find all the supported functions and overloads below.
   values, used = ImGui.DragInt4("Label", values, 0.01, -10)
   values, used = ImGui.DragInt4("Label", values, 0.01, -10, 10)
   values, used = ImGui.DragInt4("Label", values, 0.01, -10, 10, "%d")
+  values, used = ImGui.DragInt4("Label", values, 0.01, -10, 10, "%d", ImGuiSliderFlags.Logarithmic)
 ```
 
 ## Widgets: Sliders
@@ -679,41 +683,46 @@ You can find all the supported functions and overloads below.
   values, used = ImGui.SliderFloat4("Label", values, 0.01, -10, 10, "%.1f", ImGuiSliderFlags.Logarithmic)
 
   -- ImGui.SliderAngle(...)
-  -- Parameters: text (label), float (v_rad), float (v_degrees_min) [O], float (v_degrees_max) [O], text (format) [O]
+  -- Parameters: text (label), float (v_rad), float (v_degrees_min) [O], float (v_degrees_max) [O], text (format) [O], ImGuiSliderFlags (flags) [O]
   -- Returns: float (v_rad), bool (used)
   -- Overloads
   v_rad, used = ImGui.SliderAngle("Label", v_rad)
   v_rad, used = ImGui.SliderAngle("Label", v_rad, -255)
   v_rad, used = ImGui.SliderAngle("Label", v_rad, -255, 360)
   v_rad, used = ImGui.SliderAngle("Label", v_rad, -255, 360, "%.0f deg")
+  v_rad, used = ImGui.SliderAngle("Label", v_rad, -255, 360, "%.0f deg", ImGuiSliderFlags.Logarithmic)
 
   -- ImGui.SliderInt(...)
-  -- Parameters: text (label), int (value), int (value_min), int (value_max), text (format) [O]
+  -- Parameters: text (label), int (value), int (value_min), int (value_max), text (format) [O], ImGuiSliderFlags (flags) [O]
   -- Returns: int (value), bool (used)
   -- Overloads
   value, used = ImGui.SliderInt("Label", value, -10, 10)
   value, used = ImGui.SliderInt("Label", value, -10, 10, "%d")
+  value, used = ImGui.SliderInt("Label", value, -10, 10, "%d", ImGuiSliderFlags.Logarithmic)
 
   -- ImGui.SliderInt2(...)
-  -- Parameters: text (label), table (values), int (value_min), int (value_max), text (format) [O]
+  -- Parameters: text (label), table (values), int (value_min), int (value_max), text (format) [O], ImGuiSliderFlags (flags) [O]
   -- Returns: table (values), bool (used)
   -- Overloads
   values, used = ImGui.SliderInt2("Label", values, -10, 10)
   values, used = ImGui.SliderInt2("Label", values, -10, 10, "%d")
+  values, used = ImGui.SliderInt2("Label", values, -10, 10, "%d", ImGuiSliderFlags.Logarithmic)
 
   -- ImGui.SliderInt3(...)
-  -- Parameters: text (label), table (values), int (value_min), int (value_max), text (format) [O]
+  -- Parameters: text (label), table (values), int (value_min), int (value_max), text (format) [O], ImGuiSliderFlags (flags) [O]
   -- Returns: table (values), bool (used)
   -- Overloads
   values, used = ImGui.SliderInt3("Label", values, -10, 10)
   values, used = ImGui.SliderInt3("Label", values, -10, 10, "%d")
+  values, used = ImGui.SliderInt3("Label", values, -10, 10, "%d", ImGuiSliderFlags.Logarithmic)
 
   -- ImGui.SliderInt4(...)
-  -- Parameters: text (label), table (values), int (value_min), int (value_max), text (format) [O]
+  -- Parameters: text (label), table (values), int (value_min), int (value_max), text (format) [O], ImGuiSliderFlags (flags) [O]
   -- Returns: table (values), bool (used)
   -- Overloads
   values, used = ImGui.SliderInt4("Label", values, -10, 10)
   values, used = ImGui.SliderInt4("Label", values, -10, 10, "%d")
+  values, used = ImGui.SliderInt4("Label", values, -10, 10, "%d", ImGuiSliderFlags.Logarithmic)
 
   -- ImGui.VSliderFloat(...)
   -- Parameters: text (label), float (size_x), float (size_y), float (value), float (value_min), float (value_max), text (format) [O], ImGuiSliderFlags (flags) [O]
@@ -724,11 +733,12 @@ You can find all the supported functions and overloads below.
   value, used = ImGui.VSliderFloat("Label", 100, 25, value, -10, 10, "%.1f", ImGuiSliderFlags.Logarithmic)
 
   -- ImGui.VSliderInt(...)
-  -- Parameters: text (label), float (size_x), float (size_y), int (value), int (value_min), int (value_max), text (format) [O]
+  -- Parameters: text (label), float (size_x), float (size_y), int (value), int (value_min), int (value_max), text (format) [O], ImGuiSliderFlags (flags) [O]
   -- Returns: int (value), bool (used)
   -- Overloads
   value, used = ImGui.VSliderInt("Label", 100, 25, value, -10, 10)
   value, used = ImGui.VSliderInt("Label", 100, 25, value, -10, 10, "%d")
+  value, used = ImGui.VSliderInt("Label", 100, 25, value, -10, 10, "%d", ImGuiSliderFlags.Logarithmic)
 ```
 
 ## Widgets: Input with Keyboard
