@@ -17,6 +17,7 @@ void OptionsInitHook(const Image* apImage);
 void DisableIntroMoviesPatch(const Image* apImage);
 void DisableVignettePatch(const Image* apImage);
 void DisableBoundaryTeleportPatch(const Image* apImage);
+void SaveVulnerabilityPatch(const Image* apImage);
 
 static HANDLE s_modInstanceMutex = nullptr;
 
@@ -36,6 +37,8 @@ static void Initialize()
         s_modInstanceMutex = CreateMutex(NULL, TRUE, _T("Cyber Engine Tweaks Module Instance"));
         if (s_modInstanceMutex == nullptr)
             return;
+
+        SaveVulnerabilityPatch(&options.GameImage);
 
         // initialize patches
         if (options.PatchEnableDebug)
