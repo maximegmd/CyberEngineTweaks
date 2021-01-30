@@ -63,13 +63,13 @@ bool ImGui_ImplWin32_Init(HWND ahWnd)
     ImGuiIO& io = ImGui::GetIO();
     io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;         // We can honor GetMouseCursor() values (optional)
     io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;          // We can honor io.WantSetMousePos requests (optional, rarely used)
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.BackendPlatformName = "imgui_impl_win32";
     io.ImeWindowHandle = ahWnd;
 
     // Setup ini path
     g_LayoutPath = (CET::Get().GetPaths().CETRoot() / "layout.ini").string();
     io.IniFilename = g_LayoutPath.c_str();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
     // Keyboard mapping. ImGui will use those indices to peek into the io.KeysDown[] array that we will update during the application lifetime.
     io.KeyMap[ImGuiKey_Tab] = VK_TAB;
