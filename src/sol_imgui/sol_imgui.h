@@ -1742,13 +1742,17 @@ namespace sol_ImGui
             "PlotLinesHovered"			, ImGuiCol_PlotLinesHovered,
             "PlotHistogram"				, ImGuiCol_PlotHistogram,
             "PlotHistogramHovered"		, ImGuiCol_PlotHistogramHovered,
+            "TableHeaderBg"             , ImGuiCol_TableHeaderBg,     
+            "TableBorderStrong"         , ImGuiCol_TableBorderStrong, 
+            "TableBorderLight"          , ImGuiCol_TableBorderLight,  
+            "TableRowBg"                , ImGuiCol_TableRowBg,        
+            "TableRowBgAlt"             , ImGuiCol_TableRowBgAlt,     
             "TextSelectedBg"			, ImGuiCol_TextSelectedBg,
             "DragDropTarget"			, ImGuiCol_DragDropTarget,
             "NavHighlight"				, ImGuiCol_NavHighlight,
             "NavWindowingHighlight"		, ImGuiCol_NavWindowingHighlight,
             "NavWindowingDimBg"			, ImGuiCol_NavWindowingDimBg,
             "ModalWindowDimBg"			, ImGuiCol_ModalWindowDimBg,
-            "ModalWindowDarkening"		, ImGuiCol_ModalWindowDimBg,
             "COUNT"						, ImGuiCol_COUNT
         );
 #pragma endregion Col
@@ -1829,6 +1833,7 @@ namespace sol_ImGui
             "NoUndoRedo"			, ImGuiInputTextFlags_NoUndoRedo,
             "CharsScientific"		, ImGuiInputTextFlags_CharsScientific,
             "CallbackResize"		, ImGuiInputTextFlags_CallbackResize,
+            "CallbackEdit"		    , ImGuiInputTextFlags_CallbackEdit,
             "Multiline"				, ImGuiInputTextFlags_Multiline,
             "NoMarkEdited"			, ImGuiInputTextFlags_NoMarkEdited
         );
@@ -1867,9 +1872,7 @@ namespace sol_ImGui
             "_DisplayMask"			, ImGuiColorEditFlags__DisplayMask,
             "_DataTypeMask"			, ImGuiColorEditFlags__DataTypeMask,
             "_PickerMask"			, ImGuiColorEditFlags__PickerMask,
-            "_InputMask"			, ImGuiColorEditFlags__InputMask,
-
-            "RGB"					, ImGuiColorEditFlags_RGB
+            "_InputMask"			, ImGuiColorEditFlags__InputMask
         );
 #pragma endregion ColorEdit Flags
 
@@ -1944,7 +1947,10 @@ namespace sol_ImGui
             "SetSelected"					, ImGuiTabItemFlags_SetSelected,
             "NoCloseWithMiddleMouseButton"	, ImGuiTabItemFlags_NoCloseWithMiddleMouseButton,
             "NoPushId"						, ImGuiTabItemFlags_NoPushId,
-            "NoTooltip"						, ImGuiTabItemFlags_NoTooltip
+            "NoTooltip"						, ImGuiTabItemFlags_NoTooltip,
+            "NoReorder"                     , ImGuiTabItemFlags_NoReorder,
+            "Leading"                       , ImGuiTabItemFlags_Leading,
+            "Trailing"                      , ImGuiTabItemFlags_Trailing
         );
 #pragma endregion TabItem Flags
         
