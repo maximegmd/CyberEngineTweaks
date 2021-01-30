@@ -69,6 +69,7 @@ bool ImGui_ImplWin32_Init(HWND ahWnd)
     // Setup ini path
     g_LayoutPath = (CET::Get().GetPaths().CETRoot() / "layout.ini").string();
     io.IniFilename = g_LayoutPath.c_str();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
     // Keyboard mapping. ImGui will use those indices to peek into the io.KeysDown[] array that we will update during the application lifetime.
     io.KeyMap[ImGuiKey_Tab] = VK_TAB;
@@ -155,7 +156,7 @@ static void ImGui_ImplWin32_UpdateMousePos(SIZE aOutSize)
             if (::GetCursorPos(&pos) && ::ScreenToClient(g_hWnd, &pos))
                 if (!aOutSize.cx || !aOutSize.cy)
                     io.MousePos = ImVec2((float)pos.x, (float)pos.y);
-                else 
+                else
                 {
                     RECT clientRect;
                     ::GetClientRect(g_hWnd, &clientRect);
