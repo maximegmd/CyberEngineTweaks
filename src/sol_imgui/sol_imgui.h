@@ -267,7 +267,7 @@ namespace sol_ImGui
     inline std::tuple<float, bool> DragFloat(const std::string& label, float v, float v_speed, float v_min)																				{ bool used = ImGui::DragFloat(label.c_str(), &v, v_speed, v_min); return std::make_tuple(v, used); }
     inline std::tuple<float, bool> DragFloat(const std::string& label, float v, float v_speed, float v_min, float v_max)																{ bool used = ImGui::DragFloat(label.c_str(), &v, v_speed, v_min, v_max); return std::make_tuple(v, used); }
     inline std::tuple<float, bool> DragFloat(const std::string& label, float v, float v_speed, float v_min, float v_max, const std::string& format)										{ bool used = ImGui::DragFloat(label.c_str(), &v, v_speed, v_min, v_max, format.c_str()); return std::make_tuple(v, used); }
-    inline std::tuple<float, bool> DragFloat(const std::string& label, float v, float v_speed, float v_min, float v_max, const std::string& format, float power)						{ bool used = ImGui::DragFloat(label.c_str(), &v, v_speed, v_min, v_max, format.c_str(), power); return std::make_tuple(v, used); }
+    inline std::tuple<float, bool> DragFloat(const std::string& label, float v, float v_speed, float v_min, float v_max, const std::string& format, int flags)						{ bool used = ImGui::DragFloat(label.c_str(), &v, v_speed, v_min, v_max, format.c_str(), static_cast<ImGuiSliderFlags>(flags)); return std::make_tuple(v, used); }
     inline std::tuple<sol::as_table_t<std::vector<float>>, bool> DragFloat2(const std::string& label, const sol::table& v)
     {
         const lua_Number	v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -333,12 +333,12 @@ namespace sol_ImGui
 
         return std::make_tuple(float2, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> DragFloat2(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max, const std::string& format, float power)
+    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> DragFloat2(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max, const std::string& format, int flags)
     {
         const lua_Number	v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                             v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         float value[2] = { float(v1), float(v2) };
-        bool used = ImGui::DragFloat2(label.c_str(), value, v_speed, v_min, v_max, format.c_str(), power);
+        bool used = ImGui::DragFloat2(label.c_str(), value, v_speed, v_min, v_max, format.c_str(), static_cast<ImGuiSliderFlags>(flags));
 
         sol::as_table_t float2 = sol::as_table(std::vector<float>{
             value[0], value[1]
@@ -416,13 +416,13 @@ namespace sol_ImGui
 
         return std::make_tuple(float3, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> DragFloat3(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max, const std::string& format, float power)
+    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> DragFloat3(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max, const std::string& format, int flags)
     {
         const lua_Number	v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
             v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
             v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         float value[3] = { float(v1), float(v2), float(v3) };
-        bool used = ImGui::DragFloat3(label.c_str(), value, v_speed, v_min, v_max, format.c_str(), power);
+        bool used = ImGui::DragFloat3(label.c_str(), value, v_speed, v_min, v_max, format.c_str(), static_cast<ImGuiSliderFlags>(flags));
 
         sol::as_table_t float3 = sol::as_table(std::vector<float>{
             value[0], value[1], value[2]
@@ -505,14 +505,14 @@ namespace sol_ImGui
 
         return std::make_tuple(float4, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> DragFloat4(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max, const std::string& format, float power)
+    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> DragFloat4(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max, const std::string& format, int flags)
     {
         const lua_Number	v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                             v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                             v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                             v4{ v[4].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         float value[4] = { float(v1), float(v2), float(v3), float(v4) };
-        bool used = ImGui::DragFloat4(label.c_str(), value, v_speed, v_min, v_max, format.c_str(), power);
+        bool used = ImGui::DragFloat4(label.c_str(), value, v_speed, v_min, v_max, format.c_str(), static_cast<ImGuiSliderFlags>(flags));
 
         sol::as_table_t float4 = sol::as_table(std::vector<float>{
             value[0], value[1], value[2], value[3]
@@ -743,7 +743,7 @@ namespace sol_ImGui
     // Widgets: Sliders
     inline std::tuple<float, bool> SliderFloat(const std::string& label, float v, float v_min, float v_max)																				{ bool used = ImGui::SliderFloat(label.c_str(), &v, v_min, v_max); return std::make_tuple(v, used); }
     inline std::tuple<float, bool> SliderFloat(const std::string& label, float v, float v_min, float v_max, const std::string& format)													{ bool used = ImGui::SliderFloat(label.c_str(), &v, v_min, v_max, format.c_str()); return std::make_tuple(v, used); }
-    inline std::tuple<float, bool> SliderFloat(const std::string& label, float v, float v_min, float v_max, const std::string& format, float power)										{ bool used = ImGui::SliderFloat(label.c_str(), &v, v_min, v_max, format.c_str(), power); return std::make_tuple(v, used); }
+    inline std::tuple<float, bool> SliderFloat(const std::string& label, float v, float v_min, float v_max, const std::string& format, int flags)										{ bool used = ImGui::SliderFloat(label.c_str(), &v, v_min, v_max, format.c_str(), static_cast<ImGuiSliderFlags>(flags)); return std::make_tuple(v, used); }
     inline std::tuple<sol::as_table_t<std::vector<float>>, bool> SliderFloat2(const std::string& label, const sol::table& v, float v_min, float v_max)
     {
         const lua_Number	v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -770,12 +770,12 @@ namespace sol_ImGui
 
         return std::make_tuple(float2, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> SliderFloat2(const std::string& label, const sol::table& v, float v_min, float v_max, const std::string& format, float power)
+    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> SliderFloat2(const std::string& label, const sol::table& v, float v_min, float v_max, const std::string& format, int flags)
     {
         const lua_Number	v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                             v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         float value[2] = { float(v1), float(v2) };
-        bool used = ImGui::SliderFloat2(label.c_str(), value, v_min, v_max, format.c_str(), power);
+        bool used = ImGui::SliderFloat2(label.c_str(), value, v_min, v_max, format.c_str(), static_cast<ImGuiSliderFlags>(flags));
 
         sol::as_table_t float2 = sol::as_table(std::vector<float>{
             value[0], value[1]
@@ -811,13 +811,13 @@ namespace sol_ImGui
 
         return std::make_tuple(float3, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> SliderFloat3(const std::string& label, const sol::table& v, float v_min, float v_max, const std::string& format, float power)
+    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> SliderFloat3(const std::string& label, const sol::table& v, float v_min, float v_max, const std::string& format, int flags)
     {
         const lua_Number	v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                             v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                             v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         float value[3] = { float(v1), float(v2), float(v3) };
-        bool used = ImGui::SliderFloat3(label.c_str(), value, v_min, v_max, format.c_str(), power);
+        bool used = ImGui::SliderFloat3(label.c_str(), value, v_min, v_max, format.c_str(), static_cast<ImGuiSliderFlags>(flags));
 
         sol::as_table_t float3 = sol::as_table(std::vector<float>{
             value[0], value[1], value[3]
@@ -855,14 +855,14 @@ namespace sol_ImGui
 
         return std::make_tuple(float4, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> SliderFloat4(const std::string& label, const sol::table& v, float v_min, float v_max, const std::string& format, float power)
+    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> SliderFloat4(const std::string& label, const sol::table& v, float v_min, float v_max, const std::string& format, int flags)
     {
         const lua_Number	v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                             v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                             v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                             v4{ v[4].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         float value[4] = { float(v1), float(v2), float(v3), float(v4) };
-        bool used = ImGui::SliderFloat4(label.c_str(), value, v_min, v_max, format.c_str(), power);
+        bool used = ImGui::SliderFloat4(label.c_str(), value, v_min, v_max, format.c_str(), static_cast<ImGuiSliderFlags>(flags));
 
         sol::as_table_t float4 = sol::as_table(std::vector<float>{
             value[0], value[1], value[2], value[3]
@@ -964,7 +964,7 @@ namespace sol_ImGui
     inline void SliderScalarN()																																							{ /* TODO: SliderScalarN(...) ==> UNSUPPORTED */ }
     inline std::tuple<float, bool> VSliderFloat(const std::string& label, float sizeX, float sizeY, float v, float v_min, float v_max)													{ bool used = ImGui::VSliderFloat(label.c_str(), { sizeX, sizeY }, &v, v_min, v_max); return std::make_tuple(v, used); }
     inline std::tuple<float, bool> VSliderFloat(const std::string& label, float sizeX, float sizeY, float v, float v_min, float v_max, const std::string& format)						{ bool used = ImGui::VSliderFloat(label.c_str(), { sizeX, sizeY }, &v, v_min, v_max, format.c_str()); return std::make_tuple(v, used); }
-    inline std::tuple<float, bool> VSliderFloat(const std::string& label, float sizeX, float sizeY, float v, float v_min, float v_max, const std::string& format, float power)			{ bool used = ImGui::VSliderFloat(label.c_str(), { sizeX, sizeY }, &v, v_min, v_max, format.c_str(), power); return std::make_tuple(v, used); }
+    inline std::tuple<float, bool> VSliderFloat(const std::string& label, float sizeX, float sizeY, float v, float v_min, float v_max, const std::string& format, int flags)			{ bool used = ImGui::VSliderFloat(label.c_str(), { sizeX, sizeY }, &v, v_min, v_max, format.c_str(), static_cast<ImGuiSliderFlags>(flags)); return std::make_tuple(v, used); }
     inline std::tuple<int, bool> VSliderInt(const std::string& label, float sizeX, float sizeY, int v, int v_min, int v_max)															{ bool used = ImGui::VSliderInt(label.c_str(), { sizeX, sizeY }, &v, v_min, v_max); return std::make_tuple(v, used); }
     inline std::tuple<int, bool> VSliderInt(const std::string& label, float sizeX, float sizeY, int v, int v_min, int v_max, const std::string& format)									{ bool used = ImGui::VSliderInt(label.c_str(), { sizeX, sizeY }, &v, v_min, v_max, format.c_str()); return std::make_tuple(v, used); }
     inline void VSliderScalar()																																							{ /* TODO: VSliderScalar(...) ==> UNSUPPORTED */ }
@@ -1583,7 +1583,7 @@ namespace sol_ImGui
         ImGui::ColorConvertHSVtoRGB(h, s, v, r, g, b);
         return std::make_tuple(r, g, b);
     }
-    
+
 #ifdef SOL_IMGUI_ENABLE_INPUT_FUNCTIONS
     // Inputs Utilities: Keyboard
     inline int GetKeyIndex(int imgui_key)																{ return ImGui::GetKeyIndex(static_cast<ImGuiKey>(imgui_key)); }
@@ -1834,6 +1834,16 @@ namespace sol_ImGui
         );
 #pragma endregion InputText Flags
 
+#pragma region Slider Flags
+        lua.new_enum("ImGuiSliderFlags",
+            "None"              , ImGuiSliderFlags_None,
+            "ClampOnInput"      , ImGuiSliderFlags_ClampOnInput,
+            "Logarithmic"       , ImGuiSliderFlags_Logarithmic,
+            "NoRoundToFormat"   , ImGuiSliderFlags_NoRoundToFormat,
+            "NoInput"           , ImGuiSliderFlags_NoInput
+        );
+#pragma endregion Slider Flags
+
 #pragma region ColorEdit Flags
         lua.new_enum("ImGuiColorEditFlags",
             "None"					, ImGuiColorEditFlags_None,
@@ -1947,7 +1957,7 @@ namespace sol_ImGui
             "NoTooltip"						, ImGuiTabItemFlags_NoTooltip
         );
 #pragma endregion TabItem Flags
-        
+
 #ifdef SOL_IMGUI_ENABLE_INPUT_FUNCTIONS
 #pragma region MouseButton
         lua.new_enum("ImGuiMouseButton",
@@ -2275,7 +2285,7 @@ namespace sol_ImGui
                                                                 sol::resolve<std::tuple<float, bool>(const std::string&, float, float, float)>(DragFloat),
                                                                 sol::resolve<std::tuple<float, bool>(const std::string&, float, float, float, float)>(DragFloat),
                                                                 sol::resolve<std::tuple<float, bool>(const std::string&, float, float, float, float, const std::string&)>(DragFloat),
-                                                                sol::resolve<std::tuple<float, bool>(const std::string&, float, float, float, float, const std::string&, float)>(DragFloat)
+                                                                sol::resolve<std::tuple<float, bool>(const std::string&, float, float, float, float, const std::string&, int)>(DragFloat)
                                                             ));
         ImGui.set_function("DragFloat2"						, sol::overload(
                                                                 sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&)>(DragFloat2),
@@ -2283,7 +2293,7 @@ namespace sol_ImGui
                                                                 sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float)>(DragFloat2),
                                                                 sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, float)>(DragFloat2),
                                                                 sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, float, const std::string&)>(DragFloat2),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, float, const std::string&, float)>(DragFloat2)
+                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, float, const std::string&, int)>(DragFloat2)
                                                             ));
         ImGui.set_function("DragFloat3"						, sol::overload(
                                                                 sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&)>(DragFloat3),
@@ -2291,7 +2301,7 @@ namespace sol_ImGui
                                                                 sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float)>(DragFloat3),
                                                                 sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, float)>(DragFloat3),
                                                                 sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, float, const std::string&)>(DragFloat3),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, float, const std::string&, float)>(DragFloat3)
+                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, float, const std::string&, int)>(DragFloat3)
                                                             ));
         ImGui.set_function("DragFloat4"						, sol::overload(
                                                                 sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&)>(DragFloat4),
@@ -2299,7 +2309,7 @@ namespace sol_ImGui
                                                                 sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float)>(DragFloat4),
                                                                 sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, float)>(DragFloat4),
                                                                 sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, float, const std::string&)>(DragFloat4),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, float, const std::string&, float)>(DragFloat4)
+                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, float, const std::string&, int)>(DragFloat4)
                                                             ));
         ImGui.set_function("DragInt"						, sol::overload(
                                                                 sol::resolve<std::tuple<int, bool>(const std::string&, int)>(DragInt),
@@ -2335,22 +2345,22 @@ namespace sol_ImGui
         ImGui.set_function("SliderFloat"					, sol::overload(
                                                                 sol::resolve<std::tuple<float, bool>(const std::string&, float, float, float)>(SliderFloat),
                                                                 sol::resolve<std::tuple<float, bool>(const std::string&, float, float, float, const std::string&)>(SliderFloat),
-                                                                sol::resolve<std::tuple<float, bool>(const std::string&, float, float, float, const std::string&, float)>(SliderFloat)
+                                                                sol::resolve<std::tuple<float, bool>(const std::string&, float, float, float, const std::string&, int)>(SliderFloat)
                                                             ));
         ImGui.set_function("SliderFloat2"					, sol::overload(
                                                                 sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float)>(SliderFloat2),
                                                                 sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, const std::string&)>(SliderFloat2),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, const std::string&, float)>(SliderFloat2)
+                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, const std::string&, int)>(SliderFloat2)
                                                             ));
         ImGui.set_function("SliderFloat3"					, sol::overload(
                                                                 sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float)>(SliderFloat3),
                                                                 sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, const std::string&)>(SliderFloat3),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, const std::string&, float)>(SliderFloat3)
+                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, const std::string&, int)>(SliderFloat3)
                                                             ));
         ImGui.set_function("SliderFloat4"					, sol::overload(
                                                                 sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float)>(SliderFloat4),
                                                                 sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, const std::string&)>(SliderFloat4),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, const std::string&, float)>(SliderFloat4)
+                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, const std::string&, int)>(SliderFloat4)
                                                             ));
         ImGui.set_function("SliderAngle"					, sol::overload(
                                                                 sol::resolve<std::tuple<float, bool>(const std::string&, float)>(SliderAngle),
@@ -2377,7 +2387,7 @@ namespace sol_ImGui
         ImGui.set_function("VSliderFloat"					, sol::overload(
                                                                 sol::resolve<std::tuple<float, bool>(const std::string&, float, float, float, float, float)>(VSliderFloat),
                                                                 sol::resolve<std::tuple<float, bool>(const std::string&, float, float, float, float, float, const std::string&)>(VSliderFloat),
-                                                                sol::resolve<std::tuple<float, bool>(const std::string&, float, float, float, float, float, const std::string&, float)>(VSliderFloat)
+                                                                sol::resolve<std::tuple<float, bool>(const std::string&, float, float, float, float, float, const std::string&, int)>(VSliderFloat)
                                                             ));
         ImGui.set_function("VSliderInt"						, sol::overload(
                                                                 sol::resolve<std::tuple<int, bool>(const std::string&, float, float, int, int, int)>(VSliderInt),
@@ -2708,7 +2718,7 @@ namespace sol_ImGui
         ImGui.set_function("ColorConvertRGBtoHSV"			, ColorConvertRGBtoHSV);
         ImGui.set_function("ColorConvertHSVtoRGB"			, ColorConvertHSVtoRGB);
 #pragma endregion Color Utilities
-        
+
 #ifdef SOL_IMGUI_ENABLE_INPUT_FUNCTIONS
 #pragma region Inputs Utilities: Keyboard
         ImGui.set_function("GetKeyIndex"					, GetKeyIndex);
@@ -2760,7 +2770,7 @@ namespace sol_ImGui
                                                             ));
 #pragma endregion Inputs Utilities: Mouse
 #endif // SOL_IMGUI_ENABLE_INPUT_FUNCTIONS
-        
+
 #pragma region Clipboard Utilities
         ImGui.set_function("GetClipboardText"				, GetClipboardText);
         ImGui.set_function("SetClipboardText"				, SetClipboardText);
