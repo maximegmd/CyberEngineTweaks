@@ -276,11 +276,8 @@ void LuaSandbox::InitializeIOForEnvironment(sol::environment& aEnvironment, cons
                 this->m_modules[key] = obj;
                 return std::make_tuple(obj, sol::nil);
             }
-            else
-            {
-                sol::error err = res;
-                spdlog::get("scripting")->error(err.what());
-            }
+            sol::error err = res;
+            return std::make_tuple(sol::nil, make_object(this->m_lua, err.what()));
         }
         return res;
     };
@@ -307,32 +304,75 @@ void LuaSandbox::InitializeIOForEnvironment(sol::environment& aEnvironment, cons
         return (index > 1) ? (res) : (sol::nil);
     };
     aEnvironment["dir"] = dir;
-
+    
+    auto globals = m_lua.globals();
     // define replacements for io lib
     {
-        auto globals = m_lua.globals();
         sol::table io = globals["io"].get<sol::table>();
         sol::table ioSB(m_lua, sol::create);
         ioSB["close"] = io["close"];
         ioSB["lines"] = [io, acRootPath](const std::string& acPath)
         {
             auto absPath = absolute(acRootPath / acPath).make_preferred();
-            auto relPath = relative(absPath, acPath);
+            auto relPath = relative(absPath, acRootPath);
             auto relPathStr =  relPath.string();
             if (relPathStr.find("..") == std::string::npos)
                 return io["lines"](absPath.string());
             return io["lines"](""); // simulate invalid input even though it may be valid - we dont want mod access outside!
         };
-        ioSB["open"] = [io, acRootPath](const std::string& acPath, const std::string& acMode)
+        auto openWithMode = [io, acRootPath](const std::string& acPath, const std::string& acMode)
         {
             auto absPath = absolute(acRootPath / acPath).make_preferred();
-            auto relPath = relative(absPath, acPath);
+            auto relPath = relative(absPath, acRootPath);
             auto relPathStr =  relPath.string();
             if (relPathStr.find("..") == std::string::npos)
                 return io["open"](absPath.string(), acMode);
             return io["open"]("", acMode); // simulate invalid input even though it may be valid - we dont want mod access outside!
         };
+        auto openDefault = [openWithMode](const std::string& acPath)
+        {
+            return openWithMode(acPath, "r");
+        };
+        ioSB["open"] = sol::overload(openDefault, openWithMode);
         aEnvironment["io"] = ioSB;
+    }
+
+    // add in rename and remove repacements for os lib
+    {
+        sol::table os = globals["os"].get<sol::table>();
+        auto osEnv = aEnvironment["os"];
+        osEnv["rename"] = [os, acRootPath](const std::string& acOldPath, const std::string& acNewPath) -> std::tuple<sol::object, std::string>
+        {
+            auto absOldPath = absolute(acRootPath / acOldPath).make_preferred();
+            auto relOldPath = relative(absOldPath, acRootPath);
+            auto relOldPathStr =  relOldPath.string();
+            if (!exists(absOldPath) || (relOldPathStr.find("..") != std::string::npos) || (relOldPathStr == "db.sqlite3"))
+                return std::make_tuple(sol::nil, "Argument oldpath is invalid!");
+
+            auto absNewPath = absolute(acRootPath / acNewPath).make_preferred();
+            auto relNewPath = relative(absNewPath, acRootPath);
+            auto relNewPathStr =  relNewPath.string();
+            if (relNewPathStr.find("..") != std::string::npos)
+                return std::make_tuple(sol::nil, "Argument newpath is invalid!");
+
+            auto res = os["rename"](absOldPath.string(), absNewPath.string());
+            if (res.valid())
+                return std::make_tuple(res.get<sol::object>(), "");
+            return std::make_tuple(res.get<sol::object>(0), res.get<std::string>(1));
+        };
+        osEnv["remove"] = [os, acRootPath](const std::string& acPath) -> std::tuple<sol::object, std::string>
+        {
+            auto absPath = absolute(acRootPath / acPath).make_preferred();
+            auto relPath = relative(absPath, acRootPath);
+            auto relPathStr =  relPath.string();
+            if (!exists(absPath) || (relPathStr.find("..") != std::string::npos) || (relPathStr == "db.sqlite3"))
+                return std::make_tuple(sol::nil, "Argument path is invalid!");
+
+            auto res = os["remove"](absPath.string());
+            if (res.valid())
+                return std::make_tuple(res.get<sol::object>(), "");
+            return std::make_tuple(res.get<sol::object>(0), res.get<std::string>(1));
+        };
     }
 }
 
