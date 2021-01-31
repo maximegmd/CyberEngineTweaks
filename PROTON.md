@@ -55,6 +55,9 @@ Either run Winetricks in itself if you use your default prefix, or from your cus
 
 From now on, you can follow the Setting up the mod with ProtonTricks instructions. If you want to verify in Winetricks has correctly taken in account your custom Wine directory, click on `Browse files` to see if it brings you to the designated folder.
 
+## Troubleshooting
+
+If for some reason protontricks crashes on start with the APPID, try installing it from the latest master, as described in the repo: https://github.com/Matoking/protontricks
 
 ## Thanks to
 
