@@ -2,6 +2,8 @@
 
 #include "ScriptContext.h"
 
+#include "Utils.h"
+
 #include <CET.h>
 
 ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::path& acPath, const std::string& acName)
@@ -11,7 +13,7 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
 {
     auto& sb = m_sandbox[m_sandboxID];
     auto& env = sb.GetEnvironment();
-    m_logger = m_sandbox.InitializeLoggerForEnvironment(env, acPath / (acName + ".log"), acName);
+    m_logger = m_sandbox.InitializeLoggerForSandbox(sb, acName);
 
     env["registerForEvent"] = [this](const std::string& acName, sol::function aCallback)
     {
@@ -50,23 +52,7 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
         std::string vkBindID = m_name + '.' + acID;
         VKBind vkBind = { vkBindID, acDescription, [loggerRef, aCallback]()
         {
-            // TODO: proper exception handling!
-            try
-            {
-                if (aCallback)
-                {
-                    auto res = aCallback();
-                    if (!res.valid())
-                    {
-                        sol::error err = res;
-                        loggerRef->error(err.what());
-                    }
-                }
-            }
-            catch(std::exception& e)
-            {
-                loggerRef->error(e.what());
-            }
+            TryLuaFunction(loggerRef, aCallback);
         }};
 
         m_vkBindInfos.emplace_back(VKBindInfo{vkBind});
@@ -120,106 +106,27 @@ const std::vector<VKBindInfo>& ScriptContext::GetBinds() const
 
 void ScriptContext::TriggerOnInit() const
 {
-    // TODO: proper exception handling!
-    try
-    {
-        if (m_onInit)
-        {
-            auto res = m_onInit();
-            if (!res.valid())
-            {
-                sol::error err = res;
-                m_logger->error(err.what());
-            }
-        }
-    }
-    catch(std::exception& e)
-    {
-        m_logger->error(e.what());
-    }
+    TryLuaFunction(m_logger, m_onInit);
 }
 
 void ScriptContext::TriggerOnUpdate(float aDeltaTime) const
 {
-    // TODO: proper exception handling!
-    try
-    {
-        if (m_onUpdate)
-        {
-            auto res = m_onUpdate(aDeltaTime);
-            if (!res.valid())
-            {
-                sol::error err = res;
-                m_logger->error(err.what());
-            }
-        }
-    }
-    catch(std::exception& e)
-    {
-        m_logger->error(e.what());
-    }
+    TryLuaFunction(m_logger, m_onUpdate, aDeltaTime);
 }
 
 void ScriptContext::TriggerOnDraw() const
 {
-    // TODO: proper exception handling!
-    try
-    {
-        if (m_onDraw)
-        {
-            auto res = m_onDraw();
-            if (!res.valid())
-            {
-                sol::error err = res;
-                m_logger->error(err.what());
-            }
-        }
-    }
-    catch(std::exception& e)
-    {
-        m_logger->error(e.what());
-    }
+    TryLuaFunction(m_logger, m_onDraw);
 }
     
 void ScriptContext::TriggerOnOverlayOpen() const
 {
-    // TODO: proper exception handling!
-    try
-    {
-        if (m_onOverlayOpen)
-        {
-            auto res = m_onOverlayOpen();
-            if (!res.valid())
-            {
-                sol::error err = res;
-                m_logger->error(err.what());
-            }
-        }
-    }
-    catch(std::exception& e)
-    {
-        m_logger->error(e.what());
-    }
+    TryLuaFunction(m_logger, m_onOverlayOpen);
 }
+
 void ScriptContext::TriggerOnOverlayClose() const
 {
-    // TODO: proper exception handling!
-    try
-    {
-        if (m_onOverlayClose)
-        {
-            auto res = m_onOverlayClose();
-            if (!res.valid())
-            {
-                sol::error err = res;
-                m_logger->error(err.what());
-            }
-        }
-    }
-    catch(std::exception& e)
-    {
-        m_logger->error(e.what());
-    }
+    TryLuaFunction(m_logger, m_onOverlayClose);
 }
 
 sol::object ScriptContext::GetRootObject() const
@@ -229,21 +136,5 @@ sol::object ScriptContext::GetRootObject() const
 
 void ScriptContext::TriggerOnShutdown() const
 {
-    // TODO: proper exception handling!
-    try
-    {
-        if (m_onShutdown)
-        {
-            auto res = m_onShutdown();
-            if (!res.valid())
-            {
-                sol::error err = res;
-                m_logger->error(err.what());
-            }
-        }
-    }
-    catch(std::exception& e)
-    {
-        m_logger->error(e.what());
-    }
+    TryLuaFunction(m_logger, m_onShutdown);
 }

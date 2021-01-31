@@ -24,26 +24,23 @@ struct LuaSandbox
     ~LuaSandbox() = default;
 
     void Initialize(sol::state_view aStateView);
+    void ResetState();
 
     size_t CreateSandbox(const std::filesystem::path& acPath, bool aEnableExtraLibs = true, bool aEnableDB = true, bool aEnableIO = true);
 
-    void ResetState();
+    std::shared_ptr<spdlog::logger> InitializeLoggerForSandbox(Sandbox& aSandbox, const std::string& acName) const;
     
     sol::protected_function_result ExecuteFile(const std::string& acPath);
     sol::protected_function_result ExecuteString(const std::string& acString);
-
-    void InitializeExtraLibsForEnvironment(sol::environment& aEnvironment) const;
     
-    void InitializeDBForEnvironment(sol::environment& aEnvironment, const std::filesystem::path& acRootPath) const;
-
-    void InitializeIOForEnvironment(sol::environment& aEnvironment, const std::filesystem::path& acRootPath);
-
-    std::shared_ptr<spdlog::logger> InitializeLoggerForEnvironment(sol::environment& aEnvironment, const std::filesystem::path& acPath, const std::string& acName) const;
-
     Sandbox& operator[](size_t id);
     const Sandbox& operator[](size_t id) const;
     
 private:
+
+    void InitializeExtraLibsForSandbox(Sandbox& aSandbox) const;
+    void InitializeDBForSandbox(Sandbox& aSandbox) const;
+    void InitializeIOForSandbox(Sandbox& aSandbox); 
     
     sol::state_view m_lua;
     sol::environment m_env{ };
