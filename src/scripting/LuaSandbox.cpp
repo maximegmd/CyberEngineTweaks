@@ -351,6 +351,10 @@ std::shared_ptr<spdlog::logger> LuaSandbox::InitializeLoggerForEnvironment(sol::
     {
         logger->debug(message);
     };
+    spdlog["info"] = [logger](const std::string& message)
+    {
+        logger->info(message);
+    };
     spdlog["warning"] = [logger](const std::string& message)
     {
         logger->warn(message);

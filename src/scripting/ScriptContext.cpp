@@ -54,7 +54,14 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
             try
             {
                 if (aCallback)
-                    aCallback();
+                {
+                    auto res = aCallback();
+                    if (!res.valid())
+                    {
+                        sol::error err = res;
+                        loggerRef->error(err.what());
+                    }
+                }
             }
             catch(std::exception& e)
             {
@@ -117,7 +124,14 @@ void ScriptContext::TriggerOnInit() const
     try
     {
         if (m_onInit)
-            m_onInit();
+        {
+            auto res = m_onInit();
+            if (!res.valid())
+            {
+                sol::error err = res;
+                m_logger->error(err.what());
+            }
+        }
     }
     catch(std::exception& e)
     {
@@ -131,7 +145,14 @@ void ScriptContext::TriggerOnUpdate(float aDeltaTime) const
     try
     {
         if (m_onUpdate)
-            m_onUpdate(aDeltaTime);
+        {
+            auto res = m_onUpdate(aDeltaTime);
+            if (!res.valid())
+            {
+                sol::error err = res;
+                m_logger->error(err.what());
+            }
+        }
     }
     catch(std::exception& e)
     {
@@ -145,7 +166,14 @@ void ScriptContext::TriggerOnDraw() const
     try
     {
         if (m_onDraw)
-            m_onDraw();
+        {
+            auto res = m_onDraw();
+            if (!res.valid())
+            {
+                sol::error err = res;
+                m_logger->error(err.what());
+            }
+        }
     }
     catch(std::exception& e)
     {
@@ -159,7 +187,14 @@ void ScriptContext::TriggerOnOverlayOpen() const
     try
     {
         if (m_onOverlayOpen)
-            m_onOverlayOpen();
+        {
+            auto res = m_onOverlayOpen();
+            if (!res.valid())
+            {
+                sol::error err = res;
+                m_logger->error(err.what());
+            }
+        }
     }
     catch(std::exception& e)
     {
@@ -172,7 +207,14 @@ void ScriptContext::TriggerOnOverlayClose() const
     try
     {
         if (m_onOverlayClose)
-            m_onOverlayClose();
+        {
+            auto res = m_onOverlayClose();
+            if (!res.valid())
+            {
+                sol::error err = res;
+                m_logger->error(err.what());
+            }
+        }
     }
     catch(std::exception& e)
     {
@@ -191,7 +233,14 @@ void ScriptContext::TriggerOnShutdown() const
     try
     {
         if (m_onShutdown)
-            m_onShutdown();
+        {
+            auto res = m_onShutdown();
+            if (!res.valid())
+            {
+                sol::error err = res;
+                m_logger->error(err.what());
+            }
+        }
     }
     catch(std::exception& e)
     {
