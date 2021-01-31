@@ -4,32 +4,18 @@ namespace sol_ImGui
 {
     // Windows
     inline bool Begin(const std::string& name)                              { return ImGui::Begin(name.c_str()); }
+    inline bool Begin(const std::string& name, int flags)                   { return ImGui::Begin(name.c_str(), NULL, static_cast<ImGuiWindowFlags_>(flags)); }
     inline std::tuple<bool, bool> Begin(const std::string& name, bool open)
     {
         if (!open) return std::make_tuple(false, false);
-
-        bool shouldDraw = ImGui::Begin(name.c_str(), &open);
-
-        if(!open)
-        {
-            ImGui::End();
-            return std::make_tuple(false, false);
-        }
-
-        return std::make_tuple(open, shouldDraw);
+        const bool shouldDraw = ImGui::Begin(name.c_str(), &open);
+        return std::make_tuple(open, open && shouldDraw);
     }
     inline std::tuple<bool, bool> Begin(const std::string& name, bool open, int flags)
     {
         if (!open) return std::make_tuple(false, false);
-        bool shouldDraw = ImGui::Begin(name.c_str(), &open, static_cast<ImGuiWindowFlags_>(flags));
-
-        if(!open)
-        {
-            ImGui::End();
-            return std::make_tuple(false, false);
-        }
-
-        return std::make_tuple(open, shouldDraw);
+        const bool shouldDraw = ImGui::Begin(name.c_str(), &open, static_cast<ImGuiWindowFlags_>(flags));
+        return std::make_tuple(open, open && shouldDraw);
     }
     inline void End()                                               { ImGui::End(); }
 
@@ -1535,6 +1521,7 @@ namespace sol_ImGui
     inline bool BeginPopup(const std::string& str_id)                                   { return ImGui::BeginPopup(str_id.c_str()); }
     inline bool BeginPopup(const std::string& str_id, int flags)                        { return ImGui::BeginPopup(str_id.c_str(), static_cast<ImGuiWindowFlags>(flags)); }
     inline bool BeginPopupModal(const std::string& name)                                { return ImGui::BeginPopupModal(name.c_str()); }
+    inline bool BeginPopupModal(const std::string& name, int flags)                     { return ImGui::BeginPopupModal(name.c_str(), NULL, static_cast<ImGuiWindowFlags>(flags)); }
     inline bool BeginPopupModal(const std::string& name, bool open)                     { return ImGui::BeginPopupModal(name.c_str(), &open); }
     inline bool BeginPopupModal(const std::string& name, bool open, int flags)          { return ImGui::BeginPopupModal(name.c_str(), &open, static_cast<ImGuiWindowFlags>(flags)); }
     inline void EndPopup()                                                              { ImGui::EndPopup(); }
@@ -1573,6 +1560,7 @@ namespace sol_ImGui
     inline bool BeginTabBar(const std::string& str_id, int flags)                                   { return ImGui::BeginTabBar(str_id.c_str(), static_cast<ImGuiTabBarFlags>(flags)); }
     inline void EndTabBar()                                                                         { ImGui::EndTabBar(); }
     inline bool BeginTabItem(const std::string& label)                                              { return ImGui::BeginTabItem(label.c_str()); }
+    inline bool BeginTabItem(const std::string& label, int flags)                                   { return ImGui::BeginTabItem(label.c_str(), NULL, static_cast<ImGuiTabItemFlags>(flags)); }
     inline std::tuple<bool, bool> BeginTabItem(const std::string& label, bool open)                 { bool selected = ImGui::BeginTabItem(label.c_str(), &open); return std::make_tuple(open, selected); }
     inline std::tuple<bool, bool> BeginTabItem(const std::string& label, bool open, int flags)      { bool selected = ImGui::BeginTabItem(label.c_str(), &open, static_cast<ImGuiTabItemFlags>(flags)); return std::make_tuple(open, selected); }
     inline void EndTabItem()                                                                        { ImGui::EndTabItem(); }
@@ -2117,6 +2105,7 @@ namespace sol_ImGui
 #pragma region Windows
         ImGui.set_function("Begin"              , sol::overload(
                                                                 sol::resolve<bool(const std::string&)>(Begin),
+                                                                sol::resolve<bool(const std::string&, int)>(Begin),
                                                                 sol::resolve<std::tuple<bool, bool>(const std::string&, bool)>(Begin),
                                                                 sol::resolve<std::tuple<bool, bool>(const std::string&, bool, int)>(Begin)
                                                             ));
@@ -2669,6 +2658,7 @@ namespace sol_ImGui
                                                             ));
         ImGui.set_function("BeginPopupModal"        , sol::overload(
                                                                 sol::resolve<bool(const std::string&)>(BeginPopupModal),
+                                                                sol::resolve<bool(const std::string&, int)>(BeginPopupModal),
                                                                 sol::resolve<bool(const std::string&, bool)>(BeginPopupModal),
                                                                 sol::resolve<bool(const std::string&, bool, int)>(BeginPopupModal)
                                                             ));
@@ -2729,6 +2719,7 @@ namespace sol_ImGui
         ImGui.set_function("EndTabBar"             , EndTabBar);
         ImGui.set_function("BeginTabItem"          , sol::overload(
                                                                 sol::resolve<bool(const std::string&)>(BeginTabItem),
+                                                                sol::resolve<bool(const std::string&, int)>(BeginTabItem),
                                                                 sol::resolve<std::tuple<bool, bool>(const std::string&, bool)>(BeginTabItem),
                                                                 sol::resolve<std::tuple<bool, bool>(const std::string&, bool, int)>(BeginTabItem)
                                                             ));

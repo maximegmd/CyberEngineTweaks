@@ -21,6 +21,7 @@ You can find all the supported functions and overloads below.
   -- Returns B & C: bool (open), bool (shouldDraw)
   -- Overloads
   shouldDraw = ImGui.Begin("Name")
+  shouldDraw = ImGui.Begin("Name", ImGuiWindowFlags.NoMove)
   open, shouldDraw = ImGui.Begin("Name", open)
   open, shouldDraw = ImGui.Begin("Name", open, ImGuiWindowFlags.NoMove)
 
@@ -34,7 +35,7 @@ You can find all the supported functions and overloads below.
   -- Parameters: text (name), float (size_x) [O], float (size_y) [O], bool (border) [O], ImGuiWindowFlags (flags) [O]
   -- Returns: bool (shouldDraw)
   -- Overloads
-  shouldDraw = ImGui.BeginChild("Name", 100)
+  shouldDraw = ImGui.BeginChild("Name")
   shouldDraw = ImGui.BeginChild("Name", 100)
   shouldDraw = ImGui.BeginChild("Name", 100, 200)
   shouldDraw = ImGui.BeginChild("Name", 100, 200, true)
@@ -1040,6 +1041,7 @@ selected, activated = ImGui.MenuItem("Label", "ALT+F4", selected, true)
   -- Returns: bool (open)
   -- Overloads
   open = ImGui.BeginPopupModal("Name")
+  open = ImGui.BeginPopupModal("Name", ImGuiWindowFlags.NoCollapse)
   open = ImGui.BeginPopupModal("Name", open)
   open = ImGui.BeginPopupModal("Name", open, ImGuiWindowFlags.NoCollapse)
 
@@ -1157,8 +1159,9 @@ selected, activated = ImGui.MenuItem("Label", "ALT+F4", selected, true)
   -- Returns B: bool (open), bool (selected)
   -- Overloads
   selected = ImGui.BeginTabItem("Label")
+  selected = ImGui.BeginTabItem("Label", ImGuiTabItemFlags.NoTooltip)
   open, selected = ImGui.BeginTabItem("Label", open)
-  open, selected = ImGui.BeginTabItem("Label", open, ImGuiTabItemFlags_NoTooltip)
+  open, selected = ImGui.BeginTabItem("Label", open, ImGuiTabItemFlags.NoTooltip)
 
   -- ImGui.EndTabItem()
   ImGui.EndTabItem()
