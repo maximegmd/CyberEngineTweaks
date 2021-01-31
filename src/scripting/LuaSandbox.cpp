@@ -252,10 +252,23 @@ void LuaSandbox::InitializeIOForEnvironment(sol::environment& aEnvironment, cons
     {
         auto absPath = absolute(acRootPath / acPath).make_preferred();
         if (!exists(absPath))
-            absPath += ".lua";
+        {
+            auto absPath2 = absPath;
+            absPath2 += ".lua";
+            if (exists(absPath2))
+                absPath = absPath2;
+            else
+            {
+                auto absPath3 = absPath;
+                absPath3 /= "init.lua";
+                if (!exists(absPath3))
+                    return std::make_tuple(sol::nil, make_object(this->m_lua, "Invalid path!"));
+                absPath = absPath3;
+            }
+        }
         auto relPath = relative(absPath, acRootPath);
         auto relPathStr =  relPath.string();
-        if (!exists(absPath) || (relPathStr.find("..") != std::string::npos))
+        if ((relPathStr.find("..") != std::string::npos))
             return std::make_tuple(sol::nil, make_object(this->m_lua, "Invalid path!"));
 
         auto key = absPath.string();
