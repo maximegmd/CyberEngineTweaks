@@ -28,7 +28,7 @@
 static RED4ext::IRTTIType* s_pStringType = nullptr;
 
 Scripting::Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12)
-    : m_store(aPaths, aBindings)
+    : m_store(m_sandbox, aPaths, aBindings)
     , m_paths(aPaths)
     , m_d3d12(aD3D12)
 {
@@ -381,6 +381,9 @@ void Scripting::Initialize()
         spdlog::get("scripting")->warn("WARNING: missing CET autoexec.lua!");
     }
 
+    // initialize sandbox
+    m_sandbox.Initialize(m_lua);
+
     // load mods
     ReloadAllMods();
 }
@@ -425,7 +428,7 @@ void Scripting::ReloadAllMods()
     // set current path for following scripts to our ModsPath
     current_path(m_paths.ModsRoot());
 
-    m_store.LoadAll(m_lua);
+    m_store.LoadAll();
 }
 
 bool Scripting::ExecuteLua(const std::string& acCommand)
@@ -433,8 +436,11 @@ bool Scripting::ExecuteLua(const std::string& acCommand)
     // TODO: proper exception handling!
     try
     {
-        m_lua.script(acCommand);
-        return true;
+        auto res = m_sandbox.ExecuteString(acCommand);
+        if (res.valid())
+            return true;
+        sol::error err = res;
+        spdlog::get("scripting")->error(err.what());
     }
     catch(std::exception& e)
     {

@@ -43,6 +43,7 @@ private:
     sol::state m_lua{ };
     std::unordered_map<std::string, sol::object> m_properties{ };
     std::unordered_map<std::string, SingletonReference> m_singletons{ };
+    LuaSandbox m_sandbox{ m_lua };
     ScriptStore m_store;
     const Paths& m_paths;
     D3D12& m_d3d12;

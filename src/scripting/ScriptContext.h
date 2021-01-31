@@ -1,8 +1,10 @@
 #pragma once
 
+#include "LuaSandbox.h"
+
 struct ScriptContext
 {
-    ScriptContext(sol::state_view aStateView, const std::filesystem::path& acPath);
+    ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::path& acPath, const std::string& acName);
     ScriptContext(ScriptContext&& other) noexcept;
     ~ScriptContext();
 
@@ -24,9 +26,9 @@ private:
     void TriggerOnShutdown() const;
 
     ScriptContext(const ScriptContext&) = default;
-
-    sol::state_view m_lua;
-    sol::environment m_env;
+    
+    LuaSandbox& m_sandbox;
+    size_t m_sandboxID;
     sol::object m_object{ };
     sol::function m_onInit{ };
     sol::function m_onShutdown{ };
@@ -35,7 +37,6 @@ private:
     sol::function m_onOverlayOpen{ };
     sol::function m_onOverlayClose{ };
     std::vector<VKBindInfo> m_vkBindInfos{ };
-    std::filesystem::path m_path{ };
     std::string m_name{ };
     std::shared_ptr<spdlog::logger> m_logger{ nullptr };
     bool m_initialized{ false };

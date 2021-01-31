@@ -4,10 +4,10 @@
 
 struct ScriptStore
 {
-    ScriptStore(const Paths& aPaths, VKBindings& aBindings);
+    ScriptStore(LuaSandbox& aLuaSandbox, const Paths& aPaths, VKBindings& aBindings);
     ~ScriptStore() = default;
 
-    void LoadAll(sol::state_view aStateView);
+    void LoadAll();
 
     const std::vector<VKBindInfo>& GetBinds() const;
     
@@ -24,6 +24,7 @@ private:
     
     std::unordered_map<std::string, ScriptContext> m_contexts{ };
     std::vector<VKBindInfo> m_vkBindInfos{ };
+    LuaSandbox& m_sandbox;
     const Paths& m_paths;
     VKBindings& m_bindings;
 };
