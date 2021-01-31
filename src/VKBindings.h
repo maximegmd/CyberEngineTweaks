@@ -40,7 +40,8 @@ struct VKBindings
     
     void Load(Overlay& aOverlay);
     void Save();
-    
+
+    void Clear();
     bool Bind(UINT aVKCodeBind, const VKBind& aBind);
     bool UnBind(UINT aVKCodeBind);
     bool UnBind(const std::string& aID);

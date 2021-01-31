@@ -1549,9 +1549,8 @@ namespace sol_ImGui
 
     // Text Utilities
     inline std::tuple<float, float> CalcTextSize(const std::string& text)																					{ const auto vec2{ ImGui::CalcTextSize(text.c_str()) }; return std::make_tuple(vec2.x, vec2.y); }
-    inline std::tuple<float, float> CalcTextSize(const std::string& text, const std::string& text_end)														{ const auto vec2{ ImGui::CalcTextSize(text.c_str(), text_end.c_str()) }; return std::make_tuple(vec2.x, vec2.y); }
-    inline std::tuple<float, float> CalcTextSize(const std::string& text, const std::string& text_end, bool hide_text_after_double_hash)					{ const auto vec2{ ImGui::CalcTextSize(text.c_str(), text_end.c_str(), hide_text_after_double_hash) }; return std::make_tuple(vec2.x, vec2.y); }
-    inline std::tuple<float, float> CalcTextSize(const std::string& text, const std::string& text_end, bool hide_text_after_double_hash, float wrap_width)	{ const auto vec2{ ImGui::CalcTextSize(text.c_str(), text_end.c_str(), hide_text_after_double_hash, wrap_width) }; return std::make_tuple(vec2.x, vec2.y); }
+    inline std::tuple<float, float> CalcTextSize(const std::string& text, bool hide_text_after_double_hash)					{ const auto vec2{ ImGui::CalcTextSize(text.c_str(), nullptr, hide_text_after_double_hash) }; return std::make_tuple(vec2.x, vec2.y); }
+    inline std::tuple<float, float> CalcTextSize(const std::string& text, bool hide_text_after_double_hash, float wrap_width)	{ const auto vec2{ ImGui::CalcTextSize(text.c_str(), nullptr, hide_text_after_double_hash, wrap_width) }; return std::make_tuple(vec2.x, vec2.y); }
 
     // Color Utilities
     inline sol::as_table_t<std::vector<float>> ColorConvertU32ToFloat4(unsigned int in)
@@ -1743,13 +1742,17 @@ namespace sol_ImGui
             "PlotLinesHovered"			, ImGuiCol_PlotLinesHovered,
             "PlotHistogram"				, ImGuiCol_PlotHistogram,
             "PlotHistogramHovered"		, ImGuiCol_PlotHistogramHovered,
+            "TableHeaderBg"             , ImGuiCol_TableHeaderBg,     
+            "TableBorderStrong"         , ImGuiCol_TableBorderStrong, 
+            "TableBorderLight"          , ImGuiCol_TableBorderLight,  
+            "TableRowBg"                , ImGuiCol_TableRowBg,        
+            "TableRowBgAlt"             , ImGuiCol_TableRowBgAlt,     
             "TextSelectedBg"			, ImGuiCol_TextSelectedBg,
             "DragDropTarget"			, ImGuiCol_DragDropTarget,
             "NavHighlight"				, ImGuiCol_NavHighlight,
             "NavWindowingHighlight"		, ImGuiCol_NavWindowingHighlight,
             "NavWindowingDimBg"			, ImGuiCol_NavWindowingDimBg,
             "ModalWindowDimBg"			, ImGuiCol_ModalWindowDimBg,
-            "ModalWindowDarkening"		, ImGuiCol_ModalWindowDimBg,
             "COUNT"						, ImGuiCol_COUNT
         );
 #pragma endregion Col
@@ -1830,6 +1833,7 @@ namespace sol_ImGui
             "NoUndoRedo"			, ImGuiInputTextFlags_NoUndoRedo,
             "CharsScientific"		, ImGuiInputTextFlags_CharsScientific,
             "CallbackResize"		, ImGuiInputTextFlags_CallbackResize,
+            "CallbackEdit"		    , ImGuiInputTextFlags_CallbackEdit,
             "Multiline"				, ImGuiInputTextFlags_Multiline,
             "NoMarkEdited"			, ImGuiInputTextFlags_NoMarkEdited
         );
@@ -1868,9 +1872,7 @@ namespace sol_ImGui
             "_DisplayMask"			, ImGuiColorEditFlags__DisplayMask,
             "_DataTypeMask"			, ImGuiColorEditFlags__DataTypeMask,
             "_PickerMask"			, ImGuiColorEditFlags__PickerMask,
-            "_InputMask"			, ImGuiColorEditFlags__InputMask,
-
-            "RGB"					, ImGuiColorEditFlags_RGB
+            "_InputMask"			, ImGuiColorEditFlags__InputMask
         );
 #pragma endregion ColorEdit Flags
 
@@ -1945,7 +1947,10 @@ namespace sol_ImGui
             "SetSelected"					, ImGuiTabItemFlags_SetSelected,
             "NoCloseWithMiddleMouseButton"	, ImGuiTabItemFlags_NoCloseWithMiddleMouseButton,
             "NoPushId"						, ImGuiTabItemFlags_NoPushId,
-            "NoTooltip"						, ImGuiTabItemFlags_NoTooltip
+            "NoTooltip"						, ImGuiTabItemFlags_NoTooltip,
+            "NoReorder"                     , ImGuiTabItemFlags_NoReorder,
+            "Leading"                       , ImGuiTabItemFlags_Leading,
+            "Trailing"                      , ImGuiTabItemFlags_Trailing
         );
 #pragma endregion TabItem Flags
         
@@ -2698,9 +2703,8 @@ namespace sol_ImGui
 #pragma region Text Utilities
         ImGui.set_function("CalcTextSize"					, sol::overload(
                                                                 sol::resolve<std::tuple<float, float>(const std::string&)>(CalcTextSize),
-                                                                sol::resolve<std::tuple<float, float>(const std::string&, const std::string&)>(CalcTextSize),
-                                                                sol::resolve<std::tuple<float, float>(const std::string&, const std::string&, bool)>(CalcTextSize),
-                                                                sol::resolve<std::tuple<float, float>(const std::string&, const std::string&, bool, float)>(CalcTextSize)
+                                                                sol::resolve<std::tuple<float, float>(const std::string&, bool)>(CalcTextSize),
+                                                                sol::resolve<std::tuple<float, float>(const std::string&, bool, float)>(CalcTextSize)
                                                             ));
 #pragma endregion Text Utilities
 

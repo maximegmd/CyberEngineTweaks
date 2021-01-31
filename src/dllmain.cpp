@@ -1,15 +1,13 @@
-#include "CET.h"
-
 #include <stdafx.h>
+
+#include "CET.h"
 
 #include "Image.h"
 #include "Options.h"
 
-#include "scripting/LuaVM.h"
+#ifndef NDEBUG
 #include "scripting/GameHooks.h"
-
-#pragma comment(lib, "dbghelp.lib")
-#pragma comment(linker, "/DLL")
+#endif
 
 void EnableDebugPatch(const Image* apImage);
 void StartScreenPatch(const Image* apImage);
@@ -19,6 +17,7 @@ void OptionsInitHook(const Image* apImage);
 void DisableIntroMoviesPatch(const Image* apImage);
 void DisableVignettePatch(const Image* apImage);
 void DisableBoundaryTeleportPatch(const Image* apImage);
+void SaveVulnerabilityPatch(const Image* apImage);
 
 static HANDLE s_modInstanceMutex = nullptr;
 
@@ -34,21 +33,12 @@ static void Initialize()
 
         const auto& options = CET::Get().GetOptions();
 
-        // check if we are hooked to valid process
-        if (!options.ExeValid)
-            return;
-
-        if (options.GameImage.GetVersion() != Image::GetSupportedVersion())
-        {
-            auto [major, minor] = Image::GetSupportedVersion();
-            spdlog::error("Unsupported game version! Only {}.{:02d} is supported.", major, minor);
-            return;
-        }
-
         // single instance check
         s_modInstanceMutex = CreateMutex(NULL, TRUE, _T("Cyber Engine Tweaks Module Instance"));
         if (s_modInstanceMutex == nullptr)
             return;
+
+        SaveVulnerabilityPatch(&options.GameImage);
 
         // initialize patches
         if (options.PatchEnableDebug)
@@ -89,8 +79,12 @@ static void Initialize()
 
 static void Shutdown()
 {
+    bool inGameProcess = false;
+
     if (s_modInstanceMutex)
     {
+        inGameProcess = CET::Get().GetOptions().ExeValid;
+
         MH_DisableHook(MH_ALL_HOOKS);
         MH_Uninitialize();
 
@@ -99,9 +93,12 @@ static void Shutdown()
         ReleaseMutex(s_modInstanceMutex);
     }
 
-    // flush main log (== default logger)
-    spdlog::default_logger()->flush();
-    spdlog::get("scripting")->flush();
+    if (inGameProcess)
+    {
+        // flush main log (== default logger)
+        spdlog::default_logger()->flush();
+        spdlog::get("scripting")->flush();
+    }
 }
 
 BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID) 

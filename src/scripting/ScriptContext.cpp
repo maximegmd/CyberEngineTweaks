@@ -235,7 +235,7 @@ ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::
         else if(acName == "onOverlayClose")
             m_onOverlayClose = aCallback;
         else
-            m_logger->error("Tried to register unknown handler '{}'!", acName);
+            m_logger->error("Tried to register an unknown event '{}'!", acName);
     };
 
     m_env["registerHotkey"] = [this](const std::string& acID, const std::string& acDescription, sol::function aCallback)
@@ -243,13 +243,13 @@ ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::
         if (acID.empty() ||
             (std::find_if(acID.cbegin(), acID.cend(), [](char c){ return !(isalpha(c) || isdigit(c) || c == '_'); }) != acID.cend()))
         {
-            m_logger->error("Tried to register hotkey with incorrect ID format '{}'! ID needs to be alphanumeric without any whitespace or special characters (exception being '_' which is allowed in ID)!", acID);
+            m_logger->error("Tried to register a hotkey with an incorrect ID format '{}'! ID needs to be alphanumeric without any whitespace or special characters (exception being '_' which is allowed in ID)!", acID);
             return;
         }
 
         if (acDescription.empty())
         {
-            m_logger->error("Tried to register hotkey with empty description! (ID of hotkey handler: {})", acID);
+            m_logger->error("Tried to register a hotkey with an empty description! (ID of hotkey handler: {})", acID);
             return;
         }
 
@@ -268,6 +268,7 @@ ScriptContext::ScriptContext(sol::state_view aStateView, const std::filesystem::
                 loggerRef->error(e.what());
             }
         }};
+
         m_vkBindInfos.emplace_back(VKBindInfo{vkBind});
     };
 

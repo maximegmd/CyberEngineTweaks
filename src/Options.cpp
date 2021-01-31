@@ -122,7 +122,6 @@ Options::Options(Paths& aPaths)
         throw std::runtime_error("Not Cyberpunk2077.exe");
 
     set_default_logger(CreateLogger(m_paths.CETRoot() / "cyber_engine_tweaks.log", "main"));
-    spdlog::flush_every(std::chrono::seconds(3));
 
     spdlog::info("Cyber Engine Tweaks is starting...");
 
@@ -136,9 +135,20 @@ Options::Options(Paths& aPaths)
         spdlog::info("Root path: \"{}\"", aPaths.GameRoot().string());
         spdlog::info("Cyber Engine Tweaks path: \"{}\"", aPaths.CETRoot().string());
         spdlog::info("Lua scripts search path: \"{}\"", aPaths.ModsRoot().string());
+
+        if (GameImage.GetVersion() != GameImage.GetSupportedVersion())
+        {
+            auto [smajor, sminor] = GameImage.GetSupportedVersion();
+            spdlog::error("Unsupported game version! Only {}.{:02d} is supported.", smajor, sminor);
+            throw std::runtime_error("Unsupported version");
+        }
+            
     }
     else
+    {
         spdlog::info("Unknown Game Version, update the mod");
+        throw std::runtime_error("Unknown version");
+    }
 
     Load();
 

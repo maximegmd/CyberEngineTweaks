@@ -2,7 +2,6 @@
 
 #include "GameHooks.h"
 #include "CET.h"
-#include <Pattern.h>
 
 static std::unique_ptr<GameMainThread> s_pGameMainThread;
 
@@ -54,9 +53,9 @@ void GameMainThread::Hook()
     {
         auto& gameImage = CET::Get().GetOptions().GameImage;
 
-        // 40 55 57 41 57 48 81 EC ? ? ? ? 
-        m_pMainThreadLocation = 
-            FindSignature(gameImage.pTextStart, gameImage.pTextEnd, {0x40, 0x55, 0x57, 0x41, 0x57, 0x48, 0x81, 0xEC});
+        const mem::pattern cPattern("40 55 57 41 57 48 81 EC");
+        const mem::default_scanner cScanner(cPattern);
+        m_pMainThreadLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
     }
 
     if (m_pMainThreadLocation)

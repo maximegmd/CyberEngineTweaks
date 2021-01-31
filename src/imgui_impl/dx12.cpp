@@ -246,7 +246,7 @@ void ImGui_ImplDX12_RenderDrawData(ImDrawData* apDrawData, ID3D12GraphicsCommand
     }
 }
 
-static void ImGui_ImplDX12_CreateFontsTexture()
+static void ImGui_ImplDX12_CreateFontsTexture(ID3D12CommandQueue* apCommandQueue)
 {
     // Build texture atlas
     ImGuiIO& io = ImGui::GetIO();
@@ -340,15 +340,6 @@ static void ImGui_ImplDX12_CreateFontsTexture()
         HANDLE event = CreateEvent(0, 0, 0, 0);
         IM_ASSERT(event != NULL);
 
-        D3D12_COMMAND_QUEUE_DESC queueDesc = {};
-        queueDesc.Type     = D3D12_COMMAND_LIST_TYPE_DIRECT;
-        queueDesc.Flags    = D3D12_COMMAND_QUEUE_FLAG_NONE;
-        queueDesc.NodeMask = 1;
-
-        ID3D12CommandQueue* cmdQueue = NULL;
-        hr = g_pd3dDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&cmdQueue));
-        IM_ASSERT(SUCCEEDED(hr));
-
         ID3D12CommandAllocator* cmdAlloc = NULL;
         hr = g_pd3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&cmdAlloc));
         IM_ASSERT(SUCCEEDED(hr));
@@ -363,8 +354,8 @@ static void ImGui_ImplDX12_CreateFontsTexture()
         hr = cmdList->Close();
         IM_ASSERT(SUCCEEDED(hr));
 
-        cmdQueue->ExecuteCommandLists(1, (ID3D12CommandList* const*)&cmdList);
-        hr = cmdQueue->Signal(fence, 1);
+        apCommandQueue->ExecuteCommandLists(1, (ID3D12CommandList* const*)&cmdList);
+        hr = apCommandQueue->Signal(fence, 1);
         IM_ASSERT(SUCCEEDED(hr));
 
         fence->SetEventOnCompletion(1, event);
@@ -372,7 +363,6 @@ static void ImGui_ImplDX12_CreateFontsTexture()
 
         cmdList->Release();
         cmdAlloc->Release();
-        cmdQueue->Release();
         CloseHandle(event);
         fence->Release();
         uploadBuffer->Release();
@@ -395,7 +385,7 @@ static void ImGui_ImplDX12_CreateFontsTexture()
     io.Fonts->TexID = (ImTextureID)g_hFontSrvGpuDescHandle.ptr;
 }
 
-bool ImGui_ImplDX12_CreateDeviceObjects()
+bool ImGui_ImplDX12_CreateDeviceObjects(ID3D12CommandQueue* apCommandQueue)
 {
     if (!g_pd3dDevice)
         return false;
@@ -628,7 +618,7 @@ bool ImGui_ImplDX12_CreateDeviceObjects()
     if (result_pipeline_state != S_OK)
         return false;
 
-    ImGui_ImplDX12_CreateFontsTexture();
+    ImGui_ImplDX12_CreateFontsTexture(apCommandQueue);
 
     return true;
 }
@@ -695,8 +685,8 @@ void ImGui_ImplDX12_Shutdown()
     g_frameIndex = UINT_MAX;
 }
 
-void ImGui_ImplDX12_NewFrame()
+void ImGui_ImplDX12_NewFrame(ID3D12CommandQueue* apCommandQueue)
 {
     if (!g_pPipelineState)
-        ImGui_ImplDX12_CreateDeviceObjects();
+        ImGui_ImplDX12_CreateDeviceObjects(apCommandQueue);
 }

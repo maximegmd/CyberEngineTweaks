@@ -47,10 +47,10 @@ jobs:
 
     # Install the result files
     - name: Create package
-      run: xmake.exe install -vo package
+      run: xmake.exe package
 
     # Upload artifacts
     - uses: actions/upload-artifact@v2
       with:
         name: ${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.mode }}
-        path: package/bin
+        path: package/**

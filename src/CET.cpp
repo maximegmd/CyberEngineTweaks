@@ -1,8 +1,7 @@
+#include <stdafx.h>
+
 #include "CET.h"
-
 #include "Options.h"
-
-#include <spdlog/spdlog.h>
 
 using namespace std::chrono_literals;
 
@@ -10,7 +9,7 @@ static std::unique_ptr<CET> s_pInstance{ nullptr };
 
 void CET::Initialize()
 {
-    s_pInstance.reset(new (std::nothrow) CET);
+    s_pInstance.reset(new CET);
 }
 
 void CET::Shutdown()
@@ -66,4 +65,7 @@ CET::CET()
     m_vm.Initialize();
 }
 
-CET::~CET() = default;
+CET::~CET()
+{
+    m_bindings.Clear();
+}

@@ -6,11 +6,10 @@
 #include <imgui_impl/dx12.h>
 #include <imgui_impl/win32.h>
 
-#include <scripting/LuaVM.h>
 #include <window/Window.h>
 #include "Options.h"
 
-bool D3D12::ResetState()
+bool D3D12::ResetState(bool aClearDownlevelBackbuffers)
 {
     if (m_initialized)
     {   
@@ -19,7 +18,8 @@ bool D3D12::ResetState()
         ImGui_ImplWin32_Shutdown();
     }
     m_frameContexts.clear();
-    m_downlevelBackbuffers.clear();
+    if (aClearDownlevelBackbuffers)
+        m_downlevelBackbuffers.clear();
     m_pdxgiSwapChain = nullptr;
     m_pd3d12Device = nullptr;
     m_pd3dRtvDescHeap = nullptr;
@@ -376,7 +376,7 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         return false;
     }
 
-    if (!ImGui_ImplDX12_CreateDeviceObjects()) 
+    if (!ImGui_ImplDX12_CreateDeviceObjects(m_pCommandQueue)) 
     {
         spdlog::error("D3D12::InitializeImGui() - ImGui_ImplDX12_CreateDeviceObjects call failed!");
         ImGui_ImplDX12_Shutdown();
@@ -389,7 +389,7 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
 
 void D3D12::Update()
 {
-    ImGui_ImplDX12_NewFrame();
+    ImGui_ImplDX12_NewFrame(m_pCommandQueue);
     ImGui_ImplWin32_NewFrame(m_outSize);
     ImGui::NewFrame();
     

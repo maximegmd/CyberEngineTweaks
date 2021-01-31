@@ -2,7 +2,6 @@
 
 #include "Scripting.h"
 
-#include "GameHooks.h"
 #include "GameOptions.h"
 
 #include <sol_imgui/sol_imgui.h>
@@ -21,6 +20,7 @@
 #include "Utils.h"
 
 #ifndef NDEBUG
+#include "GameHooks.h"
 #include "GameDump.h"
 #include <RED4ext/Dump/Reflection.hpp>
 #endif
@@ -365,9 +365,10 @@ void Scripting::Initialize()
         // error when there are classes that instantiate a parent class but don't actually have a subclass instance
         GameMainThread::Get().AddTask(&GameDump::DumpVTablesTask::Run);
     };
-    m_lua["DumpReflection"] = [this]()
+    m_lua["DumpReflection"] = [this](bool aVerbose, bool aExtendedPath, bool aPropertyHolders)
     {
-        RED4ext::GameReflection::Dump(m_paths.CETRoot() / "dumps");
+        
+        RED4ext::GameReflection::Dump(m_paths.CETRoot() / "dumps", aVerbose, aExtendedPath, aPropertyHolders);
     };
 #endif
 
@@ -377,11 +378,8 @@ void Scripting::Initialize()
         m_lua.do_file("autoexec.lua");
     else
     {
-        spdlog::get("scripting")->info("WARNING: missing CET autoexec.lua!");
+        spdlog::get("scripting")->warn("WARNING: missing CET autoexec.lua!");
     }
-
-    // set current path for following scripts to our ModsPath
-    current_path(m_paths.ModsRoot());
 
     // load mods
     ReloadAllMods();
@@ -424,6 +422,9 @@ sol::object Scripting::GetMod(const std::string& acName) const
 
 void Scripting::ReloadAllMods()
 {
+    // set current path for following scripts to our ModsPath
+    current_path(m_paths.ModsRoot());
+
     m_store.LoadAll(m_lua);
 }
 
@@ -596,6 +597,18 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
             }
 
             result.value = pMemory;
+        }
+        else if (apRttiType->GetType() == RED4ext::ERTTIType::ScriptReference)
+        {
+            if (aObject.is<ClassReference>())
+            {
+                auto* pClassRef = aObject.as<ClassReference*>();
+                auto* pScriptRef = apAllocator->New<RED4ext::ScriptRef<void>>();
+                pScriptRef->innerType = pClassRef->m_pType;
+                pScriptRef->ref = pClassRef->GetHandle();
+                apRttiType->GetName(pScriptRef->hash);
+                result.value = pScriptRef;
+            }
         }
         else
         {
