@@ -359,8 +359,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox)
             item["type"] = (file.is_directory()) ? ("directory") : ("file");
             res[index++] = item;
         }
-
-        return (index > 1) ? (res) : (sol::nil);
+        return res;
     };
     sbEnv["dir"] = dir;
     
