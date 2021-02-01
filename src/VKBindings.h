@@ -24,7 +24,7 @@ struct VKBindInfo
 };
 
 struct Overlay;
-
+struct D3D12;
 struct VKBindings
 {
     VKBindings(Paths& aPaths);
@@ -61,6 +61,9 @@ struct VKBindings
 
     LRESULT OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam);
 
+    void ConnectUpdate(D3D12& aD3D12);
+    void DisconnectUpdate(D3D12& aD3D12);
+
 private:
 
     bool IsLastRecordingKey(UINT aVKCode);
@@ -85,4 +88,6 @@ private:
 
     Paths& m_paths;
     Overlay* m_pOverlay{nullptr};
+    
+    size_t m_connectUpdate{ static_cast<size_t>(-1) };
 };

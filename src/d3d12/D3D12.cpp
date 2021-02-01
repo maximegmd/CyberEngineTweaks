@@ -47,11 +47,10 @@ LRESULT D3D12::OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam)
     return 0;
 }
 
-D3D12::D3D12(Window& aWindow, Paths& aPaths, Options& aOptions, VKBindings& aBindings)
+D3D12::D3D12(Window& aWindow, Paths& aPaths, Options& aOptions)
     : m_paths(aPaths)
     , m_window(aWindow)
     , m_options(aOptions)
-    , m_bindings(aBindings)
 {
     std::thread t([this]()
     {

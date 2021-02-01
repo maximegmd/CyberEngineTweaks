@@ -419,6 +419,17 @@ LRESULT VKBindings::OnWndProc(HWND, UINT auMsg, WPARAM awParam, LPARAM alParam)
     return 0;
 }
 
+void VKBindings::ConnectUpdate(D3D12& aD3D12)
+{
+    m_connectUpdate = aD3D12.OnUpdate.Connect([this](){ this->Update(); });
+}
+
+void VKBindings::DisconnectUpdate(D3D12& aD3D12)
+{
+    aD3D12.OnUpdate.Disconnect(m_connectUpdate);
+    m_connectUpdate = static_cast<size_t>(-1);
+}
+
 bool VKBindings::IsLastRecordingKey(UINT aVKCode)
 {
     if (m_recordingLength == 0)

@@ -56,16 +56,18 @@ CET::CET()
     : m_options(m_paths)
     , m_bindings(m_paths)
     , m_window(&m_overlay, &m_bindings, &m_d3d12)
-    , m_d3d12(m_window, m_paths, m_options, m_bindings)
+    , m_d3d12(m_window, m_paths, m_options)
     , m_vm(m_paths, m_bindings, m_d3d12, m_options)
     , m_overlay(m_d3d12, m_bindings, m_options, m_vm)
 {
     m_bindings.Bind(m_options.OverlayKeyBind, m_overlay.GetBind());
+    m_bindings.ConnectUpdate(m_d3d12);
 
     m_vm.Initialize();
 }
 
 CET::~CET()
 {
+    m_bindings.DisconnectUpdate(m_d3d12);
     m_bindings.Clear();
 }
