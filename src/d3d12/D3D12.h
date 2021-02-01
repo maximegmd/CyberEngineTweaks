@@ -13,7 +13,7 @@ struct D3D12
 {
     static const uint32_t g_numDownlevelBackbuffersRequired = 3; // Windows 7 only: number of buffers needed before we start rendering
 
-    D3D12(Window& aWindow, Paths& aPaths, Options& aOptions);
+    D3D12(Window& aWindow, Paths& aPaths, Options& aOptions, VKBindings& aBindings);
     ~D3D12();
     
     void SetTrapInputInImGui(bool aEnabled);
@@ -72,9 +72,10 @@ private:
     
     SIZE m_outSize{ };
     
-    bool m_trapInputInImGui{ false };
+    std::atomic_bool m_trapInputInImGui{ false };
 
     Paths& m_paths;
     Window& m_window;
     Options& m_options;
+    VKBindings& m_bindings;
 };

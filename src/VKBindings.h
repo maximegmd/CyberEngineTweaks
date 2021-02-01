@@ -41,6 +41,8 @@ struct VKBindings
     void Load(Overlay& aOverlay);
     void Save();
 
+    void Update();
+
     void Clear();
     bool Bind(UINT aVKCodeBind, const VKBind& aBind);
     bool UnBind(UINT aVKCodeBind);
@@ -67,9 +69,12 @@ private:
     bool VerifyRecording();
 
     LRESULT HandleRAWInput(HRAWINPUT ahRAWInput);
-    
-    std::map<UINT, VKBind> m_binds{};
+
+    std::map<UINT, VKBind> m_binds{ };
     TiltedPhoques::Map<std::string, UINT> m_idToBind{ };
+
+    std::mutex m_queuedCallbacksLock{ };
+    std::queue<std::function<TVKBindCallback>> m_queuedCallbacks{ };
     
     VKCodeBindDecoded m_recording{ };
     size_t m_recordingLength{ 0 };
