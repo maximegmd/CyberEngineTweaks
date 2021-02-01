@@ -303,11 +303,11 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox)
         sol::state_view sv = aThisState;
 
         auto absPath = absolute(sbRootPath / acPath).make_preferred();
-        if (!exists(absPath))
+        if (!exists(absPath) || !is_regular_file(absPath))
             absPath += ".lua";
         auto relPath = relative(absPath, sbRootPath);
         auto relPathStr =  relPath.string();
-        if (!exists(absPath) || (relPathStr.find("..") != std::string::npos))
+        if (!exists(absPath) || !is_regular_file(absPath) || (relPathStr.find("..") != std::string::npos))
             return std::make_tuple(sol::nil, make_object(sv, "Invalid path!"));
 
         std::ifstream t(absPath);
@@ -330,17 +330,17 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox)
     auto require = [this, loadstring, sbRootPath](const std::string& acPath, sol::this_state aThisState, sol::this_environment aThisEnv) -> std::tuple<sol::object, sol::object>
     {
         auto absPath = absolute(sbRootPath / acPath).make_preferred();
-        if (!exists(absPath))
+        if (!exists(absPath) || !is_regular_file(absPath))
         {
             auto absPath2 = absPath;
             absPath2 += ".lua";
-            if (exists(absPath2))
+            if (exists(absPath2) && is_regular_file(absPath2))
                 absPath = absPath2;
             else
             {
                 auto absPath3 = absPath;
                 absPath3 /= "init.lua";
-                if (!exists(absPath3))
+                if (!exists(absPath3) || !is_regular_file(absPath3))
                     return std::make_tuple(sol::nil, make_object(this->m_lua, "Invalid path!"));
                 absPath = absPath3;
             }
@@ -382,7 +382,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox)
         auto absPath = absolute(sbRootPath / acPath).make_preferred();
         auto relPath = relative(absPath, sbRootPath);
         auto relPathStr =  relPath.string();
-        if (!exists(absPath) || (relPathStr.find("..") != std::string::npos))
+        if (!exists(absPath) || !is_directory(absPath) || (relPathStr.find("..") != std::string::npos))
             return sol::nil;
 
         sol::table res(sv, sol::create);
