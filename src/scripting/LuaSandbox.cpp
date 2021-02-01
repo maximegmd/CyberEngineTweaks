@@ -163,6 +163,9 @@ std::shared_ptr<spdlog::logger> LuaSandbox::InitializeLoggerForSandbox(Sandbox& 
     };
     sbEnv["spdlog"] = spdlog;
 
+    // assign logger to special var so we can access it from our functions
+    sbEnv["__logger"] = logger;
+
     return logger;
 }
 
@@ -326,15 +329,25 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox)
         auto res = loadstring(str, "@" + absPath.string(), aThisState, aThisEnv);
         sol::function func = std::get<0>(res);
         if (func != sol::nil)
-        {
-            auto res = func();
-            if (res.valid())
+        {            
+            // TODO: proper exception handling!
+            sol::protected_function_result result;
+            try
             {
-                auto obj = res.get<sol::object>();
+                result = func();
+            }
+            catch(std::exception& e)
+            {
+                return std::make_tuple(sol::nil, make_object(this->m_lua, e.what()));
+            }
+            
+            if (result.valid())
+            {
+                auto obj = result.get<sol::object>();
                 this->m_modules[key] = obj;
                 return std::make_tuple(obj, sol::nil);
             }
-            sol::error err = res;
+            sol::error err = result;
             return std::make_tuple(sol::nil, make_object(this->m_lua, err.what()));
         }
         return res;

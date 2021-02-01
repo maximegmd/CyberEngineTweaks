@@ -32,10 +32,10 @@ struct Scripting
 
 protected:
 
-    sol::object Index(const std::string& acName);
+    sol::object Index(const std::string& acName, sol::this_environment aThisEnv);
     sol::object NewIndex(const std::string& acName, sol::object aParam);
-    sol::object GetSingletonHandle(const std::string& acName);
-    sol::protected_function InternalIndex(const std::string& acName);
+    sol::object GetSingletonHandle(const std::string& acName, sol::this_environment aThisEnv);
+    sol::protected_function InternalIndex(const std::string& acName, sol::this_environment aThisEnv);
     
     sol::object Execute(const std::string& aFuncName, sol::variadic_args args, sol::this_environment env, sol::this_state L, std::string& aReturnMessage) const;
 

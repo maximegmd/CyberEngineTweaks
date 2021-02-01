@@ -298,9 +298,9 @@ void Scripting::Initialize()
         sol::meta_function::to_string, &Type::Descriptor::ToString);
 
     m_lua["Game"] = this;
-    m_lua["GetSingleton"] = [this](const std::string& acName)
+    m_lua["GetSingleton"] = [this](const std::string& acName, sol::this_environment aThisEnv)
     {
-        return this->GetSingletonHandle(acName);
+        return this->GetSingletonHandle(acName, aThisEnv);
     };
 
     m_lua["GameDump"] = [this](Type* apType)
@@ -324,7 +324,7 @@ void Scripting::Initialize()
         return type.Dump(aDetailed);
     };
     
-    m_lua["DumpAllTypeNames"] = [this]()
+    m_lua["DumpAllTypeNames"] = [this](sol::this_environment aThisEnv)
     {
         auto* pRtti = RED4ext::CRTTISystem::Get();
 
@@ -334,8 +334,9 @@ void Scripting::Initialize()
             spdlog::info(name.ToString());
             count++;
         });
-
-        spdlog::get("scripting")->info("Dumped {} types", count);
+        sol::environment env = aThisEnv;
+        std::shared_ptr<spdlog::logger> logger = env["__logger"].get<std::shared_ptr<spdlog::logger>>();
+        logger->info("Dumped {} types", count);
     };
 
     m_lua["print"] = [](sol::variadic_args aArgs, sol::this_state aState)
@@ -383,6 +384,11 @@ void Scripting::Initialize()
 
     // initialize sandbox
     m_sandbox.Initialize(m_lua);
+
+    // setup logger for console sandbox
+    auto& consoleSB = m_sandbox[0];
+    auto& consoleSBEnv = consoleSB.GetEnvironment();
+    consoleSBEnv["__logger"] = spdlog::get("scripting");
 
     // load mods
     ReloadAllMods();
@@ -625,14 +631,14 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
     return result;
 }
 
-sol::object Scripting::Index(const std::string& acName)
+sol::object Scripting::Index(const std::string& acName, sol::this_environment aThisEnv)
 {
     if(const auto itor = m_properties.find(acName); itor != m_properties.end())
     {
         return itor->second;
     }
 
-    return InternalIndex(acName);
+    return InternalIndex(acName, aThisEnv);
 }
 
 sol::object Scripting::NewIndex(const std::string& acName, sol::object aParam)
@@ -642,7 +648,7 @@ sol::object Scripting::NewIndex(const std::string& acName, sol::object aParam)
     return property;
 }
 
-sol::object Scripting::GetSingletonHandle(const std::string& acName)
+sol::object Scripting::GetSingletonHandle(const std::string& acName, sol::this_environment aThisEnv)
 {
     auto itor = m_singletons.find(acName);
     if (itor != std::end(m_singletons))
@@ -652,7 +658,9 @@ sol::object Scripting::GetSingletonHandle(const std::string& acName)
     auto* pType = pRtti->GetClass(RED4ext::FNV1a(acName.c_str()));
     if (!pType)
     {
-        spdlog::get("scripting")->info("Type '{}' not found or is not initialized yet.", acName);
+        sol::environment env = aThisEnv;
+        std::shared_ptr<spdlog::logger> logger = env["__logger"].get<std::shared_ptr<spdlog::logger>>();
+        logger->info("Type '{}' not found or is not initialized yet.", acName);
         return sol::nil;
     }
 
@@ -660,16 +668,18 @@ sol::object Scripting::GetSingletonHandle(const std::string& acName)
     return make_object(m_lua, result.first->second);
 }
 
-sol::protected_function Scripting::InternalIndex(const std::string& acName)
+sol::protected_function Scripting::InternalIndex(const std::string& acName, sol::this_environment aThisEnv)
 {
     const sol::state_view state(m_lua);
-    auto obj = make_object(state, [this, name = acName](sol::variadic_args args, sol::this_environment env, sol::this_state L)
+    auto obj = make_object(state, [this, name = acName](sol::variadic_args args, sol::this_environment thisEnv, sol::this_state L)
     {
         std::string result;
-        auto code = this->Execute(name, args, std::move(env), L, result);
+        auto code = this->Execute(name, args, thisEnv, L, result);
         if(!code)
         {
-            spdlog::get("scripting")->info("Error: {}", result);
+            sol::environment env = thisEnv;
+            std::shared_ptr<spdlog::logger> logger = env["__logger"].get<std::shared_ptr<spdlog::logger>>();
+            logger->error("Error: {}", result);
         }
         return code;
     });
