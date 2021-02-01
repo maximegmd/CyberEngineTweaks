@@ -22,7 +22,7 @@
 #include <RED4ext/Scripting/Stack.hpp>
 #include <RED4ext/Scripting/CProperty.hpp>
 #include <RED4ext/Scripting/Functions.hpp>
-#include <RED4ext/IMemoryAllocator.hpp>
+#include <RED4ext/MemoryAllocators.hpp>
 
 #include <filesystem>
 #include <iostream>

@@ -2,6 +2,7 @@
 
 #include <RED4ext/Types/TweakDB.hpp>
 
+#include <reverse/StrongReference.h>
 #include <scripting/Scripting.h>
 
 #include "TweakDB.h"
@@ -18,14 +19,11 @@ sol::object TweakDB::GetRecord(TweakDBID aDBID)
     RED4ext::TweakDBID dbid;
     dbid.value = aDBID.value;
 
-    auto* record = pTDB->GetRecord(dbid);
-    if (record == nullptr)
+    RED4ext::Handle<RED4ext::IScriptable> record;
+    if (!pTDB->TryGetRecord(dbid, record))
         return sol::nil;
 
-    RED4ext::CStackType stackType;
-    stackType.type = (*record)->GetType();
-    stackType.value = record;
-    return Scripting::ToLua(m_lua, stackType);
+    return make_object(m_lua, StrongReference(m_lua, std::move(record)));
 }
 
 sol::object TweakDB::Query(TweakDBID aDBID)
@@ -37,19 +35,20 @@ sol::object TweakDB::Query(TweakDBID aDBID)
     RED4ext::TweakDBID dbid;
     dbid.value = aDBID.value;
 
-    auto* queryResult = pTDB->Query(dbid);
-    if (queryResult == nullptr)
+    RED4ext::DynArray<RED4ext::TweakDBID> queryResult;
+    if (!pTDB->TryQuery(dbid, queryResult))
         return sol::nil;
 
     RED4ext::CStackType stackType;
     stackType.type = pArrayTweakDBIDType;
-    stackType.value = queryResult;
+    stackType.value = &queryResult;
     return Scripting::ToLua(m_lua, stackType);
 }
 
 sol::object TweakDB::GetFlat(TweakDBID aDBID)
 {
     static auto* pTDB = RED4ext::TweakDB::Get();
+    std::shared_lock<RED4ext::SharedMutex> _(pTDB->mutex00); // GetFlatValue is not thread safe
 
     RED4ext::TweakDBID dbid;
     dbid.value = aDBID.value;
