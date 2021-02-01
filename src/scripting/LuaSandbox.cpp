@@ -392,6 +392,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox)
         {
             return openWithMode(acPath, "r");
         };
+        ioSB["type"] = io["type"];
         ioSB["open"] = sol::overload(openDefault, openWithMode);
         sbEnv["io"] = ioSB;
     }
