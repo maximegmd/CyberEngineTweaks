@@ -245,7 +245,7 @@ You can find all the supported functions and overloads below.
   ImGui.SetScrollFromPosY(10, 0.5)
 ```
 
-## Parameters Stacks (Shared)  
+## Parameters Stacks (Shared)
 ```lua
   -- ImGui.PushStyleColor(...)
   -- Parameters A: ImGuiCol (idx), int (color_u32)
@@ -881,7 +881,7 @@ You can find all the supported functions and overloads below.
 
   -- ImGui.SetColorEditOptions(...)
   -- Parameters: ImGuiColorEditFlags (flags)
-  ImGui.SetColorEditOptions(ImGuiColorEditFlags.NoTooltip | ImGuiColorEditFlags_NoInputs)
+  ImGui.SetColorEditOptions(ImGuiColorEditFlags.NoTooltip | ImGuiColorEditFlags.NoInputs)
 ```
 
 ## Widgets: Trees
@@ -1096,7 +1096,90 @@ selected, activated = ImGui.MenuItem("Label", "ALT+F4", selected, true)
   ImGui.IsPopupOpen("String ID", ImGuiPopupFlags.NoOpenOverExistingPopup)
 ```
 
-## Columns
+## Tables
+```lua
+  -- ImGui.BeginTable(...)
+  -- Parameters: string (str_id), int (column), ImGuiTableFlags (flags) [O], float (outer_size_x) [O], float (outer_size_y) [O], float (inner_width) [O]
+  -- Returns: bool
+  ImGui.BeginTable("Table1", 3)
+  ImGui.BeginTable("Table1", 3, ImGuiTableFlags.Resizable)
+  ImGui.BeginTable("Table1", 3, ImGuiTableFlags.Resizable, 200, 150)
+  ImGui.BeginTable("Table1", 3, ImGuiTableFlags.Resizable, 200, 150, 10)
+
+  -- ImGui.EndTable() // only call EndTable() if BeginTable() returns true!
+  ImGui.EndTable()
+
+  -- ImGui.TableNextRow(...) // append into the first cell of a new row.
+  -- Parameters: ImGuiTableRowFlags (flags) [O], float (min_row_height) [O]
+  ImGui.TableNextRow()
+  ImGui.TableNextRow(ImGuiTableRowFlags.Headers)
+  ImGui.TableNextRow(ImGuiTableRowFlags.Headers, 25)
+
+  -- ImGui.TableNextColumn() // append into the next column (or first column of next row if currently in last column). Return true when column is visible.
+  -- Returns: bool (visible)
+  visible = ImGui.TableNextColumn()
+
+  -- ImGui.TableSetColumnIndex(...) // append into the specified column. Return true when column is visible.
+  -- Parameter: int (column_n)
+  -- Returns: bool (visible)
+  visible = ImGui.TableSetColumnIndex(2)
+
+  -- ImGui.TableSetupColumn(...)
+  -- Parameters: string (label), ImGuiTableColumnFlags (flags) [O], float (init_width_or_weight) [O], ImU32 (user_id) [O]
+  ImGui.TableSetupColumn("Column1")
+  ImGui.TableSetupColumn("Column1", ImGuiTableColumnFlags.WidthFixed)
+  ImGui.TableSetupColumn("Column1", ImGuiTableColumnFlags.WidthFixed, 60)
+
+  -- ImGui.TableSetupScrollFreeze(...) // lock columns/rows so they stay visible when scrolled.
+  -- Parameters: int (cols), int(rows)
+  ImGui.TableSetupScrollFreeze(3, 1)
+
+  -- ImGuui.TableHeadersRow() // submit all headers cells based on data provided to TableSetupColumn() + submit context menu
+  ImGui.TableHeadersRow()
+
+  -- ImGui.TableHeader(...) // submit one header cell manually (rarely used)
+  -- Parameter: string (label)
+  ImGui.TableHeader("Header")
+
+  -- ImGui.TableGetSortSpecs() // get latest sort specs for the table (NULL if not sorting).
+  -- Returns: ImGuiTableSortSpecs*
+  ImGui.TableGetSortSpecs()
+
+  -- ImGui.TableGetColumnCount() // return number of columns (value passed to BeginTable)
+  -- Returns: int (cols)
+  cols = ImGui.TableGetColumnCount()
+
+  -- ImGui.TableGetColumnIndex() // return current column index.
+  -- Returns: int (col_index)
+  col_index = ImGui.TableGetColumnIndex()
+
+  -- ImGui.TableGetRowIndex() // return current row index.
+  -- Returns: int (row_index)
+  row_index = ImGui.TableGetRowIndex()
+
+  -- ImGui.TableGetColumnName(...) // return "" if column didn't have a name declared by TableSetupColumn(). Pass -1 to use current column.
+  -- Parameter: int (column_n) [O]
+  -- Returns: string(col_name)
+  col_name = ImGui.TableGetColumnName()
+  col_name = ImGui.TableGetColumnName(2)
+
+  -- ImGui.TableGetColumnFlags(...) // return column flags so you can query their Enabled/Visible/Sorted/Hovered status flags. Pass -1 to use current column.
+  -- Parameter: int (column_n) [O]
+  -- Returns: ImGuiTableColumnFlags
+  col_flags = ImGui.TableGetColumnFlags()
+  col_flags = ImGui.TableGetColumnFlags(2)
+
+  -- ImGui.TableSetBgColor(ImGuiTableBgTarget target, ImU32 color, int column_n = -1) // change the color of a cell, row, or column. See ImGuiTableBgTarget_ flags for details.
+  -- Parameters1: ImGuiTableBgTarget (target), ImU32 (color), int (column_n) [O]
+  -- Parameters2: ImGuiTableBgTarget (target), float (col_R), float (col_G), float (col_B), float (col_A), int (column_n) [O]
+  ImGui.TableSetBgColor(ImGuiTableBgTarget.CellBg, 0xF42069FF)
+  ImGui.TableSetBgColor(ImGuiTableBgTarget.CellBg, 0xF42069FF, 2)
+  ImGui.TableSetBgColor(ImGuiTableBgTarget.CellBg, 1, 0, 0, 1)
+  ImGui.TableSetBgColor(ImGuiTableBgTarget.CellBg, 1, 0, 0, 1, 2)
+```
+
+
+## Columns (Legacy API, prefer using Tables!)
 ```lua
   -- ImGui.Columns(...)
   -- Parameters: int (count) [O], text (id) [O], bool (border) [O]
