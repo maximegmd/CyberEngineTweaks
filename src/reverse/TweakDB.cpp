@@ -7,6 +7,117 @@
 
 #include "TweakDB.h"
 
+struct FlatValuePool
+{
+    using HashType = uint32_t;
+
+    enum class Type
+    {
+        Unknown = -1,
+        ArrayTweakDBID,
+        TweakDBID,
+        ArrayQuaternion,
+        Quaternion,
+        ArrayEulerAngles,
+        EulerAngles,
+        ArrayVector3,
+        Vector3,
+        ArrayVector2,
+        Vector2,
+        ArrayColor,
+        Color,
+        ArrayGamedataLocKeyWrapper,
+        GamedataLocKeyWrapper,
+        ArrayRaRefCResource,
+        RaRefCResource,
+        ArrayCName,
+        CName,
+        ArrayBool,
+        Bool,
+        ArrayString,
+        String,
+        ArrayFloat,
+        Float,
+        ArrayInt32,
+        Int32,
+        Count
+    };
+    struct Item
+    {
+        uint32_t useCount;
+        int32_t tdbOffset;
+
+        Item(int32_t aTDBOffset);
+        void DecUseCount();
+        void IncUseCount();
+        RED4ext::TweakDB::FlatValue* ToFlatValue();
+    };
+
+    FlatValuePool(Type aType);
+    Item* Get(const RED4ext::CStackType& acStackType);
+    Item* Get(const RED4ext::CStackType& acStackType, HashType aHash);
+
+    // Write-Lock TweakDB
+    Item* GetOrCreate(const RED4ext::CStackType& acStackType, int32_t tdbOffset = -1);
+    // Write-Lock TweakDB
+    Item* GetOrCreate(const RED4ext::CStackType& acStackType, HashType aHash, int32_t tdbOffset);
+
+    HashType HashValue(const RED4ext::CStackType& acStackType, HashType seed = HashType{});
+    HashType HashValue(const RED4ext::CStackType& acStackType, Type aType, HashType seed = HashType{});
+
+    static Type RTTIToPoolType(const RED4ext::IRTTIType* acpType);
+
+private:
+    Type poolType;
+    std::map<HashType, std::vector<Item>> itemPools;
+};
+bool flatValuePoolsInitialized = false;
+std::vector<FlatValuePool> flatValuePools;
+
+void InitializeFlatValuePools()
+{
+    static auto* pTDB = RED4ext::TweakDB::Get();
+
+    if (flatValuePoolsInitialized) return;
+
+    if (flatValuePools.empty())
+    {
+        flatValuePools.reserve(static_cast<int32_t>(FlatValuePool::Type::Count));
+        for (int32_t i = 0; i != static_cast<int32_t>(FlatValuePool::Type::Count); ++i)
+            flatValuePools.emplace_back(static_cast<FlatValuePool::Type>(i));
+    }
+
+    std::shared_lock<RED4ext::SharedMutex> _(pTDB->mutex00);
+    if (pTDB->flatDataBufferSize == 0) return; // TweakDB is not initialized yet
+
+    for (RED4ext::TweakDBID& flatID : pTDB->flats)
+    {
+        auto* pFlatValue = pTDB->GetFlatValue(flatID);
+
+        RED4ext::CStackType stackType;
+        pFlatValue->GetValue(&stackType);
+
+        auto flatPoolType = FlatValuePool::RTTIToPoolType(stackType.type);
+        if (flatPoolType == FlatValuePool::Type::Unknown)
+        {
+            flatValuePools.clear();
+
+            RED4ext::CName typeName;
+            stackType.type->GetName(typeName);
+            auto exceptionStr = fmt::format("[InitializeFlatValuePools] Unknown flat type: {08X}:{02X} {}",
+                flatID.nameHash, flatID.nameLength,
+                typeName.ToString());
+            throw std::exception(exceptionStr.c_str()); // This should never happen
+        }
+
+        auto* pFlatValuePool = &flatValuePools[static_cast<int32_t>(flatPoolType)];
+        auto* pPoolItem = pFlatValuePool->GetOrCreate(stackType, pFlatValue->ToTDBOffset());
+        pPoolItem->IncUseCount();
+    }
+
+    flatValuePoolsInitialized = true;
+}
+
 TweakDB::TweakDB(sol::state_view aLua)
     : m_lua(std::move(aLua))
 {
@@ -48,7 +159,7 @@ sol::object TweakDB::Query(TweakDBID aDBID)
 sol::object TweakDB::GetFlat(TweakDBID aDBID)
 {
     static auto* pTDB = RED4ext::TweakDB::Get();
-    std::shared_lock<RED4ext::SharedMutex> _(pTDB->mutex00); // GetFlatValue is not thread safe
+    //std::shared_lock<RED4ext::SharedMutex> _(pTDB->mutex00);
 
     RED4ext::TweakDBID dbid;
     dbid.value = aDBID.value;
@@ -95,4 +206,276 @@ bool TweakDB::SetFlat(TweakDBID aDBID, sol::object aValue)
 
     RED4ext::CStackType stackType = Scripting::ToRED(aValue, stackTypeCurrent.type, &s_scratchMemory);
     return flatValue->SetValue(stackType);
+}
+
+FlatValuePool::Item::Item(int32_t aTDBOffset)
+    : useCount(1),
+    tdbOffset(aTDBOffset)
+{
+}
+
+void FlatValuePool::Item::DecUseCount()
+{
+    --useCount;
+}
+
+void FlatValuePool::Item::IncUseCount()
+{
+    ++useCount;
+}
+
+RED4ext::TweakDB::FlatValue* FlatValuePool::Item::ToFlatValue()
+{
+    static auto* pTDB = RED4ext::TweakDB::Get();
+
+    int32_t offset = tdbOffset & 0x00FFFFFF;
+    if (offset == 0)
+        return nullptr;
+
+    return reinterpret_cast<RED4ext::TweakDB::FlatValue*>(pTDB->flatDataBuffer + offset);
+}
+
+FlatValuePool::FlatValuePool(Type aType)
+    : poolType(aType)
+{
+}
+
+FlatValuePool::Item* FlatValuePool::Get(const RED4ext::CStackType& acStackType)
+{
+    return Get(acStackType, HashValue(acStackType));
+}
+
+FlatValuePool::Item* FlatValuePool::Get(const RED4ext::CStackType& acStackType, HashType aHash)
+{
+    const auto it = itemPools.find(aHash);
+    if (it == itemPools.end())
+        return nullptr;
+
+    for (auto& item : it->second)
+    {
+        const auto* pFlatValue = item.ToFlatValue();
+        RED4ext::CStackType poolStackType;
+        pFlatValue->GetValue(&poolStackType);
+
+        if (poolStackType.type != acStackType.type)
+            return nullptr; // This should never happen
+
+        if (poolStackType.type->IsEqual(poolStackType.value, acStackType.value))
+        {
+            return &item;
+        }
+    }
+
+    return nullptr;
+}
+
+FlatValuePool::Item* FlatValuePool::GetOrCreate(const RED4ext::CStackType& acStackType, int32_t tdbOffset)
+{
+    return GetOrCreate(acStackType, HashValue(acStackType), tdbOffset);
+}
+
+FlatValuePool::Item* FlatValuePool::GetOrCreate(const RED4ext::CStackType& acStackType, HashType aHash, int32_t tdbOffset)
+{
+    static auto* pTDB = RED4ext::TweakDB::Get();
+
+    auto* pItem = Get(acStackType, aHash);
+    if (pItem != nullptr)
+        return pItem;
+
+    std::vector<Item>* pItemPool;
+    const auto it = itemPools.find(aHash);
+    if (it == itemPools.end())
+    {
+        pItemPool = &itemPools.emplace(aHash, std::vector<Item>{}).first->second;
+    }
+    else
+    {
+        pItemPool = &it->second;
+    }
+
+    if (tdbOffset == -1)
+    {
+        auto* pFlatValue = pTDB->CreateFlatValue(acStackType.type);
+        if (pFlatValue == nullptr)
+        {
+            // Failed to create FlatValue
+            return nullptr;
+        }
+        return &pItemPool->emplace_back(Item(pFlatValue->ToTDBOffset()));
+    }
+    else
+    {
+        return &pItemPool->emplace_back(Item(tdbOffset));
+    }
+}
+
+FlatValuePool::HashType FlatValuePool::HashValue(const RED4ext::CStackType& acStackType, HashType seed)
+{
+    return HashValue(acStackType, poolType, seed);
+}
+
+FlatValuePool::HashType FlatValuePool::HashValue(const RED4ext::CStackType& acStackType, Type aType, HashType seed)
+{
+    switch (aType)
+    {
+        case FlatValuePool::Type::ArrayTweakDBID:
+        case FlatValuePool::Type::ArrayQuaternion:
+        case FlatValuePool::Type::ArrayEulerAngles:
+        case FlatValuePool::Type::ArrayVector3:
+        case FlatValuePool::Type::ArrayVector2:
+        case FlatValuePool::Type::ArrayColor:
+        case FlatValuePool::Type::ArrayGamedataLocKeyWrapper:
+        case FlatValuePool::Type::ArrayRaRefCResource:
+        case FlatValuePool::Type::ArrayCName:
+        case FlatValuePool::Type::ArrayBool:
+        case FlatValuePool::Type::ArrayString:
+        case FlatValuePool::Type::ArrayFloat:
+        case FlatValuePool::Type::ArrayInt32:
+        {
+            if (acStackType.type->GetType() == RED4ext::ERTTIType::Array)
+            {
+                RED4ext::CName typeName;
+                acStackType.type->GetName(typeName);
+                throw std::exception(fmt::format("[FlatValuePool::HashValue] Unexpected RTTI type: {}", typeName.ToString()).c_str());
+            }
+
+            const auto* pArrayType = reinterpret_cast<RED4ext::CArray*>(acStackType.type);
+            auto* pArrayInnerType = pArrayType->GetInnerType();
+            const auto arrayInnerPoolType = FlatValuePool::RTTIToPoolType(pArrayInnerType);
+            if (arrayInnerPoolType == FlatValuePool::Type::Unknown)
+            {
+                RED4ext::CName typeName;
+                pArrayInnerType->GetName(typeName);
+                throw std::exception(fmt::format("[FlatValuePool::HashValue] Unexpected Array inner RTTI type: {}", typeName.ToString()).c_str());
+            }
+
+            HashType hash = seed;
+            for (uint32_t i = 0; i != pArrayType->GetLength(acStackType.value); ++i)
+            {
+                RED4ext::CStackType innerStackType;
+                innerStackType.type = pArrayInnerType;
+                innerStackType.value = pArrayType->GetElement(acStackType.value, i);
+                hash = HashValue(innerStackType, arrayInnerPoolType, hash);
+            }
+
+            return hash;
+        }
+
+        case FlatValuePool::Type::Quaternion:
+        case FlatValuePool::Type::EulerAngles:
+        case FlatValuePool::Type::Vector3:
+        case FlatValuePool::Type::Vector2:
+        case FlatValuePool::Type::Color:
+        case FlatValuePool::Type::GamedataLocKeyWrapper:
+        case FlatValuePool::Type::RaRefCResource:
+        case FlatValuePool::Type::CName:
+        case FlatValuePool::Type::Bool:
+        case FlatValuePool::Type::Float:
+        case FlatValuePool::Type::Int32:
+        {
+            auto* pData = reinterpret_cast<uint8_t*>(acStackType.value);
+            return RED4ext::CRC32(pData, acStackType.type->GetSize(), seed);
+        }
+
+        case FlatValuePool::Type::TweakDBID:
+        {
+            auto* pData = reinterpret_cast<uint8_t*>(acStackType.value);
+            return RED4ext::CRC32(pData, 4 + 1 /* nameHash + nameLen */, seed);
+        }
+
+        case FlatValuePool::Type::String:
+        {
+            auto* pString = reinterpret_cast<RED4ext::CString*>(acStackType.value);
+            auto* pData = reinterpret_cast<const uint8_t*>(pString->c_str());
+            return RED4ext::CRC32(pData, pString->Length(), seed);
+        }
+    }
+    throw std::exception("[FlatValuePool::HashValue] Unknown PoolType"); // This should never happen
+}
+
+FlatValuePool::Type FlatValuePool::RTTIToPoolType(const RED4ext::IRTTIType* acpType)
+{
+    static auto* pRTTI = RED4ext::CRTTISystem::Get();
+    static auto* pArrayTweakDBIDType = pRTTI->GetType("array:TweakDBID");
+    static auto* pTweakDBIDType = pRTTI->GetType("TweakDBID");
+    static auto* pArrayQuaternionType = pRTTI->GetType("array:Quaternion");
+    static auto* pQuaternionType = pRTTI->GetType("Quaternion");
+    static auto* pArrayEulerAnglesType = pRTTI->GetType("array:EulerAngles");
+    static auto* pEulerAnglesType = pRTTI->GetType("EulerAngles");
+    static auto* pArrayVector3Type = pRTTI->GetType("array:Vector3");
+    static auto* pVector3Type = pRTTI->GetType("Vector3");
+    static auto* pArrayVector2Type = pRTTI->GetType("array:Vector2");
+    static auto* pVector2Type = pRTTI->GetType("Vector2");
+    static auto* pArrayColorType = pRTTI->GetType("array:Color");
+    static auto* pColorType = pRTTI->GetType("Color");
+    static auto* pArrayGamedataLocKeyWrapperType = pRTTI->GetType("array:gamedataLocKeyWrapper");
+    static auto* pGamedataLocKeyWrapperType = pRTTI->GetType("gamedataLocKeyWrapper");
+    static auto* pArrayRaRefCResourceType = pRTTI->GetType("array:raRef:CResource");
+    static auto* pRaRefCResourceType = pRTTI->GetType("raRef:CResource");
+    static auto* pArrayCNameType = pRTTI->GetType("array:CName");
+    static auto* pCNameType = pRTTI->GetType("CName");
+    static auto* pArrayBoolType = pRTTI->GetType("array:Bool");
+    static auto* pBoolType = pRTTI->GetType("Bool");
+    static auto* pArrayStringType = pRTTI->GetType("array:String");
+    static auto* pStringType = pRTTI->GetType("String");
+    static auto* pArrayFloatType = pRTTI->GetType("array:Float");
+    static auto* pFloatType = pRTTI->GetType("Float");
+    static auto* pArrayInt32Type = pRTTI->GetType("array:Int32");
+    static auto* pInt32Type = pRTTI->GetType("Int32");
+
+    FlatValuePool::Type poolType = FlatValuePool::Type::Unknown;
+    if (acpType == pArrayTweakDBIDType)
+        poolType = FlatValuePool::Type::ArrayTweakDBID;
+    else if (acpType == pTweakDBIDType)
+        poolType = FlatValuePool::Type::TweakDBID;
+    else if (acpType == pArrayQuaternionType)
+        poolType = FlatValuePool::Type::ArrayQuaternion;
+    else if (acpType == pQuaternionType)
+        poolType = FlatValuePool::Type::Quaternion;
+    else if (acpType == pArrayEulerAnglesType)
+        poolType = FlatValuePool::Type::ArrayEulerAngles;
+    else if (acpType == pEulerAnglesType)
+        poolType = FlatValuePool::Type::EulerAngles;
+    else if (acpType == pArrayVector3Type)
+        poolType = FlatValuePool::Type::ArrayVector3;
+    else if (acpType == pVector3Type)
+        poolType = FlatValuePool::Type::Vector3;
+    else if (acpType == pArrayVector2Type)
+        poolType = FlatValuePool::Type::ArrayVector2;
+    else if (acpType == pVector2Type)
+        poolType = FlatValuePool::Type::Vector2;
+    else if (acpType == pArrayColorType)
+        poolType = FlatValuePool::Type::ArrayColor;
+    else if (acpType == pColorType)
+        poolType = FlatValuePool::Type::Color;
+    else if (acpType == pArrayGamedataLocKeyWrapperType)
+        poolType = FlatValuePool::Type::ArrayGamedataLocKeyWrapper;
+    else if (acpType == pGamedataLocKeyWrapperType)
+        poolType = FlatValuePool::Type::GamedataLocKeyWrapper;
+    else if (acpType == pArrayRaRefCResourceType)
+        poolType = FlatValuePool::Type::ArrayRaRefCResource;
+    else if (acpType == pRaRefCResourceType)
+        poolType = FlatValuePool::Type::RaRefCResource;
+    else if (acpType == pArrayCNameType)
+        poolType = FlatValuePool::Type::ArrayCName;
+    else if (acpType == pCNameType)
+        poolType = FlatValuePool::Type::CName;
+    else if (acpType == pArrayBoolType)
+        poolType = FlatValuePool::Type::ArrayBool;
+    else if (acpType == pBoolType)
+        poolType = FlatValuePool::Type::Bool;
+    else if (acpType == pArrayStringType)
+        poolType = FlatValuePool::Type::ArrayString;
+    else if (acpType == pStringType)
+        poolType = FlatValuePool::Type::String;
+    else if (acpType == pArrayFloatType)
+        poolType = FlatValuePool::Type::ArrayFloat;
+    else if (acpType == pFloatType)
+        poolType = FlatValuePool::Type::Float;
+    else if (acpType == pArrayInt32Type)
+        poolType = FlatValuePool::Type::ArrayInt32;
+    else if (acpType == pInt32Type)
+        poolType = FlatValuePool::Type::Int32;
+
+    return poolType;
 }
