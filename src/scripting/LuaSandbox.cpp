@@ -196,7 +196,7 @@ void LuaSandbox::InitializeExtraLibsForSandbox(Sandbox& aSandbox) const
     auto& sbEnv = aSandbox.GetEnvironment();
 
     // copy extra whitelisted libs from global table
-    constexpr std::array<std::string_view, 18> whitelistedTables =
+    constexpr std::array<std::string_view, 22> whitelistedTables =
     {
         "ImGui",
         "ImGuiCond",
@@ -213,6 +213,10 @@ void LuaSandbox::InitializeExtraLibsForSandbox(Sandbox& aSandbox) const
         "ImGuiStyleVar",
         "ImGuiTabBarFlags",
         "ImGuiSliderFlags",
+        "ImGuiTableFlags",
+        "ImGuiTableColumnFlags",
+        "ImGuiTableRowFlags",
+        "ImGuiTableBgTarget",
         "ImGuiCol",
         "ImGuiDir",
         "json"
