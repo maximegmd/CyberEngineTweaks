@@ -2173,10 +2173,10 @@ namespace sol_ImGui
 #ifdef SOL_IMGUI_ENABLE_INPUT_FUNCTIONS
 #pragma region MouseButton
         lua.new_enum("ImGuiMouseButton",
-            "ImGuiMouseButton_Left"          , ImGuiMouseButton_Left,
-            "ImGuiMouseButton_Right"         , ImGuiMouseButton_Right,
-            "ImGuiMouseButton_Middle"        , ImGuiMouseButton_Middle,
-            "ImGuiMouseButton_COUNT"         , ImGuiMouseButton_COUNT
+            "Left"                           , ImGuiMouseButton_Left,
+            "Right"                          , ImGuiMouseButton_Right,
+            "Middle"                         , ImGuiMouseButton_Middle,
+            "COUNT"                          , ImGuiMouseButton_COUNT
         );
 #pragma endregion MouseButton
 
