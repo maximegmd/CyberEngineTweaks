@@ -123,6 +123,16 @@ void VKBindings::Save()
     ofs << config.dump(4) << std::endl;
 }
 
+void VKBindings::Update()
+{
+    const std::lock_guard lock(m_queuedCallbacksLock);
+    while (!m_queuedCallbacks.empty())
+    {
+        m_queuedCallbacks.front()();
+        m_queuedCallbacks.pop();
+    }
+}
+
 void VKBindings::Clear()
 {
     m_binds.clear();
@@ -409,6 +419,17 @@ LRESULT VKBindings::OnWndProc(HWND, UINT auMsg, WPARAM awParam, LPARAM alParam)
     return 0;
 }
 
+void VKBindings::ConnectUpdate(D3D12& aD3D12)
+{
+    m_connectUpdate = aD3D12.OnUpdate.Connect([this](){ this->Update(); });
+}
+
+void VKBindings::DisconnectUpdate(D3D12& aD3D12)
+{
+    aD3D12.OnUpdate.Disconnect(m_connectUpdate);
+    m_connectUpdate = static_cast<size_t>(-1);
+}
+
 bool VKBindings::IsLastRecordingKey(UINT aVKCode)
 {
     if (m_recordingLength == 0)
@@ -469,7 +490,15 @@ LRESULT VKBindings::RecordKeyUp(UINT aVKCode)
                     return 0; // we dont want to handle bindings if toolbar is open and we are not in binding state!
 
                 if (bind->second.Handler) // prevention for freshly loaded bind from file without rebinding
-                    bind->second.Handler();
+                {
+                    if (!bind->second.ID.compare(0, 4, "cet."))
+                        bind->second.Handler(); // we need to execute this immediately, otherwise cursor will not show on overlay toggle
+                    else
+                    {
+                        const std::lock_guard lock(m_queuedCallbacksLock); 
+                        m_queuedCallbacks.push(bind->second.Handler);
+                    }
+                }
             }
             return 0;
         }

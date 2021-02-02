@@ -50,7 +50,8 @@ private:
 
     WidgetID m_activeWidgetID{WidgetID::CONSOLE };
     
-    bool m_enabled{ false };
+    std::atomic_bool m_enabled{ false };
+    std::atomic_bool m_toggled{ false };
     bool m_initialized{ false };
     VKBind m_VKBOverlay;
 

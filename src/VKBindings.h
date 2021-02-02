@@ -24,7 +24,7 @@ struct VKBindInfo
 };
 
 struct Overlay;
-
+struct D3D12;
 struct VKBindings
 {
     VKBindings(Paths& aPaths);
@@ -40,6 +40,8 @@ struct VKBindings
     
     void Load(Overlay& aOverlay);
     void Save();
+
+    void Update();
 
     void Clear();
     bool Bind(UINT aVKCodeBind, const VKBind& aBind);
@@ -59,6 +61,9 @@ struct VKBindings
 
     LRESULT OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam);
 
+    void ConnectUpdate(D3D12& aD3D12);
+    void DisconnectUpdate(D3D12& aD3D12);
+
 private:
 
     bool IsLastRecordingKey(UINT aVKCode);
@@ -67,9 +72,12 @@ private:
     bool VerifyRecording();
 
     LRESULT HandleRAWInput(HRAWINPUT ahRAWInput);
-    
-    std::map<UINT, VKBind> m_binds{};
+
+    std::map<UINT, VKBind> m_binds{ };
     TiltedPhoques::Map<std::string, UINT> m_idToBind{ };
+
+    std::mutex m_queuedCallbacksLock{ };
+    std::queue<std::function<TVKBindCallback>> m_queuedCallbacks{ };
     
     VKCodeBindDecoded m_recording{ };
     size_t m_recordingLength{ 0 };
@@ -80,4 +88,6 @@ private:
 
     Paths& m_paths;
     Overlay* m_pOverlay{nullptr};
+    
+    size_t m_connectUpdate{ static_cast<size_t>(-1) };
 };
