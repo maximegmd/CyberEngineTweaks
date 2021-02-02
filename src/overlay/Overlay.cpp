@@ -44,15 +44,11 @@ void Overlay::Toggle()
     m_enabled = !m_enabled;
 
     auto& d3d12 = CET::Get().GetD3D12();
-
     d3d12.SetTrapInputInImGui(m_enabled);
-
-    if (m_enabled)
-        m_vm.OnOverlayOpen();
-    else
-        m_vm.OnOverlayClose();
     
     ClipToCenter(RED4ext::CGameEngine::Get()->unkC0);
+
+    m_toggled = true;
 }
 
 bool Overlay::IsEnabled() const noexcept
@@ -67,7 +63,20 @@ VKBind Overlay::GetBind() const noexcept
 
 void Overlay::Update()
 {
-    if (!IsEnabled())
+    if (!m_initialized)
+        return;
+
+    // always check for this event in Update
+    if (m_toggled)
+    {
+        if (m_enabled)
+            m_vm.OnOverlayOpen();
+        else
+            m_vm.OnOverlayClose();
+        m_toggled = false;
+    }
+
+    if (!m_enabled)
         return;
 
     auto& d3d12 = CET::Get().GetD3D12();

@@ -392,7 +392,7 @@ void D3D12::Update()
     ImGui_ImplDX12_NewFrame(m_pCommandQueue);
     ImGui_ImplWin32_NewFrame(m_outSize);
     ImGui::NewFrame();
-    
+
     OnUpdate.Emit();
 
     const auto bufferIndex = (m_pdxgiSwapChain != nullptr) ? (m_pdxgiSwapChain->GetCurrentBackBufferIndex()) : (m_downlevelBufferIndex);

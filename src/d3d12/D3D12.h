@@ -72,7 +72,7 @@ private:
     
     SIZE m_outSize{ };
     
-    bool m_trapInputInImGui{ false };
+    std::atomic_bool m_trapInputInImGui{ false };
 
     Paths& m_paths;
     Window& m_window;
