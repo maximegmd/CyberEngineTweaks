@@ -158,17 +158,12 @@ namespace sol_ImGui
 
     // ID stack / scopes
     inline void PushID(const std::string& stringID)                                             { ImGui::PushID(stringID.c_str()); }
-    inline void PushID(const std::string& stringIDBegin, const std::string& stringIDEnd)        { ImGui::PushID(stringIDBegin.c_str(), stringIDEnd.c_str()); }
-    inline void PushID(const void*)                                                             { /* TODO: PushID(void*) ==> UNSUPPORTED */ }
     inline void PushID(int intID)                                                               { ImGui::PushID(intID); }
     inline void PopID()                                                                         { ImGui::PopID(); }
     inline int GetID(const std::string& stringID)                                               { return ImGui::GetID(stringID.c_str()); }
-    inline int GetID(const std::string& stringIDBegin, const std::string& stringIDEnd)          { return ImGui::GetID(stringIDBegin.c_str(), stringIDEnd.c_str()); }
-    inline int GetID(const void*)                                                               { return 0;  /* TODO: GetID(void*) ==> UNSUPPORTED */ }
 
     // Widgets: Text
     inline void TextUnformatted(const std::string& text)                                               { ImGui::TextUnformatted(text.c_str()); }
-    inline void TextUnformatted(const std::string& text, const std::string& textEnd)                   { ImGui::TextUnformatted(text.c_str(), textEnd.c_str()); }
     inline void Text(const std::string& text)                                                          { ImGui::Text(text.c_str()); }
     inline void TextColored(float colR, float colG, float colB, float colA, const std::string& text)   { ImGui::TextColored({ colR, colG, colB, colA }, text.c_str()); }
     inline void TextDisabled(const std::string& text)                                                  { ImGui::TextDisabled(text.c_str()); }
@@ -1596,19 +1591,7 @@ namespace sol_ImGui
     inline std::tuple<bool, bool> BeginTabItem(const std::string& label, bool open, int flags)      { bool selected = ImGui::BeginTabItem(label.c_str(), &open, static_cast<ImGuiTabItemFlags>(flags)); return std::make_tuple(open, selected); }
     inline void EndTabItem()                                                                        { ImGui::EndTabItem(); }
     inline void SetTabItemClosed(const std::string& tab_or_docked_window_label)                     { ImGui::SetTabItemClosed(tab_or_docked_window_label.c_str()); }
-
-    // Logging
-    inline void LogToTTY()                                                       { ImGui::LogToTTY(); }
-    inline void LogToTTY(int auto_open_depth)                                    { ImGui::LogToTTY(auto_open_depth); }
-    inline void LogToFile()                                                      { ImGui::LogToFile(); }
-    inline void LogToFile(int auto_open_depth)                                   { ImGui::LogToFile(auto_open_depth); }
-    inline void LogToFile(int auto_open_depth, const std::string& filename)      { ImGui::LogToFile(auto_open_depth, filename.c_str()); }
-    inline void LogToClipboard()                                                 { ImGui::LogToClipboard(); }
-    inline void LogToClipboard(int auto_open_depth)                              { ImGui::LogToClipboard(auto_open_depth); }
-    inline void LogFinish()                                                      { ImGui::LogFinish(); }
-    inline void LogButtons()                                                     { ImGui::LogButtons(); }
-    inline void LogText(const std::string& fmt)                                  { ImGui::LogText(fmt.c_str()); }
-
+    
     // Drag and Drop
     // TODO: Drag and Drop ==> UNSUPPORTED
 
@@ -1691,27 +1674,9 @@ namespace sol_ImGui
         return std::make_tuple(r, g, b);
     }
 
-#ifdef SOL_IMGUI_ENABLE_INPUT_FUNCTIONS
-    // Inputs Utilities: Keyboard
-    inline int GetKeyIndex(int imgui_key)                                           { return ImGui::GetKeyIndex(static_cast<ImGuiKey>(imgui_key)); }
-    inline bool IsKeyDown(int user_key_index)                                       { return ImGui::IsKeyDown(user_key_index); }
-    inline bool IsKeyPressed(int user_key_index)                                    { return ImGui::IsKeyPressed(user_key_index); }
-    inline bool IsKeyPressed(int user_key_index, bool repeat)                       { return ImGui::IsKeyPressed(user_key_index, repeat); }
-    inline bool IsKeyReleased(int user_key_index)                                   { return ImGui::IsKeyReleased(user_key_index); }
-    inline int GetKeyPressedAmount(int key_index, float repeat_delay, float rate)   { return ImGui::GetKeyPressedAmount(key_index, repeat_delay, rate); }
-    inline void CaptureKeyboardFromApp()                                            { ImGui::CaptureKeyboardFromApp(); }
-    inline void CaptureKeyboardFromApp(bool want_capture_keyboard_value)            { ImGui::CaptureKeyboardFromApp(want_capture_keyboard_value); }
-
     // Inputs Utilities: Mouse
-    inline bool IsMouseDown(int button)                                                               { return ImGui::IsMouseDown(static_cast<ImGuiMouseButton>(button)); }
-    inline bool IsMouseClicked(int button)                                                            { return ImGui::IsMouseClicked(static_cast<ImGuiMouseButton>(button)); }
-    inline bool IsMouseClicked(int button, bool repeat)                                               { return ImGui::IsMouseClicked(static_cast<ImGuiMouseButton>(button), repeat); }
-    inline bool IsMouseReleased(int button)                                                           { return ImGui::IsMouseReleased(static_cast<ImGuiMouseButton>(button)); }
-    inline bool IsMouseDoubleClicked(int button)                                                      { return ImGui::IsMouseDoubleClicked(static_cast<ImGuiMouseButton>(button)); }
     inline bool IsMouseHoveringRect(float min_x, float min_y, float max_x, float max_y)               { return ImGui::IsMouseHoveringRect({ min_x, min_y }, { max_x, max_y }); }
     inline bool IsMouseHoveringRect(float min_x, float min_y, float max_x, float max_y, bool clip)    { return ImGui::IsMouseHoveringRect({ min_x, min_y }, { max_x, max_y }, clip); }
-    inline bool IsMousePosValid()                                                                     { return false; /* TODO: IsMousePosValid() ==> UNSUPPORTED */ }
-    inline bool IsAnyMouseDown()                                                                      { return ImGui::IsAnyMouseDown(); }
     inline std::tuple<float, float> GetMousePos()                                                     { const auto vec2{ ImGui::GetMousePos() }; return std::make_tuple(vec2.x, vec2.y); }
     inline std::tuple<float, float> GetMousePosOnOpeningCurrentPopup()                                { const auto vec2{ ImGui::GetMousePosOnOpeningCurrentPopup() }; return std::make_tuple(vec2.x, vec2.y); }
     inline bool IsMouseDragging(int button)                                                           { return ImGui::IsMouseDragging(static_cast<ImGuiMouseButton>(button)); }
@@ -1721,11 +1686,6 @@ namespace sol_ImGui
     inline std::tuple<float, float> GetMouseDragDelta(int button, float lock_threshold)               { const auto vec2{ ImGui::GetMouseDragDelta(static_cast<ImGuiMouseButton>(button), lock_threshold) }; return std::make_tuple(vec2.x, vec2.y); }
     inline void ResetMouseDragDelta()                                                                 { ImGui::ResetMouseDragDelta(); }
     inline void ResetMouseDragDelta(int button)                                                       { ImGui::ResetMouseDragDelta(static_cast<ImGuiMouseButton>(button)); }
-    inline int GetMouseCursor()                                                                       { return ImGui::GetMouseCursor(); }
-    inline void SetMouseCursor(int cursor_type)                                                       { ImGui::SetMouseCursor(static_cast<ImGuiMouseCursor>(cursor_type)); }
-    inline void CaptureMouseFromApp()                                                                 { ImGui::CaptureMouseFromApp(); }
-    inline void CaptureMouseFromApp(bool want_capture_mouse_value)                                    { ImGui::CaptureMouseFromApp(want_capture_mouse_value); }
-#endif // SOL_IMGUI_ENABLE_INPUT_FUNCTIONS
 
     // Clipboard Utilities
     inline std::string GetClipboardText()                                                             { return std::string(ImGui::GetClipboardText()); }
@@ -2169,8 +2129,7 @@ namespace sol_ImGui
             "Trailing"                       , ImGuiTabItemFlags_Trailing
         );
 #pragma endregion TabItem Flags
-
-#ifdef SOL_IMGUI_ENABLE_INPUT_FUNCTIONS
+        
 #pragma region MouseButton
         lua.new_enum("ImGuiMouseButton",
             "ImGuiMouseButton_Left"          , ImGuiMouseButton_Left,
@@ -2179,51 +2138,6 @@ namespace sol_ImGui
             "ImGuiMouseButton_COUNT"         , ImGuiMouseButton_COUNT
         );
 #pragma endregion MouseButton
-
-#pragma region Key
-        lua.new_enum("ImGuiKey",
-            "Tab"                            , ImGuiKey_Tab,
-            "LeftArrow"                      , ImGuiKey_LeftArrow,
-            "RightArrow"                     , ImGuiKey_RightArrow,
-            "UpArrow"                        , ImGuiKey_UpArrow,
-            "DownArrow"                      , ImGuiKey_DownArrow,
-            "PageUp"                         , ImGuiKey_PageUp,
-            "PageDown"                       , ImGuiKey_PageDown,
-            "Home"                           , ImGuiKey_Home,
-            "End"                            , ImGuiKey_End,
-            "Insert"                         , ImGuiKey_Insert,
-            "Delete"                         , ImGuiKey_Delete,
-            "Backspace"                      , ImGuiKey_Backspace,
-            "Space"                          , ImGuiKey_Space,
-            "Enter"                          , ImGuiKey_Enter,
-            "Escape"                         , ImGuiKey_Escape,
-            "KeyPadEnter"                    , ImGuiKey_KeyPadEnter,
-            "A"                              , ImGuiKey_A,
-            "C"                              , ImGuiKey_C,
-            "V"                              , ImGuiKey_V,
-            "X"                              , ImGuiKey_X,
-            "Y"                              , ImGuiKey_Y,
-            "Z"                              , ImGuiKey_Z,
-            "COUNT"                          , ImGuiKey_COUNT
-        );
-#pragma endregion Key
-
-#pragma region MouseCursor
-        lua.new_enum("ImGuiMouseCursor",
-            "None"                          , ImGuiMouseCursor_None,
-            "Arrow"                         , ImGuiMouseCursor_Arrow,
-            "TextInput"                     , ImGuiMouseCursor_TextInput,
-            "ResizeAll"                     , ImGuiMouseCursor_ResizeAll,
-            "ResizeNS"                      , ImGuiMouseCursor_ResizeNS,
-            "ResizeEW"                      , ImGuiMouseCursor_ResizeEW,
-            "ResizeNESW"                    , ImGuiMouseCursor_ResizeNESW,
-            "ResizeNWSE"                    , ImGuiMouseCursor_ResizeNWSE,
-            "Hand"                          , ImGuiMouseCursor_Hand,
-            "NotAllowed"                    , ImGuiMouseCursor_NotAllowed,
-            "COUNT"                         , ImGuiMouseCursor_COUNT
-        );
-#pragma endregion MouseCursor
-#endif // SOL_IMGUI_ENABLE_INPUT_FUNCTIONS
     }
 
     inline void InitBindings(sol::state& lua)
@@ -2433,21 +2347,14 @@ namespace sol_ImGui
 #pragma region ID stack / scopes
         ImGui.set_function("PushID"              , sol::overload(
                                                                 sol::resolve<void(const std::string&)>(PushID),
-                                                                sol::resolve<void(const std::string&, const std::string&)>(PushID),
                                                                 sol::resolve<void(int)>(PushID)
                                                             ));
         ImGui.set_function("PopID"              , PopID);
-        ImGui.set_function("GetID"              , sol::overload(
-                                                                sol::resolve<int(const std::string&)>(GetID),
-                                                                sol::resolve<int(const std::string&, const std::string&)>(GetID)
-                                                            ));
+        ImGui.set_function("GetID"              , GetID);
 #pragma endregion ID stack / scopes
 
 #pragma region Widgets: Text
-        ImGui.set_function("TextUnformatted"        , sol::overload(
-                                                                sol::resolve<void(const std::string&)>(TextUnformatted),
-                                                                sol::resolve<void(const std::string&, const std::string&)>(TextUnformatted)
-                                                            ));
+        ImGui.set_function("TextUnformatted"        , TextUnformatted);
         ImGui.set_function("Text"                 , Text);
         ImGui.set_function("TextColored"          , TextColored);
         ImGui.set_function("TextDisabled"         , TextDisabled);
@@ -2901,24 +2808,6 @@ namespace sol_ImGui
         ImGui.set_function("SetTabItemClosed"        , SetTabItemClosed);
 #pragma endregion Tab Bars, Tabs
 
-#pragma region Logging / Capture
-        ImGui.set_function("LogToTTY"            , sol::overload(
-                                                                sol::resolve<void()>(LogToTTY),
-                                                                sol::resolve<void(int)>(LogToTTY)
-                                                            ));
-        ImGui.set_function("LogToFile"            , sol::overload(
-                                                                sol::resolve<void(int)>(LogToFile),
-                                                                sol::resolve<void(int, const std::string&)>(LogToFile)
-                                                            ));
-        ImGui.set_function("LogToClipboard"          , sol::overload(
-                                                                sol::resolve<void()>(LogToClipboard),
-                                                                sol::resolve<void(int)>(LogToClipboard)
-                                                            ));
-        ImGui.set_function("LogFinish"              , LogFinish);
-        ImGui.set_function("LogButtons"             , LogButtons);
-        ImGui.set_function("LogText"                , LogText);
-#pragma endregion Logging / Capture
-
 #pragma region Clipping
         ImGui.set_function("PushClipRect"           , PushClipRect);
         ImGui.set_function("PopClipRect"            , PopClipRect);
@@ -2988,34 +2877,11 @@ namespace sol_ImGui
         ImGui.set_function("ColorConvertHSVtoRGB"        , ColorConvertHSVtoRGB);
 #pragma endregion Color Utilities
 
-#ifdef SOL_IMGUI_ENABLE_INPUT_FUNCTIONS
-#pragma region Inputs Utilities: Keyboard
-        ImGui.set_function("GetKeyIndex"              , GetKeyIndex);
-        ImGui.set_function("IsKeyDown"                , IsKeyDown);
-        ImGui.set_function("IsKeyPressed"             , sol::overload(
-                                                                sol::resolve<bool(int)>(IsKeyPressed),
-                                                                sol::resolve<bool(int, bool)>(IsKeyPressed)
-                                                            ));
-        ImGui.set_function("IsKeyReleased"            , IsKeyReleased);
-        ImGui.set_function("CaptureKeyboardFromApp"   , sol::overload(
-                                                                sol::resolve<void()>(CaptureKeyboardFromApp),
-                                                                sol::resolve<void(bool)>(CaptureKeyboardFromApp)
-                                                            ));
-#pragma endregion Inputs Utilities: Keyboard
-
 #pragma region Inputs Utilities: Mouse
-        ImGui.set_function("IsMouseDown"             , IsMouseDown);
-        ImGui.set_function("IsMouseClicked"          , sol::overload(
-                                                                sol::resolve<bool(int)>(IsMouseClicked),
-                                                                sol::resolve<bool(int, bool)>(IsMouseClicked)
-                                                            ));
-        ImGui.set_function("IsMouseReleased"           , IsMouseReleased);
-        ImGui.set_function("IsMouseDoubleClicked"      , IsMouseDoubleClicked);
         ImGui.set_function("IsMouseHoveringRect"       , sol::overload(
                                                                 sol::resolve<bool(float, float, float, float)>(IsMouseHoveringRect),
                                                                 sol::resolve<bool(float, float, float, float, bool)>(IsMouseHoveringRect)
                                                             ));
-        ImGui.set_function("IsAnyMouseDown"           , IsAnyMouseDown);
         ImGui.set_function("GetMousePos"              , GetMousePos);
         ImGui.set_function("GetMousePosOnOpeningCurrentPopup", GetMousePosOnOpeningCurrentPopup);
         ImGui.set_function("IsMouseDragging"          , sol::overload(
@@ -3031,14 +2897,7 @@ namespace sol_ImGui
                                                                 sol::resolve<void()>(ResetMouseDragDelta),
                                                                 sol::resolve<void(int)>(ResetMouseDragDelta)
                                                             ));
-        ImGui.set_function("GetMouseCursor"           , GetMouseCursor);
-        ImGui.set_function("SetMouseCursor"           , SetMouseCursor);
-        ImGui.set_function("CaptureMouseFromApp"      , sol::overload(
-                                                                sol::resolve<void()>(CaptureMouseFromApp),
-                                                                sol::resolve<void(bool)>(CaptureMouseFromApp)
-                                                            ));
 #pragma endregion Inputs Utilities: Mouse
-#endif // SOL_IMGUI_ENABLE_INPUT_FUNCTIONS
 
 #pragma region Clipboard Utilities
         ImGui.set_function("GetClipboardText"        , GetClipboardText);
