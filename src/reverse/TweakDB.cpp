@@ -255,6 +255,7 @@ FlatValuePool::Item::Item(int32_t aTDBOffset)
 
 void FlatValuePool::Item::DecUseCount()
 {
+    if (useCount == 0) return;
     --useCount;
 }
 
