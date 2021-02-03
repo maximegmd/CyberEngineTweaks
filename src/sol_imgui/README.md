@@ -434,11 +434,9 @@ You can find all the supported functions and overloads below.
 ```lua
   -- ImGui.PushID(...)
   -- Parameters A: text (str_id)
-  -- Parameters B: text (str_id_begin), text (str_id_end)
-  -- Parameters C: int (int_id)
+  -- Parameters B: int (int_id)
   -- Overloads
   ImGui.PushID("MyID")
-  ImGui.PushID("MyID_Begin", "MyID_End")
   ImGui.PushID(1)
 
   -- ImGui.PopID()
@@ -446,20 +444,17 @@ You can find all the supported functions and overloads below.
 
   -- ImGui.GetID(...)
   -- Parameters A: text (str_id)
-  -- Parameters B: text (str_id_begin), text (str_id_end)
   -- Returns: int (id)
   -- Overloads
-  id = ImGui.PushID("MyID")
-  id = ImGui.PushID("MyID_Begin", "MyID_End")
+  id = ImGui.GetID("MyID")
 ```
 
 ## Widgets: Text
 ```lua
   -- ImGui.TextUnformatted(...)
-  -- Parameters: text (text), text (text_end) [O]
+  -- Parameters: text (text)
   -- Overloads
   ImGui.TextUnformatted("I am Unformatted")
-  ImGui.TextUnformatted("I am ", "Unformatted")
 
   -- ImGui.Text(...)
   -- Parameters: text (text)
@@ -1254,38 +1249,6 @@ selected, activated = ImGui.MenuItem("Label", "ALT+F4", selected, true)
   ImGui.SetTabItemClosed("MyDockedWindow")
 ```
 
-## Logging
-```lua
-  -- ImGui.LogToTTY(...)
-  -- Parameters: int (auto_open_depth) [O]
-  -- Overloads
-  ImGui.LogToTTY()
-  ImGui.LogToTTY(1)
-
-  -- ImGui.LogToFile(...)
-  -- Parameters: int (auto_open_depth) [O], text (fileName) [O]
-  -- Overloads
-  ImGui.LogToFile()
-  ImGui.LogToFile(1)
-  ImGui.LogToFile(1, "myfile.txt")
-
-  -- ImGui.LogToClipboard(...)
-  -- Parameters: int (auto_open_depth) [O]
-  -- Overloads
-  ImGui.LogToClipboard()
-  ImGui.LogToClipboard(1)
-
-  -- ImGui.LogFinish()
-  ImGui.LogFinish()
-
-  -- ImGui.LogButtons()
-  ImGui.LogButtons()
-
-  -- ImGui.LogText(...)
-  -- Parameters: text (fmt)
-  ImGui.LogText("I want to log this, thanks.")
-```
-
 ## Clipping
 ```lua
   -- ImGui.PushClipRect(...)
@@ -1451,6 +1414,44 @@ selected, activated = ImGui.MenuItem("Label", "ALT+F4", selected, true)
   -- Returns: int (color_u32)
   -- NOTE: this function is fundamentally
   color_u32 = ImGui.ColorConvertFloat4ToU32({0.4, 0.2, 0, 1})
+```
+
+## Inputs Utilities: Mouse
+```lua
+  -- ImGui.IsMouseHoveringRect(...)
+  -- Parameters: float (min_x), float (min_y), float(max_x), float(max_y), bool (clip) [O]
+  -- Returns: bool (hovered)
+  hovered = ImGui.IsMouseHoveringRect(0, 0, 100, 100)
+  hovered = ImGui.IsMouseHoveringRect(0, 0, 100, 100, true)
+  
+  -- ImGui.GetMousePos()
+  -- Returns: float (x), float (y)
+  x, y = ImGui.GetMousePos()
+  
+  -- ImGui.GetMousePosOnOpeningCurrentPopup()
+  -- Returns: float (x), float (y)
+  x, y = ImGui.GetMousePosOnOpeningCurrentPopup()
+  
+  -- ImGui.IsMouseDragging(...)
+  -- Parameters: ImGuiMouseButton (button), float (lock_threshold) [O]
+  -- Returns: bool (dragging)
+  -- Overloads
+  dragging = ImGui.IsMouseDragging(ImGuiMouseButton.Middle)
+  dragging = ImGui.IsMouseDragging(ImGuiMouseButton.Middle, 0.5)
+  
+  -- ImGui.GetMouseDragDelta(...)
+  -- Parameters: ImGuiMouseButton (button) [O], float (lock_threshold) [O]
+  -- Returns: float (x), float (y)
+  -- Overloads
+  x, y = ImGui.GetMouseDragDelta()
+  x, y = ImGui.GetMouseDragDelta(ImGuiMouseButton.Middle)
+  x, y = ImGui.GetMouseDragDelta(ImGuiMouseButton.Middle, 0.5)
+  
+  -- ImGui.ResetMouseDragDelta(...)
+  -- Parameters: ImGuiMouseButton (button) [O]
+  -- Overloads
+  ImGui.ResetMouseDragDelta()
+  ImGui.ResetMouseDragDelta(ImGuiMouseButton.Middle)
 ```
 
 ## Clipboard Utilities
