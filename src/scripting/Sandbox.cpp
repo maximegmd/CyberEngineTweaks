@@ -1,8 +1,6 @@
 #include <stdafx.h>
 
-#include "LuaSandbox.h"
-
-#include <Utils.h>
+#include "Sandbox.h"
 
 Sandbox::Sandbox(sol::state_view aStateView, sol::environment aBaseEnvironment, const std::filesystem::path& acRootPath)
     : m_lua(aStateView)

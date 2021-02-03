@@ -450,7 +450,7 @@ bool Scripting::ExecuteLua(const std::string& acCommand)
     }
     catch(std::exception& e)
     {
-        spdlog::get("scripting")->info(e.what());
+        spdlog::get("scripting")->error(e.what());
     }
     return false;
 }

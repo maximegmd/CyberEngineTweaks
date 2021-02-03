@@ -16,7 +16,7 @@ void LuaSandbox::Initialize(sol::state_view aStateView)
     m_env = { aStateView, sol::create };
 
     // copy whitelisted things from global table
-    constexpr std::array<std::string_view, 55> whitelistedGlobals =
+    constexpr const char* whitelistedGlobals[] =
     {
         "assert",
         "error",
@@ -84,7 +84,7 @@ void LuaSandbox::Initialize(sol::state_view aStateView)
         m_env[key].set(globals[key].get<sol::object>());
 
     // copy whitelisted libs from global table
-    constexpr std::array<std::string_view, 3> whitelistedTables =
+    constexpr const char* whitelistedTables[] =
     {
         "string",
         "table",
@@ -196,7 +196,7 @@ void LuaSandbox::InitializeExtraLibsForSandbox(Sandbox& aSandbox) const
     auto& sbEnv = aSandbox.GetEnvironment();
 
     // copy extra whitelisted libs from global table
-    constexpr std::array<std::string_view, 23> whitelistedTables =
+    constexpr const char* whitelistedTables[] =
     {
         "ImGui",
         "ImGuiCond",

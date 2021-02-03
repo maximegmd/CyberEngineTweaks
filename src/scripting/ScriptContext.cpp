@@ -2,9 +2,31 @@
 
 #include "ScriptContext.h"
 
-#include "Utils.h"
-
 #include <CET.h>
+
+// TODO: proper exception handling for Lua funcs!
+template <typename ...Args>
+static sol::protected_function_result TryLuaFunction(std::shared_ptr<spdlog::logger> aLogger, sol::function aFunc, Args... aArgs)
+{
+    sol::protected_function_result result{ };
+    if (aFunc)
+    {
+        try
+        {
+            result = aFunc(aArgs...);
+        }
+        catch(std::exception& e)
+        {
+            aLogger->error(e.what());
+        }
+        if (!result.valid())
+        {
+            sol::error error = result;
+            aLogger->error(error.what());
+        }
+    }
+    return result;
+}
 
 ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::path& acPath, const std::string& acName)
     : m_sandbox(aLuaSandbox)
