@@ -242,13 +242,20 @@ bool TweakDB::SetFlat(TweakDBID aDBID, sol::object aValue)
     ResetAllocator ___allocatorReset;
 
     RED4ext::CStackType stackType = Scripting::ToRED(aValue, stackTypeCurrent.type, &s_scratchMemory);
+    if (stackType.value == nullptr)
+    {
+        RED4ext::CName typeName;
+        stackTypeCurrent.type->GetName(typeName);
+        spdlog::get("scripting")->info("[TweakDB::SetFlat] Failed to convert value. Expecting: {}", typeName.ToString());
+        return false;
+    }
     if (stackType.type->IsEqual(stackType.value, stackTypeCurrent.value))
         return true;
 
     auto* pNewPoolItem = pFlatValuePool->GetOrCreate(stackType);
     if (pNewPoolItem == nullptr)
     {
-        spdlog::get("scripting")->info("Failed to create FlatValue. possibly not enough space.");
+        spdlog::get("scripting")->info("[TweakDB::SetFlat] Failed to create FlatValue");
         return false;
     }
     pCurentPoolItem->DecUseCount();
