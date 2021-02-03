@@ -2,6 +2,7 @@
 
 #include <RED4ext/Types/TweakDB.hpp>
 
+#include <reverse/WeakReference.h>
 #include <reverse/StrongReference.h>
 #include <scripting/Scripting.h>
 
@@ -259,6 +260,32 @@ bool TweakDB::SetFlat(TweakDBID aDBID, sol::object aValue)
     pDBID->tdbOffsetBE[2] = reinterpret_cast<uint8_t*>(&pNewPoolItem->tdbOffset)[0];
 
     return true;
+}
+
+bool TweakDB::UpdateRecordByID(TweakDBID aDBID)
+{
+    static auto* pTDB = RED4ext::TweakDB::Get();
+
+    return pTDB->UpdateRecord(RED4ext::TweakDBID(aDBID.value));
+}
+
+bool TweakDB::UpdateRecord(sol::object aValue)
+{
+    static auto* pTDB = RED4ext::TweakDB::Get();
+
+    if (aValue.is<StrongReference>())
+    {
+        return pTDB->UpdateRecord(reinterpret_cast<RED4ext::gamedataTweakDBRecord*>(aValue.as<StrongReference*>()->GetHandle()));
+    }
+    else if (aValue.is<WeakReference>())
+    {
+        return pTDB->UpdateRecord(reinterpret_cast<RED4ext::gamedataTweakDBRecord*>(aValue.as<WeakReference*>()->GetHandle()));
+    }
+    else
+    {
+        spdlog::get("scripting")->info("[TweakDB::UpdateRecord] Expecting handle or whandle");
+        return false;
+    }
 }
 
 FlatValuePool::Item::Item(int32_t aTDBOffset)

@@ -362,7 +362,8 @@ void Scripting::Initialize()
         "GetRecord", &TweakDB::GetRecord,
         "Query", &TweakDB::Query,
         "GetFlat", &TweakDB::GetFlat,
-        "SetFlat", &TweakDB::SetFlat);
+        "SetFlat", &TweakDB::SetFlat,
+        "Update", sol::overload(&TweakDB::UpdateRecordByID, &TweakDB::UpdateRecord));
 
     m_lua["TweakDB"] = TweakDB(m_lua);
 

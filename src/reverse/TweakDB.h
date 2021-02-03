@@ -11,6 +11,8 @@ struct TweakDB
   sol::object Query(TweakDBID aDBID);
   sol::object GetFlat(TweakDBID aDBID);
   bool SetFlat(TweakDBID aDBID, sol::object aValue);
+  bool UpdateRecordByID(TweakDBID aDBID);
+  bool UpdateRecord(sol::object aValue);
 
 private:
   sol::state_view m_lua;
