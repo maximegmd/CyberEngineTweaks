@@ -177,22 +177,45 @@ bool TweakDB::SetFlat(TweakDBID aDBID, sol::object aValue)
 {
     static auto* pTDB = RED4ext::TweakDB::Get();
 
-    RED4ext::TweakDBID dbid;
-    dbid.value = aDBID.value;
+    InitializeFlatValuePools();
 
-    auto* flatValue = pTDB->GetFlatValue(dbid);
+    RED4ext::TweakDBID* pDBID; // with tdbOffset
+    {
+        std::shared_lock<RED4ext::SharedMutex> _(pTDB->mutex00);
+
+        RED4ext::TweakDBID tmpDBID;
+        tmpDBID.value = aDBID.value;
+        pDBID = std::find(pTDB->flats.begin(), pTDB->flats.end(), tmpDBID);
+        if (pDBID == pTDB->flats.end())
+        {
+            return false;
+        }
+    }
+    
+    auto* flatValue = pTDB->GetFlatValue(*pDBID);
     if (flatValue == nullptr)
         return false;
 
     RED4ext::CStackType stackTypeCurrent;
     flatValue->GetValue(&stackTypeCurrent);
-    bool isDefaultValue = false;
-    pTDB->defaultValueByType.for_each([&stackTypeCurrent, &isDefaultValue](const RED4ext::CName&, RED4ext::TweakDB::FlatValue* defaultFlatValue)
-        {
-            if (stackTypeCurrent.value == defaultFlatValue)
-                isDefaultValue = true;
-        });
-    if (isDefaultValue) return false; // catastrophic. don't modify.
+
+    auto flatPoolType = FlatValuePool::RTTIToPoolType(stackTypeCurrent.type);
+    if (flatPoolType == FlatValuePool::Type::Unknown)
+    {
+        RED4ext::CName typeName;
+        stackTypeCurrent.type->GetName(typeName);
+        auto exceptionStr = fmt::format("[TweakDB::SetFlat] Unknown flat type: {08X}:{02X} {}",
+            pDBID->nameHash, pDBID->nameLength,
+            typeName.ToString());
+        throw std::exception(exceptionStr.c_str()); // This should never happen
+    }
+
+    auto* pFlatValuePool = &flatValuePools[static_cast<int32_t>(flatPoolType)];
+    auto* pCurentPoolItem = pFlatValuePool->Get(stackTypeCurrent);
+    if (pCurentPoolItem == nullptr)
+    {
+        throw std::exception("[TweakDB::SetFlat] Couldn't find current item in pool"); // This should never happen
+    }
 
     static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1024);
     struct ResetAllocator
@@ -205,7 +228,23 @@ bool TweakDB::SetFlat(TweakDBID aDBID, sol::object aValue)
     ResetAllocator ___allocatorReset;
 
     RED4ext::CStackType stackType = Scripting::ToRED(aValue, stackTypeCurrent.type, &s_scratchMemory);
-    return flatValue->SetValue(stackType);
+    if (stackType.type->IsEqual(stackType.value, stackTypeCurrent.value))
+        return true;
+
+    auto* pNewPoolItem = pFlatValuePool->GetOrCreate(stackType);
+    if (pNewPoolItem == nullptr)
+    {
+        // Failed to create FlatValue
+        return false;
+    }
+    pCurentPoolItem->DecUseCount();
+    pNewPoolItem->IncUseCount();
+
+    pDBID->tdbOffsetBE[0] = reinterpret_cast<uint8_t*>(&pNewPoolItem->tdbOffset)[2];
+    pDBID->tdbOffsetBE[1] = reinterpret_cast<uint8_t*>(&pNewPoolItem->tdbOffset)[1];
+    pDBID->tdbOffsetBE[2] = reinterpret_cast<uint8_t*>(&pNewPoolItem->tdbOffset)[0];
+
+    return true;
 }
 
 FlatValuePool::Item::Item(int32_t aTDBOffset)
