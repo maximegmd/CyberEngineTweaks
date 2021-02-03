@@ -13,6 +13,7 @@ protected:
     
 private:
     friend struct Scripting;
+    friend struct TweakDB;
     
     RED4ext::WeakHandle<RED4ext::IScriptable> m_weakHandle;
 };
