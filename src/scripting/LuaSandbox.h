@@ -17,8 +17,8 @@ struct LuaSandbox
     sol::protected_function_result ExecuteFile(const std::string& acPath);
     sol::protected_function_result ExecuteString(const std::string& acString);
     
-    Sandbox& operator[](size_t id);
-    const Sandbox& operator[](size_t id) const;
+    Sandbox& operator[](size_t aID);
+    const Sandbox& operator[](size_t aID) const;
     
 private:
 

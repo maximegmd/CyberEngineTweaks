@@ -21,8 +21,8 @@ static sol::protected_function_result TryLuaFunction(std::shared_ptr<spdlog::log
         }
         if (!result.valid())
         {
-            sol::error error = result;
-            aLogger->error(error.what());
+            const sol::error cError = result;
+            aLogger->error(cError.what());
         }
     }
     return result;
@@ -93,8 +93,8 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
         }
         else
         {
-            sol::error err = result;
-            m_logger->error(err.what());
+            const sol::error cError = result;
+            m_logger->error(cError.what());
         }
     }
     catch(std::exception& e)

@@ -334,8 +334,8 @@ void Scripting::Initialize()
             spdlog::info(name.ToString());
             count++;
         });
-        sol::environment env = aThisEnv;
-        std::shared_ptr<spdlog::logger> logger = env["__logger"].get<std::shared_ptr<spdlog::logger>>();
+        const sol::environment cEnv = aThisEnv;
+        std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
         logger->info("Dumped {} types", count);
     };
 
@@ -442,11 +442,11 @@ bool Scripting::ExecuteLua(const std::string& acCommand)
     // TODO: proper exception handling!
     try
     {
-        auto res = m_sandbox.ExecuteString(acCommand);
-        if (res.valid())
+        const auto cResult = m_sandbox.ExecuteString(acCommand);
+        if (cResult.valid())
             return true;
-        sol::error err = res;
-        spdlog::get("scripting")->error(err.what());
+        const sol::error cError = cResult;
+        spdlog::get("scripting")->error(cError.what());
     }
     catch(std::exception& e)
     {
@@ -658,8 +658,8 @@ sol::object Scripting::GetSingletonHandle(const std::string& acName, sol::this_e
     auto* pType = pRtti->GetClass(RED4ext::FNV1a(acName.c_str()));
     if (!pType)
     {
-        sol::environment env = aThisEnv;
-        std::shared_ptr<spdlog::logger> logger = env["__logger"].get<std::shared_ptr<spdlog::logger>>();
+        const sol::environment cEnv = aThisEnv;
+        std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
         logger->info("Type '{}' not found or is not initialized yet.", acName);
         return sol::nil;
     }
@@ -671,15 +671,15 @@ sol::object Scripting::GetSingletonHandle(const std::string& acName, sol::this_e
 sol::protected_function Scripting::InternalIndex(const std::string& acName, sol::this_environment aThisEnv)
 {
     const sol::state_view state(m_lua);
-    auto obj = make_object(state, [this, name = acName](sol::variadic_args args, sol::this_environment thisEnv, sol::this_state L)
+    auto obj = make_object(state, [this, name = acName](sol::variadic_args aArgs, sol::this_environment aThisEnv, sol::this_state aThisState)
     {
         std::string result;
-        auto code = this->Execute(name, args, thisEnv, L, result);
+        auto code = this->Execute(name, aArgs, aThisEnv, aThisState, result);
         if(!code)
         {
-            sol::environment env = thisEnv;
-            std::shared_ptr<spdlog::logger> logger = env["__logger"].get<std::shared_ptr<spdlog::logger>>();
-            logger->error("Error: {}", result);
+            const sol::environment cEnv = aThisEnv;
+            std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+            logger->error("Error: {}", (result.empty()) ? ("Unknown error") : (result));
         }
         return code;
     });
@@ -687,7 +687,7 @@ sol::protected_function Scripting::InternalIndex(const std::string& acName, sol:
     return NewIndex(acName, std::move(obj));
 }
 
-sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args aArgs, sol::this_environment env, sol::this_state L, std::string& aReturnMessage) const
+sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args aArgs, sol::this_environment aThisEnv, sol::this_state aThisState, std::string& aReturnMessage) const
 {
     auto* pRtti = RED4ext::CRTTISystem::Get();
     if (pRtti == nullptr)

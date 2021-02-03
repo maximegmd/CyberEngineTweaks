@@ -8,8 +8,8 @@ Sandbox::Sandbox(sol::state_view aStateView, sol::environment aBaseEnvironment, 
     , m_path(acRootPath)
 {
     // copy base environment, do not set it as fallback, as it may cause globals to bleed into other things!
-    for (auto kv : aBaseEnvironment)
-        m_env[kv.first].set(kv.second.as<sol::object>());
+    for (const auto& cKV : aBaseEnvironment)
+        m_env[cKV.first].set(cKV.second.as<sol::object>());
 }
 
 sol::protected_function_result Sandbox::ExecuteFile(const std::string& acPath)

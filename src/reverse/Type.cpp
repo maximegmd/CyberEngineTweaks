@@ -388,8 +388,8 @@ sol::object ClassType::Index_Impl(const std::string& acName, sol::this_environme
 
         if (!pFunc)
         {
-            sol::environment env = aThisEnv;
-            std::shared_ptr<spdlog::logger> logger = env["__logger"].get<std::shared_ptr<spdlog::logger>>();
+            const sol::environment cEnv = aThisEnv;
+            std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
             logger->error("Function '{}' not found in system '{}'.", acName, GetName());
             return sol::nil;
         }
@@ -401,8 +401,8 @@ sol::object ClassType::Index_Impl(const std::string& acName, sol::this_environme
         auto funcRet = apType->Execute(pFunc, name, aArgs, aThisEnv, L, result);
         if (!result.empty())
         {
-            sol::environment env = aThisEnv;
-            std::shared_ptr<spdlog::logger> logger = env["__logger"].get<std::shared_ptr<spdlog::logger>>();
+            const sol::environment cEnv = aThisEnv;
+            std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
             logger->error("Error: {}", result);
         }
         return funcRet;
