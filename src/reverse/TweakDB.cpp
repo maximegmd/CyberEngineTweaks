@@ -209,7 +209,7 @@ bool TweakDB::SetFlat(TweakDBID aDBID, sol::object aValue)
 }
 
 FlatValuePool::Item::Item(int32_t aTDBOffset)
-    : useCount(1),
+    : useCount(0),
     tdbOffset(aTDBOffset)
 {
 }
@@ -295,7 +295,9 @@ FlatValuePool::Item* FlatValuePool::GetOrCreate(const RED4ext::CStackType& acSta
 
     if (tdbOffset == -1)
     {
-        auto* pFlatValue = pTDB->CreateFlatValue(acStackType.type);
+        // TODO: Try to reuse items with useCount == 0 if it doesn't tank performance
+
+        auto* pFlatValue = pTDB->CreateFlatValue(acStackType);
         if (pFlatValue == nullptr)
         {
             // Failed to create FlatValue
@@ -332,7 +334,7 @@ FlatValuePool::HashType FlatValuePool::HashValue(const RED4ext::CStackType& acSt
         case FlatValuePool::Type::ArrayFloat:
         case FlatValuePool::Type::ArrayInt32:
         {
-            if (acStackType.type->GetType() == RED4ext::ERTTIType::Array)
+            if (acStackType.type->GetType() != RED4ext::ERTTIType::Array)
             {
                 RED4ext::CName typeName;
                 acStackType.type->GetName(typeName);
