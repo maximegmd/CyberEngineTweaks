@@ -123,6 +123,20 @@ TweakDB::TweakDB(sol::state_view aLua)
 {
 }
 
+void TweakDB::DebugStats()
+{
+    static auto* pTDB = RED4ext::TweakDB::Get();
+    std::shared_lock<RED4ext::SharedMutex> _1(pTDB->mutex00);
+    std::shared_lock<RED4ext::SharedMutex> _2(pTDB->mutex01);
+
+    spdlog::get("scripting")->info("flats: {}", pTDB->flats.size);
+    spdlog::get("scripting")->info("records: {}", pTDB->recordsByID.size);
+    spdlog::get("scripting")->info("queries: {}", pTDB->queryIDs.size);
+    spdlog::get("scripting")->info("flatDataBuffer current size: {} bytes", pTDB->flatDataBufferSize);
+    auto bufferFreeBytes = (pTDB->flatDataBuffer + pTDB->flatDataBufferSize) - pTDB->flatDataBufferEnd;
+    spdlog::get("scripting")->info("flatDataBuffer has {} free bytes (maybe {} more unique values)", bufferFreeBytes, bufferFreeBytes / 24);
+}
+
 sol::object TweakDB::GetRecord(TweakDBID aDBID)
 {
     static auto* pTDB = RED4ext::TweakDB::Get();

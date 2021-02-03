@@ -6,6 +6,7 @@ struct TweakDB
 {
   TweakDB(sol::state_view aLua);
 
+  void DebugStats();
   sol::object GetRecord(TweakDBID aDBID);
   sol::object Query(TweakDBID aDBID);
   sol::object GetFlat(TweakDBID aDBID);

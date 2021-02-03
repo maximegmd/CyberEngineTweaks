@@ -358,6 +358,7 @@ void Scripting::Initialize()
 
     m_lua.new_usertype<TweakDB>("__TweakDB",
         sol::meta_function::construct, sol::no_constructor,
+        "DebugStats", &TweakDB::DebugStats,
         "GetRecord", &TweakDB::GetRecord,
         "Query", &TweakDB::Query,
         "GetFlat", &TweakDB::GetFlat,
