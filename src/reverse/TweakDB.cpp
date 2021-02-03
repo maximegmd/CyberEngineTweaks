@@ -89,7 +89,7 @@ void InitializeFlatValuePools()
     }
 
     std::shared_lock<RED4ext::SharedMutex> _(pTDB->mutex00);
-    if (pTDB->flatDataBufferSize == 0) return; // TweakDB is not initialized yet
+    if (pTDB->flatDataBufferCapacity == 0) return; // TweakDB is not initialized yet
 
     for (RED4ext::TweakDBID& flatID : pTDB->flats)
     {
@@ -133,9 +133,7 @@ void TweakDB::DebugStats()
     spdlog::get("scripting")->info("flats: {}", pTDB->flats.size);
     spdlog::get("scripting")->info("records: {}", pTDB->recordsByID.size);
     spdlog::get("scripting")->info("queries: {}", pTDB->queryIDs.size);
-    spdlog::get("scripting")->info("flatDataBuffer current size: {} bytes", pTDB->flatDataBufferSize);
-    auto bufferFreeBytes = (pTDB->flatDataBuffer + pTDB->flatDataBufferSize) - pTDB->flatDataBufferEnd;
-    spdlog::get("scripting")->info("flatDataBuffer has {} free bytes (maybe {} more unique values)", bufferFreeBytes, bufferFreeBytes / 24);
+    spdlog::get("scripting")->info("flatDataBuffer capacity: {} bytes", pTDB->flatDataBufferCapacity);
 }
 
 sol::object TweakDB::GetRecord(TweakDBID aDBID)
@@ -249,7 +247,7 @@ bool TweakDB::SetFlat(TweakDBID aDBID, sol::object aValue)
     auto* pNewPoolItem = pFlatValuePool->GetOrCreate(stackType);
     if (pNewPoolItem == nullptr)
     {
-        spdlog::get("scripting")->info("Failed to create FlatValue. possibly not enough space."); // TODO: RED4ext.SDK should grow buffer
+        spdlog::get("scripting")->info("Failed to create FlatValue. possibly not enough space.");
         return false;
     }
     pCurentPoolItem->DecUseCount();
