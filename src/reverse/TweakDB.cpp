@@ -45,10 +45,11 @@ struct FlatValuePool
     };
     struct Item
     {
+        HashType hash;
         uint32_t useCount;
         int32_t tdbOffset;
 
-        Item(int32_t aTDBOffset);
+        Item(HashType aHash, int32_t aTDBOffset);
         void DecUseCount();
         void IncUseCount();
         RED4ext::TweakDB::FlatValue* ToFlatValue();
@@ -70,7 +71,7 @@ struct FlatValuePool
 
 private:
     Type poolType;
-    std::map<HashType, std::vector<Item>> itemPools;
+    std::vector<Item> items;
 };
 bool flatValuePoolsInitialized = false;
 std::vector<FlatValuePool> flatValuePools;
@@ -286,8 +287,9 @@ bool TweakDB::UpdateRecord(sol::object aValue)
     }
 }
 
-FlatValuePool::Item::Item(int32_t aTDBOffset)
-    : useCount(0),
+FlatValuePool::Item::Item(HashType aHash, int32_t aTDBOffset)
+    : hash(aHash),
+    useCount(0),
     tdbOffset(aTDBOffset)
 {
 }
@@ -326,12 +328,10 @@ FlatValuePool::Item* FlatValuePool::Get(const RED4ext::CStackType& acStackType)
 
 FlatValuePool::Item* FlatValuePool::Get(const RED4ext::CStackType& acStackType, HashType aHash)
 {
-    const auto it = itemPools.find(aHash);
-    if (it == itemPools.end())
-        return nullptr;
-
-    for (auto& item : it->second)
+    for (auto& item : items)
     {
+        if (item.hash != aHash) continue;
+
         const auto* pFlatValue = item.ToFlatValue();
         RED4ext::CStackType poolStackType;
         pFlatValue->GetValue(&poolStackType);
@@ -361,17 +361,6 @@ FlatValuePool::Item* FlatValuePool::GetOrCreate(const RED4ext::CStackType& acSta
     if (pItem != nullptr)
         return pItem;
 
-    std::vector<Item>* pItemPool;
-    const auto it = itemPools.find(aHash);
-    if (it == itemPools.end())
-    {
-        pItemPool = &itemPools.emplace(aHash, std::vector<Item>{}).first->second;
-    }
-    else
-    {
-        pItemPool = &it->second;
-    }
-
     if (tdbOffset == -1)
     {
         // TODO: Try to reuse items with useCount == 0 if it doesn't tank performance
@@ -382,11 +371,11 @@ FlatValuePool::Item* FlatValuePool::GetOrCreate(const RED4ext::CStackType& acSta
             // Failed to create FlatValue
             return nullptr;
         }
-        return &pItemPool->emplace_back(Item(pFlatValue->ToTDBOffset()));
+        return &items.emplace_back(Item(aHash, pFlatValue->ToTDBOffset()));
     }
     else
     {
-        return &pItemPool->emplace_back(Item(tdbOffset));
+        return &items.emplace_back(Item(aHash, tdbOffset));
     }
 }
 
