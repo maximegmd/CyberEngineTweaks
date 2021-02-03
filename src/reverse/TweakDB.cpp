@@ -248,7 +248,7 @@ bool TweakDB::SetFlat(TweakDBID aDBID, sol::object aValue)
     auto* pNewPoolItem = pFlatValuePool->GetOrCreate(stackType);
     if (pNewPoolItem == nullptr)
     {
-        // Failed to create FlatValue
+        spdlog::get("scripting")->info("Failed to create FlatValue. possibly not enough space."); // TODO: RED4ext.SDK should grow buffer
         return false;
     }
     pCurentPoolItem->DecUseCount();
