@@ -4,6 +4,104 @@
 
 #include <Utils.h>
 
+static constexpr const char* GlobalObjectsWhitelist[] =
+{
+    "assert",
+    "error",
+    "getmetatable", //< Used to extend string class
+    "ipairs",
+    "next",
+    "pairs",
+    "pcall",
+    "print",
+
+    // Required for implementing classes
+    "rawequal",
+    "rawget",
+    "rawset",
+
+    "select",
+    "setmetatable", //< Required for implementing classes
+    "tonumber",
+    "tostring",
+    "type",
+    "unpack",
+    "_VERSION",
+    "xpcall",
+
+    // CET specific
+    "NewObject",
+    "DumpReflection",
+    "DumpVtables",
+    "GetVersion",
+    "DumpAllTypeNames",
+    "ClassReference",
+    "GetDisplayResolution",
+    "Dump",
+    "ToVector3",
+    "Vector4",
+    "Game",
+    "DumpType",
+    "Enum",
+    "ToEulerAngles",
+    "GameOptions",
+    "GameDump",
+    "GetSingleton",
+    "Descriptor",
+    "ItemID",
+    "ToItemID",
+    "TweakDBID",
+    "ToCName",
+    "CName",
+    "Vector3",
+    "Quaternion",
+    "EulerAngles",
+    "ToVector4",
+    "Unknown",
+    "ToQuaternion",
+    "SingletonReference",
+    "StrongReference",
+    "ToTweakDBID",
+    "WeakReference",
+    "GetMod",
+    "__Game",
+    "__Type",
+};
+
+static constexpr const char* GlobalTablesWhitelist[] =
+{
+    "string",
+    "table",
+    "math",
+};
+
+static constexpr const char* GlobalExtraLibsWhitelist[] =
+{
+    "ImGui",
+    "ImGuiCond",
+    "ImGuiTreeNodeFlags",
+    "ImGuiSelectableFlags",
+    "ImGuiInputTextFlags",
+    "ImGuiColorEditFlags",
+    "ImGuiComboFlags",
+    "ImGuiHoveredFlags",
+    "ImGuiFocusedFlags",
+    "ImGuiPopupFlags",
+    "ImGuiTabItemFlags",
+    "ImGuiWindowFlags",
+    "ImGuiStyleVar",
+    "ImGuiTabBarFlags",
+    "ImGuiSliderFlags",
+    "ImGuiTableFlags",
+    "ImGuiTableColumnFlags",
+    "ImGuiTableRowFlags",
+    "ImGuiTableBgTarget",
+    "ImGuiMouseButton",
+    "ImGuiCol",
+    "ImGuiDir",
+    "json"
+};
+
 LuaSandbox::LuaSandbox(sol::state_view aStateView)
     : m_lua(aStateView)
 {
@@ -16,81 +114,12 @@ void LuaSandbox::Initialize(sol::state_view aStateView)
     m_env = { aStateView, sol::create };
 
     // copy whitelisted things from global table
-    constexpr const char* whitelistedGlobals[] =
-    {
-        "assert",
-        "error",
-        "getmetatable", //< Used to extend string class
-        "ipairs",
-        "next",
-        "pairs",
-        "pcall",
-        "print",
-
-        // Required for implementing classes
-        "rawequal",
-        "rawget",
-        "rawset",
-
-        "select",
-        "setmetatable", //< Required for implementing classes
-        "tonumber",
-        "tostring",
-        "type",
-        "unpack",
-        "_VERSION",
-        "xpcall",
-
-        // CET specific
-        "NewObject",
-        "DumpReflection",
-        "DumpVtables",
-        "GetVersion",
-        "DumpAllTypeNames",
-        "ClassReference",
-        "GetDisplayResolution",
-        "Dump",
-        "ToVector3",
-        "Vector4",
-        "Game",
-        "DumpType",
-        "Enum",
-        "ToEulerAngles",
-        "GameOptions",
-        "GameDump",
-        "GetSingleton",
-        "Descriptor",
-        "ItemID",
-        "ToItemID",
-        "TweakDBID",
-        "ToCName",
-        "CName",
-        "Vector3",
-        "Quaternion",
-        "EulerAngles",
-        "ToVector4",
-        "Unknown",
-        "ToQuaternion",
-        "SingletonReference",
-        "StrongReference",
-        "ToTweakDBID",
-        "WeakReference",
-        "GetMod",
-        "__Game",
-        "__Type",
-    };
     const auto globals = m_lua.globals();
-    for (const auto& key : whitelistedGlobals)
+    for (const auto& key : GlobalObjectsWhitelist)
         m_env[key].set(globals[key].get<sol::object>());
 
     // copy whitelisted libs from global table
-    constexpr const char* whitelistedTables[] =
-    {
-        "string",
-        "table",
-        "math",
-    };
-    for (const auto &tableKey : whitelistedTables)
+    for (const auto &tableKey : GlobalTablesWhitelist)
         m_env[tableKey].set(globals[tableKey].get<sol::table>());
     
     // copy safe os functions
@@ -196,34 +225,8 @@ void LuaSandbox::InitializeExtraLibsForSandbox(Sandbox& aSandbox) const
     auto& sbEnv = aSandbox.GetEnvironment();
 
     // copy extra whitelisted libs from global table
-    constexpr const char* whitelistedTables[] =
-    {
-        "ImGui",
-        "ImGuiCond",
-        "ImGuiTreeNodeFlags",
-        "ImGuiSelectableFlags",
-        "ImGuiInputTextFlags",
-        "ImGuiColorEditFlags",
-        "ImGuiComboFlags",
-        "ImGuiHoveredFlags",
-        "ImGuiFocusedFlags",
-        "ImGuiPopupFlags",
-        "ImGuiTabItemFlags",
-        "ImGuiWindowFlags",
-        "ImGuiStyleVar",
-        "ImGuiTabBarFlags",
-        "ImGuiSliderFlags",
-        "ImGuiTableFlags",
-        "ImGuiTableColumnFlags",
-        "ImGuiTableRowFlags",
-        "ImGuiTableBgTarget",
-        "ImGuiMouseButton",
-        "ImGuiCol",
-        "ImGuiDir",
-        "json"
-    };
     auto globals = m_lua.globals();
-    for (const auto &tableKey : whitelistedTables)
+    for (const auto &tableKey : GlobalExtraLibsWhitelist)
         sbEnv[tableKey].set(globals[tableKey].get<sol::table>());
 }
 
