@@ -34,7 +34,7 @@ namespace sol_ImGui
     inline bool IsWindowFocused(int flags)                           { return ImGui::IsWindowFocused(static_cast<ImGuiFocusedFlags>(flags)); }
     inline bool IsWindowHovered()                                    { return ImGui::IsWindowHovered(); }
     inline bool IsWindowHovered(int flags)                           { return ImGui::IsWindowHovered(static_cast<ImGuiHoveredFlags>(flags)); }
-    inline ImDrawList* GetWindowDrawList()                           { return nullptr; /* TODO: GetWindowDrawList() ==> UNSUPPORTED */ }
+    inline ImDrawList* GetWindowDrawList()                           { return ImGui::GetWindowDrawList(); }
     inline std::tuple<float, float> GetWindowPos()                   { const auto vec2{ ImGui::GetWindowPos() };  return std::make_tuple(vec2.x, vec2.y); }
     inline std::tuple<float, float> GetWindowSize()                  { const auto vec2{ ImGui::GetWindowSize() };  return std::make_tuple(vec2.x, vec2.y); }
     inline float GetWindowWidth()                                    { return ImGui::GetWindowWidth(); }
@@ -1630,7 +1630,9 @@ namespace sol_ImGui
     inline bool IsRectVisible(float minX, float minY, float maxX, float maxY)              { return ImGui::IsRectVisible({ minX, minY }, { maxX, maxY }); }
     inline double GetTime()                                                                { return ImGui::GetTime(); }
     inline int GetFrameCount()                                                             { return ImGui::GetFrameCount(); }
-    /* TODO: GetBackgroundDrawList(), GetForeGroundDrawList(), GetDrawListSharedData() ==> UNSUPPORTED */
+    inline ImDrawList* GetBackgroundDrawList()                                             { return ImGui::GetBackgroundDrawList(); }
+    inline ImDrawList* GetForegroundDrawList()                                             { return ImGui::GetForegroundDrawList(); }
+    /* TODO: GetDrawListSharedData() ==> UNSUPPORTED */
     inline std::string GetStyleColorName(int idx)                                          { return std::string(ImGui::GetStyleColorName(static_cast<ImGuiCol>(idx))); }
     /* TODO: SetStateStorage(), GetStateStorage(), CalcListClipping() ==> UNSUPPORTED */
     inline bool BeginChildFrame(unsigned int id, float sizeX, float sizeY)                 { return ImGui::BeginChildFrame(id, { sizeX, sizeY }); }
@@ -1690,6 +1692,45 @@ namespace sol_ImGui
     // Clipboard Utilities
     inline std::string GetClipboardText()                                                             { return std::string(ImGui::GetClipboardText()); }
     inline void SetClipboardText(const std::string& text)                                             { ImGui::SetClipboardText(text.c_str()); }
+
+    // Drawing APIs
+    // Primitives
+    inline void ImDrawListAddLine(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, int col)                                                                                                    { drawlist->AddLine({ p1X, p1Y }, { p2X, p2Y }, ImU32(col)); }
+    inline void ImDrawListAddLine(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, int col, float thickness)                                                                                   { drawlist->AddLine({ p1X, p1Y }, { p2X, p2Y }, ImU32(col), thickness); }
+    inline void ImDrawListAddRect(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col)                                                                                        { drawlist->AddRect({ p_minX, p_minY }, { p_maxX, p_maxY }, ImU32(col)); }
+    inline void ImDrawListAddRect(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col, float rounding)                                                                        { drawlist->AddRect({ p_minX, p_minY }, { p_maxX, p_maxY }, ImU32(col), rounding); }
+    inline void ImDrawListAddRect(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col, float rounding, int rounding_corners)                                                  { drawlist->AddRect({ p_minX, p_minY }, { p_maxX, p_maxY }, ImU32(col), rounding, static_cast<ImDrawCornerFlags>(rounding_corners)); }
+    inline void ImDrawListAddRect(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col, float rounding, int rounding_corners, float thickness)                                 { drawlist->AddRect({ p_minX, p_minY }, { p_maxX, p_maxY }, ImU32(col), rounding, static_cast<ImDrawCornerFlags>(rounding_corners), thickness); }
+    inline void ImDrawListAddRectFilled(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col)                                                                                  { drawlist->AddRectFilled({ p_minX, p_minY }, { p_maxX, p_maxY }, ImU32(col)); }
+    inline void ImDrawListAddRectFilled(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col, float rounding)                                                                  { drawlist->AddRectFilled({ p_minX, p_minY }, { p_maxX, p_maxY }, ImU32(col), rounding); }
+    inline void ImDrawListAddRectFilled(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col, float rounding, int rounding_corners)                                            { drawlist->AddRectFilled({ p_minX, p_minY }, { p_maxX, p_maxY }, ImU32(col), rounding, static_cast<ImDrawCornerFlags>(rounding_corners)); }
+    inline void ImDrawListAddRectFilledMultiColor(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col_upr_left, int col_upr_right, int col_bot_right, int col_bot_left)       { drawlist->AddRectFilledMultiColor({ p_minX, p_minY }, { p_maxX, p_maxY }, ImU32(col_upr_left), ImU32(col_upr_right), ImU32(col_bot_right), ImU32(col_bot_left)); }
+    inline void ImDrawListAddQuad(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, float p4X, float p4Y, int col)                                                        { drawlist->AddQuad({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, { p4X, p4Y }, ImU32(col)); }
+    inline void ImDrawListAddQuad(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, float p4X, float p4Y, int col, float thickness)                                       { drawlist->AddQuad({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, { p4X, p4Y }, ImU32(col), thickness); }
+    inline void ImDrawListAddQuadFilled(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, float p4X, float p4Y, int col)                                                  { drawlist->AddQuadFilled({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, { p4X, p4Y }, ImU32(col)); }
+    inline void ImDrawListAddTriangle(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, int col)                                                                          { drawlist->AddTriangle({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, ImU32(col)); }
+    inline void ImDrawListAddTriangle(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, int col, float thickness)                                                         { drawlist->AddTriangle({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, ImU32(col), thickness); }
+    inline void ImDrawListAddTriangleFilled(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, int col)                                                                    { drawlist->AddTriangleFilled({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, ImU32(col)); }
+    inline void ImDrawListAddCircle(ImDrawList* drawlist, float centerX, float centerY, float radius, int col)                                                                                                  { drawlist->AddCircle({ centerX, centerY }, radius, ImU32(col)); }
+    inline void ImDrawListAddCircle(ImDrawList* drawlist, float centerX, float centerY, float radius, int col, int num_segments)                                                                                { drawlist->AddCircle({ centerX, centerY }, radius, ImU32(col), num_segments); }
+    inline void ImDrawListAddCircle(ImDrawList* drawlist, float centerX, float centerY, float radius, int col, int num_segments, float thickness)                                                               { drawlist->AddCircle({ centerX, centerY }, radius, ImU32(col), num_segments, thickness); }
+    inline void ImDrawListAddCircleFilled(ImDrawList* drawlist, float centerX, float centerY, float radius, int col)                                                                                            { drawlist->AddCircleFilled({ centerX, centerY }, radius, ImU32(col)); }
+    inline void ImDrawListAddCircleFilled(ImDrawList* drawlist, float centerX, float centerY, float radius, int col, int num_segments)                                                                          { drawlist->AddCircleFilled({ centerX, centerY }, radius, ImU32(col), num_segments); }
+    inline void ImDrawListAddNgon(ImDrawList* drawlist, float centerX, float centerY, float radius, int col, int num_segments)                                                                                  { drawlist->AddNgon({ centerX, centerY }, radius, ImU32(col), num_segments); }
+    inline void ImDrawListAddNgon(ImDrawList* drawlist, float centerX, float centerY, float radius, int col, int num_segments, float thickness)                                                                 { drawlist->AddNgon({ centerX, centerY }, radius, ImU32(col), num_segments, thickness); }
+    inline void ImDrawListAddNgonFilled(ImDrawList* drawlist, float centerX, float centerY, float radius, int col, int num_segments)                                                                            { drawlist->AddNgonFilled({ centerX, centerY }, radius, ImU32(col), num_segments); }
+    inline void ImDrawListAddText(ImDrawList* drawlist, float posX, float posY, int col, const std::string& text_begin)                                                                                         { drawlist->AddText({ posX, posY }, ImU32(col), text_begin.c_str()); }
+    inline void ImDrawListAddText(ImDrawList* drawlist, float font_size, float posX, float posY, int col, const std::string& text_begin)                                                                        { drawlist->AddText(ImGui::GetFont(), font_size, { posX, posY }, ImU32(col), text_begin.c_str()); }
+    inline void ImDrawListAddText(ImDrawList* drawlist, float font_size, float posX, float posY, int col, const std::string& text_begin, float wrap_width)                                                      { drawlist->AddText(ImGui::GetFont(), font_size, { posX, posY }, ImU32(col), text_begin.c_str(), NULL, wrap_width); }
+    // TODO
+    // inline void ImDrawListAddText(ImDrawList* drawlist, float font_size, float posX, float posY, int col, const std::string& text_begin, float wrap_width, sol::table float cpu_fine_clip_rect)                 { drawlist->AddText(ImGui::GetFont(), font_size, { posX, posY }, ImU32(col), text_begin.c_str(), NULL, wrap_width, cpu_fine_clip_rect); }
+    // inline void ImDrawListAddPolyline(ImDrawList* drawlist, sol::table points, int num_points, int col, bool closed, float thickness)                                                                           { drawlist->AddPolyline(points, num_points, ImU32(col), &closed, thickness); }
+    // inline void ImDrawListAddConvexPolyFilled(ImDrawList* drawlist, sol::table points, int num_points, int col)                                                                                                 { drawlist->AddConvexPolyFilled(points, num_points, ImU32(col)); }
+    inline void ImDrawListAddBezierCubic(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, float p4X, float p4Y, int col, float thickness)                                { drawlist->AddBezierCubic({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, { p4X, p4Y }, ImU32(col), thickness); }
+    inline void ImDrawListAddBezierCubic(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, float p4X, float p4Y, int col, float thickness, int num_segments)              { drawlist->AddBezierCubic({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, { p4X, p4Y }, ImU32(col), thickness, num_segments); }
+    inline void ImDrawListAddBezierQuadratic(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, int col, float thickness)                                                  { drawlist->AddBezierQuadratic({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, ImU32(col), thickness); }
+    inline void ImDrawListAddBezierQuadratic(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, int col, float thickness, int num_segments)                                { drawlist->AddBezierQuadratic({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, ImU32(col), thickness, num_segments); }
+    
 
     inline void InitEnums(sol::state& lua)
     {
@@ -2138,6 +2179,21 @@ namespace sol_ImGui
             "COUNT"                          , ImGuiMouseButton_COUNT
         );
 #pragma endregion MouseButton
+
+#pragma region ImDrawCorner Flags
+        lua.new_enum("ImDrawCornerFlags",
+            "None"                           , ImDrawCornerFlags_None,
+            "TopLeft"                        , ImDrawCornerFlags_TopLeft,
+            "TopRight"                       , ImDrawCornerFlags_TopRight,
+            "BotLeft"                        , ImDrawCornerFlags_BotLeft,
+            "BotRight"                       , ImDrawCornerFlags_BotRight,
+            "Top"                            , ImDrawCornerFlags_Top,
+            "Bot"                            , ImDrawCornerFlags_Bot,
+            "Left"                           , ImDrawCornerFlags_Left,
+            "Right"                          , ImDrawCornerFlags_Right,
+            "All"                            , ImDrawCornerFlags_All
+        );
+#pragma endregion ImDrawCorner Flags
     }
 
     inline void InitBindings(sol::state& lua)
@@ -2178,6 +2234,7 @@ namespace sol_ImGui
                                                                 sol::resolve<bool()>(IsWindowHovered),
                                                                 sol::resolve<bool(int)>(IsWindowHovered)
                                                             ));
+        ImGui.set_function("GetWindowDrawList"      , GetWindowDrawList);
         ImGui.set_function("GetWindowPos"           , GetWindowPos);
         ImGui.set_function("GetWindowSize"          , GetWindowSize);
         ImGui.set_function("GetWindowWidth"         , GetWindowWidth);
@@ -2854,6 +2911,8 @@ namespace sol_ImGui
                                                             ));
         ImGui.set_function("GetTime"                , GetTime);
         ImGui.set_function("GetFrameCount"          , GetFrameCount);
+        ImGui.set_function("GetBackgroundDrawList"  , GetBackgroundDrawList);
+        ImGui.set_function("GetForegroundDrawList"  , GetForegroundDrawList);
         ImGui.set_function("GetStyleColorName"      , GetStyleColorName);
         ImGui.set_function("BeginChildFrame"        , sol::overload(
                                                                 sol::resolve<bool(unsigned int, float, float)>(BeginChildFrame),
@@ -2903,5 +2962,64 @@ namespace sol_ImGui
         ImGui.set_function("GetClipboardText"        , GetClipboardText);
         ImGui.set_function("SetClipboardText"        , SetClipboardText);
 #pragma endregion Clipboard Utilities
+
+#pragma region Drawing APIs
+        ImGui.set_function("ImDrawListAddLine"                 , sol::overload(
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, int)>(ImDrawListAddLine),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, int, float)>(ImDrawListAddLine)
+                                                                    ));
+        ImGui.set_function("ImDrawListAddRect"                 , sol::overload(
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, int)>(ImDrawListAddRect),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, int, float)>(ImDrawListAddRect),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, int, float, int)>(ImDrawListAddRect),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, int, float, int, float)>(ImDrawListAddRect)
+                                                                    ));
+        ImGui.set_function("ImDrawListAddRectFilled"           , sol::overload(
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, int)>(ImDrawListAddRectFilled),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, int, float)>(ImDrawListAddRectFilled),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, int, float, int)>(ImDrawListAddRectFilled)
+                                                                    ));
+        ImGui.set_function("ImDrawListAddRectFilledMultiColor" , ImDrawListAddRectFilledMultiColor);
+        ImGui.set_function("ImDrawListAddQuad"                 , sol::overload(
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, float, float, float, float, int)>(ImDrawListAddQuad),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, float, float, float, float, int, float)>(ImDrawListAddQuad)
+                                                                    ));
+        ImGui.set_function("ImDrawListAddQuadFilled"           , ImDrawListAddQuadFilled);
+        ImGui.set_function("ImDrawListAddTriangle"             , sol::overload(
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, float, float, int)>(ImDrawListAddTriangle),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, float, float, int, float)>(ImDrawListAddTriangle)
+                                                                    ));
+        ImGui.set_function("ImDrawListAddTriangleFilled"       , ImDrawListAddTriangleFilled);
+        ImGui.set_function("ImDrawListAddCircle"               , sol::overload(
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, int)>(ImDrawListAddCircle),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, int, int)>(ImDrawListAddCircle),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, int, int, float)>(ImDrawListAddCircle)
+                                                                    ));
+        ImGui.set_function("ImDrawListAddCircleFilled"         , sol::overload(
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, int)>(ImDrawListAddCircleFilled),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, int, int)>(ImDrawListAddCircleFilled)
+                                                                    ));
+        ImGui.set_function("ImDrawListAddNgon"                 , sol::overload(
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, int, int)>(ImDrawListAddNgon),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, int, int, float)>(ImDrawListAddNgon)
+                                                                    ));
+        ImGui.set_function("ImDrawListAddNgonFilled"           , ImDrawListAddNgonFilled);
+        ImGui.set_function("ImDrawListAddText"                 , sol::overload(
+                                                                               sol::resolve<void(ImDrawList*, float, float, int, const std::string&)>(ImDrawListAddText),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, int, const std::string&)>(ImDrawListAddText),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, int, const std::string&, float)>(ImDrawListAddText)
+                                                                            //    sol::resolve<void(ImDrawList*, float, float, float, int, const std::string&, float, ImVec4*)>(ImDrawListAddText)
+                                                                    ));
+        // ImGui.set_function("ImDrawListAddPolyline  "           , ImDrawListAddPolyline);
+        // ImGui.set_function("ImDrawListAddConvexPolyFilled"     , ImDrawListAddConvexPolyFilled);
+        ImGui.set_function("ImDrawListAddBezierCubic"          , sol::overload(
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, float, float, float, float, int, float)>(ImDrawListAddBezierCubic),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, float, float, float, float, int, float, int)>(ImDrawListAddBezierCubic)
+                                                                    ));
+        ImGui.set_function("ImDrawListAddBezierQuadratic"      , sol::overload(
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, float, float, int, float)>(ImDrawListAddBezierQuadratic),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, float, float, int, float, int)>(ImDrawListAddBezierQuadratic)
+                                                                    ));
+#pragma endregion Drawing APIs
     }
 }
