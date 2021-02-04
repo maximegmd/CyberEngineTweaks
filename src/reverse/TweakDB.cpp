@@ -60,12 +60,12 @@ struct FlatValuePool
     Item* Get(const RED4ext::CStackType& acStackType, HashType aHash);
 
     // Write-Lock TweakDB
-    Item* GetOrCreate(const RED4ext::CStackType& acStackType, int32_t tdbOffset = -1);
+    Item* GetOrCreate(const RED4ext::CStackType& acStackType, int32_t aTDBOffset = -1);
     // Write-Lock TweakDB
-    Item* GetOrCreate(const RED4ext::CStackType& acStackType, HashType aHash, int32_t tdbOffset);
+    Item* GetOrCreate(const RED4ext::CStackType& acStackType, HashType aHash, int32_t aTDBOffset);
 
-    HashType HashValue(const RED4ext::CStackType& acStackType, HashType seed = HashType{});
-    HashType HashValue(const RED4ext::CStackType& acStackType, Type aType, HashType seed = HashType{});
+    HashType HashValue(const RED4ext::CStackType& acStackType, HashType aSeed = HashType{});
+    HashType HashValue(const RED4ext::CStackType& acStackType, Type aType, HashType aSeed = HashType{});
 
     static Type RTTIToPoolType(const RED4ext::IRTTIType* acpType);
 
@@ -355,12 +355,12 @@ FlatValuePool::Item* FlatValuePool::Get(const RED4ext::CStackType& acStackType, 
     return nullptr;
 }
 
-FlatValuePool::Item* FlatValuePool::GetOrCreate(const RED4ext::CStackType& acStackType, int32_t tdbOffset)
+FlatValuePool::Item* FlatValuePool::GetOrCreate(const RED4ext::CStackType& acStackType, int32_t aTDBOffset)
 {
-    return GetOrCreate(acStackType, HashValue(acStackType), tdbOffset);
+    return GetOrCreate(acStackType, HashValue(acStackType), aTDBOffset);
 }
 
-FlatValuePool::Item* FlatValuePool::GetOrCreate(const RED4ext::CStackType& acStackType, HashType aHash, int32_t tdbOffset)
+FlatValuePool::Item* FlatValuePool::GetOrCreate(const RED4ext::CStackType& acStackType, HashType aHash, int32_t aTDBOffset)
 {
     static auto* pTDB = RED4ext::TweakDB::Get();
 
@@ -368,9 +368,10 @@ FlatValuePool::Item* FlatValuePool::GetOrCreate(const RED4ext::CStackType& acSta
     if (pItem != nullptr)
         return pItem;
 
-    if (tdbOffset == -1)
+    if (aTDBOffset == -1)
     {
-        // TODO: Try to reuse items with useCount == 0 if it doesn't tank performance
+        // Should we overwrite flat values with 0 useCount?
+        // What happens to the records pointing to them that werent updated yet?
 
         auto* pFlatValue = pTDB->CreateFlatValue(acStackType);
         if (pFlatValue == nullptr)
@@ -382,16 +383,16 @@ FlatValuePool::Item* FlatValuePool::GetOrCreate(const RED4ext::CStackType& acSta
     }
     else
     {
-        return &items.emplace_back(Item(aHash, tdbOffset));
+        return &items.emplace_back(Item(aHash, aTDBOffset));
     }
 }
 
-FlatValuePool::HashType FlatValuePool::HashValue(const RED4ext::CStackType& acStackType, HashType seed)
+FlatValuePool::HashType FlatValuePool::HashValue(const RED4ext::CStackType& acStackType, HashType aSeed)
 {
-    return HashValue(acStackType, poolType, seed);
+    return HashValue(acStackType, poolType, aSeed);
 }
 
-FlatValuePool::HashType FlatValuePool::HashValue(const RED4ext::CStackType& acStackType, Type aType, HashType seed)
+FlatValuePool::HashType FlatValuePool::HashValue(const RED4ext::CStackType& acStackType, Type aType, HashType aSeed)
 {
     switch (aType)
     {
@@ -426,7 +427,7 @@ FlatValuePool::HashType FlatValuePool::HashValue(const RED4ext::CStackType& acSt
                 throw std::exception(fmt::format("[FlatValuePool::HashValue] Unexpected Array inner RTTI type: {}", typeName.ToString()).c_str());
             }
 
-            HashType hash = seed;
+            HashType hash = aSeed;
             for (uint32_t i = 0; i != pArrayType->GetLength(acStackType.value); ++i)
             {
                 RED4ext::CStackType innerStackType;
@@ -451,20 +452,20 @@ FlatValuePool::HashType FlatValuePool::HashValue(const RED4ext::CStackType& acSt
         case FlatValuePool::Type::Int32:
         {
             auto* pData = reinterpret_cast<uint8_t*>(acStackType.value);
-            return RED4ext::CRC32(pData, acStackType.type->GetSize(), seed);
+            return RED4ext::CRC32(pData, acStackType.type->GetSize(), aSeed);
         }
 
         case FlatValuePool::Type::TweakDBID:
         {
             auto* pData = reinterpret_cast<uint8_t*>(acStackType.value);
-            return RED4ext::CRC32(pData, 4 + 1 /* nameHash + nameLen */, seed);
+            return RED4ext::CRC32(pData, 4 + 1 /* nameHash + nameLen */, aSeed);
         }
 
         case FlatValuePool::Type::String:
         {
             auto* pString = reinterpret_cast<RED4ext::CString*>(acStackType.value);
             auto* pData = reinterpret_cast<const uint8_t*>(pString->c_str());
-            return RED4ext::CRC32(pData, pString->Length(), seed);
+            return RED4ext::CRC32(pData, pString->Length(), aSeed);
         }
     }
     throw std::exception("[FlatValuePool::HashValue] Unknown PoolType"); // This should never happen
