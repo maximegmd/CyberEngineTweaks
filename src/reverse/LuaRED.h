@@ -2,7 +2,7 @@
 
 #include "common/Meta.h"
 
-template<class T, FixedString REDName>
+template<class T, FixedString REDName, bool CheckObjectType = !std::is_arithmetic_v<T>>
 struct LuaRED
 {
     static constexpr char const* Name = REDName;
@@ -16,10 +16,13 @@ struct LuaRED
     {
         RED4ext::CStackType result;
         result.type = m_pRtti;
-        if(aObject != sol::nil)
-            result.value = apAllocator->New<T>(aObject.as<T>());
-        else
-            result.value = apAllocator->New<T>();
+        if (!CheckObjectType || aObject.is<T>())
+        {
+            if (aObject != sol::nil)
+                result.value = apAllocator->New<T>(aObject.as<T>());
+            else
+                result.value = apAllocator->New<T>();
+        }
 
         return result;
     }
