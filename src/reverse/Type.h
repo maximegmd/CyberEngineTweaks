@@ -14,10 +14,10 @@ struct Type
 
     Type(sol::state_view aView, RED4ext::IRTTIType* apClass);
 
-    sol::object Index(const std::string& acName);
+    sol::object Index(const std::string& acName, sol::this_environment aThisEnv);
     sol::object NewIndex(const std::string& acName, sol::object aParam);
 
-    virtual sol::object Index_Impl(const std::string& acName);
+    virtual sol::object Index_Impl(const std::string& acName, sol::this_environment aThisEnv);
     virtual sol::object NewIndex_Impl(const std::string& acName, sol::object aParam);
 
     std::string GetName() const;
@@ -42,17 +42,17 @@ struct ClassType : Type
 {
     ClassType(sol::state_view aView, RED4ext::IRTTIType* apClass);
 
-    virtual Descriptor Dump(bool aWithHashes) const;
-    virtual sol::object Index_Impl(const std::string& acName);
-    virtual sol::object NewIndex_Impl(const std::string& acName, sol::object aParam);
+    Descriptor Dump(bool aWithHashes) const override;
+    sol::object Index_Impl(const std::string& acName, sol::this_environment aThisEnv) override;
+    sol::object NewIndex_Impl(const std::string& acName, sol::object aParam) override;
 };
 
 struct UnknownType : Type
 {
     UnknownType(sol::state_view aView, RED4ext::IRTTIType* apClass, RED4ext::ScriptInstance apInstance);
 
-    virtual Descriptor Dump(bool aWithHashes) const;
-    virtual RED4ext::ScriptInstance GetHandle() { return m_pInstance.get(); }
+    Descriptor Dump(bool aWithHashes) const override;
+    RED4ext::ScriptInstance GetHandle()  override { return m_pInstance.get(); }
 
 private:
     std::unique_ptr<uint8_t[]> m_pInstance;

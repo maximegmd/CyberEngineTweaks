@@ -2,16 +2,18 @@
 
 #include "ScriptStore.h"
 
-ScriptStore::ScriptStore(const Paths& aPaths, VKBindings& aBindings)
-    : m_paths(aPaths)
+ScriptStore::ScriptStore(LuaSandbox& aLuaSandbox, const Paths& aPaths, VKBindings& aBindings)
+    : m_sandbox(aLuaSandbox)
+    , m_paths(aPaths)
     , m_bindings(aBindings)
 {
 }
 
-void ScriptStore::LoadAll(sol::state_view aStateView)
+void ScriptStore::LoadAll()
 {
     m_vkBindInfos.clear();
     m_contexts.clear();
+    m_sandbox.ResetState();
 
     auto consoleLogger = spdlog::get("scripting");
 
@@ -36,7 +38,7 @@ void ScriptStore::LoadAll(sol::state_view aStateView)
             continue;
         }
 
-        auto ctx = ScriptContext{aStateView, relative(file.path(), cModsRoot)};
+        auto ctx = ScriptContext{m_sandbox, file.path(), name};
         if (ctx.IsValid())
         {
             auto& ctxBinds = ctx.GetBinds();

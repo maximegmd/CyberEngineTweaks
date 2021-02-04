@@ -35,9 +35,9 @@ Type::Type(sol::state_view aView, RED4ext::IRTTIType* apClass)
 {
 }
 
-sol::object Type::Index(const std::string& acName)
+sol::object Type::Index(const std::string& acName, sol::this_environment aThisEnv)
 {
-    return Index_Impl(acName);
+    return Index_Impl(acName, aThisEnv);
 }
 
 sol::object Type::NewIndex(const std::string& acName, sol::object aParam)
@@ -45,7 +45,7 @@ sol::object Type::NewIndex(const std::string& acName, sol::object aParam)
     return NewIndex_Impl(acName, aParam);
 }
 
-sol::object Type::Index_Impl(const std::string& acName)
+sol::object Type::Index_Impl(const std::string& acName, sol::this_environment aThisEnv)
 {
     if (const auto itor = m_properties.find(acName); itor != m_properties.end())
     {
@@ -347,7 +347,7 @@ Type::Descriptor ClassType::Dump(bool aWithHashes) const
     return descriptor;
 }
 
-sol::object ClassType::Index_Impl(const std::string& acName)
+sol::object ClassType::Index_Impl(const std::string& acName, sol::this_environment aThisEnv)
 {
     auto pType = static_cast<RED4ext::CClass*>(m_pType);
     auto handle = GetHandle();
@@ -362,7 +362,7 @@ sol::object ClassType::Index_Impl(const std::string& acName)
         }
     }
 
-    auto res = Type::Index_Impl(acName);
+    auto res = Type::Index_Impl(acName, aThisEnv);
     if (res != sol::nil)
     {
         return res;
@@ -388,18 +388,22 @@ sol::object ClassType::Index_Impl(const std::string& acName)
 
         if (!pFunc)
         {
-            spdlog::get("scripting")->info("Function '{}' not found in system '{}'.", acName, GetName());
+            const sol::environment cEnv = aThisEnv;
+            std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+            logger->error("Function '{}' not found in system '{}'.", acName, GetName());
             return sol::nil;
         }
     }
 
-    auto obj = make_object(m_lua, [pFunc, name = acName](Type* apType, sol::variadic_args args, sol::this_environment env, sol::this_state L)
+    auto obj = make_object(m_lua, [pFunc, name = acName](Type* apType, sol::variadic_args aArgs, sol::this_environment aThisEnv, sol::this_state L)
     {
         std::string result;
-        auto funcRet = apType->Execute(pFunc, name, args, env, L, result);
+        auto funcRet = apType->Execute(pFunc, name, aArgs, aThisEnv, L, result);
         if (!result.empty())
         {
-            spdlog::get("scripting")->info("Error: {}", result);
+            const sol::environment cEnv = aThisEnv;
+            std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+            logger->error("Error: {}", result);
         }
         return funcRet;
     });

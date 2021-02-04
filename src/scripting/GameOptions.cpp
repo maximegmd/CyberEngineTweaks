@@ -307,9 +307,9 @@ void GameOptions::Set(const std::string& category, const std::string& name, cons
     else
     {
         if (option->type == GameOptionType::String)
-            consoleLogger->info("Failed to set game option '{}/{}', can't set string options right now.", category, name);
+            consoleLogger->error("Failed to set game option '{}/{}', can't set string options right now.", category, name);
         else
-            consoleLogger->info("Failed to set game option '{}/{}' due to an error (missing pointer?).", category, name);
+            consoleLogger->error("Failed to set game option '{}/{}' due to an error (missing pointer?).", category, name);
     }
 }
 
@@ -325,9 +325,9 @@ void GameOptions::SetBool(const std::string& category, const std::string& name, 
     else
     {
         if (option->type != GameOptionType::Boolean)
-            consoleLogger->info("Failed to set game option '{}/{}', not a boolean.", category, name);
+            consoleLogger->error("Failed to set game option '{}/{}', not a boolean.", category, name);
         else
-            consoleLogger->info("Failed to set game option '{}/{}' due to an error (missing pointer?).", category, name);
+            consoleLogger->error("Failed to set game option '{}/{}' due to an error (missing pointer?).", category, name);
     }
 }
 
@@ -343,9 +343,9 @@ void GameOptions::SetInt(const std::string& category, const std::string& name, i
     else
     {
         if (option->type != GameOptionType::Integer && option->type != GameOptionType::Color)
-            consoleLogger->info("Failed to set game option '{}/{}', not an integer.", category, name);
+            consoleLogger->error("Failed to set game option '{}/{}', not an integer.", category, name);
         else
-            consoleLogger->info("Failed to set game option '{}/{}' due to an error (missing pointer?).", category, name);
+            consoleLogger->error("Failed to set game option '{}/{}' due to an error (missing pointer?).", category, name);
     }
 }
 
@@ -361,9 +361,9 @@ void GameOptions::SetFloat(const std::string& category, const std::string& name,
     else
     {
         if (option->type != GameOptionType::Float)
-            consoleLogger->info("Failed to set game option '{}/{}', not a float.", category, name);
+            consoleLogger->error("Failed to set game option '{}/{}', not a float.", category, name);
         else
-            consoleLogger->info("Failed to set game option '{}/{}' due to an error (missing pointer?).", category, name);
+            consoleLogger->error("Failed to set game option '{}/{}' due to an error (missing pointer?).", category, name);
     }
 }
 
@@ -379,9 +379,9 @@ void GameOptions::Toggle(const std::string& category, const std::string& name)
     else
     {
         if (option->type != GameOptionType::Boolean)
-            consoleLogger->info("Failed to set game option '{}/{}', not a boolean.", category, name);
+            consoleLogger->error("Failed to set game option '{}/{}', not a boolean.", category, name);
         else
-            consoleLogger->info("Failed to set game option '{}/{}' due to an error (missing pointer?).", category, name);
+            consoleLogger->error("Failed to set game option '{}/{}' due to an error (missing pointer?).", category, name);
     }
 }
 

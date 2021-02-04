@@ -32,17 +32,18 @@ struct Scripting
 
 protected:
 
-    sol::object Index(const std::string& acName);
+    sol::object Index(const std::string& acName, sol::this_environment aThisEnv);
     sol::object NewIndex(const std::string& acName, sol::object aParam);
-    sol::object GetSingletonHandle(const std::string& acName);
-    sol::protected_function InternalIndex(const std::string& acName);
+    sol::object GetSingletonHandle(const std::string& acName, sol::this_environment aThisEnv);
+    sol::protected_function InternalIndex(const std::string& acName, sol::this_environment aThisEnv);
     
-    sol::object Execute(const std::string& aFuncName, sol::variadic_args args, sol::this_environment env, sol::this_state L, std::string& aReturnMessage) const;
+    sol::object Execute(const std::string& aFuncName, sol::variadic_args aArgs, sol::this_environment aThisEnv, sol::this_state aThisState, std::string& aReturnMessage) const;
 
 private:
     sol::state m_lua{ };
     std::unordered_map<std::string, sol::object> m_properties{ };
     std::unordered_map<std::string, SingletonReference> m_singletons{ };
+    LuaSandbox m_sandbox{ m_lua }; // some object must be passed here... will be reset in Initialize
     ScriptStore m_store;
     const Paths& m_paths;
     D3D12& m_d3d12;
