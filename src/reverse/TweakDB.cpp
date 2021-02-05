@@ -231,7 +231,7 @@ bool TweakDB::SetFlat(TweakDBID aDBID, sol::object aValue)
         throw std::exception("[TweakDB::SetFlat] Couldn't find current item in pool"); // This should never happen
     }
 
-    static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1024);
+    static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 22);
     struct ResetAllocator
     {
         ~ResetAllocator()
