@@ -64,8 +64,7 @@ static constexpr const char* s_cGlobalObjectsWhitelist[] =
     "ToTweakDBID",
     "WeakReference",
     "GetMod",
-    "__Game",
-    "__Type",
+    "TweakDB"
 };
 
 static constexpr const char* s_cGlobalTablesWhitelist[] =
