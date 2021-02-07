@@ -6,6 +6,7 @@
 #include "d3d12/D3D12.h"
 #include "overlay/Overlay.h"
 #include "scripting/LuaVM.h"
+#include "common/CETTasks.h"
 
 struct CET
 {
@@ -33,4 +34,5 @@ private:
     D3D12 m_d3d12;
     LuaVM m_vm;
     Overlay m_overlay;
+    CETTasks m_tasks;
 };

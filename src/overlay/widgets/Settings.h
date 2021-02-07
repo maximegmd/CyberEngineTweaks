@@ -31,6 +31,7 @@ private:
     bool m_patchDisableBoundaryTeleport{ false };
     bool m_patchDisableWin7Vsync{ false };
     bool m_dumpGameOptions{ false };
+    bool m_telemetry{ true };
     VKBindings& m_bindings;
     Overlay& m_overlay;
     Options& m_options;

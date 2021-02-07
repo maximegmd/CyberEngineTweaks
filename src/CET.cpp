@@ -59,6 +59,7 @@ CET::CET()
     , m_d3d12(m_window, m_paths, m_options)
     , m_vm(m_paths, m_bindings, m_d3d12, m_options)
     , m_overlay(m_d3d12, m_bindings, m_options, m_vm)
+    , m_tasks(m_options)
 {
     m_bindings.Bind(m_options.OverlayKeyBind, m_overlay.GetBind());
     m_bindings.ConnectUpdate(m_d3d12);
