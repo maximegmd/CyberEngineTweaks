@@ -10,7 +10,7 @@ Ethereum: 0x43D4071c06BC7b41634E677250Ba4108A2A424Aa
 
 This plugin fixes some Cyberpunk 2077 issues and adds some features.
 
-Works with 1.11.
+Works with 1.12.
 
 ### Current fixes
 
