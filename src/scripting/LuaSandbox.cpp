@@ -14,6 +14,7 @@ static constexpr const char* s_cGlobalObjectsWhitelist[] =
     "pairs",
     "pcall",
     "print",
+    "load",
 
     // Required for implementing classes
     "rawequal",
