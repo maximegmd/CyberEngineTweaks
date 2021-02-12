@@ -23,6 +23,42 @@ void Console::OnDisable()
 {
 }
 
+int Console::HandleConsoleHistory(ImGuiInputTextCallbackData* apData)
+{
+    auto* pConsole = static_cast<Console*>(apData->UserData);
+
+    std::string* pStr = nullptr;
+
+    if (pConsole->m_newConsoleHistory)
+    {
+        pStr = &pConsole->m_consoleHistory[pConsole->m_consoleHistoryIndex];
+    }
+    else if (apData->EventKey == ImGuiKey_UpArrow && pConsole->m_consoleHistoryIndex > 0)
+    {
+        pConsole->m_consoleHistoryIndex--;
+
+        pStr = &pConsole->m_consoleHistory[pConsole->m_consoleHistoryIndex];
+    }
+    else if (apData->EventKey == ImGuiKey_DownArrow && pConsole->m_consoleHistoryIndex + 1 < pConsole->m_consoleHistory.size())
+    {
+        pConsole->m_consoleHistoryIndex++;
+
+        pStr = &pConsole->m_consoleHistory[pConsole->m_consoleHistoryIndex];
+    }
+
+    pConsole->m_newConsoleHistory = false;
+
+    if (pStr)
+    {
+        std::memcpy(apData->Buf, pStr->c_str(), pStr->size());
+        apData->BufDirty = true;
+        apData->BufTextLen = pStr->size();
+        apData->CursorPos = apData->BufTextLen;
+    }
+
+    return 0;
+}
+
 void Console::Update()
 {
     ImGui::Checkbox("Clear Input", &m_inputClear);
@@ -82,13 +118,18 @@ void Console::Update()
         m_focusConsoleInput = false;
     }
     ImGui::PushItemWidth(-1);
-    const auto execute = ImGui::InputText("##InputCommand", m_Command, std::size(m_Command), ImGuiInputTextFlags_EnterReturnsTrue);
+    const auto execute = ImGui::InputText("##InputCommand", m_Command, std::size(m_Command),
+                                          ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory,  &HandleConsoleHistory, this);
     ImGui::PopItemWidth();
     ImGui::SetItemDefaultFocus();
     if (execute)
     {
         auto consoleLogger = spdlog::get("scripting");
         consoleLogger->info("> {}", m_Command);
+
+        m_consoleHistoryIndex = m_consoleHistory.size();
+        m_consoleHistory.push_back(m_Command);
+        m_newConsoleHistory = true;
         
         if (!m_vm.ExecuteLua(m_Command))
             consoleLogger->info("Command failed to execute!");

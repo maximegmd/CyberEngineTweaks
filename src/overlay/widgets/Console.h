@@ -17,8 +17,14 @@ struct Console : Widget
     bool GameLogEnabled() const;
 
 private:
+
+    static int HandleConsoleHistory(ImGuiInputTextCallbackData* apData);
+
     std::recursive_mutex m_outputLock{ };
     std::vector<std::string> m_outputLines{ };
+    std::vector<std::string> m_consoleHistory{};
+    int64_t m_consoleHistoryIndex{ 0 };
+    bool m_newConsoleHistory{true};
     bool m_outputShouldScroll{ true };
     bool m_outputScroll{ false };
     bool m_inputClear{ true };
