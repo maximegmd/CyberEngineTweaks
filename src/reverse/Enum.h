@@ -10,6 +10,7 @@ struct Enum
 
     void Get(const RED4ext::CStackType& acStackType) noexcept;
     void Set(RED4ext::CStackType& acStackType, TiltedPhoques::Allocator* apAllocator) const noexcept;
+    void Set(RED4ext::CStackType& acStackType) const noexcept;
 
     // Returns the enum value by name
     std::string GetValueName() const;

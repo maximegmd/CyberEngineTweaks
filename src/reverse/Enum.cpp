@@ -93,6 +93,25 @@ void Enum::Set(RED4ext::CStackType& aStackType, TiltedPhoques::Allocator* apAllo
     }
 }
 
+void Enum::Set(RED4ext::CStackType& acStackType) const noexcept
+{
+    switch (m_cpType->GetSize())
+    {
+    case sizeof(uint8_t):
+        *static_cast<uint8_t*>(acStackType.value) = static_cast<uint8_t>(m_value);
+        break;
+    case sizeof(uint16_t):
+        *static_cast<uint16_t*>(acStackType.value) = static_cast<uint16_t>(m_value);
+        break;
+    case sizeof(uint32_t):
+        *static_cast<uint32_t*>(acStackType.value) = static_cast<uint32_t>(m_value);
+        break;
+    case sizeof(uint64_t):
+        *static_cast<uint64_t*>(acStackType.value) = static_cast<uint64_t>(m_value);
+        break;
+    }
+}
+
 
 std::string Enum::GetValueName() const
 {

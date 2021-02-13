@@ -12,7 +12,7 @@ struct LuaRED
         return make_object(aLua, *static_cast<T*>(aResult.value));
     }
 
-    RED4ext::CStackType ToRED(sol::object aObject, RED4ext::IRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator) 
+    RED4ext::CStackType ToRED(sol::object aObject, RED4ext::IRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator)
     {
         RED4ext::CStackType result;
         result.type = m_pRtti;
@@ -25,6 +25,17 @@ struct LuaRED
         }
 
         return result;
+    }
+
+    void ToRED(sol::object aObject, RED4ext::CStackType* apType)
+    {
+        if (!CheckObjectType || aObject.is<T>())
+        {
+            if (aObject != sol::nil)
+                *reinterpret_cast<T*>(apType->value) = aObject.as<T>();
+            else
+                *reinterpret_cast<T*>(apType->value) = T{};
+        }
     }
 
     size_t Size() const noexcept

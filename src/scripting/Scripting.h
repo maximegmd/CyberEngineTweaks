@@ -29,6 +29,7 @@ struct Scripting
     static size_t Size(RED4ext::IRTTIType* apRttiType);
     static sol::object ToLua(sol::state_view aState, RED4ext::CStackType& aResult);
     static RED4ext::CStackType ToRED(sol::object aObject, RED4ext::IRTTIType* apRttiType, TiltedPhoques::Allocator* apAllocator);
+    static void ToRED(sol::object aObject, RED4ext::CStackType* apType);
 
 protected:
 
