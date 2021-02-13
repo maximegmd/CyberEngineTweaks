@@ -23,7 +23,6 @@ void Options::Load()
             PatchDisableWin7Vsync = config.value("disable_win7_vsync", PatchDisableWin7Vsync);
 
             DumpGameOptions = config.value("dump_game_options", DumpGameOptions);
-            Telemetry = config.value("telemetry", Telemetry);
             
             // font config
             FontPath = config.value("font_path", FontPath);
@@ -57,7 +56,6 @@ void Options::Save()
     config["disable_boundary_teleport"] = PatchDisableBoundaryTeleport;
     config["disable_win7_vsync"] = PatchDisableWin7Vsync;
     config["dump_game_options"] = DumpGameOptions;
-    config["telemetry"] = Telemetry;
     config["font_path"] = FontPath;
     config["font_glyph_ranges"] = FontGlyphRanges;
     config["font_size"] = FontSize;
@@ -78,7 +76,6 @@ void Options::ResetToDefaults()
     PatchDisableBoundaryTeleport = false;
     PatchDisableWin7Vsync = false;
     DumpGameOptions = false;
-    Telemetry = true;
 
     Save();
 }

@@ -58,7 +58,6 @@ void Settings::Update()
     HelperWidgets::BoolWidget("Disable Boundary Teleport:", m_patchDisableBoundaryTeleport, m_options.PatchDisableBoundaryTeleport);
     HelperWidgets::BoolWidget("Disable V-Sync (Windows 7 only):", m_patchDisableWin7Vsync, m_options.PatchDisableWin7Vsync);
     HelperWidgets::BoolWidget("Dump Game Options:", m_dumpGameOptions, m_options.DumpGameOptions);
-    HelperWidgets::BoolWidget("Telemetry:", m_telemetry, m_options.Telemetry);
 
     if (!m_options.IsFirstLaunch)
         ImGui::EndChild();
@@ -79,7 +78,6 @@ void Settings::Load()
     m_patchDisableBoundaryTeleport = m_options.PatchDisableBoundaryTeleport;
     m_patchDisableWin7Vsync = m_options.PatchDisableWin7Vsync;
     m_dumpGameOptions = m_options.DumpGameOptions;
-    m_telemetry = m_options.Telemetry;
 }
 
 void Settings::Save()
@@ -100,7 +98,6 @@ void Settings::Save()
     m_options.PatchDisableBoundaryTeleport = m_patchDisableBoundaryTeleport;
     m_options.PatchDisableWin7Vsync = m_patchDisableWin7Vsync;
     m_options.DumpGameOptions = m_dumpGameOptions;
-    m_options.Telemetry = m_telemetry;
 
     m_options.Save();
 }

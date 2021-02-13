@@ -8,7 +8,5 @@ struct CETTasks
 
 private:
 
-    void RunTelemetry();
-    std::thread m_telemetryThread;
     std::atomic<bool> m_running;
 };
