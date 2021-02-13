@@ -39,6 +39,9 @@ protected:
     
     sol::object Execute(const std::string& aFuncName, sol::variadic_args aArgs, sol::this_environment aThisEnv, sol::this_state aThisState, std::string& aReturnMessage) const;
 
+    static void HandleOverridenFunction(RED4ext::IScriptable* aContext, RED4ext::CStackFrame* aFrame, int32_t* aOut,
+                                        int64_t a4, struct Context* apCookie, RED4ext::CStack* apStack);
+
 private:
     sol::state m_lua{ };
     std::unordered_map<std::string, sol::object> m_properties{ };

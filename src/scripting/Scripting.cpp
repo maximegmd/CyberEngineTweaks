@@ -2,6 +2,7 @@
 
 #include "Scripting.h"
 
+#include "FunctionOverride.h"
 #include "GameOptions.h"
 
 #include <sol_imgui/sol_imgui.h>
@@ -27,6 +28,22 @@
 #endif
 
 static RED4ext::IRTTIType* s_pStringType = nullptr;
+
+struct Context
+{
+    sol::protected_function ScriptFunction;
+    RED4ext::CClassFunction* RealFunction{nullptr};
+    sol::environment Environment;
+};
+
+void Scripting::HandleOverridenFunction(RED4ext::IScriptable* apContext, RED4ext::CStackFrame* apFrame, int32_t* apOut,
+                                        int64_t a4, Context* apCookie, RED4ext::CStack* apStack)
+{
+    apCookie->ScriptFunction(apCookie->Environment);
+
+    if (apCookie->RealFunction)
+        apCookie->RealFunction->Execute(apStack);
+}
 
 Scripting::Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12)
     : m_store(m_sandbox, aPaths, aBindings)
@@ -367,6 +384,99 @@ void Scripting::Initialize()
         "Update", sol::overload(&TweakDB::UpdateRecordByID, &TweakDB::UpdateRecord));
 
     m_lua["TweakDB"] = TweakDB(m_lua);
+
+    m_lua["Override"] = [this](const std::string& acTypeName, const std::string& acFullName,
+                               const std::string& acShortName, sol::protected_function aFunction, sol::this_environment aThisEnv)
+    {
+        auto pRtti = RED4ext::CRTTISystem::Get();
+        auto pClassType = pRtti->GetClass(acTypeName.c_str());
+
+        if (!pClassType)
+        {
+            spdlog::get("scripting")->error("Class type {} not found", acTypeName);
+            return;
+        }
+
+        // At this point r15 is a pointer to CStack*
+        /*
+sub rsp, 56
+mov qword ptr[rsp + 40], r15
+mov rax, 0xDEADBEEFC0DEBAAD
+mov qword ptr[rsp + 32], rax
+mov rax, 0xDEADBEEFC0DEBAAD
+call rax
+add rsp, 56
+ret
+         */
+        uint8_t payload[] = {0x48, 0x83, 0xEC, 0x38, 0x4C, 0x89, 0x7C, 0x24, 0x28, 0x48, 0xB8, 0xAD, 0xBA, 0xDE,
+                             0xC0, 0xEF, 0xBE, 0xAD, 0xDE, 0x48, 0x89, 0x44, 0x24, 0x20, 0x48, 0xB8, 0xAD, 0xBA,
+                             0xDE, 0xC0, 0xEF, 0xBE, 0xAD, 0xDE, 0xFF, 0xD0, 0x48, 0x83, 0xC4, 0x38, 0xC3};
+
+        auto funcAddr = reinterpret_cast<uintptr_t>(&Scripting::HandleOverridenFunction);
+
+        auto* pContext = TiltedPhoques::New<Context>();
+        pContext->ScriptFunction = aFunction;
+        pContext->Environment = aThisEnv;
+
+        std::memcpy(payload + 11, &pContext, 8);
+        std::memcpy(payload + 26, &funcAddr, 8);
+
+        auto* pExecutablePayload = static_cast<void(*)(RED4ext::IScriptable*, RED4ext::CStackFrame*, void*, int64_t)>(FunctionOverride::Get().
+            MakeExecutable(payload, std::size(payload)));
+
+        if (!pExecutablePayload)
+        {
+            spdlog::get("scripting")->error("Unable to create the override payload!");
+            return;
+        }
+
+        pContext->RealFunction = pClassType->GetFunction(RED4ext::FNV1a(acFullName.c_str()));
+        const auto pFunc = RED4ext::CClassFunction::Create(pClassType, acFullName.c_str(), acShortName.c_str(), pExecutablePayload);
+
+        if (pContext->RealFunction)
+        {
+            pFunc->returnType = pContext->RealFunction->returnType;
+            for (auto p : pContext->RealFunction->params)
+            {
+                pFunc->params.PushBack(p);
+            }
+            pFunc->flags = pContext->RealFunction->flags;
+        }
+        pFunc->flags.isNative = true;
+
+        if (pFunc->flags.isStatic)
+        {
+            bool found = false;
+            for (auto& entry : pClassType->staticFuncs)
+            {
+                if (entry == pContext->RealFunction)
+                {
+                    entry = pFunc;
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found)
+                pClassType->staticFuncs.PushBack(pFunc);
+        }
+        else
+        {
+            bool found = false;
+            for (auto& entry : pClassType->funcs)
+            {
+                if (entry == pContext->RealFunction)
+                {
+                    entry = pFunc;
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found)
+                pClassType->funcs.PushBack(pFunc);
+        }
+    };
 
 #ifndef NDEBUG
     m_lua["DumpVtables"] = [this]()

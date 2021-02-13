@@ -64,7 +64,8 @@ static constexpr const char* s_cGlobalObjectsWhitelist[] =
     "ToTweakDBID",
     "WeakReference",
     "GetMod",
-    "TweakDB"
+    "TweakDB",
+    "Override"
 };
 
 static constexpr const char* s_cGlobalTablesWhitelist[] =
@@ -121,7 +122,7 @@ void LuaSandbox::Initialize(sol::state_view aStateView)
     // copy whitelisted libs from global table
     for (const auto* cKey : s_cGlobalTablesWhitelist)
         m_env[cKey].set(cGlobals[cKey].get<sol::table>());
-    
+
     // copy safe os functions
     {
         auto os = cGlobals["os"].get<sol::table>();
@@ -153,10 +154,10 @@ size_t LuaSandbox::CreateSandbox(const std::filesystem::path& acPath, bool aEnab
         InitializeDBForSandbox(res);
     if (aEnableIO)
         InitializeIOForSandbox(res);
-    return cResID; 
+    return cResID;
 }
 
-std::shared_ptr<spdlog::logger> LuaSandbox::InitializeLoggerForSandbox(Sandbox& aSandbox, const std::string& acName) const 
+std::shared_ptr<spdlog::logger> LuaSandbox::InitializeLoggerForSandbox(Sandbox& aSandbox, const std::string& acName) const
 {
     auto& sbEnv = aSandbox.GetEnvironment();
     const auto cSBRootPath = aSandbox.GetRootPath();
@@ -334,7 +335,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox)
         auto res = cLoadString(cScriptString, "@" + absPath.string(), aThisState, aThisEnv);
         sol::function func = std::get<0>(res);
         if (func != sol::nil)
-        {            
+        {
             // TODO: proper exception handling!
             sol::protected_function_result result{ };
             try
@@ -345,7 +346,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox)
             {
                 return std::make_tuple(sol::nil, make_object(this->m_lua, e.what()));
             }
-            
+
             if (result.valid())
             {
                 auto obj = result.get<sol::object>();
@@ -378,7 +379,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox)
         }
         return res;
     };
-    
+
     const auto cGlobals = m_lua.globals();
     // define replacements for io lib
     {

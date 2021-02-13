@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Type.h"
-#include "BasicTypes.h"
 
 struct WeakReference : ClassType
 {
