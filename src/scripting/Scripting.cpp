@@ -42,12 +42,18 @@ void Scripting::HandleOverridenFunction(RED4ext::IScriptable* apContext, RED4ext
                                         int64_t a4, Context* apCookie, RED4ext::CStack* apStack)
 {
     std::vector<sol::object> args;
+
+    RED4ext::CStackType self;
+    self.type = apContext->classType;
+    self.value = apContext;
+
+    args.push_back(ToLua(apCookie->pScripting->m_lua, self)); // Push self
     for (auto i = 0; i < apStack->argsCount; ++i)
     {
         args.push_back(ToLua(apCookie->pScripting->m_lua, apStack->args[i]));
     }
 
-    auto result = apCookie->ScriptFunction(as_args(args), apCookie->Environment);
+    const auto result = apCookie->ScriptFunction(as_args(args), apCookie->Environment);
 
     if (!apCookie->Forward && apStack->result)
     {

@@ -1,5 +1,4 @@
 #include <stdafx.h>
-#include <curl/curl.h>
 
 #include "CETTasks.h"
 
