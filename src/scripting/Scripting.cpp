@@ -62,7 +62,10 @@ void Scripting::HandleOverridenFunction(RED4ext::IScriptable* apContext, RED4ext
     }
 
     if (apCookie->RealFunction)
-        apCookie->RealFunction->Execute(apStack);
+    {
+        RED4ext::CStack stack(apContext, apStack->args, apStack->argsCount, apStack->result);
+        apCookie->RealFunction->Execute(&stack);
+    }
 }
 
 Scripting::Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12)
@@ -451,51 +454,39 @@ ret
             return;
         }
 
-        pContext->RealFunction = pClassType->GetFunction(RED4ext::FNV1a(acFullName.c_str()));
+        // Get the real function
+        const auto pRealFunction = pClassType->GetFunction(RED4ext::FNV1a(acFullName.c_str()));
         const auto pFunc = RED4ext::CClassFunction::Create(pClassType, acFullName.c_str(), acShortName.c_str(), pExecutablePayload);
 
-        if (pContext->RealFunction)
+        if (pRealFunction)
         {
-            pFunc->returnType = pContext->RealFunction->returnType;
-            for (auto p : pContext->RealFunction->params)
+            pFunc->returnType = pRealFunction->returnType;
+            for (auto p : pRealFunction->params)
             {
                 pFunc->params.PushBack(p);
             }
-            pFunc->flags = pContext->RealFunction->flags;
+            pFunc->flags = pRealFunction->flags;
         }
         pFunc->flags.isNative = true;
 
-        if (pFunc->flags.isStatic)
+        if (!pRealFunction)
         {
-            bool found = false;
-            for (auto& entry : pClassType->staticFuncs)
-            {
-                if (entry == pContext->RealFunction)
-                {
-                    entry = pFunc;
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found)
+            if (pFunc->flags.isStatic)
                 pClassType->staticFuncs.PushBack(pFunc);
+            else
+                pClassType->funcs.PushBack(pFunc);
         }
         else
         {
-            bool found = false;
-            for (auto& entry : pClassType->funcs)
-            {
-                if (entry == pContext->RealFunction)
-                {
-                    entry = pFunc;
-                    found = true;
-                    break;
-                }
-            }
+            // Swap the content of the real function with the one we just created
+            std::array<char, sizeof(RED4ext::CClassFunction)> tmpBuffer;
 
-            if (!found)
-                pClassType->funcs.PushBack(pFunc);
+            std::memcpy(&tmpBuffer, pRealFunction, sizeof(RED4ext::CClassFunction));
+            std::memcpy(pRealFunction, pFunc, sizeof(RED4ext::CClassFunction));
+            std::memcpy(pFunc, &tmpBuffer, sizeof(RED4ext::CClassFunction));
+
+            // Now pFunc is the real function
+            pContext->RealFunction = pFunc;
         }
 
         pContext->Forward = !aAbsolute;
