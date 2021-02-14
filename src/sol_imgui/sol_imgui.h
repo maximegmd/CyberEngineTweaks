@@ -1478,10 +1478,9 @@ namespace sol_ImGui
         bool clicked = ImGui::ListBox(label.c_str(), &current_item, cstrings.data(), items_count, height_in_items);
         return std::make_tuple(current_item, clicked);
     }
-    inline bool ListBoxHeader(const std::string& label, float sizeX, float sizeY)                    { return ImGui::ListBoxHeader(label.c_str(), { sizeX, sizeY }); }
-    inline bool ListBoxHeader(const std::string& label, int items_count)                             { return ImGui::ListBoxHeader(label.c_str(), items_count); }
-    inline bool ListBoxHeader(const std::string& label, int items_count, int height_in_items)        { return ImGui::ListBoxHeader(label.c_str(), items_count, height_in_items); }
-    inline void ListBoxFooter()                                                                      { ImGui::ListBoxFooter(); }
+    inline bool BeginListBox(const std::string& label)                                               { return ImGui::BeginListBox(label.c_str()); }
+    inline bool BeginListBox(const std::string& label, float sizeX, float sizeY)                     { return ImGui::BeginListBox(label.c_str(), { sizeX, sizeY }); }
+    inline void EndListBox()                                                                         { ImGui::EndListBox(); }
 
     // Widgets: Data Plotting
     /* TODO: Widgets Data Plotting ==> UNSUPPORTED (barely used and quite long functions) */
@@ -1591,7 +1590,7 @@ namespace sol_ImGui
     inline std::tuple<bool, bool> BeginTabItem(const std::string& label, bool open, int flags)      { bool selected = ImGui::BeginTabItem(label.c_str(), &open, static_cast<ImGuiTabItemFlags>(flags)); return std::make_tuple(open, selected); }
     inline void EndTabItem()                                                                        { ImGui::EndTabItem(); }
     inline void SetTabItemClosed(const std::string& tab_or_docked_window_label)                     { ImGui::SetTabItemClosed(tab_or_docked_window_label.c_str()); }
-    
+
     // Drag and Drop
     // TODO: Drag and Drop ==> UNSUPPORTED
 
@@ -1730,7 +1729,7 @@ namespace sol_ImGui
     inline void ImDrawListAddBezierCubic(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, float p4X, float p4Y, int col, float thickness, int num_segments)              { drawlist->AddBezierCubic({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, { p4X, p4Y }, ImU32(col), thickness, num_segments); }
     inline void ImDrawListAddBezierQuadratic(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, int col, float thickness)                                                  { drawlist->AddBezierQuadratic({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, ImU32(col), thickness); }
     inline void ImDrawListAddBezierQuadratic(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, int col, float thickness, int num_segments)                                { drawlist->AddBezierQuadratic({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, ImU32(col), thickness, num_segments); }
-    
+
 
     inline void InitEnums(sol::state& lua)
     {
@@ -2170,7 +2169,7 @@ namespace sol_ImGui
             "Trailing"                       , ImGuiTabItemFlags_Trailing
         );
 #pragma endregion TabItem Flags
-        
+
 #pragma region MouseButton
         lua.new_enum("ImGuiMouseButton",
             "Left"                           , ImGuiMouseButton_Left,
@@ -2703,12 +2702,11 @@ namespace sol_ImGui
                                                                 sol::resolve<std::tuple<int, bool>(const std::string&, int, const sol::table&, int)>(ListBox),
                                                                 sol::resolve<std::tuple<int, bool>(const std::string&, int, const sol::table&, int, int)>(ListBox)
                                                             ));
-        ImGui.set_function("ListBoxHeader"          , sol::overload(
-                                                                sol::resolve<bool(const std::string&, float, float)>(ListBoxHeader),
-                                                                sol::resolve<bool(const std::string&, int)>(ListBoxHeader),
-                                                                sol::resolve<bool(const std::string&, int, int)>(ListBoxHeader)
+        ImGui.set_function("BeginListBox"       , sol::overload(
+                                                                sol::resolve<bool(const std::string&)>(BeginListBox),
+                                                                sol::resolve<bool(const std::string&, float, float)>(BeginListBox)
                                                             ));
-        ImGui.set_function("ListBoxFooter"          , ListBoxFooter);
+        ImGui.set_function("EndListBox"         , EndListBox);
 #pragma endregion Widgets: List Boxes
 
 #pragma region Widgets: Value() Helpers
