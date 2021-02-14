@@ -1591,7 +1591,7 @@ namespace sol_ImGui
     inline std::tuple<bool, bool> BeginTabItem(const std::string& label, bool open, int flags)      { bool selected = ImGui::BeginTabItem(label.c_str(), &open, static_cast<ImGuiTabItemFlags>(flags)); return std::make_tuple(open, selected); }
     inline void EndTabItem()                                                                        { ImGui::EndTabItem(); }
     inline void SetTabItemClosed(const std::string& tab_or_docked_window_label)                     { ImGui::SetTabItemClosed(tab_or_docked_window_label.c_str()); }
-    
+
     // Drag and Drop
     // TODO: Drag and Drop ==> UNSUPPORTED
 
@@ -1730,7 +1730,7 @@ namespace sol_ImGui
     inline void ImDrawListAddBezierCubic(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, float p4X, float p4Y, int col, float thickness, int num_segments)              { drawlist->AddBezierCubic({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, { p4X, p4Y }, ImU32(col), thickness, num_segments); }
     inline void ImDrawListAddBezierQuadratic(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, int col, float thickness)                                                  { drawlist->AddBezierQuadratic({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, ImU32(col), thickness); }
     inline void ImDrawListAddBezierQuadratic(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, int col, float thickness, int num_segments)                                { drawlist->AddBezierQuadratic({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, ImU32(col), thickness, num_segments); }
-    
+
 
     inline void InitEnums(sol::state& lua)
     {
@@ -2170,7 +2170,7 @@ namespace sol_ImGui
             "Trailing"                       , ImGuiTabItemFlags_Trailing
         );
 #pragma endregion TabItem Flags
-        
+
 #pragma region MouseButton
         lua.new_enum("ImGuiMouseButton",
             "Left"                           , ImGuiMouseButton_Left,
@@ -2662,6 +2662,11 @@ namespace sol_ImGui
         ImGui.set_function("ColorPicker4"          , sol::overload(
                                                                 sol::resolve<std::tuple <sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&)>(ColorPicker4),
                                                                 sol::resolve<std::tuple <sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, int)>(ColorPicker4)
+                                                            ));
+        ImGui.set_function("ColorButton"           , sol::overload(
+                                                                sol::resolve<bool(const std::string&, const sol::table&)>(ColorButton),
+                                                                sol::resolve<bool(const std::string&, const sol::table&, int)>(ColorButton),
+                                                                sol::resolve<bool(const std::string&, const sol::table&, int, float, float)>(ColorButton)
                                                             ));
 #pragma endregion Widgets: Color Editor / Picker
 
