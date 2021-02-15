@@ -333,6 +333,10 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox)
         std::ifstream ifs(absPath);
         const std::string cScriptString((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
         auto res = cLoadString(cScriptString, "@" + absPath.string(), aThisState, aThisEnv);
+        auto obj = std::get<0>(res);
+        if (obj == sol::nil)
+            return res;
+
         sol::function func = std::get<0>(res);
         if (func != sol::nil)
         {
