@@ -66,8 +66,10 @@ void Scripting::HandleOverridenFunction(RED4ext::IScriptable* apContext, RED4ext
 
     if (apCookie->RealFunction)
     {
-        RED4ext::CStack stack(apContext, apStack->args, apStack->argsCount, apStack->result);
-        apCookie->RealFunction->Execute(&stack);
+        using TCallScriptFunction = bool(*)(RED4ext::IFunction* apFunction, RED4ext::IScriptable* apContext, RED4ext::CStackFrame* apFrame, int32_t* apOut, int64_t a4);
+        static RED4ext::REDfunc<TCallScriptFunction> CallScriptFunction(0x224DC0);
+
+        CallScriptFunction(apCookie->RealFunction, apContext, apFrame, apOut, a4);
     }
 }
 
