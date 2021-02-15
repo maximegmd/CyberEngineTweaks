@@ -4,6 +4,8 @@
 
 #include "FunctionOverride.h"
 #include "GameOptions.h"
+#include "LuaVM.h"
+
 
 #include <sol_imgui/sol_imgui.h>
 #include <lsqlite3/lsqlite3.h>
@@ -34,13 +36,14 @@ struct Context
 {
     sol::protected_function ScriptFunction;
     RED4ext::CClassFunction* RealFunction{nullptr};
+    RED4ext::CClassFunction* FunctionDefinition{nullptr};
     sol::environment Environment;
     Scripting* pScripting;
     bool Forward;
 };
 
 void Scripting::HandleOverridenFunction(RED4ext::IScriptable* apContext, RED4ext::CStackFrame* apFrame, int32_t* apOut,
-                                        int64_t a4, Context* apCookie, RED4ext::CStack* apStack)
+                                        int64_t a4, Context* apCookie)
 {
     std::vector<sol::object> args;
 
@@ -49,23 +52,47 @@ void Scripting::HandleOverridenFunction(RED4ext::IScriptable* apContext, RED4ext
     self.value = apContext;
 
     args.push_back(ToLua(apCookie->pScripting->m_lua, self)); // Push self
-    for (auto i = 0; i < apStack->argsCount; ++i)
+
+    // Save state so we can rollback to it after we popped for ourself
+    auto* pCode = apFrame->code;
+
+    // Nasty way of popping all args
+    for (auto& pArg : apCookie->FunctionDefinition->params)
     {
-        args.push_back(ToLua(apCookie->pScripting->m_lua, apStack->args[i]));
+        char holder[1 << 12];
+
+        RED4ext::CStackType arg;
+        arg.type = pArg->type;
+        arg.value = holder;
+
+        apFrame->unk30 = 0;
+        apFrame->unk38 = 0;
+        const auto opcode = *(apFrame->code++);
+        GetScriptCallArray()[opcode](apFrame->context, apFrame, holder, nullptr);
+        apFrame->code++; // skip ParamEnd
+
+        args.push_back(ToLua(apCookie->pScripting->m_lua, arg));
     }
 
     const auto result = apCookie->ScriptFunction(as_args(args), apCookie->Environment);
 
     if (!apCookie->Forward)
     {
-        if (apStack->result)
-            ToRED(result.get<sol::object>(), apStack->result);
+        RED4ext::CStackType redResult;
+        redResult.type = apCookie->FunctionDefinition->returnType->type;
+        redResult.value = apOut;
+
+        if (apOut)
+            ToRED(result.get<sol::object>(), &redResult);
 
         return;
     }
 
     if (apCookie->RealFunction)
     {
+        // Rollback so the real function will manage to pop everything
+        apFrame->code = pCode;
+
         using TCallScriptFunction = bool(*)(RED4ext::IFunction* apFunction, RED4ext::IScriptable* apContext, RED4ext::CStackFrame* apFrame, int32_t* apOut, int64_t a4);
         static RED4ext::REDfunc<TCallScriptFunction> CallScriptFunction(0x224DC0);
 
@@ -88,7 +115,6 @@ void Scripting::Override(const std::string& acTypeName, const std::string& acFul
     // At this point r15 is a pointer to CStack*
     /*
 sub rsp, 56
-mov qword ptr[rsp + 40], r15
 mov rax, 0xDEADBEEFC0DEBAAD
 mov qword ptr[rsp + 32], rax
 mov rax, 0xDEADBEEFC0DEBAAD
@@ -96,9 +122,9 @@ call rax
 add rsp, 56
 ret
      */
-    uint8_t payload[] = {0x48, 0x83, 0xEC, 0x38, 0x4C, 0x89, 0x7C, 0x24, 0x28, 0x48, 0xB8, 0xAD, 0xBA, 0xDE,
-                         0xC0, 0xEF, 0xBE, 0xAD, 0xDE, 0x48, 0x89, 0x44, 0x24, 0x20, 0x48, 0xB8, 0xAD, 0xBA,
-                         0xDE, 0xC0, 0xEF, 0xBE, 0xAD, 0xDE, 0xFF, 0xD0, 0x48, 0x83, 0xC4, 0x38, 0xC3};
+    uint8_t payload[] = {0x48, 0x83, 0xEC, 0x38, 0x48, 0xB8, 0xAD, 0xBA, 0xDE, 0xC0, 0xEF, 0xBE, 0xAD,
+                         0xDE, 0x48, 0x89, 0x44, 0x24, 0x20, 0x48, 0xB8, 0xAD, 0xBA, 0xDE, 0xC0, 0xEF,
+                         0xBE, 0xAD, 0xDE, 0xFF, 0xD0, 0x48, 0x83, 0xC4, 0x38, 0xC3};
 
     auto funcAddr = reinterpret_cast<uintptr_t>(&Scripting::HandleOverridenFunction);
 
@@ -107,8 +133,8 @@ ret
     pContext->Environment = aThisEnv;
     pContext->pScripting = this;
 
-    std::memcpy(payload + 11, &pContext, 8);
-    std::memcpy(payload + 26, &funcAddr, 8);
+    std::memcpy(payload + 6, &pContext, 8);
+    std::memcpy(payload + 21, &funcAddr, 8);
 
     auto* pExecutablePayload = static_cast<void (*)(RED4ext::IScriptable*, RED4ext::CStackFrame*, void*, int64_t)>(
         FunctionOverride::Get().MakeExecutable(payload, std::size(payload)));
@@ -141,6 +167,8 @@ ret
             pClassType->staticFuncs.PushBack(pFunc);
         else
             pClassType->funcs.PushBack(pFunc);
+
+        pContext->FunctionDefinition = pFunc;
     }
     else
     {
@@ -153,6 +181,7 @@ ret
 
         // Now pFunc is the real function
         pContext->RealFunction = pFunc;
+        pContext->FunctionDefinition = pRealFunction;
     }
 
     pContext->Forward = !aAbsolute;

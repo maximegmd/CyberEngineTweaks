@@ -106,12 +106,12 @@ void EnableDebugPatch(const Image* apImage)
             if (i == 0)
             {
                 RealRegisterScriptFunction = reinterpret_cast<TRegisterScriptFunction*>(pCallLocation + offset);
-                MH_CreateHook(RealRegisterScriptFunction, &HookRegisterScriptFunction, reinterpret_cast<void**>(&RealRegisterScriptFunction));
+                MH_CreateHook(&RealRegisterScriptFunction, &HookRegisterScriptFunction, reinterpret_cast<void**>(&RealRegisterScriptFunction));
             }
             else
             {
                 RealRegisterScriptMemberFunction = reinterpret_cast<TRegisterScriptMemberFunction*>(pCallLocation + offset);
-                MH_CreateHook(RealRegisterScriptMemberFunction, &HookRegisterScriptMemberFunction, reinterpret_cast<void**>(&RealRegisterScriptMemberFunction));
+                MH_CreateHook(&RealRegisterScriptMemberFunction, &HookRegisterScriptMemberFunction, reinterpret_cast<void**>(&RealRegisterScriptMemberFunction));
             }
 
             spdlog::info("{}: success", patchType);

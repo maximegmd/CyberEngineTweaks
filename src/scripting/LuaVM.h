@@ -5,17 +5,17 @@
 
 typedef TweakDBID TDBID;
 
-struct REDScriptContext;
-struct ScriptStack;
 struct UnknownString;
 
 using TSetMousePosition = BOOL(void*, HWND, long, long);
-using TScriptCall = void(REDScriptContext*, ScriptStack*, void*, void*);
+using TScriptCall = void(RED4ext::IScriptable*, RED4ext::CStackFrame*, void*, void*);
 using TTDBIDCtor = TDBID*(TDBID*, const char*);
 using TTDBIDCtorCString = TDBID*(TDBID*, const RED4ext::CString*);
 using TTDBIDCtorDerive = TDBID*(const TDBID*, TDBID*, const char*);
 using TTDBIDCtorUnknown = TDBID*(TDBID*, uint64_t);
 using TSomeStringLookup = UnknownString*(const uint64_t*, UnknownString*);
+
+TScriptCall** GetScriptCallArray();
 
 struct TDBIDLookupEntry
 {
@@ -48,13 +48,13 @@ protected:
     void Hook(Options& aOptions);
     void PostInitialize();
     
-    static void HookLog(REDScriptContext*, ScriptStack* apStack, void*, void*);
-    static void HookLogChannel(REDScriptContext*, ScriptStack* apStack, void*, void*);
+    static void HookLog(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*, void*);
+    static void HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*, void*);
     static TDBID* HookTDBIDCtor(TDBID* apThis, const char* acpName);
     static TDBID* HookTDBIDCtorCString(TDBID* apThis, const RED4ext::CString* acpName);
     static TDBID* HookTDBIDCtorDerive(TDBID* apBase, TDBID* apThis, const char* acpName);
     static TDBID* HookTDBIDCtorUnknown(TDBID* apThis, uint64_t apName);
-    static void HookTDBIDToStringDEBUG(REDScriptContext*, ScriptStack* apStack, void* apResult, void*);
+    static void HookTDBIDToStringDEBUG(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void* apResult, void*);
 
     void RegisterTDBIDString(uint64_t aValue, uint64_t aBase, const std::string& acString);
     std::string GetTDBIDString(uint64_t aValue);

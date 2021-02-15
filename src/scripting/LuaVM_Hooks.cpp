@@ -5,19 +5,7 @@
 
 #include <overlay/Overlay.h>
 
-struct REDScriptContext;
-
-struct ScriptStack
-{
-    uint8_t* m_code;
-    uint8_t pad[0x28];
-    void* unk30;
-    void* unk38;
-    REDScriptContext* m_context;
-};
-static_assert(offsetof(ScriptStack, m_context) == 0x40);
-
-static TScriptCall** GetScriptCallArray()
+TScriptCall** GetScriptCallArray()
 {
     auto& gameImage = CET::Get().GetOptions().GameImage;
 
@@ -30,14 +18,14 @@ static TScriptCall** GetScriptCallArray()
     return reinterpret_cast<TScriptCall**>(finalLocation);
 }
 
-void LuaVM::HookLog(REDScriptContext*, ScriptStack* apStack, void*, void*)
+void LuaVM::HookLog(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*, void*)
 {
     RED4ext::CString text("");
-    apStack->unk30 = nullptr;
-    apStack->unk38 = nullptr;
-    const auto opcode = *(apStack->m_code++);
-    GetScriptCallArray()[opcode](apStack->m_context, apStack, &text, nullptr);
-    apStack->m_code++; // skip ParamEnd
+    apStack->unk30 = 0;
+    apStack->unk38 = 0;
+    const auto opcode = *(apStack->code++);
+    GetScriptCallArray()[opcode](apStack->context, apStack, &text, nullptr);
+    apStack->code++; // skip ParamEnd
 
     auto& console = CET::Get().GetOverlay().GetConsole();
     if (console.GameLogEnabled())
@@ -71,21 +59,21 @@ static const char* GetChannelStr(uint64_t hash)
     return "";
 }
 
-void LuaVM::HookLogChannel(REDScriptContext*, ScriptStack* apStack, void*, void*)
+void LuaVM::HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*, void*)
 {
     uint64_t channel_hash = 0;
-    apStack->unk30 = nullptr;
-    apStack->unk38 = nullptr;
-    uint8_t opcode = *(apStack->m_code++);
-    GetScriptCallArray()[opcode](apStack->m_context, apStack, &channel_hash, nullptr);
+    apStack->unk30 = 0;
+    apStack->unk38 = 0;
+    uint8_t opcode = *(apStack->code++);
+    GetScriptCallArray()[opcode](apStack->context, apStack, &channel_hash, nullptr);
 
     RED4ext::CString text("");
-    apStack->unk30 = nullptr;
-    apStack->unk38 = nullptr;
-    opcode = *(apStack->m_code++);
-    GetScriptCallArray()[opcode](apStack->m_context, apStack, &text, nullptr);
+    apStack->unk30 = 0;
+    apStack->unk38 = 0;
+    opcode = *(apStack->code++);
+    GetScriptCallArray()[opcode](apStack->context, apStack, &text, nullptr);
 
-    apStack->m_code++; // skip ParamEnd
+    apStack->code++; // skip ParamEnd
 
     auto& console = CET::Get().GetOverlay().GetConsole();
     if (console.GameLogEnabled())
@@ -195,14 +183,14 @@ TDBID* LuaVM::HookTDBIDCtorUnknown(TDBID* apThis, uint64_t aName)
     return result;
 }
 
-void LuaVM::HookTDBIDToStringDEBUG(REDScriptContext*, ScriptStack* apStack, void* apResult, void*)
+void LuaVM::HookTDBIDToStringDEBUG(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void* apResult, void*)
 {
     TDBID tdbid;
-    apStack->unk30 = nullptr;
-    apStack->unk38 = nullptr;
-    uint8_t opcode = *(apStack->m_code++);
-    GetScriptCallArray()[opcode](apStack->m_context, apStack, &tdbid, nullptr);
-    apStack->m_code++; // skip ParamEnd
+    apStack->unk30 = 0;
+    apStack->unk38 = 0;
+    uint8_t opcode = *(apStack->code++);
+    GetScriptCallArray()[opcode](apStack->context, apStack, &tdbid, nullptr);
+    apStack->code++; // skip ParamEnd
 
     if (apResult)
     {
