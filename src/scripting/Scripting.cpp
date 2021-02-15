@@ -18,6 +18,7 @@
 #include <reverse/WeakReference.h>
 #include <reverse/Enum.h>
 #include <reverse/TweakDB.h>
+#include <reverse/RTTILocator.h>
 
 #include "Utils.h"
 
@@ -27,7 +28,7 @@
 #include <RED4ext/Dump/Reflection.hpp>
 #endif
 
-static RED4ext::IRTTIType* s_pStringType = nullptr;
+static RTTILocator s_stringType{RED4ext::FNV1a("String")};
 
 struct Context
 {
@@ -55,9 +56,11 @@ void Scripting::HandleOverridenFunction(RED4ext::IScriptable* apContext, RED4ext
 
     const auto result = apCookie->ScriptFunction(as_args(args), apCookie->Environment);
 
-    if (!apCookie->Forward && apStack->result)
+    if (!apCookie->Forward)
     {
-        ToRED(result.get<sol::object>(), apStack->result);
+        if (apStack->result)
+            ToRED(result.get<sol::object>(), apStack->result);
+
         return;
     }
 
@@ -593,7 +596,7 @@ bool Scripting::ExecuteLua(const std::string& acCommand)
 
 size_t Scripting::Size(RED4ext::IRTTIType* apRttiType)
 {
-    if (apRttiType == s_pStringType)
+    if (apRttiType == s_stringType)
         return sizeof(RED4ext::CString);
     if (apRttiType->GetType() == RED4ext::ERTTIType::Handle)
         return sizeof(RED4ext::Handle<RED4ext::IScriptable>);
@@ -609,7 +612,7 @@ sol::object Scripting::ToLua(sol::state_view aState, RED4ext::CStackType& aResul
 
     if (pType == nullptr)
         return sol::nil;
-    if (pType == s_pStringType)
+    if (pType == s_stringType)
         return make_object(aState, std::string(static_cast<RED4ext::CString*>(aResult.value)->c_str()));
     if (pType->GetType() == RED4ext::ERTTIType::Handle)
     {
@@ -660,7 +663,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
     {
         result.type = apRttiType;
 
-        if (apRttiType == s_pStringType)
+        if (apRttiType == s_stringType)
         {
             std::string str;
             if (hasData)
@@ -778,7 +781,7 @@ void Scripting::ToRED(sol::object aObject, RED4ext::CStackType* apType)
 
     if (apType->type)
     {
-        if (apType->type == s_pStringType)
+        if (apType->type == s_stringType)
         {
             std::string str;
             if (hasData)
@@ -936,8 +939,8 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
         aReturnMessage = "Could not retrieve RTTISystem instance.";
         return sol::nil;
     }
-    s_pStringType = pRtti->GetType(RED4ext::FNV1a("String"));
-    if (s_pStringType == nullptr)
+
+    if (s_stringType == nullptr)
     {
         aReturnMessage = "Could not retrieve String type instance.";
         return sol::nil;
