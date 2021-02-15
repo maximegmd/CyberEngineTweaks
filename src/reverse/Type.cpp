@@ -395,23 +395,9 @@ sol::object ClassType::Index_Impl(const std::string& acName, sol::this_environme
         }
     }
 
-    auto obj = make_object(m_lua, [pType, name = acName](Type* apType, sol::variadic_args aArgs,
+    auto obj = make_object(m_lua, [pFunc, name = acName](Type* apType, sol::variadic_args aArgs,
                                                        sol::this_environment aThisEnv, sol::this_state L)
     {
-        // We need to retrieve the function everytime as they can change with this
-        auto* pFunc = pType->GetFunction(RED4ext::FNV1a(name.c_str()));
-        if (!pFunc)
-        {
-            for (uint32_t i = 0; i < pType->funcs.size; ++i)
-            {
-                if (pType->funcs.entries[i]->fullName.hash == RED4ext::FNV1a(name.c_str()))
-                {
-                    pFunc = static_cast<RED4ext::CClassFunction*>(pType->funcs.entries[i]);
-                    break;
-                }
-            }
-        }
-
         std::string result;
         auto funcRet = apType->Execute(pFunc, name, aArgs, aThisEnv, L, result);
         if (!result.empty())
