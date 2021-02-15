@@ -59,19 +59,26 @@ void Scripting::HandleOverridenFunction(RED4ext::IScriptable* apContext, RED4ext
     // Nasty way of popping all args
     for (auto& pArg : apCookie->FunctionDefinition->params)
     {
-        char holder[1 << 12];
+        auto* pType = pArg->type;
+        auto* pAllocator = pType->GetAllocator();
+
+        auto* pInstance = pAllocator->Alloc(pType->GetSize()).memory;
+        pType->Init(pInstance);
 
         RED4ext::CStackType arg;
         arg.type = pArg->type;
-        arg.value = holder;
+        arg.value = pInstance;
 
         apFrame->unk30 = 0;
         apFrame->unk38 = 0;
         const auto opcode = *(apFrame->code++);
-        GetScriptCallArray()[opcode](apFrame->context, apFrame, holder, nullptr);
+        GetScriptCallArray()[opcode](apFrame->context, apFrame, pInstance, nullptr);
         apFrame->code++; // skip ParamEnd
 
         args.push_back(ToLua(apCookie->pScripting->m_lua, arg));
+
+        pType->Destroy(pInstance);
+        pAllocator->Free(pInstance);
     }
 
     const auto result = apCookie->ScriptFunction(as_args(args), apCookie->Environment);
