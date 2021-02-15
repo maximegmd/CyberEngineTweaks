@@ -497,25 +497,23 @@ void Scripting::Initialize()
     m_lua["TweakDB"] = TweakDB(m_lua);
 
     m_lua["Override"] = sol::overload(
-        [this](const std::string& acTypeName, const std::string& acFullName,
-               sol::protected_function aFunction, sol::this_environment aThisEnv)
-        {
+        [this](const std::string& acTypeName, const std::string& acFullName, sol::protected_function aFunction,
+               sol::this_environment aThisEnv) {
+            this->Override(acTypeName, acFullName, acFullName, true, aFunction, aThisEnv);
+        },
+        [this](const std::string& acTypeName, const std::string& acFullName, const std::string& acShortName,
+               sol::protected_function aFunction, sol::this_environment aThisEnv) {
+            this->Override(acTypeName, acFullName, acShortName, true, aFunction, aThisEnv);
+        });
+
+    m_lua["Observe"] = sol::overload(
+        [this](const std::string& acTypeName, const std::string& acFullName, sol::protected_function aFunction,
+               sol::this_environment aThisEnv) {
             this->Override(acTypeName, acFullName, acFullName, false, aFunction, aThisEnv);
         },
-        [this](const std::string& acTypeName, const std::string& acFullName, bool aAbsolute,
-               sol::protected_function aFunction, sol::this_environment aThisEnv)
-        {
-            this->Override(acTypeName, acFullName, acFullName, aAbsolute, aFunction, aThisEnv);
-        },
         [this](const std::string& acTypeName, const std::string& acFullName, const std::string& acShortName,
-               sol::protected_function aFunction, sol::this_environment aThisEnv)
-        {
+               sol::protected_function aFunction, sol::this_environment aThisEnv) {
             this->Override(acTypeName, acFullName, acShortName, false, aFunction, aThisEnv);
-        },
-        [this](const std::string& acTypeName, const std::string& acFullName, const std::string& acShortName,
-               bool aAbsolute, sol::protected_function aFunction, sol::this_environment aThisEnv)
-        {
-            this->Override(acTypeName, acFullName, acShortName, aAbsolute, aFunction, aThisEnv);
         });
 
 #ifndef NDEBUG
