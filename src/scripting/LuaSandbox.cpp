@@ -65,7 +65,8 @@ static constexpr const char* s_cGlobalObjectsWhitelist[] =
     "WeakReference",
     "GetMod",
     "TweakDB",
-    "Override"
+    "Override",
+    "Observe"
 };
 
 static constexpr const char* s_cGlobalTablesWhitelist[] =
