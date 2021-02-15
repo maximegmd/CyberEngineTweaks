@@ -43,6 +43,9 @@ protected:
     static void HandleOverridenFunction(RED4ext::IScriptable* aContext, RED4ext::CStackFrame* aFrame, int32_t* aOut,
                                         int64_t a4, struct Context* apCookie, RED4ext::CStack* apStack);
 
+    void Override(const std::string& acTypeName, const std::string& acFullName, const std::string& acShortName,
+                         bool aAbsolute, sol::protected_function aFunction, sol::this_environment aThisEnv);
+
 private:
     sol::state m_lua{ };
     std::unordered_map<std::string, sol::object> m_properties{ };

@@ -71,6 +71,91 @@ void Scripting::HandleOverridenFunction(RED4ext::IScriptable* apContext, RED4ext
     }
 }
 
+void Scripting::Override(const std::string& acTypeName, const std::string& acFullName, const std::string& acShortName,
+    bool aAbsolute, sol::protected_function aFunction, sol::this_environment aThisEnv)
+{
+    auto pRtti = RED4ext::CRTTISystem::Get();
+    auto pClassType = pRtti->GetClass(acTypeName.c_str());
+
+    if (!pClassType)
+    {
+        spdlog::get("scripting")->error("Class type {} not found", acTypeName);
+        return;
+    }
+
+    // At this point r15 is a pointer to CStack*
+    /*
+sub rsp, 56
+mov qword ptr[rsp + 40], r15
+mov rax, 0xDEADBEEFC0DEBAAD
+mov qword ptr[rsp + 32], rax
+mov rax, 0xDEADBEEFC0DEBAAD
+call rax
+add rsp, 56
+ret
+     */
+    uint8_t payload[] = {0x48, 0x83, 0xEC, 0x38, 0x4C, 0x89, 0x7C, 0x24, 0x28, 0x48, 0xB8, 0xAD, 0xBA, 0xDE,
+                         0xC0, 0xEF, 0xBE, 0xAD, 0xDE, 0x48, 0x89, 0x44, 0x24, 0x20, 0x48, 0xB8, 0xAD, 0xBA,
+                         0xDE, 0xC0, 0xEF, 0xBE, 0xAD, 0xDE, 0xFF, 0xD0, 0x48, 0x83, 0xC4, 0x38, 0xC3};
+
+    auto funcAddr = reinterpret_cast<uintptr_t>(&Scripting::HandleOverridenFunction);
+
+    auto* pContext = TiltedPhoques::New<Context>();
+    pContext->ScriptFunction = aFunction;
+    pContext->Environment = aThisEnv;
+    pContext->pScripting = this;
+
+    std::memcpy(payload + 11, &pContext, 8);
+    std::memcpy(payload + 26, &funcAddr, 8);
+
+    auto* pExecutablePayload = static_cast<void (*)(RED4ext::IScriptable*, RED4ext::CStackFrame*, void*, int64_t)>(
+        FunctionOverride::Get().MakeExecutable(payload, std::size(payload)));
+
+    if (!pExecutablePayload)
+    {
+        spdlog::get("scripting")->error("Unable to create the override payload!");
+        return;
+    }
+
+    // Get the real function
+    const auto pRealFunction = pClassType->GetFunction(RED4ext::FNV1a(acFullName.c_str()));
+    const auto pFunc =
+        RED4ext::CClassFunction::Create(pClassType, acFullName.c_str(), acShortName.c_str(), pExecutablePayload);
+
+    if (pRealFunction)
+    {
+        pFunc->returnType = pRealFunction->returnType;
+        for (auto p : pRealFunction->params)
+        {
+            pFunc->params.PushBack(p);
+        }
+        pFunc->flags = pRealFunction->flags;
+    }
+    pFunc->flags.isNative = true;
+
+    if (!pRealFunction)
+    {
+        if (pFunc->flags.isStatic)
+            pClassType->staticFuncs.PushBack(pFunc);
+        else
+            pClassType->funcs.PushBack(pFunc);
+    }
+    else
+    {
+        // Swap the content of the real function with the one we just created
+        std::array<char, sizeof(RED4ext::CClassFunction)> tmpBuffer;
+
+        std::memcpy(&tmpBuffer, pRealFunction, sizeof(RED4ext::CClassFunction));
+        std::memcpy(pRealFunction, pFunc, sizeof(RED4ext::CClassFunction));
+        std::memcpy(pFunc, &tmpBuffer, sizeof(RED4ext::CClassFunction));
+
+        // Now pFunc is the real function
+        pContext->RealFunction = pFunc;
+    }
+
+    pContext->Forward = !aAbsolute;
+}
+
 Scripting::Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12)
     : m_store(m_sandbox, aPaths, aBindings)
     , m_paths(aPaths)
@@ -407,93 +492,31 @@ void Scripting::Initialize()
         "Query", &TweakDB::Query,
         "GetFlat", &TweakDB::GetFlat,
         "SetFlat", &TweakDB::SetFlat,
-        "Update", sol::overload(&TweakDB::UpdateRecordByID, &TweakDB::UpdateRecord));
+        "Update", overload(&TweakDB::UpdateRecordByID, &TweakDB::UpdateRecord));
 
     m_lua["TweakDB"] = TweakDB(m_lua);
 
-    m_lua["Override"] = [this](const std::string& acTypeName, const std::string& acFullName,
-                               const std::string& acShortName, bool aAbsolute, sol::protected_function aFunction, sol::this_environment aThisEnv)
-    {
-        auto pRtti = RED4ext::CRTTISystem::Get();
-        auto pClassType = pRtti->GetClass(acTypeName.c_str());
-
-        if (!pClassType)
+    m_lua["Override"] = sol::overload(
+        [this](const std::string& acTypeName, const std::string& acFullName,
+               sol::protected_function aFunction, sol::this_environment aThisEnv)
         {
-            spdlog::get("scripting")->error("Class type {} not found", acTypeName);
-            return;
-        }
-
-        // At this point r15 is a pointer to CStack*
-        /*
-sub rsp, 56
-mov qword ptr[rsp + 40], r15
-mov rax, 0xDEADBEEFC0DEBAAD
-mov qword ptr[rsp + 32], rax
-mov rax, 0xDEADBEEFC0DEBAAD
-call rax
-add rsp, 56
-ret
-         */
-        uint8_t payload[] = {0x48, 0x83, 0xEC, 0x38, 0x4C, 0x89, 0x7C, 0x24, 0x28, 0x48, 0xB8, 0xAD, 0xBA, 0xDE,
-                             0xC0, 0xEF, 0xBE, 0xAD, 0xDE, 0x48, 0x89, 0x44, 0x24, 0x20, 0x48, 0xB8, 0xAD, 0xBA,
-                             0xDE, 0xC0, 0xEF, 0xBE, 0xAD, 0xDE, 0xFF, 0xD0, 0x48, 0x83, 0xC4, 0x38, 0xC3};
-
-        auto funcAddr = reinterpret_cast<uintptr_t>(&Scripting::HandleOverridenFunction);
-
-        auto* pContext = TiltedPhoques::New<Context>();
-        pContext->ScriptFunction = aFunction;
-        pContext->Environment = aThisEnv;
-        pContext->pScripting = this;
-
-        std::memcpy(payload + 11, &pContext, 8);
-        std::memcpy(payload + 26, &funcAddr, 8);
-
-        auto* pExecutablePayload = static_cast<void(*)(RED4ext::IScriptable*, RED4ext::CStackFrame*, void*, int64_t)>(FunctionOverride::Get().
-            MakeExecutable(payload, std::size(payload)));
-
-        if (!pExecutablePayload)
+            this->Override(acTypeName, acFullName, acFullName, false, aFunction, aThisEnv);
+        },
+        [this](const std::string& acTypeName, const std::string& acFullName, bool aAbsolute,
+               sol::protected_function aFunction, sol::this_environment aThisEnv)
         {
-            spdlog::get("scripting")->error("Unable to create the override payload!");
-            return;
-        }
-
-        // Get the real function
-        const auto pRealFunction = pClassType->GetFunction(RED4ext::FNV1a(acFullName.c_str()));
-        const auto pFunc = RED4ext::CClassFunction::Create(pClassType, acFullName.c_str(), acShortName.c_str(), pExecutablePayload);
-
-        if (pRealFunction)
+            this->Override(acTypeName, acFullName, acFullName, aAbsolute, aFunction, aThisEnv);
+        },
+        [this](const std::string& acTypeName, const std::string& acFullName, const std::string& acShortName,
+               sol::protected_function aFunction, sol::this_environment aThisEnv)
         {
-            pFunc->returnType = pRealFunction->returnType;
-            for (auto p : pRealFunction->params)
-            {
-                pFunc->params.PushBack(p);
-            }
-            pFunc->flags = pRealFunction->flags;
-        }
-        pFunc->flags.isNative = true;
-
-        if (!pRealFunction)
+            this->Override(acTypeName, acFullName, acShortName, false, aFunction, aThisEnv);
+        },
+        [this](const std::string& acTypeName, const std::string& acFullName, const std::string& acShortName,
+               bool aAbsolute, sol::protected_function aFunction, sol::this_environment aThisEnv)
         {
-            if (pFunc->flags.isStatic)
-                pClassType->staticFuncs.PushBack(pFunc);
-            else
-                pClassType->funcs.PushBack(pFunc);
-        }
-        else
-        {
-            // Swap the content of the real function with the one we just created
-            std::array<char, sizeof(RED4ext::CClassFunction)> tmpBuffer;
-
-            std::memcpy(&tmpBuffer, pRealFunction, sizeof(RED4ext::CClassFunction));
-            std::memcpy(pRealFunction, pFunc, sizeof(RED4ext::CClassFunction));
-            std::memcpy(pFunc, &tmpBuffer, sizeof(RED4ext::CClassFunction));
-
-            // Now pFunc is the real function
-            pContext->RealFunction = pFunc;
-        }
-
-        pContext->Forward = !aAbsolute;
-    };
+            this->Override(acTypeName, acFullName, acShortName, aAbsolute, aFunction, aThisEnv);
+        });
 
 #ifndef NDEBUG
     m_lua["DumpVtables"] = [this]()
