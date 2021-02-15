@@ -946,17 +946,15 @@ You can find all the supported functions and overloads below.
   current_item, clicked = ImGui.ListBox("Label", current_item, { "Item 1", "Item 2", 2 })
   current_item, clicked = ImGui.ListBox("Label", current_item, { "Item 1", "Item 2", 2 }, 5)
 
-  -- ImGui.ListBoxHeader(...)
-  -- Parameters A: text (label), float (size_x), float (size_y)
-  -- Parameters B: text (label), int (items_count), int (height_in_items) [0]
+  -- ImGui.BeginListBox(...)
+  -- Parameters A: text (label), float (size_x) [O], float (size_y) [O]
   -- Returns: bool (open)
   -- Overloads
-  open = ImGui.ListBoxHeader("Label", 100.0, 100.0) -- size as params
-  open = ImGui.ListBoxHeader("Label", 5)
-  open = ImGui.ListBoxHeader("Label", 5, 5)     -- items count and height
+  open = ImGui.BeginListBox("Label")
+  open = ImGui.BeginListBox("Label", 100.0, 100.0)
 
-  -- ImGui.ListBoxFooter()
-  ImGui.ListBoxFooter()
+  -- ImGui.EndListBox()
+  ImGui.EndListBox()
 ```
 
 ## Widgets: Value() Helpers
@@ -1423,22 +1421,22 @@ selected, activated = ImGui.MenuItem("Label", "ALT+F4", selected, true)
   -- Returns: bool (hovered)
   hovered = ImGui.IsMouseHoveringRect(0, 0, 100, 100)
   hovered = ImGui.IsMouseHoveringRect(0, 0, 100, 100, true)
-  
+
   -- ImGui.GetMousePos()
   -- Returns: float (x), float (y)
   x, y = ImGui.GetMousePos()
-  
+
   -- ImGui.GetMousePosOnOpeningCurrentPopup()
   -- Returns: float (x), float (y)
   x, y = ImGui.GetMousePosOnOpeningCurrentPopup()
-  
+
   -- ImGui.IsMouseDragging(...)
   -- Parameters: ImGuiMouseButton (button), float (lock_threshold) [O]
   -- Returns: bool (dragging)
   -- Overloads
   dragging = ImGui.IsMouseDragging(ImGuiMouseButton.Middle)
   dragging = ImGui.IsMouseDragging(ImGuiMouseButton.Middle, 0.5)
-  
+
   -- ImGui.GetMouseDragDelta(...)
   -- Parameters: ImGuiMouseButton (button) [O], float (lock_threshold) [O]
   -- Returns: float (x), float (y)
@@ -1446,7 +1444,7 @@ selected, activated = ImGui.MenuItem("Label", "ALT+F4", selected, true)
   x, y = ImGui.GetMouseDragDelta()
   x, y = ImGui.GetMouseDragDelta(ImGuiMouseButton.Middle)
   x, y = ImGui.GetMouseDragDelta(ImGuiMouseButton.Middle, 0.5)
-  
+
   -- ImGui.ResetMouseDragDelta(...)
   -- Parameters: ImGuiMouseButton (button) [O]
   -- Overloads
