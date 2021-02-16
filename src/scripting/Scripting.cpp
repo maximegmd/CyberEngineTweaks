@@ -45,54 +45,57 @@ struct Context
 void Scripting::HandleOverridenFunction(RED4ext::IScriptable* apContext, RED4ext::CStackFrame* apFrame, int32_t* apOut,
                                         int64_t a4, Context* apCookie)
 {
-    std::vector<sol::object> args;
-
     RED4ext::CStackType self;
     self.type = apContext->classType;
     self.value = apContext;
 
-    args.push_back(ToLua(apCookie->pScripting->m_lua, self)); // Push self
-
     // Save state so we can rollback to it after we popped for ourself
     auto* pCode = apFrame->code;
 
-    // Nasty way of popping all args
-    for (auto& pArg : apCookie->FunctionDefinition->params)
     {
-        auto* pType = pArg->type;
-        auto* pAllocator = pType->GetAllocator();
+        std::vector<sol::object> args;
 
-        auto* pInstance = pAllocator->Alloc(pType->GetSize()).memory;
-        pType->Init(pInstance);
+        auto state = apCookie->pScripting->GetState();
+        args.push_back(ToLua(state, self)); // Push self
 
-        RED4ext::CStackType arg;
-        arg.type = pArg->type;
-        arg.value = pInstance;
+        // Nasty way of popping all args
+        for (auto& pArg : apCookie->FunctionDefinition->params)
+        {
+            auto* pType = pArg->type;
+            auto* pAllocator = pType->GetAllocator();
 
-        apFrame->unk30 = 0;
-        apFrame->unk38 = 0;
-        const auto opcode = *(apFrame->code++);
-        GetScriptCallArray()[opcode](apFrame->context, apFrame, pInstance, nullptr);
-        apFrame->code++; // skip ParamEnd
+            auto* pInstance = pAllocator->Alloc(pType->GetSize()).memory;
+            pType->Init(pInstance);
 
-        args.push_back(ToLua(apCookie->pScripting->m_lua, arg));
+            RED4ext::CStackType arg;
+            arg.type = pArg->type;
+            arg.value = pInstance;
 
-        pType->Destroy(pInstance);
-        pAllocator->Free(pInstance);
-    }
+            apFrame->unk30 = 0;
+            apFrame->unk38 = 0;
+            const auto opcode = *(apFrame->code++);
+            GetScriptCallArray()[opcode](apFrame->context, apFrame, pInstance, nullptr);
+            apFrame->code++; // skip ParamEnd
 
-    const auto result = apCookie->ScriptFunction(as_args(args), apCookie->Environment);
+            args.push_back(ToLua(state, arg));
 
-    if (!apCookie->Forward)
-    {
-        RED4ext::CStackType redResult;
-        redResult.type = apCookie->FunctionDefinition->returnType->type;
-        redResult.value = apOut;
+            pType->Destroy(pInstance);
+            pAllocator->Free(pInstance);
+        }
 
-        if (apOut)
-            ToRED(result.get<sol::object>(), &redResult);
+        const auto result = apCookie->ScriptFunction(as_args(args), apCookie->Environment);
 
-        return;
+        if (!apCookie->Forward)
+        {
+            RED4ext::CStackType redResult;
+            redResult.type = apCookie->FunctionDefinition->returnType->type;
+            redResult.value = apOut;
+
+            if (apOut)
+                ToRED(result.get<sol::object>(), &redResult);
+
+            return;
+        }
     }
 
     if (apCookie->RealFunction)
@@ -438,7 +441,7 @@ void Scripting::Initialize()
 
             if (pClass && !pClass->flags.isAbstract)
             {
-                const sol::state_view state(m_lua);
+                auto state = GetState();
                 
                 if (pType->GetType() == RED4ext::ERTTIType::Handle)
                 {
@@ -487,7 +490,7 @@ void Scripting::Initialize()
         if (!pType || pType->GetType() == RED4ext::ERTTIType::Simple)
             return Type::Descriptor();
 
-        const Type type(m_lua, pType);
+        const Type type({m_lua, m_vmLock}, pType);
         return type.Dump(aDetailed);
     };
     
@@ -532,7 +535,7 @@ void Scripting::Initialize()
         "SetFlat", &TweakDB::SetFlat,
         "Update", overload(&TweakDB::UpdateRecordByID, &TweakDB::UpdateRecord));
 
-    m_lua["TweakDB"] = TweakDB(m_lua);
+    m_lua["TweakDB"] = TweakDB({m_lua, m_vmLock});
 
     m_lua["Override"] = sol::overload(
         [this](const std::string& acTypeName, const std::string& acFullName, sol::protected_function aFunction,
@@ -581,7 +584,7 @@ void Scripting::Initialize()
     }
 
     // initialize sandbox
-    m_sandbox.Initialize(m_lua);
+    m_sandbox.Initialize();
 
     // setup logger for console sandbox
     auto& consoleSB = m_sandbox[0];
@@ -640,6 +643,8 @@ bool Scripting::ExecuteLua(const std::string& acCommand)
     // TODO: proper exception handling!
     try
     {
+        auto lock = std::scoped_lock{m_vmLock};
+
         const auto cResult = m_sandbox.ExecuteString(acCommand);
         if (cResult.valid())
             return true;
@@ -651,6 +656,11 @@ bool Scripting::ExecuteLua(const std::string& acCommand)
         spdlog::get("scripting")->error(e.what());
     }
     return false;
+}
+
+Scripting::LockedState Scripting::GetState() const noexcept
+{
+    return { m_lua, m_vmLock };
 }
 
 size_t Scripting::Size(RED4ext::IRTTIType* apRttiType)
@@ -665,31 +675,33 @@ size_t Scripting::Size(RED4ext::IRTTIType* apRttiType)
     return Converter::Size(apRttiType);
 }
 
-sol::object Scripting::ToLua(sol::state_view aState, RED4ext::CStackType& aResult)
+sol::object Scripting::ToLua(LockedState& aState, RED4ext::CStackType& aResult)
 {
     auto* pType = aResult.type;
+
+    auto& state = aState.Get();
 
     if (pType == nullptr)
         return sol::nil;
     if (pType == s_stringType)
-        return make_object(aState, std::string(static_cast<RED4ext::CString*>(aResult.value)->c_str()));
+        return make_object(state, std::string(static_cast<RED4ext::CString*>(aResult.value)->c_str()));
     if (pType->GetType() == RED4ext::ERTTIType::Handle)
     {
         const auto handle = *static_cast<RED4ext::Handle<RED4ext::IScriptable>*>(aResult.value);
         if (handle)
-            return make_object(aState, StrongReference(aState, handle));
+            return make_object(state, StrongReference(aState, handle));
     }
     else if (pType->GetType() == RED4ext::ERTTIType::WeakHandle)
     {
         const auto handle = *static_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(aResult.value);
         if (!handle.Expired())
-            return make_object(aState, WeakReference(aState, handle));
+            return make_object(state, WeakReference(aState, handle));
     }
     else if (pType->GetType() == RED4ext::ERTTIType::Array)
     {
         auto* pArrayType = static_cast<RED4ext::CArray*>(pType);
         const uint32_t cLength = pArrayType->GetLength(aResult.value);
-        sol::table result(aState, sol::create);
+        sol::table result(state, sol::create);
         for (auto i = 0u; i < cLength; ++i)
         {
             RED4ext::CStackType el;
@@ -967,17 +979,17 @@ sol::object Scripting::GetSingletonHandle(const std::string& acName, sol::this_e
         return sol::nil;
     }
 
-    auto result = m_singletons.emplace(std::make_pair(acName, SingletonReference{ m_lua, pType }));
+    auto result = m_singletons.emplace(std::make_pair(acName, SingletonReference{{m_lua, m_vmLock}, pType}));
     return make_object(m_lua, result.first->second);
 }
 
 sol::protected_function Scripting::InternalIndex(const std::string& acName, sol::this_environment aThisEnv)
 {
     const sol::state_view state(m_lua);
-    auto obj = make_object(state, [this, name = acName](sol::variadic_args aArgs, sol::this_environment aThisEnv, sol::this_state aThisState)
+    auto obj = make_object(state, [this, name = acName](sol::variadic_args aArgs, sol::this_environment aThisEnv)
     {
         std::string result;
-        auto code = this->Execute(name, aArgs, aThisEnv, aThisState, result);
+        auto code = this->Execute(name, aArgs, result);
         if(!code)
         {
             const sol::environment cEnv = aThisEnv;
@@ -990,7 +1002,7 @@ sol::protected_function Scripting::InternalIndex(const std::string& acName, sol:
     return NewIndex(acName, std::move(obj));
 }
 
-sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args aArgs, sol::this_environment aThisEnv, sol::this_state aThisState, std::string& aReturnMessage) const
+sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args aArgs, std::string& aReturnMessage) const
 {
     auto* pRtti = RED4ext::CRTTISystem::Get();
     if (pRtti == nullptr)
@@ -1157,8 +1169,11 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
         return sol::nil;
     }
 
-    if(hasReturnType)
-        return ToLua(m_lua, result);
+    if (hasReturnType)
+    {
+        auto state = GetState();
+        return ToLua(state, result);
+    }
 
     return make_object(m_lua, true);
 }

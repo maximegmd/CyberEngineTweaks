@@ -1,11 +1,12 @@
 #pragma once
 
 #include "Type.h"
-#include "BasicTypes.h"
 
 struct StrongReference : ClassType
 {
-    StrongReference(sol::state_view aView, RED4ext::Handle<RED4ext::IScriptable> aStrongHandle);
+    StrongReference(const Lockable<sol::state_view, std::recursive_mutex>& aView,
+                    RED4ext::Handle<RED4ext::IScriptable> aStrongHandle);
+    virtual ~StrongReference();
 
 protected:
 

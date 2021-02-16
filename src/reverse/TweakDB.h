@@ -4,16 +4,16 @@
 
 struct TweakDB
 {
-  TweakDB(sol::state_view aLua);
+    TweakDB(const Lockable<sol::state_view, std::recursive_mutex>& aLua);
 
-  void DebugStats();
-  sol::object GetRecord(TweakDBID aDBID);
-  sol::object Query(TweakDBID aDBID);
-  sol::object GetFlat(TweakDBID aDBID);
-  bool SetFlat(TweakDBID aDBID, sol::object aValue);
-  bool UpdateRecordByID(TweakDBID aDBID);
-  bool UpdateRecord(sol::object aValue);
+    void DebugStats();
+    sol::object GetRecord(TweakDBID aDBID);
+    sol::object Query(TweakDBID aDBID);
+    sol::object GetFlat(TweakDBID aDBID);
+    bool SetFlat(TweakDBID aDBID, sol::object aValue);
+    bool UpdateRecordByID(TweakDBID aDBID);
+    bool UpdateRecord(sol::object aValue);
 
 private:
-  sol::state_view m_lua;
+    Lockable<sol::state_view, std::recursive_mutex> m_lua;
 };

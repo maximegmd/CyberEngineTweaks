@@ -2,12 +2,14 @@
 
 #include "Sandbox.h"
 
+#include <reverse/Locked.h>
+
 struct LuaSandbox
 {
-    LuaSandbox(sol::state_view aStateView);
+    LuaSandbox(Scripting* apScripting);
     ~LuaSandbox() = default;
 
-    void Initialize(sol::state_view aStateView);
+    void Initialize();
     void ResetState();
 
     size_t CreateSandbox(const std::filesystem::path& acPath, bool aEnableExtraLibs = true, bool aEnableDB = true, bool aEnableIO = true);
@@ -19,6 +21,8 @@ struct LuaSandbox
     
     Sandbox& operator[](size_t aID);
     const Sandbox& operator[](size_t aID) const;
+
+    Locked<sol::state_view, std::recursive_mutex> GetState() const;
     
 private:
 
@@ -26,7 +30,7 @@ private:
     void InitializeDBForSandbox(Sandbox& aSandbox) const;
     void InitializeIOForSandbox(Sandbox& aSandbox); 
     
-    sol::state_view m_lua;
+    Scripting* m_pScripting;
     sol::environment m_env{ };
     std::vector<Sandbox> m_sandboxes{ };
     TiltedPhoques::Map<std::string, sol::object> m_modules{ };

@@ -2,20 +2,34 @@
 
 #include "WeakReference.h"
 
-WeakReference::WeakReference(sol::state_view aView, RED4ext::WeakHandle<RED4ext::IScriptable> aWeakHandle)
+#include "CET.h"
+
+WeakReference::WeakReference(const Lockable<sol::state_view, std::recursive_mutex>& aView,
+                             RED4ext::WeakHandle<RED4ext::IScriptable> aWeakHandle)
     : ClassType(aView, nullptr)
-    , m_weakHandle(aWeakHandle)
+    , m_weakHandle(std::move(aWeakHandle))
 {
-    auto ref = aWeakHandle.Lock();
+    auto ref = m_weakHandle.Lock();
     if (ref)
     {
         m_pType = ref->GetType();
     }
 }
 
+WeakReference::~WeakReference()
+{
+    // Nasty hack so that the Lua VM doesn't try to release game memory on shutdown
+    if (!CET::IsRunning())
+    {
+        m_weakHandle.instance = nullptr;
+        m_weakHandle.refCount = nullptr;
+    }
+}
+
+
 RED4ext::ScriptInstance WeakReference::GetHandle()
 {
-    auto ref = m_weakHandle.Lock();
+    const auto ref = m_weakHandle.Lock();
     if (ref)
     {
         return m_weakHandle.instance;

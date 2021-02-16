@@ -4,7 +4,7 @@
 
 struct SingletonReference : ClassType
 {
-    SingletonReference(sol::state_view aView, RED4ext::IRTTIType* apClass);
+    SingletonReference(const Lockable<sol::state_view, std::recursive_mutex>& aView, RED4ext::IRTTIType* apClass);
     ~SingletonReference();
     
 protected:

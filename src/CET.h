@@ -23,6 +23,8 @@ struct CET
     Overlay& GetOverlay() noexcept;
     LuaVM& GetVM() noexcept;
 
+    static bool IsRunning() noexcept;
+
 private:
 
     CET();

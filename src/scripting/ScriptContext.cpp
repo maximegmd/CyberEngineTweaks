@@ -33,6 +33,8 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
     , m_sandboxID(aLuaSandbox.CreateSandbox(acPath))
     , m_name(acName)
 {
+    auto state = aLuaSandbox.GetState();
+
     auto& sb = m_sandbox[m_sandboxID];
     auto& env = sb.GetEnvironment();
     m_logger = m_sandbox.InitializeLoggerForSandbox(sb, acName);
@@ -128,26 +130,36 @@ const std::vector<VKBindInfo>& ScriptContext::GetBinds() const
 
 void ScriptContext::TriggerOnInit() const
 {
+    auto state = m_sandbox.GetState();
+
     TryLuaFunction(m_logger, m_onInit);
 }
 
 void ScriptContext::TriggerOnUpdate(float aDeltaTime) const
 {
+    auto state = m_sandbox.GetState();
+
     TryLuaFunction(m_logger, m_onUpdate, aDeltaTime);
 }
 
 void ScriptContext::TriggerOnDraw() const
 {
+    auto state = m_sandbox.GetState();
+
     TryLuaFunction(m_logger, m_onDraw);
 }
     
 void ScriptContext::TriggerOnOverlayOpen() const
 {
+    auto state = m_sandbox.GetState();
+
     TryLuaFunction(m_logger, m_onOverlayOpen);
 }
 
 void ScriptContext::TriggerOnOverlayClose() const
 {
+    auto state = m_sandbox.GetState();
+
     TryLuaFunction(m_logger, m_onOverlayClose);
 }
 
@@ -158,5 +170,7 @@ sol::object ScriptContext::GetRootObject() const
 
 void ScriptContext::TriggerOnShutdown() const
 {
+    auto state = m_sandbox.GetState();
+
     TryLuaFunction(m_logger, m_onShutdown);
 }

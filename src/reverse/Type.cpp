@@ -29,8 +29,8 @@ std::string Type::Descriptor::ToString() const
     return result;
 }
 
-Type::Type(sol::state_view aView, RED4ext::IRTTIType* apClass)
-    : m_lua(std::move(aView))
+Type::Type(const Lockable<sol::state_view, std::recursive_mutex>& aView, RED4ext::IRTTIType* apClass)
+    : m_lua(aView)
     , m_pType(apClass)
 {
 }
@@ -193,7 +193,8 @@ std::string Type::GameDump()
     if (m_pType)
     {
         auto handle = GetHandle();
-        if (handle) {
+        if (handle)
+        {
             m_pType->GetDebugString(handle, str);
         }
     }
@@ -201,7 +202,7 @@ std::string Type::GameDump()
     return str.c_str();
 }
 
-sol::variadic_results Type::Execute(RED4ext::CBaseFunction* apFunc, const std::string& acName, sol::variadic_args aArgs, sol::this_environment env, sol::this_state L, std::string& aReturnMessage)
+sol::variadic_results Type::Execute(RED4ext::CBaseFunction* apFunc, const std::string& acName, sol::variadic_args aArgs, std::string& aReturnMessage)
 {
     std::vector<RED4ext::CStackType> args(apFunc->params.size);
 
@@ -289,23 +290,25 @@ sol::variadic_results Type::Execute(RED4ext::CBaseFunction* apFunc, const std::s
 
     sol::variadic_results results;
 
+    auto state = m_lua.Lock();
+
     if (hasReturnType)
-        results.push_back(Scripting::ToLua(m_lua, result));
+        results.push_back(Scripting::ToLua(state, result));
 
     for (auto i = 0; i < apFunc->params.size; ++i)
     {
         if (!apFunc->params[i]->flags.isOut)
             continue;
 
-        results.push_back(Scripting::ToLua(m_lua, args[i]));
+        results.push_back(Scripting::ToLua(state, args[i]));
     }
 
     return results;
 }
 
 
-ClassType::ClassType(sol::state_view aView, RED4ext::IRTTIType* apClass)
-    : Type(std::move(aView), apClass)
+ClassType::ClassType(const Lockable<sol::state_view, std::recursive_mutex>& aView, RED4ext::IRTTIType* apClass)
+    : Type(aView, apClass)
 {
 
 }
@@ -314,7 +317,7 @@ Type::Descriptor ClassType::Dump(bool aWithHashes) const
 {
     auto descriptor = Type::Dump(aWithHashes);
 
-    RED4ext::CClass* type = static_cast<RED4ext::CClass*>(m_pType);
+    auto* type = static_cast<RED4ext::CClass*>(m_pType);
     while (type)
     {
         std::string name = type->name.ToString();
@@ -358,7 +361,8 @@ sol::object ClassType::Index_Impl(const std::string& acName, sol::this_environme
         {
             auto value = prop->GetValue<uintptr_t*>(handle);
             RED4ext::CStackType stackType(prop->type, value);
-            return Scripting::ToLua(m_lua, stackType);
+            auto state = m_lua.Lock();
+            return Scripting::ToLua(state, stackType);
         }
     }
 
@@ -395,11 +399,13 @@ sol::object ClassType::Index_Impl(const std::string& acName, sol::this_environme
         }
     }
 
-    auto obj = make_object(m_lua, [pFunc, name = acName](Type* apType, sol::variadic_args aArgs,
+    auto state = m_lua.Lock();
+
+    auto obj = make_object(state.Get(), [pFunc, name = acName](Type* apType, sol::variadic_args aArgs,
                                                        sol::this_environment aThisEnv, sol::this_state L)
     {
         std::string result;
-        auto funcRet = apType->Execute(pFunc, name, aArgs, aThisEnv, L, result);
+        auto funcRet = apType->Execute(pFunc, name, aArgs, result);
         if (!result.empty())
         {
             const sol::environment cEnv = aThisEnv;
@@ -439,8 +445,9 @@ sol::object ClassType::NewIndex_Impl(const std::string& acName, sol::object aPar
     return Type::NewIndex_Impl(acName, aParam);
 }
 
-UnknownType::UnknownType(sol::state_view aView, RED4ext::IRTTIType* apClass, RED4ext::ScriptInstance apInstance)
-    : Type(std::move(aView), apClass)
+UnknownType::UnknownType(const Lockable<sol::state_view, std::recursive_mutex>& aView, RED4ext::IRTTIType* apClass,
+                         RED4ext::ScriptInstance apInstance)
+    : Type(aView, apClass)
 {
     // Hack for now until we use their allocators
     m_pInstance = std::make_unique<uint8_t[]>(apClass->GetSize());

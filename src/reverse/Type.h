@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Locked.h"
+
 struct Type
 {
     struct Descriptor
@@ -12,7 +14,8 @@ struct Type
         std::string ToString() const;
     };
 
-    Type(sol::state_view aView, RED4ext::IRTTIType* apClass);
+    Type(const Lockable<sol::state_view, std::recursive_mutex>& aView, RED4ext::IRTTIType* apClass);
+    virtual ~Type(){};
 
     sol::object Index(const std::string& acName, sol::this_environment aThisEnv);
     sol::object NewIndex(const std::string& acName, sol::object aParam);
@@ -25,7 +28,7 @@ struct Type
     std::string GameDump();
 
     std::string FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithHashes) const;
-    sol::variadic_results Execute(RED4ext::CBaseFunction* apFunc, const std::string& acName, sol::variadic_args args, sol::this_environment env, sol::this_state L, std::string& aReturnMessage);
+    sol::variadic_results Execute(RED4ext::CBaseFunction* apFunc, const std::string& acName, sol::variadic_args args, std::string& aReturnMessage);
 
 protected:
     virtual RED4ext::ScriptInstance GetHandle() { return nullptr; }
@@ -34,13 +37,14 @@ protected:
 
     friend struct Scripting;
 
-    sol::state_view m_lua;
+    Lockable<sol::state_view, std::recursive_mutex> m_lua;
     std::unordered_map<std::string, sol::object> m_properties;
 };
 
 struct ClassType : Type
 {
-    ClassType(sol::state_view aView, RED4ext::IRTTIType* apClass);
+    ClassType(const Lockable<sol::state_view, std::recursive_mutex>& aView, RED4ext::IRTTIType* apClass);
+    virtual ~ClassType(){};
 
     Descriptor Dump(bool aWithHashes) const override;
     sol::object Index_Impl(const std::string& acName, sol::this_environment aThisEnv) override;
@@ -49,7 +53,8 @@ struct ClassType : Type
 
 struct UnknownType : Type
 {
-    UnknownType(sol::state_view aView, RED4ext::IRTTIType* apClass, RED4ext::ScriptInstance apInstance);
+    UnknownType(const Lockable<sol::state_view, std::recursive_mutex>& aView, RED4ext::IRTTIType* apClass,
+                RED4ext::ScriptInstance apInstance);
 
     Descriptor Dump(bool aWithHashes) const override;
     RED4ext::ScriptInstance GetHandle()  override { return m_pInstance.get(); }

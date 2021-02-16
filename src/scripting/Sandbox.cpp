@@ -1,10 +1,11 @@
 #include <stdafx.h>
 
 #include "Sandbox.h"
+#include "Scripting.h"
 
-Sandbox::Sandbox(sol::state_view aStateView, sol::environment aBaseEnvironment, const std::filesystem::path& acRootPath)
-    : m_lua(aStateView)
-    , m_env(aStateView, sol::create)
+Sandbox::Sandbox(Scripting* apScripting, sol::environment aBaseEnvironment, const std::filesystem::path& acRootPath)
+    : m_pScripting(apScripting)
+    , m_env(apScripting->GetState().Get(), sol::create)
     , m_path(acRootPath)
 {
     // copy base environment, do not set it as fallback, as it may cause globals to bleed into other things!
@@ -12,19 +13,14 @@ Sandbox::Sandbox(sol::state_view aStateView, sol::environment aBaseEnvironment, 
         m_env[cKV.first].set(cKV.second.as<sol::object>());
 }
 
-sol::protected_function_result Sandbox::ExecuteFile(const std::string& acPath)
+sol::protected_function_result Sandbox::ExecuteFile(const std::string& acPath) const
 {
-    return m_lua.script_file(acPath, m_env);
+    return m_pScripting->GetState().Get().script_file(acPath, m_env);
 }
 
-sol::protected_function_result Sandbox::ExecuteString(const std::string& acString)
+sol::protected_function_result Sandbox::ExecuteString(const std::string& acString) const
 {
-    return m_lua.script(acString, m_env);
-}
-
-sol::state_view& Sandbox::GetStateView()
-{
-    return m_lua;
+    return m_pScripting->GetState().Get().script(acString, m_env);
 }
 
 sol::environment& Sandbox::GetEnvironment()

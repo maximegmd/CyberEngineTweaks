@@ -6,6 +6,7 @@
 using namespace std::chrono_literals;
 
 static std::unique_ptr<CET> s_pInstance{ nullptr };
+static bool s_isRunning{true};
 
 void CET::Initialize()
 {
@@ -52,6 +53,11 @@ LuaVM& CET::GetVM() noexcept
     return m_vm;
 }
 
+bool CET::IsRunning() noexcept
+{
+    return s_isRunning;
+}
+
 CET::CET()
     : m_options(m_paths)
     , m_bindings(m_paths)
@@ -69,6 +75,8 @@ CET::CET()
 
 CET::~CET()
 {
+    s_isRunning = false;
+
     m_bindings.DisconnectUpdate(m_d3d12);
     m_bindings.Clear();
 }

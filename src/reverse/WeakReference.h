@@ -4,7 +4,9 @@
 
 struct WeakReference : ClassType
 {
-    WeakReference(sol::state_view aView, RED4ext::WeakHandle<RED4ext::IScriptable> aWeakHandle);
+    WeakReference(const Lockable<sol::state_view, std::recursive_mutex>& aView,
+                  RED4ext::WeakHandle<RED4ext::IScriptable> aWeakHandle);
+    virtual ~WeakReference();
 
 protected:
 

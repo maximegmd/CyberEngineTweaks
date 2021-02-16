@@ -2,8 +2,9 @@
 
 #include "SingletonReference.h"
 
-SingletonReference::SingletonReference(sol::state_view aView, RED4ext::IRTTIType* apClass)
-    : ClassType(std::move(aView), apClass)
+SingletonReference::SingletonReference(const Lockable<sol::state_view, std::recursive_mutex>& aView,
+                                       RED4ext::IRTTIType* apClass)
+    : ClassType(aView, apClass)
 {
 }
 

@@ -12,13 +12,13 @@ namespace TiltedPhoques {
 namespace Converter
 {
     size_t Size(RED4ext::IRTTIType* apRtti);
-    sol::object ToLua(RED4ext::CStackType& aResult, sol::state_view aLua);
+    sol::object ToLua(RED4ext::CStackType& aResult, Locked<sol::state_view, std::recursive_mutex>& aLua);
     RED4ext::CStackType ToRED(sol::object aObject, RED4ext::IRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator);
     void ToRED(sol::object aObject, RED4ext::CStackType* apType);
 }
 
 // Specialization manages special case implicit casting
-struct CNameConverter : public LuaRED<CName, "CName">
+struct CNameConverter : LuaRED<CName, "CName">
 {
     RED4ext::CStackType ToRED(sol::object aObject, RED4ext::IRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator)
     {
@@ -54,11 +54,11 @@ struct CNameConverter : public LuaRED<CName, "CName">
 };
 
 // Specialization manages wrapping and converting RT_Enum
-struct EnumConverter : public LuaRED<Enum, "Enum">
+struct EnumConverter : LuaRED<Enum, "Enum">
 {
-	sol::object ToLua(RED4ext::CStackType& aResult, sol::state_view aLua)
+    sol::object ToLua(RED4ext::CStackType& aResult, Locked<sol::state_view, std::recursive_mutex>& aLua)
 	{
-		return make_object(aLua, Enum(aResult));
+		return make_object(aLua.Get(), Enum(aResult));
 	}
 
 	RED4ext::CStackType ToRED(sol::object aObject, RED4ext::IRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator)
@@ -157,11 +157,11 @@ struct EnumConverter : public LuaRED<Enum, "Enum">
 };
 
 // Specialization manages wrapping RT_Class
-struct ClassConverter : public LuaRED<ClassReference, "ClassReference">
+struct ClassConverter : LuaRED<ClassReference, "ClassReference">
 {
-	sol::object ToLua(RED4ext::CStackType& aResult, sol::state_view aLua)
+    sol::object ToLua(RED4ext::CStackType& aResult, Locked<sol::state_view, std::recursive_mutex>& aLua)
 	{
-		return make_object(aLua, ClassReference(aLua, aResult.type, aResult.value));
+		return make_object(aLua.Get(), ClassReference(aLua, aResult.type, aResult.value));
 	}
 
 	RED4ext::CStackType ToRED(sol::object aObject, RED4ext::IRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator)
@@ -210,11 +210,11 @@ struct ClassConverter : public LuaRED<ClassReference, "ClassReference">
 };
 
 // Specialization manages wrapping RT_***
-struct RawConverter : public LuaRED<UnknownType, "UnknownType">
+struct RawConverter : LuaRED<UnknownType, "UnknownType">
 {
-	sol::object ToLua(RED4ext::CStackType& aResult, sol::state_view aLua)
+    sol::object ToLua(RED4ext::CStackType& aResult, Locked<sol::state_view, std::recursive_mutex>& aLua)
 	{
-		return make_object(aLua, UnknownType(aLua, aResult.type, aResult.value));
+		return make_object(aLua.Get(), UnknownType(aLua, aResult.type, aResult.value));
 	}
 
 	RED4ext::CStackType ToRED(sol::object aObject, RED4ext::IRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator)

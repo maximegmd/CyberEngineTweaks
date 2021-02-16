@@ -2,8 +2,9 @@
 
 #include "ClassReference.h"
 
-ClassReference::ClassReference(sol::state_view aView, RED4ext::IRTTIType* apClass, RED4ext::ScriptInstance apInstance)
-    : ClassType(std::move(aView), apClass)
+ClassReference::ClassReference(const Lockable<sol::state_view, std::recursive_mutex>& aView,
+                               RED4ext::IRTTIType* apClass, RED4ext::ScriptInstance apInstance)
+    : ClassType(aView, apClass)
 {
     // Hack for now until we use their allocators, classes can actually be pointers to structs
     // GI just happens to be a 8-byte struct with only a pointer in it

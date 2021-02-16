@@ -7,9 +7,9 @@ struct LuaRED
 {
     static constexpr char const* Name = REDName;
     
-    sol::object ToLua(RED4ext::CStackType& aResult, sol::state_view aLua)
+    sol::object ToLua(RED4ext::CStackType& aResult, Locked<sol::state_view, std::recursive_mutex>& aLua)
     {
-        return make_object(aLua, *static_cast<T*>(aResult.value));
+        return make_object(aLua.Get(), *static_cast<T*>(aResult.value));
     }
 
     RED4ext::CStackType ToRED(sol::object aObject, RED4ext::IRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator)

@@ -51,7 +51,7 @@ size_t Converter::Size(RED4ext::IRTTIType* apRtti)
     return s;
 }
 
-sol::object Converter::ToLua(RED4ext::CStackType& aResult, sol::state_view aLua)
+sol::object Converter::ToLua(RED4ext::CStackType& aResult, Locked<sol::state_view, std::recursive_mutex>& aLua)
 {
     sol::object o = sol::nil;
     auto initLuaObject = [&](auto& x)
