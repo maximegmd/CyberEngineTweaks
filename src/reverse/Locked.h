@@ -5,16 +5,16 @@
 template<class T, class TLock>
 struct Locked
 {
-    Locked(T aValue, TLock& aLock)
-        : m_value(aValue)
-        , m_handle(aLock)
+    Locked(const T& aValue, TLock& aLock)
+        : m_handle(aLock)
+        , m_value(aValue)
         , m_lock(aLock)
     {
     }
 
     Locked(const Lockable<T, TLock>& aLockable)
-        : m_value(aLockable.m_value)
-        , m_handle(aLockable.m_lock)
+        : m_handle(aLockable.m_lock)
+        , m_value(aLockable.m_value)
         , m_lock(aLockable.m_lock)
     {
     }
@@ -37,7 +37,7 @@ struct Locked
 private:
     friend struct Lockable<T, TLock>;
 
-    T m_value;
     std::scoped_lock<TLock> m_handle;
+    T m_value;
     TLock& m_lock;
 };

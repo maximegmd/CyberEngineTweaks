@@ -4,7 +4,7 @@
 
 struct StrongReference : ClassType
 {
-    StrongReference(const Lockable<sol::state_view, std::recursive_mutex>& aView,
+    StrongReference(const Lockable<sol::state*, std::recursive_mutex>& aView,
                     RED4ext::Handle<RED4ext::IScriptable> aStrongHandle);
     virtual ~StrongReference();
 

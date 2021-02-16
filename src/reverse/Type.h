@@ -14,7 +14,7 @@ struct Type
         std::string ToString() const;
     };
 
-    Type(const Lockable<sol::state_view, std::recursive_mutex>& aView, RED4ext::IRTTIType* apClass);
+    Type(const Lockable<sol::state*, std::recursive_mutex>& aView, RED4ext::IRTTIType* apClass);
     virtual ~Type(){};
 
     sol::object Index(const std::string& acName, sol::this_environment aThisEnv);
@@ -37,13 +37,13 @@ protected:
 
     friend struct Scripting;
 
-    Lockable<sol::state_view, std::recursive_mutex> m_lua;
+    Lockable<sol::state*, std::recursive_mutex> m_lua;
     std::unordered_map<std::string, sol::object> m_properties;
 };
 
 struct ClassType : Type
 {
-    ClassType(const Lockable<sol::state_view, std::recursive_mutex>& aView, RED4ext::IRTTIType* apClass);
+    ClassType(const Lockable<sol::state*, std::recursive_mutex>& aView, RED4ext::IRTTIType* apClass);
     virtual ~ClassType(){};
 
     Descriptor Dump(bool aWithHashes) const override;
@@ -53,7 +53,7 @@ struct ClassType : Type
 
 struct UnknownType : Type
 {
-    UnknownType(const Lockable<sol::state_view, std::recursive_mutex>& aView, RED4ext::IRTTIType* apClass,
+    UnknownType(const Lockable<sol::state*, std::recursive_mutex>& aView, RED4ext::IRTTIType* apClass,
                 RED4ext::ScriptInstance apInstance);
 
     Descriptor Dump(bool aWithHashes) const override;

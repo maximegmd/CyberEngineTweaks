@@ -22,7 +22,7 @@ struct LuaSandbox
     Sandbox& operator[](size_t aID);
     const Sandbox& operator[](size_t aID) const;
 
-    Locked<sol::state_view, std::recursive_mutex> GetState() const;
+    Locked<sol::state*, std::recursive_mutex> GetState() const;
     
 private:
 

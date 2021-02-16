@@ -200,6 +200,20 @@ void LuaVM::HookTDBIDToStringDEBUG(RED4ext::IScriptable*, RED4ext::CStackFrame* 
     }
 }
 
+using TRunPureScriptFunction = bool(*)(RED4ext::CBaseFunction* apFunction, RED4ext::CStack*, void*);
+static TRunPureScriptFunction RealRunPureScriptFunction = nullptr;
+
+bool HookRunPureScriptFunction(RED4ext::CBaseFunction* apFunction, RED4ext::CStack* apContext, void* a3)
+{
+    if (apFunction->flags.isNative == 1)
+    {
+        RED4ext::CStack stack(apContext->context18, apContext->args, apContext->argsCount, apContext->result);
+        return apFunction->Execute(&stack);
+    }
+
+    return RealRunPureScriptFunction(apFunction, apContext, a3);
+}
+
 void LuaVM::Hook(Options& aOptions)
 {
     auto& gameImage = aOptions.GameImage;
@@ -302,7 +316,8 @@ void LuaVM::Hook(Options& aOptions)
     }
 
     {
-        const mem::pattern cPattern("48 BF 58 D1 78 A0 18 09 BA EC 75 16 48 8D 15 ?? ?? ?? ?? 48 8B CF E8 ?? ?? ?? ?? C6 05 ?? ?? ?? ?? 01 41 8B 06 39 05 ?? ?? ?? ?? 7F");
+        const mem::pattern cPattern("48 BF 58 D1 78 A0 18 09 BA EC 75 16 48 8D 15 ?? ?? ?? ?? 48 8B CF E8 ?? ?? ?? ?? "
+                                    "C6 05 ?? ?? ?? ?? 01 41 8B 06 39 05 ?? ?? ?? ?? 7F");
         const mem::default_scanner cScanner(cPattern);
         uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
 
@@ -311,7 +326,8 @@ void LuaVM::Hook(Options& aOptions)
             pLocation = &pLocation[45] + static_cast<int8_t>(pLocation[44]);
 
             mem::region reg(pLocation, 45);
-            const mem::pattern cSecondaryPattern("48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 83 3D ?? ?? ?? ?? FF 75 ?? 48 8D 05");
+            const mem::pattern cSecondaryPattern(
+                "48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 83 3D ?? ?? ?? ?? FF 75 ?? 48 8D 05");
             const mem::default_scanner cSecondaryScanner(cSecondaryPattern);
 
             pLocation = cSecondaryScanner(reg).as<uint8_t*>();
@@ -326,6 +342,48 @@ void LuaVM::Hook(Options& aOptions)
                 else
                     spdlog::info("TDBID::ToStringDEBUG function hook complete!");
             }
+        }
+    }
+
+    {
+        const mem::pattern cPattern("48 89 5C 24 08 57 48 83 EC 40 8B F9 48 8D 54 24 30 48 8B 0D ?? ?? ?? ?? 41 B8 88 00 00 00");
+        const mem::default_scanner cScanner(cPattern);
+        uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
+
+        if (pLocation)
+        {
+            auto* pFirstLocation = pLocation + 0x1A;
+            auto* pSecondLocation = pLocation + 0x3A;
+
+            if (*pFirstLocation == 0x88 && *pSecondLocation == 0x88)
+            {
+                DWORD oldProtect;
+                VirtualProtect(pLocation, 0x40, PAGE_READWRITE, &oldProtect);
+                *pFirstLocation = *pSecondLocation = 0x90;
+                VirtualProtect(pLocation, 0x40, oldProtect, &oldProtect);
+
+                spdlog::info("Override function allocator patched!");
+            }
+            else
+                spdlog::error("Could not fix allocator for override functions!");
+        }
+    }
+
+    {
+        const mem::pattern cPattern("40 55 48 81 EC D0 00 00 00 48 8D 6C 24 40 8B 41 7C");
+        const mem::default_scanner cScanner(cPattern);
+        RealRunPureScriptFunction = cScanner(gameImage.TextRegion).as<TRunPureScriptFunction>();
+        if (!RealRunPureScriptFunction)
+            spdlog::error("Could not find pure run script function!");
+        else
+        {
+            auto* pLocation = RealRunPureScriptFunction;
+            if (MH_CreateHook(pLocation, &HookRunPureScriptFunction,
+                              reinterpret_cast<void**>(&RealRunPureScriptFunction)) != MH_OK ||
+                MH_EnableHook(pLocation) != MH_OK)
+                spdlog::error("Could not hook RealRunScriptFunction function!");
+            else
+                spdlog::info("RealRunScriptFunction function hook complete!");
         }
     }
 }

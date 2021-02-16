@@ -42,74 +42,64 @@ struct Context
     bool Forward;
 };
 
-void Scripting::HandleOverridenFunction(RED4ext::IScriptable* apContext, RED4ext::CStackFrame* apFrame, int32_t* apOut,
-                                        int64_t a4, Context* apCookie)
+void Scripting::HandleOverridenFunction(RED4ext::IScriptable* apContext, RED4ext::CStackFrame* apFrame, int32_t* apOut, int64_t a4, Context* apCookie)
 {
-    // Store a static pointer to the real function to check later if the current function is the same as the previous to prevent calling our self
-    static thread_local RED4ext::CClassFunction* s_pRealFunction = nullptr;
-
-    auto* pSaveFunction = s_pRealFunction;
     auto* pRealFunction = apCookie->RealFunction;
-
-    s_pRealFunction = pRealFunction;
 
     // Save state so we can rollback to it after we popped for ourself
     auto* pCode = apFrame->code;
 
-    if (pRealFunction != pSaveFunction)
+    RED4ext::CStackType self;
+    self.type = apContext->classType;
+    self.value = apContext;
+
     {
-        RED4ext::CStackType self;
-        self.type = apContext->classType;
-        self.value = apContext;
+        auto state = apCookie->pScripting->GetState();
 
+        std::vector<sol::object> args;
+        args.push_back(ToLua(state, self)); // Push self
+
+        // Nasty way of popping all args
+        for (auto& pArg : apCookie->FunctionDefinition->params)
         {
-            std::vector<sol::object> args;
+            auto* pType = pArg->type;
+            auto* pAllocator = pType->GetAllocator();
 
-            auto state = apCookie->pScripting->GetState();
-            args.push_back(ToLua(state, self)); // Push self
+            auto* pInstance = pAllocator->Alloc(pType->GetSize()).memory;
+            pType->Init(pInstance);
 
-            // Nasty way of popping all args
-            for (auto& pArg : apCookie->FunctionDefinition->params)
-            {
-                auto* pType = pArg->type;
-                auto* pAllocator = pType->GetAllocator();
+            RED4ext::CStackType arg;
+            arg.type = pArg->type;
+            arg.value = pInstance;
 
-                auto* pInstance = pAllocator->Alloc(pType->GetSize()).memory;
-                pType->Init(pInstance);
+            apFrame->unk30 = 0;
+            apFrame->unk38 = 0;
+            const auto opcode = *(apFrame->code++);
+            GetScriptCallArray()[opcode](apFrame->context, apFrame, pInstance, nullptr);
+            apFrame->code++; // skip ParamEnd
 
-                RED4ext::CStackType arg;
-                arg.type = pArg->type;
-                arg.value = pInstance;
+            args.push_back(ToLua(state, arg));
 
-                apFrame->unk30 = 0;
-                apFrame->unk38 = 0;
-                const auto opcode = *(apFrame->code++);
-                GetScriptCallArray()[opcode](apFrame->context, apFrame, pInstance, nullptr);
-                apFrame->code++; // skip ParamEnd
+            pType->Destroy(pInstance);
+            pAllocator->Free(pInstance);
+        }
 
-                args.push_back(ToLua(state, arg));
+        const auto result = apCookie->ScriptFunction(as_args(args), apCookie->Environment);
 
-                pType->Destroy(pInstance);
-                pAllocator->Free(pInstance);
-            }
+        if (!apCookie->Forward)
+        {
+            RED4ext::CStackType redResult;
+            redResult.type = apCookie->FunctionDefinition->returnType->type;
+            redResult.value = apOut;
 
-            const auto result = apCookie->ScriptFunction(as_args(args), apCookie->Environment);
+            if (apOut)
+                ToRED(result.get<sol::object>(), &redResult);
 
-            if (!apCookie->Forward)
-            {
-                RED4ext::CStackType redResult;
-                redResult.type = apCookie->FunctionDefinition->returnType->type;
-                redResult.value = apOut;
-
-                if (apOut)
-                    ToRED(result.get<sol::object>(), &redResult);
-
-                s_pRealFunction = pSaveFunction; // Restore the previous function
-
-                return;
-            }
+            return;
         }
     }
+    
+
     if (pRealFunction)
     {
         // Rollback so the real function will manage to pop everything
@@ -120,8 +110,6 @@ void Scripting::HandleOverridenFunction(RED4ext::IScriptable* apContext, RED4ext
 
         CallScriptFunction(pRealFunction, apContext, apFrame, apOut, a4);
     }
-
-    s_pRealFunction = pSaveFunction; // Restore the previous function
 }
 
 void Scripting::Override(const std::string& acTypeName, const std::string& acFullName, const std::string& acShortName,
@@ -181,7 +169,13 @@ ret
         {
             pFunc->params.PushBack(p);
         }
-        pFunc->flags = pRealFunction->flags;
+
+        for (auto p : pRealFunction->localVars)
+        {
+            pFunc->localVars.PushBack(p);
+        }
+
+        pFunc->unk7C = pRealFunction->unk7C;
     }
     pFunc->flags.isNative = true;
 
@@ -504,7 +498,7 @@ void Scripting::Initialize()
         if (!pType || pType->GetType() == RED4ext::ERTTIType::Simple)
             return Type::Descriptor();
 
-        const Type type({m_lua, m_vmLock}, pType);
+        const Type type({&m_lua, m_vmLock}, pType);
         return type.Dump(aDetailed);
     };
     
@@ -549,7 +543,7 @@ void Scripting::Initialize()
         "SetFlat", &TweakDB::SetFlat,
         "Update", overload(&TweakDB::UpdateRecordByID, &TweakDB::UpdateRecord));
 
-    m_lua["TweakDB"] = TweakDB({m_lua, m_vmLock});
+    m_lua["TweakDB"] = TweakDB({&m_lua, m_vmLock});
 
     m_lua["Override"] = sol::overload(
         [this](const std::string& acTypeName, const std::string& acFullName, sol::protected_function aFunction,
@@ -674,7 +668,7 @@ bool Scripting::ExecuteLua(const std::string& acCommand)
 
 Scripting::LockedState Scripting::GetState() const noexcept
 {
-    return { m_lua, m_vmLock };
+    return { &m_lua, m_vmLock };
 }
 
 size_t Scripting::Size(RED4ext::IRTTIType* apRttiType)
@@ -693,7 +687,7 @@ sol::object Scripting::ToLua(LockedState& aState, RED4ext::CStackType& aResult)
 {
     auto* pType = aResult.type;
 
-    auto& state = aState.Get();
+    auto& state = *aState.Get();
 
     if (pType == nullptr)
         return sol::nil;
@@ -993,7 +987,7 @@ sol::object Scripting::GetSingletonHandle(const std::string& acName, sol::this_e
         return sol::nil;
     }
 
-    auto result = m_singletons.emplace(std::make_pair(acName, SingletonReference{{m_lua, m_vmLock}, pType}));
+    auto result = m_singletons.emplace(std::make_pair(acName, SingletonReference{{&m_lua, m_vmLock}, pType}));
     return make_object(m_lua, result.first->second);
 }
 

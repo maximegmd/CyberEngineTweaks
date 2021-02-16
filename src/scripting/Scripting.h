@@ -7,8 +7,8 @@ struct D3D12;
 
 struct Scripting
 {
-    using LockedState = Locked<sol::state_view, std::recursive_mutex>;
-    using LockableState = Lockable<sol::state_view, std::recursive_mutex>;
+    using LockedState = Locked<sol::state*, std::recursive_mutex>;
+    using LockableState = Lockable<sol::state*, std::recursive_mutex>;
 
     Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12);
     ~Scripting() = default;
@@ -51,7 +51,7 @@ protected:
                          bool aAbsolute, sol::protected_function aFunction, sol::this_environment aThisEnv);
 
 private:
-    sol::state m_lua{ };
+    mutable sol::state m_lua{ };
     std::unordered_map<std::string, sol::object> m_properties{ };
     std::unordered_map<std::string, SingletonReference> m_singletons{ };
     LuaSandbox m_sandbox{ this }; // some object must be passed here... will be reset in Initialize

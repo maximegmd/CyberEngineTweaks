@@ -2,7 +2,7 @@
 
 #include "ClassReference.h"
 
-ClassReference::ClassReference(const Lockable<sol::state_view, std::recursive_mutex>& aView,
+ClassReference::ClassReference(const Lockable<sol::state*, std::recursive_mutex>& aView,
                                RED4ext::IRTTIType* apClass, RED4ext::ScriptInstance apInstance)
     : ClassType(aView, apClass)
 {
