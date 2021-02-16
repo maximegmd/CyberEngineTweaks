@@ -45,60 +45,72 @@ struct Context
 void Scripting::HandleOverridenFunction(RED4ext::IScriptable* apContext, RED4ext::CStackFrame* apFrame, int32_t* apOut,
                                         int64_t a4, Context* apCookie)
 {
-    RED4ext::CStackType self;
-    self.type = apContext->classType;
-    self.value = apContext;
+    // Store a static pointer to the real function to check later if the current function is the same as the previous to prevent calling our self
+    static thread_local RED4ext::CClassFunction* s_pRealFunction = nullptr;
+
+    auto* pSaveFunction = s_pRealFunction;
+    auto* pRealFunction = apCookie->RealFunction;
+
+    s_pRealFunction = pRealFunction;
 
     // Save state so we can rollback to it after we popped for ourself
     auto* pCode = apFrame->code;
 
+    if (pRealFunction != pSaveFunction)
     {
-        std::vector<sol::object> args;
+        RED4ext::CStackType self;
+        self.type = apContext->classType;
+        self.value = apContext;
 
-        auto state = apCookie->pScripting->GetState();
-        args.push_back(ToLua(state, self)); // Push self
-
-        // Nasty way of popping all args
-        for (auto& pArg : apCookie->FunctionDefinition->params)
         {
-            auto* pType = pArg->type;
-            auto* pAllocator = pType->GetAllocator();
+            std::vector<sol::object> args;
 
-            auto* pInstance = pAllocator->Alloc(pType->GetSize()).memory;
-            pType->Init(pInstance);
+            auto state = apCookie->pScripting->GetState();
+            args.push_back(ToLua(state, self)); // Push self
 
-            RED4ext::CStackType arg;
-            arg.type = pArg->type;
-            arg.value = pInstance;
+            // Nasty way of popping all args
+            for (auto& pArg : apCookie->FunctionDefinition->params)
+            {
+                auto* pType = pArg->type;
+                auto* pAllocator = pType->GetAllocator();
 
-            apFrame->unk30 = 0;
-            apFrame->unk38 = 0;
-            const auto opcode = *(apFrame->code++);
-            GetScriptCallArray()[opcode](apFrame->context, apFrame, pInstance, nullptr);
-            apFrame->code++; // skip ParamEnd
+                auto* pInstance = pAllocator->Alloc(pType->GetSize()).memory;
+                pType->Init(pInstance);
 
-            args.push_back(ToLua(state, arg));
+                RED4ext::CStackType arg;
+                arg.type = pArg->type;
+                arg.value = pInstance;
 
-            pType->Destroy(pInstance);
-            pAllocator->Free(pInstance);
-        }
+                apFrame->unk30 = 0;
+                apFrame->unk38 = 0;
+                const auto opcode = *(apFrame->code++);
+                GetScriptCallArray()[opcode](apFrame->context, apFrame, pInstance, nullptr);
+                apFrame->code++; // skip ParamEnd
 
-        const auto result = apCookie->ScriptFunction(as_args(args), apCookie->Environment);
+                args.push_back(ToLua(state, arg));
 
-        if (!apCookie->Forward)
-        {
-            RED4ext::CStackType redResult;
-            redResult.type = apCookie->FunctionDefinition->returnType->type;
-            redResult.value = apOut;
+                pType->Destroy(pInstance);
+                pAllocator->Free(pInstance);
+            }
 
-            if (apOut)
-                ToRED(result.get<sol::object>(), &redResult);
+            const auto result = apCookie->ScriptFunction(as_args(args), apCookie->Environment);
 
-            return;
+            if (!apCookie->Forward)
+            {
+                RED4ext::CStackType redResult;
+                redResult.type = apCookie->FunctionDefinition->returnType->type;
+                redResult.value = apOut;
+
+                if (apOut)
+                    ToRED(result.get<sol::object>(), &redResult);
+
+                s_pRealFunction = pSaveFunction; // Restore the previous function
+
+                return;
+            }
         }
     }
-
-    if (apCookie->RealFunction)
+    if (pRealFunction)
     {
         // Rollback so the real function will manage to pop everything
         apFrame->code = pCode;
@@ -106,8 +118,10 @@ void Scripting::HandleOverridenFunction(RED4ext::IScriptable* apContext, RED4ext
         using TCallScriptFunction = bool(*)(RED4ext::IFunction* apFunction, RED4ext::IScriptable* apContext, RED4ext::CStackFrame* apFrame, int32_t* apOut, int64_t a4);
         static RED4ext::REDfunc<TCallScriptFunction> CallScriptFunction(0x224DC0);
 
-        CallScriptFunction(apCookie->RealFunction, apContext, apFrame, apOut, a4);
+        CallScriptFunction(pRealFunction, apContext, apFrame, apOut, a4);
     }
+
+    s_pRealFunction = pSaveFunction; // Restore the previous function
 }
 
 void Scripting::Override(const std::string& acTypeName, const std::string& acFullName, const std::string& acShortName,
