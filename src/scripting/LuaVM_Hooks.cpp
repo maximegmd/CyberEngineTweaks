@@ -207,7 +207,23 @@ bool HookRunPureScriptFunction(RED4ext::CBaseFunction* apFunction, RED4ext::CSta
 {
     if (apFunction->flags.isNative == 1)
     {
-        RED4ext::CStack stack(apContext->context18, apContext->args, apContext->argsCount, apContext->result);
+        // Here it's actually another CStackBase but args is at the same location though it's a different type
+        uint8_t* pArgsData = reinterpret_cast<uint8_t*>(apContext->args);
+
+        std::vector<RED4ext::CStackType> args;
+
+        for (auto p : apFunction->params)
+        {
+            auto* pOffset = p->valueOffset + pArgsData;
+
+            RED4ext::CStackType arg;
+            arg.type = p->type;
+            arg.value = pOffset;
+
+            args.push_back(arg);
+        }
+
+        RED4ext::CStack stack(apContext->context18, args.data(), args.size(), apContext->result);
         return apFunction->Execute(&stack);
     }
 
