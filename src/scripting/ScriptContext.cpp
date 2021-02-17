@@ -41,8 +41,6 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
 
     env["registerForEvent"] = [this](const std::string& acName, sol::function aCallback)
     {
-        m_sandbox[m_sandboxID].GetEnvironment().set_on(aCallback);
-
         if(acName == "onInit")
             m_onInit = aCallback;
         else if(acName == "onShutdown")
@@ -73,8 +71,6 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
             m_logger->error("Tried to register a hotkey with an empty description! (ID of hotkey handler: {})", acID);
             return;
         }
-
-        m_sandbox[m_sandboxID].GetEnvironment().set_on(aCallback);
 
         auto loggerRef = m_logger;
         std::string vkBindID = m_name + '.' + acID;
