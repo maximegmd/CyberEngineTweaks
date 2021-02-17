@@ -57,7 +57,7 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
             m_logger->error("Tried to register an unknown event '{}'!", acName);
     };
 
-    env["registerHotkey"] = [this](const std::string& acID, const std::string& acDescription, sol::function aCallback)
+    env["registerHotkey"] = [this, &env](const std::string& acID, const std::string& acDescription, sol::function aCallback)
     {
         if (acID.empty() ||
             (std::find_if(acID.cbegin(), acID.cend(), [](char c){ return !(isalpha(c) || isdigit(c) || c == '_'); }) != acID.cend()))
@@ -74,11 +74,8 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
 
         auto loggerRef = m_logger;
         std::string vkBindID = m_name + '.' + acID;
-        VKBind vkBind = { vkBindID, acDescription, [loggerRef, aCallback, this]()
+        VKBind vkBind = { vkBindID, acDescription, [loggerRef, aCallback, &env]()
         {
-            auto& sb = m_sandbox[m_sandboxID];
-            auto& env = sb.GetEnvironment();
-
             TryLuaFunction(loggerRef, env, aCallback);
         }};
 
