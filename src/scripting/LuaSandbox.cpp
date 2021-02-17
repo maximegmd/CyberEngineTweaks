@@ -115,7 +115,7 @@ LuaSandbox::LuaSandbox(Scripting* apScripting)
 void LuaSandbox::Initialize()
 {
     auto lock = m_pScripting->GetState();
-    auto& luaView = *lock.Get();
+    auto& luaView = lock.Get();
 
     // initialize state + environment first
     m_env = {luaView, sol::create};
@@ -174,7 +174,7 @@ std::shared_ptr<spdlog::logger> LuaSandbox::InitializeLoggerForSandbox(Sandbox& 
     auto state = m_pScripting->GetState();
 
     // assign logger to mod so it can be used from within it too
-    sol::table spdlog(*state.Get(), sol::create);
+    sol::table spdlog(state.Get(), sol::create);
     spdlog["trace"] = [logger](const std::string& message)
     {
         logger->trace(message);
@@ -229,7 +229,7 @@ const Sandbox& LuaSandbox::operator[](size_t aID) const
     return m_sandboxes[aID];
 }
 
-Locked<sol::state*, std::recursive_mutex> LuaSandbox::GetState() const
+TiltedPhoques::Locked<sol::state, std::recursive_mutex> LuaSandbox::GetState() const
 {
     return m_pScripting->GetState();
 }
@@ -239,7 +239,7 @@ void LuaSandbox::InitializeExtraLibsForSandbox(Sandbox& aSandbox) const
     auto& sbEnv = aSandbox.GetEnvironment();
 
     auto lock = m_pScripting->GetState();
-    auto& luaView = *lock.Get();
+    auto& luaView = lock.Get();
 
     // copy extra whitelisted libs from global table
     const auto cGlobals = luaView.globals();
@@ -253,7 +253,7 @@ void LuaSandbox::InitializeDBForSandbox(Sandbox& aSandbox) const
     const auto cSBRootPath = aSandbox.GetRootPath();
 
     auto lock = m_pScripting->GetState();
-    auto& luaView = *lock.Get();
+    auto& luaView = lock.Get();
 
     const auto cGlobals = luaView.globals();
     const auto cSQLite3 = cGlobals["sqlite3"].get<sol::table>();
@@ -404,7 +404,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox)
     };
 
     auto lock = m_pScripting->GetState();
-    auto& luaView = *lock.Get();
+    auto& luaView = lock.Get();
 
     const auto cGlobals = luaView.globals();
     // define replacements for io lib

@@ -4,7 +4,7 @@
 
 #include "CET.h"
 
-WeakReference::WeakReference(const Lockable<sol::state*, std::recursive_mutex>& aView,
+WeakReference::WeakReference(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView,
                              RED4ext::WeakHandle<RED4ext::IScriptable> aWeakHandle)
     : ClassType(aView, nullptr)
     , m_weakHandle(std::move(aWeakHandle))

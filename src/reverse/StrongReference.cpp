@@ -4,7 +4,7 @@
 
 #include "CET.h"
 
-StrongReference::StrongReference(const Lockable<sol::state*, std::recursive_mutex>& aView,
+StrongReference::StrongReference(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView,
                                  RED4ext::Handle<RED4ext::IScriptable> aStrongHandle)
     : ClassType(aView, nullptr)
     , m_strongHandle(std::move(aStrongHandle))

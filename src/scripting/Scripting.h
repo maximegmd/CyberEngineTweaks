@@ -1,5 +1,6 @@
 #pragma once
 
+#include "FunctionOverride.h"
 #include "ScriptStore.h"
 #include "reverse/SingletonReference.h"
 
@@ -7,10 +8,9 @@ struct D3D12;
 
 struct Scripting
 {
-    using LockedState = Locked<sol::state*, std::recursive_mutex>;
-    using LockableState = Lockable<sol::state*, std::recursive_mutex>;
+    using LockedState = TiltedPhoques::Locked<sol::state, std::recursive_mutex>;
 
-    Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12);
+    Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12, Options& aOptions);
     ~Scripting() = default;
 
     void Initialize();
@@ -42,20 +42,15 @@ protected:
     sol::object GetSingletonHandle(const std::string& acName, sol::this_environment aThisEnv);
     sol::protected_function InternalIndex(const std::string& acName, sol::this_environment aThisEnv);
     
-    sol::object Execute(const std::string& aFuncName, sol::variadic_args aArgs, std::string& aReturnMessage) const;
-
-    static void HandleOverridenFunction(RED4ext::IScriptable* aContext, RED4ext::CStackFrame* aFrame, int32_t* aOut,
-                                        int64_t a4, struct Context* apCookie);
-
-    void Override(const std::string& acTypeName, const std::string& acFullName, const std::string& acShortName,
-                         bool aAbsolute, sol::protected_function aFunction, sol::this_environment aThisEnv);
+    sol::object Execute(const std::string& aFuncName, sol::variadic_args aArgs, std::string& aReturnMessage, sol::this_state aState) const;
 
 private:
-    mutable sol::state m_lua{ };
+    TiltedPhoques::Lockable<sol::state, std::recursive_mutex> m_lua;
     std::unordered_map<std::string, sol::object> m_properties{ };
     std::unordered_map<std::string, SingletonReference> m_singletons{ };
     LuaSandbox m_sandbox{ this }; // some object must be passed here... will be reset in Initialize
     ScriptStore m_store;
+    FunctionOverride m_override;
     const Paths& m_paths;
     D3D12& m_d3d12;
     mutable std::recursive_mutex m_vmLock;

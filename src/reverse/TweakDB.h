@@ -4,7 +4,7 @@
 
 struct TweakDB
 {
-    TweakDB(const Lockable<sol::state*, std::recursive_mutex>& aLua);
+    TweakDB(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aLua);
 
     void DebugStats();
     sol::object GetRecord(TweakDBID aDBID);
@@ -15,5 +15,5 @@ struct TweakDB
     bool UpdateRecord(sol::object aValue);
 
 private:
-    Lockable<sol::state*, std::recursive_mutex> m_lua;
+    TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref m_lua;
 };

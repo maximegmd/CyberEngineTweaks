@@ -3,7 +3,7 @@ set_xmakever("2.5.1")
 set_languages("cxx20")
 set_arch("x64")
 
-add_requires("spdlog", "nlohmann_json", "hopscotch-map", "minhook", "mem", "imgui 1.81", "sol2", "tiltedcore")
+add_requires("spdlog", "nlohmann_json", "hopscotch-map", "minhook", "mem", "imgui 1.81", "sol2", "tiltedcore 0.2.0")
 add_requireconfs("imgui", { configs = {cxflags = "/DNDEBUG"} })
 
 add_rules("mode.debug","mode.releasedbg", "mode.release")

@@ -130,7 +130,7 @@ std::string LuaVM::GetTDBIDString(uint64_t aValue)
 }
 
 LuaVM::LuaVM(Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12, Options& aOptions)
-    : m_scripting(aPaths, aBindings, aD3D12)
+    : m_scripting(aPaths, aBindings, aD3D12, aOptions)
     , m_d3d12(aD3D12)
 {
     Hook(aOptions);
@@ -198,36 +198,6 @@ void LuaVM::HookTDBIDToStringDEBUG(RED4ext::IScriptable*, RED4ext::CStackFrame* 
         RED4ext::CString s(name.c_str());
         *static_cast<RED4ext::CString*>(apResult) = s;
     }
-}
-
-using TRunPureScriptFunction = bool(*)(RED4ext::CBaseFunction* apFunction, RED4ext::CStack*, void*);
-static TRunPureScriptFunction RealRunPureScriptFunction = nullptr;
-
-bool HookRunPureScriptFunction(RED4ext::CBaseFunction* apFunction, RED4ext::CStack* apContext, void* a3)
-{
-    if (apFunction->flags.isNative == 1)
-    {
-        // Here it's actually another CStackBase but args is at the same location though it's a different type
-        uint8_t* pArgsData = reinterpret_cast<uint8_t*>(apContext->args);
-
-        std::vector<RED4ext::CStackType> args;
-
-        for (auto p : apFunction->params)
-        {
-            auto* pOffset = p->valueOffset + pArgsData;
-
-            RED4ext::CStackType arg;
-            arg.type = p->type;
-            arg.value = pOffset;
-
-            args.push_back(arg);
-        }
-
-        RED4ext::CStack stack(apContext->context18, args.data(), args.size(), apContext->result);
-        return apFunction->Execute(&stack);
-    }
-
-    return RealRunPureScriptFunction(apFunction, apContext, a3);
 }
 
 void LuaVM::Hook(Options& aOptions)
@@ -382,24 +352,6 @@ void LuaVM::Hook(Options& aOptions)
             }
             else
                 spdlog::error("Could not fix allocator for override functions!");
-        }
-    }
-
-    {
-        const mem::pattern cPattern("40 55 48 81 EC D0 00 00 00 48 8D 6C 24 40 8B 41 7C");
-        const mem::default_scanner cScanner(cPattern);
-        RealRunPureScriptFunction = cScanner(gameImage.TextRegion).as<TRunPureScriptFunction>();
-        if (!RealRunPureScriptFunction)
-            spdlog::error("Could not find pure run script function!");
-        else
-        {
-            auto* pLocation = RealRunPureScriptFunction;
-            if (MH_CreateHook(pLocation, &HookRunPureScriptFunction,
-                              reinterpret_cast<void**>(&RealRunPureScriptFunction)) != MH_OK ||
-                MH_EnableHook(pLocation) != MH_OK)
-                spdlog::error("Could not hook RealRunScriptFunction function!");
-            else
-                spdlog::info("RealRunScriptFunction function hook complete!");
         }
     }
 }

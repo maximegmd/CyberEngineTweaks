@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Locked.h"
-
 struct Type
 {
     struct Descriptor
@@ -14,7 +12,7 @@ struct Type
         std::string ToString() const;
     };
 
-    Type(const Lockable<sol::state*, std::recursive_mutex>& aView, RED4ext::IRTTIType* apClass);
+    Type(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::IRTTIType* apClass);
     virtual ~Type(){};
 
     sol::object Index(const std::string& acName, sol::this_environment aThisEnv);
@@ -37,13 +35,13 @@ protected:
 
     friend struct Scripting;
 
-    Lockable<sol::state*, std::recursive_mutex> m_lua;
+    TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref m_lua;
     std::unordered_map<std::string, sol::object> m_properties;
 };
 
 struct ClassType : Type
 {
-    ClassType(const Lockable<sol::state*, std::recursive_mutex>& aView, RED4ext::IRTTIType* apClass);
+    ClassType(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::IRTTIType* apClass);
     virtual ~ClassType(){};
 
     Descriptor Dump(bool aWithHashes) const override;
@@ -53,7 +51,8 @@ struct ClassType : Type
 
 struct UnknownType : Type
 {
-    UnknownType(const Lockable<sol::state*, std::recursive_mutex>& aView, RED4ext::IRTTIType* apClass,
+    UnknownType(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView,
+                RED4ext::IRTTIType* apClass,
                 RED4ext::ScriptInstance apInstance);
 
     Descriptor Dump(bool aWithHashes) const override;

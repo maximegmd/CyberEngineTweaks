@@ -4,7 +4,7 @@
 
 struct ClassReference : ClassType
 {
-    ClassReference(const Lockable<sol::state*, std::recursive_mutex>& aView, RED4ext::IRTTIType* apClass,
+    ClassReference(const TiltedPhoques::Locked<sol::state, std::recursive_mutex>& aView, RED4ext::IRTTIType* apClass,
                    RED4ext::ScriptInstance apInstance);
 
     virtual RED4ext::ScriptInstance GetHandle();

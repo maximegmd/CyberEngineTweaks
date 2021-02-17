@@ -29,7 +29,7 @@ std::string Type::Descriptor::ToString() const
     return result;
 }
 
-Type::Type(const Lockable<sol::state*, std::recursive_mutex>& aView, RED4ext::IRTTIType* apClass)
+Type::Type(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::IRTTIType* apClass)
     : m_lua(aView)
     , m_pType(apClass)
 {
@@ -307,7 +307,8 @@ sol::variadic_results Type::Execute(RED4ext::CBaseFunction* apFunc, const std::s
 }
 
 
-ClassType::ClassType(const Lockable<sol::state*, std::recursive_mutex>& aView, RED4ext::IRTTIType* apClass)
+ClassType::ClassType(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView,
+                     RED4ext::IRTTIType* apClass)
     : Type(aView, apClass)
 {
 
@@ -401,7 +402,7 @@ sol::object ClassType::Index_Impl(const std::string& acName, sol::this_environme
 
     auto state = m_lua.Lock();
 
-    auto obj = make_object(*state.Get(), [pFunc, name = acName](Type* apType, sol::variadic_args aArgs,
+    auto obj = make_object(state.Get(), [pFunc, name = acName](Type* apType, sol::variadic_args aArgs,
                                                        sol::this_environment aThisEnv, sol::this_state L)
     {
         std::string result;
@@ -445,7 +446,8 @@ sol::object ClassType::NewIndex_Impl(const std::string& acName, sol::object aPar
     return Type::NewIndex_Impl(acName, aParam);
 }
 
-UnknownType::UnknownType(const Lockable<sol::state*, std::recursive_mutex>& aView, RED4ext::IRTTIType* apClass,
+UnknownType::UnknownType(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView,
+                         RED4ext::IRTTIType* apClass,
                          RED4ext::ScriptInstance apInstance)
     : Type(aView, apClass)
 {

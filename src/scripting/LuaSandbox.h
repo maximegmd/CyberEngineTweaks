@@ -2,8 +2,6 @@
 
 #include "Sandbox.h"
 
-#include <reverse/Locked.h>
-
 struct LuaSandbox
 {
     LuaSandbox(Scripting* apScripting);
@@ -22,7 +20,7 @@ struct LuaSandbox
     Sandbox& operator[](size_t aID);
     const Sandbox& operator[](size_t aID) const;
 
-    Locked<sol::state*, std::recursive_mutex> GetState() const;
+    [[nodiscard]] TiltedPhoques::Locked<sol::state, std::recursive_mutex> GetState() const;
     
 private:
 

@@ -120,7 +120,7 @@ void InitializeFlatValuePools()
     flatValuePoolsInitialized = true;
 }
 
-TweakDB::TweakDB(const Lockable<sol::state*, std::recursive_mutex>& aLua)
+TweakDB::TweakDB(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aLua)
     : m_lua(aLua)
 {
 }
@@ -150,7 +150,7 @@ sol::object TweakDB::GetRecord(TweakDBID aDBID)
 
     auto state = m_lua.Lock();
 
-    return make_object(*state.Get(), StrongReference(state, std::move(record)));
+    return make_object(state.Get(), StrongReference(m_lua, std::move(record)));
 }
 
 sol::object TweakDB::Query(TweakDBID aDBID)
