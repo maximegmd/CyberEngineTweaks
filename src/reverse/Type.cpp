@@ -204,7 +204,6 @@ std::string Type::GameDump()
 
 sol::variadic_results Type::Execute(RED4ext::CBaseFunction* apFunc, const std::string& acName, sol::variadic_args aArgs, std::string& aReturnMessage)
 {
-    std::vector<RED4ext::CStackType> args(apFunc->params.size);
 
     static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 13);
     struct ResetAllocator
@@ -215,6 +214,8 @@ sol::variadic_results Type::Execute(RED4ext::CBaseFunction* apFunc, const std::s
         }
     };
     ResetAllocator ___allocatorReset;
+
+    TiltedPhoques::Vector<RED4ext::CStackType> args(apFunc->params.size);
 
     int32_t minArgs = 0;
     for (auto i = 0; i < apFunc->params.size; ++i)

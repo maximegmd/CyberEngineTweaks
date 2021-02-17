@@ -4,19 +4,10 @@
 #include "LuaVM.h"
 #include "Scripting.h"
 
-struct CScriptStack : RED4ext::CBaseStack
-{
-    ~CScriptStack() override = default;
-
-    uint8_t* args;               // 30
-    RED4ext::CStackType* result; // 38
-    void* unk40;                 // 40
-};
-
-using TRunPureScriptFunction = bool (*)(RED4ext::CBaseFunction* apFunction, CScriptStack*, void*);
+using TRunPureScriptFunction = bool (*)(RED4ext::CBaseFunction* apFunction, RED4ext::CScriptStack*, void*);
 static TRunPureScriptFunction RealRunPureScriptFunction = nullptr;
 
-bool HookRunPureScriptFunction(RED4ext::CBaseFunction* apFunction, CScriptStack* apContext, void* a3)
+bool HookRunPureScriptFunction(RED4ext::CBaseFunction* apFunction, RED4ext::CScriptStack* apContext, void* a3)
 {
     if (apFunction->flags.isNative == 1)
     {
@@ -37,7 +28,11 @@ bool HookRunPureScriptFunction(RED4ext::CBaseFunction* apFunction, CScriptStack*
             args.push_back(arg);
         }
 
-        RED4ext::CStack stack(apContext->context18, args.data(), args.size(), apContext->result);
+        RED4ext::CStackType ret;
+        ret.value = apContext->GetResultAddr();
+        ret.type = apContext->GetType();
+
+        RED4ext::CStack stack(apContext->context20, args.data(), args.size(), &ret);
         return apFunction->Execute(&stack);
     }
 
@@ -80,12 +75,12 @@ void FunctionOverride::Clear()
     {
         auto& funcs = *itor;
 
+        auto* pFunc = funcs.NewFunction;
+
         // Just an added function, not an override
         if (funcs.OldFunction == nullptr)
         {
-            auto* pFunc = funcs.NewFunction;
             auto* pClassType = pFunc->parent;
-
             auto* pArray = &pClassType->funcs;
 
             if (pFunc->flags.isStatic)
@@ -107,7 +102,6 @@ void FunctionOverride::Clear()
         else
         {
             auto* pRealFunction = funcs.OldFunction;
-            auto* pFunc = funcs.NewFunction;
 
             std::array<char, sizeof(RED4ext::CClassFunction)> tmpBuffer;
 
@@ -116,10 +110,9 @@ void FunctionOverride::Clear()
             std::memcpy(pFunc, &tmpBuffer, sizeof(RED4ext::CClassFunction));
         }
 
-        auto* pAllocator = funcs.NewFunction->GetAllocator();
-        RED4ext::IFunction* pVFunc = funcs.NewFunction;
-        pVFunc->~IFunction();
-        pAllocator->Free(funcs.NewFunction);
+        auto* pAllocator = pFunc->GetAllocator();
+        RED4ext::IFunction* pVFunc = pFunc;
+        pAllocator->Free(pFunc);
     }
 
     m_overrides.clear();
@@ -140,14 +133,14 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
     self.value = apContext;
 
     {
-        auto state = apCookie->pScripting->GetState();
-
         // Cheap allocation
         TiltedPhoques::StackAllocator<1 << 13> s_allocator;
 
         TiltedPhoques::Allocator::Push(s_allocator);
         TiltedPhoques::Vector<sol::object> args;
         TiltedPhoques::Allocator::Pop();
+
+        auto state = apCookie->pScripting->GetState();
 
         args.push_back(Scripting::ToLua(state, self)); // Push self
 
