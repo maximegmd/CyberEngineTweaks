@@ -75,6 +75,7 @@ void* FunctionOverride::MakeExecutable(uint8_t* apData, size_t aSize)
 
 void FunctionOverride::Clear()
 {
+    // Reverse order as we want to swap from most recent to oldest change
     for (auto itor = std::rbegin(m_overrides); itor != std::rend(m_overrides); ++itor)
     {
         auto& funcs = *itor;
@@ -119,6 +120,8 @@ void FunctionOverride::Clear()
         RED4ext::IFunction* pVFunc = funcs.NewFunction;
         pVFunc->~IFunction();
         pAllocator->Free(funcs.NewFunction);
+
+        TiltedPhoques::Delete(funcs.Context);
     }
 
     m_overrides.clear();
@@ -238,7 +241,6 @@ void FunctionOverride::Override(const std::string& acTypeName, const std::string
         return;
     }
 
-    // At this point r15 is a pointer to CStack*
     /*
 sub rsp, 56
 mov rax, 0xDEADBEEFC0DEBAAD
@@ -268,6 +270,7 @@ ret
 
     if (!pExecutablePayload)
     {
+        TiltedPhoques::Delete(pContext);
         spdlog::get("scripting")->error("Unable to create the override payload!");
         return;
     }
@@ -297,7 +300,7 @@ ret
             pClassType->funcs.PushBack(pFunc);
 
         pContext->FunctionDefinition = pFunc;
-        m_overrides.emplace_back(nullptr, pFunc);
+        m_overrides.emplace_back(nullptr, pFunc, pContext);
     }
     else
     {
@@ -312,7 +315,7 @@ ret
         pContext->RealFunction = pFunc;
         pContext->FunctionDefinition = pRealFunction;
 
-        m_overrides.emplace_back(pRealFunction, pFunc);
+        m_overrides.emplace_back(pRealFunction, pFunc, pContext);
     }
 
     pContext->Forward = !aAbsolute;

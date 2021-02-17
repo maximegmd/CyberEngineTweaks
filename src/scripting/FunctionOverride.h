@@ -41,6 +41,7 @@ private:
     {
         RED4ext::CClassFunction* OldFunction{nullptr};
         RED4ext::CClassFunction* NewFunction{nullptr};
+        Context* Context;
     };
 
     void* m_pBufferStart;
