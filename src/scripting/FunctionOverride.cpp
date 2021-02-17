@@ -110,9 +110,13 @@ void FunctionOverride::Clear()
             std::memcpy(pFunc, &tmpBuffer, sizeof(RED4ext::CClassFunction));
         }
 
-        auto* pAllocator = pFunc->GetAllocator();
-        RED4ext::IFunction* pVFunc = pFunc;
-        pAllocator->Free(pFunc);
+        /**
+         * Don't free, it's likely garbage collected later, freeing causes a crash on load
+         *
+         * auto* pAllocator = pFunc->GetAllocator();
+         * RED4ext::IFunction* pVFunc = pFunc;
+         * pAllocator->Free(pFunc);
+         */
     }
 
     m_overrides.clear();
