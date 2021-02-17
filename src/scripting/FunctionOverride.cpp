@@ -120,8 +120,6 @@ void FunctionOverride::Clear()
         RED4ext::IFunction* pVFunc = funcs.NewFunction;
         pVFunc->~IFunction();
         pAllocator->Free(funcs.NewFunction);
-
-        TiltedPhoques::Delete(funcs.Context);
     }
 
     m_overrides.clear();
@@ -256,12 +254,14 @@ ret
 
     auto funcAddr = reinterpret_cast<uintptr_t>(&FunctionOverride::HandleOverridenFunction);
 
-    auto* pContext = TiltedPhoques::New<Context>();
+    auto pContext = TiltedPhoques::MakeUnique<Context>();
     pContext->ScriptFunction = aFunction;
     pContext->Environment = aThisEnv;
     pContext->pScripting = m_pScripting;
 
-    std::memcpy(payload + 6, &pContext, 8);
+    auto pPtr = pContext.get();
+
+    std::memcpy(payload + 6, &pPtr, 8);
     std::memcpy(payload + 21, &funcAddr, 8);
 
     using TNativeScriptFunction = void (*)(RED4ext::IScriptable*, RED4ext::CStackFrame*, void*, int64_t);
@@ -270,7 +270,6 @@ ret
 
     if (!pExecutablePayload)
     {
-        TiltedPhoques::Delete(pContext);
         spdlog::get("scripting")->error("Unable to create the override payload!");
         return;
     }
@@ -291,6 +290,7 @@ ret
         pFunc->unk7C = pRealFunction->unk7C;
     }
     pFunc->flags.isNative = true;
+    pContext->Forward = !aAbsolute;
 
     if (!pRealFunction)
     {
@@ -300,7 +300,6 @@ ret
             pClassType->funcs.PushBack(pFunc);
 
         pContext->FunctionDefinition = pFunc;
-        m_overrides.emplace_back(nullptr, pFunc, pContext);
     }
     else
     {
@@ -314,9 +313,7 @@ ret
         // Now pFunc is the real function
         pContext->RealFunction = pFunc;
         pContext->FunctionDefinition = pRealFunction;
-
-        m_overrides.emplace_back(pRealFunction, pFunc, pContext);
     }
 
-    pContext->Forward = !aAbsolute;
+    m_overrides.emplace_back(pRealFunction, pFunc, std::move(pContext));
 }
