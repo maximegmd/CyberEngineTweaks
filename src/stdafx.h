@@ -47,6 +47,7 @@
 
 #include <TiltedCore/Allocator.hpp>
 #include <TiltedCore/ScratchAllocator.hpp>
+#include <TiltedCore/StackAllocator.hpp>
 #include <TiltedCore/TaskQueue.hpp>
 #include <TiltedCore/Platform.hpp>
 #include <TiltedCore/Signal.hpp>

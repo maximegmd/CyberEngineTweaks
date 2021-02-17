@@ -20,7 +20,11 @@ bool HookRunPureScriptFunction(RED4ext::CBaseFunction* apFunction, CScriptStack*
 {
     if (apFunction->flags.isNative == 1)
     {
-        std::vector<RED4ext::CStackType> args;
+        TiltedPhoques::StackAllocator<1 << 13> s_allocator;
+
+        TiltedPhoques::Allocator::Push(s_allocator);
+        TiltedPhoques::Vector<RED4ext::CStackType> args;
+        TiltedPhoques::Allocator::Pop();
 
         for (auto* p : apFunction->params)
         {
@@ -137,7 +141,13 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
     {
         auto state = apCookie->pScripting->GetState();
 
-        std::vector<sol::object> args;
+        // Cheap allocation
+        TiltedPhoques::StackAllocator<1 << 13> s_allocator;
+
+        TiltedPhoques::Allocator::Push(s_allocator);
+        TiltedPhoques::Vector<sol::object> args;
+        TiltedPhoques::Allocator::Pop();
+
         args.push_back(Scripting::ToLua(state, self)); // Push self
 
         // Nasty way of popping all args
