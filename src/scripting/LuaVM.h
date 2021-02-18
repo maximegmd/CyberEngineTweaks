@@ -8,14 +8,11 @@ typedef TweakDBID TDBID;
 struct UnknownString;
 
 using TSetMousePosition = BOOL(void*, HWND, long, long);
-using TScriptCall = void(RED4ext::IScriptable*, RED4ext::CStackFrame*, void*, void*);
 using TTDBIDCtor = TDBID*(TDBID*, const char*);
 using TTDBIDCtorCString = TDBID*(TDBID*, const RED4ext::CString*);
 using TTDBIDCtorDerive = TDBID*(const TDBID*, TDBID*, const char*);
 using TTDBIDCtorUnknown = TDBID*(TDBID*, uint64_t);
 using TSomeStringLookup = UnknownString*(const uint64_t*, UnknownString*);
-
-TScriptCall** GetScriptCallArray();
 
 struct TDBIDLookupEntry
 {
@@ -64,14 +61,14 @@ private:
     std::recursive_mutex m_tdbidLock{ };
     std::unordered_map<uint64_t, TDBIDLookupEntry> m_tdbidLookup{ };
     
-    TScriptCall* m_realLog{ nullptr };
-    TScriptCall* m_realLogChannel{ nullptr };
+    RED4ext::OpcodeHandlers::Handler_t m_realLog{ nullptr };
+    RED4ext::OpcodeHandlers::Handler_t m_realLogChannel{nullptr};
     TTDBIDCtor* m_realTDBIDCtor{ nullptr };
     TTDBIDCtorCString* m_realTDBIDCtorCString{ nullptr };
     TTDBIDCtorDerive* m_realTDBIDCtorDerive{ nullptr };
     TTDBIDCtorUnknown* m_realTDBIDCtorUnknown{ nullptr };
     TSomeStringLookup* m_someStringLookup{ nullptr };
-    TScriptCall* m_realTDBIDToStringDEBUG{ nullptr };
+    RED4ext::OpcodeHandlers::Handler_t m_realTDBIDToStringDEBUG{nullptr};
 
     std::atomic<uint64_t> m_logCount{ 0 };
 

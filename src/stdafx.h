@@ -22,6 +22,7 @@
 #include <RED4ext/Scripting/Stack.hpp>
 #include <RED4ext/Scripting/CProperty.hpp>
 #include <RED4ext/Scripting/Functions.hpp>
+#include <RED4ext/Scripting/OpcodeHandlers.hpp>
 #include <RED4ext/MemoryAllocators.hpp>
 
 #include <filesystem>
@@ -31,6 +32,7 @@
 #include <vector>
 #include <unordered_map>
 #include <mutex>
+#include <shared_mutex>
 #include <memory>
 #include <fstream>
 #include <array>

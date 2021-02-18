@@ -46,4 +46,5 @@ private:
     size_t m_size{ kExecutableSize };
     TiltedPhoques::Map<RED4ext::CClassFunction*, CallChain> m_functions;
     Scripting* m_pScripting;
+    std::shared_mutex m_lock;
 };

@@ -1,7 +1,6 @@
 #include <stdafx.h>
 
 #include "FunctionOverride.h"
-#include "LuaVM.h"
 #include "Scripting.h"
 
 
@@ -14,6 +13,8 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
 {
     if (apFunction->flags.isNative == 1 && s_pOverride)
     {
+        std::shared_lock lock(s_pOverride->m_lock);
+
         const auto itor = s_pOverride->m_functions.find(apFunction);
         if (itor == std::end(s_pOverride->m_functions))
         {
@@ -57,7 +58,11 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
             }
         }
 
-        return RealRunPureScriptFunction(itor->second.Trampoline, apContext, a3);
+        auto* pTrampoline = itor->second.Trampoline;
+
+        lock.unlock();
+
+        return RealRunPureScriptFunction(pTrampoline, apContext, a3);
     }
 
     return RealRunPureScriptFunction(apFunction, apContext, a3);
@@ -98,6 +103,8 @@ void* FunctionOverride::MakeExecutable(uint8_t* apData, size_t aSize)
 
 void FunctionOverride::Clear()
 {
+    std::unique_lock lock(s_pOverride->m_lock);
+
     // Reverse order as we want to swap from most recent to oldest change
     for (auto& [pFunction, pContext] : m_functions)
     {
@@ -146,6 +153,8 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
     if (!s_pOverride)
         return;
 
+    std::shared_lock lock(s_pOverride->m_lock);
+
     const auto itor = s_pOverride->m_functions.find(apFunction);
     if (itor == std::end(s_pOverride->m_functions))
     {
@@ -190,7 +199,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
             apFrame->unk30 = 0;
             apFrame->unk38 = 0;
             const auto opcode = *(apFrame->code++);
-            GetScriptCallArray()[opcode](apFrame->context, apFrame, pInstance, nullptr);
+            RED4ext::OpcodeHandlers::Run(opcode, apFrame->context, apFrame, pInstance, nullptr);
             apFrame->code++; // skip ParamEnd
 
             args.push_back(Scripting::ToLua(state, arg));
@@ -221,6 +230,9 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
     }
 
     RED4ext::IFunction* pRealFunction = context.Trampoline;
+
+    lock.unlock();
+
     if (pRealFunction)
     {
         // Rollback so the real function will manage to pop everything
@@ -304,6 +316,8 @@ void FunctionOverride::Override(const std::string& acTypeName, const std::string
 
     if (pRealFunction)
     {
+        std::unique_lock lock(m_lock);
+
         auto itor = m_functions.find(pRealFunction);
 
         // This function was never hooked

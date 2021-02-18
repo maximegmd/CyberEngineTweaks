@@ -5,26 +5,13 @@
 
 #include <overlay/Overlay.h>
 
-TScriptCall** GetScriptCallArray()
-{
-    auto& gameImage = CET::Get().GetOptions().GameImage;
-
-    const mem::pattern cPattern("4C 8D 15 ?? ?? ?? ?? 48 89 42 38 49 8B F8 48 8B 02 4C 8D 44 24 20 C7");
-    const mem::default_scanner cScanner(cPattern);
-
-    static uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>() + 3;
-    static uintptr_t finalLocation = (uintptr_t)pLocation + 4 + *reinterpret_cast<uint32_t*>(pLocation);
-
-    return reinterpret_cast<TScriptCall**>(finalLocation);
-}
-
 void LuaVM::HookLog(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*, void*)
 {
     RED4ext::CString text("");
     apStack->unk30 = 0;
     apStack->unk38 = 0;
     const auto opcode = *(apStack->code++);
-    GetScriptCallArray()[opcode](apStack->context, apStack, &text, nullptr);
+    RED4ext::OpcodeHandlers::Run(opcode, apStack->context, apStack, &text, nullptr);
     apStack->code++; // skip ParamEnd
 
     auto& console = CET::Get().GetOverlay().GetConsole();
@@ -65,13 +52,13 @@ void LuaVM::HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack,
     apStack->unk30 = 0;
     apStack->unk38 = 0;
     uint8_t opcode = *(apStack->code++);
-    GetScriptCallArray()[opcode](apStack->context, apStack, &channel_hash, nullptr);
+    RED4ext::OpcodeHandlers::Run(opcode, apStack->context, apStack, &channel_hash, nullptr);
 
     RED4ext::CString text("");
     apStack->unk30 = 0;
     apStack->unk38 = 0;
     opcode = *(apStack->code++);
-    GetScriptCallArray()[opcode](apStack->context, apStack, &text, nullptr);
+    RED4ext::OpcodeHandlers::Run(opcode, apStack->context, apStack, &text, nullptr);
 
     apStack->code++; // skip ParamEnd
 
@@ -189,7 +176,7 @@ void LuaVM::HookTDBIDToStringDEBUG(RED4ext::IScriptable*, RED4ext::CStackFrame* 
     apStack->unk30 = 0;
     apStack->unk38 = 0;
     uint8_t opcode = *(apStack->code++);
-    GetScriptCallArray()[opcode](apStack->context, apStack, &tdbid, nullptr);
+    RED4ext::OpcodeHandlers::Run(opcode, apStack->context, apStack, &tdbid, nullptr);
     apStack->code++; // skip ParamEnd
 
     if (apResult)
