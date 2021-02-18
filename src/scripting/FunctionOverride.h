@@ -7,10 +7,7 @@ struct FunctionOverride
     struct Context
     {
         sol::protected_function ScriptFunction;
-        RED4ext::CClassFunction* RealFunction{nullptr};
-        RED4ext::CClassFunction* FunctionDefinition{nullptr};
         sol::environment Environment;
-        Scripting* pScripting;
         bool Forward;
     };
 
@@ -25,8 +22,8 @@ struct FunctionOverride
 
 protected:
 
-    static void HandleOverridenFunction(RED4ext::IScriptable* aContext, RED4ext::CStackFrame* aFrame, int32_t* aOut,
-                                        int64_t a4, struct Context* apCookie);
+    static void HandleOverridenFunction(RED4ext::IScriptable* aContext, RED4ext::CStackFrame* aFrame, int32_t* aOut, int64_t a4, RED4ext::CClassFunction* apFunction);
+    static bool HookRunPureScriptFunction(RED4ext::CClassFunction* apFunction, RED4ext::CScriptStack* apContext, void* a3);
 
 private:
 
@@ -37,16 +34,16 @@ private:
         kExecutableSize = 1 << 20
     };
 
-    struct InternalOverride
+    struct CallChain
     {
-        RED4ext::CClassFunction* OldFunction{nullptr};
-        RED4ext::CClassFunction* NewFunction{nullptr};
-        TiltedPhoques::UniquePtr<Context> Context;
+        RED4ext::CClassFunction* Trampoline;
+        Scripting* pScripting;
+        TiltedPhoques::Vector<TiltedPhoques::UniquePtr<Context>> Calls;
     };
 
     void* m_pBufferStart;
     void* m_pBuffer;
     size_t m_size{ kExecutableSize };
-    TiltedPhoques::Vector<InternalOverride> m_overrides;
+    TiltedPhoques::Map<RED4ext::CClassFunction*, CallChain> m_functions;
     Scripting* m_pScripting;
 };

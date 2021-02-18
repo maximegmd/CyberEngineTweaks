@@ -4,18 +4,30 @@
 #include "LuaVM.h"
 #include "Scripting.h"
 
-using TRunPureScriptFunction = bool (*)(RED4ext::CBaseFunction* apFunction, RED4ext::CScriptStack*, void*);
+
+static FunctionOverride* s_pOverride = nullptr;
+
+using TRunPureScriptFunction = bool (*)(RED4ext::CClassFunction* apFunction, RED4ext::CScriptStack*, void*);
 static TRunPureScriptFunction RealRunPureScriptFunction = nullptr;
 
-bool HookRunPureScriptFunction(RED4ext::CBaseFunction* apFunction, RED4ext::CScriptStack* apContext, void* a3)
+bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunction, RED4ext::CScriptStack* apContext, void* a3)
 {
-    if (apFunction->flags.isNative == 1)
+    if (apFunction->flags.isNative == 1 && s_pOverride)
     {
+        const auto itor = s_pOverride->m_functions.find(apFunction);
+        if (itor == std::end(s_pOverride->m_functions))
+        {
+            spdlog::get("scripting")->error("Function appears to be hooked but isn't?");
+            return false;
+        }
+
         TiltedPhoques::StackAllocator<1 << 13> s_allocator;
 
         TiltedPhoques::Allocator::Push(s_allocator);
-        TiltedPhoques::Vector<RED4ext::CStackType> args;
+        TiltedPhoques::Vector<sol::object> args;
         TiltedPhoques::Allocator::Pop();
+
+        auto state = itor->second.pScripting->GetState();
 
         for (auto* p : apFunction->params)
         {
@@ -25,15 +37,27 @@ bool HookRunPureScriptFunction(RED4ext::CBaseFunction* apFunction, RED4ext::CScr
             arg.type = p->type;
             arg.value = pOffset;
 
-            args.push_back(arg);
+            args.push_back(Scripting::ToLua(state, arg));
         }
 
         RED4ext::CStackType ret;
         ret.value = apContext->GetResultAddr();
         ret.type = apContext->GetType();
 
-        RED4ext::CStack stack(apContext->context20, args.data(), args.size(), &ret);
-        return apFunction->Execute(&stack);
+        const auto& calls = itor->second.Calls;
+        for (const auto& call : calls)
+        {
+            const auto result = call->ScriptFunction(as_args(args), call->Environment);
+            if (!call->Forward)
+            {
+                if (result.valid())
+                    Scripting::ToRED(result.get<sol::object>(), &ret);
+
+                return true;
+            }
+        }
+
+        return RealRunPureScriptFunction(itor->second.Trampoline, apContext, a3);
     }
 
     return RealRunPureScriptFunction(apFunction, apContext, a3);
@@ -42,6 +66,8 @@ bool HookRunPureScriptFunction(RED4ext::CBaseFunction* apFunction, RED4ext::CScr
 FunctionOverride::FunctionOverride(Scripting* apScripting, Options& aOptions)
     : m_pScripting(apScripting)
 {
+    s_pOverride = this;
+
     m_pBuffer = m_pBufferStart = VirtualAlloc(nullptr, m_size, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 
     Hook(aOptions);
@@ -50,6 +76,8 @@ FunctionOverride::FunctionOverride(Scripting* apScripting, Options& aOptions)
 FunctionOverride::~FunctionOverride()
 {
     VirtualFree(m_pBufferStart, 0, MEM_RELEASE);
+
+    s_pOverride = nullptr;
 }
 
 void* FunctionOverride::MakeExecutable(uint8_t* apData, size_t aSize)
@@ -71,24 +99,20 @@ void* FunctionOverride::MakeExecutable(uint8_t* apData, size_t aSize)
 void FunctionOverride::Clear()
 {
     // Reverse order as we want to swap from most recent to oldest change
-    for (auto itor = std::rbegin(m_overrides); itor != std::rend(m_overrides); ++itor)
+    for (auto& [pFunction, pContext] : m_functions)
     {
-        auto& funcs = *itor;
-
-        auto* pFunc = funcs.NewFunction;
-
         // Just an added function, not an override
-        if (funcs.OldFunction == nullptr)
+        if (pContext.Trampoline == nullptr)
         {
-            auto* pClassType = pFunc->parent;
+            auto* pClassType = pFunction->parent;
             auto* pArray = &pClassType->funcs;
 
-            if (pFunc->flags.isStatic)
+            if (pFunction->flags.isStatic)
                 pClassType->staticFuncs;
 
             for (auto*& pItor : *pArray)
             {
-                if (pItor == pFunc)
+                if (pItor == pFunction)
                 {
                     // Swap our self with the last element
                     pItor = *(pArray->End() - 1);
@@ -101,33 +125,35 @@ void FunctionOverride::Clear()
         }
         else
         {
-            auto* pRealFunction = funcs.OldFunction;
+            auto* pRealFunction = pContext.Trampoline;
 
             std::array<char, sizeof(RED4ext::CClassFunction)> tmpBuffer;
 
             std::memcpy(&tmpBuffer, pRealFunction, sizeof(RED4ext::CClassFunction));
-            std::memcpy(pRealFunction, pFunc, sizeof(RED4ext::CClassFunction));
-            std::memcpy(pFunc, &tmpBuffer, sizeof(RED4ext::CClassFunction));
+            std::memcpy(pRealFunction, pFunction, sizeof(RED4ext::CClassFunction));
+            std::memcpy(pFunction, &tmpBuffer, sizeof(RED4ext::CClassFunction));
         }
-
-        /**
-         * Don't free, it's likely garbage collected later, freeing causes a crash on load
-         *
-         * auto* pAllocator = pFunc->GetAllocator();
-         * RED4ext::IFunction* pVFunc = pFunc;
-         * pAllocator->Free(pFunc);
-         */
     }
 
-    m_overrides.clear();
+    m_functions.clear();
 
     m_pBuffer = m_pBufferStart;
     m_size = kExecutableSize;
 }
 
-void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, RED4ext::CStackFrame* apFrame, int32_t* apOut, int64_t a4, Context* apCookie)
+void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, RED4ext::CStackFrame* apFrame, int32_t* apOut, int64_t a4, RED4ext::CClassFunction* apFunction)
 {
-    auto* pRealFunction = apCookie->RealFunction;
+    if (!s_pOverride)
+        return;
+
+    const auto itor = s_pOverride->m_functions.find(apFunction);
+    if (itor == std::end(s_pOverride->m_functions))
+    {
+        spdlog::get("scripting")->error("Function appears to be hooked but isn't?");
+        return;
+    }
+
+    const auto& context = itor->second;
 
     // Save state so we can rollback to it after we popped for ourself
     auto* pCode = apFrame->code;
@@ -144,12 +170,12 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
         TiltedPhoques::Vector<sol::object> args;
         TiltedPhoques::Allocator::Pop();
 
-        auto state = apCookie->pScripting->GetState();
+        auto state = context.pScripting->GetState();
 
         args.push_back(Scripting::ToLua(state, self)); // Push self
 
         // Nasty way of popping all args
-        for (auto& pArg : apCookie->FunctionDefinition->params)
+        for (auto& pArg : apFunction->params)
         {
             auto* pType = pArg->type;
             auto* pAllocator = pType->GetAllocator();
@@ -173,21 +199,24 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
             pAllocator->Free(pInstance);
         }
 
-        const auto result = apCookie->ScriptFunction(as_args(args), apCookie->Environment);
-
-        if (!apCookie->Forward)
+        const auto& calls = context.Calls;
         {
-            RED4ext::CStackType redResult;
-            redResult.type = apCookie->FunctionDefinition->returnType->type;
-            redResult.value = apOut;
+            const auto result = call->ScriptFunction(as_args(args), call->Environment);
+            if (!call->Forward)
+            {
+                RED4ext::CStackType redResult;
+                redResult.type = apFunction->returnType->type;
+                redResult.value = apOut;
 
-            if (apOut)
-                Scripting::ToRED(result.get<sol::object>(), &redResult);
+                if (result.valid())
+                    Scripting::ToRED(result.get<sol::object>(), &redResult);
 
-            return;
+                return;
+            }
         }
     }
 
+    RED4ext::IFunction* pRealFunction = context.Trampoline;
     if (pRealFunction)
     {
         // Rollback so the real function will manage to pop everything
@@ -214,12 +243,37 @@ void FunctionOverride::Hook(Options& aOptions) const
         else
         {
             auto* pLocation = RealRunPureScriptFunction;
-            if (MH_CreateHook(pLocation, &HookRunPureScriptFunction,
+            if (MH_CreateHook(pLocation, &FunctionOverride::HookRunPureScriptFunction,
                               reinterpret_cast<void**>(&RealRunPureScriptFunction)) != MH_OK ||
                 MH_EnableHook(pLocation) != MH_OK)
                 spdlog::error("Could not hook RealRunScriptFunction function!");
             else
                 spdlog::info("RealRunScriptFunction function hook complete!");
+        }
+    }
+
+    {
+        const mem::pattern cPattern(
+            "48 89 5C 24 08 57 48 83 EC 40 8B F9 48 8D 54 24 30 48 8B 0D ?? ?? ?? ?? 41 B8 88 00 00 00");
+        const mem::default_scanner cScanner(cPattern);
+        uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
+
+        if (pLocation)
+        {
+            auto* pFirstLocation = pLocation + 0x1A;
+            auto* pSecondLocation = pLocation + 0x3A;
+
+            if (*pFirstLocation == 0x88 && *pSecondLocation == 0x88)
+            {
+                DWORD oldProtect;
+                VirtualProtect(pLocation, 0x40, PAGE_READWRITE, &oldProtect);
+                *pFirstLocation = *pSecondLocation = sizeof(RED4ext::CClassFunction);
+                VirtualProtect(pLocation, 0x40, oldProtect, &oldProtect);
+
+                spdlog::info("Override function allocator patched!");
+            }
+            else
+                spdlog::error("Could not fix allocator for override functions!");
         }
     }
 }
@@ -236,81 +290,85 @@ void FunctionOverride::Override(const std::string& acTypeName, const std::string
         return;
     }
 
-    /*
-sub rsp, 56
-mov rax, 0xDEADBEEFC0DEBAAD
-mov qword ptr[rsp + 32], rax
-mov rax, 0xDEADBEEFC0DEBAAD
-call rax
-add rsp, 56
-ret
-     */
-    uint8_t payload[] = {0x48, 0x83, 0xEC, 0x38, 0x48, 0xB8, 0xAD, 0xBA, 0xDE, 0xC0, 0xEF, 0xBE,
-                         0xAD, 0xDE, 0x48, 0x89, 0x44, 0x24, 0x20, 0x48, 0xB8, 0xAD, 0xBA, 0xDE,
-                         0xC0, 0xEF, 0xBE, 0xAD, 0xDE, 0xFF, 0xD0, 0x48, 0x83, 0xC4, 0x38, 0xC3};
-
-    auto funcAddr = reinterpret_cast<uintptr_t>(&FunctionOverride::HandleOverridenFunction);
-
     auto pContext = TiltedPhoques::MakeUnique<Context>();
-    pContext->ScriptFunction = aFunction;
+    pContext->ScriptFunction = std::move(aFunction);
     pContext->Environment = aThisEnv;
-    pContext->pScripting = m_pScripting;
-
-    auto pPtr = pContext.get();
-
-    std::memcpy(payload + 6, &pPtr, 8);
-    std::memcpy(payload + 21, &funcAddr, 8);
-
-    using TNativeScriptFunction = void (*)(RED4ext::IScriptable*, RED4ext::CStackFrame*, void*, int64_t);
-
-    auto* pExecutablePayload = static_cast<TNativeScriptFunction>(MakeExecutable(payload, std::size(payload)));
-
-    if (!pExecutablePayload)
-    {
-        spdlog::get("scripting")->error("Unable to create the override payload!");
-        return;
-    }
+    pContext->Forward = !aAbsolute;
 
     // Get the real function
-    auto* const pRealFunction = pClassType->GetFunction(RED4ext::FNV1a(acFullName.c_str()));
-    auto* const pFunc =
-        RED4ext::CClassFunction::Create(pClassType, acFullName.c_str(), acShortName.c_str(), pExecutablePayload);
+    auto* pRealFunction = pClassType->GetFunction(RED4ext::FNV1a(acFullName.c_str()));
 
     if (pRealFunction)
     {
-        pFunc->returnType = pRealFunction->returnType;
-        for (auto* p : pRealFunction->params)
+        auto itor = m_functions.find(pRealFunction);
+
+        // This function was never hooked
+        if (itor == std::end(m_functions))
         {
-            pFunc->params.PushBack(p);
+            auto& entry = m_functions[pRealFunction] = {};
+
+            /*
+            sub rsp, 56
+            mov rax, 0xDEADBEEFC0DEBAAD
+            mov qword ptr[rsp + 32], rax
+            mov rax, 0xDEADBEEFC0DEBAAD
+            call rax
+            add rsp, 56
+            ret
+             */
+            uint8_t payload[] = {0x48, 0x83, 0xEC, 0x38, 0x48, 0xB8, 0xAD, 0xBA, 0xDE, 0xC0, 0xEF, 0xBE,
+                                 0xAD, 0xDE, 0x48, 0x89, 0x44, 0x24, 0x20, 0x48, 0xB8, 0xAD, 0xBA, 0xDE,
+                                 0xC0, 0xEF, 0xBE, 0xAD, 0xDE, 0xFF, 0xD0, 0x48, 0x83, 0xC4, 0x38, 0xC3};
+
+            auto funcAddr = reinterpret_cast<uintptr_t>(&FunctionOverride::HandleOverridenFunction);
+
+            std::memcpy(payload + 6, &pRealFunction, 8);
+            std::memcpy(payload + 21, &funcAddr, 8);
+
+            using TNativeScriptFunction = void (*)(RED4ext::IScriptable*, RED4ext::CStackFrame*, void*, int64_t);
+            auto* pExecutablePayload = static_cast<TNativeScriptFunction>(MakeExecutable(payload, std::size(payload)));
+
+            auto* const pFunc = RED4ext::CClassFunction::Create(pClassType, acFullName.c_str(), acShortName.c_str(), pExecutablePayload);
+
+            pFunc->fullName = pRealFunction->fullName;
+            pFunc->shortName = pRealFunction->shortName;
+
+            pFunc->returnType = pRealFunction->returnType;
+            for (auto* p : pRealFunction->params)
+            {
+                pFunc->params.PushBack(p);
+            }
+
+            for (auto* p : pRealFunction->localVars)
+            {
+                pFunc->localVars.PushBack(p);
+            }
+
+            pFunc->unk20 = pRealFunction->unk20;
+            std::copy_n(pRealFunction->unk48, std::size(pRealFunction->unk48), pFunc->unk48);
+            pFunc->unk7C = pRealFunction->unk7C;
+            pFunc->flags = pRealFunction->flags;
+            pFunc->parent = pRealFunction->parent;
+            pFunc->flags.isNative = true;
+
+            entry.Trampoline = pFunc;
+            entry.pScripting = m_pScripting;
+
+            // Swap the content of the real function with the one we just created
+            std::array<char, sizeof(RED4ext::CClassFunction)> tmpBuffer;
+
+            std::memcpy(&tmpBuffer, pRealFunction, sizeof(RED4ext::CClassFunction));
+            std::memcpy(pRealFunction, pFunc, sizeof(RED4ext::CClassFunction));
+            std::memcpy(pFunc, &tmpBuffer, sizeof(RED4ext::CClassFunction));
+
+            entry.Calls.emplace_back(std::move(pContext));
         }
-
-        pFunc->unk7C = pRealFunction->unk7C;
-    }
-    pFunc->flags.isNative = true;
-    pContext->Forward = !aAbsolute;
-
-    if (!pRealFunction)
-    {
-        if (pFunc->flags.isStatic)
-            pClassType->staticFuncs.PushBack(pFunc);
         else
-            pClassType->funcs.PushBack(pFunc);
-
-        pContext->FunctionDefinition = pFunc;
+            itor.value().Calls.emplace_back(std::move(pContext));
+        
     }
     else
     {
-        // Swap the content of the real function with the one we just created
-        std::array<char, sizeof(RED4ext::CClassFunction)> tmpBuffer;
-
-        std::memcpy(&tmpBuffer, pRealFunction, sizeof(RED4ext::CClassFunction));
-        std::memcpy(pRealFunction, pFunc, sizeof(RED4ext::CClassFunction));
-        std::memcpy(pFunc, &tmpBuffer, sizeof(RED4ext::CClassFunction));
-
-        // Now pFunc is the real function
-        pContext->RealFunction = pFunc;
-        pContext->FunctionDefinition = pRealFunction;
+        spdlog::get("scripting")->error("Function {} in class {} does not exist", acFullName, acTypeName);
     }
-
-    m_overrides.emplace_back(pRealFunction, pFunc, std::move(pContext));
 }

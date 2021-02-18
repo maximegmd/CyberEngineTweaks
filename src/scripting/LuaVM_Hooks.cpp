@@ -330,28 +330,4 @@ void LuaVM::Hook(Options& aOptions)
             }
         }
     }
-
-    {
-        const mem::pattern cPattern("48 89 5C 24 08 57 48 83 EC 40 8B F9 48 8D 54 24 30 48 8B 0D ?? ?? ?? ?? 41 B8 88 00 00 00");
-        const mem::default_scanner cScanner(cPattern);
-        uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
-
-        if (pLocation)
-        {
-            auto* pFirstLocation = pLocation + 0x1A;
-            auto* pSecondLocation = pLocation + 0x3A;
-
-            if (*pFirstLocation == 0x88 && *pSecondLocation == 0x88)
-            {
-                DWORD oldProtect;
-                VirtualProtect(pLocation, 0x40, PAGE_READWRITE, &oldProtect);
-                *pFirstLocation = *pSecondLocation = 0x90;
-                VirtualProtect(pLocation, 0x40, oldProtect, &oldProtect);
-
-                spdlog::info("Override function allocator patched!");
-            }
-            else
-                spdlog::error("Could not fix allocator for override functions!");
-        }
-    }
 }
