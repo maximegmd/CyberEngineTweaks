@@ -50,7 +50,7 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
             const auto result = call->ScriptFunction(as_args(args), call->Environment);
             if (!call->Forward)
             {
-                if (result.valid())
+                if (result.valid() && ret.value && ret.type)
                     Scripting::ToRED(result.get<sol::object>(), &ret);
 
                 return true;
@@ -200,16 +200,20 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
         }
 
         const auto& calls = context.Calls;
+        for (const auto& call : calls)
         {
             const auto result = call->ScriptFunction(as_args(args), call->Environment);
             if (!call->Forward)
             {
-                RED4ext::CStackType redResult;
-                redResult.type = apFunction->returnType->type;
-                redResult.value = apOut;
+                if (apFunction->returnType)
+                {
+                    RED4ext::CStackType redResult;
+                    redResult.type = apFunction->returnType->type;
+                    redResult.value = apOut;
 
-                if (result.valid())
-                    Scripting::ToRED(result.get<sol::object>(), &redResult);
+                    if (result.valid() && apOut)
+                        Scripting::ToRED(result.get<sol::object>(), &redResult);
+                }
 
                 return;
             }
