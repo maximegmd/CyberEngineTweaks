@@ -3,7 +3,7 @@ set_xmakever("2.5.1")
 set_languages("cxx20")
 set_arch("x64")
 
-add_requires("spdlog", "nlohmann_json", "hopscotch-map", "minhook", "mem", "imgui 1.81", "sol2", "tiltedcore 0.2.0")
+add_requires("spdlog", "nlohmann_json", "hopscotch-map", "minhook", "mem", "imgui 1.81", "sol2", "tiltedcore 0.2.0", "sqlite3")
 add_requireconfs("imgui", { configs = {cxflags = "/DNDEBUG"} })
 
 add_rules("mode.debug","mode.releasedbg", "mode.release")
@@ -66,7 +66,7 @@ target("cyber_engine_tweaks")
     add_headerfiles("src/**.h")
     add_includedirs("src/")
     add_syslinks("User32", "Version", "d3d11")
-    add_packages("spdlog", "nlohmann_json", "minhook", "hopscotch-map", "imgui", "mem", "sol2", "tiltedcore")
+    add_packages("spdlog", "nlohmann_json", "minhook", "hopscotch-map", "imgui", "mem", "sol2", "tiltedcore", "sqlite3")
     add_deps("RED4ext.SDK")
 
 	on_package(function(target)
