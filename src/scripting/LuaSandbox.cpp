@@ -440,8 +440,12 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox)
     // add in rename and remove repacements for os lib
     {
         const auto cOS = cGlobals["os"].get<sol::table>();
-        auto osEnv = sbEnv["os"]; // os should already be in environment at this point, do not overwrite it!
-        osEnv["rename"] = [cOS, cSBRootPath](const std::string& acOldPath, const std::string& acNewPath) -> std::tuple<sol::object, std::string>
+        sol::table osSB(luaView, sol::create);
+        osSB["clock"] = cOS["clock"];
+        osSB["date"] = cOS["date"];
+        osSB["difftime"] = cOS["difftime"];
+        osSB["time"] = cOS["time"];
+        osSB["rename"] = [cOS, cSBRootPath](const std::string& acOldPath, const std::string& acNewPath) -> std::tuple<sol::object, std::string>
         {
             const auto cAbsOldPath = absolute(cSBRootPath / acOldPath).make_preferred();
             const auto cRelOldPathStr =  relative(cAbsOldPath, cSBRootPath).string();
@@ -458,7 +462,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox)
                 return std::make_tuple(cResult.get<sol::object>(), "");
             return std::make_tuple(cResult.get<sol::object>(0), cResult.get<std::string>(1));
         };
-        osEnv["remove"] = [cOS, cSBRootPath](const std::string& acPath) -> std::tuple<sol::object, std::string>
+        osSB["remove"] = [cOS, cSBRootPath](const std::string& acPath) -> std::tuple<sol::object, std::string>
         {
             const auto cAbsPath = absolute(cSBRootPath / acPath).make_preferred();
             const auto cRelPathStr = relative(cAbsPath, cSBRootPath).string();
@@ -470,5 +474,6 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox)
                 return std::make_tuple(cResult.get<sol::object>(), "");
             return std::make_tuple(cResult.get<sol::object>(0), cResult.get<std::string>(1));
         };
+        sbEnv["os"] = osSB;
     }
 }
