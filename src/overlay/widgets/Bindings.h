@@ -5,10 +5,10 @@
 struct Overlay;
 struct LuaVM;
 
-struct Hotkeys : Widget
+struct Bindings : Widget
 {
-    Hotkeys(VKBindings& aBindings, Overlay& aOverlay, LuaVM& aVm);
-    ~Hotkeys() override = default;
+    Bindings(VKBindings& aBindings, Overlay& aOverlay, LuaVM& aVm);
+    ~Bindings() override = default;
 
     void OnEnable() override;
     void OnDisable() override;

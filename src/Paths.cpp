@@ -48,7 +48,7 @@ Paths::Paths()
     if (exists(m_config) && !file_size(m_config))
         std::filesystem::remove(m_config);
 
-    m_vkBindings = m_cetRoot / "hotkeys.json";
+    m_vkBindings = m_cetRoot / "bindings.json";
     // remove empty vkbindings.json
     if (exists(m_vkBindings) && !file_size(m_vkBindings))
         std::filesystem::remove(m_vkBindings);

@@ -30,14 +30,14 @@ static sol::protected_function_result TryLuaFunction(std::shared_ptr<spdlog::log
 
 ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::path& acPath, const std::string& acName)
     : m_sandbox(aLuaSandbox)
-    , m_sandboxID(aLuaSandbox.CreateSandbox(acPath))
+    , m_sandboxID(aLuaSandbox.CreateSandbox(acPath, acName))
     , m_name(acName)
 {
     auto state = aLuaSandbox.GetState();
 
     auto& sb = m_sandbox[m_sandboxID];
     auto& env = sb.GetEnvironment();
-    m_logger = m_sandbox.InitializeLoggerForSandbox(sb, acName);
+    m_logger = env["__logger"].get<std::shared_ptr<spdlog::logger>>();
 
     env["registerForEvent"] = [this](const std::string& acName, sol::function aCallback)
     {
@@ -57,11 +57,10 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
             m_logger->error("Tried to register an unknown event '{}'!", acName);
     };
 
-    env["registerHotkey"] = [this, &sb = m_sandbox, id = m_sandboxID](const std::string& acID, const std::string& acDescription,
-                                               sol::function aCallback)
+    env["registerHotkey"] = [this, &sb = m_sandbox, id = m_sandboxID](const std::string& acID, const std::string& acDescription, sol::function aCallback)
     {
         if (acID.empty() ||
-            (std::find_if(acID.cbegin(), acID.cend(), [](char c){ return !(isalpha(c) || isdigit(c) || c == '_'); }) != acID.cend()))
+            (std::ranges::find_if(acID, [](char c){ return !(isalpha(c) || isdigit(c) || c == '_'); }) != acID.cend()))
         {
             m_logger->error("Tried to register a hotkey with an incorrect ID format '{}'! ID needs to be alphanumeric without any whitespace or special characters (exception being '_' which is allowed in ID)!", acID);
             return;
@@ -83,6 +82,34 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
 
         m_vkBindInfos.emplace_back(VKBindInfo{vkBind});
     };    
+    
+    env["registerInput"] = [this, &sb = m_sandbox, id = m_sandboxID](const std::string& acID, const std::string& acDescription, sol::function aCallback) {
+        if (acID.empty() ||
+            (std::ranges::find_if(acID, [](char c) { return !(isalpha(c) || isdigit(c) || c == '_'); }) != acID.cend()))
+        {
+            m_logger->error(
+                "Tried to register input with an incorrect ID format '{}'! ID needs to be alphanumeric without any "
+                "whitespace or special characters (exception being '_' which is allowed in ID)!",
+                acID);
+            return;
+        }
+
+        if (acDescription.empty())
+        {
+            m_logger->error("Tried to register an input with an empty description! (ID of input handler: {})", acID);
+            return;
+        }
+
+        auto loggerRef = m_logger;
+        std::string vkBindID = m_name + '.' + acID;
+        VKBind vkBind = {vkBindID, acDescription, [loggerRef, aCallback, &sb, id](bool isDown)
+        {
+            auto& env = sb[id].GetEnvironment();
+            TryLuaFunction(loggerRef, env, aCallback, isDown);
+        }};
+
+        m_vkBindInfos.emplace_back(VKBindInfo{vkBind});
+    };
 
     // TODO: proper exception handling!
     try

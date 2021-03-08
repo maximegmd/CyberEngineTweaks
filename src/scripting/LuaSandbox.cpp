@@ -107,8 +107,9 @@ static constexpr const char* s_cGlobalExtraLibsWhitelist[] =
     "json"
 };
 
-LuaSandbox::LuaSandbox(Scripting* apScripting)
+LuaSandbox::LuaSandbox(Scripting* apScripting, const VKBindings& acVKBindings)
     : m_pScripting(apScripting)
+    , m_vkBindings(acVKBindings)
 {
 }
 
@@ -140,7 +141,7 @@ void LuaSandbox::Initialize()
         m_env["os"] = osCopy;
     }
 
-    CreateSandbox("", false, false, false);
+    CreateSandbox();
 }
 
 void LuaSandbox::ResetState()
@@ -150,61 +151,23 @@ void LuaSandbox::ResetState()
         m_sandboxes.erase(m_sandboxes.cbegin()+1, m_sandboxes.cend());
 }
 
-size_t LuaSandbox::CreateSandbox(const std::filesystem::path& acPath, bool aEnableExtraLibs, bool aEnableDB, bool aEnableIO)
+size_t LuaSandbox::CreateSandbox(const std::filesystem::path& acPath, const std::string& acName, bool aEnableExtraLibs, bool aEnableDB, bool aEnableIO, bool aEnableLogger)
 {
     const size_t cResID = m_sandboxes.size();
+    assert(!cResID || (!acPath.empty() && !acName.empty()));
     auto& res = m_sandboxes.emplace_back(m_pScripting, m_env, acPath);
-    if (aEnableExtraLibs)
-        InitializeExtraLibsForSandbox(res);
-    if (aEnableDB)
-        InitializeDBForSandbox(res);
-    if (aEnableIO)
-        InitializeIOForSandbox(res);
+    if (!acPath.empty() && !acName.empty())
+    {
+        if (aEnableExtraLibs)
+            InitializeExtraLibsForSandbox(res);
+        if (aEnableDB)
+            InitializeDBForSandbox(res);
+        if (aEnableIO)
+            InitializeIOForSandbox(res, acName);
+        if (aEnableLogger)
+            InitializeLoggerForSandbox(res, acName);
+    }
     return cResID;
-}
-
-std::shared_ptr<spdlog::logger> LuaSandbox::InitializeLoggerForSandbox(Sandbox& aSandbox, const std::string& acName) const
-{
-    auto& sbEnv = aSandbox.GetEnvironment();
-    const auto cSBRootPath = aSandbox.GetRootPath();
-
-    // initialize logger for this mod
-    auto logger = CreateLogger(cSBRootPath / (acName + ".log"), acName);
-
-    auto state = m_pScripting->GetState();
-
-    // assign logger to mod so it can be used from within it too
-    sol::table spdlog(state.Get(), sol::create);
-    spdlog["trace"] = [logger](const std::string& message)
-    {
-        logger->trace(message);
-    };
-    spdlog["debug"] = [logger](const std::string& message)
-    {
-        logger->debug(message);
-    };
-    spdlog["info"] = [logger](const std::string& message)
-    {
-        logger->info(message);
-    };
-    spdlog["warning"] = [logger](const std::string& message)
-    {
-        logger->warn(message);
-    };
-    spdlog["error"] = [logger](const std::string& message)
-    {
-        logger->error(message);
-    };
-    spdlog["critical"] = [logger](const std::string& message)
-    {
-        logger->critical(message);
-    };
-    sbEnv["spdlog"] = spdlog;
-
-    // assign logger to special var so we can access it from our functions
-    sbEnv["__logger"] = logger;
-
-    return logger;
 }
 
 sol::protected_function_result LuaSandbox::ExecuteFile(const std::string& acPath)
@@ -269,7 +232,7 @@ void LuaSandbox::InitializeDBForSandbox(Sandbox& aSandbox) const
     sbEnv["db"] = luaView["sqlite3"]["open"]((cSBRootPath / "db.sqlite3").string());
 }
 
-void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox)
+void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& acName)
 {
     auto& sbEnv = aSandbox.GetEnvironment();
     const auto cSBRootPath = aSandbox.GetRootPath();
@@ -476,4 +439,38 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox)
         };
         sbEnv["os"] = osSB;
     }
+
+    // add support functions for bindings
+    sbEnv["IsBound"] = [vkb = &m_vkBindings, name = acName](const std::string& aID) -> bool
+    {
+        return vkb->IsBound(name + '.' + aID);
+    };
+    sbEnv["GetBind"] = [vkb = &m_vkBindings, name = acName](const std::string& aID) -> std::string
+    {
+        return vkb->GetBindString(name + '.' + aID);
+    };
+}
+
+void LuaSandbox::InitializeLoggerForSandbox(Sandbox& aSandbox, const std::string& acName) const
+{
+    auto& sbEnv = aSandbox.GetEnvironment();
+    const auto cSBRootPath = aSandbox.GetRootPath();
+
+    // initialize logger for this mod
+    auto logger = CreateLogger(cSBRootPath / (acName + ".log"), acName);
+
+    auto state = m_pScripting->GetState();
+
+    // assign logger to mod so it can be used from within it too
+    sol::table spdlog(state.Get(), sol::create);
+    spdlog["trace"]    = [logger](const std::string& message) { logger->trace(message);    };
+    spdlog["debug"]    = [logger](const std::string& message) { logger->debug(message);    };
+    spdlog["info"]     = [logger](const std::string& message) { logger->info(message);     };
+    spdlog["warning"]  = [logger](const std::string& message) { logger->warn(message);     };
+    spdlog["error"]    = [logger](const std::string& message) { logger->error(message);    };
+    spdlog["critical"] = [logger](const std::string& message) { logger->critical(message); };
+    sbEnv["spdlog"] = spdlog;
+
+    // assign logger to special var so we can access it from our functions
+    sbEnv["__logger"] = logger;
 }
