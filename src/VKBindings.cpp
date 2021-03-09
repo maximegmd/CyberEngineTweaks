@@ -72,7 +72,11 @@ std::vector<VKBindInfo> VKBindings::InitializeMods(std::vector<VKBindInfo> aVKBi
         {
             found = (idToBind.first == vkBindInfo.Bind.ID);
             if (found)
-                break;
+            {
+                // test if bind is hotkey and if not, check if bind is valid for input (which means it has single input key, not combo)
+                found = (vkBindInfo.Bind.IsHotkey() || ((idToBind.second & 0xFFFF000000000000) == idToBind.second));
+                break; // we just reset found flag accordingly and exit here, we found valid entry, no need to continue regardless of result
+            }
         }
 
         if (!found)
