@@ -15,12 +15,12 @@ Sandbox::Sandbox(Scripting* apScripting, sol::environment aBaseEnvironment, cons
 
 sol::protected_function_result Sandbox::ExecuteFile(const std::string& acPath) const
 {
-    return m_pScripting->GetState().Get().script_file(acPath, m_env);
+    return m_pScripting->GetState().Get().script_file(acPath, m_env, sol::load_mode::text);
 }
 
 sol::protected_function_result Sandbox::ExecuteString(const std::string& acString) const
 {
-    return m_pScripting->GetState().Get().script(acString, m_env);
+    return m_pScripting->GetState().Get().script(acString, m_env, sol:: detail::default_chunk_name(), sol::load_mode::text);
 }
 
 sol::environment& Sandbox::GetEnvironment()

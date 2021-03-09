@@ -48,7 +48,7 @@ private:
     TiltedPhoques::Lockable<sol::state, std::recursive_mutex> m_lua;
     std::unordered_map<std::string, sol::object> m_properties{ };
     std::unordered_map<std::string, SingletonReference> m_singletons{ };
-    LuaSandbox m_sandbox{ this }; // some object must be passed here... will be reset in Initialize
+    LuaSandbox m_sandbox;
     ScriptStore m_store;
     FunctionOverride m_override;
     const Paths& m_paths;

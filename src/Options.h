@@ -14,7 +14,7 @@ struct Options
     void ResetToDefaults(); 
     
     Image GameImage;
-    UINT OverlayKeyBind{ 0 };
+    uint64_t OverlayKeyBind{ 0 };
     bool PatchEnableDebug{ false };
     bool PatchRemovePedestrians{ false };
     bool PatchAsyncCompute{ false };

@@ -3,7 +3,7 @@
 enum class WidgetID
 {
     CONSOLE,
-    HOTKEYS,
+    BINDINGS,
     SETTINGS,
     COUNT
 };

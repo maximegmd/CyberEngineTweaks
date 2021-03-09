@@ -34,6 +34,18 @@ void Options::Load()
             if (OverlayKeyBind == 0)
                 IsFirstLaunch = true; // is for sure in this case
 
+            if (exists(m_paths.CETRoot() / "hotkeys.json"))
+            {
+                // encoded key bind was 32-bit number in old config, convert it to new 64-bit format
+                OverlayKeyBind =
+                {
+                      ((OverlayKeyBind & 0x000000FF) << 8*0)
+                    | ((OverlayKeyBind & 0x0000FF00) << 8*1)
+                    | ((OverlayKeyBind & 0x00FF0000) << 8*2)
+                    | ((OverlayKeyBind & 0xFF000000) << 8*3)
+                };
+            }
+
             // check old config names
             if (config.value("unlock_menu", false))
                 PatchEnableDebug = true;

@@ -31,7 +31,8 @@
 static RTTILocator s_stringType{RED4ext::FNV1a("String")};
 
 Scripting::Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12, Options& aOptions)
-    : m_store(m_sandbox, aPaths, aBindings)
+    : m_sandbox(this, aBindings)
+    , m_store(m_sandbox, aPaths, aBindings)
     , m_override(this, aOptions)
     , m_paths(aPaths)
     , m_d3d12(aD3D12)
