@@ -15,6 +15,7 @@ void Options::Load()
             PatchEnableDebug = config.value("enable_debug", PatchEnableDebug);
             PatchRemovePedestrians = config.value("remove_pedestrians", PatchRemovePedestrians);
             PatchSkipStartMenu = config.value("skip_start_menu", PatchSkipStartMenu);
+            PatchAmdSmt = config.value("amd_smt", PatchAmdSmt);
             PatchAsyncCompute = config.value("disable_async_compute", PatchAsyncCompute);
             PatchAntialiasing = config.value("disable_antialiasing", PatchAntialiasing);
             PatchDisableIntroMovies = config.value("disable_intro_movies", PatchDisableIntroMovies);
@@ -51,6 +52,7 @@ void Options::Save()
     config["disable_async_compute"] = PatchAsyncCompute;
     config["disable_antialiasing"] = PatchAntialiasing;
     config["skip_start_menu"] = PatchSkipStartMenu;
+    config["amd_smt"] = PatchAmdSmt;
     config["disable_intro_movies"] = PatchDisableIntroMovies;
     config["disable_vignette"] = PatchDisableVignette;
     config["disable_boundary_teleport"] = PatchDisableBoundaryTeleport;
@@ -71,6 +73,7 @@ void Options::ResetToDefaults()
     PatchAsyncCompute = false;
     PatchAntialiasing = false;
     PatchSkipStartMenu = false;
+    PatchAmdSmt = false;
     PatchDisableIntroMovies = false;
     PatchDisableVignette = false;
     PatchDisableBoundaryTeleport = false;

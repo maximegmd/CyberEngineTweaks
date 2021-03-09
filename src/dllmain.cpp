@@ -17,6 +17,7 @@ void OptionsInitHook(const Image* apImage);
 void DisableIntroMoviesPatch(const Image* apImage);
 void DisableVignettePatch(const Image* apImage);
 void DisableBoundaryTeleportPatch(const Image* apImage);
+void SmtAmdPatch(const Image* apImage);
 
 static HANDLE s_modInstanceMutex = nullptr;
 
@@ -58,6 +59,9 @@ static void Initialize()
 
         if (options.PatchDisableBoundaryTeleport)
             DisableBoundaryTeleportPatch(&options.GameImage);
+
+        if (options.PatchAmdSmt)
+            SmtAmdPatch(&options.GameImage);
 
         OptionsInitHook(&options.GameImage);
 

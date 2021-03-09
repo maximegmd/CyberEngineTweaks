@@ -48,6 +48,7 @@ void Settings::Update()
         Load();
     }
 
+    HelperWidgets::BoolWidget("AMD SMT Patch:", m_patchAmdSmt, m_options.PatchAmdSmt);
     HelperWidgets::BoolWidget("Enable Debug Menu:", m_patchEnableDebug, m_options.PatchEnableDebug);
     HelperWidgets::BoolWidget("Remove Pedestrians:", m_patchRemovePedestrians, m_options.PatchRemovePedestrians);
     HelperWidgets::BoolWidget("Disable Async Compute:", m_patchAsyncCompute, m_options.PatchAsyncCompute);
@@ -73,6 +74,7 @@ void Settings::Load()
     m_patchAsyncCompute = m_options.PatchAsyncCompute;
     m_patchAntialiasing = m_options.PatchAntialiasing;
     m_patchSkipStartMenu = m_options.PatchSkipStartMenu;
+    m_patchAmdSmt = m_options.PatchAmdSmt;
     m_patchDisableIntroMovies = m_options.PatchDisableIntroMovies;
     m_patchDisableVignette = m_options.PatchDisableVignette;
     m_patchDisableBoundaryTeleport = m_options.PatchDisableBoundaryTeleport;
@@ -93,6 +95,7 @@ void Settings::Save()
     m_options.PatchAsyncCompute = m_patchAsyncCompute;
     m_options.PatchAntialiasing = m_patchAntialiasing;
     m_options.PatchSkipStartMenu = m_patchSkipStartMenu;
+    m_options.PatchAmdSmt = m_patchAmdSmt;
     m_options.PatchDisableIntroMovies = m_patchDisableIntroMovies;
     m_options.PatchDisableVignette = m_patchDisableVignette;
     m_options.PatchDisableBoundaryTeleport = m_patchDisableBoundaryTeleport;

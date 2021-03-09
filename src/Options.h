@@ -20,6 +20,7 @@ struct Options
     bool PatchAsyncCompute{ false };
     bool PatchAntialiasing{ false };
     bool PatchSkipStartMenu{ false };
+    bool PatchAmdSmt{ false };
     bool PatchDisableIntroMovies{ false };
     bool PatchDisableVignette{ false };
     bool PatchDisableBoundaryTeleport{ false };
