@@ -384,23 +384,21 @@ void Scripting::Initialize()
     luaVm["TweakDB"] = TweakDB(m_lua.AsRef());
 
     luaVm["Override"] = sol::overload(
-        [this](const std::string& acTypeName, const std::string& acFullName, sol::protected_function aFunction,
-               sol::this_environment aThisEnv) {
-            m_override.Override(acTypeName, acFullName, acFullName, true, aFunction, aThisEnv);
+        [this](const std::string& acTypeName, const std::string& acFullName, sol::protected_function aFunction) {
+            m_override.Override(acTypeName, acFullName, acFullName, true, aFunction);
         },
         [this](const std::string& acTypeName, const std::string& acFullName, const std::string& acShortName,
-               sol::protected_function aFunction, sol::this_environment aThisEnv) {
-            m_override.Override(acTypeName, acFullName, acShortName, true, aFunction, aThisEnv);
+               sol::protected_function aFunction) {
+            m_override.Override(acTypeName, acFullName, acShortName, true, aFunction);
         });
 
     luaVm["Observe"] = sol::overload(
-        [this](const std::string& acTypeName, const std::string& acFullName, sol::protected_function aFunction,
-               sol::this_environment aThisEnv) {
-            m_override.Override(acTypeName, acFullName, acFullName, false, aFunction, aThisEnv);
+        [this](const std::string& acTypeName, const std::string& acFullName, sol::protected_function aFunction) {
+            m_override.Override(acTypeName, acFullName, acFullName, false, aFunction);
         },
         [this](const std::string& acTypeName, const std::string& acFullName, const std::string& acShortName,
-               sol::protected_function aFunction, sol::this_environment aThisEnv) {
-            m_override.Override(acTypeName, acFullName, acShortName, false, aFunction, aThisEnv);
+               sol::protected_function aFunction) {
+            m_override.Override(acTypeName, acFullName, acShortName, false, aFunction);
         });
 
 #ifndef NDEBUG
