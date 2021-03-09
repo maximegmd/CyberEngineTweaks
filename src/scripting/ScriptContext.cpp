@@ -6,14 +6,14 @@
 
 // TODO: proper exception handling for Lua funcs!
 template <typename ...Args>
-static sol::protected_function_result TryLuaFunction(std::shared_ptr<spdlog::logger> aLogger, sol::environment& aEnv, sol::function aFunc, Args... aArgs)
+static sol::protected_function_result TryLuaFunction(std::shared_ptr<spdlog::logger> aLogger, sol::function aFunc, Args... aArgs)
 {
     sol::protected_function_result result{ };
     if (aFunc)
     {
         try
         {
-            result = aFunc(aArgs..., aEnv);
+            result = aFunc(aArgs...);
         }
         catch(std::exception& e)
         {
@@ -57,7 +57,7 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
             m_logger->error("Tried to register an unknown event '{}'!", acName);
     };
 
-    env["registerHotkey"] = [this, &sb = m_sandbox, id = m_sandboxID](const std::string& acID, const std::string& acDescription,
+    env["registerHotkey"] = [this](const std::string& acID, const std::string& acDescription,
                                                sol::function aCallback)
     {
         if (acID.empty() ||
@@ -75,10 +75,9 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
 
         auto loggerRef = m_logger;
         std::string vkBindID = m_name + '.' + acID;
-        VKBind vkBind = {vkBindID, acDescription, [loggerRef, aCallback, &sb, id]()
+        VKBind vkBind = {vkBindID, acDescription, [loggerRef, aCallback]()
         {
-            auto& env = sb[id].GetEnvironment();
-            TryLuaFunction(loggerRef, env, aCallback);
+            TryLuaFunction(loggerRef, aCallback);
         }};
 
         m_vkBindInfos.emplace_back(VKBindInfo{vkBind});
@@ -132,52 +131,37 @@ const std::vector<VKBindInfo>& ScriptContext::GetBinds() const
 
 void ScriptContext::TriggerOnInit() const
 {
-    auto& sb = m_sandbox[m_sandboxID];
-    auto& env = sb.GetEnvironment();
-
     auto state = m_sandbox.GetState();
 
-    TryLuaFunction(m_logger, env, m_onInit);
+    TryLuaFunction(m_logger, m_onInit);
 }
 
 void ScriptContext::TriggerOnUpdate(float aDeltaTime) const
 {
-    auto& sb = m_sandbox[m_sandboxID];
-    auto& env = sb.GetEnvironment();
-
     auto state = m_sandbox.GetState();
 
-    TryLuaFunction(m_logger, env, m_onUpdate, aDeltaTime);
+    TryLuaFunction(m_logger, m_onUpdate, aDeltaTime);
 }
 
 void ScriptContext::TriggerOnDraw() const
 {
-    auto& sb = m_sandbox[m_sandboxID];
-    auto& env = sb.GetEnvironment();
-
     auto state = m_sandbox.GetState();
 
-    TryLuaFunction(m_logger, env, m_onDraw);
+    TryLuaFunction(m_logger, m_onDraw);
 }
     
 void ScriptContext::TriggerOnOverlayOpen() const
 {
-    auto& sb = m_sandbox[m_sandboxID];
-    auto& env = sb.GetEnvironment();
-
     auto state = m_sandbox.GetState();
 
-    TryLuaFunction(m_logger, env, m_onOverlayOpen);
+    TryLuaFunction(m_logger, m_onOverlayOpen);
 }
 
 void ScriptContext::TriggerOnOverlayClose() const
 {
-    auto& sb = m_sandbox[m_sandboxID];
-    auto& env = sb.GetEnvironment();
-
     auto state = m_sandbox.GetState();
 
-    TryLuaFunction(m_logger, env, m_onOverlayClose);
+    TryLuaFunction(m_logger, m_onOverlayClose);
 }
 
 sol::object ScriptContext::GetRootObject() const
@@ -187,10 +171,7 @@ sol::object ScriptContext::GetRootObject() const
 
 void ScriptContext::TriggerOnShutdown() const
 {
-    auto& sb = m_sandbox[m_sandboxID];
-    auto& env = sb.GetEnvironment();
-
     auto state = m_sandbox.GetState();
 
-    TryLuaFunction(m_logger, env, m_onShutdown);
+    TryLuaFunction(m_logger, m_onShutdown);
 }
