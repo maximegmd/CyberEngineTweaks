@@ -95,7 +95,7 @@ std::vector<VKBindInfo> VKBindings::InitializeMods(std::vector<VKBindInfo> aVKBi
 
 void VKBindings::Load(const Overlay& aOverlay)
 {
-    auto parseConfig {[this, &aOverlay](const std::filesystem::path& path) -> bool {
+    auto parseConfig {[this, &aOverlay](const std::filesystem::path& path, bool old = false) -> bool {
         std::ifstream ifs { path };
         if (ifs)
         {
@@ -105,20 +105,34 @@ void VKBindings::Load(const Overlay& aOverlay)
                 // properly auto-bind Overlay if it is present here (could be this is first start so it may not be
                 // in here yet)
                 auto vkBind { (it.key() == aOverlay.GetBind().ID) ? aOverlay.GetBind() : VKBind{ it.key() } };
-                const auto ret { Bind(it.value(), vkBind) };
+
+                uint64_t key { it.value() };
+                if (old)
+                {
+                    // encoded key bind was 32-bit number in old config, convert it to new 64-bit format
+                    key =
+                    {
+                          ((key & 0x000000FF) << 8*0)
+                        | ((key & 0x0000FF00) << 8*1)
+                        | ((key & 0x00FF0000) << 8*2)
+                        | ((key & 0xFF000000) << 8*3)
+                    };
+                }
+
+                const auto ret { Bind(key, vkBind) };
                 assert(ret); // we want this to never fail!
             }
             return true;
         }
         return false;
     }};
-
+ 
     // try to load from current path
     if (!parseConfig(m_paths.VKBindings()))
     {
         // if failed, try to look for old config
         auto oldPath = m_paths.CETRoot() / "hotkeys.json";
-        if (parseConfig(oldPath))
+        if (parseConfig(oldPath, true))
         {
             // old config found and parsed, remove it and save it to current location
             remove(oldPath);
