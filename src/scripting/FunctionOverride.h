@@ -7,7 +7,6 @@ struct FunctionOverride
     struct Context
     {
         sol::protected_function ScriptFunction;
-        sol::environment Environment;
         bool Forward;
     };
 
@@ -18,7 +17,7 @@ struct FunctionOverride
     void Clear();
 
     void Override(const std::string& acTypeName, const std::string& acFullName, const std::string& acShortName,
-                  bool aAbsolute, sol::protected_function aFunction, sol::this_environment aThisEnv);
+                  bool aAbsolute, sol::protected_function aFunction);
 
 protected:
 
