@@ -48,7 +48,7 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
         const auto& calls = itor->second.Calls;
         for (const auto& call : calls)
         {
-            const auto result = call->ScriptFunction(as_args(args));
+            const auto result = call->ScriptFunction(as_args(args), call->Environment);
             if (!call->Forward)
             {
                 if (result.valid() && ret.value && ret.type)
@@ -211,7 +211,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
         const auto& calls = context.Calls;
         for (const auto& call : calls)
         {
-            const auto result = call->ScriptFunction(as_args(args));
+            const auto result = call->ScriptFunction(as_args(args), call->Environment);
             if (!call->Forward)
             {
                 if (apFunction->returnType)
@@ -295,7 +295,7 @@ void FunctionOverride::Hook(Options& aOptions) const
 }
 
 void FunctionOverride::Override(const std::string& acTypeName, const std::string& acFullName, const std::string& acShortName,
-                                bool aAbsolute, sol::protected_function aFunction)
+                                bool aAbsolute, sol::protected_function aFunction, sol::this_environment aEnvironment)
 {
     auto* pRtti = RED4ext::CRTTISystem::Get();
     auto* pClassType = pRtti->GetClass(acTypeName.c_str());
@@ -308,6 +308,7 @@ void FunctionOverride::Override(const std::string& acTypeName, const std::string
 
     auto pContext = TiltedPhoques::MakeUnique<Context>();
     pContext->ScriptFunction = std::move(aFunction);
+    pContext->Environment = aEnvironment;
     pContext->Forward = !aAbsolute;
 
     // Get the real function
