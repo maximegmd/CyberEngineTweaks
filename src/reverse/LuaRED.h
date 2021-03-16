@@ -16,12 +16,13 @@ struct LuaRED
     {
         RED4ext::CStackType result;
         result.type = m_pRtti;
-        if (!CheckObjectType || aObject.is<T>())
+        if (aObject == sol::nil)
         {
-            if (aObject != sol::nil)
-                result.value = apAllocator->New<T>(aObject.as<T>());
-            else
-                result.value = apAllocator->New<T>();
+            result.value = apAllocator->New<T>();
+        }
+        else if (!CheckObjectType || aObject.is<T>())
+        {
+            result.value = apAllocator->New<T>(aObject.as<T>());
         }
 
         return result;
@@ -29,12 +30,13 @@ struct LuaRED
 
     void ToRED(sol::object aObject, RED4ext::CStackType* apType)
     {
-        if (!CheckObjectType || aObject.is<T>())
+        if (aObject == sol::nil)
         {
-            if (aObject != sol::nil)
-                *reinterpret_cast<T*>(apType->value) = aObject.as<T>();
-            else
-                *reinterpret_cast<T*>(apType->value) = T{};
+            *reinterpret_cast<T*>(apType->value) = T{};
+        }
+        else if (!CheckObjectType || aObject.is<T>())
+        {
+            *reinterpret_cast<T*>(apType->value) = aObject.as<T>();
         }
     }
 
