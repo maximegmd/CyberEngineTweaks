@@ -13,10 +13,7 @@ if is_mode("debug") or is_mode("releasedbg") then
     add_defines("CET_DEBUG")
 
 elseif is_mode("release") then
-    add_ldflags("/LTCG", "/OPT:REF")
-    add_cxflags("/Ot", "/GL", "/Ob2", "/Oi", "/GS-")
     add_defines("NDEBUG")
-
     set_optimize("fastest")
 end
 
