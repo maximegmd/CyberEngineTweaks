@@ -14,6 +14,7 @@ auto s_metaVisitor = [](auto... args) {
     LuaRED<uint32_t, "Uint32">(),
     LuaRED<uint64_t, "Uint64">(),
     LuaRED<float, "Float">(),
+    LuaRED<double, "Double">(),
     LuaRED<bool, "Bool">(),
     LuaRED<Quaternion, "Quaternion">(),
     LuaRED<Vector3, "Vector3">(),
