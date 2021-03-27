@@ -12,7 +12,6 @@ add_rules("plugin.vsxmake.autoupdate")
 
 if is_mode("debug") or is_mode("releasedbg") then
     add_defines("CET_DEBUG")
-
 elseif is_mode("release") then
     add_defines("NDEBUG")
     set_optimize("fastest")
@@ -56,7 +55,7 @@ target("RED4ext.SDK")
     add_includedirs("vendor/RED4ext.SDK/include/", { public = true })
 
 target("cyber_engine_tweaks")
-    add_defines("WIN32_LEAN_AND_MEAN", "NOMINMAX", "SOL_ALL_SAFETIES_ON", "WINVER=0x0601") -- WINVER=0x0601 == Windows 7, we need this specified now for some reason
+    add_defines("WIN32_LEAN_AND_MEAN", "NOMINMAX", "SOL_ALL_SAFETIES_ON", "WINVER=0x0601", "SOL_LUAJIT=1") -- WINVER=0x0601 == Windows 7, we need this specified now for some reason
     set_pcxxheader("src/stdafx.h")
     set_kind("shared")
     set_filename("cyber_engine_tweaks.asi")

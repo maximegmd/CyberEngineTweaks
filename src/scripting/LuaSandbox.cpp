@@ -77,6 +77,7 @@ static constexpr const char* s_cGlobalTablesWhitelist[] =
     "string",
     "table",
     "math",
+    "bit32"
 };
 
 static constexpr const char* s_cGlobalExtraLibsWhitelist[] =
