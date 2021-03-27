@@ -46,7 +46,7 @@ void Scripting::Initialize()
     auto& luaVm = lua.Get();
 
     luaVm.open_libraries(sol::lib::base, sol::lib::string, sol::lib::io, sol::lib::math, sol::lib::package,
-                         sol::lib::os, sol::lib::table);
+                         sol::lib::os, sol::lib::table, sol::lib::bit32);
     luaVm.require("sqlite3", luaopen_lsqlite3);
 
     sol_ImGui::InitBindings(luaVm);
