@@ -13,7 +13,8 @@ static sol::protected_function_result TryLuaFunction(std::shared_ptr<spdlog::log
     {
         try
         {
-            result = aFunc(aArgs..., aEnv);
+            aEnv.set_on(aFunc);
+            result = aFunc(aArgs...);
         }
         catch(std::exception& e)
         {

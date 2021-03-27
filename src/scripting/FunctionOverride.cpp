@@ -48,7 +48,8 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
         const auto& calls = itor->second.Calls;
         for (const auto& call : calls)
         {
-            const auto result = call->ScriptFunction(as_args(args), call->Environment);
+            call->Environment.set_on(call->ScriptFunction);
+            const auto result = call->ScriptFunction(as_args(args));
             if (!call->Forward)
             {
                 if (result.valid() && ret.value && ret.type)
@@ -211,7 +212,8 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
         const auto& calls = context.Calls;
         for (const auto& call : calls)
         {
-            const auto result = call->ScriptFunction(as_args(args), call->Environment);
+            call->Environment.set_on(call->ScriptFunction);
+            const auto result = call->ScriptFunction(as_args(args));
             if (!call->Forward)
             {
                 if (apFunction->returnType)

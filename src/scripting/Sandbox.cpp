@@ -3,14 +3,17 @@
 #include "Sandbox.h"
 #include "Scripting.h"
 
+#include <Utils.h>
+
 Sandbox::Sandbox(Scripting* apScripting, sol::environment aBaseEnvironment, const std::filesystem::path& acRootPath)
     : m_pScripting(apScripting)
     , m_env(apScripting->GetState().Get(), sol::create)
     , m_path(acRootPath)
 {
     // copy base environment, do not set it as fallback, as it may cause globals to bleed into other things!
+    sol::state_view sv = apScripting->GetState().Get();
     for (const auto& cKV : aBaseEnvironment)
-        m_env[cKV.first].set(cKV.second.as<sol::object>());
+        m_env[DeepCopySolObject(cKV.first, sv)] = DeepCopySolObject(cKV.second, sv);
 }
 
 sol::protected_function_result Sandbox::ExecuteFile(const std::string& acPath) const

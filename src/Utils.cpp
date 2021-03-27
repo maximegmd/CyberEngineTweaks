@@ -96,3 +96,37 @@ std::shared_ptr<spdlog::logger> CreateLogger(const std::filesystem::path& aPath,
     register_logger(logger);
     return logger;
 }
+
+// deep copies sol object (doesnt take into account potential duplicates)
+sol::object DeepCopySolObject(sol::object aObj, const sol::state_view& aStateView)
+{
+    if (aObj.get_type() != sol::type::table)
+        return aObj;
+    sol::table src{aObj.as<sol::table>()};
+    sol::table copy{aStateView, sol::create};
+    for (auto kv : src)
+        copy[DeepCopySolObject(kv.first, aStateView)] = DeepCopySolObject(kv.second, aStateView);
+    copy[sol::metatable_key] = src[sol::metatable_key];
+    return copy;
+}
+
+// deep copies sol object (takes into account potential duplicates, may be redundant)
+sol::object DeepCopySolObject(sol::object aObj, const sol::state_view& aStateView, std::unordered_map<sol::object, sol::object>& aSeen)
+{
+    if (aObj.get_type() != sol::type::table)
+        return aObj;
+
+    if (aSeen[aObj] != sol::nil)
+        return aSeen[aObj];
+
+    sol::table src{aObj.as<sol::table>()};
+    sol::table copy{aStateView, sol::create};
+    sol::object& obj{aSeen[aObj]};
+    assert(obj == sol::nil);
+    for (auto kv : src)
+        copy[DeepCopySolObject(kv.first, aStateView, aSeen)] = DeepCopySolObject(kv.second, aStateView, aSeen);
+    copy[sol::metatable_key] = src[sol::metatable_key];
+    obj = copy;
+    assert(obj != sol::nil);
+    return obj;
+}
