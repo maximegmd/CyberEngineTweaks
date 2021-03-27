@@ -96,3 +96,16 @@ std::shared_ptr<spdlog::logger> CreateLogger(const std::filesystem::path& aPath,
     register_logger(logger);
     return logger;
 }
+
+// deep copies sol object (doesnt take into account potential duplicates)
+sol::object DeepCopySolObject(sol::object aObj, const sol::state_view& aStateView)
+{
+    if (aObj.get_type() != sol::type::table)
+        return aObj;
+    sol::table src{aObj.as<sol::table>()};
+    sol::table copy{aStateView, sol::create};
+    for (auto kv : src)
+        copy[DeepCopySolObject(kv.first, aStateView)] = DeepCopySolObject(kv.second, aStateView);
+    copy[sol::metatable_key] = src[sol::metatable_key];
+    return copy;
+}

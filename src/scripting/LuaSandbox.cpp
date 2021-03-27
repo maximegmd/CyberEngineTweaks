@@ -4,7 +4,6 @@
 
 #include "Scripting.h"
 
-
 #include <Utils.h>
 
 static constexpr const char* s_cGlobalObjectsWhitelist[] =
@@ -208,7 +207,7 @@ void LuaSandbox::InitializeExtraLibsForSandbox(Sandbox& aSandbox) const
     // copy extra whitelisted libs from global table
     const auto cGlobals = luaView.globals();
     for (const auto* cKey : s_cGlobalExtraLibsWhitelist)
-        sbEnv[cKey].set(cGlobals[cKey].get<sol::table>());
+        sbEnv[cKey] = DeepCopySolObject(cGlobals[cKey].get<sol::object>(), luaView);
 }
 
 void LuaSandbox::InitializeDBForSandbox(Sandbox& aSandbox) const
@@ -226,7 +225,7 @@ void LuaSandbox::InitializeDBForSandbox(Sandbox& aSandbox) const
     {
         const auto cKeyStr = cKV.first.as<std::string>();
         if (cKeyStr.compare(0, 4, "open"))
-            sqlite3Copy[cKV.first] = cKV.second;
+            sqlite3Copy[cKV.first] = DeepCopySolObject(cKV.second, luaView);
     }
     sbEnv["sqlite3"] = sqlite3Copy;
 
@@ -374,8 +373,8 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
     {
         const auto cIO = cGlobals["io"].get<sol::table>();
         sol::table ioSB(luaView, sol::create);
-        ioSB["type"] = cIO["type"];
-        ioSB["close"] = cIO["close"];
+        ioSB["type"] = DeepCopySolObject(cIO["type"], luaView);
+        ioSB["close"] = DeepCopySolObject(cIO["close"], luaView);
         ioSB["lines"] = [cIO, cSBRootPath](const std::string& acPath)
         {
             const auto cAbsPath = absolute(cSBRootPath / acPath).make_preferred();
@@ -404,10 +403,6 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
     {
         const auto cOS = cGlobals["os"].get<sol::table>();
         sol::table osSB(luaView, sol::create);
-        osSB["clock"] = cOS["clock"];
-        osSB["date"] = cOS["date"];
-        osSB["difftime"] = cOS["difftime"];
-        osSB["time"] = cOS["time"];
         osSB["rename"] = [cOS, cSBRootPath](const std::string& acOldPath, const std::string& acNewPath) -> std::tuple<sol::object, std::string>
         {
             const auto cAbsOldPath = absolute(cSBRootPath / acOldPath).make_preferred();
