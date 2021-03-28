@@ -20,6 +20,9 @@ namespace HelperWidgets
         ImGui::SameLine();
         if (ImGui::Button("Settings"))
             activeID = WidgetID::SETTINGS;
+        ImGui::SameLine();
+        if (ImGui::Button("TweakDB Editor"))
+            activeID = WidgetID::TWEAKDB;
         ImGui::Spacing();
         return activeID;
     }
