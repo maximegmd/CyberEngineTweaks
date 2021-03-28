@@ -1,16 +1,25 @@
 #include <stdafx.h>
+#include <chrono>
 
 #include <RED4ext/Types/TweakDB.hpp>
 
+#include <CET.h>
 #include <reverse/WeakReference.h>
 #include <reverse/StrongReference.h>
 #include <scripting/Scripting.h>
 
 #include "TweakDB.h"
 
-struct FlatValuePool
+using namespace std::chrono_literals;
+
+struct FlatPool
 {
-    using HashType = uint32_t;
+#define __HashFunction__ RED4ext::CRC32
+    using HashType = decltype(__HashFunction__(nullptr, 0, 0));
+    using THashFunc = HashType (*)(const uint8_t*, size_t, HashType);
+    constexpr static HashType HashSeed = 0;
+    constexpr static THashFunc HashFunc = __HashFunction__;
+#undef __HashFunction__
 
     enum class Type
     {
@@ -43,82 +52,67 @@ struct FlatValuePool
         Int32,
         Count
     };
+
     struct Item
     {
-        HashType hash;
-        uint32_t useCount;
-        int32_t tdbOffset;
+        using clock = std::chrono::high_resolution_clock;
 
-        Item(HashType aHash, int32_t aTDBOffset);
+        // Too low may lead to race conditions
+        // another thread using a record might get modified data
+        // like a TweakDBID for vehicle record that was recycled to point to an item.
+        // Give the user enough time to call TweakDB::UpdateRecord
+        static constexpr auto c_recycleWaitTime = 10s;
+
+        HashType m_hash;
+        uint32_t m_useCount;
+        int32_t m_tdbOffset;
+        clock::time_point m_availableAt; // available for recycle
+
+        Item(HashType aHash, int32_t aTDBOffset) noexcept;
         void DecUseCount();
         void IncUseCount();
+        bool ReadyForRecycle();
         RED4ext::TweakDB::FlatValue* ToFlatValue();
     };
 
-    FlatValuePool(Type aType);
-    Item* Get(const RED4ext::CStackType& acStackType);
-    Item* Get(const RED4ext::CStackType& acStackType, HashType aHash);
+    // Increases m_useCount for 'FlatPool::Item'
+    int32_t Get(const RED4ext::CStackType& acStackType);
+    // Increases m_useCount for 'FlatPool::Item'
+    int32_t Get(const RED4ext::CStackType& acStackType, HashType aHash);
 
-    // Write-Lock TweakDB
-    Item* GetOrCreate(const RED4ext::CStackType& acStackType, int32_t aTDBOffset = -1);
-    // Write-Lock TweakDB
-    Item* GetOrCreate(const RED4ext::CStackType& acStackType, HashType aHash, int32_t aTDBOffset);
+    // Write-Lock TweakDB / Increases m_useCount for 'FlatPool::Item'
+    int32_t Create(const RED4ext::CStackType& acStackType, int32_t aTDBOffset = -1);
+    // Write-Lock TweakDB / Increases m_useCount for 'FlatPool::Item'
+    int32_t Create(const RED4ext::CStackType& acStackType, HashType aHash, int32_t aTDBOffset);
 
-    HashType HashValue(const RED4ext::CStackType& acStackType, HashType aSeed = HashType{});
-    HashType HashValue(const RED4ext::CStackType& acStackType, Type aType, HashType aSeed = HashType{});
+    // Write-Lock TweakDB / Increases m_useCount for 'FlatPool::Item'
+    int32_t GetOrCreate(const RED4ext::CStackType& acStackType, int32_t aTDBOffset = -1);
+    // Write-Lock TweakDB / Increases m_useCount for 'FlatPool::Item'
+    int32_t GetOrCreate(const RED4ext::CStackType& acStackType, HashType aHash, int32_t aTDBOffset);
 
+    // Decreases m_useCount for 'FlatPool::Item'
+    bool Remove(int32_t aTDBOffset);
+
+    HashType HashValue(const RED4ext::CStackType& acStackType);
+    HashType HashValue(const RED4ext::CStackType& acStackType, Type aType, HashType aSeed = HashSeed);
+
+    static bool Initialize();
+    static FlatPool* GetPool(const RED4ext::IRTTIType* acpType);
     static Type RTTIToPoolType(const RED4ext::IRTTIType* acpType);
 
 private:
-    Type poolType;
-    std::vector<Item> items;
+    std::mutex m_mutex;
+    Type m_poolType = Type::Unknown;
+    std::vector<Item> m_items;
+
+    static bool s_initialized;
+    static std::array<FlatPool, (size_t)Type::Count> s_pools;
 };
-bool flatValuePoolsInitialized = false;
-std::vector<FlatValuePool> flatValuePools;
 
-void InitializeFlatValuePools()
-{
-    static auto* pTDB = RED4ext::TweakDB::Get();
-
-    if (flatValuePoolsInitialized) return;
-
-    if (flatValuePools.empty())
-    {
-        flatValuePools.reserve(static_cast<int32_t>(FlatValuePool::Type::Count));
-        for (int32_t i = 0; i != static_cast<int32_t>(FlatValuePool::Type::Count); ++i)
-            flatValuePools.emplace_back(static_cast<FlatValuePool::Type>(i));
-    }
-
-    std::shared_lock<RED4ext::SharedMutex> _(pTDB->mutex00);
-    if (pTDB->flatDataBufferCapacity == 0) return; // TweakDB is not initialized yet
-
-    for (RED4ext::TweakDBID& flatID : pTDB->flats)
-    {
-        auto* pFlatValue = pTDB->GetFlatValue(flatID);
-
-        RED4ext::CStackType stackType;
-        pFlatValue->GetValue(&stackType);
-
-        auto flatPoolType = FlatValuePool::RTTIToPoolType(stackType.type);
-        if (flatPoolType == FlatValuePool::Type::Unknown)
-        {
-            flatValuePools.clear();
-
-            RED4ext::CName typeName;
-            stackType.type->GetName(typeName);
-            auto exceptionStr = fmt::format("[InitializeFlatValuePools] Unknown flat type: {08X}:{02X} {}",
-                flatID.nameHash, flatID.nameLength,
-                typeName.ToString());
-            throw std::exception(exceptionStr.c_str()); // This should never happen
-        }
-
-        auto* pFlatValuePool = &flatValuePools[static_cast<int32_t>(flatPoolType)];
-        auto* pPoolItem = pFlatValuePool->GetOrCreate(stackType, pFlatValue->ToTDBOffset());
-        pPoolItem->IncUseCount();
-    }
-
-    flatValuePoolsInitialized = true;
-}
+std::mutex TweakDB::s_mutex;
+std::set<RED4ext::TweakDBID> TweakDB::s_createdRecords;
+bool FlatPool::s_initialized = false;
+std::array<FlatPool, (size_t)FlatPool::Type::Count> FlatPool::s_pools;
 
 TweakDB::TweakDB(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aLua)
     : m_lua(aLua)
@@ -127,115 +121,101 @@ TweakDB::TweakDB(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>
 
 void TweakDB::DebugStats()
 {
-    static auto* pTDB = RED4ext::TweakDB::Get();
+    auto* pTDB = RED4ext::TweakDB::Get();
     std::shared_lock<RED4ext::SharedMutex> _1(pTDB->mutex00);
     std::shared_lock<RED4ext::SharedMutex> _2(pTDB->mutex01);
+    auto logger = spdlog::get("scripting"); // DebugStats should always log to console
 
-    spdlog::get("scripting")->info("flats: {}", pTDB->flats.size);
-    spdlog::get("scripting")->info("records: {}", pTDB->recordsByID.size);
-    spdlog::get("scripting")->info("queries: {}", pTDB->queryIDs.size);
-    spdlog::get("scripting")->info("flatDataBuffer capacity: {} bytes", pTDB->flatDataBufferCapacity);
+    logger->info("flats: {}", pTDB->flats.size);
+    logger->info("records: {}", pTDB->recordsByID.size);
+    logger->info("queries: {}", pTDB->queries.GetSize());
+    size_t flatDataBufferSize = pTDB->flatDataBufferEnd - pTDB->flatDataBuffer;
+    logger->info("flatDataBuffer: {}/{} bytes", flatDataBufferSize, pTDB->flatDataBufferCapacity);
+    logger->info("created records: {}", s_createdRecords.size());
+}
+
+sol::object TweakDB::GetRecords(const std::string& acRecordTypeName)
+{
+    static auto* pArrayType = RED4ext::CRTTISystem::Get()->GetType("array:handle:IScriptable");
+    auto* pTDB = RED4ext::TweakDB::Get();
+    std::shared_lock<RED4ext::SharedMutex> _(pTDB->mutex01);
+
+    auto* pRecordType = RED4ext::CRTTISystem::Get()->GetType(acRecordTypeName.c_str());
+    if (pRecordType == nullptr)
+        return sol::nil;
+
+    auto* pRecords = pTDB->recordsByType.Get(pRecordType);
+    if (pRecords == nullptr)
+        return sol::nil;
+
+    RED4ext::CStackType stackType(pArrayType, pRecords);
+    auto state = m_lua.Lock();
+    return Scripting::ToLua(state, stackType);
+}
+
+sol::object TweakDB::GetRecordByName(const std::string& acRecordName)
+{
+    return std::move(GetRecord(TweakDBID(acRecordName)));
 }
 
 sol::object TweakDB::GetRecord(TweakDBID aDBID)
 {
-    static auto* pTDB = RED4ext::TweakDB::Get();
-
-    RED4ext::TweakDBID dbid;
-    dbid.value = aDBID.value;
+    auto* pTDB = RED4ext::TweakDB::Get();
 
     RED4ext::Handle<RED4ext::IScriptable> record;
-    if (!pTDB->TryGetRecord(dbid, record))
+    if (!pTDB->TryGetRecord(aDBID.value, record))
         return sol::nil;
 
     auto state = m_lua.Lock();
-
     return make_object(state.Get(), StrongReference(m_lua, std::move(record)));
+}
+
+sol::object TweakDB::QueryByName(const std::string& acQueryName)
+{
+    return std::move(Query(TweakDBID(acQueryName)));
 }
 
 sol::object TweakDB::Query(TweakDBID aDBID)
 {
-    static auto* pRTTI = RED4ext::CRTTISystem::Get();
-    static auto* pArrayTweakDBIDType = pRTTI->GetType("array:TweakDBID");
-    static auto* pTDB = RED4ext::TweakDB::Get();
-
-    RED4ext::TweakDBID dbid;
-    dbid.value = aDBID.value;
+    static auto* pArrayTweakDBIDType = RED4ext::CRTTISystem::Get()->GetType("array:TweakDBID");
+    auto* pTDB = RED4ext::TweakDB::Get();
+    std::shared_lock<RED4ext::SharedMutex> _(pTDB->mutex01);
 
     RED4ext::DynArray<RED4ext::TweakDBID> queryResult;
-    if (!pTDB->TryQuery(dbid, queryResult))
+    if (!pTDB->TryQuery(aDBID.value, queryResult))
         return sol::nil;
 
-    RED4ext::CStackType stackType;
-    stackType.type = pArrayTweakDBIDType;
-    stackType.value = &queryResult;
+    RED4ext::CStackType stackType(pArrayTweakDBIDType, &queryResult);
     auto state = m_lua.Lock();
     return Scripting::ToLua(state, stackType);
+}
+
+sol::object TweakDB::GetFlatByName(const std::string& acFlatName)
+{
+    return std::move(GetFlat(TweakDBID(acFlatName)));
 }
 
 sol::object TweakDB::GetFlat(TweakDBID aDBID)
 {
-    static auto* pTDB = RED4ext::TweakDB::Get();
-    //std::shared_lock<RED4ext::SharedMutex> _(pTDB->mutex00);
+    auto* pTDB = RED4ext::TweakDB::Get();
 
-    RED4ext::TweakDBID dbid;
-    dbid.value = aDBID.value;
-
-    auto* flatValue = pTDB->GetFlatValue(dbid);
-    if (flatValue == nullptr)
+    auto* pFlatValue = pTDB->GetFlatValue(aDBID.value);
+    if (pFlatValue == nullptr)
         return sol::nil;
 
-    RED4ext::CStackType stackType;
-    flatValue->GetValue(&stackType);
+    RED4ext::CStackType stackType = pFlatValue->GetValue();
     auto state = m_lua.Lock();
-
     return Scripting::ToLua(state, stackType);
 }
 
-bool TweakDB::SetFlat(TweakDBID aDBID, sol::object aValue)
+bool TweakDB::SetFlatByName(const std::string& acFlatName, sol::object aObject, sol::this_environment aThisEnv)
 {
-    static auto* pTDB = RED4ext::TweakDB::Get();
+    return SetFlat(TweakDBID(acFlatName), std::move(aObject), std::move(aThisEnv));
+}
 
-    InitializeFlatValuePools();
-
-    RED4ext::TweakDBID* pDBID; // with tdbOffset
-    {
-        std::shared_lock<RED4ext::SharedMutex> _(pTDB->mutex00);
-
-        RED4ext::TweakDBID tmpDBID;
-        tmpDBID.value = aDBID.value;
-        pDBID = std::find(pTDB->flats.begin(), pTDB->flats.end(), tmpDBID);
-        if (pDBID == pTDB->flats.end())
-        {
-            return false;
-        }
-    }
-    
-    auto* flatValue = pTDB->GetFlatValue(*pDBID);
-    if (flatValue == nullptr)
-        return false;
-
-    RED4ext::CStackType stackTypeCurrent;
-    flatValue->GetValue(&stackTypeCurrent);
-
-    auto flatPoolType = FlatValuePool::RTTIToPoolType(stackTypeCurrent.type);
-    if (flatPoolType == FlatValuePool::Type::Unknown)
-    {
-        RED4ext::CName typeName;
-        stackTypeCurrent.type->GetName(typeName);
-        auto exceptionStr = fmt::format("[TweakDB::SetFlat] Unknown flat type: {08X}:{02X} {}",
-            pDBID->nameHash, pDBID->nameLength,
-            typeName.ToString());
-        throw std::exception(exceptionStr.c_str()); // This should never happen
-    }
-
-    auto* pFlatValuePool = &flatValuePools[static_cast<int32_t>(flatPoolType)];
-    auto* pCurentPoolItem = pFlatValuePool->Get(stackTypeCurrent);
-    if (pCurentPoolItem == nullptr)
-    {
-        throw std::exception("[TweakDB::SetFlat] Couldn't find current item in pool"); // This should never happen
-    }
-
+bool TweakDB::SetFlat(TweakDBID aDBID, sol::object aObject, sol::this_environment aThisEnv)
+{
+    auto* pTDB = RED4ext::TweakDB::Get();
     static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 22);
     struct ResetAllocator
     {
@@ -246,237 +226,682 @@ bool TweakDB::SetFlat(TweakDBID aDBID, sol::object aValue)
     };
     ResetAllocator ___allocatorReset;
 
-    RED4ext::CStackType stackType = Scripting::ToRED(aValue, stackTypeCurrent.type, &s_scratchMemory);
-    if (stackType.value == nullptr)
+    const sol::environment cEnv = aThisEnv;
+    std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+
+    RED4ext::CStackType stackType;
     {
-        RED4ext::CName typeName;
-        stackTypeCurrent.type->GetName(typeName);
-        spdlog::get("scripting")->info("[TweakDB::SetFlat] Failed to convert value. Expecting: {}", typeName.ToString());
+        auto* pFlatValue = pTDB->GetFlatValue(aDBID.value);
+        if (pFlatValue == nullptr)
+            return false;
+
+        RED4ext::CStackType stackTypeCurrent = pFlatValue->GetValue();
+        stackType = Scripting::ToRED(aObject, stackTypeCurrent.type, &s_scratchMemory);
+        if (stackType.value == nullptr)
+        {
+            RED4ext::CName typeName;
+            stackTypeCurrent.type->GetName(typeName);
+            logger->info("[TweakDB::SetFlat] Failed to convert value. Expecting: {}", typeName.ToString());
+            return false;
+        }
+    }
+
+    if (InternalSetFlat(aDBID.value, stackType) == -1)
+    {
+        logger->info("[TweakDB::SetFlat] Failed to create a new TweakDB Flat");
         return false;
     }
-    if (stackType.type->IsEqual(stackType.value, stackTypeCurrent.value))
-        return true;
-
-    auto* pNewPoolItem = pFlatValuePool->GetOrCreate(stackType);
-    if (pNewPoolItem == nullptr)
-    {
-        spdlog::get("scripting")->info("[TweakDB::SetFlat] Failed to create FlatValue");
-        return false;
-    }
-    pCurentPoolItem->DecUseCount();
-    pNewPoolItem->IncUseCount();
-
-    pDBID->tdbOffsetBE[0] = reinterpret_cast<uint8_t*>(&pNewPoolItem->tdbOffset)[2];
-    pDBID->tdbOffsetBE[1] = reinterpret_cast<uint8_t*>(&pNewPoolItem->tdbOffset)[1];
-    pDBID->tdbOffsetBE[2] = reinterpret_cast<uint8_t*>(&pNewPoolItem->tdbOffset)[0];
 
     return true;
 }
 
-bool TweakDB::UpdateRecordByID(TweakDBID aDBID)
+bool TweakDB::SetFlatByNameAutoUpdate(const std::string& acFlatName, sol::object aObject,
+                                      sol::this_environment aThisEnv)
 {
-    static auto* pTDB = RED4ext::TweakDB::Get();
-
-    return pTDB->UpdateRecord(RED4ext::TweakDBID(aDBID.value));
+    return SetFlatAutoUpdate(TweakDBID(acFlatName), std::move(aObject), std::move(aThisEnv));
 }
 
-bool TweakDB::UpdateRecord(sol::object aValue)
+bool TweakDB::SetFlatAutoUpdate(TweakDBID aDBID, sol::object aObject, sol::this_environment aThisEnv)
 {
-    static auto* pTDB = RED4ext::TweakDB::Get();
+    if (SetFlat(aDBID, std::move(aObject), std::move(aThisEnv)))
+    {
+        uint64_t recordDBID = CET::Get().GetVM().GetTDBIDBase(aDBID.value);
+        if (recordDBID != 0)
+        {
+            UpdateRecordByID(recordDBID);
+        }
+        return true;
+    }
 
+    return false;
+}
+
+bool TweakDB::UpdateRecordByName(const std::string& acRecordName)
+{
+    return UpdateRecordByID(TweakDBID(acRecordName));
+}
+
+bool TweakDB::UpdateRecordByID(TweakDBID aDBID)
+{
+    auto* pTDB = RED4ext::TweakDB::Get();
+    return pTDB->UpdateRecord(aDBID.value);
+}
+
+bool TweakDB::UpdateRecord(sol::object aValue, sol::this_environment aThisEnv)
+{
+    auto* pTDB = RED4ext::TweakDB::Get();
+
+    const sol::environment cEnv = aThisEnv;
+    std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+
+    RED4ext::gamedataTweakDBRecord* pRecord;
     if (aValue.is<StrongReference>())
     {
-        return pTDB->UpdateRecord(reinterpret_cast<RED4ext::gamedataTweakDBRecord*>(aValue.as<StrongReference*>()->GetHandle()));
+        pRecord = reinterpret_cast<RED4ext::gamedataTweakDBRecord*>(aValue.as<StrongReference*>()->GetHandle());
     }
     else if (aValue.is<WeakReference>())
     {
-        return pTDB->UpdateRecord(reinterpret_cast<RED4ext::gamedataTweakDBRecord*>(aValue.as<WeakReference*>()->GetHandle()));
+        pRecord = reinterpret_cast<RED4ext::gamedataTweakDBRecord*>(aValue.as<WeakReference*>()->GetHandle());
     }
     else
     {
-        spdlog::get("scripting")->info("[TweakDB::UpdateRecord] Expecting handle or whandle");
+        logger->info("[TweakDB::UpdateRecord] Expecting handle or whandle");
         return false;
+    }
+
+    return pTDB->UpdateRecord(pRecord);
+}
+
+bool TweakDB::CreateRecord(const std::string& acRecordName, const std::string& acRecordTypeName,
+                           sol::this_environment aThisEnv)
+{
+    const sol::environment cEnv = aThisEnv;
+    std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+
+    return InternalCreateRecord(acRecordName, acRecordTypeName, logger);
+}
+
+bool TweakDB::CloneRecordByName(const std::string& acRecordName, const std::string& acClonedRecordName,
+                                sol::this_environment aThisEnv)
+{
+    return CloneRecord(acRecordName, TweakDBID(acClonedRecordName), std::move(aThisEnv));
+}
+
+bool TweakDB::CloneRecord(const std::string& acRecordName, TweakDBID aClonedRecordDBID, sol::this_environment aThisEnv)
+{
+    const sol::environment cEnv = aThisEnv;
+    std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+
+    return InternalCloneRecord(acRecordName, aClonedRecordDBID.value, logger);
+}
+
+bool TweakDB::DeleteRecord(const std::string& acRecordName, sol::this_environment aThisEnv)
+{
+    const sol::environment cEnv = aThisEnv;
+    std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+
+    return InternalDeleteRecord(RED4ext::TweakDBID(acRecordName), logger);
+}
+
+int32_t TweakDB::InternalSetFlat(RED4ext::TweakDBID aDBID, const RED4ext::CStackType& acStackType)
+{
+    auto* pTDB = RED4ext::TweakDB::Get();
+
+    auto* pFlatValue = pTDB->GetFlatValue(aDBID);
+    if (pFlatValue == nullptr)
+        return -1;
+
+    RED4ext::CStackType stackTypeCurrent = pFlatValue->GetValue();
+    if (acStackType.type->IsEqual(acStackType.value, stackTypeCurrent.value))
+        return pFlatValue->ToTDBOffset();
+
+    FlatPool* pPool = FlatPool::GetPool(stackTypeCurrent.type);
+    if (pPool == nullptr)
+    {
+        // This should never happen
+        assert(false);
+        return -1;
+    }
+
+    int32_t newTDBOffset = pPool->GetOrCreate(acStackType);
+    if (newTDBOffset == -1)
+        return -1;
+
+    {
+        std::shared_lock<RED4ext::SharedMutex> _(pTDB->mutex00);
+
+        auto* pDBID = pTDB->flats.Find(aDBID);
+        if (pDBID == pTDB->flats.end())
+        {
+            pPool->Remove(newTDBOffset);
+            return -1;
+        }
+
+        pDBID->SetTDBOffset(newTDBOffset);
+    }
+
+    pPool->Remove(pFlatValue->ToTDBOffset());
+    return newTDBOffset;
+}
+
+bool TweakDB::InternalCreateRecord(const std::string& acRecordName, const std::string& acRecordTypeName,
+                                   std::shared_ptr<spdlog::logger> aLogger)
+{
+    auto* pTDB = RED4ext::TweakDB::Get();
+
+    auto* pType = RED4ext::CRTTISystem::Get()->GetType(acRecordTypeName.c_str());
+    RED4ext::Handle<RED4ext::IScriptable> record;
+    {
+        std::shared_lock<RED4ext::SharedMutex> _(pTDB->mutex01);
+
+        RED4ext::DynArray<RED4ext::Handle<RED4ext::IScriptable>> recordsOfSameType;
+        if (!pTDB->TryGetRecordsByType(pType, recordsOfSameType) || recordsOfSameType.size == 0)
+        {
+            if (aLogger)
+            {
+                aLogger->info("Failed to create record '{}'. reason: Unknown type '{}'", acRecordName,
+                              acRecordTypeName);
+            }
+            return false;
+        }
+        record = recordsOfSameType[0];
+    }
+
+    auto* pTweakRecord = reinterpret_cast<RED4ext::gamedataTweakDBRecord*>(record.GetPtr());
+    return InternalCloneRecord(acRecordName, pTweakRecord, false, aLogger);
+}
+
+bool TweakDB::InternalCloneRecord(const std::string& acRecordName, RED4ext::TweakDBID aClonedRecordDBID,
+                                  std::shared_ptr<spdlog::logger> aLogger)
+{
+    auto* pTDB = RED4ext::TweakDB::Get();
+
+    RED4ext::Handle<RED4ext::IScriptable> record;
+    if (!pTDB->TryGetRecord(aClonedRecordDBID, record))
+    {
+        if (aLogger)
+        {
+            aLogger->info("Failed to create record '{}'. reason: Couldn't find record '{}' to clone", acRecordName,
+                          CET::Get().GetVM().GetTDBIDString(aClonedRecordDBID));
+        }
+        return false;
+    }
+
+    auto* pTweakRecord = reinterpret_cast<RED4ext::gamedataTweakDBRecord*>(record.GetPtr());
+    return InternalCloneRecord(acRecordName, pTweakRecord, true, aLogger);
+}
+
+bool TweakDB::InternalCloneRecord(const std::string& acRecordName, const RED4ext::gamedataTweakDBRecord* acClonedRecord,
+                                  bool cloneValues, std::shared_ptr<spdlog::logger> aLogger)
+{
+    auto* pTDB = RED4ext::TweakDB::Get();
+    RED4ext::TweakDBID recordDBID(acRecordName);
+
+    if (!pTDB->CreateRecord(recordDBID, acClonedRecord->GetTweakBaseHash()))
+    {
+        aLogger->info("Failed to create record '{}'. reason: Record already exists", acRecordName);
+        return false;
+    }
+
+    auto& vm = CET::Get().GetVM();
+    vm.RegisterTDBIDString(recordDBID, 0, acRecordName);
+
+    // List of flats the game tried to read for our record
+    std::vector<uint64_t> recordFlats;
+    vm.GetTDBIDDerivedFrom(recordDBID, recordFlats);
+    bool success = true;
+    size_t lastCreatedFlatIdx;
+    for (lastCreatedFlatIdx = 0; lastCreatedFlatIdx != recordFlats.size(); ++lastCreatedFlatIdx)
+    {
+        RED4ext::TweakDBID flatID = recordFlats[lastCreatedFlatIdx];
+        const TDBIDLookupEntry lookup = vm.GetTDBIDLookupEntry(flatID);
+        const std::string& propertyName = lookup.name;
+
+        const auto* clonedFlatValue = pTDB->GetFlatValue(acClonedRecord->recordID + propertyName);
+        if (clonedFlatValue == nullptr)
+        {
+            if (aLogger)
+            {
+                aLogger->info("Failed to create record '{}'. reason: Couldn't find flat '<...>{}'", acRecordName,
+                              propertyName);
+            }
+            success = false;
+            break;
+        }        
+
+        RED4ext::CStackType clonedStacktype = clonedFlatValue->GetValue();
+        FlatPool* pPool = FlatPool::GetPool(clonedStacktype.type);
+        if (pPool == nullptr)
+        {
+            // This should never happen
+            assert(false);
+            success = false;
+            break;
+        }
+
+        if (cloneValues)
+        {
+            flatID.SetTDBOffset(pPool->Get(clonedStacktype));
+        }
+        else
+        {
+            // get default FlatValue for this flat type
+            RED4ext::CName flatTypeName;
+            clonedStacktype.type->GetName(flatTypeName);
+            const auto* pDefaultFlatValue = pTDB->GetDefaultFlatValue(flatTypeName);
+            RED4ext::CStackType defaultStackType = pDefaultFlatValue->GetValue();
+
+            flatID.SetTDBOffset(pPool->GetOrCreate(defaultStackType, pDefaultFlatValue->ToTDBOffset()));
+        }
+
+        // add our flat pointing to that value
+        if (!pTDB->AddFlat(flatID))
+        {
+            // Decreases 'm_useCount'
+            pPool->Remove(flatID.ToTDBOffset());
+            if (aLogger)
+            {
+                aLogger->info("Failed to create record '{}'. reason: Flat '{}' collision, pick another record name",
+                              acRecordName, propertyName);
+            }
+            success = false;
+            break;
+        }
+    }
+
+    // revert changes
+    if (!success)
+    {
+        vm.RemoveTDBIDDerivedFrom(recordDBID);
+        // Only RemoveFlat the ones we made
+        for (size_t i = 0; i != lastCreatedFlatIdx; ++i)
+        {
+            RemoveFlat(recordFlats[i]);
+        }
+        return false;
+    }
+
+    pTDB->UpdateRecord(recordDBID);
+
+    std::lock_guard<std::mutex> _(s_mutex);
+    s_createdRecords.emplace(recordDBID);
+    return true;
+}
+
+bool TweakDB::InternalDeleteRecord(RED4ext::TweakDBID aDBID, std::shared_ptr<spdlog::logger> aLogger)
+{
+    auto* pTDB = RED4ext::TweakDB::Get();
+
+    if (!IsACreatedRecord(aDBID))
+    {
+        if (aLogger)
+        {
+            aLogger->info("Record '{}' couldn't be deleted. reason: Record not found",
+                          CET::Get().GetVM().GetTDBIDString(aDBID));
+        }
+        return false;
+    }
+
+    if (!pTDB->RemoveRecord(aDBID))
+    {
+        if (aLogger)
+        {
+            aLogger->info("Record '{}' couldn't be deleted. reason: Unknown", CET::Get().GetVM().GetTDBIDString(aDBID));
+        }
+        return false; // shouldn't happen
+    }
+
+    auto& vm = CET::Get().GetVM();
+    std::vector<uint64_t> recordFlats;
+    vm.GetTDBIDDerivedFrom(aDBID, recordFlats);
+    for (const auto& flatID : recordFlats)
+    {
+        // This shouldn't delete any game-created flats
+        RemoveFlat(flatID);
+    }
+    vm.RemoveTDBIDDerivedFrom(aDBID);
+
+    std::lock_guard<std::mutex> _(s_mutex);
+    s_createdRecords.erase(aDBID);
+    return true;
+}
+
+bool TweakDB::RemoveFlat(RED4ext::TweakDBID aDBID)
+{
+    auto* pTDB = RED4ext::TweakDB::Get();
+
+    auto* pFlatValue = pTDB->GetFlatValue(aDBID);
+    if (pFlatValue == nullptr)
+        return false;
+
+    FlatPool* pPool = FlatPool::GetPool(pFlatValue->GetValue().type);
+    if (pPool == nullptr)
+    {
+        // This should never happen
+        assert(false);
+        return false;
+    }
+
+    pPool->Remove(pFlatValue->ToTDBOffset());
+    return pTDB->RemoveFlat(aDBID);
+}
+
+bool TweakDB::IsACreatedRecord(RED4ext::TweakDBID aDBID)
+{
+    std::lock_guard<std::mutex> _(s_mutex);
+    return s_createdRecords.find(aDBID) != s_createdRecords.end();
+}
+
+FlatPool::Item::Item(HashType aHash, int32_t aTDBOffset) noexcept
+    : m_hash(aHash)
+    , m_useCount(1)
+    , m_tdbOffset(aTDBOffset)
+{
+}
+
+void FlatPool::Item::DecUseCount()
+{
+    if (m_useCount == 0)
+    {
+        // This should never happen if the pool is used properly
+        assert(false);
+        return;
+    }
+
+    --m_useCount;
+    if (m_useCount == 0)
+    {
+        m_availableAt = clock::now() + c_recycleWaitTime;
     }
 }
 
-FlatValuePool::Item::Item(HashType aHash, int32_t aTDBOffset)
-    : hash(aHash),
-    useCount(0),
-    tdbOffset(aTDBOffset)
+void FlatPool::Item::IncUseCount()
 {
+    ++m_useCount;
 }
 
-void FlatValuePool::Item::DecUseCount()
+bool FlatPool::Item::ReadyForRecycle()
 {
-    if (useCount == 0) return;
-    --useCount;
+    return m_useCount == 0 && clock::now() >= m_availableAt;
 }
 
-void FlatValuePool::Item::IncUseCount()
+RED4ext::TweakDB::FlatValue* FlatPool::Item::ToFlatValue()
 {
-    ++useCount;
-}
+    auto* pTDB = RED4ext::TweakDB::Get();
 
-RED4ext::TweakDB::FlatValue* FlatValuePool::Item::ToFlatValue()
-{
-    static auto* pTDB = RED4ext::TweakDB::Get();
-
-    int32_t offset = tdbOffset & 0x00FFFFFF;
+    int32_t offset = m_tdbOffset & 0x00FFFFFF;
     if (offset == 0)
         return nullptr;
 
     return reinterpret_cast<RED4ext::TweakDB::FlatValue*>(pTDB->flatDataBuffer + offset);
 }
 
-FlatValuePool::FlatValuePool(Type aType)
-    : poolType(aType)
-{
-}
-
-FlatValuePool::Item* FlatValuePool::Get(const RED4ext::CStackType& acStackType)
+int32_t FlatPool::Get(const RED4ext::CStackType& acStackType)
 {
     return Get(acStackType, HashValue(acStackType));
 }
 
-FlatValuePool::Item* FlatValuePool::Get(const RED4ext::CStackType& acStackType, HashType aHash)
+int32_t FlatPool::Get(const RED4ext::CStackType& acStackType, HashType aHash)
 {
-    for (auto& item : items)
+    std::lock_guard<std::mutex> _(m_mutex);
+
+    for (auto& item : m_items)
     {
-        if (item.hash != aHash) continue;
+        if (item.m_hash != aHash)
+            continue;
 
         const auto* pFlatValue = item.ToFlatValue();
-        RED4ext::CStackType poolStackType;
-        pFlatValue->GetValue(&poolStackType);
+        RED4ext::CStackType poolStackType = pFlatValue->GetValue();
 
-        if (poolStackType.type != acStackType.type)
-            return nullptr; // This should never happen
+        assert(poolStackType.type == acStackType.type);
 
         if (poolStackType.type->IsEqual(poolStackType.value, acStackType.value))
         {
-            return &item;
+            item.IncUseCount();
+            return item.m_tdbOffset;
         }
     }
 
-    return nullptr;
+    return -1;
 }
 
-FlatValuePool::Item* FlatValuePool::GetOrCreate(const RED4ext::CStackType& acStackType, int32_t aTDBOffset)
+int32_t FlatPool::Create(const RED4ext::CStackType& acStackType, int32_t aTDBOffset)
+{
+    return Create(acStackType, HashValue(acStackType), aTDBOffset);
+}
+
+int32_t FlatPool::Create(const RED4ext::CStackType& acStackType, HashType aHash, int32_t aTDBOffset)
+{
+    std::lock_guard<std::mutex> _(m_mutex);
+
+    if (aTDBOffset == -1)
+    {
+        for (auto& item : m_items)
+        {
+            if (!item.ReadyForRecycle())
+                continue;
+
+            // Overwrite the flat
+            if (item.ToFlatValue()->SetValue(acStackType))
+            {
+                item.m_hash = HashValue(acStackType);
+                item.IncUseCount();
+                return item.m_tdbOffset;
+            }
+        }
+
+        int32_t tdbOffset = RED4ext::TweakDB::Get()->CreateFlatValue(acStackType);
+        if (tdbOffset != -1)
+        {
+            m_items.emplace_back(aHash, tdbOffset);
+        }
+        return tdbOffset;
+    }
+    else
+    {
+        m_items.emplace_back(aHash, aTDBOffset);
+        return aTDBOffset;
+    }
+}
+
+int32_t FlatPool::GetOrCreate(const RED4ext::CStackType& acStackType, int32_t aTDBOffset)
 {
     return GetOrCreate(acStackType, HashValue(acStackType), aTDBOffset);
 }
 
-FlatValuePool::Item* FlatValuePool::GetOrCreate(const RED4ext::CStackType& acStackType, HashType aHash, int32_t aTDBOffset)
+int32_t FlatPool::GetOrCreate(const RED4ext::CStackType& acStackType, HashType aHash, int32_t aTDBOffset)
 {
-    static auto* pTDB = RED4ext::TweakDB::Get();
-
-    auto* pItem = Get(acStackType, aHash);
-    if (pItem != nullptr)
-        return pItem;
-
-    if (aTDBOffset == -1)
+    int32_t existingTDBOffset = Get(acStackType, aHash);
+    if (existingTDBOffset != -1)
     {
-        // Should we overwrite flat values with 0 useCount?
-        // What happens to the records pointing to them that werent updated yet?
+        assert(existingTDBOffset == aTDBOffset);
+        return existingTDBOffset;
+    }
 
-        auto* pFlatValue = pTDB->CreateFlatValue(acStackType);
-        if (pFlatValue == nullptr)
-        {
-            // Failed to create FlatValue
-            return nullptr;
-        }
-        return &items.emplace_back(Item(aHash, pFlatValue->ToTDBOffset()));
-    }
-    else
-    {
-        return &items.emplace_back(Item(aHash, aTDBOffset));
-    }
+    return Create(acStackType, aHash, aTDBOffset);
 }
 
-FlatValuePool::HashType FlatValuePool::HashValue(const RED4ext::CStackType& acStackType, HashType aSeed)
+bool FlatPool::Remove(int32_t aTDBOffset)
 {
-    return HashValue(acStackType, poolType, aSeed);
+    std::lock_guard<std::mutex> _(m_mutex);
+
+    for (Item& item : m_items)
+    {
+        if (item.m_tdbOffset != aTDBOffset)
+            continue;
+
+        item.DecUseCount();
+        return true;
+    }
+
+    return false;
 }
 
-FlatValuePool::HashType FlatValuePool::HashValue(const RED4ext::CStackType& acStackType, Type aType, HashType aSeed)
+FlatPool::HashType FlatPool::HashValue(const RED4ext::CStackType& acStackType)
+{
+    return HashValue(acStackType, m_poolType);
+}
+
+FlatPool::HashType FlatPool::HashValue(const RED4ext::CStackType& acStackType, Type aType, HashType aSeed)
 {
     switch (aType)
     {
-        case FlatValuePool::Type::ArrayTweakDBID:
-        case FlatValuePool::Type::ArrayQuaternion:
-        case FlatValuePool::Type::ArrayEulerAngles:
-        case FlatValuePool::Type::ArrayVector3:
-        case FlatValuePool::Type::ArrayVector2:
-        case FlatValuePool::Type::ArrayColor:
-        case FlatValuePool::Type::ArrayGamedataLocKeyWrapper:
-        case FlatValuePool::Type::ArrayRaRefCResource:
-        case FlatValuePool::Type::ArrayCName:
-        case FlatValuePool::Type::ArrayBool:
-        case FlatValuePool::Type::ArrayString:
-        case FlatValuePool::Type::ArrayFloat:
-        case FlatValuePool::Type::ArrayInt32:
+    case Type::ArrayTweakDBID:
+    case Type::ArrayQuaternion:
+    case Type::ArrayEulerAngles:
+    case Type::ArrayVector3:
+    case Type::ArrayVector2:
+    case Type::ArrayColor:
+    case Type::ArrayGamedataLocKeyWrapper:
+    case Type::ArrayRaRefCResource:
+    case Type::ArrayCName:
+    case Type::ArrayBool:
+    case Type::ArrayString:
+    case Type::ArrayFloat:
+    case Type::ArrayInt32:
+    {
+        if (acStackType.type->GetType() != RED4ext::ERTTIType::Array)
         {
-            if (acStackType.type->GetType() != RED4ext::ERTTIType::Array)
-            {
-                RED4ext::CName typeName;
-                acStackType.type->GetName(typeName);
-                throw std::exception(fmt::format("[FlatValuePool::HashValue] Unexpected RTTI type: {}", typeName.ToString()).c_str());
-            }
-
-            const auto* pArrayType = reinterpret_cast<RED4ext::CArray*>(acStackType.type);
-            auto* pArrayInnerType = pArrayType->GetInnerType();
-            const auto arrayInnerPoolType = FlatValuePool::RTTIToPoolType(pArrayInnerType);
-            if (arrayInnerPoolType == FlatValuePool::Type::Unknown)
-            {
-                RED4ext::CName typeName;
-                pArrayInnerType->GetName(typeName);
-                throw std::exception(fmt::format("[FlatValuePool::HashValue] Unexpected Array inner RTTI type: {}", typeName.ToString()).c_str());
-            }
-
-            HashType hash = aSeed;
-            for (uint32_t i = 0; i != pArrayType->GetLength(acStackType.value); ++i)
-            {
-                RED4ext::CStackType innerStackType;
-                innerStackType.type = pArrayInnerType;
-                innerStackType.value = pArrayType->GetElement(acStackType.value, i);
-                hash = HashValue(innerStackType, arrayInnerPoolType, hash);
-            }
-
-            return hash;
+            RED4ext::CName typeName;
+            acStackType.type->GetName(typeName);
+            auto exceptionStr = fmt::format("Unexpected RTTI type: {}", typeName.ToString());
+            // This should never happen
+            throw std::exception(exceptionStr.c_str());
         }
 
-        case FlatValuePool::Type::Quaternion:
-        case FlatValuePool::Type::EulerAngles:
-        case FlatValuePool::Type::Vector3:
-        case FlatValuePool::Type::Vector2:
-        case FlatValuePool::Type::Color:
-        case FlatValuePool::Type::GamedataLocKeyWrapper:
-        case FlatValuePool::Type::RaRefCResource:
-        case FlatValuePool::Type::CName:
-        case FlatValuePool::Type::Bool:
-        case FlatValuePool::Type::Float:
-        case FlatValuePool::Type::Int32:
+        auto* pArrayType = reinterpret_cast<RED4ext::CArray*>(acStackType.type);
+        auto* pArrayInnerType = pArrayType->GetInnerType();
+        auto arrayInnerPoolType = RTTIToPoolType(pArrayInnerType);
+        if (arrayInnerPoolType == Type::Unknown)
         {
-            auto* pData = reinterpret_cast<uint8_t*>(acStackType.value);
-            return RED4ext::CRC32(pData, acStackType.type->GetSize(), aSeed);
+            RED4ext::CName typeName;
+            pArrayInnerType->GetName(typeName);
+            auto exceptionStr = fmt::format("Unexpected Array inner RTTI type: {}", typeName.ToString());
+            // This should never happen
+            throw std::exception(exceptionStr.c_str());
         }
 
-        case FlatValuePool::Type::TweakDBID:
+        HashType hash = aSeed;
+        uint32_t arraySize = pArrayType->GetLength(acStackType.value);
+        for (uint32_t i = 0; i != arraySize; ++i)
         {
-            auto* pData = reinterpret_cast<uint8_t*>(acStackType.value);
-            return RED4ext::CRC32(pData, 4 + 1 /* nameHash + nameLen */, aSeed);
+            RED4ext::CStackType innerStackType;
+            innerStackType.type = pArrayInnerType;
+            innerStackType.value = pArrayType->GetElement(acStackType.value, i);
+            hash = HashValue(innerStackType, arrayInnerPoolType, hash);
         }
 
-        case FlatValuePool::Type::String:
-        {
-            auto* pString = reinterpret_cast<RED4ext::CString*>(acStackType.value);
-            auto* pData = reinterpret_cast<const uint8_t*>(pString->c_str());
-            return RED4ext::CRC32(pData, pString->Length(), aSeed);
-        }
+        return hash;
     }
-    throw std::exception("[FlatValuePool::HashValue] Unknown PoolType"); // This should never happen
+
+    case Type::Quaternion:
+    case Type::EulerAngles:
+    case Type::Vector3:
+    case Type::Vector2:
+    case Type::Color:
+    case Type::GamedataLocKeyWrapper:
+    case Type::RaRefCResource:
+    case Type::CName:
+    case Type::Bool:
+    case Type::Float:
+    case Type::Int32:
+    {
+        auto* pData = reinterpret_cast<uint8_t*>(acStackType.value);
+        return HashFunc(pData, acStackType.type->GetSize(), aSeed);
+    }
+
+    case Type::TweakDBID:
+    {
+        auto* pData = reinterpret_cast<uint8_t*>(acStackType.value);
+        return HashFunc(pData, 4 + 1 /* nameHash + nameLen */, aSeed);
+    }
+
+    case Type::String:
+    {
+        auto* pString = reinterpret_cast<RED4ext::CString*>(acStackType.value);
+        auto* pData = reinterpret_cast<const uint8_t*>(pString->c_str());
+        return HashFunc(pData, pString->Length(), aSeed);
+    }
+    default:
+    {
+        // This should never happen
+        throw std::exception("Unknown PoolType");
+    }
+    }
 }
 
-FlatValuePool::Type FlatValuePool::RTTIToPoolType(const RED4ext::IRTTIType* acpType)
+bool FlatPool::Initialize()
+{
+    static std::mutex mutex;
+    std::lock_guard<std::mutex> _1(mutex);
+    if (s_initialized)
+        return true;
+
+    auto* pTDB = RED4ext::TweakDB::Get();
+    std::shared_lock<RED4ext::SharedMutex> _2(pTDB->mutex00);
+    if (pTDB->flatDataBufferCapacity == 0)
+        return false; // TweakDB is not initialized yet
+
+    for (size_t i = 0; i != (size_t)FlatPool::Type::Count; ++i)
+    {
+        s_pools[i].m_poolType = (FlatPool::Type)i;
+    }
+
+    // key: tdbOffset
+    // value: FlatPool::m_items index
+    // reason: optimization, much faster than linear lookup
+    std::map<int32_t, size_t> tdbOffToIndex;
+    for (const RED4ext::TweakDBID flatID : pTDB->flats)
+    {
+        auto* pFlatValue = pTDB->GetFlatValue(flatID);
+        RED4ext::CStackType stackType = pFlatValue->GetValue();
+        FlatPool* pPool;
+        //FlatPool* pPool = GetPool(stackType.type);
+        {
+            Type flatPoolType = RTTIToPoolType(stackType.type);
+            if (flatPoolType == Type::Unknown)
+            {
+                // This should never happen
+                assert(false);
+                continue;
+            }
+            else
+            {
+                pPool = &s_pools[static_cast<size_t>(flatPoolType)];
+            }
+        }
+
+        int32_t tdbOffset = pFlatValue->ToTDBOffset();
+        const auto it = tdbOffToIndex.lower_bound(tdbOffset);
+        if (it != tdbOffToIndex.end() && it->first == tdbOffset)
+        {
+            std::lock_guard<std::mutex> _3(pPool->m_mutex);
+            pPool->m_items[it->second].IncUseCount(); 
+        }
+        else
+        {
+            tdbOffToIndex.emplace(tdbOffset, pPool->m_items.size());
+            pPool->Create(stackType, tdbOffset);
+        }
+    }
+
+    s_initialized = true;
+    return true;
+}
+
+FlatPool* FlatPool::GetPool(const RED4ext::IRTTIType* acpType)
+{
+    if (!Initialize())
+        return nullptr;
+
+    Type flatPoolType = RTTIToPoolType(acpType);
+    if (flatPoolType == Type::Unknown)
+        return nullptr;
+
+    return &s_pools[static_cast<size_t>(flatPoolType)];
+}
+
+FlatPool::Type FlatPool::RTTIToPoolType(const RED4ext::IRTTIType* acpType)
 {
     static auto* pRTTI = RED4ext::CRTTISystem::Get();
     static auto* pArrayTweakDBIDType = pRTTI->GetType("array:TweakDBID");
@@ -506,59 +931,59 @@ FlatValuePool::Type FlatValuePool::RTTIToPoolType(const RED4ext::IRTTIType* acpT
     static auto* pArrayInt32Type = pRTTI->GetType("array:Int32");
     static auto* pInt32Type = pRTTI->GetType("Int32");
 
-    FlatValuePool::Type poolType = FlatValuePool::Type::Unknown;
+    FlatPool::Type poolType = FlatPool::Type::Unknown;
     if (acpType == pArrayTweakDBIDType)
-        poolType = FlatValuePool::Type::ArrayTweakDBID;
+        poolType = FlatPool::Type::ArrayTweakDBID;
     else if (acpType == pTweakDBIDType)
-        poolType = FlatValuePool::Type::TweakDBID;
+        poolType = FlatPool::Type::TweakDBID;
     else if (acpType == pArrayQuaternionType)
-        poolType = FlatValuePool::Type::ArrayQuaternion;
+        poolType = FlatPool::Type::ArrayQuaternion;
     else if (acpType == pQuaternionType)
-        poolType = FlatValuePool::Type::Quaternion;
+        poolType = FlatPool::Type::Quaternion;
     else if (acpType == pArrayEulerAnglesType)
-        poolType = FlatValuePool::Type::ArrayEulerAngles;
+        poolType = FlatPool::Type::ArrayEulerAngles;
     else if (acpType == pEulerAnglesType)
-        poolType = FlatValuePool::Type::EulerAngles;
+        poolType = FlatPool::Type::EulerAngles;
     else if (acpType == pArrayVector3Type)
-        poolType = FlatValuePool::Type::ArrayVector3;
+        poolType = FlatPool::Type::ArrayVector3;
     else if (acpType == pVector3Type)
-        poolType = FlatValuePool::Type::Vector3;
+        poolType = FlatPool::Type::Vector3;
     else if (acpType == pArrayVector2Type)
-        poolType = FlatValuePool::Type::ArrayVector2;
+        poolType = FlatPool::Type::ArrayVector2;
     else if (acpType == pVector2Type)
-        poolType = FlatValuePool::Type::Vector2;
+        poolType = FlatPool::Type::Vector2;
     else if (acpType == pArrayColorType)
-        poolType = FlatValuePool::Type::ArrayColor;
+        poolType = FlatPool::Type::ArrayColor;
     else if (acpType == pColorType)
-        poolType = FlatValuePool::Type::Color;
+        poolType = FlatPool::Type::Color;
     else if (acpType == pArrayGamedataLocKeyWrapperType)
-        poolType = FlatValuePool::Type::ArrayGamedataLocKeyWrapper;
+        poolType = FlatPool::Type::ArrayGamedataLocKeyWrapper;
     else if (acpType == pGamedataLocKeyWrapperType)
-        poolType = FlatValuePool::Type::GamedataLocKeyWrapper;
+        poolType = FlatPool::Type::GamedataLocKeyWrapper;
     else if (acpType == pArrayRaRefCResourceType)
-        poolType = FlatValuePool::Type::ArrayRaRefCResource;
+        poolType = FlatPool::Type::ArrayRaRefCResource;
     else if (acpType == pRaRefCResourceType)
-        poolType = FlatValuePool::Type::RaRefCResource;
+        poolType = FlatPool::Type::RaRefCResource;
     else if (acpType == pArrayCNameType)
-        poolType = FlatValuePool::Type::ArrayCName;
+        poolType = FlatPool::Type::ArrayCName;
     else if (acpType == pCNameType)
-        poolType = FlatValuePool::Type::CName;
+        poolType = FlatPool::Type::CName;
     else if (acpType == pArrayBoolType)
-        poolType = FlatValuePool::Type::ArrayBool;
+        poolType = FlatPool::Type::ArrayBool;
     else if (acpType == pBoolType)
-        poolType = FlatValuePool::Type::Bool;
+        poolType = FlatPool::Type::Bool;
     else if (acpType == pArrayStringType)
-        poolType = FlatValuePool::Type::ArrayString;
+        poolType = FlatPool::Type::ArrayString;
     else if (acpType == pStringType)
-        poolType = FlatValuePool::Type::String;
+        poolType = FlatPool::Type::String;
     else if (acpType == pArrayFloatType)
-        poolType = FlatValuePool::Type::ArrayFloat;
+        poolType = FlatPool::Type::ArrayFloat;
     else if (acpType == pFloatType)
-        poolType = FlatValuePool::Type::Float;
+        poolType = FlatPool::Type::Float;
     else if (acpType == pArrayInt32Type)
-        poolType = FlatValuePool::Type::ArrayInt32;
+        poolType = FlatPool::Type::ArrayInt32;
     else if (acpType == pInt32Type)
-        poolType = FlatValuePool::Type::Int32;
+        poolType = FlatPool::Type::Int32;
 
     return poolType;
 }

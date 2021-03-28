@@ -376,11 +376,16 @@ void Scripting::Initialize()
     luaVm.new_usertype<TweakDB>("__TweakDB",
         sol::meta_function::construct, sol::no_constructor,
         "DebugStats", &TweakDB::DebugStats,
-        "GetRecord", &TweakDB::GetRecord,
-        "Query", &TweakDB::Query,
-        "GetFlat", &TweakDB::GetFlat,
-        "SetFlat", &TweakDB::SetFlat,
-        "Update", overload(&TweakDB::UpdateRecordByID, &TweakDB::UpdateRecord));
+        "GetRecords", &TweakDB::GetRecords,
+        "GetRecord", sol::overload(&TweakDB::GetRecordByName, &TweakDB::GetRecord),
+        "Query", sol::overload(&TweakDB::QueryByName, &TweakDB::Query),
+        "GetFlat", sol::overload(&TweakDB::GetFlatByName, &TweakDB::GetFlat),
+        "SetFlat", sol::overload(&TweakDB::SetFlatByNameAutoUpdate, &TweakDB::SetFlatAutoUpdate),
+        "SetFlatNoUpdate", sol::overload(&TweakDB::SetFlatByName, &TweakDB::SetFlat),
+        "Update", sol::overload(&TweakDB::UpdateRecordByName, &TweakDB::UpdateRecordByID, &TweakDB::UpdateRecord),
+        "CreateRecord", &TweakDB::CreateRecord,
+        "CloneRecord", sol::overload(&TweakDB::CloneRecordByName, &TweakDB::CloneRecord),
+        "DeleteRecord", &TweakDB::DeleteRecord);
 
     luaVm["TweakDB"] = TweakDB(m_lua.AsRef());
 

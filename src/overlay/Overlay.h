@@ -4,6 +4,7 @@
 #include "widgets/Console.h"
 #include "widgets/Bindings.h"
 #include "widgets/Settings.h"
+#include "widgets/TweakDBEditor.h"
 
 using TClipToCenter = HWND(RED4ext::CGameEngine::UnkC0*);
 
@@ -44,6 +45,7 @@ private:
     Console m_console;
     Bindings m_bindings;
     Settings m_settings;
+    TweakDBEditor m_tweakDBEditor;
     std::array<Widget*, size_t(WidgetID::COUNT)> m_widgets{ }; 
 
     TClipToCenter* m_realClipToCenter{ nullptr };

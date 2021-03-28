@@ -78,44 +78,6 @@ void LuaVM::HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack,
     CET::Get().GetVM().m_logCount.fetch_add(1);
 }
 
-static std::string GetTDBDIDDebugString(TDBID tdbid)
-{
-    return (tdbid.unk5 == 0 && tdbid.unk7 == 0)
-        ? fmt::format("<TDBID:{:08X}:{:02X}>",
-            tdbid.name_hash, tdbid.name_length)
-        : fmt::format("<TDBID:{:08X}:{:02X}:{:04X}:{:02X}>",
-            tdbid.name_hash, tdbid.name_length, tdbid.unk5, tdbid.unk7);
-}
-
-void LuaVM::RegisterTDBIDString(uint64_t aValue, uint64_t aBase, const std::string& aName)
-{
-    std::lock_guard<std::recursive_mutex> _{ m_tdbidLock };
-    m_tdbidLookup[aValue] = { aBase, aName };
-}
-
-std::string LuaVM::GetTDBIDString(uint64_t aValue)
-{
-    std::lock_guard<std::recursive_mutex> _{ m_tdbidLock };
-    auto it = m_tdbidLookup.find(aValue);
-    auto end = m_tdbidLookup.end();
-    if (it == end)
-        return GetTDBDIDDebugString(TDBID{ aValue });
-    std::string string = (*it).second.name;
-    uint64_t base = (*it).second.base;
-    while (base)
-    {
-        it = m_tdbidLookup.find(base);
-        if (it == end)
-        {
-            string.insert(0, GetTDBDIDDebugString(TDBID{ base }));
-            break;
-        }
-        string.insert(0, (*it).second.name);
-        base = (*it).second.base;
-    }
-    return string;
-}
-
 LuaVM::LuaVM(Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12, Options& aOptions)
     : m_scripting(aPaths, aBindings, aD3D12, aOptions)
     , m_d3d12(aD3D12)
@@ -260,7 +222,7 @@ void LuaVM::Hook(Options& aOptions)
         if (pLocation)
         {
             if (MH_CreateHook(pLocation, &HookTDBIDCtorDerive, reinterpret_cast<void**>(&m_realTDBIDCtorDerive)) !=
-                    MH_OK ||
+                MH_OK ||
                 MH_EnableHook(pLocation) != MH_OK)
                 spdlog::error("Could not hook TDBID::ctor[Derive] function!");
             else

@@ -30,6 +30,7 @@
 #include <cstdint>
 #include <algorithm>
 #include <vector>
+#include <set>
 #include <unordered_map>
 #include <mutex>
 #include <shared_mutex>
