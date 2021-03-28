@@ -37,7 +37,6 @@ static constexpr const char* s_cGlobalObjectsWhitelist[] =
     "DumpVtables",
     "GetVersion",
     "DumpAllTypeNames",
-    "ClassReference",
     "GetDisplayResolution",
     "Dump",
     "ToVector3",
@@ -49,7 +48,6 @@ static constexpr const char* s_cGlobalObjectsWhitelist[] =
     "GameOptions",
     "GameDump",
     "GetSingleton",
-    "Descriptor",
     "ItemID",
     "ToItemID",
     "TweakDBID",
@@ -59,12 +57,8 @@ static constexpr const char* s_cGlobalObjectsWhitelist[] =
     "Quaternion",
     "EulerAngles",
     "ToVector4",
-    "Unknown",
     "ToQuaternion",
-    "SingletonReference",
-    "StrongReference",
     "ToTweakDBID",
-    "WeakReference",
     "GetMod",
     "TweakDB",
     "Override",
@@ -77,6 +71,26 @@ static constexpr const char* s_cGlobalTablesWhitelist[] =
     "table",
     "math",
     "bit32"
+};
+
+static constexpr const char* s_cGlobalImmutablesList[] =
+{
+    "ClassReference",
+    "CName",
+    "Descriptor",
+    "Enum",
+    "EulerAngles",
+    "Game",
+    "GameOptions",
+    "ItemID",
+    "Quaternion",
+    "SingletonReference",
+    "StrongReference",
+    "TweakDBID",
+    "Unknown",
+    "Vector3",
+    "Vector4",
+    "WeakReference"
 };
 
 static constexpr const char* s_cGlobalExtraLibsWhitelist[] =
@@ -140,6 +154,10 @@ void LuaSandbox::Initialize()
         osCopy["time"] = os["time"];
         m_env["os"] = osCopy;
     }
+
+    // make shared things immutable
+    for (const auto* cKey : s_cGlobalImmutablesList)
+        MakeSolObjectImmutable(cGlobals[cKey], luaView);
 
     CreateSandbox();
 }

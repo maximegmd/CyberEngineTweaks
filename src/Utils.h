@@ -10,3 +10,6 @@ std::shared_ptr<spdlog::logger> CreateLogger(const std::filesystem::path& aPath,
 
 // deep copies sol object (doesnt take into account potential duplicates)
 sol::object DeepCopySolObject(sol::object aObj, const sol::state_view& aStateView);
+
+// makes sol object immutable when accessed from lua
+void MakeSolObjectImmutable(sol::object aObj, const sol::state_view& aStateView);
