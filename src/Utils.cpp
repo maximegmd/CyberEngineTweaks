@@ -117,9 +117,14 @@ void MakeSolObjectImmutable(sol::object aObj, const sol::state_view& aStateView)
         return;
 
     sol::table target = aObj;
-    sol::table metatable = target.get_or(sol::metatable_key, sol::nil);
+    sol::table metatable;
+    sol::object metaref = target[sol::metatable_key];
 
-    if (metatable == sol::nil)
+    if (metaref.is<sol::table>())
+    {
+        metatable = metaref;
+    }
+    else
     {
         metatable = {aStateView, sol::create};
         target[sol::metatable_key] = metatable;
@@ -129,5 +134,5 @@ void MakeSolObjectImmutable(sol::object aObj, const sol::state_view& aStateView)
     metatable[sol::meta_function::metatable] = []() { return sol::nil; };
 
     // prevent adding new properties
-    metatable[sol::meta_function::new_index] = [](sol::table aTable, const std::string& acName, sol::object aParam) {};
+    metatable[sol::meta_function::new_index] = []() {};
 }
