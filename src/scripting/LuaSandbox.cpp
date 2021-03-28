@@ -402,7 +402,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
     // add in rename and remove repacements for os lib
     {
         const auto cOS = cGlobals["os"].get<sol::table>();
-        sol::table osSB(luaView, sol::create);
+        sol::table osSB = sbEnv["os"].get<sol::table>();
         osSB["rename"] = [cOS, cSBRootPath](const std::string& acOldPath, const std::string& acNewPath) -> std::tuple<sol::object, std::string>
         {
             const auto cAbsOldPath = absolute(cSBRootPath / acOldPath).make_preferred();
@@ -432,7 +432,6 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
                 return std::make_tuple(cResult.get<sol::object>(), "");
             return std::make_tuple(cResult.get<sol::object>(0), cResult.get<std::string>(1));
         };
-        sbEnv["os"] = osSB;
     }
 
     // add support functions for bindings
