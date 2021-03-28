@@ -40,6 +40,16 @@ struct LuaVM
 
     bool IsInitialized() const;
 
+    // Used by TweakDB when you delete a custom record
+    void RemoveTDBIDDerivedFrom(uint64_t aDBID);
+    bool GetTDBIDDerivedFrom(uint64_t aDBID, std::vector<uint64_t>& aDerivedList);
+    uint64_t GetTDBIDBase(uint64_t aDBID);
+    TDBIDLookupEntry GetTDBIDLookupEntry(uint64_t aDBID);
+    std::string GetTDBDIDDebugString(TDBID aDBID);
+    std::string GetTDBIDString(uint64_t aDBID);
+
+    void RegisterTDBIDString(uint64_t aValue, uint64_t aBase, const std::string& acString);
+
 protected:
     
     void Hook(Options& aOptions);
@@ -53,13 +63,12 @@ protected:
     static TDBID* HookTDBIDCtorUnknown(TDBID* apThis, uint64_t apName);
     static void HookTDBIDToStringDEBUG(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void* apResult, void*);
 
-    void RegisterTDBIDString(uint64_t aValue, uint64_t aBase, const std::string& acString);
-    std::string GetTDBIDString(uint64_t aValue);
-
 private:
   
-    std::recursive_mutex m_tdbidLock{ };
+    std::shared_mutex m_tdbidLock{ };
     std::unordered_map<uint64_t, TDBIDLookupEntry> m_tdbidLookup{ };
+    // Used by TweakDB to get the flats associated with a record
+    std::unordered_map<uint64_t, std::set<uint64_t>> m_tdbidDerivedLookup{ };
     
     RED4ext::OpcodeHandlers::Handler_t m_realLog{ nullptr };
     RED4ext::OpcodeHandlers::Handler_t m_realLogChannel{nullptr};
