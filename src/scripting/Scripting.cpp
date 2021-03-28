@@ -31,7 +31,8 @@
 static RTTILocator s_stringType{RED4ext::FNV1a("String")};
 
 Scripting::Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12, Options& aOptions)
-    : m_store(m_sandbox, aPaths, aBindings)
+    : m_sandbox(this, aBindings)
+    , m_store(m_sandbox, aPaths, aBindings)
     , m_override(this, aOptions)
     , m_paths(aPaths)
     , m_d3d12(aD3D12)
@@ -45,7 +46,7 @@ void Scripting::Initialize()
     auto& luaVm = lua.Get();
 
     luaVm.open_libraries(sol::lib::base, sol::lib::string, sol::lib::io, sol::lib::math, sol::lib::package,
-                         sol::lib::os, sol::lib::table);
+                         sol::lib::os, sol::lib::table, sol::lib::bit32);
     luaVm.require("sqlite3", luaopen_lsqlite3);
 
     sol_ImGui::InitBindings(luaVm);

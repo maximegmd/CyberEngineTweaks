@@ -26,6 +26,7 @@ private:
     bool m_patchAsyncCompute{ false };
     bool m_patchAntialiasing{ false };
     bool m_patchSkipStartMenu{ false };
+    bool m_patchAmdSmt{ false };
     bool m_patchDisableIntroMovies{ false };
     bool m_patchDisableVignette{ false };
     bool m_patchDisableBoundaryTeleport{ false };

@@ -2,7 +2,7 @@
 
 #include "widgets/Widget.h"
 #include "widgets/Console.h"
-#include "widgets/Hotkeys.h"
+#include "widgets/Bindings.h"
 #include "widgets/Settings.h"
 
 using TClipToCenter = HWND(RED4ext::CGameEngine::UnkC0*);
@@ -20,7 +20,7 @@ struct Overlay
     [[nodiscard]] bool IsInitialized() const noexcept;
 
     Console& GetConsole();
-    Hotkeys& GetHotkeys();
+    Bindings& GetBindings();
     Settings& GetSettings();
     
     void Toggle();
@@ -42,7 +42,7 @@ private:
     void SetActiveWidget(WidgetID aNewActive);
     
     Console m_console;
-    Hotkeys m_hotkeys;
+    Bindings m_bindings;
     Settings m_settings;
     std::array<Widget*, size_t(WidgetID::COUNT)> m_widgets{ }; 
 

@@ -3,20 +3,17 @@ set_xmakever("2.5.1")
 set_languages("cxx20")
 set_arch("x64")
 
-add_requires("spdlog", "nlohmann_json", "hopscotch-map", "minhook", "mem", "imgui 1.81", "sol2", "tiltedcore 0.2.0", "sqlite3")
-add_requireconfs("imgui", { configs = {cxflags = "/DNDEBUG"} })
+add_requires("spdlog", "nlohmann_json", "hopscotch-map", "minhook", "mem", "imgui 1.81", "sol2", "tiltedcore 0.2.0", "sqlite3", "luajit")
+add_requireconfs("imgui", { configs = { cxflags = "/DNDEBUG" } })
+add_requireconfs("sol2", { configs = { includes_lua = false } })
 
 add_rules("mode.debug","mode.releasedbg", "mode.release")
 add_rules("plugin.vsxmake.autoupdate")
 
 if is_mode("debug") or is_mode("releasedbg") then
     add_defines("CET_DEBUG")
-
 elseif is_mode("release") then
-    add_ldflags("/LTCG", "/OPT:REF")
-    add_cxflags("/Ot", "/GL", "/Ob2", "/Oi", "/GS-")
     add_defines("NDEBUG")
-
     set_optimize("fastest")
 end
 
@@ -58,7 +55,7 @@ target("RED4ext.SDK")
     add_includedirs("vendor/RED4ext.SDK/include/", { public = true })
 
 target("cyber_engine_tweaks")
-    add_defines("WIN32_LEAN_AND_MEAN", "NOMINMAX", "SOL_ALL_SAFETIES_ON")
+    add_defines("WIN32_LEAN_AND_MEAN", "NOMINMAX", "SOL_ALL_SAFETIES_ON", "WINVER=0x0601", "SOL_LUAJIT=1") -- WINVER=0x0601 == Windows 7, we need this specified now for some reason
     set_pcxxheader("src/stdafx.h")
     set_kind("shared")
     set_filename("cyber_engine_tweaks.asi")
@@ -66,7 +63,7 @@ target("cyber_engine_tweaks")
     add_headerfiles("src/**.h")
     add_includedirs("src/")
     add_syslinks("User32", "Version", "d3d11")
-    add_packages("spdlog", "nlohmann_json", "minhook", "hopscotch-map", "imgui", "mem", "sol2", "tiltedcore", "sqlite3")
+    add_packages("spdlog", "nlohmann_json", "minhook", "hopscotch-map", "imgui", "mem", "sol2", "tiltedcore", "sqlite3", "luajit")
     add_deps("RED4ext.SDK")
 
 	on_package(function(target)

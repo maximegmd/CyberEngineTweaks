@@ -4,7 +4,7 @@
 
 #include <overlay/Overlay.h>
 
-void VKBindInfo::Fill(UINT aVKCodeBind, const VKBind& aVKBind)
+void VKBindInfo::Fill(uint64_t aVKCodeBind, const VKBind& aVKBind)
 {
     Bind = aVKBind;
     CodeBind = aVKCodeBind;
@@ -12,7 +12,7 @@ void VKBindInfo::Fill(UINT aVKCodeBind, const VKBind& aVKBind)
     IsBinding = false;
 }
 
-UINT VKBindInfo::Apply()
+uint64_t VKBindInfo::Apply()
 {
     SavedCodeBind = CodeBind;
     return CodeBind;
@@ -72,7 +72,11 @@ std::vector<VKBindInfo> VKBindings::InitializeMods(std::vector<VKBindInfo> aVKBi
         {
             found = (idToBind.first == vkBindInfo.Bind.ID);
             if (found)
-                break;
+            {
+                // test if bind is hotkey and if not, check if bind is valid for input (which means it has single input key, not combo)
+                found = (vkBindInfo.Bind.IsHotkey() || ((idToBind.second & 0xFFFF000000000000) == idToBind.second));
+                break; // we just reset found flag accordingly and exit here, we found valid entry, no need to continue regardless of result
+            }
         }
 
         if (!found)
@@ -93,18 +97,50 @@ std::vector<VKBindInfo> VKBindings::InitializeMods(std::vector<VKBindInfo> aVKBi
     return aVKBindInfos;
 }
 
-void VKBindings::Load(Overlay& aOverlay)
+void VKBindings::Load(const Overlay& aOverlay)
 {
-    std::ifstream ifs{ m_paths.VKBindings() };
-    if (ifs)
-    {
-        auto config = nlohmann::json::parse(ifs);
-        for (auto& it : config.items())
+    auto parseConfig {[this, &aOverlay](const std::filesystem::path& path, bool old = false) -> bool {
+        std::ifstream ifs { path };
+        if (ifs)
         {
-            // properly auto-bind Overlay if it is present here (could be this is first start so it may not be in here yet)
-            auto vkBind = (it.key() == aOverlay.GetBind().ID) ? aOverlay.GetBind() : VKBind{it.key()};
-            const auto ret = Bind(it.value(), vkBind);
-            assert(ret); // we want this to never fail!
+            auto config { nlohmann::json::parse(ifs) };
+            for (auto& it : config.items())
+            {
+                // properly auto-bind Overlay if it is present here (could be this is first start so it may not be
+                // in here yet)
+                auto vkBind { (it.key() == aOverlay.GetBind().ID) ? aOverlay.GetBind() : VKBind{ it.key() } };
+
+                uint64_t key { it.value() };
+                if (old)
+                {
+                    // encoded key bind was 32-bit number in old config, convert it to new 64-bit format
+                    key =
+                    {
+                          ((key & 0x000000FF) << 8*0)
+                        | ((key & 0x0000FF00) << 8*1)
+                        | ((key & 0x00FF0000) << 8*2)
+                        | ((key & 0xFF000000) << 8*3)
+                    };
+                }
+
+                const auto ret { Bind(key, vkBind) };
+                assert(ret); // we want this to never fail!
+            }
+            return true;
+        }
+        return false;
+    }};
+ 
+    // try to load from current path
+    if (!parseConfig(m_paths.VKBindings()))
+    {
+        // if failed, try to look for old config
+        auto oldPath = m_paths.CETRoot() / "hotkeys.json";
+        if (parseConfig(oldPath, true))
+        {
+            // old config found and parsed, remove it and save it to current location
+            remove(oldPath);
+            Save();
         }
     }
 
@@ -139,7 +175,7 @@ void VKBindings::Clear()
     m_recordingBind = {};
 }
 
-bool VKBindings::Bind(UINT aVKCodeBind, const VKBind& aBind)
+bool VKBindings::Bind(uint64_t aVKCodeBind, const VKBind& aBind)
 {
     // bind check 1
     {
@@ -163,7 +199,7 @@ bool VKBindings::Bind(UINT aVKCodeBind, const VKBind& aBind)
             auto bind = m_binds.find(idToBind->second);
             assert (bind != m_binds.end()); // if these are not true for some reason, we have Fd up binding maps!
             assert (bind->second.ID == aBind.ID); // if these are not true for some reason, we have Fd up binding maps!
-            if (bind->second.Handler == nullptr)
+            if (!bind->second.IsValid())
             {
                 bind->second.Handler = aBind.Handler; // rebind
                 return true;
@@ -180,7 +216,7 @@ bool VKBindings::Bind(UINT aVKCodeBind, const VKBind& aBind)
     return true;
 }
 
-bool VKBindings::UnBind(UINT aVKCodeBind)
+bool VKBindings::UnBind(uint64_t aVKCodeBind)
 {
     auto bind = m_binds.find(aVKCodeBind);
     if (bind == m_binds.end())
@@ -202,7 +238,7 @@ bool VKBindings::UnBind(const std::string& aID)
     return true;
 }
 
-bool VKBindings::IsBound(UINT aVKCodeBind) const
+bool VKBindings::IsBound(uint64_t aVKCodeBind) const
 {
     return m_binds.count(aVKCodeBind);
 }
@@ -211,46 +247,86 @@ bool VKBindings::IsBound(const std::string& aID) const
 {
     return m_idToBind.count(aID);
 }
+
+std::string VKBindings::GetBindString(uint64_t aVKCodeBind)
+{
+    std::string bindStr { };
+    if (aVKCodeBind == 0)
+        bindStr = "NOT BOUND";
+    else
+    {
+        auto bindDec { DecodeVKCodeBind(aVKCodeBind) };
+        for (auto vkCode : bindDec)
+        {
+            if (vkCode == 0)
+                break;
+
+            const char* specialName { GetSpecialKeyName(vkCode) };
+            if (specialName)
+                bindStr += specialName;
+            else
+            {
+                char vkChar { static_cast<char>(MapVirtualKey(vkCode, MAPVK_VK_TO_CHAR)) };
+                if (vkChar != 0)
+                    bindStr += vkChar;
+                else
+                    bindStr += "UNKNOWN";
+            }
+            bindStr += " + ";
+        }
+        bindStr.erase(bindStr.rfind(" + "));
+    }
+    return bindStr;
+}
+
+std::string VKBindings::GetBindString(const std::string aID) const
+{
+    return GetBindString(GetBindCodeForID(aID));
+}
     
-UINT VKBindings::GetBindCodeForID(const std::string& aID)
+uint64_t VKBindings::GetBindCodeForID(const std::string& aID) const
 {
     assert(!aID.empty()); // we never really want aID to be empty here... but leave some fallback for release!
     if (aID.empty())
         return 0;
 
     const auto idToBind = m_idToBind.find(aID);
-    if (idToBind == m_idToBind.end())
+    if (idToBind == m_idToBind.cend())
         return 0;
 
     return idToBind->second;
 }
 
-std::string VKBindings::GetIDForBindCode(UINT aVKCodeBind)
+std::string VKBindings::GetIDForBindCode(uint64_t aVKCodeBind) const
 {
     assert(aVKCodeBind != 0); // we never really want aVKCodeBind == 0 here... but leave some fallback for release!
     if (aVKCodeBind == 0)
         return { };
 
     const auto bind = m_binds.find(aVKCodeBind);
-    if (bind == m_binds.end())
+    if (bind == m_binds.cend())
         return { };
 
     return bind->second.ID;
 }
 
-VKCodeBindDecoded VKBindings::DecodeVKCodeBind(UINT aVKCodeBind)
+VKCodeBindDecoded VKBindings::DecodeVKCodeBind(uint64_t aVKCodeBind)
 {
     if (aVKCodeBind == 0)
         return { };
 
     VKCodeBindDecoded res{ };
-    *reinterpret_cast<UINT*>(res.data()) = _byteswap_ulong(aVKCodeBind);
+    *reinterpret_cast<uint64_t*>(res.data()) = _byteswap_uint64(aVKCodeBind);
+    for (auto& key : res)
+        key = _byteswap_ushort(key);
     return res;
 }
 
-UINT VKBindings::EncodeVKCodeBind(const VKCodeBindDecoded& aVKCodeBindDecoded)
+uint64_t VKBindings::EncodeVKCodeBind(VKCodeBindDecoded aVKCodeBindDecoded)
 {
-    return _byteswap_ulong(*reinterpret_cast<const UINT*>(aVKCodeBindDecoded.data()));
+    for (auto& key : aVKCodeBindDecoded)
+        key = _byteswap_ushort(key);
+    return _byteswap_uint64(*reinterpret_cast<const uint64_t*>(aVKCodeBindDecoded.data()));
 }
 
 bool VKBindings::StartRecordingBind(const VKBind& aBind)
@@ -284,12 +360,12 @@ bool VKBindings::IsRecordingBind() const
     return m_isBindRecording;
 }
 
-UINT VKBindings::GetLastRecordingResult() const
+uint64_t VKBindings::GetLastRecordingResult() const
 {
     return m_recordingResult;
 }
 
-const char* VKBindings::GetSpecialKeyName(UINT aVKCode)
+const char* VKBindings::GetSpecialKeyName(USHORT aVKCode)
 {
     switch (aVKCode)
     {
@@ -401,12 +477,20 @@ const char* VKBindings::GetSpecialKeyName(UINT aVKCode)
             return "Num Lock";
         case VK_SCROLL:
             return "Scroll Lock";
+        case VKBC_MWHEELUP:
+            return "Mouse Wheel Up";
+        case VKBC_MWHEELDOWN:
+            return "Mouse Wheel Down";
+        case VKBC_MWHEELLEFT:
+            return "Mouse Wheel Left";
+        case VKBC_MWHEELRIGHT:
+            return "Mouse Wheel Right";
         default:
             return nullptr;
     }
 }
 
-LRESULT VKBindings::OnWndProc(HWND, UINT auMsg, WPARAM awParam, LPARAM alParam)
+LRESULT VKBindings::OnWndProc(HWND, UINT auMsg, WPARAM, LPARAM alParam)
 {
     if (!m_initialized)
         return 0; // we have not yet fully initialized!
@@ -430,7 +514,7 @@ void VKBindings::DisconnectUpdate(D3D12& aD3D12)
     m_connectUpdate = static_cast<size_t>(-1);
 }
 
-bool VKBindings::IsLastRecordingKey(UINT aVKCode)
+bool VKBindings::IsLastRecordingKey(USHORT aVKCode)
 {
     if (m_recordingLength == 0)
         return false;
@@ -438,28 +522,57 @@ bool VKBindings::IsLastRecordingKey(UINT aVKCode)
     return (m_recording[m_recordingLength-1] == aVKCode);
 }
 
-LRESULT VKBindings::RecordKeyDown(UINT aVKCode)
+LRESULT VKBindings::RecordKeyDown(USHORT aVKCode)
 {
     for (size_t i = 0; i < m_recordingLength; ++i)
         if (m_recording[i] == aVKCode)
             return 0; // ignore repeats
 
-    while (m_recordingLength >= m_recording.size())
+    if (m_recordingLength >= m_recording.size())
     {
-        for (size_t i = 1; i < m_recording.size(); ++i)
+        assert(m_recordingLength == m_recording.size());
+        for (size_t i = 1; i < m_recordingLength; ++i)
             m_recording[i-1] = m_recording[i];
-
         --m_recordingLength;
     }
 
     m_recording[m_recordingLength++] = aVKCode;
 
-    VerifyRecording(); // we don't care about result of this here, we just want it corrected :P
+    const VKBind* bind { VerifyRecording() };
+
+    if (m_isBindRecording)
+    {
+        if (m_recordingBind.IsInput())
+            return RecordKeyUp(aVKCode); // instantly register bind for single inputs
+
+        return 0; // don't do anything else when bind is being recorded
+    }
+
+    if (bind && (bind != VKBRecord_OK))
+    {
+        if (m_pOverlay && m_pOverlay->IsEnabled())
+            return 0; // we dont want to handle bindings if overlay is open and we are not in binding state!
+
+        if (bind->IsValid()) // prevention for freshly loaded bind from file without rebinding
+        {
+            if (!bind->ID.compare(0, 4, "cet."))
+                bind->Call(true); // we need to execute this immediately, otherwise cursor will not show on overlay toggle
+            else
+            {
+                auto delayedCall { bind->DelayedCall(true) };
+                if (delayedCall)
+                {
+                    const std::lock_guard lock(m_queuedCallbacksLock);
+                    m_queuedCallbacks.push(delayedCall);
+                }
+            }
+        }
+    }
 
     return 0;
 }
 
-LRESULT VKBindings::RecordKeyUp(UINT aVKCode)
+LRESULT VKBindings::RecordKeyUp(USHORT aVKCode)
 {
     for (size_t i = 0; i < m_recordingLength; ++i)
     {
@@ -489,14 +602,14 @@ LRESULT VKBindings::RecordKeyUp(UINT aVKCode)
                 if (m_pOverlay && m_pOverlay->IsEnabled() && (bind->second.ID != m_pOverlay->GetBind().ID))
                     return 0; // we dont want to handle bindings if toolbar is open and we are not in binding state!
 
-                if (bind->second.Handler) // prevention for freshly loaded bind from file without rebinding
+                if (bind->second.IsValid()) // prevention for freshly loaded bind from file without rebinding
                 {
                     if (!bind->second.ID.compare(0, 4, "cet."))
-                        bind->second.Handler(); // we need to execute this immediately, otherwise cursor will not show on overlay toggle
+                        bind->second.Call(false); // we need to execute this immediately, otherwise cursor will not show on overlay toggle
                     else
                     {
                         const std::lock_guard lock(m_queuedCallbacksLock); 
-                        m_queuedCallbacks.push(bind->second.Handler);
+                        m_queuedCallbacks.push(bind->second.DelayedCall(false));
                     }
                 }
             }
@@ -507,19 +620,16 @@ LRESULT VKBindings::RecordKeyUp(UINT aVKCode)
     return 0;
 }
 
-bool VKBindings::VerifyRecording()
+const VKBind* VKBindings::VerifyRecording()
 {
-    if (m_isBindRecording)
-        return true; // always valid for bind recordings
-
-    if (m_recordingLength == 0)
-        return true; // always valid when empty
+    if ((m_isBindRecording) || (m_recordingLength == 0))
+        return VKBRecord_OK; // always valid for bind recordings or when empty
 
     const auto possibleBind = m_binds.lower_bound(EncodeVKCodeBind(m_recording));
     if (possibleBind == m_binds.end())
     {
         m_recording[--m_recordingLength] = 0;
-        return false; // seems like there is no possible HK here
+        return nullptr; // seems like there is no possible HK here
     }
 
     VKCodeBindDecoded pbCodeDec = DecodeVKCodeBind(possibleBind->first);
@@ -528,26 +638,26 @@ bool VKBindings::VerifyRecording()
         if (pbCodeDec[i] != m_recording[i])
         {
             m_recording[--m_recordingLength] = 0;
-            return false; // seems like there is no possible HK here
+            return nullptr; // seems like there is no possible HK here
         }
     }
-
-    return true; // valid recording
+    // valid recording
+    return ((m_recordingLength == 4) || !pbCodeDec[m_recordingLength]) ? (&possibleBind->second) : (VKBRecord_OK); // ptr to VKBind if equal, OK if possible match exists
 }
 
 LRESULT VKBindings::HandleRAWInput(HRAWINPUT ahRAWInput)
 {
-    UINT dwSize;
+    UINT dwSize { 0 };
     GetRawInputData(ahRAWInput, RID_INPUT, nullptr, &dwSize, sizeof(RAWINPUTHEADER));
 
     const auto lpb = std::make_unique<BYTE[]>(dwSize);
     if (GetRawInputData(ahRAWInput, RID_INPUT, lpb.get(), &dwSize, sizeof(RAWINPUTHEADER)) != dwSize )
          spdlog::warn("VKBindings::HandleRAWInput() - GetRawInputData() does not return correct size !");
 
-    auto* raw = reinterpret_cast<RAWINPUT*>(lpb.get());
+    const auto* raw = reinterpret_cast<const RAWINPUT*>(lpb.get());
     if (raw->header.dwType == RIM_TYPEKEYBOARD)
     {
-        auto& kb = raw->data.keyboard;
+        const auto& kb = raw->data.keyboard;
         switch (kb.Message)
         {
             case WM_KEYDOWN:
@@ -563,8 +673,8 @@ LRESULT VKBindings::HandleRAWInput(HRAWINPUT ahRAWInput)
         if (m_pOverlay && m_isBindRecording && (m_recordingBind.ID == m_pOverlay->GetBind().ID))
             return 0; // ignore mouse keys for toolbar key binding!
 
-        auto& m = raw->data.mouse;
-        switch (raw->data.mouse.usButtonFlags)
+        const auto& m = raw->data.mouse;
+        switch (m.usButtonFlags)
         {
             case RI_MOUSE_LEFT_BUTTON_DOWN:
                 return RecordKeyDown(VK_LBUTTON);
@@ -586,6 +696,18 @@ LRESULT VKBindings::HandleRAWInput(HRAWINPUT ahRAWInput)
                 return RecordKeyDown(VK_XBUTTON2);
             case RI_MOUSE_BUTTON_5_UP:
                 return RecordKeyUp(VK_XBUTTON2);
+            case RI_MOUSE_WHEEL:
+            {
+                const USHORT key { static_cast<USHORT>(RI_MOUSE_WHEEL | !(m.usButtonData & 0x8000)) };
+                RecordKeyDown(key);
+                return RecordKeyUp(key);
+            }
+            case RI_MOUSE_HWHEEL:
+            {
+                const USHORT key{static_cast<USHORT>(RI_MOUSE_HWHEEL | !(m.usButtonData & 0x8000))};
+                RecordKeyDown(key);
+                return RecordKeyUp(key);
+            }
         }
     }
 

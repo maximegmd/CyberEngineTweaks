@@ -295,7 +295,7 @@ void FunctionOverride::Hook(Options& aOptions) const
 }
 
 void FunctionOverride::Override(const std::string& acTypeName, const std::string& acFullName, const std::string& acShortName,
-                                bool aAbsolute, sol::protected_function aFunction, sol::this_environment aThisEnv)
+                                bool aAbsolute, sol::protected_function aFunction, sol::this_environment aEnvironment)
 {
     auto* pRtti = RED4ext::CRTTISystem::Get();
     auto* pClassType = pRtti->GetClass(acTypeName.c_str());
@@ -308,7 +308,7 @@ void FunctionOverride::Override(const std::string& acTypeName, const std::string
 
     auto pContext = TiltedPhoques::MakeUnique<Context>();
     pContext->ScriptFunction = std::move(aFunction);
-    pContext->Environment = aThisEnv;
+    pContext->Environment = aEnvironment;
     pContext->Forward = !aAbsolute;
 
     // Get the real function

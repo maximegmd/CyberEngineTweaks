@@ -29,9 +29,9 @@ Console& Overlay::GetConsole()
     return m_console;
 }
 
-Hotkeys& Overlay::GetHotkeys()
+Bindings& Overlay::GetBindings()
 {
-    return m_hotkeys;
+    return m_bindings;
 }
 
 Settings& Overlay::GetSettings()
@@ -102,10 +102,10 @@ void Overlay::Update()
                     m_console.Update();
                 ImGui::EndChild();
             }
-            if (m_activeWidgetID == WidgetID::HOTKEYS)
+            if (m_activeWidgetID == WidgetID::BINDINGS)
             {
-                if (ImGui::BeginChild("Keybinds", zeroVec, true))
-                    m_hotkeys.Update();
+                if (ImGui::BeginChild("Bindings", zeroVec, true))
+                    m_bindings.Update();
                 ImGui::EndChild();
             }
         }
@@ -179,7 +179,7 @@ void Overlay::Hook()
 
 Overlay::Overlay(D3D12& aD3D12, VKBindings& aBindings, Options& aOptions, LuaVM& aVm)
     : m_console(aVm)
-    , m_hotkeys(aBindings, *this, aVm)
+    , m_bindings(aBindings, *this, aVm)
     , m_settings(*this, aBindings, aOptions)
     , m_VKBOverlay{"cet.overlay_key", "Overlay Key", [this]() { Toggle(); }}
     , m_d3d12(aD3D12)
@@ -187,7 +187,7 @@ Overlay::Overlay(D3D12& aD3D12, VKBindings& aBindings, Options& aOptions, LuaVM&
     , m_vm(aVm)
 {
     m_widgets[static_cast<size_t>(WidgetID::CONSOLE)] = &m_console;
-    m_widgets[static_cast<size_t>(WidgetID::HOTKEYS)] = &m_hotkeys;
+    m_widgets[static_cast<size_t>(WidgetID::BINDINGS)] = &m_bindings;
     m_widgets[static_cast<size_t>(WidgetID::SETTINGS)] = &m_settings;
 
     Hook();

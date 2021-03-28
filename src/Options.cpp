@@ -15,6 +15,7 @@ void Options::Load()
             PatchEnableDebug = config.value("enable_debug", PatchEnableDebug);
             PatchRemovePedestrians = config.value("remove_pedestrians", PatchRemovePedestrians);
             PatchSkipStartMenu = config.value("skip_start_menu", PatchSkipStartMenu);
+            PatchAmdSmt = config.value("amd_smt", PatchAmdSmt);
             PatchAsyncCompute = config.value("disable_async_compute", PatchAsyncCompute);
             PatchAntialiasing = config.value("disable_antialiasing", PatchAntialiasing);
             PatchDisableIntroMovies = config.value("disable_intro_movies", PatchDisableIntroMovies);
@@ -32,6 +33,18 @@ void Options::Load()
             OverlayKeyBind = config.value("overlay_key", OverlayKeyBind);
             if (OverlayKeyBind == 0)
                 IsFirstLaunch = true; // is for sure in this case
+
+            if (exists(m_paths.CETRoot() / "hotkeys.json"))
+            {
+                // encoded key bind was 32-bit number in old config, convert it to new 64-bit format
+                OverlayKeyBind =
+                {
+                      ((OverlayKeyBind & 0x000000FF) << 8*0)
+                    | ((OverlayKeyBind & 0x0000FF00) << 8*1)
+                    | ((OverlayKeyBind & 0x00FF0000) << 8*2)
+                    | ((OverlayKeyBind & 0xFF000000) << 8*3)
+                };
+            }
 
             // check old config names
             if (config.value("unlock_menu", false))
@@ -51,6 +64,7 @@ void Options::Save()
     config["disable_async_compute"] = PatchAsyncCompute;
     config["disable_antialiasing"] = PatchAntialiasing;
     config["skip_start_menu"] = PatchSkipStartMenu;
+    config["amd_smt"] = PatchAmdSmt;
     config["disable_intro_movies"] = PatchDisableIntroMovies;
     config["disable_vignette"] = PatchDisableVignette;
     config["disable_boundary_teleport"] = PatchDisableBoundaryTeleport;
@@ -71,6 +85,7 @@ void Options::ResetToDefaults()
     PatchAsyncCompute = false;
     PatchAntialiasing = false;
     PatchSkipStartMenu = false;
+    PatchAmdSmt = false;
     PatchDisableIntroMovies = false;
     PatchDisableVignette = false;
     PatchDisableBoundaryTeleport = false;
