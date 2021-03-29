@@ -10,10 +10,10 @@ add_rules("mode.debug","mode.releasedbg", "mode.release")
 add_rules("plugin.vsxmake.autoupdate")
 
 if is_mode("debug") then
-    add_defines("_DEBUG", "CET_DEBUG")
+    add_defines("CET_DEBUG")
     set_optimize("none")
 elseif is_mode("releasedbg") then
-    add_defines("_DEBUG", "CET_DEBUG")
+    add_defines("CET_DEBUG")
     set_optimize("fastest")
 elseif is_mode("release") then
 	add_requireconfs("imgui", { configs = { cxflags = "/DNDEBUG" } })
