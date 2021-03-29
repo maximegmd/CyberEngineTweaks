@@ -6,7 +6,7 @@ struct Image
 
 	static std::tuple<uint32_t, uint16_t> GetSupportedVersion() noexcept
 	{
-        return std::make_tuple(1, 12);
+        return std::make_tuple(1, 20);
 	}
 
     static uint64_t MakeVersion(uint32_t aMajor, uint16_t aMinor) noexcept
@@ -14,7 +14,7 @@ struct Image
         return static_cast<uint64_t>(aMajor) << 32 | static_cast<uint64_t>(aMinor) << 16;
     }
 
-    std::tuple<uint32_t, uint16_t> GetVersion() const noexcept
+    [[nodiscard]] std::tuple<uint32_t, uint16_t> GetVersion() const noexcept
     {
         return std::make_tuple(static_cast<uint32_t>(version >> 32), static_cast<uint16_t>((version >> 16) & 0xFFFF));
     }

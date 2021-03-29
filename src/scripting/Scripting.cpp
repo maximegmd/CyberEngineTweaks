@@ -848,7 +848,8 @@ sol::protected_function Scripting::InternalIndex(const std::string& acName, sol:
     auto obj = make_object(state, [this, name = acName](sol::variadic_args aArgs, sol::this_environment aThisEnv, sol::this_state aState)
     {
         std::string result;
-            auto code = this->Execute(name, aArgs, result, aState);
+        auto code = this->Execute(name, aArgs, result, aState);
+
         if(!code)
         {
             const sol::environment cEnv = aThisEnv;
