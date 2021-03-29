@@ -3,16 +3,20 @@ set_xmakever("2.5.1")
 set_languages("cxx20")
 set_arch("x64")
 
-add_requires("spdlog", "nlohmann_json", "hopscotch-map", "minhook", "mem", "imgui 1.81", "sol2", "tiltedcore 0.2.0", "sqlite3", "luajit")
-add_requireconfs("imgui", { configs = { cxflags = "/DNDEBUG" } })
+add_requires("spdlog", "nlohmann_json", "hopscotch-map", "minhook", "mem", "imgui 1.82", "sol2", "tiltedcore 0.2.0", "sqlite3", "luajit")
 add_requireconfs("sol2", { configs = { includes_lua = false } })
 
 add_rules("mode.debug","mode.releasedbg", "mode.release")
 add_rules("plugin.vsxmake.autoupdate")
 
-if is_mode("debug") or is_mode("releasedbg") then
-    add_defines("CET_DEBUG")
+if is_mode("debug") then
+    add_defines("_DEBUG", "CET_DEBUG")
+    set_optimize("none")
+elseif is_mode("releasedbg") then
+    add_defines("_DEBUG", "CET_DEBUG")
+    set_optimize("fastest")
 elseif is_mode("release") then
+	add_requireconfs("imgui", { configs = { cxflags = "/DNDEBUG" } })
     add_defines("NDEBUG")
     set_optimize("fastest")
 end
