@@ -82,7 +82,7 @@ private:
     struct CachedFlatGroup
     {
         bool m_isFiltered = false;
-        bool m_initialized = false;
+        bool m_isInitialized = false;
         std::string m_name;
         std::vector<CachedFlat> m_flats;
         ImGuiVisibilityChecker m_visibilityChecker;
@@ -97,7 +97,7 @@ private:
     {
         bool m_isFiltered = false;
         bool m_isDropdownFiltered = false;
-        bool m_initialized = false;
+        bool m_isInitialized = false;
         std::string m_name;
         RED4ext::TweakDBID m_dbid;
         std::vector<CachedFlat> m_flats;
@@ -107,12 +107,14 @@ private:
         CachedRecord(CachedRecord&&) noexcept = default;
         CachedRecord& operator=(CachedRecord&&) noexcept = default;
         void Initialize();
+        void InitializeFlats();
         void Update();
     };
 
     struct CachedRecordGroup
     {
         bool m_isFiltered = false;
+        bool m_isInitialized = false;
         std::string m_name;
         RED4ext::CName m_typeName;
         std::vector<CachedRecord> m_records;
@@ -121,6 +123,7 @@ private:
         CachedRecordGroup(RED4ext::CName aTypeName);
         CachedRecordGroup(CachedRecordGroup&&) noexcept = default;
         CachedRecordGroup& operator=(CachedRecordGroup&&) noexcept = default;
+        void Initialize();
     };
 
     LuaVM& m_vm;
