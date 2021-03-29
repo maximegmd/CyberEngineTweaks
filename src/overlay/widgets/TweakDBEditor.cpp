@@ -163,6 +163,126 @@ private:
     std::unordered_map<uint64_t, std::string> m_queries;
 };
 
+struct ResourcesList
+{
+    static constexpr char c_defaultFilename[] = "archivehashes.txt";
+
+    struct Resource
+    {
+        bool m_isFiltered;
+        std::string m_name;
+        uint64_t m_hash;
+
+        Resource(std::string aName) noexcept
+            : m_isFiltered(false)
+            , m_name(std::move(aName))
+            , m_hash(RED4ext::FNV1a(m_name.c_str()))
+        {
+        }
+
+        bool operator<(const Resource& aOther) const noexcept
+        {
+            size_t minLength = std::min(m_name.size(), aOther.m_name.size());
+            for (size_t i = 0; i != minLength; ++i)
+            {
+                char a = std::tolower(m_name[i]);
+                char b = std::tolower(aOther.m_name[i]);
+                if (a != b)
+                    return a < b;
+            }
+            return m_name.size() < aOther.m_name.size();
+        }
+
+        Resource(Resource&&) noexcept = default;
+        Resource& operator=(Resource&&) noexcept = default;
+    };
+
+    static ResourcesList* Get()
+    {
+        static ResourcesList instance;
+        return &instance;
+    }
+
+    bool Initialize()
+    {
+        Reset();
+
+        auto filepath = CET::Get().GetPaths().CETRoot() / c_defaultFilename;
+        if (!std::filesystem::exists(filepath))
+            return false;
+
+        m_resources.reserve(1485150);
+
+        try
+        {
+            std::ifstream file(filepath);
+            file.exceptions(std::ios::badbit);
+
+            char buffer[1024]{};
+            while (file.getline(buffer, sizeof(buffer)))
+            {
+                // archivehashes.txt is already ordered
+                // but check just incase
+
+                Resource resource(buffer);
+                if (m_resources.back() < resource)
+                    m_resources.emplace_back(std::move(resource));
+                else
+                {
+                    const auto it = std::lower_bound(m_resources.begin(), m_resources.end(), resource);
+                    m_resources.emplace(it, std::move(resource));
+                }
+            }
+
+            for (auto& resource : m_resources)
+            {
+                m_resourcesByHash.emplace(resource.m_hash, &resource);
+            }
+
+            return m_isInitialized = true;
+        }
+        // this is easier for now
+        catch (std::exception&)
+        {
+            return m_isInitialized = false;
+        }
+    }
+
+    bool IsInitialized()
+    {
+        return m_isInitialized;
+    }
+
+    const std::string& Resolve(uint64_t aHash)
+    {
+        static std::string defaultName = "ERROR_UNKNOWN_RESOURCE";
+
+        const auto it = m_resourcesByHash.find(aHash);
+        if (it == m_resourcesByHash.end())
+            return defaultName;
+        else
+            return it->second->m_name;
+    }
+
+    std::vector<Resource>& GetResources()
+    {
+        return m_resources;
+    }
+
+protected:
+    void Reset()
+    {
+        m_isInitialized = false;
+        m_resources.clear();
+        m_resourcesByHash.clear();
+    }
+
+private:
+    bool m_isInitialized = false;
+    std::vector<Resource> m_resources;
+    std::unordered_map<uint64_t, Resource*> m_resourcesByHash;
+};
+
 namespace ImGui
 {
 std::pair<bool, std::string*> InputTextCStr(const char* acpLabel, const char* acpBuf, size_t aBufSize,
@@ -1265,13 +1385,99 @@ bool TweakDBEditor::DrawFlatResourceAsyncRef(RED4ext::TweakDBID aDBID, RED4ext::
     auto* pRaRef = reinterpret_cast<RED4ext::ResourceAsyncReference<void>*>(aStackType.value);
 
     uint64_t hashRef = reinterpret_cast<uint64_t>(pRaRef->ref);
-    ImGui::Text("raRef:CResource is not supported yet");
-    ImGui::Text("but you can modify the hash!");
 
     int32_t flags = aReadOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_EnterReturnsTrue;
     flags |= ImGuiInputTextFlags_CharsHexadecimal;
     ImGui::SetNextItemWidth(-1);
     bool valueChanged = ImGui::InputScalar("", ImGuiDataType_U64, &hashRef, nullptr, nullptr, "%016llX", flags);
+
+    if (ResourcesList::Get()->IsInitialized())
+    {
+        const std::string& resourceName = ResourcesList::Get()->Resolve(hashRef);
+
+        ImGui::SetNextItemWidth(-1);
+        if (ImGui::BeginCombo("##resolvedHash", resourceName.c_str(), ImGuiComboFlags_HeightLargest))
+        {
+            static float searchTimer = 0.001f;
+            static int resourcesCount = 0;
+            static char comboSearchStr[256]{};
+            ImGui::SetNextItemWidth(-1);
+            if (ImGui::InputTextWithHint("##dropdownSearch", "Search", comboSearchStr, sizeof(comboSearchStr)))
+            {
+                searchTimer = 0.5f;
+            }
+
+            if (searchTimer)
+            {
+                searchTimer -= ImGui::GetIO().DeltaTime;
+                if (searchTimer <= 0.0f)
+                {
+                    resourcesCount = 0;
+                    for (auto& resource : ResourcesList::Get()->GetResources())
+                    {
+                        if (comboSearchStr[0] == '\0' || StringContains(resource.m_name, comboSearchStr))
+                        {
+                            resource.m_isFiltered = false;
+                            ++resourcesCount;
+                        }
+                        else
+                        {
+                            resource.m_isFiltered = true;
+                        }
+                    }
+
+                    searchTimer = 0.0f;
+                }
+            }
+
+            if (ImGui::BeginChild("##dropdownScroll", ImVec2(0, g_comboDropdownHeight)))
+            {
+                const auto& resources = ResourcesList::Get()->GetResources();
+                // DisplayStart/End is 'int'
+                // Will this cause issues? current resources.size() is 1,485,150 million items
+                ImGuiListClipper clipper;
+                clipper.Begin(resourcesCount, ImGui::GetTextLineHeightWithSpacing());
+                while (clipper.Step())
+                {
+                    auto it = resources.begin();
+
+                    // Skip 'DisplayStart' number of unfiltered items
+                    for (int i = 0; i != clipper.DisplayStart; ++it)
+                    {
+                        const auto& resource = *it;
+                        if (resource.m_isFiltered)
+                            continue;
+
+                        ++i;
+                    }
+
+                    for (int i = clipper.DisplayStart; i != clipper.DisplayEnd && it != resources.end(); ++it)
+                    {
+                        const auto& resource = *it;
+                        if (resource.m_isFiltered)
+                            continue;
+
+                        bool isSelected = resource.m_hash == hashRef;
+                        if (ImGui::Selectable(resource.m_name.c_str(), isSelected))
+                        {
+                            hashRef = resource.m_hash;
+                            valueChanged = true;
+                            ImGui::CloseCurrentPopup();
+                            break;
+                        }
+
+                        if (isSelected)
+                            ImGui::SetItemDefaultFocus();
+
+                        ++i;
+                    }
+                }
+            }
+            ImGui::EndChild();
+
+            ImGui::EndCombo();
+        }
+    }
 
     if (!aReadOnly && valueChanged)
     {
@@ -1668,8 +1874,8 @@ void TweakDBEditor::DrawAdvancedTab()
         ImGui::TreePush();
         ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32_BLACK_TRANS);
         ImGui::PushStyleColor(ImGuiCol_Text, 0xFFF66409);
-        char* pLink = const_cast<char*>("https://www.cyberpunk.net/en/modding-support");
-        ImGui::InputText("##cdprLink", pLink, 44, ImGuiInputTextFlags_ReadOnly);
+        char pLink[] = "https://www.cyberpunk.net/en/modding-support";
+        ImGui::InputText("##cdprLink", pLink, sizeof(pLink) - 1, ImGuiInputTextFlags_ReadOnly);
         ImGui::PopStyleColor(2);
         ImGui::Text("1) Download and unpack 'Metadata'");
         ImGui::Text("2) Copy 'tweakdb.str' to 'plugins\\cyber_engine_tweaks\\tweakdb.str'");
@@ -1682,6 +1888,34 @@ void TweakDBEditor::DrawAdvancedTab()
                 RefreshAll();
                 FilterAll();
             }
+        }
+        ImGui::TreePop();
+    }
+
+    if (ResourcesList::Get()->IsInitialized())
+    {
+        ImGui::PushStyleColor(ImGuiCol_Text, 0xFF00FF00);
+        ImGui::Text("'archivehashes.txt' is loaded!");
+        ImGui::PopStyleColor();
+    }
+    else
+    {
+        ImGui::PushStyleColor(ImGuiCol_Text, 0xFF0000FF);
+        ImGui::Text("'archivehashes.txt' is not loaded.");
+        ImGui::PopStyleColor();
+        ImGui::TreePush();
+        ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32_BLACK_TRANS);
+        ImGui::PushStyleColor(ImGuiCol_Text, 0xFFF66409);
+        char pLink[] = "https://github.com/WolvenKit/Wolvenkit/raw/master/WolvenKit.Common/Resources/archivehashes.zip";
+        ImGui::InputText("##wkitLink", pLink, sizeof(pLink) - 1, ImGuiInputTextFlags_ReadOnly);
+        ImGui::PopStyleColor(2);
+        ImGui::Text("1) Download and unpack 'archivehashes.zip'");
+        ImGui::Text("2) Copy 'archivehashes.txt' to 'plugins\\cyber_engine_tweaks\\archivehashes.txt'");
+        std::string cetDir = CET::Get().GetPaths().CETRoot().string();
+        ImGui::Text("Full path: %s", cetDir.c_str());
+        if (ImGui::Button("3) Load archivehashes.txt"))
+        {
+            ResourcesList::Get()->Initialize();
         }
         ImGui::TreePop();
     }
