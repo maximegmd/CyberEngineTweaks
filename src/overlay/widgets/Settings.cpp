@@ -42,11 +42,6 @@ void Settings::Update()
         ImGui::BeginChild("##SETTINGS_ACTUAL", ImVec2(0,0), true);
 
     HelperWidgets::BindWidget(m_overlayKeyBindInfo, m_overlay.GetBind().ID);
-    if (m_options.IsFirstLaunch && (m_overlayKeyBindInfo.SavedCodeBind != m_overlayKeyBindInfo.CodeBind))
-    {
-        Save();
-        Load();
-    }
 
     HelperWidgets::BoolWidget("AMD SMT Patch:", m_patchAmdSmt, m_options.PatchAmdSmt);
     HelperWidgets::BoolWidget("Enable Debug Menu:", m_patchEnableDebug, m_options.PatchEnableDebug);
@@ -62,6 +57,13 @@ void Settings::Update()
 
     if (!m_options.IsFirstLaunch)
         ImGui::EndChild();
+
+    // this needs to be performed at the end!
+    if (m_options.IsFirstLaunch && (m_overlayKeyBindInfo.SavedCodeBind != m_overlayKeyBindInfo.CodeBind))
+    {
+        Save();
+        Load();
+    }
 }
 
 void Settings::Load()
