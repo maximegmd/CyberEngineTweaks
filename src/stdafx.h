@@ -38,6 +38,8 @@
 #include <fstream>
 #include <array>
 #include <bitset>
+#include <regex>
+#include <execution>
 
 #include <atlcomcli.h>
 #include <d3d12.h>

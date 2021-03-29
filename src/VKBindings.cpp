@@ -698,13 +698,13 @@ LRESULT VKBindings::HandleRAWInput(HRAWINPUT ahRAWInput)
                 return RecordKeyUp(VK_XBUTTON2);
             case RI_MOUSE_WHEEL:
             {
-                const USHORT key { static_cast<USHORT>(RI_MOUSE_WHEEL | !(m.usButtonData & 0x8000)) };
+                const USHORT key { static_cast<USHORT>(RI_MOUSE_WHEEL | (m.usButtonData & 0x8000) ? 0 : 1) };
                 RecordKeyDown(key);
                 return RecordKeyUp(key);
             }
             case RI_MOUSE_HWHEEL:
             {
-                const USHORT key{static_cast<USHORT>(RI_MOUSE_HWHEEL | !(m.usButtonData & 0x8000))};
+                const USHORT key{static_cast<USHORT>(RI_MOUSE_HWHEEL | (m.usButtonData & 0x8000) ? 0 : 1)};
                 RecordKeyDown(key);
                 return RecordKeyUp(key);
             }

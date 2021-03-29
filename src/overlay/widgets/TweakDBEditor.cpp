@@ -1,7 +1,4 @@
 #include <stdafx.h>
-#include <execution>
-#include <regex>
-#include <shared_mutex>
 
 #include <RED4ext/Types/TweakDB.hpp>
 #include <RED4ext/Types/generated/Color.hpp>
@@ -595,51 +592,51 @@ void TweakDBEditor::FilterRecords(bool aFilterTab, bool aFilterDropdown)
     {
         bool anyRecordsVisible = false;
         std::for_each(std::execution::par_unseq, group.m_records.begin(), group.m_records.end(),
-                      [&](CachedRecord& record)
+          [&](CachedRecord& record)
+          {
+              if (aFilterTab)
+              {
+                  bool isFiltered = false;
+                  if (s_recordsFilterBuffer[0] != '\0' && record.m_dbid != dbid &&
+                      !StringContains(record.m_name, s_recordsFilterBuffer, s_recordsFilterIsRegex))
+                  {
+                      isFiltered = true;
+
+                      for (CachedFlat& flat : record.m_flats)
                       {
-                          if (aFilterTab)
+                          if (flat.m_dbid == dbid ||
+                              StringContains(flat.m_name, s_recordsFilterBuffer, s_recordsFilterIsRegex))
                           {
-                              bool isFiltered = false;
-                              if (s_recordsFilterBuffer[0] != '\0' && record.m_dbid != dbid &&
-                                  !StringContains(record.m_name, s_recordsFilterBuffer, s_recordsFilterIsRegex))
-                              {
-                                  isFiltered = true;
-
-                                  for (CachedFlat& flat : record.m_flats)
-                                  {
-                                      if (flat.m_dbid == dbid ||
-                                          StringContains(flat.m_name, s_recordsFilterBuffer, s_recordsFilterIsRegex))
-                                      {
-                                          isFiltered = false;
-                                          break;
-                                      }
-                                  }
-                              }
-
-                              if (isFiltered)
-                              {
-                                  record.m_isFiltered = true;
-                              }
-                              else
-                              {
-                                  record.m_isFiltered = false;
-                                  anyRecordsVisible = true;
-                              }
+                              isFiltered = false;
+                              break;
                           }
+                      }
+                  }
 
-                          if (aFilterDropdown)
-                          {
-                              if (s_tweakdbidFilterBuffer[0] != '\0' && record.m_dbid != dbidDropdown &&
-                                  !StringContains(record.m_name, s_tweakdbidFilterBuffer))
-                              {
-                                  record.m_isDropdownFiltered = true;
-                              }
-                              else
-                              {
-                                  record.m_isDropdownFiltered = false;
-                              }
-                          }
-                      });
+                  if (isFiltered)
+                  {
+                      record.m_isFiltered = true;
+                  }
+                  else
+                  {
+                      record.m_isFiltered = false;
+                      anyRecordsVisible = true;
+                  }
+              }
+
+              if (aFilterDropdown)
+              {
+                  if (s_tweakdbidFilterBuffer[0] != '\0' && record.m_dbid != dbidDropdown &&
+                      !StringContains(record.m_name, s_tweakdbidFilterBuffer))
+                  {
+                      record.m_isDropdownFiltered = true;
+                  }
+                  else
+                  {
+                      record.m_isDropdownFiltered = false;
+                  }
+              }
+          });
 
         if (aFilterTab)
         {
@@ -1110,7 +1107,7 @@ bool TweakDBEditor::DrawFlatTweakDBID(RED4ext::TweakDBID aDBID, RED4ext::CStackT
 
 bool TweakDBEditor::DrawFlatQuaternion(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
 {
-    auto* pQuat = reinterpret_cast<RED4ext::Quaternion*>(aStackType.value);
+    auto* pQuat = static_cast<RED4ext::Quaternion*>(aStackType.value);
 
     float i = pQuat->i;
     float j = pQuat->j;
@@ -1164,7 +1161,7 @@ bool TweakDBEditor::DrawFlatQuaternion(RED4ext::TweakDBID aDBID, RED4ext::CStack
 
 bool TweakDBEditor::DrawFlatEulerAngles(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
 {
-    auto* pEular = reinterpret_cast<RED4ext::EulerAngles*>(aStackType.value);
+    auto* pEular = static_cast<RED4ext::EulerAngles*>(aStackType.value);
 
     float roll = pEular->Roll;
     float pitch = pEular->Pitch;
@@ -1211,7 +1208,7 @@ bool TweakDBEditor::DrawFlatEulerAngles(RED4ext::TweakDBID aDBID, RED4ext::CStac
 
 bool TweakDBEditor::DrawFlatVector3(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
 {
-    auto* pVec = reinterpret_cast<RED4ext::Vector3*>(aStackType.value);
+    auto* pVec = static_cast<RED4ext::Vector3*>(aStackType.value);
 
     float x = pVec->X;
     float y = pVec->Y;
@@ -1258,7 +1255,7 @@ bool TweakDBEditor::DrawFlatVector3(RED4ext::TweakDBID aDBID, RED4ext::CStackTyp
 
 bool TweakDBEditor::DrawFlatVector2(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
 {
-    auto* pVec = reinterpret_cast<RED4ext::Vector2*>(aStackType.value);
+    auto* pVec = static_cast<RED4ext::Vector2*>(aStackType.value);
 
     float x = pVec->X;
     float y = pVec->Y;
@@ -1298,7 +1295,7 @@ bool TweakDBEditor::DrawFlatVector2(RED4ext::TweakDBID aDBID, RED4ext::CStackTyp
 
 bool TweakDBEditor::DrawFlatColor(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
 {
-    auto* pColor = reinterpret_cast<RED4ext::Color*>(aStackType.value);
+    auto* pColor = static_cast<RED4ext::Color*>(aStackType.value);
 
     float rgba[4];
     rgba[0] = pColor->Red / 255.0f;
@@ -1343,7 +1340,7 @@ bool TweakDBEditor::DrawFlatColor(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
 
 bool TweakDBEditor::DrawFlatLocKeyWrapper(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
 {
-    auto* pLocKey = reinterpret_cast<RED4ext::gamedataLocKeyWrapper*>(aStackType.value);
+    auto* pLocKey = static_cast<RED4ext::gamedataLocKeyWrapper*>(aStackType.value);
 
     ImGui::Text("This is a LocalizationKey");
     ImGui::Text("Game.GetLocalizedTextByKey(...)");
@@ -1355,7 +1352,7 @@ bool TweakDBEditor::DrawFlatLocKeyWrapper(RED4ext::TweakDBID aDBID, RED4ext::CSt
 
     {
         RED4ext::CString localizedText;
-        RED4ext::ExecuteGlobalFunction("GetLocalizedTextByKey", &localizedText, key);
+        ExecuteGlobalFunction("GetLocalizedTextByKey", &localizedText, key);
         ImGui::SetNextItemWidth(-1);
         ImGui::InputText("##string", (char*)localizedText.c_str(), localizedText.Length(),
                          ImGuiInputTextFlags_ReadOnly);
@@ -1383,7 +1380,7 @@ bool TweakDBEditor::DrawFlatLocKeyWrapper(RED4ext::TweakDBID aDBID, RED4ext::CSt
 
 bool TweakDBEditor::DrawFlatResourceAsyncRef(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
 {
-    auto* pRaRef = reinterpret_cast<RED4ext::ResourceAsyncReference<void>*>(aStackType.value);
+    auto* pRaRef = static_cast<RED4ext::ResourceAsyncReference<void>*>(aStackType.value);
 
     uint64_t hashRef = reinterpret_cast<uint64_t>(pRaRef->ref);
 
@@ -1415,20 +1412,20 @@ bool TweakDBEditor::DrawFlatResourceAsyncRef(RED4ext::TweakDBID aDBID, RED4ext::
                 {
                     auto& resources = ResourcesList::Get()->GetResources();
                     resourcesCount = std::count_if(std::execution::par_unseq, resources.begin(), resources.end(),
-                                                   [](ResourcesList::Resource& resource)
-                                                   {
-                                                       if (comboSearchStr[0] == '\0' ||
-                                                           StringContains(resource.m_name, comboSearchStr))
-                                                       {
-                                                           resource.m_isFiltered = false;
-                                                       }
-                                                       else
-                                                       {
-                                                           resource.m_isFiltered = true;
-                                                       }
+                       [](ResourcesList::Resource& resource)
+                       {
+                           if (comboSearchStr[0] == '\0' ||
+                               StringContains(resource.m_name, comboSearchStr))
+                           {
+                               resource.m_isFiltered = false;
+                           }
+                           else
+                           {
+                               resource.m_isFiltered = true;
+                           }
 
-                                                       return !resource.m_isFiltered;
-                                                   });
+                           return !resource.m_isFiltered;
+                       });
 
                     searchTimer = 0.0f;
                 }
@@ -1506,7 +1503,7 @@ bool TweakDBEditor::DrawFlatResourceAsyncRef(RED4ext::TweakDBID aDBID, RED4ext::
 
 bool TweakDBEditor::DrawFlatCName(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
 {
-    auto* pCName = reinterpret_cast<RED4ext::CName*>(aStackType.value);
+    auto* pCName = static_cast<RED4ext::CName*>(aStackType.value);
 
     ImGui::Text("This is not just a string.");
     ImGui::Text("Game is expecting specific values.");
@@ -1532,7 +1529,7 @@ bool TweakDBEditor::DrawFlatCName(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
     if (ImGui::IsItemHovered() && strnicmp(pStr, "LocKey#", 7) == 0)
     {
         RED4ext::CString localizedText;
-        RED4ext::ExecuteGlobalFunction("GetLocalizedTextByKey", &localizedText, atoll(pStr + 7));
+        ExecuteGlobalFunction("GetLocalizedTextByKey", &localizedText, atoll(pStr + 7));
         ImGui::SetTooltip(localizedText.c_str());
     }
 
@@ -1550,7 +1547,7 @@ bool TweakDBEditor::DrawFlatCName(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
     {
         if (aDBID.IsValid())
         {
-            RED4ext::CStackType newStackType(aStackType.type, &newCName);
+            const RED4ext::CStackType newStackType(aStackType.type, &newCName);
             return TweakDB::InternalSetFlat(aDBID, newStackType);
         }
         else
@@ -1565,15 +1562,15 @@ bool TweakDBEditor::DrawFlatCName(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
 
 bool TweakDBEditor::DrawFlatBool(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
 {
-    auto* pBool = reinterpret_cast<bool*>(aStackType.value);
+    auto* pBool = static_cast<bool*>(aStackType.value);
 
     bool val = *pBool;
-    bool valueChanged = ImGui::Checkbox("", &val);
+    const bool valueChanged = ImGui::Checkbox("", &val);
     if (!aReadOnly && valueChanged)
     {
         if (aDBID.IsValid())
         {
-            RED4ext::CStackType newStackType(aStackType.type, &val);
+            const RED4ext::CStackType newStackType(aStackType.type, &val);
             return TweakDB::InternalSetFlat(aDBID, newStackType);
         }
         else
@@ -1645,7 +1642,7 @@ bool TweakDBEditor::DrawFlatFloat(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
 
 bool TweakDBEditor::DrawFlatInt32(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
 {
-    auto* pInt = reinterpret_cast<int32_t*>(aStackType.value);
+    auto* pInt = static_cast<int32_t*>(aStackType.value);
 
     int32_t val = *pInt;
     ImGui::SetNextItemWidth(-1);
@@ -1672,8 +1669,6 @@ bool TweakDBEditor::DrawFlatInt32(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
 
 void TweakDBEditor::DrawRecordsTab()
 {
-    auto* pTDB = RED4ext::TweakDB::Get();
-
     static float searchTimer = 0.0f;
     ImGui::SetNextItemWidth(-70);
     if (ImGui::InputTextWithHint("##search", "Search", s_recordsFilterBuffer, sizeof(s_recordsFilterBuffer)))
@@ -1699,7 +1694,7 @@ void TweakDBEditor::DrawRecordsTab()
     if (!ImGui::BeginChild("##scrollable"))
         ImGui::EndChild();
 
-    for (CachedRecordGroup& group : m_cachedRecords)
+    for (auto& group : m_cachedRecords)
     {
         if (group.m_isFiltered || !group.m_visibilityChecker.IsVisible())
             continue;
@@ -1783,7 +1778,7 @@ void TweakDBEditor::DrawQueriesTab()
     std::shared_lock<RED4ext::SharedMutex> _(pTDB->mutex01);
     pTDB->queries.ForEach([this](const RED4ext::TweakDBID& queryID, RED4ext::DynArray<RED4ext::TweakDBID>& recordIDs)
     {
-        auto queryName = GetTweakDBIDStringQuery(queryID.value);
+        const auto queryName = GetTweakDBIDStringQuery(queryID.value);
 
         ImGui::PushID(queryID.nameHash);
         ImGui::PushID(queryID.nameLength);
@@ -2137,7 +2132,7 @@ void TweakDBEditor::CachedRecord::InitializeFlats()
     }
 }
 
-void TweakDBEditor::CachedRecord::Update()
+void TweakDBEditor::CachedRecord::Update() const
 {
     auto* pTDB = RED4ext::TweakDB::Get();
     pTDB->UpdateRecord(m_dbid);
@@ -2162,7 +2157,7 @@ void TweakDBEditor::CachedRecordGroup::Initialize()
     m_isInitialized = true;
 }
 
-bool TweakDBEditor::ImGuiVisibilityChecker::IsVisible(bool aClaimSpaceIfInvisible)
+bool TweakDBEditor::ImGuiVisibilityChecker::IsVisible(bool aClaimSpaceIfInvisible) const
 {
     return m_itemSize.y == 0 || ImGui::NextItemVisible(m_itemSize, aClaimSpaceIfInvisible);
 }
