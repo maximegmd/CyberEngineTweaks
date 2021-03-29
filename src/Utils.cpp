@@ -96,3 +96,43 @@ std::shared_ptr<spdlog::logger> CreateLogger(const std::filesystem::path& aPath,
     register_logger(logger);
     return logger;
 }
+
+// deep copies sol object (doesnt take into account potential duplicates)
+sol::object DeepCopySolObject(sol::object aObj, const sol::state_view& aStateView)
+{
+    if (aObj.get_type() != sol::type::table)
+        return aObj;
+    sol::table src{aObj.as<sol::table>()};
+    sol::table copy{aStateView, sol::create};
+    for (auto kv : src)
+        copy[DeepCopySolObject(kv.first, aStateView)] = DeepCopySolObject(kv.second, aStateView);
+    copy[sol::metatable_key] = src[sol::metatable_key];
+    return copy;
+}
+
+// makes sol object immutable when accessed from lua
+void MakeSolObjectImmutable(sol::object aObj, const sol::state_view& aStateView)
+{
+    if (aObj.get_type() != sol::type::table && aObj.get_type() != sol::type::userdata)
+        return;
+
+    sol::table target = aObj;
+    sol::table metatable;
+    sol::object metaref = target[sol::metatable_key];
+
+    if (metaref.is<sol::table>())
+    {
+        metatable = metaref;
+    }
+    else
+    {
+        metatable = {aStateView, sol::create};
+        target[sol::metatable_key] = metatable;
+    }
+
+    // prevent overriding metatable
+    metatable[sol::meta_function::metatable] = []() { return sol::nil; };
+
+    // prevent adding new properties
+    metatable[sol::meta_function::new_index] = []() {};
+}

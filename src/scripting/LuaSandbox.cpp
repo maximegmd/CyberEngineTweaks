@@ -4,7 +4,6 @@
 
 #include "Scripting.h"
 
-
 #include <Utils.h>
 
 static constexpr const char* s_cGlobalObjectsWhitelist[] =
@@ -38,7 +37,6 @@ static constexpr const char* s_cGlobalObjectsWhitelist[] =
     "DumpVtables",
     "GetVersion",
     "DumpAllTypeNames",
-    "ClassReference",
     "GetDisplayResolution",
     "Dump",
     "ToVector3",
@@ -50,7 +48,6 @@ static constexpr const char* s_cGlobalObjectsWhitelist[] =
     "GameOptions",
     "GameDump",
     "GetSingleton",
-    "Descriptor",
     "ItemID",
     "ToItemID",
     "TweakDBID",
@@ -60,12 +57,8 @@ static constexpr const char* s_cGlobalObjectsWhitelist[] =
     "Quaternion",
     "EulerAngles",
     "ToVector4",
-    "Unknown",
     "ToQuaternion",
-    "SingletonReference",
-    "StrongReference",
     "ToTweakDBID",
-    "WeakReference",
     "GetMod",
     "TweakDB",
     "Override",
@@ -78,6 +71,26 @@ static constexpr const char* s_cGlobalTablesWhitelist[] =
     "table",
     "math",
     "bit32"
+};
+
+static constexpr const char* s_cGlobalImmutablesList[] =
+{
+    "ClassReference",
+    "CName",
+    "Descriptor",
+    "Enum",
+    "EulerAngles",
+    "Game",
+    "GameOptions",
+    "ItemID",
+    "Quaternion",
+    "SingletonReference",
+    "StrongReference",
+    "TweakDBID",
+    "Unknown",
+    "Vector3",
+    "Vector4",
+    "WeakReference"
 };
 
 static constexpr const char* s_cGlobalExtraLibsWhitelist[] =
@@ -141,6 +154,10 @@ void LuaSandbox::Initialize()
         osCopy["time"] = os["time"];
         m_env["os"] = osCopy;
     }
+
+    // make shared things immutable
+    for (const auto* cKey : s_cGlobalImmutablesList)
+        MakeSolObjectImmutable(cGlobals[cKey], luaView);
 
     CreateSandbox();
 }
@@ -208,7 +225,7 @@ void LuaSandbox::InitializeExtraLibsForSandbox(Sandbox& aSandbox) const
     // copy extra whitelisted libs from global table
     const auto cGlobals = luaView.globals();
     for (const auto* cKey : s_cGlobalExtraLibsWhitelist)
-        sbEnv[cKey].set(cGlobals[cKey].get<sol::table>());
+        sbEnv[cKey] = DeepCopySolObject(cGlobals[cKey].get<sol::object>(), luaView);
 }
 
 void LuaSandbox::InitializeDBForSandbox(Sandbox& aSandbox) const
@@ -226,7 +243,7 @@ void LuaSandbox::InitializeDBForSandbox(Sandbox& aSandbox) const
     {
         const auto cKeyStr = cKV.first.as<std::string>();
         if (cKeyStr.compare(0, 4, "open"))
-            sqlite3Copy[cKV.first] = cKV.second;
+            sqlite3Copy[cKV.first] = DeepCopySolObject(cKV.second, luaView);
     }
     sbEnv["sqlite3"] = sqlite3Copy;
 
@@ -374,8 +391,8 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
     {
         const auto cIO = cGlobals["io"].get<sol::table>();
         sol::table ioSB(luaView, sol::create);
-        ioSB["type"] = cIO["type"];
-        ioSB["close"] = cIO["close"];
+        ioSB["type"] = DeepCopySolObject(cIO["type"], luaView);
+        ioSB["close"] = DeepCopySolObject(cIO["close"], luaView);
         ioSB["lines"] = [cIO, cSBRootPath](const std::string& acPath)
         {
             const auto cAbsPath = absolute(cSBRootPath / acPath).make_preferred();
@@ -403,11 +420,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
     // add in rename and remove repacements for os lib
     {
         const auto cOS = cGlobals["os"].get<sol::table>();
-        sol::table osSB(luaView, sol::create);
-        osSB["clock"] = cOS["clock"];
-        osSB["date"] = cOS["date"];
-        osSB["difftime"] = cOS["difftime"];
-        osSB["time"] = cOS["time"];
+        sol::table osSB = sbEnv["os"].get<sol::table>();
         osSB["rename"] = [cOS, cSBRootPath](const std::string& acOldPath, const std::string& acNewPath) -> std::tuple<sol::object, std::string>
         {
             const auto cAbsOldPath = absolute(cSBRootPath / acOldPath).make_preferred();
@@ -437,7 +450,6 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
                 return std::make_tuple(cResult.get<sol::object>(), "");
             return std::make_tuple(cResult.get<sol::object>(0), cResult.get<std::string>(1));
         };
-        sbEnv["os"] = osSB;
     }
 
     // add support functions for bindings
