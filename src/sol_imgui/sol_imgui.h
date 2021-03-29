@@ -1698,11 +1698,11 @@ namespace sol_ImGui
     inline void ImDrawListAddLine(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, int col, float thickness)                                                                                   { drawlist->AddLine({ p1X, p1Y }, { p2X, p2Y }, ImU32(col), thickness); }
     inline void ImDrawListAddRect(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col)                                                                                        { drawlist->AddRect({ p_minX, p_minY }, { p_maxX, p_maxY }, ImU32(col)); }
     inline void ImDrawListAddRect(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col, float rounding)                                                                        { drawlist->AddRect({ p_minX, p_minY }, { p_maxX, p_maxY }, ImU32(col), rounding); }
-    inline void ImDrawListAddRect(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col, float rounding, int rounding_corners)                                                  { drawlist->AddRect({ p_minX, p_minY }, { p_maxX, p_maxY }, ImU32(col), rounding, static_cast<ImDrawCornerFlags>(rounding_corners)); }
-    inline void ImDrawListAddRect(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col, float rounding, int rounding_corners, float thickness)                                 { drawlist->AddRect({ p_minX, p_minY }, { p_maxX, p_maxY }, ImU32(col), rounding, static_cast<ImDrawCornerFlags>(rounding_corners), thickness); }
+    inline void ImDrawListAddRect(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col, float rounding, int flags)                                                             { drawlist->AddRect({ p_minX, p_minY }, { p_maxX, p_maxY }, ImU32(col), rounding, static_cast<ImDrawFlags>(flags)); }
+    inline void ImDrawListAddRect(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col, float rounding, int flags, float thickness)                                            { drawlist->AddRect({ p_minX, p_minY }, { p_maxX, p_maxY }, ImU32(col), rounding, static_cast<ImDrawFlags>(flags), thickness); }
     inline void ImDrawListAddRectFilled(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col)                                                                                  { drawlist->AddRectFilled({ p_minX, p_minY }, { p_maxX, p_maxY }, ImU32(col)); }
     inline void ImDrawListAddRectFilled(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col, float rounding)                                                                  { drawlist->AddRectFilled({ p_minX, p_minY }, { p_maxX, p_maxY }, ImU32(col), rounding); }
-    inline void ImDrawListAddRectFilled(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col, float rounding, int rounding_corners)                                            { drawlist->AddRectFilled({ p_minX, p_minY }, { p_maxX, p_maxY }, ImU32(col), rounding, static_cast<ImDrawCornerFlags>(rounding_corners)); }
+    inline void ImDrawListAddRectFilled(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col, float rounding, int flags)                                                       { drawlist->AddRectFilled({ p_minX, p_minY }, { p_maxX, p_maxY }, ImU32(col), rounding, static_cast<ImDrawFlags>(flags)); }
     inline void ImDrawListAddRectFilledMultiColor(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col_upr_left, int col_upr_right, int col_bot_right, int col_bot_left)       { drawlist->AddRectFilledMultiColor({ p_minX, p_minY }, { p_maxX, p_maxY }, ImU32(col_upr_left), ImU32(col_upr_right), ImU32(col_bot_right), ImU32(col_bot_left)); }
     inline void ImDrawListAddQuad(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, float p4X, float p4Y, int col)                                                        { drawlist->AddQuad({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, { p4X, p4Y }, ImU32(col)); }
     inline void ImDrawListAddQuad(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, float p4X, float p4Y, int col, float thickness)                                       { drawlist->AddQuad({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, { p4X, p4Y }, ImU32(col), thickness); }
@@ -1723,7 +1723,7 @@ namespace sol_ImGui
     inline void ImDrawListAddText(ImDrawList* drawlist, float font_size, float posX, float posY, int col, const std::string& text_begin, float wrap_width)                                                      { drawlist->AddText(ImGui::GetFont(), font_size, { posX, posY }, ImU32(col), text_begin.c_str(), NULL, wrap_width); }
     // TODO
     // inline void ImDrawListAddText(ImDrawList* drawlist, float font_size, float posX, float posY, int col, const std::string& text_begin, float wrap_width, sol::table float cpu_fine_clip_rect)                 { drawlist->AddText(ImGui::GetFont(), font_size, { posX, posY }, ImU32(col), text_begin.c_str(), NULL, wrap_width, cpu_fine_clip_rect); }
-    // inline void ImDrawListAddPolyline(ImDrawList* drawlist, sol::table points, int num_points, int col, bool closed, float thickness)                                                                           { drawlist->AddPolyline(points, num_points, ImU32(col), &closed, thickness); }
+    // inline void ImDrawListAddPolyline(ImDrawList* drawlist, sol::table points, int num_points, int col, int flags, float thickness)                                                                             { drawlist->AddPolyline(points, num_points, ImU32(col), static_cast<ImDrawFlags>(flags), thickness); }
     // inline void ImDrawListAddConvexPolyFilled(ImDrawList* drawlist, sol::table points, int num_points, int col)                                                                                                 { drawlist->AddConvexPolyFilled(points, num_points, ImU32(col)); }
     inline void ImDrawListAddBezierCubic(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, float p4X, float p4Y, int col, float thickness)                                { drawlist->AddBezierCubic({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, { p4X, p4Y }, ImU32(col), thickness); }
     inline void ImDrawListAddBezierCubic(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, float p4X, float p4Y, int col, float thickness, int num_segments)              { drawlist->AddBezierCubic({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, { p4X, p4Y }, ImU32(col), thickness, num_segments); }
@@ -1934,7 +1934,7 @@ namespace sol_ImGui
             "AllowTabInput"                  , ImGuiInputTextFlags_AllowTabInput,
             "CtrlEnterForNewLine"            , ImGuiInputTextFlags_CtrlEnterForNewLine,
             "NoHorizontalScroll"             , ImGuiInputTextFlags_NoHorizontalScroll,
-            "AlwaysInsertMode"               , ImGuiInputTextFlags_AlwaysInsertMode,
+            "AlwaysOverwrite"                , ImGuiInputTextFlags_AlwaysOverwrite,
             "ReadOnly"                       , ImGuiInputTextFlags_ReadOnly,
             "Password"                       , ImGuiInputTextFlags_Password,
             "NoUndoRedo"                     , ImGuiInputTextFlags_NoUndoRedo,
@@ -2140,6 +2140,23 @@ namespace sol_ImGui
             "CellBg"                         , ImGuiTableBgTarget_CellBg
         );
 #pragma endregion TableBg Target
+
+#pragma region Draw Flags
+        lua.new_enum("ImDrawFlags",
+            "None"                              , ImDrawFlags_None,
+            "Closed"                            , ImDrawFlags_Closed,
+            "ImDrawFlags_RoundCornersTopLeft"   , ImDrawFlags_RoundCornersTopLeft,
+            "RoundCornersTopRight"              , ImDrawFlags_RoundCornersTopRight,
+            "RoundCornersBottomLeft"            , ImDrawFlags_RoundCornersBottomLeft,
+            "RoundCornersBottomRight"           , ImDrawFlags_RoundCornersBottomRight,
+            "RoundCornersNone"                  , ImDrawFlags_RoundCornersNone,
+            "RoundCornersTop"                   , ImDrawFlags_RoundCornersTop,
+            "RoundCornersBottom"                , ImDrawFlags_RoundCornersBottom,
+            "RoundCornersLeft"                  , ImDrawFlags_RoundCornersLeft,
+            "RoundCornersRight"                 , ImDrawFlags_RoundCornersRight,
+            "RoundCornersAll"                   , ImDrawFlags_RoundCornersAll
+        );
+#pragma endregion Draw Flags 
 
 #pragma region TabBar Flags
         lua.new_enum("ImGuiTabBarFlags",
