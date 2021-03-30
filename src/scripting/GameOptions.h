@@ -1,43 +1,39 @@
 #pragma once
 
-enum class GameOptionType : uint8_t
-{
-    Integer,
-    Boolean,
-    Float,
-    String,
-    Color // stored as int32
-};
-
 struct GameOption
 {
     virtual ~GameOption();
+
+    static void* s_integerVtable;
+    static void* s_booleanVtable;
+    static void* s_floatVtable;
+    static void* s_stringVtable;
+    static void* s_colorVtable;
 
     const char* pName;
     const char* pCategory;
     uint64_t unk18;
     uint64_t unk20;
-    GameOptionType type;
+    uint8_t unk28;
     uint8_t flag;
     uint8_t pad2A[0x30 - 0x2A];
     union
     {
-        bool* pBoolean;
-        int32_t* pInteger;
-        float* pFloat;
-        RED4ext::CString* pString;
-    };
+        bool Boolean;
+        struct
+        {
+            int32_t Value;
+            int32_t Min;
+            int32_t Max;
+        } Integer;
+        struct
+        {
+            float Value;
+            float Min;
+            float Max;
+        } Float;
 
-    union
-    {
-        int32_t* pIntegerMin;
-        float* pFloatMin;
-    };
-
-    union
-    {
-        int32_t* pIntegerMax;
-        float* pFloatMax;
+        RED4ext::CString String;
     };
 
     std::string GetInfo();
@@ -56,11 +52,13 @@ struct GameOption
     bool SetString(const std::string& value);
     bool SetColor(int value);
 
+    bool IsA(void* apVtable) const;
+
     bool Toggle();
 };
 
-static_assert(offsetof(GameOption, type) == 0x28);
-static_assert(offsetof(GameOption, pBoolean) == 0x30);
+static_assert(offsetof(GameOption, unk28) == 0x28);
+static_assert(offsetof(GameOption, Boolean) == 0x30);
 
 // Struct to expose to Lua to allow these functions to be called at runtime
 struct GameOptions
