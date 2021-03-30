@@ -9,6 +9,7 @@ Bindings::Bindings(VKBindings& aBindings, Overlay& aOverlay, LuaVM& aVm)
     : m_bindings(aBindings)
     , m_overlay(aOverlay)
     , m_vm(aVm)
+    , m_overlayKeyID(m_overlay.GetBind().ID)
 {
 }
 
@@ -70,7 +71,7 @@ void Bindings::Update()
                     prevMod = curMod;
                 }
 
-                m_madeChanges |= HelperWidgets::BindWidget(vkBindInfo, m_overlay.GetBind().ID);
+                m_madeChanges |= HelperWidgets::BindWidget(vkBindInfo, (vkBindInfo.Bind.ID != m_overlayKeyID));
             }
         }
         else

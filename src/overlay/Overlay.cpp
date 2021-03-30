@@ -108,7 +108,7 @@ void Overlay::Update()
             ImGui::Text("Please, bind some key combination for toggling overlay!\nCombo can be composed from up to 4 keys.");
             ImGui::Separator();
 
-            HelperWidgets::BindWidget(m_VKBIOverlay, m_VKBIOverlay.Bind.ID);
+            HelperWidgets::BindWidget(m_VKBIOverlay, false);
             if (m_VKBIOverlay.CodeBind)
             {
                 m_VKBIOverlay.Apply();

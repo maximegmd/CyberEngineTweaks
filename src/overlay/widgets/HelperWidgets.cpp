@@ -27,7 +27,7 @@ namespace HelperWidgets
         return activeID;
     }
 
-    bool BindWidget(VKBindInfo& aVKBindInfo, const std::string& acIdOverlay)
+    bool BindWidget(VKBindInfo& aVKBindInfo, bool aUnbindable)
     {
         VKBindings& vkb { CET::Get().GetBindings() };
 
@@ -66,7 +66,7 @@ namespace HelperWidgets
         }
         ImGui::PopID();
         
-        if (aVKBindInfo.CodeBind && (aVKBindInfo.Bind.ID != acIdOverlay)) // make an exception for Overlay key
+        if (aUnbindable && aVKBindInfo.CodeBind)
         {
             ImGui::PushID(&aVKBindInfo.Bind.ID[1]); // same as PushID before, just make pointer a bit bigger :)
             ImGui::SameLine();

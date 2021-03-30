@@ -5,7 +5,7 @@
 namespace HelperWidgets
 {
 WidgetID ToolbarWidget();
-bool BindWidget(VKBindInfo& aVKBindInfo, const std::string& acIdOverlay);
+bool BindWidget(VKBindInfo& aVKBindInfo, bool aUnbindable);
 bool BoolWidget(const std::string& label, bool& current, bool saved);
 
 using TUCHPSave = std::function<void()>;

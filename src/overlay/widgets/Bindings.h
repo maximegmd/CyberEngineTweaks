@@ -23,7 +23,9 @@ private:
     VKBindings& m_bindings;
     Overlay& m_overlay;
     LuaVM& m_vm;
-    
+
+    std::string m_overlayKeyID;
+
     HelperWidgets::TUCHPSave m_saveCB { [this](){ Save(); } };
     HelperWidgets::TUCHPLoad m_loadCB { [this](){ Load(); } };
 
