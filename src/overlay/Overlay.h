@@ -42,6 +42,8 @@ private:
 
     void SetActiveWidget(WidgetID aNewActive);
     
+    VKBindInfo m_VKBIOverlay{ { "cet.overlay_key", "Overlay Key", [this](){ Toggle(); } }, 0, 0, false };
+
     Console m_console;
     Bindings m_bindings;
     Settings m_settings;
@@ -56,7 +58,6 @@ private:
     std::atomic_bool m_enabled{ false };
     std::atomic_bool m_toggled{ false };
     bool m_initialized{ false };
-    VKBindInfo m_VKBIOverlay;
 
     std::atomic_bool m_showFirstTimeModal{ false };
 
