@@ -109,3 +109,18 @@ void Bindings::Save()
     m_vkBindInfos = m_bindings.InitializeMods(m_vm.GetBinds());
     m_luaVMReady = true;
 }
+
+void Bindings::ResetChanges()
+{
+    for (auto& vkBindInfo : m_vkBindInfos)
+    {
+        if (vkBindInfo.CodeBind == vkBindInfo.SavedCodeBind)
+            continue;
+
+        if (vkBindInfo.CodeBind)
+            m_bindings.UnBind(vkBindInfo.CodeBind);
+        if (vkBindInfo.SavedCodeBind)
+            m_bindings.Bind(vkBindInfo.SavedCodeBind, vkBindInfo.Bind);
+        vkBindInfo.CodeBind = vkBindInfo.SavedCodeBind;
+    }
+}

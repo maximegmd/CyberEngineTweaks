@@ -17,6 +17,7 @@ struct Bindings : Widget
     
     void Load();
     void Save();
+    void ResetChanges();
 
 private:
     std::vector<VKBindInfo> m_vkBindInfos{ };
@@ -27,7 +28,7 @@ private:
     std::string m_overlayKeyID;
 
     HelperWidgets::TUCHPSave m_saveCB { [this](){ Save(); } };
-    HelperWidgets::TUCHPLoad m_loadCB { [this](){ Load(); } };
+    HelperWidgets::TUCHPLoad m_loadCB { [this](){ ResetChanges(); } };
 
     bool m_luaVMReady{ false };
     bool m_enabled{ false };
