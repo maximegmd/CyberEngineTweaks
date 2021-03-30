@@ -2,8 +2,8 @@
 
 enum class GameOptionType : uint8_t
 {
-    Boolean,
     Integer,
+    Boolean,
     Float,
     String,
     Color // stored as int32
