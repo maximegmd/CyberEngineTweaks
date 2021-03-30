@@ -168,6 +168,9 @@ void Overlay::Update()
         }
     }
     ImGui::End();
+
+    if (m_options.DrawImGuiDiagnosticWindow)
+        ImGui::ShowMetricsWindow(&m_options.DrawImGuiDiagnosticWindow);
 }
 
 bool Overlay::IsInitialized() const noexcept

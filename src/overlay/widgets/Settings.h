@@ -33,7 +33,6 @@ private:
     bool m_patchDisableBoundaryTeleport{ false };
     bool m_patchDisableWin7Vsync{ false };
     bool m_dumpGameOptions{ false };
-    bool m_drawImGuiDiagnosticWindow{ false };
     bool m_removeDeadBindings{ true };
     Options& m_options;
     LuaVM& m_vm;

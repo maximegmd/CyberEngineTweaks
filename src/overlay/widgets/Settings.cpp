@@ -46,43 +46,42 @@ void Settings::Update()
     
     if (ImGui::BeginTabBar("##SETTINGS", ImGuiTabBarFlags_NoCloseWithMiddleMouseButton | ImGuiTabBarFlags_NoTooltip))
     {
-        // reset dirty state
-        m_madeChanges = false;
-
+        bool patchesChanged = false;
         if (ImGui::BeginTabItem("Patches"))
         {
             if (ImGui::BeginChild("##SETTINGS_PATCHES"))
             {                
-                m_madeChanges |= HelperWidgets::BoolWidget("AMD SMT Patch:", m_patchAmdSmt, m_options.PatchAmdSmt);
-                m_madeChanges |= HelperWidgets::BoolWidget("Remove Pedestrians:", m_patchRemovePedestrians, m_options.PatchRemovePedestrians);
-                m_madeChanges |= HelperWidgets::BoolWidget("Disable Async Compute:", m_patchAsyncCompute, m_options.PatchAsyncCompute);
-                m_madeChanges |= HelperWidgets::BoolWidget("Disable Antialiasing:", m_patchAntialiasing, m_options.PatchAntialiasing);
-                m_madeChanges |= HelperWidgets::BoolWidget("Skip Start Menu:", m_patchSkipStartMenu, m_options.PatchSkipStartMenu);
-                m_madeChanges |= HelperWidgets::BoolWidget("Suppress Intro Movies:", m_patchDisableIntroMovies, m_options.PatchDisableIntroMovies);
-                m_madeChanges |= HelperWidgets::BoolWidget("Disable Vignette:", m_patchDisableVignette, m_options.PatchDisableVignette);
-                m_madeChanges |= HelperWidgets::BoolWidget("Disable Boundary Teleport:", m_patchDisableBoundaryTeleport, m_options.PatchDisableBoundaryTeleport);
-                m_madeChanges |= HelperWidgets::BoolWidget("Disable V-Sync (Windows 7 only):", m_patchDisableWin7Vsync, m_options.PatchDisableWin7Vsync);
+                patchesChanged = HelperWidgets::BoolWidget("AMD SMT Patch:", m_patchAmdSmt, m_options.PatchAmdSmt);
+                patchesChanged |= HelperWidgets::BoolWidget("Remove Pedestrians:", m_patchRemovePedestrians, m_options.PatchRemovePedestrians);
+                patchesChanged |= HelperWidgets::BoolWidget("Disable Async Compute:", m_patchAsyncCompute, m_options.PatchAsyncCompute);
+                patchesChanged |= HelperWidgets::BoolWidget("Disable Antialiasing:", m_patchAntialiasing, m_options.PatchAntialiasing);
+                patchesChanged |= HelperWidgets::BoolWidget("Skip Start Menu:", m_patchSkipStartMenu, m_options.PatchSkipStartMenu);
+                patchesChanged |= HelperWidgets::BoolWidget("Suppress Intro Movies:", m_patchDisableIntroMovies, m_options.PatchDisableIntroMovies);
+                patchesChanged |= HelperWidgets::BoolWidget("Disable Vignette:", m_patchDisableVignette, m_options.PatchDisableVignette);
+                patchesChanged |= HelperWidgets::BoolWidget("Disable Boundary Teleport:", m_patchDisableBoundaryTeleport, m_options.PatchDisableBoundaryTeleport);
+                patchesChanged |= HelperWidgets::BoolWidget("Disable V-Sync (Windows 7 only):", m_patchDisableWin7Vsync, m_options.PatchDisableWin7Vsync);
             }
             ImGui::EndChild();
             ImGui::EndTabItem();
         }
-        
+
+        bool devChanged = false;
         if (ImGui::BeginTabItem("Dev"))
         {
             if (ImGui::BeginChild("##SETTINGS_DEV"))
             {
 
-                HelperWidgets::BoolWidget("Draw ImGui Diagnostic Window:", m_drawImGuiDiagnosticWindow, m_drawImGuiDiagnosticWindow);
-                if (m_drawImGuiDiagnosticWindow)
-                    ImGui::ShowMetricsWindow(&m_drawImGuiDiagnosticWindow);
+                HelperWidgets::BoolWidget("Draw ImGui Diagnostic Window:", m_options.DrawImGuiDiagnosticWindow, m_options.DrawImGuiDiagnosticWindow);
 
-                m_madeChanges |= HelperWidgets::BoolWidget("Remove Dead Bindings:", m_removeDeadBindings, m_options.RemoveDeadBindings);
-                m_madeChanges |= HelperWidgets::BoolWidget("Enable Debug Menu:", m_patchEnableDebug, m_options.PatchEnableDebug);
-                m_madeChanges |= HelperWidgets::BoolWidget("Dump Game Options:", m_dumpGameOptions, m_options.DumpGameOptions);
+                devChanged  = HelperWidgets::BoolWidget("Remove Dead Bindings:", m_removeDeadBindings, m_options.RemoveDeadBindings);
+                devChanged |= HelperWidgets::BoolWidget("Enable Debug Menu:", m_patchEnableDebug, m_options.PatchEnableDebug);
+                devChanged |= HelperWidgets::BoolWidget("Dump Game Options:", m_dumpGameOptions, m_options.DumpGameOptions);
             }
             ImGui::EndChild();
             ImGui::EndTabItem();
         }
+
+        m_madeChanges = patchesChanged || devChanged;
 
         ImGui::EndTabBar();
     }

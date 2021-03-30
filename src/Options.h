@@ -31,6 +31,7 @@ struct Options
     bool ExeValid{ false };
     bool IsFirstLaunch { true };
     bool RemoveDeadBindings { true };
+    bool DrawImGuiDiagnosticWindow { false };
 
 private:
 
