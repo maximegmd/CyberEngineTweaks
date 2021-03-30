@@ -4,6 +4,12 @@
 
 static std::vector<GameOption*> s_gameOptions;
 
+void* GameOption::s_booleanVtable{nullptr};
+void* GameOption::s_integerVtable{nullptr};
+void* GameOption::s_floatVtable{nullptr};
+void* GameOption::s_stringVtable{nullptr};
+void* GameOption::s_colorVtable{nullptr};
+
 std::string GameOption::GetInfo()
 {
     std::stringstream ret;
@@ -24,28 +30,25 @@ std::string GameOption::GetString()
 {
     std::stringstream ret;
 
-    switch (type)
+    if (IsA(s_booleanVtable))
     {
-    case GameOptionType::Boolean:
-        if (pBoolean)
-            ret << (*pBoolean ? "true" : "false");
-        break;
-    case GameOptionType::Integer:
-        if (pInteger)
-            ret << *pInteger;
-        break;
-    case GameOptionType::Float:
-        if (pFloat)
-            ret << std::to_string(*pFloat);
-        break;
-    case GameOptionType::String:
-        if (pString)
-            ret << "\"" << pString->c_str() << "\"";
-        break;
-    case GameOptionType::Color:
-        if (pInteger)
-            ret << "0x" << std::hex << *pInteger << std::dec;
-        break;
+        ret << (Boolean ? "true" : "false");
+    }
+    else if (IsA(s_integerVtable))
+    {
+        ret << Integer.Value;
+    }
+    else if (IsA(s_floatVtable))
+    {
+        ret << std::to_string(Float.Value);
+    }
+    else if(IsA(s_stringVtable))
+    {
+        ret << "\"" << String.c_str() << "\"";
+    }
+    else if(IsA(s_colorVtable))
+    {
+        ret << "0x" << std::hex << Integer.Value << std::dec;
     }
 
     return ret.str();
@@ -54,70 +57,64 @@ std::string GameOption::GetString()
 bool GameOption::GetBool(bool& retval)
 {
     retval = false;
-    if (type != GameOptionType::Boolean)
-        return false;
-    if (!pBoolean)
+    if (!IsA(s_booleanVtable))
         return false;
 
-    retval = *pBoolean;
+    retval = Boolean;
     return true;
 }
 
 bool GameOption::GetInt(int& retval)
 {
     retval = 0;
-    if (type != GameOptionType::Integer && type != GameOptionType::Color)
-        return false;
-    if (!pInteger)
+    if (!IsA(s_integerVtable) && !IsA(s_colorVtable))
         return false;
 
-    retval = *pInteger;
+    retval = Integer.Value;
     return true;
 }
 
 bool GameOption::GetFloat(float& retval)
 {
     retval = 0.f;
-    if (type != GameOptionType::Float)
-        return false;
-    if (!pFloat)
+    if (!IsA(s_floatVtable))
         return false;
 
-    retval = *pFloat;
+    retval = Float.Value;
     return true;
 }
 
 bool GameOption::GetColor(int& retval)
 {
     retval = 0;
-    if (type != GameOptionType::Color)
-        return false;
-    if (!pInteger)
+    if (!IsA(s_colorVtable))
         return false;
 
-    retval = *pInteger;
+    retval = Integer.Value;
     return true;
 }
 
 bool GameOption::Set(const std::string& value)
 {
-    switch (this->type)
+    if (IsA(s_booleanVtable))
     {
-    case GameOptionType::Boolean:
         return SetBool(stricmp(value.c_str(), "true") == 0 || stricmp(value.c_str(), "1") == 0);
-
-    case GameOptionType::Integer:
+    }
+    if (IsA(s_integerVtable))
+    {
         return SetInt(std::stoi(value, nullptr, 0));
-
-    case GameOptionType::Float:
+    }
+    if (IsA(s_floatVtable))
+    {
         return SetFloat(std::stof(value, nullptr));
-
-    case GameOptionType::String:
+    }
+    if (IsA(s_stringVtable))
+    {
         return SetString(value);
-
-    case GameOptionType::Color:
+    }
+    if (IsA(s_colorVtable))
+    {
         return SetColor(std::stoi(value, nullptr, 0));
-
     }
 
     return false;
@@ -125,54 +122,45 @@ bool GameOption::Set(const std::string& value)
 
 bool GameOption::SetBool(bool value)
 {
-    if (type != GameOptionType::Boolean)
+    if (!IsA(s_booleanVtable))
         return false;
 
-    if (!pBoolean)
-        return false;
-
-    *pBoolean = value;
+    Boolean = value;
 
     return true;
 }
 
 bool GameOption::SetInt(int value)
 {
-    if (type != GameOptionType::Integer && type != GameOptionType::Color)
+    if (!IsA(s_integerVtable) && !IsA(s_colorVtable))
         return false;
 
-    if (!pInteger)
-        return false;
+    Integer.Value = value;
 
-    *pInteger = value;
-
-    if (type == GameOptionType::Color)
+    if (IsA(s_colorVtable))
         return true; // no min/max checks for colors
 
-    if (pIntegerMin && *pIntegerMin > *pInteger)
-        *pInteger = *pIntegerMin;
+    if (Integer.Min > Integer.Value)
+        Integer.Value = Integer.Min;
 
-    if (pIntegerMax && *pIntegerMax < *pInteger)
-        *pInteger = *pIntegerMax;
+    if (Integer.Max < Integer.Value)
+        Integer.Value = Integer.Max;
 
     return true;
 }
 
 bool GameOption::SetFloat(float value)
 {
-    if (type != GameOptionType::Float)
+    if (!IsA(s_floatVtable))
         return false;
 
-    if (!pFloat)
-        return false;
+    Float.Value = value;
 
-    *pFloat = value;
+    if (Float.Min > Float.Value)
+        Float.Value = Float.Min;
 
-    if (pFloatMin && *pFloatMin > *pFloat)
-        *pFloat = *pFloatMin;
-
-    if (pFloatMax && *pFloatMax < *pFloat)
-        *pFloat = *pFloatMax;
+    if (Float.Max < Float.Value)
+        Float.Value = Float.Max;
 
     return true;
 }
@@ -184,26 +172,25 @@ bool GameOption::SetString(const std::string& value)
 
 bool GameOption::SetColor(int value)
 {
-    if (type != GameOptionType::Color)
+    if (!IsA(s_colorVtable))
         return false;
 
-    if (!pInteger)
-        return false;
-
-    *pInteger = value;
+    Integer.Value = value;
 
     return true;
 }
 
+bool GameOption::IsA(void* apVtable) const
+{
+    return *(void**)this == apVtable;
+}
+
 bool GameOption::Toggle()
 {
-    if (type != GameOptionType::Boolean)
+    if (IsA(s_booleanVtable))
         return false;
 
-    if (!pBoolean)
-        return false;
-
-    *pBoolean = !*pBoolean;
+    Boolean = !Boolean;
 
     return true;
 }
@@ -306,7 +293,7 @@ void GameOptions::Set(const std::string& category, const std::string& name, cons
         consoleLogger->info(option->GetInfo());
     else
     {
-        if (option->type == GameOptionType::String)
+        if (option->IsA(GameOption::s_stringVtable))
             consoleLogger->error("Failed to set game option '{}/{}', can't set string options right now.", category, name);
         else
             consoleLogger->error("Failed to set game option '{}/{}' due to an error (missing pointer?).", category, name);
@@ -324,7 +311,7 @@ void GameOptions::SetBool(const std::string& category, const std::string& name, 
         consoleLogger->info(option->GetInfo());
     else
     {
-        if (option->type != GameOptionType::Boolean)
+        if (!option->IsA(GameOption::s_booleanVtable))
             consoleLogger->error("Failed to set game option '{}/{}', not a boolean.", category, name);
         else
             consoleLogger->error("Failed to set game option '{}/{}' due to an error (missing pointer?).", category, name);
@@ -342,7 +329,7 @@ void GameOptions::SetInt(const std::string& category, const std::string& name, i
         consoleLogger->info(option->GetInfo());
     else
     {
-        if (option->type != GameOptionType::Integer && option->type != GameOptionType::Color)
+        if (!option->IsA(GameOption::s_integerVtable) && option->IsA(GameOption::s_colorVtable))
             consoleLogger->error("Failed to set game option '{}/{}', not an integer.", category, name);
         else
             consoleLogger->error("Failed to set game option '{}/{}' due to an error (missing pointer?).", category, name);
@@ -360,7 +347,7 @@ void GameOptions::SetFloat(const std::string& category, const std::string& name,
         consoleLogger->info(option->GetInfo());
     else
     {
-        if (option->type != GameOptionType::Float)
+        if (!option->IsA(GameOption::s_floatVtable))
             consoleLogger->error("Failed to set game option '{}/{}', not a float.", category, name);
         else
             consoleLogger->error("Failed to set game option '{}/{}' due to an error (missing pointer?).", category, name);
@@ -378,7 +365,7 @@ void GameOptions::Toggle(const std::string& category, const std::string& name)
         consoleLogger->info(option->GetInfo());
     else
     {
-        if (option->type != GameOptionType::Boolean)
+        if (option->IsA(GameOption::s_booleanVtable))
             consoleLogger->error("Failed to set game option '{}/{}', not a boolean.", category, name);
         else
             consoleLogger->error("Failed to set game option '{}/{}' due to an error (missing pointer?).", category, name);

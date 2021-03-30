@@ -6,30 +6,28 @@
 #include "Options.h"
 #include "scripting/GameOptions.h"
 
-bool HookGameOptionGetBoolean(GameOption* apThis, uint8_t* apVariable, GameOptionType aType)
+bool HookGameOptionGetBoolean(GameOption* apThis, uint8_t* apVariable, uint8_t aType)
 {
-    auto* pVariable = apThis->pBoolean;
-    if (!pVariable)
-        return false;
+    auto& pVariable = apThis->Boolean;
 
     auto& options = CET::Get().GetOptions();
     if (options.PatchAsyncCompute && strcmp(apThis->pCategory, "Rendering/AsyncCompute") == 0)
     {
-        *pVariable = false;
+        pVariable = false;
     }
     else if (options.PatchAntialiasing && strcmp(apThis->pName, "Antialiasing") == 0)
     {
-        *pVariable = false;
+        pVariable = false;
     }
     else if (options.PatchAntialiasing && strcmp(apThis->pName, "ScreenSpaceReflection") == 0)
     {
-        *pVariable = false;
+        pVariable = false;
     }
 
-    if (aType != apThis->type)
+    if (aType != apThis->unk28)
         return false;
 
-    *apVariable = *pVariable;
+    *apVariable = pVariable;
 
     return true;
 }
@@ -69,6 +67,34 @@ TGameOptionInit* RealGameOptionInit = nullptr;
 void* HookGameOptionInit(GameOption* apThis)
 {
     auto& gameOptions = GameOptions::GetList();
+
+    // We grab the RTTi here off known values
+    void* vtable = *(void**)apThis;
+    if (strcmp(apThis->pCategory, "Backend") == 0 &&
+        strcmp(apThis->pName, "ShowAllClassProperties") == 0)
+    {
+        GameOption::s_booleanVtable = vtable;
+    }
+    else if (strcmp(apThis->pCategory, "ResourceBank") == 0 &&
+             strcmp(apThis->pName, "GameResourceCacheExpirySeconds") == 0)
+    {
+        GameOption::s_integerVtable = vtable;
+    }
+    else if (strcmp(apThis->pCategory, "GameServices") == 0 &&
+             strcmp(apThis->pName, "GalaxyClientID") == 0)
+    {
+        GameOption::s_stringVtable = vtable;
+    }
+    else if (strcmp(apThis->pCategory, "RayTracing") == 0 &&
+             strcmp(apThis->pName, "DiffuseIlluminationAOModulation") == 0)
+    {
+        GameOption::s_floatVtable = vtable;
+    }
+    else if (strcmp(apThis->pCategory, "Editor/Selection/Appearance") == 0 &&
+             strcmp(apThis->pName, "Color") == 0)
+    {
+        GameOption::s_colorVtable = vtable;
+    }
 
     if (std::find(gameOptions.begin(), gameOptions.end(), apThis) == gameOptions.end())
     {
