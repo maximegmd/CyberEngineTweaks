@@ -27,7 +27,7 @@ namespace HelperWidgets
         return activeID;
     }
 
-    bool BindWidget(VKBindInfo& aVKBindInfo, bool aUnbindable)
+    bool BindWidget(VKBindInfo& aVKBindInfo, bool aUnbindable, float offset_x)
     {
         VKBindings& vkb { CET::Get().GetBindings() };
 
@@ -48,6 +48,8 @@ namespace HelperWidgets
             label.insert(0, "[HK] "); // insert [HK] prefix for hotkeys so user knows this input can be assigned up to 4-key combo
         
         ImGui::AlignTextToFramePadding();
+
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offset_x);
 
         ImGui::PushStyleColor(ImGuiCol_Text, curTextColor);
         ImGui::PushID(&aVKBindInfo.Bind.Description); // ensure we have unique ID by using pointer to Description, is OK, pointer will not be used inside ImGui :P
@@ -89,13 +91,15 @@ namespace HelperWidgets
         return (aVKBindInfo.CodeBind != aVKBindInfo.SavedCodeBind);
     }
 
-    bool BoolWidget(const std::string& label, bool& current, bool saved)
+    bool BoolWidget(const std::string& label, bool& current, bool saved, float offset_x)
     {
         ImVec4 curTextColor = ImGui::GetStyleColorVec4(ImGuiCol_Text);
         if (current != saved)
             curTextColor = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
 
         ImGui::AlignTextToFramePadding();
+
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offset_x);
 
         ImGui::PushStyleColor(ImGuiCol_Text, curTextColor);
         ImGui::Text(label.c_str());

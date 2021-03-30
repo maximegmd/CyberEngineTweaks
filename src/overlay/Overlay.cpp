@@ -115,7 +115,8 @@ void Overlay::Update()
             ImGui::Text("Combo can be composed from up to 4 keys.");
             ImGui::Separator();
 
-            HelperWidgets::BindWidget(m_VKBIOverlay, false);
+            // TODO - do not hardcode offset! this somewhat works temporarily...
+            HelperWidgets::BindWidget(m_VKBIOverlay, false, diffTextSz * 0.75f);
             if (m_VKBIOverlay.CodeBind)
             {
                 m_VKBIOverlay.Apply();
