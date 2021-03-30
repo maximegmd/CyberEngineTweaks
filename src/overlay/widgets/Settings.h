@@ -43,4 +43,7 @@ private:
     bool m_enabled{ false };
     bool m_madeChanges{ false };
     bool m_openChangesModal{ true };
+    
+    bool m_patchesChanged{ false };
+    bool m_devChanged{ false };
 };
