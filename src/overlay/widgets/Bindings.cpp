@@ -30,7 +30,7 @@ bool Bindings::OnDisable()
     {
         m_bindings.StopRecordingBind();
         m_vm.BlockUpdate(m_madeChanges);
-        m_madeChanges = (HelperWidgets::UnappliedChangesPopup(m_openChangesModal, m_madeChanges, m_saveCB, m_loadCB) == 0);
+        m_madeChanges = (HelperWidgets::UnsavedChangesPopup(m_openChangesModal, m_madeChanges, m_saveCB, m_loadCB) == 0);
         m_vm.BlockUpdate(m_madeChanges);
         m_enabled = m_madeChanges;
     }

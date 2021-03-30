@@ -112,18 +112,18 @@ namespace HelperWidgets
         return (current != saved);
     }
 
-    int32_t UnappliedChangesPopup(bool& aFirstTime, bool aMadeChanges, TUCHPSave aSaveCB, TUCHPLoad aLoadCB)
+    int32_t UnsavedChangesPopup(bool& aFirstTime, bool aMadeChanges, TUCHPSave aSaveCB, TUCHPLoad aLoadCB)
     {
         if (aMadeChanges)
         {
             int32_t res = 0;
             if (aFirstTime)
             {
-                ImGui::OpenPopup("Unapplied changes");
+                ImGui::OpenPopup("Unsaved changes");
                 aFirstTime = false;
             }
 
-            if (ImGui::BeginPopupModal("Unapplied changes", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+            if (ImGui::BeginPopupModal("Unsaved changes", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
             {
                 const auto shorterTextSz { ImGui::CalcTextSize("You have some unsaved changes.").x };
                 const auto longerTextSz { ImGui::CalcTextSize("Do you wish to apply them or discard them?").x };

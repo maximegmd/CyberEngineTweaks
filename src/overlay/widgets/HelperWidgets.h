@@ -10,5 +10,5 @@ bool BoolWidget(const std::string& label, bool& current, bool saved, float offse
 
 using TUCHPSave = std::function<void()>;
 using TUCHPLoad = std::function<void()>;
-int32_t UnappliedChangesPopup(bool& aFirstTime, bool aMadeChanges, TUCHPSave aSaveCB, TUCHPLoad aLoadCB);
+int32_t UnsavedChangesPopup(bool& aFirstTime, bool aMadeChanges, TUCHPSave aSaveCB, TUCHPLoad aLoadCB);
 }
