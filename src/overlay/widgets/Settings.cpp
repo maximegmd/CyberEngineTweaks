@@ -2,8 +2,6 @@
 
 #include "Settings.h"
 
-#include "HelperWidgets.h"
-
 Settings::Settings(Options& aOptions)
     : m_options(aOptions)
 {
@@ -23,40 +21,7 @@ bool Settings::OnDisable()
 {
     if (m_enabled)
     {
-        if (m_madeChanges)
-        {
-            if (!m_showChangesModal)
-            {
-                ImGui::OpenPopup("Unapplied changes");
-                m_showChangesModal = true;
-            }
-
-            if (ImGui::BeginPopupModal("Unapplied changes", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-            {
-                ImGui::Text("You have some unsaved changes.\nDo you wish to apply them or discard them?");
-                ImGui::Separator();
-
-                if (ImGui::Button("Apply", ImVec2(120, 0)))
-                {
-                    Save();
-                    m_showChangesModal = false;
-                    m_madeChanges = false;
-                    ImGui::CloseCurrentPopup();
-                }
-                ImGui::SameLine();
-                if (ImGui::Button("Discard", ImVec2(120, 0)))
-                {
-                    Load();
-                    m_showChangesModal = false;
-                    m_madeChanges = false;
-                    ImGui::CloseCurrentPopup();
-                }
-                ImGui::SetItemDefaultFocus();
-
-                ImGui::EndPopup();
-            }
-        }
-
+        m_madeChanges = (HelperWidgets::UnappliedChangesPopup(m_openChangesModal, m_madeChanges, m_saveCB, m_loadCB) == 0);
         m_enabled = m_madeChanges;
     }
     return !m_enabled;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Widget.h"
+#include "HelperWidgets.h"
 
 struct VKBindings;
 struct Overlay;
@@ -35,7 +36,10 @@ private:
     bool m_removeDeadBindings{ true };
     Options& m_options;
 
+    HelperWidgets::TUCHPSave m_saveCB{[this]() { Save(); }};
+    HelperWidgets::TUCHPLoad m_loadCB{[this]() { Load(); }};
+
     bool m_enabled{ false };
     bool m_madeChanges{ false };
-    bool m_showChangesModal{ false };
+    bool m_openChangesModal{ true };
 };

@@ -1,7 +1,6 @@
 #include <stdafx.h>
 
 #include "Bindings.h"
-#include "HelperWidgets.h"
 #include "overlay/Overlay.h"
 
 #include <scripting/LuaVM.h>
@@ -29,41 +28,7 @@ bool Bindings::OnDisable()
     if (m_enabled)
     {
         m_bindings.StopRecordingBind();
-
-        if (m_madeChanges)
-        {
-            if (!m_showChangesModal)
-            {
-                ImGui::OpenPopup("Unapplied changes");
-                m_showChangesModal = true;
-            }
-
-            if (ImGui::BeginPopupModal("Unapplied changes", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-            {
-                ImGui::Text("You have some unsaved changes.\nDo you wish to apply them or discard them?");
-                ImGui::Separator();
-
-                if (ImGui::Button("Apply", ImVec2(120, 0)))
-                {
-                    Save();
-                    m_showChangesModal = false;
-                    m_madeChanges = false;
-                    ImGui::CloseCurrentPopup();
-                }
-                ImGui::SameLine();
-                if (ImGui::Button("Discard", ImVec2(120, 0)))
-                {
-                    Load();
-                    m_showChangesModal = false;
-                    m_madeChanges = false;
-                    ImGui::CloseCurrentPopup();
-                }
-                ImGui::SetItemDefaultFocus();
-
-                ImGui::EndPopup();
-            }
-        }
-
+        m_madeChanges = (HelperWidgets::UnappliedChangesPopup(m_openChangesModal, m_madeChanges, m_saveCB, m_loadCB) == 0);
         m_enabled = m_madeChanges;
     }
     return !m_enabled;
@@ -81,27 +46,35 @@ void Bindings::Update()
     
     if (ImGui::BeginChild("##BINDINGS"))
     {
-        // reset dirty state
-        m_madeChanges = false;
+        if (!m_luaVMReady && m_vm.IsInitialized())
+            Load();
 
-        std::string_view prevMod = "";
-        for (auto& vkBindInfo : m_vkBindInfos)
+        if (m_luaVMReady)
         {
-            std::string_view curMod = vkBindInfo.Bind.ID;
-            curMod = curMod.substr(0, curMod.find('.'));
-            if (prevMod != curMod)
+            // reset dirty state
+            m_madeChanges = false;
+
+            std::string_view prevMod = "";
+            for (auto& vkBindInfo : m_vkBindInfos)
             {
-                if (!prevMod.empty())
-                    ImGui::Spacing();
+                std::string_view curMod = vkBindInfo.Bind.ID;
+                curMod = curMod.substr(0, curMod.find('.'));
+                if (prevMod != curMod)
+                {
+                    if (!prevMod.empty())
+                        ImGui::Spacing();
 
-                std::string curModStr { curMod };
-                ImGui::Text(curModStr.c_str());
+                    std::string curModStr{curMod};
+                    ImGui::Text(curModStr.c_str());
 
-                prevMod = curMod;
+                    prevMod = curMod;
+                }
+
+                m_madeChanges |= HelperWidgets::BindWidget(vkBindInfo, m_overlay.GetBind().ID);
             }
-
-            m_madeChanges |= HelperWidgets::BindWidget(vkBindInfo, m_overlay.GetBind().ID);
         }
+        else
+            ImGui::Text("LuaVM is not yet initialized!");
     }
     ImGui::EndChild();
     
@@ -110,11 +83,14 @@ void Bindings::Update()
 void Bindings::Load()
 {
     if (!m_vm.IsInitialized())
+    {
+        m_luaVMReady = false;
         return;
+    }
     
     m_bindings.Load(m_overlay);
-    
     m_vkBindInfos = m_bindings.InitializeMods(m_vm.GetBinds());
+    m_luaVMReady = true;
 }
 
 void Bindings::Save()
@@ -122,7 +98,11 @@ void Bindings::Save()
     m_bindings.Save();
 
     if (!m_vm.IsInitialized())
+    {
+        m_luaVMReady = false;
         return;
+    }
     
     m_vkBindInfos = m_bindings.InitializeMods(m_vm.GetBinds());
+    m_luaVMReady = true;
 }

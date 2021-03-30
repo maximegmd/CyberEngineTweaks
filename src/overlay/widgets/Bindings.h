@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Widget.h"
+#include "HelperWidgets.h"
 
 struct Overlay;
 struct LuaVM;
@@ -22,8 +23,12 @@ private:
     VKBindings& m_bindings;
     Overlay& m_overlay;
     LuaVM& m_vm;
+    
+    HelperWidgets::TUCHPSave m_saveCB { [this](){ Save(); } };
+    HelperWidgets::TUCHPLoad m_loadCB { [this](){ Load(); } };
 
+    bool m_luaVMReady{ false };
     bool m_enabled{ false };
     bool m_madeChanges{ false };
-    bool m_showChangesModal{ false };
+    bool m_openChangesModal{ true };
 };

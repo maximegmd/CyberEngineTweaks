@@ -103,4 +103,43 @@ namespace HelperWidgets
         return (current != saved);
     }
 
+    int32_t UnappliedChangesPopup(bool& aFirstTime, bool aMadeChanges, TUCHPSave aSaveCB, TUCHPLoad aLoadCB)
+    {
+        if (aMadeChanges)
+        {
+            int32_t res = 0;
+            if (aFirstTime)
+            {
+                ImGui::OpenPopup("Unapplied changes");
+                aFirstTime = false;
+            }
+
+            if (ImGui::BeginPopupModal("Unapplied changes", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+            {
+                ImGui::Text("You have some unsaved changes.\nDo you wish to apply them or discard them?");
+                ImGui::Separator();
+
+                if (ImGui::Button("Apply", ImVec2(120, 0)))
+                {
+                    aSaveCB();
+                    res = 1;
+                    aFirstTime = true;
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Discard", ImVec2(120, 0)))
+                {
+                    aLoadCB();
+                    res = -1;
+                    aFirstTime = true;
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::SetItemDefaultFocus();
+
+                ImGui::EndPopup();
+            }
+            return res;
+        }
+        return 1; // no changes, same as if we were to Apply
+    }
 }
