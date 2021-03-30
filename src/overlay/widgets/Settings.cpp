@@ -4,25 +4,62 @@
 
 #include "HelperWidgets.h"
 
-#include <overlay/Overlay.h>
-
-Settings::Settings(Overlay& aOverlay, VKBindings& aBindings, Options& aOptions)
-    : m_bindings(aBindings)
-    , m_overlay(aOverlay)
-    , m_options(aOptions)
+Settings::Settings(Options& aOptions)
+    : m_options(aOptions)
 {
 }
 
-void Settings::OnEnable()
+bool Settings::OnEnable()
 {
-    Load();
-    
-    m_bindings.StopRecordingBind();
+    if (!m_enabled)
+    {
+        Load();
+        m_enabled = true;
+    }
+    return m_enabled;
 }
 
-void Settings::OnDisable()
+bool Settings::OnDisable()
 {
-    m_bindings.StopRecordingBind();
+    if (m_enabled)
+    {
+        if (m_madeChanges)
+        {
+            if (!m_showChangesModal)
+            {
+                ImGui::OpenPopup("Unapplied changes");
+                m_showChangesModal = true;
+            }
+
+            if (ImGui::BeginPopupModal("Unapplied changes", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+            {
+                ImGui::Text("You have some unsaved changes.\nDo you wish to apply them or discard them?");
+                ImGui::Separator();
+
+                if (ImGui::Button("Apply", ImVec2(120, 0)))
+                {
+                    Save();
+                    m_showChangesModal = false;
+                    m_madeChanges = false;
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Discard", ImVec2(120, 0)))
+                {
+                    Load();
+                    m_showChangesModal = false;
+                    m_madeChanges = false;
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::SetItemDefaultFocus();
+
+                ImGui::EndPopup();
+            }
+        }
+
+        m_enabled = m_madeChanges;
+    }
+    return !m_enabled;
 }
 
 void Settings::Update()
@@ -37,40 +74,55 @@ void Settings::Update()
         ResetToDefaults();
 
     ImGui::Spacing();
-
-    if (!m_options.IsFirstLaunch)
-        ImGui::BeginChild("##SETTINGS_ACTUAL", ImVec2(0,0), true);
-
-    HelperWidgets::BindWidget(m_overlayKeyBindInfo, m_overlay.GetBind().ID);
-
-    HelperWidgets::BoolWidget("AMD SMT Patch:", m_patchAmdSmt, m_options.PatchAmdSmt);
-    HelperWidgets::BoolWidget("Enable Debug Menu:", m_patchEnableDebug, m_options.PatchEnableDebug);
-    HelperWidgets::BoolWidget("Remove Pedestrians:", m_patchRemovePedestrians, m_options.PatchRemovePedestrians);
-    HelperWidgets::BoolWidget("Disable Async Compute:", m_patchAsyncCompute, m_options.PatchAsyncCompute);
-    HelperWidgets::BoolWidget("Disable Antialiasing:", m_patchAntialiasing, m_options.PatchAntialiasing);
-    HelperWidgets::BoolWidget("Skip Start Menu:", m_patchSkipStartMenu, m_options.PatchSkipStartMenu);
-    HelperWidgets::BoolWidget("Suppress Intro Movies:", m_patchDisableIntroMovies, m_options.PatchDisableIntroMovies);
-    HelperWidgets::BoolWidget("Disable Vignette:", m_patchDisableVignette, m_options.PatchDisableVignette);
-    HelperWidgets::BoolWidget("Disable Boundary Teleport:", m_patchDisableBoundaryTeleport, m_options.PatchDisableBoundaryTeleport);
-    HelperWidgets::BoolWidget("Disable V-Sync (Windows 7 only):", m_patchDisableWin7Vsync, m_options.PatchDisableWin7Vsync);
-    HelperWidgets::BoolWidget("Dump Game Options:", m_dumpGameOptions, m_options.DumpGameOptions);
-
-    if (!m_options.IsFirstLaunch)
-        ImGui::EndChild();
-
-    // this needs to be performed at the end!
-    if (m_options.IsFirstLaunch && (m_overlayKeyBindInfo.SavedCodeBind != m_overlayKeyBindInfo.CodeBind))
+    
+    if (ImGui::BeginTabBar("##SETTINGS", ImGuiTabBarFlags_NoCloseWithMiddleMouseButton | ImGuiTabBarFlags_NoTooltip))
     {
-        Save();
-        Load();
+        // reset dirty state
+        m_madeChanges = false;
+
+        if (ImGui::BeginTabItem("Patches"))
+        {
+            if (ImGui::BeginChild("##SETTINGS_PATCHES"))
+            {                
+                m_madeChanges |= HelperWidgets::BoolWidget("AMD SMT Patch:", m_patchAmdSmt, m_options.PatchAmdSmt);
+                m_madeChanges |= HelperWidgets::BoolWidget("Remove Pedestrians:", m_patchRemovePedestrians, m_options.PatchRemovePedestrians);
+                m_madeChanges |= HelperWidgets::BoolWidget("Disable Async Compute:", m_patchAsyncCompute, m_options.PatchAsyncCompute);
+                m_madeChanges |= HelperWidgets::BoolWidget("Disable Antialiasing:", m_patchAntialiasing, m_options.PatchAntialiasing);
+                m_madeChanges |= HelperWidgets::BoolWidget("Skip Start Menu:", m_patchSkipStartMenu, m_options.PatchSkipStartMenu);
+                m_madeChanges |= HelperWidgets::BoolWidget("Suppress Intro Movies:", m_patchDisableIntroMovies, m_options.PatchDisableIntroMovies);
+                m_madeChanges |= HelperWidgets::BoolWidget("Disable Vignette:", m_patchDisableVignette, m_options.PatchDisableVignette);
+                m_madeChanges |= HelperWidgets::BoolWidget("Disable Boundary Teleport:", m_patchDisableBoundaryTeleport, m_options.PatchDisableBoundaryTeleport);
+                m_madeChanges |= HelperWidgets::BoolWidget("Disable V-Sync (Windows 7 only):", m_patchDisableWin7Vsync, m_options.PatchDisableWin7Vsync);
+            }
+            ImGui::EndChild();
+            ImGui::EndTabItem();
+        }
+        
+        if (ImGui::BeginTabItem("Dev"))
+        {
+            if (ImGui::BeginChild("##SETTINGS_DEV"))
+            {
+
+                HelperWidgets::BoolWidget("Draw ImGui Diagnostic Window:", m_drawImGuiDiagnosticWindow, m_drawImGuiDiagnosticWindow);
+                if (m_drawImGuiDiagnosticWindow)
+                    ImGui::ShowMetricsWindow(&m_drawImGuiDiagnosticWindow);
+
+                m_madeChanges |= HelperWidgets::BoolWidget("Remove Dead Bindings:", m_removeDeadBindings, m_options.RemoveDeadBindings);
+                m_madeChanges |= HelperWidgets::BoolWidget("Enable Debug Menu:", m_patchEnableDebug, m_options.PatchEnableDebug);
+                m_madeChanges |= HelperWidgets::BoolWidget("Dump Game Options:", m_dumpGameOptions, m_options.DumpGameOptions);
+            }
+            ImGui::EndChild();
+            ImGui::EndTabItem();
+        }
+
+        ImGui::EndTabBar();
     }
 }
 
 void Settings::Load()
 {
     m_options.Load();
-
-    m_overlayKeyBindInfo.Fill(m_options.OverlayKeyBind, m_overlay.GetBind());
+    
     m_patchEnableDebug = m_options.PatchEnableDebug;
     m_patchRemovePedestrians = m_options.PatchRemovePedestrians;
     m_patchAsyncCompute = m_options.PatchAsyncCompute;
@@ -82,16 +134,11 @@ void Settings::Load()
     m_patchDisableBoundaryTeleport = m_options.PatchDisableBoundaryTeleport;
     m_patchDisableWin7Vsync = m_options.PatchDisableWin7Vsync;
     m_dumpGameOptions = m_options.DumpGameOptions;
+    m_removeDeadBindings = m_options.RemoveDeadBindings;
 }
 
-void Settings::Save()
+void Settings::Save() const
 {
-    if (m_overlayKeyBindInfo.SavedCodeBind != m_overlayKeyBindInfo.CodeBind)
-    {
-        m_options.OverlayKeyBind = m_overlayKeyBindInfo.Apply();
-        m_bindings.Save(); // also save bindings in this case!
-    }
-
     m_options.PatchEnableDebug = m_patchEnableDebug;
     m_options.PatchRemovePedestrians = m_patchRemovePedestrians;
     m_options.PatchAsyncCompute = m_patchAsyncCompute;
@@ -103,6 +150,7 @@ void Settings::Save()
     m_options.PatchDisableBoundaryTeleport = m_patchDisableBoundaryTeleport;
     m_options.PatchDisableWin7Vsync = m_patchDisableWin7Vsync;
     m_options.DumpGameOptions = m_dumpGameOptions;
+    m_options.RemoveDeadBindings = m_removeDeadBindings;
 
     m_options.Save();
 }

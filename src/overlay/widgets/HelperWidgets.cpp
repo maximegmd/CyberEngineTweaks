@@ -27,7 +27,7 @@ namespace HelperWidgets
         return activeID;
     }
 
-    void BindWidget(VKBindInfo& aVKBindInfo, const std::string& acId)
+    bool BindWidget(VKBindInfo& aVKBindInfo, const std::string& acIdOverlay)
     {
         VKBindings& vkb { CET::Get().GetBindings() };
 
@@ -66,7 +66,7 @@ namespace HelperWidgets
         }
         ImGui::PopID();
         
-        if (aVKBindInfo.CodeBind && (aVKBindInfo.Bind.ID != acId)) // make an exception for Overlay key
+        if (aVKBindInfo.CodeBind && (aVKBindInfo.Bind.ID != acIdOverlay)) // make an exception for Overlay key
         {
             ImGui::PushID(&aVKBindInfo.Bind.ID[1]); // same as PushID before, just make pointer a bit bigger :)
             ImGui::SameLine();
@@ -82,9 +82,11 @@ namespace HelperWidgets
             }
             ImGui::PopID();
         }
+
+        return (aVKBindInfo.CodeBind != aVKBindInfo.SavedCodeBind);
     }
 
-    void BoolWidget(const std::string& label, bool& current, bool saved)
+    bool BoolWidget(const std::string& label, bool& current, bool saved)
     {
         ImVec4 curTextColor = ImGui::GetStyleColorVec4(ImGuiCol_Text);
         if (current != saved)
@@ -97,6 +99,8 @@ namespace HelperWidgets
         ImGui::SameLine();
 
         ImGui::Checkbox(("##" + label).c_str(), &current);
+
+        return (current != saved);
     }
 
 }

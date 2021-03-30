@@ -18,8 +18,9 @@ uint64_t VKBindInfo::Apply()
     return CodeBind;
 }
 
-VKBindings::VKBindings(Paths& aPaths)
+VKBindings::VKBindings(Paths& aPaths, const Options& aOptions)
     : m_paths(aPaths)
+    , m_options(aOptions)
 {
 }
 
@@ -58,58 +59,67 @@ std::vector<VKBindInfo> VKBindings::InitializeMods(std::vector<VKBindInfo> aVKBi
         vkBindInfo.CodeBind = 0;
     }
 
-    // now, find all dead bindings
-    std::vector<std::pair<std::string, UINT>> deadIDToBinds;
-    for (auto& idToBind : m_idToBind)
+    // filter dead bindings if option is enabled (default)
+    if (m_options.RemoveDeadBindings)
     {
-        // always ignore internal CET binds here!
-        if (!idToBind.first.compare(0, 4, "cet."))
-            continue;
-
-        // TODO - try to avoid O(n^2) situation here
-        auto found = false;
-        for (auto& vkBindInfo : aVKBindInfos)
+        // now, find all dead bindings
+        std::vector<std::pair<std::string, UINT>> deadIDToBinds;
+        for (auto& idToBind : m_idToBind)
         {
-            found = (idToBind.first == vkBindInfo.Bind.ID);
-            if (found)
+            // always ignore internal CET binds here!
+            if (!idToBind.first.compare(0, 4, "cet."))
+                continue;
+
+            // TODO - try to avoid O(n^2) situation here
+            auto found = false;
+            for (auto& vkBindInfo : aVKBindInfos)
             {
-                // test if bind is hotkey and if not, check if bind is valid for input (which means it has single input key, not combo)
-                found = (vkBindInfo.Bind.IsHotkey() || ((idToBind.second & 0xFFFF000000000000) == idToBind.second));
-                break; // we just reset found flag accordingly and exit here, we found valid entry, no need to continue regardless of result
+                found = (idToBind.first == vkBindInfo.Bind.ID);
+                if (found)
+                {
+                    // test if bind is hotkey and if not, check if bind is valid for input (which means it has single input key, not combo)
+                    found = (vkBindInfo.Bind.IsHotkey() || ((idToBind.second & 0xFFFF000000000000) == idToBind.second));
+                    break; // we just reset found flag accordingly and exit here, we found valid entry, no need to continue regardless of result
+                }
             }
+
+            if (!found)
+                deadIDToBinds.emplace_back(idToBind);
         }
 
-        if (!found)
-            deadIDToBinds.emplace_back(idToBind);
+        // and remove them
+        for (auto& idToBind : deadIDToBinds)
+        {
+            m_idToBind.erase(idToBind.first);
+            m_binds.erase(idToBind.second);
+        }
+
+        // finally, save our filtered bindings back to not lose them
+        Save();
     }
 
-    // and remove them
-    for (auto& idToBind : deadIDToBinds)
-    {
-        m_idToBind.erase(idToBind.first);
-        m_binds.erase(idToBind.second);
-    }
-
-    // finally, save our filtered bindings back to not lose them
-    Save();
+    // insert CET overlay bind info
+    assert(m_pOverlay); // overlay must be set before first use!
+    const auto overlayKeyBind { m_pOverlay->GetBind() };
+    const auto overlayKeyCodeIt { m_idToBind.find(overlayKeyBind.ID) };
+    const auto overlayKeyCode { (overlayKeyCodeIt == m_idToBind.cend()) ? (0) : (overlayKeyCodeIt->second) };
+    aVKBindInfos.insert(aVKBindInfos.cbegin(), VKBindInfo{overlayKeyBind, overlayKeyCode, overlayKeyCode, false});
 
     // return corrected bindings
     return aVKBindInfos;
 }
 
-void VKBindings::Load(const Overlay& aOverlay)
+bool VKBindings::Load(const Overlay& aOverlay)
 {
-    auto parseConfig {[this, &aOverlay](const std::filesystem::path& path, bool old = false) -> bool {
+    auto parseConfig {[this, &aOverlay](const std::filesystem::path& path, bool old = false) -> std::pair<bool, uint64_t> {
         std::ifstream ifs { path };
         if (ifs)
         {
             auto config { nlohmann::json::parse(ifs) };
+            VKBind overlayBind { aOverlay.GetBind() };
+            uint64_t overlayBindCode { 0 };
             for (auto& it : config.items())
             {
-                // properly auto-bind Overlay if it is present here (could be this is first start so it may not be
-                // in here yet)
-                auto vkBind { (it.key() == aOverlay.GetBind().ID) ? aOverlay.GetBind() : VKBind{ it.key() } };
-
                 uint64_t key { it.value() };
                 if (old)
                 {
@@ -123,29 +133,46 @@ void VKBindings::Load(const Overlay& aOverlay)
                     };
                 }
 
+                // properly auto-bind Overlay if it is present here (could be this is first start so it may not be
+                // in here yet)
+                VKBind vkBind { it.key() };
+                if (it.key() == overlayBind.ID)
+                {
+                    vkBind = overlayBind;
+                    overlayBindCode = key;
+                }
+
                 const auto ret { Bind(key, vkBind) };
                 assert(ret); // we want this to never fail!
             }
-            return true;
+            return std::make_pair(true, overlayBindCode);
         }
-        return false;
+        return std::make_pair(false, 0);
     }};
  
     // try to load from current path
-    if (!parseConfig(m_paths.VKBindings()))
+    auto [res, key] = parseConfig(m_paths.VKBindings());
+    if (!res)
     {
         // if failed, try to look for old config
         auto oldPath = m_paths.CETRoot() / "hotkeys.json";
-        if (parseConfig(oldPath, true))
+        const auto [resOld, keyOld] = parseConfig(oldPath, true);
+        if (resOld)
         {
             // old config found and parsed, remove it and save it to current location
             remove(oldPath);
             Save();
+
+            // replace former res and key with ones from old config
+            res = resOld;
+            key = keyOld;
         }
     }
 
     m_pOverlay = &aOverlay;
     m_initialized = true;
+
+    return res && key;
 }
 
 void VKBindings::Save()

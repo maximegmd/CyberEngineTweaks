@@ -27,7 +27,10 @@ void LuaVM::Update(float aDeltaTime)
 
     if (!m_initialized)
         return;
-    
+
+    if (m_options.IsFirstLaunch)
+        return;
+
     m_scripting.TriggerOnUpdate(aDeltaTime);
     m_scripting.TriggerOnDraw();
 }

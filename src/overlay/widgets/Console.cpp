@@ -14,13 +14,15 @@ Console::Console(LuaVM& aVm)
     spdlog::get("scripting")->sinks().push_back(consoleSink);
 }
 
-void Console::OnEnable()
+bool Console::OnEnable()
 {
     m_focusConsoleInput = true;
+    return true;
 }
 
-void Console::OnDisable()
+bool Console::OnDisable()
 {
+    return true;
 }
 
 int Console::HandleConsoleHistory(ImGuiInputTextCallbackData* apData)
@@ -50,9 +52,9 @@ int Console::HandleConsoleHistory(ImGuiInputTextCallbackData* apData)
 
     if (pStr)
     {
-        std::memcpy(apData->Buf, pStr->c_str(), pStr->size());
+        std::memcpy(apData->Buf, pStr->c_str(), pStr->length() + 1);
         apData->BufDirty = true;
-        apData->BufTextLen = pStr->size();
+        apData->BufTextLen = pStr->length();
         apData->CursorPos = apData->BufTextLen;
     }
 

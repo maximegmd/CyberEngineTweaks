@@ -13,16 +13,60 @@ Bindings::Bindings(VKBindings& aBindings, Overlay& aOverlay, LuaVM& aVm)
 {
 }
 
-void Bindings::OnEnable()
+bool Bindings::OnEnable()
 {
-    Load();
-    
-    m_bindings.StopRecordingBind();
+    if (!m_enabled)
+    {
+        m_bindings.StopRecordingBind();
+        Load();
+        m_enabled = true;
+    }
+    return m_enabled;
 }
 
-void Bindings::OnDisable()
+bool Bindings::OnDisable()
 {
-    m_bindings.StopRecordingBind();
+    if (m_enabled)
+    {
+        m_bindings.StopRecordingBind();
+
+        if (m_madeChanges)
+        {
+            if (!m_showChangesModal)
+            {
+                ImGui::OpenPopup("Unapplied changes");
+                m_showChangesModal = true;
+            }
+
+            if (ImGui::BeginPopupModal("Unapplied changes", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+            {
+                ImGui::Text("You have some unsaved changes.\nDo you wish to apply them or discard them?");
+                ImGui::Separator();
+
+                if (ImGui::Button("Apply", ImVec2(120, 0)))
+                {
+                    Save();
+                    m_showChangesModal = false;
+                    m_madeChanges = false;
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Discard", ImVec2(120, 0)))
+                {
+                    Load();
+                    m_showChangesModal = false;
+                    m_madeChanges = false;
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::SetItemDefaultFocus();
+
+                ImGui::EndPopup();
+            }
+        }
+
+        m_enabled = m_madeChanges;
+    }
+    return !m_enabled;
 }
 
 void Bindings::Update()
@@ -35,30 +79,28 @@ void Bindings::Update()
 
     ImGui::Spacing();
     
-    if (ImGui::BeginChild("##BINDINGS_ACTUAL", ImVec2(0,0), true))
+    if (ImGui::BeginChild("##BINDINGS"))
     {
-        if (m_vkBindInfos.empty())
-            ImGui::Text("Looks empty here... Try to load some mod with bindings support!");
-        else
+        // reset dirty state
+        m_madeChanges = false;
+
+        std::string_view prevMod = "";
+        for (auto& vkBindInfo : m_vkBindInfos)
         {
-            std::string_view prevMod = "";
-            for (auto& vkBindInfo : m_vkBindInfos)
+            std::string_view curMod = vkBindInfo.Bind.ID;
+            curMod = curMod.substr(0, curMod.find('.'));
+            if (prevMod != curMod)
             {
-                std::string_view curMod = vkBindInfo.Bind.ID;
-                curMod = curMod.substr(0, curMod.find('.'));
-                if (prevMod != curMod)
-                {
-                    if (!prevMod.empty())
-                        ImGui::Spacing();
+                if (!prevMod.empty())
+                    ImGui::Spacing();
 
-                    std::string curModStr{curMod};
-                    ImGui::Text(curModStr.c_str());
+                std::string curModStr { curMod };
+                ImGui::Text(curModStr.c_str());
 
-                    prevMod = curMod;
-                }
-
-                HelperWidgets::BindWidget(vkBindInfo, m_overlay.GetBind().ID);
+                prevMod = curMod;
             }
+
+            m_madeChanges |= HelperWidgets::BindWidget(vkBindInfo, m_overlay.GetBind().ID);
         }
     }
     ImGui::EndChild();

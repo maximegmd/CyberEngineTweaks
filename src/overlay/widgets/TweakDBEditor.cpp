@@ -362,12 +362,14 @@ TweakDBEditor::TweakDBEditor(LuaVM& aVm)
 {
 }
 
-void TweakDBEditor::OnEnable()
+bool TweakDBEditor::OnEnable()
 {
+    return true;
 }
 
-void TweakDBEditor::OnDisable()
+bool TweakDBEditor::OnDisable()
 {
+    return true;
 }
 
 void TweakDBEditor::Update()

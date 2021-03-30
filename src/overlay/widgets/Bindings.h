@@ -10,8 +10,8 @@ struct Bindings : Widget
     Bindings(VKBindings& aBindings, Overlay& aOverlay, LuaVM& aVm);
     ~Bindings() override = default;
 
-    void OnEnable() override;
-    void OnDisable() override;
+    bool OnEnable() override;
+    bool OnDisable() override;
     void Update() override;
     
     void Load();
@@ -22,4 +22,8 @@ private:
     VKBindings& m_bindings;
     Overlay& m_overlay;
     LuaVM& m_vm;
+
+    bool m_enabled{ false };
+    bool m_madeChanges{ false };
+    bool m_showChangesModal{ false };
 };

@@ -9,8 +9,8 @@ struct Console : Widget
     Console(LuaVM& aVm);
     ~Console() override = default;
     
-    void OnEnable() override;
-    void OnDisable() override;
+    bool OnEnable() override;
+    bool OnDisable() override;
     void Update() override;
     
     void Log(const std::string& acpText);

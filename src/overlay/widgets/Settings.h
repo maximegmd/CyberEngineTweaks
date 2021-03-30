@@ -8,19 +8,18 @@ struct Options;
 
 struct Settings : Widget
 {
-    Settings(Overlay& aOverlay, VKBindings& aBindings, Options& aOptions);
+    Settings(Options& aOptions);
     ~Settings() override = default;
 
-    void OnEnable() override;
-    void OnDisable() override;
+    bool OnEnable() override;
+    bool OnDisable() override;
     void Update() override;
     
     void Load();
-    void Save();
+    void Save() const;
     void ResetToDefaults(); 
 
 private:
-    VKBindInfo m_overlayKeyBindInfo{ };
     bool m_patchEnableDebug{ false };
     bool m_patchRemovePedestrians{ false };
     bool m_patchAsyncCompute{ false };
@@ -32,8 +31,11 @@ private:
     bool m_patchDisableBoundaryTeleport{ false };
     bool m_patchDisableWin7Vsync{ false };
     bool m_dumpGameOptions{ false };
-    bool m_telemetry{ true };
-    VKBindings& m_bindings;
-    Overlay& m_overlay;
+    bool m_drawImGuiDiagnosticWindow{ false };
+    bool m_removeDeadBindings{ true };
     Options& m_options;
+
+    bool m_enabled{ false };
+    bool m_madeChanges{ false };
+    bool m_showChangesModal{ false };
 };

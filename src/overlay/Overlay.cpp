@@ -16,10 +16,9 @@ void Overlay::PostInitialize()
     {
         if (m_options.IsFirstLaunch)
         {
+            m_showFirstTimeModal = true;
             Toggle();
-            m_activeWidgetID = WidgetID::SETTINGS;
         }
-        m_widgets[static_cast<size_t>(m_activeWidgetID)]->OnEnable();
         m_initialized = true;
     }
 }
@@ -41,14 +40,8 @@ Settings& Overlay::GetSettings()
 
 void Overlay::Toggle()
 {
-    m_enabled = !m_enabled;
-
-    auto& d3d12 = CET::Get().GetD3D12();
-    d3d12.SetTrapInputInImGui(m_enabled);
-    
-    ClipToCenter(RED4ext::CGameEngine::Get()->unkC0);
-
-    m_toggled = true;
+    if (!m_toggled)
+        m_toggled = true;
 }
 
 bool Overlay::IsEnabled() const noexcept
@@ -58,29 +51,78 @@ bool Overlay::IsEnabled() const noexcept
 
 VKBind Overlay::GetBind() const noexcept
 {
-    return m_VKBOverlay;
+    return m_VKBIOverlay.Bind;
 }
 
 void Overlay::Update()
 {
     if (!m_initialized)
         return;
-
-    // always check for this event in Update
+    
     if (m_toggled)
     {
         if (m_enabled)
-            m_vm.OnOverlayOpen();
+        {
+            if (m_widgets[static_cast<size_t>(m_activeWidgetID)]->OnDisable())
+            {
+                m_vm.OnOverlayClose();
+                m_toggled = false;
+                m_enabled = false;
+            }
+        }
         else
-            m_vm.OnOverlayClose();
-        m_toggled = false;
+        {
+            if (m_widgets[static_cast<size_t>(m_activeWidgetID)]->OnEnable())
+            {
+                m_vm.OnOverlayOpen();
+                m_toggled = false;
+                m_enabled = true;
+            }
+        }
+
+        if (!m_toggled)
+        {
+            auto& d3d12 = CET::Get().GetD3D12();
+            d3d12.DelayedSetTrapInputInImGui(m_enabled);
+            ClipToCenter(RED4ext::CGameEngine::Get()->unkC0);
+        }
     }
 
     if (!m_enabled)
         return;
 
-    auto& d3d12 = CET::Get().GetD3D12();
+    if (m_options.IsFirstLaunch)
+    {
+        if (m_showFirstTimeModal)
+        {
+            assert(!m_VKBIOverlay.CodeBind);
+            assert(!m_VKBIOverlay.SavedCodeBind);
+            assert(!m_VKBIOverlay.IsBinding);
 
+            ImGui::OpenPopup("CET First Time Setup");
+            m_showFirstTimeModal = false;
+        }
+
+        if (ImGui::BeginPopupModal("CET First Time Setup", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+        {
+            ImGui::Text("Please, bind some key combination for toggling overlay!\nCombo can be composed from up to 4 keys.");
+            ImGui::Separator();
+
+            HelperWidgets::BindWidget(m_VKBIOverlay, m_VKBIOverlay.Bind.ID);
+            if (m_VKBIOverlay.CodeBind)
+            {
+                m_VKBIOverlay.Apply();
+                m_bindings.Save();
+                m_options.IsFirstLaunch = false;
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+        }
+        return;
+    }
+
+    auto& d3d12 = CET::Get().GetD3D12();
     const SIZE resolution = d3d12.GetResolution();
 
     ImGui::SetNextWindowPos(ImVec2(resolution.cx * 0.2f, resolution.cy * 0.2f), ImGuiCond_FirstUseEver);
@@ -88,36 +130,31 @@ void Overlay::Update()
     ImGui::SetNextWindowSizeConstraints(ImVec2(420, 315), ImVec2(FLT_MAX, FLT_MAX));
     if (ImGui::Begin("Cyber Engine Tweaks"))
     {
-        const ImVec2 zeroVec = {0, 0};
-
-        if (!m_options.IsFirstLaunch)
+        const ImVec2 cZeroVec = {0, 0};
+        
+        SetActiveWidget(HelperWidgets::ToolbarWidget());
+        
+        if (m_activeWidgetID == WidgetID::CONSOLE)
         {
-            const WidgetID selectedID = HelperWidgets::ToolbarWidget();
-            if (selectedID < WidgetID::COUNT)
-                SetActiveWidget(selectedID);
-            
-            if (m_activeWidgetID == WidgetID::CONSOLE)
-            {
-                if (ImGui::BeginChild("Console", zeroVec, true))
-                    m_console.Update();
-                ImGui::EndChild();
-            }
-            if (m_activeWidgetID == WidgetID::BINDINGS)
-            {
-                if (ImGui::BeginChild("Bindings", zeroVec, true))
-                    m_bindings.Update();
-                ImGui::EndChild();
-            }
-            if (m_activeWidgetID == WidgetID::TWEAKDB)
-            {
-                if (ImGui::BeginChild("TweakDB Editor", zeroVec, true))
-                    m_tweakDBEditor.Update();
-                ImGui::EndChild();
-            }
+            if (ImGui::BeginChild("Console", cZeroVec, true))
+                m_console.Update();
+            ImGui::EndChild();
+        }
+        if (m_activeWidgetID == WidgetID::BINDINGS)
+        {
+            if (ImGui::BeginChild("Bindings", cZeroVec, true))
+                m_bindings.Update();
+            ImGui::EndChild();
+        }
+        if (m_activeWidgetID == WidgetID::TWEAKDB)
+        {
+            if (ImGui::BeginChild("TweakDB Editor", cZeroVec, true))
+                m_tweakDBEditor.Update();
+            ImGui::EndChild();
         }
         if (m_activeWidgetID == WidgetID::SETTINGS)
         {
-            if (ImGui::BeginChild("Settings", zeroVec, true))
+            if (ImGui::BeginChild("Settings", cZeroVec, true))
                 m_settings.Update();
             ImGui::EndChild();
         }
@@ -186,9 +223,9 @@ void Overlay::Hook()
 Overlay::Overlay(D3D12& aD3D12, VKBindings& aBindings, Options& aOptions, LuaVM& aVm)
     : m_console(aVm)
     , m_bindings(aBindings, *this, aVm)
-    , m_settings(*this, aBindings, aOptions)
+    , m_settings(aOptions)
     , m_tweakDBEditor(aVm)
-    , m_VKBOverlay{"cet.overlay_key", "Overlay Key", [this]() { Toggle(); }}
+    , m_VKBIOverlay{{"cet.overlay_key", "Overlay Key", [this]() { Toggle(); }}, 0, 0, false}
     , m_d3d12(aD3D12)
     , m_options(aOptions)
     , m_vm(aVm)
@@ -200,7 +237,7 @@ Overlay::Overlay(D3D12& aD3D12, VKBindings& aBindings, Options& aOptions, LuaVM&
 
     Hook();
 
-    aBindings.Load(*this);
+    m_options.IsFirstLaunch = !aBindings.Load(*this);
 
     m_connectInitialized = aD3D12.OnInitialized.Connect([this]() { PostInitialize(); });
     m_connectUpdate = aD3D12.OnUpdate.Connect([this]() { Update(); });
@@ -214,12 +251,15 @@ Overlay::~Overlay()
 
 void Overlay::SetActiveWidget(WidgetID aNewActive)
 {
-    if (m_activeWidgetID != aNewActive)
+    if (aNewActive < WidgetID::COUNT)
+        m_nextActiveWidgetID = aNewActive;
+
+    if (m_activeWidgetID != m_nextActiveWidgetID)
     {
-        if (m_activeWidgetID < WidgetID::COUNT)
-            m_widgets[static_cast<size_t>(m_activeWidgetID)]->OnDisable();
-        m_activeWidgetID = aNewActive;
-        if (m_activeWidgetID < WidgetID::COUNT)
-            m_widgets[static_cast<size_t>(m_activeWidgetID)]->OnEnable();
+        if (m_widgets[static_cast<size_t>(m_activeWidgetID)]->OnDisable())
+        {
+            if (m_widgets[static_cast<size_t>(m_nextActiveWidgetID)]->OnEnable())
+                m_activeWidgetID = m_nextActiveWidgetID;
+        }
     }
 }

@@ -5,8 +5,7 @@
 
 void Options::Load()
 {
-    IsFirstLaunch = !exists(m_paths.Config());
-    if (!IsFirstLaunch)
+    if (exists(m_paths.Config()))
     {
         std::ifstream configFile(m_paths.Config());
         if(configFile)
@@ -22,29 +21,14 @@ void Options::Load()
             PatchDisableVignette = config.value("disable_vignette", PatchDisableVignette);
             PatchDisableBoundaryTeleport = config.value("disable_boundary_teleport", PatchDisableBoundaryTeleport);
             PatchDisableWin7Vsync = config.value("disable_win7_vsync", PatchDisableWin7Vsync);
-
+            
+            RemoveDeadBindings = config.value("cetdev_remove_dead_bindings", RemoveDeadBindings);
             DumpGameOptions = config.value("dump_game_options", DumpGameOptions);
             
             // font config
             FontPath = config.value("font_path", FontPath);
             FontGlyphRanges = config.value("font_glyph_ranges", FontGlyphRanges);
             FontSize = config.value("font_size", FontSize);
-
-            OverlayKeyBind = config.value("overlay_key", OverlayKeyBind);
-            if (OverlayKeyBind == 0)
-                IsFirstLaunch = true; // is for sure in this case
-
-            if (exists(m_paths.CETRoot() / "hotkeys.json"))
-            {
-                // encoded key bind was 32-bit number in old config, convert it to new 64-bit format
-                OverlayKeyBind =
-                {
-                      ((OverlayKeyBind & 0x000000FF) << 8*0)
-                    | ((OverlayKeyBind & 0x0000FF00) << 8*1)
-                    | ((OverlayKeyBind & 0x00FF0000) << 8*2)
-                    | ((OverlayKeyBind & 0xFF000000) << 8*3)
-                };
-            }
 
             // check old config names
             if (config.value("unlock_menu", false))
@@ -57,8 +41,7 @@ void Options::Load()
 void Options::Save()
 {
     nlohmann::json config;
-
-    config["overlay_key"] = OverlayKeyBind;
+    
     config["enable_debug"] = PatchEnableDebug;
     config["remove_pedestrians"] = PatchRemovePedestrians;
     config["disable_async_compute"] = PatchAsyncCompute;
@@ -69,6 +52,7 @@ void Options::Save()
     config["disable_vignette"] = PatchDisableVignette;
     config["disable_boundary_teleport"] = PatchDisableBoundaryTeleport;
     config["disable_win7_vsync"] = PatchDisableWin7Vsync;
+    config["cetdev_remove_dead_bindings"] = RemoveDeadBindings;
     config["dump_game_options"] = DumpGameOptions;
     config["font_path"] = FontPath;
     config["font_glyph_ranges"] = FontGlyphRanges;
@@ -90,6 +74,7 @@ void Options::ResetToDefaults()
     PatchDisableVignette = false;
     PatchDisableBoundaryTeleport = false;
     PatchDisableWin7Vsync = false;
+    RemoveDeadBindings = true;
     DumpGameOptions = false;
 
     Save();
@@ -166,7 +151,5 @@ Options::Options(Paths& aPaths)
     }
 
     Load();
-
-    if (!IsFirstLaunch)
-        Save();
+    Save();
 }

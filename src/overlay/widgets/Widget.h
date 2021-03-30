@@ -13,7 +13,7 @@ struct Widget
 {
     virtual ~Widget() = default;
 
-    virtual void OnEnable() = 0;
-    virtual void OnDisable() = 0;
+    virtual bool OnEnable() = 0;
+    virtual bool OnDisable() = 0;
     virtual void Update() = 0;
 };

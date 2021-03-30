@@ -50,12 +50,15 @@ private:
 
     TClipToCenter* m_realClipToCenter{ nullptr };
 
-    WidgetID m_activeWidgetID{WidgetID::CONSOLE };
+    WidgetID m_activeWidgetID{ WidgetID::CONSOLE };
+    WidgetID m_nextActiveWidgetID{ WidgetID::CONSOLE };
     
     std::atomic_bool m_enabled{ false };
     std::atomic_bool m_toggled{ false };
     bool m_initialized{ false };
-    VKBind m_VKBOverlay;
+    VKBindInfo m_VKBIOverlay;
+
+    std::atomic_bool m_showFirstTimeModal{ false };
 
     D3D12& m_d3d12;
     Options& m_options;
