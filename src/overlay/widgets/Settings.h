@@ -6,10 +6,11 @@
 struct VKBindings;
 struct Overlay;
 struct Options;
+struct LuaVM;
 
 struct Settings : Widget
 {
-    Settings(Options& aOptions);
+    Settings(Options& aOptions, LuaVM& aVm);
     ~Settings() override = default;
 
     bool OnEnable() override;
@@ -35,9 +36,10 @@ private:
     bool m_drawImGuiDiagnosticWindow{ false };
     bool m_removeDeadBindings{ true };
     Options& m_options;
+    LuaVM& m_vm;
 
-    HelperWidgets::TUCHPSave m_saveCB {[this](){ Save(); } };
-    HelperWidgets::TUCHPLoad m_loadCB {[this](){ Load(); } };
+    HelperWidgets::TUCHPSave m_saveCB { [this](){ Save(); } };
+    HelperWidgets::TUCHPLoad m_loadCB { [this](){ Load(); } };
 
     bool m_enabled{ false };
     bool m_madeChanges{ false };

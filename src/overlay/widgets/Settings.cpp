@@ -1,9 +1,11 @@
 #include <stdafx.h>
 
 #include "Settings.h"
+#include <scripting/LuaVM.h>
 
-Settings::Settings(Options& aOptions)
+Settings::Settings(Options& aOptions, LuaVM& aVm)
     : m_options(aOptions)
+    , m_vm(aVm)
 {
 }
 
@@ -21,7 +23,9 @@ bool Settings::OnDisable()
 {
     if (m_enabled)
     {
+        m_vm.BlockUpdate(m_madeChanges);
         m_madeChanges = (HelperWidgets::UnappliedChangesPopup(m_openChangesModal, m_madeChanges, m_saveCB, m_loadCB) == 0);
+        m_vm.BlockUpdate(m_madeChanges);
         m_enabled = m_madeChanges;
     }
     return !m_enabled;

@@ -46,6 +46,9 @@ namespace HelperWidgets
         std::string label { aVKBindInfo.Bind.Description + ':' };
         if (aVKBindInfo.Bind.IsHotkey())
             label.insert(0, "[HK] "); // insert [HK] prefix for hotkeys so user knows this input can be assigned up to 4-key combo
+        
+        ImGui::AlignTextToFramePadding();
+
         ImGui::PushStyleColor(ImGuiCol_Text, curTextColor);
         ImGui::PushID(&aVKBindInfo.Bind.Description); // ensure we have unique ID by using pointer to Description, is OK, pointer will not be used inside ImGui :P
         ImGui::Text(label.c_str());
@@ -91,7 +94,9 @@ namespace HelperWidgets
         ImVec4 curTextColor = ImGui::GetStyleColorVec4(ImGuiCol_Text);
         if (current != saved)
             curTextColor = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
-        
+
+        ImGui::AlignTextToFramePadding();
+
         ImGui::PushStyleColor(ImGuiCol_Text, curTextColor);
         ImGui::Text(label.c_str());
         ImGui::PopStyleColor();
@@ -116,10 +121,18 @@ namespace HelperWidgets
 
             if (ImGui::BeginPopupModal("Unapplied changes", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
             {
-                ImGui::Text("You have some unsaved changes.\nDo you wish to apply them or discard them?");
+                const auto shorterTextSz { ImGui::CalcTextSize("You have some unsaved changes.").x };
+                const auto longerTextSz { ImGui::CalcTextSize("Do you wish to apply them or discard them?").x };
+                const auto diffTextSz { longerTextSz - shorterTextSz };
+
+                ImGui::SetCursorPosX(diffTextSz / 2);
+                ImGui::Text("You have some unsaved changes.");
+                ImGui::Text("Do you wish to apply them or discard them?");
                 ImGui::Separator();
 
-                if (ImGui::Button("Apply", ImVec2(120, 0)))
+                const auto buttonWidth { (longerTextSz - ImGui::GetStyle().ItemSpacing.x) / 2 };
+
+                if (ImGui::Button("Apply", ImVec2(buttonWidth, 0)))
                 {
                     aSaveCB();
                     res = 1;
@@ -127,7 +140,7 @@ namespace HelperWidgets
                     ImGui::CloseCurrentPopup();
                 }
                 ImGui::SameLine();
-                if (ImGui::Button("Discard", ImVec2(120, 0)))
+                if (ImGui::Button("Discard", ImVec2(buttonWidth, 0)))
                 {
                     aLoadCB();
                     res = -1;

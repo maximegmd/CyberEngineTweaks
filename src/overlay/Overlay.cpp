@@ -101,11 +101,18 @@ void Overlay::Update()
 
             ImGui::OpenPopup("CET First Time Setup");
             m_showFirstTimeModal = false;
+            m_vm.BlockUpdate(true);
         }
 
         if (ImGui::BeginPopupModal("CET First Time Setup", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
         {
-            ImGui::Text("Please, bind some key combination for toggling overlay!\nCombo can be composed from up to 4 keys.");
+            const auto shorterTextSz { ImGui::CalcTextSize("Combo can be composed from up to 4 keys.").x };
+            const auto longerTextSz { ImGui::CalcTextSize("Please, bind some key combination for toggling overlay!").x };
+            const auto diffTextSz { longerTextSz - shorterTextSz };
+
+            ImGui::Text("Please, bind some key combination for toggling overlay!");
+            ImGui::SetCursorPosX(diffTextSz / 2);
+            ImGui::Text("Combo can be composed from up to 4 keys.");
             ImGui::Separator();
 
             HelperWidgets::BindWidget(m_VKBIOverlay, false);
@@ -114,6 +121,7 @@ void Overlay::Update()
                 m_VKBIOverlay.Apply();
                 m_bindings.Save();
                 m_options.IsFirstLaunch = false;
+                m_vm.BlockUpdate(false);
                 ImGui::CloseCurrentPopup();
             }
 
@@ -223,9 +231,8 @@ void Overlay::Hook()
 Overlay::Overlay(D3D12& aD3D12, VKBindings& aBindings, Options& aOptions, LuaVM& aVm)
     : m_console(aVm)
     , m_bindings(aBindings, *this, aVm)
-    , m_settings(aOptions)
+    , m_settings(aOptions, aVm)
     , m_tweakDBEditor(aVm)
-    , m_VKBIOverlay{{"cet.overlay_key", "Overlay Key", [this]() { Toggle(); }}, 0, 0, false}
     , m_d3d12(aD3D12)
     , m_options(aOptions)
     , m_vm(aVm)
@@ -256,8 +263,10 @@ void Overlay::SetActiveWidget(WidgetID aNewActive)
 
     if (m_activeWidgetID != m_nextActiveWidgetID)
     {
+        assert(m_activeWidgetID < WidgetID::COUNT);
         if (m_widgets[static_cast<size_t>(m_activeWidgetID)]->OnDisable())
         {
+            assert(m_nextActiveWidgetID < WidgetID::COUNT);
             if (m_widgets[static_cast<size_t>(m_nextActiveWidgetID)]->OnEnable())
                 m_activeWidgetID = m_nextActiveWidgetID;
         }

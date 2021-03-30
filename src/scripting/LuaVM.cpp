@@ -25,10 +25,7 @@ void LuaVM::Update(float aDeltaTime)
     if (!m_initialized && m_logCount.load(std::memory_order_relaxed) > 0)
         PostInitialize();
 
-    if (!m_initialized)
-        return;
-
-    if (m_options.IsFirstLaunch)
+    if (!m_initialized || m_updateBlocked)
         return;
 
     m_scripting.TriggerOnUpdate(aDeltaTime);
@@ -72,6 +69,11 @@ void LuaVM::Initialize()
 bool LuaVM::IsInitialized() const
 {
     return m_initialized;
+}
+
+void LuaVM::BlockUpdate(bool aBlockUpdate)
+{
+    m_updateBlocked = aBlockUpdate;
 }
 
 void LuaVM::RemoveTDBIDDerivedFrom(uint64_t aDBID)
