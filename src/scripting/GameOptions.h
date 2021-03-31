@@ -2,13 +2,28 @@
 
 struct GameOption
 {
-    virtual ~GameOption();
+    enum Type : uint8_t
+    {
+        kBoolean,
+        kInteger,
+        kFloat,
+        kString,
+        kColor
+    };
 
-    static void* s_integerVtable;
-    static void* s_booleanVtable;
-    static void* s_floatVtable;
-    static void* s_stringVtable;
-    static void* s_colorVtable;
+    virtual ~GameOption();
+    virtual bool ValueToString(RED4ext::CString& aReturn);
+    virtual bool Get(void* apValue, Type aType);
+    virtual bool MaybeSetFromString(const RED4ext::CString&);
+    virtual bool Set(void* apValue, Type aType);
+    virtual bool DefaultToString(RED4ext::CString&);
+    virtual bool SetDefault(void* apValue, Type aType);
+    virtual bool SetMin(void* apValue, Type aType);
+    virtual bool SetMax(void* apValue, Type aType);
+    virtual bool IsBounded();
+    virtual bool IsDefault(); // Converts both value and default to string and then does a string compare...
+    virtual Type GetType();
+    virtual bool Reset();
 
     const char* pName;
     const char* pCategory;
@@ -26,6 +41,7 @@ struct GameOption
             int32_t Min;
             int32_t Max;
             int32_t Default;
+            uint8_t isBounded;
         } Integer;
         struct
         {
@@ -33,10 +49,12 @@ struct GameOption
             float Min;
             float Max;
             float Default;
+            uint8_t isBounded;
         } Float;
 
         RED4ext::CString String;
     };
+    
 
     std::string GetInfo();
 
@@ -61,6 +79,7 @@ struct GameOption
 
 static_assert(offsetof(GameOption, unk28) == 0x28);
 static_assert(offsetof(GameOption, Boolean) == 0x30);
+static_assert(offsetof(GameOption, Integer.isBounded) == 0x40);
 
 // Struct to expose to Lua to allow these functions to be called at runtime
 struct GameOptions
