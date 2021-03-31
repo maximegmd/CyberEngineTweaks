@@ -140,11 +140,10 @@ bool GameOption::SetInt(int value)
     if (IsA(s_colorVtable))
         return true; // no min/max checks for colors
 
-    if (Integer.Min > Integer.Value)
-        Integer.Value = Integer.Min;
-
-    if (Integer.Max < Integer.Value)
-        Integer.Value = Integer.Max;
+    if (Integer.Min == Integer.Max == 0)
+        Integer.Value = value;
+    else
+        Integer.Value = std::clamp(value, Integer.Min, Integer.Max);
 
     return true;
 }
@@ -154,13 +153,10 @@ bool GameOption::SetFloat(float value)
     if (!IsA(s_floatVtable))
         return false;
 
-    Float.Value = value;
-
-    if (Float.Min > Float.Value)
-        Float.Value = Float.Min;
-
-    if (Float.Max < Float.Value)
-        Float.Value = Float.Max;
+    if (Float.Min == Float.Max == 0.f)
+        Float.Value = value;
+    else
+        Float.Value = std::clamp(value, Float.Min, Float.Max);
 
     return true;
 }
