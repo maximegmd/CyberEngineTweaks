@@ -28,6 +28,12 @@ bool Settings::OnDisable()
         m_vm.BlockDraw(m_madeChanges);
         m_enabled = m_madeChanges;
     }
+    if (!m_enabled)
+    {
+        // reset changes substates
+        m_patchesChanged = false;
+        m_devChanged = false;
+    }
     return !m_enabled;
 }
 
