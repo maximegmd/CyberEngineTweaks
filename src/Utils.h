@@ -13,6 +13,3 @@ sol::object DeepCopySolObject(sol::object aObj, const sol::state_view& aStateVie
 
 // makes sol object immutable when accessed from lua
 void MakeSolObjectImmutable(sol::object aObj, const sol::state_view& aStateView);
-
-//// runtime assertions which can be enabled/disabled inside CET options
-//void ImGuiAssert(wchar_t const* acpMessage, wchar_t const* acpFile, unsigned aLine);

@@ -3,6 +3,9 @@
 #include "Paths.h"
 #include "Utils.h"
 
+// global definition "Enable ImGui Assertions"
+bool g_ImGuiAssertionsEnabled { true };
+
 void Options::Load()
 {
     if (exists(m_paths.Config()))
@@ -37,6 +40,9 @@ void Options::Load()
         }
         configFile.close();
     }
+
+    // set global "Enable ImGui Assertions"
+    g_ImGuiAssertionsEnabled = EnableImGuiAssertions;
 }
 
 void Options::Save()
@@ -64,6 +70,9 @@ void Options::Save()
 
     std::ofstream o(m_paths.Config());
     o << config.dump(4) << std::endl;
+
+    // set global "Enable ImGui Assertions"
+    g_ImGuiAssertionsEnabled = EnableImGuiAssertions;
 }
 
 void Options::ResetToDefaults()

@@ -9,7 +9,7 @@ add_requireconfs("sol2", { configs = { includes_lua = false } })
 add_rules("mode.debug","mode.releasedbg", "mode.release")
 add_rules("plugin.vsxmake.autoupdate")
 
-local imguiUserConfig = path.absolute("imgui_user_config.h")
+local imguiUserConfig = path.absolute("src/imgui_impl/imgui_user_config.h")
 add_requireconfs("imgui", { configs = { user_config = imguiUserConfig } })
 
 if is_mode("debug") then
