@@ -140,7 +140,7 @@ bool GameOption::SetInt(int value)
     if (IsA(s_colorVtable))
         return true; // no min/max checks for colors
 
-    if (Integer.Min == Integer.Max == 0.f)
+    if (Integer.Min == Integer.Max == 0)
         Integer.Value = value;
     else
         Integer.Value = std::clamp(value, Integer.Min, Integer.Max);
