@@ -25,12 +25,14 @@ struct GameOption
             int32_t Value;
             int32_t Min;
             int32_t Max;
+            int32_t Default;
         } Integer;
         struct
         {
             float Value;
             float Min;
             float Max;
+            float Default;
         } Float;
 
         RED4ext::CString String;
