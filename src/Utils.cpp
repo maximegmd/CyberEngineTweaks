@@ -2,6 +2,8 @@
 
 #include "Utils.h"
 
+#include "CET.h"
+
 #include <spdlog/sinks/base_sink.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 
@@ -135,4 +137,14 @@ void MakeSolObjectImmutable(sol::object aObj, const sol::state_view& aStateView)
 
     // prevent adding new properties
     metatable[sol::meta_function::new_index] = []() {};
+}
+
+// runtime assertions which can be enabled/disabled inside CET options
+void ImGuiAssert(wchar_t const* acpMessage, wchar_t const* acpFile, unsigned aLine)
+{
+#ifdef NDEBUG
+    __declspec(dllimport) void __cdecl _wassert(wchar_t const* _Message, wchar_t const* _File, unsigned _Line);
+#endif
+    if (CET::Get().GetOptions().EnableImGuiAssertions)
+        _wassert(acpMessage, acpFile, aLine);
 }

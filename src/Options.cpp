@@ -11,7 +11,6 @@ void Options::Load()
         if(configFile)
         {
             auto config = nlohmann::json::parse(configFile);
-            PatchEnableDebug = config.value("enable_debug", PatchEnableDebug);
             PatchRemovePedestrians = config.value("remove_pedestrians", PatchRemovePedestrians);
             PatchSkipStartMenu = config.value("skip_start_menu", PatchSkipStartMenu);
             PatchAmdSmt = config.value("amd_smt", PatchAmdSmt);
@@ -23,7 +22,9 @@ void Options::Load()
             PatchDisableWin7Vsync = config.value("disable_win7_vsync", PatchDisableWin7Vsync);
             
             RemoveDeadBindings = config.value("cetdev_remove_dead_bindings", RemoveDeadBindings);
+            EnableImGuiAssertions = config.value("cetdev_enable_imgui_assertions", EnableImGuiAssertions);
             DumpGameOptions = config.value("dump_game_options", DumpGameOptions);
+            PatchEnableDebug = config.value("enable_debug", PatchEnableDebug);
             
             // font config
             FontPath = config.value("font_path", FontPath);
@@ -42,7 +43,6 @@ void Options::Save()
 {
     nlohmann::json config;
     
-    config["enable_debug"] = PatchEnableDebug;
     config["remove_pedestrians"] = PatchRemovePedestrians;
     config["disable_async_compute"] = PatchAsyncCompute;
     config["disable_antialiasing"] = PatchAntialiasing;
@@ -52,8 +52,12 @@ void Options::Save()
     config["disable_vignette"] = PatchDisableVignette;
     config["disable_boundary_teleport"] = PatchDisableBoundaryTeleport;
     config["disable_win7_vsync"] = PatchDisableWin7Vsync;
+
     config["cetdev_remove_dead_bindings"] = RemoveDeadBindings;
+    config["cetdev_enable_imgui_assertions"] = EnableImGuiAssertions;
+    config["enable_debug"] = PatchEnableDebug;
     config["dump_game_options"] = DumpGameOptions;
+
     config["font_path"] = FontPath;
     config["font_glyph_ranges"] = FontGlyphRanges;
     config["font_size"] = FontSize;

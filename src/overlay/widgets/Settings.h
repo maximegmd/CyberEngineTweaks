@@ -34,6 +34,8 @@ private:
     bool m_patchDisableWin7Vsync{ false };
     bool m_dumpGameOptions{ false };
     bool m_removeDeadBindings{ true };
+    bool m_enableImGuiAssertions{ true };
+
     Options& m_options;
     LuaVM& m_vm;
 

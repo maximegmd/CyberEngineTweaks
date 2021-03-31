@@ -72,6 +72,7 @@ void Settings::Update()
                 HelperWidgets::BoolWidget("Draw ImGui Diagnostic Window:", m_options.DrawImGuiDiagnosticWindow, m_options.DrawImGuiDiagnosticWindow);
 
                 m_devChanged  = HelperWidgets::BoolWidget("Remove Dead Bindings:", m_removeDeadBindings, m_options.RemoveDeadBindings);
+                m_devChanged |= HelperWidgets::BoolWidget("Enable ImGui Assertions:", m_enableImGuiAssertions, m_options.EnableImGuiAssertions);
                 m_devChanged |= HelperWidgets::BoolWidget("Enable Debug Menu:", m_patchEnableDebug, m_options.PatchEnableDebug);
                 m_devChanged |= HelperWidgets::BoolWidget("Dump Game Options:", m_dumpGameOptions, m_options.DumpGameOptions);
             }
@@ -89,7 +90,6 @@ void Settings::Load()
 {
     m_options.Load();
     
-    m_patchEnableDebug = m_options.PatchEnableDebug;
     m_patchRemovePedestrians = m_options.PatchRemovePedestrians;
     m_patchAsyncCompute = m_options.PatchAsyncCompute;
     m_patchAntialiasing = m_options.PatchAntialiasing;
@@ -99,13 +99,15 @@ void Settings::Load()
     m_patchDisableVignette = m_options.PatchDisableVignette;
     m_patchDisableBoundaryTeleport = m_options.PatchDisableBoundaryTeleport;
     m_patchDisableWin7Vsync = m_options.PatchDisableWin7Vsync;
-    m_dumpGameOptions = m_options.DumpGameOptions;
+
     m_removeDeadBindings = m_options.RemoveDeadBindings;
+    m_enableImGuiAssertions = m_options.EnableImGuiAssertions;
+    m_patchEnableDebug = m_options.PatchEnableDebug;
+    m_dumpGameOptions = m_options.DumpGameOptions;
 }
 
 void Settings::Save() const
 {
-    m_options.PatchEnableDebug = m_patchEnableDebug;
     m_options.PatchRemovePedestrians = m_patchRemovePedestrians;
     m_options.PatchAsyncCompute = m_patchAsyncCompute;
     m_options.PatchAntialiasing = m_patchAntialiasing;
@@ -115,8 +117,11 @@ void Settings::Save() const
     m_options.PatchDisableVignette = m_patchDisableVignette;
     m_options.PatchDisableBoundaryTeleport = m_patchDisableBoundaryTeleport;
     m_options.PatchDisableWin7Vsync = m_patchDisableWin7Vsync;
-    m_options.DumpGameOptions = m_dumpGameOptions;
+
     m_options.RemoveDeadBindings = m_removeDeadBindings;
+    m_options.EnableImGuiAssertions = m_enableImGuiAssertions;
+    m_options.PatchEnableDebug = m_patchEnableDebug;
+    m_options.DumpGameOptions = m_dumpGameOptions;
 
     m_options.Save();
 }

@@ -1,4 +1,4 @@
-set_xmakever("2.5.1")
+set_xmakever("2.5.2")
 
 set_languages("cxx20")
 set_arch("x64")
@@ -9,6 +9,9 @@ add_requireconfs("sol2", { configs = { includes_lua = false } })
 add_rules("mode.debug","mode.releasedbg", "mode.release")
 add_rules("plugin.vsxmake.autoupdate")
 
+local imguiUserConfig = path.absolute("imgui_user_config.h")
+add_requireconfs("imgui", { configs = { user_config = imguiUserConfig } })
+
 if is_mode("debug") then
     add_defines("CET_DEBUG")
     set_optimize("none")
@@ -16,13 +19,12 @@ elseif is_mode("releasedbg") then
     add_defines("CET_DEBUG")
     set_optimize("fastest")
 elseif is_mode("release") then
-	add_requireconfs("imgui", { configs = { cxflags = "/DNDEBUG" } })
     add_defines("NDEBUG")
     set_optimize("fastest")
 end
 
 add_cxflags("/bigobj", "/MP")
-add_defines("RED4EXT_STATIC_LIB", "UNICODE")
+add_defines("RED4EXT_STATIC_LIB", "UNICODE", "IMGUI_USER_CONFIG=\""..imguiUserConfig.."\"")
 
 before_build(function (target)
 	import("modules.version")
