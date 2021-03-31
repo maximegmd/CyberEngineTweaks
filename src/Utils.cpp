@@ -2,8 +2,6 @@
 
 #include "Utils.h"
 
-#include "CET.h"
-
 #include <spdlog/sinks/base_sink.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 
@@ -137,16 +135,4 @@ void MakeSolObjectImmutable(sol::object aObj, const sol::state_view& aStateView)
 
     // prevent adding new properties
     metatable[sol::meta_function::new_index] = []() {};
-}
-
-#ifdef NDEBUG
-// inline _wassert decl for NDEBUG as it is not emitted inside assert.h header in this case
-extern "C" _ACRTIMP void __cdecl _wassert(wchar_t const* _Message, wchar_t const* _File, unsigned _Line);
-#endif
-
-// runtime assertions which can be enabled/disabled inside CET options
-void ImGuiAssert(wchar_t const* acpMessage, wchar_t const* acpFile, unsigned aLine)
-{
-    spdlog::error(L"ImGui assertion failed in file \"{ 0 }\" at line { 1 }! Expression ({ 2 }) evaluates to false!", acpFile, aLine, acpMessage);
-    _wassert(acpMessage, acpFile, aLine);
 }
