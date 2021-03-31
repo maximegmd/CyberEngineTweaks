@@ -110,9 +110,9 @@ void Overlay::Update()
             const auto longerTextSz { ImGui::CalcTextSize("Please, bind some key combination for toggling overlay!").x };
             const auto diffTextSz { longerTextSz - shorterTextSz };
 
-            ImGui::Text("Please, bind some key combination for toggling overlay!");
+            ImGui::TextUnformatted("Please, bind some key combination for toggling overlay!");
             ImGui::SetCursorPosX(diffTextSz / 2);
-            ImGui::Text("Combo can be composed from up to 4 keys.");
+            ImGui::TextUnformatted("Combo can be composed from up to 4 keys.");
             ImGui::Separator();
 
             // TODO - do not hardcode offset! this somewhat works temporarily...

@@ -53,7 +53,7 @@ namespace HelperWidgets
 
         ImGui::PushStyleColor(ImGuiCol_Text, curTextColor);
         ImGui::PushID(&aVKBindInfo.Bind.Description); // ensure we have unique ID by using pointer to Description, is OK, pointer will not be used inside ImGui :P
-        ImGui::Text(label.c_str());
+        ImGui::TextUnformatted(label.c_str());
         ImGui::PopID();
         ImGui::PopStyleColor();
         
@@ -102,7 +102,7 @@ namespace HelperWidgets
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offset_x);
 
         ImGui::PushStyleColor(ImGuiCol_Text, curTextColor);
-        ImGui::Text(label.c_str());
+        ImGui::TextUnformatted(label.c_str());
         ImGui::PopStyleColor();
 
         ImGui::SameLine();
@@ -130,8 +130,8 @@ namespace HelperWidgets
                 const auto diffTextSz { longerTextSz - shorterTextSz };
 
                 ImGui::SetCursorPosX(diffTextSz / 2);
-                ImGui::Text("You have some unsaved changes.");
-                ImGui::Text("Do you wish to apply them or discard them?");
+                ImGui::TextUnformatted("You have some unsaved changes.");
+                ImGui::TextUnformatted("Do you wish to apply them or discard them?");
                 ImGui::Separator();
 
                 const auto buttonWidth { (longerTextSz - ImGui::GetStyle().ItemSpacing.x) / 2 };

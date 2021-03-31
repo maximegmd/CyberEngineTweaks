@@ -64,11 +64,32 @@ void Bindings::Update()
                 curMod = curMod.substr(0, curMod.find('.'));
                 if (prevMod != curMod)
                 {
+                    // make it writable (also checks for "cet" modname)
+                    std::string activeModName { (curMod == "cet") ? ("Cyber Engine Tweaks") : (curMod) };
+
+                    // transform to nicer format till modinfo is in
+                    bool capitalize = true;
+                    std::ranges::transform(std::as_const(activeModName), activeModName.begin(),
+                    [&capitalize](char c)
+                    {
+                        if (!std::isalnum(c))
+                        {
+                            capitalize = true;
+                            return ' ';
+                        }
+                        if (capitalize)
+                        {
+                            capitalize = false;
+                            return static_cast<char>(std::toupper(static_cast<int>(c)));
+                        }
+                        return c;
+                    });
+                    
+                    // add vertical spacing when this is not first iteration
                     if (!prevMod.empty())
                         ImGui::Spacing();
-
-                    std::string curModStr{curMod};
-                    ImGui::Text(curModStr.c_str());
+                    
+                    ImGui::TextUnformatted(activeModName.c_str());
 
                     prevMod = curMod;
                 }
@@ -77,7 +98,7 @@ void Bindings::Update()
             }
         }
         else
-            ImGui::Text("LuaVM is not yet initialized!");
+            ImGui::TextUnformatted("LuaVM is not yet initialized!");
     }
     ImGui::EndChild();
     
