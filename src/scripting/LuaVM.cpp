@@ -25,11 +25,13 @@ void LuaVM::Update(float aDeltaTime)
     if (!m_initialized && m_logCount.load(std::memory_order_relaxed) > 0)
         PostInitialize();
 
-    if (!m_initialized || m_updateBlocked)
+    if (!m_initialized)
         return;
 
     m_scripting.TriggerOnUpdate(aDeltaTime);
-    m_scripting.TriggerOnDraw();
+
+    if (!m_drawBlocked)
+        m_scripting.TriggerOnDraw();
 }
 
 void LuaVM::ReloadAllMods()
@@ -71,9 +73,9 @@ bool LuaVM::IsInitialized() const
     return m_initialized;
 }
 
-void LuaVM::BlockUpdate(bool aBlockUpdate)
+void LuaVM::BlockDraw(bool aBlockDraw)
 {
-    m_updateBlocked = aBlockUpdate;
+    m_drawBlocked = aBlockDraw;
 }
 
 void LuaVM::RemoveTDBIDDerivedFrom(uint64_t aDBID)

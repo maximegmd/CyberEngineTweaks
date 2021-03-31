@@ -23,9 +23,9 @@ bool Settings::OnDisable()
 {
     if (m_enabled)
     {
-        m_vm.BlockUpdate(m_madeChanges);
+        m_vm.BlockDraw(m_madeChanges);
         m_madeChanges = (HelperWidgets::UnsavedChangesPopup(m_openChangesModal, m_madeChanges, m_saveCB, m_loadCB) == 0);
-        m_vm.BlockUpdate(m_madeChanges);
+        m_vm.BlockDraw(m_madeChanges);
         m_enabled = m_madeChanges;
     }
     return !m_enabled;

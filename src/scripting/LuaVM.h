@@ -39,8 +39,8 @@ struct LuaVM
     void Initialize();
 
     bool IsInitialized() const;
-
-    void BlockUpdate(bool aBlockUpdate);
+    
+    void BlockDraw(bool aBlockDraw);
 
     // Used by TweakDB when you delete a custom record
     void RemoveTDBIDDerivedFrom(uint64_t aDBID);
@@ -86,7 +86,7 @@ private:
     Scripting m_scripting;
 
     bool m_initialized{ false };
-    bool m_updateBlocked{ false };
+    bool m_drawBlocked{ false };
 
     Options& m_options;
     D3D12& m_d3d12;

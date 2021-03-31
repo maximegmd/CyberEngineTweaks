@@ -101,7 +101,7 @@ void Overlay::Update()
 
             ImGui::OpenPopup("CET First Time Setup");
             m_showFirstTimeModal = false;
-            m_vm.BlockUpdate(true);
+            m_vm.BlockDraw(true);
         }
 
         if (ImGui::BeginPopupModal("CET First Time Setup", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
@@ -122,7 +122,7 @@ void Overlay::Update()
                 m_VKBIOverlay.Apply();
                 m_bindings.Save();
                 m_options.IsFirstLaunch = false;
-                m_vm.BlockUpdate(false);
+                m_vm.BlockDraw(false);
                 ImGui::CloseCurrentPopup();
             }
 
