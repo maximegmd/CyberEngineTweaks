@@ -147,5 +147,6 @@ extern "C" _ACRTIMP void __cdecl _wassert(wchar_t const* _Message, wchar_t const
 // runtime assertions which can be enabled/disabled inside CET options
 void ImGuiAssert(wchar_t const* acpMessage, wchar_t const* acpFile, unsigned aLine)
 {
+    spdlog::error(L"ImGui assertion failed in file \"{ 0 }\" at line { 1 }! Expression ({ 2 }) evaluates to false!", acpFile, aLine, acpMessage);
     _wassert(acpMessage, acpFile, aLine);
 }

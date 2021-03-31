@@ -6,11 +6,11 @@ set_arch("x64")
 add_requires("spdlog", "nlohmann_json", "hopscotch-map", "minhook", "mem", "imgui 1.82", "sol2", "tiltedcore master", "sqlite3", "luajit")
 add_requireconfs("sol2", { configs = { includes_lua = false } })
 
-add_rules("mode.debug","mode.releasedbg", "mode.release")
-add_rules("plugin.vsxmake.autoupdate")
-
 local imguiUserConfig = path.absolute("src/imgui_impl/imgui_user_config.h")
 add_requireconfs("imgui", { configs = { user_config = imguiUserConfig } })
+
+add_rules("mode.debug","mode.releasedbg", "mode.release")
+add_rules("plugin.vsxmake.autoupdate")
 
 if is_mode("debug") then
     add_defines("CET_DEBUG")
@@ -24,7 +24,7 @@ elseif is_mode("release") then
 end
 
 add_cxflags("/bigobj", "/MP")
-add_defines("RED4EXT_STATIC_LIB", "UNICODE", "IMGUI_USER_CONFIG=\""..imguiUserConfig.."\"")
+add_defines("RED4EXT_STATIC_LIB", "UNICODE")
 
 before_build(function (target)
 	import("modules.version")
@@ -61,7 +61,7 @@ target("RED4ext.SDK")
     add_includedirs("vendor/RED4ext.SDK/include/", { public = true })
 
 target("cyber_engine_tweaks")
-    add_defines("WIN32_LEAN_AND_MEAN", "NOMINMAX", "SOL_ALL_SAFETIES_ON", "WINVER=0x0601", "SOL_LUAJIT=1") -- WINVER=0x0601 == Windows 7, we need this specified now for some reason
+    add_defines("WIN32_LEAN_AND_MEAN", "NOMINMAX", "WINVER=0x0601", "SOL_ALL_SAFETIES_ON", "SOL_LUAJIT=1", "SPDLOG_WCHAR_TO_UTF8_SUPPORT", "IMGUI_USER_CONFIG=\""..imguiUserConfig.."\"") -- WINVER=0x0601 == Windows 7, we need this specified now for some reason
     set_pcxxheader("src/stdafx.h")
     set_kind("shared")
     set_filename("cyber_engine_tweaks.asi")
