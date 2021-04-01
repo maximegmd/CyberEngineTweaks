@@ -714,7 +714,7 @@ int32_t FlatPool::GetOrCreate(const RED4ext::CStackType& acStackType, HashType a
     int32_t existingTDBOffset = Get(acStackType, aHash);
     if (existingTDBOffset != -1)
     {
-        assert(existingTDBOffset == aTDBOffset);
+        assert((aTDBOffset == -1) || (existingTDBOffset == aTDBOffset));
         return existingTDBOffset;
     }
 
