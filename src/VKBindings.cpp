@@ -202,19 +202,34 @@ void VKBindings::Clear()
     m_recordingBind = {};
 }
 
+inline static bool FirstKeyMatches(uint64_t aFirst, uint64_t aSecond)
+{
+    return ((aFirst & 0xFFFF000000000000ull) == (aSecond & 0xFFFF000000000000ull));
+}
+
 bool VKBindings::Bind(uint64_t aVKCodeBind, const VKBind& aBind)
 {
-    // bind check 1
+    // bind check 1 (check for rebind and already bound case)
     {
-        auto bind = m_binds.find(aVKCodeBind);
+        auto bind = m_binds.lower_bound(aVKCodeBind);
         if (bind != m_binds.end())
         {
-            if (bind->second.ID == aBind.ID)
+            if (bind->first == aVKCodeBind)
             {
-                bind->second.Handler = aBind.Handler; // rebind
-                return true;
+                if (bind->second.ID == aBind.ID)
+                {
+                    bind->second.Handler = aBind.Handler; // rebind
+                    return true;
+                }
+                return false; // combo already bound and it is not the same VKBind!
             }
-            return false; // combo already bound and it is not the same VKBind!
+            // in this case, we may have found a hotkey or single input starting with same key
+            if (FirstKeyMatches(aVKCodeBind, bind->first))
+            {
+                // first char matches! lets check that both binds are hotkey in this case
+                if (aBind.IsInput() || bind->second.IsInput())
+                    return false; // one of these is not a hotkey! single inputs cannot start with same key as some hotkey and vice versa!
+            }
         }
     }
 
@@ -551,9 +566,11 @@ bool VKBindings::IsLastRecordingKey(USHORT aVKCode)
 
 LRESULT VKBindings::RecordKeyDown(USHORT aVKCode)
 {
-    for (size_t i = 0; i < m_recordingLength; ++i)
-        if (m_recording[i] == aVKCode)
-            return 0; // ignore repeats
+    if (m_keyStates[aVKCode])
+        return 0; // ignore repeats
+    
+    // mark key down
+    m_keyStates[aVKCode] = true;
 
     if (m_recordingLength >= m_recording.size())
     {
@@ -568,12 +585,7 @@ LRESULT VKBindings::RecordKeyDown(USHORT aVKCode)
     const VKBind* bind { VerifyRecording() };
 
     if (m_isBindRecording)
-    {
-        if (m_recordingBind.IsInput())
-            return RecordKeyUp(aVKCode); // instantly register bind for single inputs
-
         return 0; // don't do anything else when bind is being recorded
-    }
 
     if (bind && (bind != VKBRecord_OK))
     {
@@ -592,6 +604,12 @@ LRESULT VKBindings::RecordKeyDown(USHORT aVKCode)
                     const std::lock_guard lock(m_queuedCallbacksLock);
                     m_queuedCallbacks.push(delayedCall);
                 }
+                // reset recording for single input
+                if (bind->IsInput())
+                {
+                    m_recording.fill(0);
+                    m_recordingLength = 0;
+                }
             }
         }
     }
@@ -601,6 +619,44 @@ LRESULT VKBindings::RecordKeyDown(USHORT aVKCode)
 
 LRESULT VKBindings::RecordKeyUp(USHORT aVKCode)
 {
+    if (!m_keyStates[aVKCode])
+        return 0; // ignore up event when we did not register down event
+
+    // mark key up
+    m_keyStates[aVKCode] = false;
+    
+    // handle single inputs first
+    if (!m_recordingLength)
+    {
+        m_recording[m_recordingLength++] = aVKCode;
+        m_recordingResult = EncodeVKCodeBind(m_recording);
+        const auto* cpBind = VerifyRecording();
+        if (cpBind && (cpBind != VKBRecord_OK))
+        {
+            if (cpBind->IsInput())
+            {
+                if (m_pOverlay && !m_pOverlay->IsEnabled()) // we dont want to handle bindings if overlay is open
+                {
+                    if (cpBind->IsValid()) // prevention for freshly loaded bind from file without rebinding
+                    {
+                        const std::lock_guard lock(m_queuedCallbacksLock);
+                        m_queuedCallbacks.push(cpBind->DelayedCall(false));
+                    }
+                }
+                else
+                {
+                    // remark key as down! otherwise, bad things may happen...
+                    m_keyStates[aVKCode] = true;
+                }
+            }
+        }
+        m_recordingResult = 0;
+        m_recording[0] = 0;
+        m_recordingLength = 0; // explicitly reset to 0, as VerifyRecording can make it 0 which would underflow if we decreased it...
+        return 0;
+    }
+
+    // handle hotkeys
     for (size_t i = 0; i < m_recordingLength; ++i)
     {
         if (m_recording[i] == aVKCode)
@@ -725,13 +781,13 @@ LRESULT VKBindings::HandleRAWInput(HRAWINPUT ahRAWInput)
                 return RecordKeyUp(VK_XBUTTON2);
             case RI_MOUSE_WHEEL:
             {
-                const USHORT key { static_cast<USHORT>(RI_MOUSE_WHEEL | (m.usButtonData & 0x8000) ? 0 : 1) };
+                const USHORT key { static_cast<USHORT>(RI_MOUSE_WHEEL | ((m.usButtonData & 0x8000) ? 0 : 1)) };
                 RecordKeyDown(key);
                 return RecordKeyUp(key);
             }
             case RI_MOUSE_HWHEEL:
             {
-                const USHORT key{static_cast<USHORT>(RI_MOUSE_HWHEEL | (m.usButtonData & 0x8000) ? 0 : 1)};
+                const USHORT key{static_cast<USHORT>(RI_MOUSE_HWHEEL | ((m.usButtonData & 0x8000) ? 0 : 1))};
                 RecordKeyDown(key);
                 return RecordKeyUp(key);
             }

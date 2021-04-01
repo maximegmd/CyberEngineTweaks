@@ -127,11 +127,13 @@ private:
 
     LRESULT HandleRAWInput(HRAWINPUT ahRAWInput);
 
+    std::bitset<1 << 16> m_keyStates{ };
+
     std::map<uint64_t, VKBind> m_binds{ };
     TiltedPhoques::Map<std::string, uint64_t> m_idToBind{ };
 
     std::mutex m_queuedCallbacksLock{ };
-    std::queue<std::function<void()>> m_queuedCallbacks{};
+    std::queue<std::function<void()>> m_queuedCallbacks{ };
     
     VKCodeBindDecoded m_recording{ };
     size_t m_recordingLength{ 0 };
