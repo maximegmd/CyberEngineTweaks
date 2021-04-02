@@ -46,9 +46,12 @@ namespace HelperWidgets
         std::string label { aVKBindInfo.Bind.Description + ':' };
         if (aVKBindInfo.Bind.IsHotkey())
             label.insert(0, "[HK] "); // insert [HK] prefix for hotkeys so user knows this input can be assigned up to 4-key combo
+        
+        ImGui::AlignTextToFramePadding();
+
         ImGui::PushStyleColor(ImGuiCol_Text, curTextColor);
         ImGui::PushID(&aVKBindInfo.Bind.Description); // ensure we have unique ID by using pointer to Description, is OK, pointer will not be used inside ImGui :P
-        ImGui::Text(label.c_str());
+        ImGui::TextUnformatted(label.c_str());
         ImGui::PopID();
         ImGui::PopStyleColor();
         
@@ -84,19 +87,72 @@ namespace HelperWidgets
         }
     }
 
-    void BoolWidget(const std::string& label, bool& current, bool saved)
+    bool BoolWidget(const std::string& aLabel, bool& aCurrent, bool aSaved, float aOffsetX)
     {
         ImVec4 curTextColor = ImGui::GetStyleColorVec4(ImGuiCol_Text);
-        if (current != saved)
+        if (aCurrent != aSaved)
             curTextColor = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
-        
+
+        ImGui::AlignTextToFramePadding();
+
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + aOffsetX);
+
         ImGui::PushStyleColor(ImGuiCol_Text, curTextColor);
-        ImGui::Text(label.c_str());
+        ImGui::TextUnformatted(aLabel.c_str());
         ImGui::PopStyleColor();
 
         ImGui::SameLine();
 
-        ImGui::Checkbox(("##" + label).c_str(), &current);
+        ImGui::Checkbox(("##" + aLabel).c_str(), &aCurrent);
+
+        return (aCurrent != aSaved);
     }
 
+    int32_t UnsavedChangesPopup(bool& aFirstTime, bool aMadeChanges, TUCHPSave aSaveCB, TUCHPLoad aLoadCB)
+    {
+        if (aMadeChanges)
+        {
+            int32_t res = 0;
+            if (aFirstTime)
+            {
+                ImGui::OpenPopup("Unsaved changes");
+                aFirstTime = false;
+            }
+
+            if (ImGui::BeginPopupModal("Unsaved changes", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+            {
+                const auto shorterTextSz { ImGui::CalcTextSize("You have some unsaved changes.").x };
+                const auto longerTextSz { ImGui::CalcTextSize("Do you wish to apply them or discard them?").x };
+                const auto diffTextSz { longerTextSz - shorterTextSz };
+
+                ImGui::SetCursorPosX(diffTextSz / 2);
+                ImGui::TextUnformatted("You have some unsaved changes.");
+                ImGui::TextUnformatted("Do you wish to apply them or discard them?");
+                ImGui::Separator();
+
+                const auto buttonWidth { (longerTextSz - ImGui::GetStyle().ItemSpacing.x) / 2 };
+
+                if (ImGui::Button("Apply", ImVec2(buttonWidth, 0)))
+                {
+                    aSaveCB();
+                    res = 1;
+                    aFirstTime = true;
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Discard", ImVec2(buttonWidth, 0)))
+                {
+                    aLoadCB();
+                    res = -1;
+                    aFirstTime = true;
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::SetItemDefaultFocus();
+
+                ImGui::EndPopup();
+            }
+            return res;
+        }
+        return 1; // no changes, same as if we were to Apply
+    }
 }

@@ -32,6 +32,9 @@ void Bindings::Update()
     ImGui::SameLine();
     if (ImGui::Button("Save"))
         Save();
+    ImGui::SameLine();
+    if (ImGui::Button("Reset changes"))
+        ResetChanges();
 
     ImGui::Spacing();
     
@@ -83,4 +86,19 @@ void Bindings::Save()
         return;
     
     m_vkBindInfos = m_bindings.InitializeMods(m_vm.GetBinds());
+}
+
+void Bindings::ResetChanges()
+{
+    for (auto& vkBindInfo : m_vkBindInfos)
+    {
+        if (vkBindInfo.CodeBind == vkBindInfo.SavedCodeBind)
+            continue;
+
+        if (vkBindInfo.CodeBind)
+            m_bindings.UnBind(vkBindInfo.CodeBind);
+        if (vkBindInfo.SavedCodeBind)
+            m_bindings.Bind(vkBindInfo.SavedCodeBind, vkBindInfo.Bind);
+        vkBindInfo.CodeBind = vkBindInfo.SavedCodeBind;
+    }
 }

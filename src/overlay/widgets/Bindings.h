@@ -16,6 +16,7 @@ struct Bindings : Widget
     
     void Load();
     void Save();
+    void ResetChanges();
 
 private:
     std::vector<VKBindInfo> m_vkBindInfos{ };
