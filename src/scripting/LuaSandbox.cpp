@@ -116,6 +116,7 @@ static constexpr const char* s_cGlobalExtraLibsWhitelist[] =
     "ImGuiTableBgTarget",
     "ImGuiMouseButton",
     "ImDrawCornerFlags",
+    "ImDrawFlags",
     "ImGuiCol",
     "ImGuiDir",
     "json"
