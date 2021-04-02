@@ -27,7 +27,7 @@ namespace HelperWidgets
         return activeID;
     }
 
-    bool BindWidget(VKBindInfo& aVKBindInfo, bool aUnbindable, float offset_x)
+    bool BindWidget(VKBindInfo& aVKBindInfo, bool aUnbindable, float aOffsetX)
     {
         VKBindings& vkb { CET::Get().GetBindings() };
 
@@ -49,7 +49,7 @@ namespace HelperWidgets
         
         ImGui::AlignTextToFramePadding();
 
-        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offset_x);
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + aOffsetX);
 
         ImGui::PushStyleColor(ImGuiCol_Text, curTextColor);
         ImGui::PushID(&aVKBindInfo.Bind.Description); // ensure we have unique ID by using pointer to Description, is OK, pointer will not be used inside ImGui :P
