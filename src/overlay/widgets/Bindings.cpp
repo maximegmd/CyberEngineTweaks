@@ -132,8 +132,12 @@ bool Bindings::DrawBindings(bool aDrawHotkeys)
 
     if (m_luaVMReady)
     {
-        const auto emptyMessageArg1 { (aDrawHotkeys) ? ("hotkeys") : ("inputs") };
-        const auto emptyMessageArg2 { (aDrawHotkeys) ? ("inputs") : ("hotkeys") };
+        const char* cpEmptyMessage
+        {
+            (aDrawHotkeys)
+             ? ("This mod has no hotkeys, but it should have some inputs in other tab...")
+             : ("This mod has no inputs, but it should have some hotkeys in other tab...")
+        };
 
         std::string_view prevMod{""};
         size_t modBindsForType { 0 };
@@ -169,7 +173,7 @@ bool Bindings::DrawBindings(bool aDrawHotkeys)
                     {
                         // we did not draw anything, write appropriate message so it is not empty
                         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 10.0f);
-                        ImGui::Text("This mod has no %s, but it should have some %s in other tab...", emptyMessageArg1, emptyMessageArg2);
+                        ImGui::TextUnformatted(cpEmptyMessage);
                     }
                     ImGui::Spacing();
                 }
