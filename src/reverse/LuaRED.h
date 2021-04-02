@@ -9,7 +9,17 @@ struct LuaRED
     
     sol::object ToLua(RED4ext::CStackType& aResult, TiltedPhoques::Locked<sol::state, std::recursive_mutex>& aLua)
     {
-        return make_object(aLua.Get(), *static_cast<T*>(aResult.value));
+        if constexpr (std::is_integral_v<T> && (sizeof(T) == sizeof(uint64_t)))
+        {
+            constexpr auto format { (std::is_signed_v<T>) ? ("return {}ll") : ("return {}ull") };
+            auto res { aLua.Get().script(fmt::format(format, *static_cast<T*>(aResult.value))) };
+            assert(res.valid());
+            return res.get<sol::object>();
+        }
+        else
+        {
+            return make_object(aLua.Get(), *static_cast<T*>(aResult.value));
+        }
     }
 
     RED4ext::CStackType ToRED(sol::object aObject, RED4ext::IRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator)
