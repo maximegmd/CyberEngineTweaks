@@ -74,7 +74,6 @@ void Options::Save()
 
 void Options::ResetToDefaults()
 {
-    PatchEnableDebug = false;
     PatchRemovePedestrians = false;
     PatchAsyncCompute = false;
     PatchAntialiasing = false;
@@ -84,7 +83,10 @@ void Options::ResetToDefaults()
     PatchDisableVignette = false;
     PatchDisableBoundaryTeleport = false;
     PatchDisableWin7Vsync = false;
+
     RemoveDeadBindings = true;
+    EnableImGuiAssertions = true;
+    PatchEnableDebug = false;
     DumpGameOptions = false;
 
     Save();
