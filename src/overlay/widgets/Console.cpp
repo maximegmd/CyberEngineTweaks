@@ -50,9 +50,9 @@ int Console::HandleConsoleHistory(ImGuiInputTextCallbackData* apData)
 
     if (pStr)
     {
-        std::memcpy(apData->Buf, pStr->c_str(), pStr->size());
+        std::memcpy(apData->Buf, pStr->c_str(), pStr->length() + 1);
         apData->BufDirty = true;
-        apData->BufTextLen = pStr->size();
+        apData->BufTextLen = pStr->length();
         apData->CursorPos = apData->BufTextLen;
     }
 

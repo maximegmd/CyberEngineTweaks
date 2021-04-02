@@ -15,8 +15,9 @@ struct D3D12
 
     D3D12(Window& aWindow, Paths& aPaths, Options& aOptions);
     ~D3D12();
-    
+
     void SetTrapInputInImGui(bool aEnabled);
+    void DelayedSetTrapInputInImGui(bool aEnabled);
     [[nodiscard]] bool IsTrapInputInImGui() const noexcept { return m_trapInputInImGui; }
     [[nodiscard]] bool IsInitialized() const noexcept { return m_initialized; }
     [[nodiscard]] SIZE GetResolution() const noexcept { return m_outSize; }
@@ -77,4 +78,7 @@ private:
     Paths& m_paths;
     Window& m_window;
     Options& m_options;
+    
+    std::atomic_bool m_delayedTrapInput{ false };
+    std::atomic_bool m_delayedTrapInputState{ false };
 };

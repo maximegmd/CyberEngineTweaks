@@ -27,9 +27,11 @@ void LuaVM::Update(float aDeltaTime)
 
     if (!m_initialized)
         return;
-    
+
     m_scripting.TriggerOnUpdate(aDeltaTime);
-    m_scripting.TriggerOnDraw();
+
+    if (!m_drawBlocked)
+        m_scripting.TriggerOnDraw();
 }
 
 void LuaVM::ReloadAllMods()
@@ -69,6 +71,11 @@ void LuaVM::Initialize()
 bool LuaVM::IsInitialized() const
 {
     return m_initialized;
+}
+
+void LuaVM::BlockDraw(bool aBlockDraw)
+{
+    m_drawBlocked = aBlockDraw;
 }
 
 void LuaVM::RemoveTDBIDDerivedFrom(uint64_t aDBID)
