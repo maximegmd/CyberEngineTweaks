@@ -27,7 +27,7 @@ namespace HelperWidgets
         return activeID;
     }
 
-    void BindWidget(VKBindInfo& aVKBindInfo, const std::string& acId)
+    bool BindWidget(VKBindInfo& aVKBindInfo, bool aUnbindable, float aOffsetX)
     {
         VKBindings& vkb { CET::Get().GetBindings() };
 
@@ -44,10 +44,10 @@ namespace HelperWidgets
             curTextColor = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
 
         std::string label { aVKBindInfo.Bind.Description + ':' };
-        if (aVKBindInfo.Bind.IsHotkey())
-            label.insert(0, "[HK] "); // insert [HK] prefix for hotkeys so user knows this input can be assigned up to 4-key combo
         
         ImGui::AlignTextToFramePadding();
+
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + aOffsetX);
 
         ImGui::PushStyleColor(ImGuiCol_Text, curTextColor);
         ImGui::PushID(&aVKBindInfo.Bind.Description); // ensure we have unique ID by using pointer to Description, is OK, pointer will not be used inside ImGui :P
@@ -69,7 +69,7 @@ namespace HelperWidgets
         }
         ImGui::PopID();
         
-        if (aVKBindInfo.CodeBind && (aVKBindInfo.Bind.ID != acId)) // make an exception for Overlay key
+        if (aUnbindable && aVKBindInfo.CodeBind)
         {
             ImGui::PushID(&aVKBindInfo.Bind.ID[1]); // same as PushID before, just make pointer a bit bigger :)
             ImGui::SameLine();
@@ -85,6 +85,8 @@ namespace HelperWidgets
             }
             ImGui::PopID();
         }
+
+        return (aVKBindInfo.CodeBind != aVKBindInfo.SavedCodeBind);
     }
 
     bool BoolWidget(const std::string& aLabel, bool& aCurrent, bool aSaved, float aOffsetX)

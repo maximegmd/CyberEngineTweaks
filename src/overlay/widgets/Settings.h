@@ -1,26 +1,27 @@
 #pragma once
 
 #include "Widget.h"
+#include "HelperWidgets.h"
 
 struct VKBindings;
 struct Overlay;
 struct Options;
+struct LuaVM;
 
 struct Settings : Widget
 {
-    Settings(Overlay& aOverlay, VKBindings& aBindings, Options& aOptions);
+    Settings(Options& aOptions, LuaVM& aVm);
     ~Settings() override = default;
 
-    void OnEnable() override;
-    void OnDisable() override;
+    bool OnEnable() override;
+    bool OnDisable() override;
     void Update() override;
     
     void Load();
-    void Save();
+    void Save() const;
     void ResetToDefaults(); 
 
 private:
-    VKBindInfo m_overlayKeyBindInfo{ };
     bool m_patchEnableDebug{ false };
     bool m_patchRemovePedestrians{ false };
     bool m_patchAsyncCompute{ false };
@@ -32,8 +33,19 @@ private:
     bool m_patchDisableBoundaryTeleport{ false };
     bool m_patchDisableWin7Vsync{ false };
     bool m_dumpGameOptions{ false };
-    bool m_telemetry{ true };
-    VKBindings& m_bindings;
-    Overlay& m_overlay;
+    bool m_removeDeadBindings{ true };
+    bool m_enableImGuiAssertions{ true };
+
     Options& m_options;
+    LuaVM& m_vm;
+
+    HelperWidgets::TUCHPSave m_saveCB { [this](){ Save(); } };
+    HelperWidgets::TUCHPLoad m_loadCB { [this](){ Load(); } };
+
+    bool m_enabled{ false };
+    bool m_madeChanges{ false };
+    bool m_openChangesModal{ true };
+    
+    bool m_patchesChanged{ false };
+    bool m_devChanged{ false };
 };

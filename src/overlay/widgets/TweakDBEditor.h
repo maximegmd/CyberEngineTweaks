@@ -9,8 +9,8 @@ struct TweakDBEditor : Widget
     TweakDBEditor(LuaVM& aVm);
     ~TweakDBEditor() override = default;
 
-    void OnEnable() override;
-    void OnDisable() override;
+    bool OnEnable() override;
+    bool OnDisable() override;
     void Update() override;
 
 protected:

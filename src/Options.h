@@ -14,7 +14,6 @@ struct Options
     void ResetToDefaults(); 
     
     Image GameImage;
-    uint64_t OverlayKeyBind{ 0 };
     bool PatchEnableDebug{ false };
     bool PatchRemovePedestrians{ false };
     bool PatchAsyncCompute{ false };
@@ -30,7 +29,10 @@ struct Options
     std::string FontGlyphRanges{""};
     float FontSize{ 13.0f };
     bool ExeValid{ false };
-    bool IsFirstLaunch{ false };
+    bool IsFirstLaunch { true };
+    bool RemoveDeadBindings { true };
+    bool DrawImGuiDiagnosticWindow { false };
+    bool EnableImGuiAssertions { false };
 
 private:
 

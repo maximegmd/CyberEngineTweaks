@@ -72,11 +72,12 @@ constexpr USHORT VKBC_MWHEELDOWN  { RI_MOUSE_WHEEL  | 0 };
 constexpr USHORT VKBC_MWHEELRIGHT { RI_MOUSE_HWHEEL | 1 };
 constexpr USHORT VKBC_MWHEELLEFT  { RI_MOUSE_HWHEEL | 0 };
 
+struct Options;
 struct Overlay;
 struct D3D12;
 struct VKBindings
 {
-    VKBindings(Paths& aPaths);
+    VKBindings(Paths& aPaths, const Options& acOptions);
     ~VKBindings() = default;
 
     [[nodiscard]] bool IsInitialized() const noexcept;
@@ -87,7 +88,7 @@ struct VKBindings
     static uint64_t EncodeVKCodeBind(VKCodeBindDecoded aVKCodeBindDecoded);
     static const char* GetSpecialKeyName(USHORT aVKCode);
     
-    void Load(const Overlay& aOverlay);
+    bool Load(const Overlay& acOverlay);
     void Save();
 
     void Update();
@@ -141,7 +142,8 @@ private:
     bool m_initialized{ false };
 
     Paths& m_paths;
-    const Overlay* m_pOverlay{ nullptr };
+    const Options& m_cOptions;
+    const Overlay* m_cpOverlay{ nullptr };
     
     size_t m_connectUpdate{ static_cast<size_t>(-1) };
 };

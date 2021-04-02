@@ -14,13 +14,15 @@ Console::Console(LuaVM& aVm)
     spdlog::get("scripting")->sinks().push_back(consoleSink);
 }
 
-void Console::OnEnable()
+bool Console::OnEnable()
 {
     m_focusConsoleInput = true;
+    return true;
 }
 
-void Console::OnDisable()
+bool Console::OnDisable()
 {
+    return true;
 }
 
 int Console::HandleConsoleHistory(ImGuiInputTextCallbackData* apData)
@@ -117,10 +119,9 @@ void Console::Update()
         ImGui::SetKeyboardFocusHere();
         m_focusConsoleInput = false;
     }
-    ImGui::PushItemWidth(-1);
+    ImGui::SetNextItemWidth(-FLT_MIN);
     const auto execute = ImGui::InputText("##InputCommand", m_Command, std::size(m_Command),
                                           ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory,  &HandleConsoleHistory, this);
-    ImGui::PopItemWidth();
     ImGui::SetItemDefaultFocus();
     if (execute)
     {
