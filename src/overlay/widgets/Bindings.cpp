@@ -93,11 +93,12 @@ void Bindings::Update()
                         ImGui::Spacing();
                     
                     ImGui::TextUnformatted(activeModName.c_str());
+                    ImGui::Spacing();
 
                     prevMod = curMod;
                 }
 
-                m_madeChanges |= HelperWidgets::BindWidget(vkBindInfo, (vkBindInfo.Bind.ID != m_overlayKeyID));
+                m_madeChanges |= HelperWidgets::BindWidget(vkBindInfo, (vkBindInfo.Bind.ID != m_overlayKeyID), 10.0f);
             }
         }
         else
