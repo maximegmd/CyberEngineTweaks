@@ -1,9 +1,9 @@
-set_xmakever("2.5.1")
+set_xmakever("2.5.2")
 
 set_languages("cxx20")
 set_arch("x64")
 
-add_requires("spdlog", "nlohmann_json", "hopscotch-map", "minhook", "mem", "imgui 1.82", "sol2", "tiltedcore 0.2.1", "sqlite3", "luajit")
+add_requires("spdlog", "nlohmann_json", "hopscotch-map", "minhook", "mem", "imgui 1.82", "sol2", "tiltedcore 0.2.2", "sqlite3", "luajit")
 add_requireconfs("sol2", { configs = { includes_lua = false } })
 
 local imguiUserConfig = path.absolute("src/imgui_impl/imgui_user_config.h")

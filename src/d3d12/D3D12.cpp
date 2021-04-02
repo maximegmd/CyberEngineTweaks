@@ -18,6 +18,12 @@ void D3D12::SetTrapInputInImGui(bool aEnabled)
     m_trapInputInImGui = aEnabled;
 }
 
+void D3D12::DelayedSetTrapInputInImGui(bool aEnabled)
+{
+    m_delayedTrapInputState = aEnabled;
+    m_delayedTrapInput = true;
+}
+
 LRESULT D3D12::OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam)
 {
     auto& d3d12 = CET::Get().GetD3D12();
@@ -27,6 +33,12 @@ LRESULT D3D12::OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam)
         const auto res = ImGui_ImplWin32_WndProcHandler(ahWnd, auMsg, awParam, alParam);
         if (res)
             return res;
+
+        if (d3d12.m_delayedTrapInput)
+        {
+            d3d12.SetTrapInputInImGui(m_delayedTrapInputState);
+            d3d12.m_delayedTrapInput = false;
+        }
 
         if (d3d12.m_trapInputInImGui) // TODO: look into io.WantCaptureMouse and io.WantCaptureKeyboard
         {
