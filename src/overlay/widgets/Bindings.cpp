@@ -132,8 +132,8 @@ bool Bindings::DrawBindings(bool aDrawHotkeys)
 
     if (m_luaVMReady)
     {
-        const std::string_view emptyMessageArg1 { (aDrawHotkeys) ? ("hotkeys") : ("inputs") };
-        const std::string_view emptyMessageArg2 { (aDrawHotkeys) ? ("inputs") : ("hotkeys") };
+        const auto emptyMessageArg1 { (aDrawHotkeys) ? ("hotkeys") : ("inputs") };
+        const auto emptyMessageArg2 { (aDrawHotkeys) ? ("inputs") : ("hotkeys") };
 
         std::string_view prevMod{""};
         size_t modBindsForType { 0 };
@@ -165,7 +165,7 @@ bool Bindings::DrawBindings(bool aDrawHotkeys)
                 // add vertical spacing when this is not first iteration and check if we drawn anything
                 if (!prevMod.empty())
                 {
-                    if (!modBindsForType)
+                    if (!modBindsForType && (prevMod != "cet"))
                     {
                         // we did not draw anything, write appropriate message so it is not empty
                         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 10.0f);
