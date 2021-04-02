@@ -77,7 +77,7 @@ struct Overlay;
 struct D3D12;
 struct VKBindings
 {
-    VKBindings(Paths& aPaths, const Options& aOptions);
+    VKBindings(Paths& aPaths, const Options& acOptions);
     ~VKBindings() = default;
 
     [[nodiscard]] bool IsInitialized() const noexcept;
@@ -142,8 +142,8 @@ private:
     bool m_initialized{ false };
 
     Paths& m_paths;
-    const Options& m_options;
-    const Overlay* m_pOverlay{ nullptr };
+    const Options& m_cOptions;
+    const Overlay* m_cpOverlay{ nullptr };
     
     size_t m_connectUpdate{ static_cast<size_t>(-1) };
 };

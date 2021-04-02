@@ -18,9 +18,9 @@ uint64_t VKBindInfo::Apply()
     return CodeBind;
 }
 
-VKBindings::VKBindings(Paths& aPaths, const Options& aOptions)
+VKBindings::VKBindings(Paths& aPaths, const Options& acOptions)
     : m_paths(aPaths)
-    , m_options(aOptions)
+    , m_cOptions(acOptions)
 {
 }
 
@@ -60,7 +60,7 @@ std::vector<VKBindInfo> VKBindings::InitializeMods(std::vector<VKBindInfo> aVKBi
     }
 
     // filter dead bindings if option is enabled (default)
-    if (m_options.RemoveDeadBindings)
+    if (m_cOptions.RemoveDeadBindings)
     {
         // now, find all dead bindings
         std::vector<std::pair<std::string, UINT>> deadIDToBinds;
@@ -100,7 +100,7 @@ std::vector<VKBindInfo> VKBindings::InitializeMods(std::vector<VKBindInfo> aVKBi
 
     // insert CET overlay bind info
     assert(m_pOverlay); // overlay must be set before first use!
-    const auto overlayKeyBind { m_pOverlay->GetBind() };
+    const auto overlayKeyBind { m_cpOverlay->GetBind() };
     const auto overlayKeyCodeIt { m_idToBind.find(overlayKeyBind.ID) };
     const auto overlayKeyCode { (overlayKeyCodeIt == m_idToBind.cend()) ? (0) : (overlayKeyCodeIt->second) };
     aVKBindInfos.insert(aVKBindInfos.cbegin(), VKBindInfo{overlayKeyBind, overlayKeyCode, overlayKeyCode, false});
@@ -109,14 +109,14 @@ std::vector<VKBindInfo> VKBindings::InitializeMods(std::vector<VKBindInfo> aVKBi
     return aVKBindInfos;
 }
 
-bool VKBindings::Load(const Overlay& aOverlay)
+bool VKBindings::Load(const Overlay& acOverlay)
 {
-    auto parseConfig {[this, &aOverlay](const std::filesystem::path& path, bool old = false) -> std::pair<bool, uint64_t> {
+    auto parseConfig {[this, &acOverlay](const std::filesystem::path& path, bool old = false) -> std::pair<bool, uint64_t> {
         std::ifstream ifs { path };
         if (ifs)
         {
             auto config { nlohmann::json::parse(ifs) };
-            VKBind overlayBind { aOverlay.GetBind() };
+            VKBind overlayBind { acOverlay.GetBind() };
             uint64_t overlayBindCode { 0 };
             for (auto& it : config.items())
             {
@@ -169,7 +169,7 @@ bool VKBindings::Load(const Overlay& aOverlay)
         }
     }
 
-    m_pOverlay = &aOverlay;
+    m_cpOverlay = &acOverlay;
     m_initialized = true;
 
     return res && key;
@@ -584,7 +584,7 @@ LRESULT VKBindings::RecordKeyDown(USHORT aVKCode)
 
     if (bind && (bind != VKBRecord_OK))
     {
-        if (m_pOverlay && m_pOverlay->IsEnabled())
+        if (m_cpOverlay && m_cpOverlay->IsEnabled())
             return 0; // we dont want to handle bindings if overlay is open and we are not in binding state!
 
         if (bind->IsValid()) // prevention for freshly loaded bind from file without rebinding
@@ -628,7 +628,7 @@ LRESULT VKBindings::RecordKeyUp(USHORT aVKCode)
         {
             if (cpBind->IsInput())
             {
-                if (m_pOverlay && !m_pOverlay->IsEnabled()) // we dont want to handle bindings if overlay is open
+                if (m_cpOverlay && !m_cpOverlay->IsEnabled()) // we dont want to handle bindings if overlay is open
                 {
                     if (cpBind->IsValid()) // prevention for freshly loaded bind from file without rebinding
                         m_queuedCallbacks.Add(cpBind->DelayedCall(false));
@@ -672,7 +672,7 @@ LRESULT VKBindings::RecordKeyUp(USHORT aVKCode)
             const auto bind = m_binds.find(m_recordingResult);
             if (bind != m_binds.end())
             {
-                if (m_pOverlay && m_pOverlay->IsEnabled() && (bind->second.ID != m_pOverlay->GetBind().ID))
+                if (m_cpOverlay && m_cpOverlay->IsEnabled() && (bind->second.ID != m_cpOverlay->GetBind().ID))
                     return 0; // we dont want to handle bindings if toolbar is open and we are not in binding state!
 
                 if (bind->second.IsValid()) // prevention for freshly loaded bind from file without rebinding
@@ -740,7 +740,7 @@ LRESULT VKBindings::HandleRAWInput(HRAWINPUT ahRAWInput)
     }
     else if (raw->header.dwType == RIM_TYPEMOUSE) 
     {
-        if (m_pOverlay && m_isBindRecording && (m_recordingBind.ID == m_pOverlay->GetBind().ID))
+        if (m_cpOverlay && m_isBindRecording && (m_recordingBind.ID == m_cpOverlay->GetBind().ID))
             return 0; // ignore mouse keys for toolbar key binding!
 
         const auto& m = raw->data.mouse;
