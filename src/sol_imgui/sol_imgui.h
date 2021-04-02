@@ -164,7 +164,7 @@ namespace sol_ImGui
 
     // Widgets: Text
     inline void TextUnformatted(const std::string& text)                                               { ImGui::TextUnformatted(text.c_str()); }
-    inline void Text(const std::string& text)                                                          { ImGui::Text(text.c_str()); }
+    inline void Text(const std::string& text)                                                          { ImGui::TextUnformatted(text.c_str()); } // TODO - make this proper call to ImGui::Text, allowing real formatting!
     inline void TextColored(float colR, float colG, float colB, float colA, const std::string& text)   { ImGui::TextColored({ colR, colG, colB, colA }, text.c_str()); }
     inline void TextDisabled(const std::string& text)                                                  { ImGui::TextDisabled(text.c_str()); }
     inline void TextWrapped(const std::string text)                                                    { ImGui::TextWrapped(text.c_str()); }
