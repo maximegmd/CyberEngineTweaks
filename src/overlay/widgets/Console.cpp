@@ -119,10 +119,9 @@ void Console::Update()
         ImGui::SetKeyboardFocusHere();
         m_focusConsoleInput = false;
     }
-    ImGui::PushItemWidth(-1);
+    ImGui::SetNextItemWidth(-FLT_MIN);
     const auto execute = ImGui::InputText("##InputCommand", m_Command, std::size(m_Command),
                                           ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory,  &HandleConsoleHistory, this);
-    ImGui::PopItemWidth();
     ImGui::SetItemDefaultFocus();
     if (execute)
     {

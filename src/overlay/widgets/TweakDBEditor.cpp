@@ -709,7 +709,7 @@ bool TweakDBEditor::DrawRecordDropdown(const char* acpLabel, RED4ext::TweakDBID&
     if (comboOpened)
     {
         static float searchTimer = 0.0f;
-        ImGui::SetNextItemWidth(-1);
+        ImGui::SetNextItemWidth(-FLT_MIN);
         if (ImGui::InputTextWithHint("##dropdownSearch", "Search", s_tweakdbidFilterBuffer,
                                      sizeof(s_tweakdbidFilterBuffer)))
         {
@@ -1057,7 +1057,7 @@ bool TweakDBEditor::DrawFlatTweakDBID(RED4ext::TweakDBID aDBID, RED4ext::CStackT
 
     if (aReadOnly)
     {
-        ImGui::SetNextItemWidth(-1);
+        ImGui::SetNextItemWidth(-FLT_MIN);
         std::string recordName = GetTweakDBIDStringRecord(*pDBID);
         ImGui::InputText("", recordName.data(), recordName.size(), ImGuiInputTextFlags_ReadOnly);
 
@@ -1076,17 +1076,17 @@ bool TweakDBEditor::DrawFlatTweakDBID(RED4ext::TweakDBID aDBID, RED4ext::CStackT
             }
         }
 
-        ImGui::SetNextItemWidth(-1);
+        ImGui::SetNextItemWidth(-FLT_MIN);
         ImGui::InputScalar("##raw", ImGuiDataType_U64, aStackType.value, nullptr, nullptr, "%016llX",
                            ImGuiInputTextFlags_ReadOnly);
     }
     else
     {
         RED4ext::TweakDBID dbid = *pDBID;
-        bool valueChanged = DrawRecordDropdown("", dbid, -1);
+        bool valueChanged = DrawRecordDropdown("", dbid, -FLT_MIN);
 
         int32_t flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsHexadecimal;
-        ImGui::SetNextItemWidth(-1);
+        ImGui::SetNextItemWidth(-FLT_MIN);
         valueChanged |= ImGui::InputScalar("##raw", ImGuiDataType_U64, &dbid.value, nullptr, nullptr, "%016llX", flags);
 
         if (valueChanged)
@@ -1120,22 +1120,22 @@ bool TweakDBEditor::DrawFlatQuaternion(RED4ext::TweakDBID aDBID, RED4ext::CStack
 
     ImGui::TextUnformatted("I");
     ImGui::SameLine();
-    ImGui::SetNextItemWidth(-1);
+    ImGui::SetNextItemWidth(-FLT_MIN);
     bool valueChanged = ImGui::InputFloat("##I", &i, 0.0f, 0.0f, "%f", flags);
 
     ImGui::TextUnformatted("J");
     ImGui::SameLine();
-    ImGui::SetNextItemWidth(-1);
+    ImGui::SetNextItemWidth(-FLT_MIN);
     valueChanged |= ImGui::InputFloat("##J", &j, 0.0f, 0.0f, "%f", flags);
 
     ImGui::TextUnformatted("K");
     ImGui::SameLine();
-    ImGui::SetNextItemWidth(-1);
+    ImGui::SetNextItemWidth(-FLT_MIN);
     valueChanged |= ImGui::InputFloat("##K", &k, 0.0f, 0.0f, "%f", flags);
 
     ImGui::TextUnformatted("R");
     ImGui::SameLine();
-    ImGui::SetNextItemWidth(-1);
+    ImGui::SetNextItemWidth(-FLT_MIN);
     valueChanged |= ImGui::InputFloat("##R", &r, 0.0f, 0.0f, "%f", flags);
 
     if (!aReadOnly && valueChanged)
@@ -1173,17 +1173,17 @@ bool TweakDBEditor::DrawFlatEulerAngles(RED4ext::TweakDBID aDBID, RED4ext::CStac
 
     ImGui::TextUnformatted("Roll ");
     ImGui::SameLine();
-    ImGui::SetNextItemWidth(-1);
+    ImGui::SetNextItemWidth(-FLT_MIN);
     bool valueChanged = ImGui::InputFloat("##Roll", &roll, 0.0f, 0.0f, "%f", flags);
 
     ImGui::TextUnformatted("Pitch");
     ImGui::SameLine();
-    ImGui::SetNextItemWidth(-1);
+    ImGui::SetNextItemWidth(-FLT_MIN);
     valueChanged |= ImGui::InputFloat("##Pitch", &pitch, 0.0f, 0.0f, "%f", flags);
 
     ImGui::TextUnformatted("Yaw  ");
     ImGui::SameLine();
-    ImGui::SetNextItemWidth(-1);
+    ImGui::SetNextItemWidth(-FLT_MIN);
     valueChanged |= ImGui::InputFloat("##Yaw", &yaw, 0.0f, 0.0f, "%f", flags);
 
     if (!aReadOnly && valueChanged)
@@ -1220,17 +1220,17 @@ bool TweakDBEditor::DrawFlatVector3(RED4ext::TweakDBID aDBID, RED4ext::CStackTyp
 
     ImGui::TextUnformatted("X");
     ImGui::SameLine();
-    ImGui::SetNextItemWidth(-1);
+    ImGui::SetNextItemWidth(-FLT_MIN);
     bool valueChanged = ImGui::InputFloat("##X", &x, 0.0f, 0.0f, "%f", flags);
 
     ImGui::TextUnformatted("Y");
     ImGui::SameLine();
-    ImGui::SetNextItemWidth(-1);
+    ImGui::SetNextItemWidth(-FLT_MIN);
     valueChanged |= ImGui::InputFloat("##Y", &y, 0.0f, 0.0f, "%f", flags);
 
     ImGui::TextUnformatted("Z");
     ImGui::SameLine();
-    ImGui::SetNextItemWidth(-1);
+    ImGui::SetNextItemWidth(-FLT_MIN);
     valueChanged |= ImGui::InputFloat("##Z", &z, 0.0f, 0.0f, "%f", flags);
 
     if (!aReadOnly && valueChanged)
@@ -1266,12 +1266,12 @@ bool TweakDBEditor::DrawFlatVector2(RED4ext::TweakDBID aDBID, RED4ext::CStackTyp
 
     ImGui::TextUnformatted("X");
     ImGui::SameLine();
-    ImGui::SetNextItemWidth(-1);
+    ImGui::SetNextItemWidth(-FLT_MIN);
     bool valueChanged = ImGui::InputFloat("##X", &x, 0.0f, 0.0f, "%f", flags);
 
     ImGui::TextUnformatted("Y");
     ImGui::SameLine();
-    ImGui::SetNextItemWidth(-1);
+    ImGui::SetNextItemWidth(-FLT_MIN);
     valueChanged |= ImGui::InputFloat("##Y", &y, 0.0f, 0.0f, "%f", flags);
 
     if (!aReadOnly && valueChanged)
@@ -1310,7 +1310,7 @@ bool TweakDBEditor::DrawFlatColor(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
     ImGui::SameLine();
 
     int32_t flags = aReadOnly ? ImGuiColorEditFlags_NoInputs : ImGuiColorEditFlags_None;
-    ImGui::SetNextItemWidth(-1);
+    ImGui::SetNextItemWidth(-FLT_MIN);
     bool valueChanged = ImGui::ColorEdit4("", rgba, flags | ImGuiColorEditFlags_AlphaPreview);
     // Color picker returns true everytime it changes
     // It will overkill the FlatValuePool
@@ -1349,13 +1349,13 @@ bool TweakDBEditor::DrawFlatLocKeyWrapper(RED4ext::TweakDBID aDBID, RED4ext::CSt
 
     uint64_t key = pLocKey->unk00;
     int32_t flags = aReadOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_EnterReturnsTrue;
-    ImGui::SetNextItemWidth(-1);
+    ImGui::SetNextItemWidth(-FLT_MIN);
     bool valueChanged = ImGui::InputScalar("", ImGuiDataType_U64, &key, nullptr, nullptr, nullptr, flags);
 
     {
         RED4ext::CString localizedText;
         ExecuteGlobalFunction("GetLocalizedTextByKey", &localizedText, key);
-        ImGui::SetNextItemWidth(-1);
+        ImGui::SetNextItemWidth(-FLT_MIN);
         ImGui::InputText("##string", (char*)localizedText.c_str(), localizedText.Length(),
                          ImGuiInputTextFlags_ReadOnly);
     }
@@ -1388,20 +1388,20 @@ bool TweakDBEditor::DrawFlatResourceAsyncRef(RED4ext::TweakDBID aDBID, RED4ext::
 
     int32_t flags = aReadOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_EnterReturnsTrue;
     flags |= ImGuiInputTextFlags_CharsHexadecimal;
-    ImGui::SetNextItemWidth(-1);
+    ImGui::SetNextItemWidth(-FLT_MIN);
     bool valueChanged = ImGui::InputScalar("", ImGuiDataType_U64, &hashRef, nullptr, nullptr, "%016llX", flags);
 
     if (ResourcesList::Get()->IsInitialized())
     {
         const std::string& resourceName = ResourcesList::Get()->Resolve(hashRef);
 
-        ImGui::SetNextItemWidth(-1);
+        ImGui::SetNextItemWidth(-FLT_MIN);
         if (ImGui::BeginCombo("##resolvedHash", resourceName.c_str(), ImGuiComboFlags_HeightLargest))
         {
             static float searchTimer = -1.0f;
             static int resourcesCount = 0;
             static char comboSearchStr[256]{};
-            ImGui::SetNextItemWidth(-1);
+            ImGui::SetNextItemWidth(-FLT_MIN);
             if (ImGui::InputTextWithHint("##dropdownSearch", "Search", comboSearchStr, sizeof(comboSearchStr)))
             {
                 searchTimer = c_searchDelay;
@@ -1517,7 +1517,7 @@ bool TweakDBEditor::DrawFlatCName(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
     flags |= ImGuiInputTextFlags_NoUndoRedo;
 
     auto* pStr = pCName->ToString();
-    ImGui::SetNextItemWidth(-1);
+    ImGui::SetNextItemWidth(-FLT_MIN);
     auto [strChanged, pModifiedStr] = ImGui::InputTextCStr("", pStr, strlen(pStr), flags);
     if (strChanged)
     {
@@ -1536,7 +1536,7 @@ bool TweakDBEditor::DrawFlatCName(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
     }
 
     uint64_t hash = pCName->hash;
-    ImGui::SetNextItemWidth(-1);
+    ImGui::SetNextItemWidth(-FLT_MIN);
     bool rawChanged = ImGui::InputScalar("##raw", ImGuiDataType_U64, &hash, nullptr, nullptr, "%016llX",
                                          flags | ImGuiInputTextFlags_CharsHexadecimal);
     if (rawChanged)
@@ -1590,7 +1590,7 @@ bool TweakDBEditor::DrawFlatString(RED4ext::TweakDBID aDBID, RED4ext::CStackType
     auto* pCString = reinterpret_cast<RED4ext::CString*>(aStackType.value);
 
     int32_t flags = aReadOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_EnterReturnsTrue;
-    ImGui::SetNextItemWidth(-1);
+    ImGui::SetNextItemWidth(-FLT_MIN);
     auto [valueChanged, pModifiedStr] = ImGui::InputTextCStr("", pCString->c_str(), pCString->Length(), flags);
     if (ImGui::IsItemHovered() && strnicmp(pCString->c_str(), "LocKey#", 7) == 0)
     {
@@ -1622,7 +1622,7 @@ bool TweakDBEditor::DrawFlatFloat(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
     auto* pFloat = reinterpret_cast<float*>(aStackType.value);
 
     float val = *pFloat;
-    ImGui::SetNextItemWidth(-1);
+    ImGui::SetNextItemWidth(-FLT_MIN);
     bool valueChanged = ImGui::InputFloat(
         "", &val, 0, 0, "%f", aReadOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_EnterReturnsTrue);
     if (valueChanged)
@@ -1647,7 +1647,7 @@ bool TweakDBEditor::DrawFlatInt32(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
     auto* pInt = static_cast<int32_t*>(aStackType.value);
 
     int32_t val = *pInt;
-    ImGui::SetNextItemWidth(-1);
+    ImGui::SetNextItemWidth(-FLT_MIN);
     bool valueChanged = ImGui::InputInt(
         "", &val, 0, 0, aReadOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_EnterReturnsTrue);
     if (valueChanged)
@@ -1736,7 +1736,7 @@ void TweakDBEditor::DrawRecordsTab()
                             flat.Update();
 
                             ImGui::PushID(flat.m_name.c_str());
-                            ImGui::SetNextItemWidth(-1);
+                            ImGui::SetNextItemWidth(-FLT_MIN);
                             ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32_BLACK_TRANS);
                             ImGui::InputText("", flat.m_name.data(), flat.m_name.size(), ImGuiInputTextFlags_ReadOnly);
                             ImGui::PopStyleColor();
@@ -1853,7 +1853,7 @@ void TweakDBEditor::DrawFlatsTab()
                     flat.Update();
 
                     ImGui::PushID(flat.m_name.c_str());
-                    ImGui::SetNextItemWidth(-1);
+                    ImGui::SetNextItemWidth(-FLT_MIN);
                     ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32_BLACK_TRANS);
                     ImGui::InputText("", flat.m_name.data(), flat.m_name.size(), ImGuiInputTextFlags_ReadOnly);
                     ImGui::PopStyleColor();
@@ -1985,7 +1985,7 @@ void TweakDBEditor::DrawAdvancedTab()
 
         if (ImGui::BeginCombo("Record type to create", recordTypeName.ToString(), ImGuiComboFlags_HeightLargest))
         {
-            ImGui::SetNextItemWidth(-1);
+            ImGui::SetNextItemWidth(-FLT_MIN);
             ImGui::InputTextWithHint("##dropdownSearch", "Search", comboSearchBuffer, sizeof(comboSearchBuffer));
             if (ImGui::BeginChild("##dropdownScroll", ImVec2(0, g_comboDropdownHeight)))
             {
