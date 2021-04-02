@@ -375,7 +375,7 @@ void TweakDBEditor::Update()
     // LuaVM is initialized after TweakDB, let's wait for it
     if (!m_vm.IsInitialized())
     {
-        ImGui::Text("TweakDB is not initialized yet");
+        ImGui::TextUnformatted("TweakDB is not initialized yet");
         return;
     }
 
@@ -1116,22 +1116,22 @@ bool TweakDBEditor::DrawFlatQuaternion(RED4ext::TweakDBID aDBID, RED4ext::CStack
 
     int32_t flags = aReadOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_EnterReturnsTrue;
 
-    ImGui::Text("I");
+    ImGui::TextUnformatted("I");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(-1);
     bool valueChanged = ImGui::InputFloat("##I", &i, 0.0f, 0.0f, "%f", flags);
 
-    ImGui::Text("J");
+    ImGui::TextUnformatted("J");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(-1);
     valueChanged |= ImGui::InputFloat("##J", &j, 0.0f, 0.0f, "%f", flags);
 
-    ImGui::Text("K");
+    ImGui::TextUnformatted("K");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(-1);
     valueChanged |= ImGui::InputFloat("##K", &k, 0.0f, 0.0f, "%f", flags);
 
-    ImGui::Text("R");
+    ImGui::TextUnformatted("R");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(-1);
     valueChanged |= ImGui::InputFloat("##R", &r, 0.0f, 0.0f, "%f", flags);
@@ -1169,17 +1169,17 @@ bool TweakDBEditor::DrawFlatEulerAngles(RED4ext::TweakDBID aDBID, RED4ext::CStac
 
     int32_t flags = aReadOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_EnterReturnsTrue;
 
-    ImGui::Text("Roll ");
+    ImGui::TextUnformatted("Roll ");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(-1);
     bool valueChanged = ImGui::InputFloat("##Roll", &roll, 0.0f, 0.0f, "%f", flags);
 
-    ImGui::Text("Pitch");
+    ImGui::TextUnformatted("Pitch");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(-1);
     valueChanged |= ImGui::InputFloat("##Pitch", &pitch, 0.0f, 0.0f, "%f", flags);
 
-    ImGui::Text("Yaw  ");
+    ImGui::TextUnformatted("Yaw  ");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(-1);
     valueChanged |= ImGui::InputFloat("##Yaw", &yaw, 0.0f, 0.0f, "%f", flags);
@@ -1216,17 +1216,17 @@ bool TweakDBEditor::DrawFlatVector3(RED4ext::TweakDBID aDBID, RED4ext::CStackTyp
 
     int32_t flags = aReadOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_EnterReturnsTrue;
 
-    ImGui::Text("X");
+    ImGui::TextUnformatted("X");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(-1);
     bool valueChanged = ImGui::InputFloat("##X", &x, 0.0f, 0.0f, "%f", flags);
 
-    ImGui::Text("Y");
+    ImGui::TextUnformatted("Y");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(-1);
     valueChanged |= ImGui::InputFloat("##Y", &y, 0.0f, 0.0f, "%f", flags);
 
-    ImGui::Text("Z");
+    ImGui::TextUnformatted("Z");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(-1);
     valueChanged |= ImGui::InputFloat("##Z", &z, 0.0f, 0.0f, "%f", flags);
@@ -1262,12 +1262,12 @@ bool TweakDBEditor::DrawFlatVector2(RED4ext::TweakDBID aDBID, RED4ext::CStackTyp
 
     int32_t flags = aReadOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_EnterReturnsTrue;
 
-    ImGui::Text("X");
+    ImGui::TextUnformatted("X");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(-1);
     bool valueChanged = ImGui::InputFloat("##X", &x, 0.0f, 0.0f, "%f", flags);
 
-    ImGui::Text("Y");
+    ImGui::TextUnformatted("Y");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(-1);
     valueChanged |= ImGui::InputFloat("##Y", &y, 0.0f, 0.0f, "%f", flags);
@@ -1304,7 +1304,7 @@ bool TweakDBEditor::DrawFlatColor(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
     rgba[3] = pColor->Alpha / 255.0f;
 
     aReadOnly = true;
-    ImGui::Text("'Color' is not supported yet");
+    ImGui::TextUnformatted("'Color' is not supported yet");
     ImGui::SameLine();
 
     int32_t flags = aReadOnly ? ImGuiColorEditFlags_NoInputs : ImGuiColorEditFlags_None;
@@ -1342,8 +1342,8 @@ bool TweakDBEditor::DrawFlatLocKeyWrapper(RED4ext::TweakDBID aDBID, RED4ext::CSt
 {
     auto* pLocKey = static_cast<RED4ext::gamedataLocKeyWrapper*>(aStackType.value);
 
-    ImGui::Text("This is a LocalizationKey");
-    ImGui::Text("Game.GetLocalizedTextByKey(...)");
+    ImGui::TextUnformatted("This is a LocalizationKey");
+    ImGui::TextUnformatted("Game.GetLocalizedTextByKey(...)");
 
     uint64_t key = pLocKey->unk00;
     int32_t flags = aReadOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_EnterReturnsTrue;
@@ -1505,8 +1505,8 @@ bool TweakDBEditor::DrawFlatCName(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
 {
     auto* pCName = static_cast<RED4ext::CName*>(aStackType.value);
 
-    ImGui::Text("This is not just a string.");
-    ImGui::Text("Game is expecting specific values.");
+    ImGui::TextUnformatted("This is not just a string.");
+    ImGui::TextUnformatted("Game is expecting specific values.");
     // Is it worth it to implement a dropdown like DrawTweakDBID?
 
     RED4ext::CName newCName;
@@ -1743,7 +1743,7 @@ void TweakDBEditor::DrawRecordsTab()
                             ImGui::TableNextColumn();
                             if (flat.m_isMissing)
                             {
-                                ImGui::Text("ERROR_FLAT_NOT_FOUND");
+                                ImGui::TextUnformatted("ERROR_FLAT_NOT_FOUND");
                             }
                             else
                             {
@@ -1860,7 +1860,7 @@ void TweakDBEditor::DrawFlatsTab()
                     ImGui::TableNextColumn();
                     if (flat.m_isMissing)
                     {
-                        ImGui::Text("ERROR_FLAT_NOT_FOUND");
+                        ImGui::TextUnformatted("ERROR_FLAT_NOT_FOUND");
                     }
                     else
                     {
@@ -1884,13 +1884,13 @@ void TweakDBEditor::DrawAdvancedTab()
     if (CDPRTweakDBMetadata::Get()->IsInitialized())
     {
         ImGui::PushStyleColor(ImGuiCol_Text, 0xFF00FF00);
-        ImGui::Text("'tweakdb.str' is loaded!");
+        ImGui::TextUnformatted("'tweakdb.str' is loaded!");
         ImGui::PopStyleColor();
     }
     else
     {
         ImGui::PushStyleColor(ImGuiCol_Text, 0xFF0000FF);
-        ImGui::Text("'tweakdb.str' is not loaded.");
+        ImGui::TextUnformatted("'tweakdb.str' is not loaded.");
         ImGui::PopStyleColor();
         ImGui::TreePush();
         ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32_BLACK_TRANS);
@@ -1898,8 +1898,8 @@ void TweakDBEditor::DrawAdvancedTab()
         char pLink[] = "https://www.cyberpunk.net/en/modding-support";
         ImGui::InputText("##cdprLink", pLink, sizeof(pLink) - 1, ImGuiInputTextFlags_ReadOnly);
         ImGui::PopStyleColor(2);
-        ImGui::Text("1) Download and unpack 'Metadata'");
-        ImGui::Text("2) Copy 'tweakdb.str' to 'plugins\\cyber_engine_tweaks\\tweakdb.str'");
+        ImGui::TextUnformatted("1) Download and unpack 'Metadata'");
+        ImGui::TextUnformatted("2) Copy 'tweakdb.str' to 'plugins\\cyber_engine_tweaks\\tweakdb.str'");
         std::string cetDir = CET::Get().GetPaths().CETRoot().string();
         ImGui::Text("Full path: %s", cetDir.c_str());
         if (ImGui::Button("3) Load tweakdb.str"))
@@ -1916,13 +1916,13 @@ void TweakDBEditor::DrawAdvancedTab()
     if (ResourcesList::Get()->IsInitialized())
     {
         ImGui::PushStyleColor(ImGuiCol_Text, 0xFF00FF00);
-        ImGui::Text("'archivehashes.txt' is loaded!");
+        ImGui::TextUnformatted("'archivehashes.txt' is loaded!");
         ImGui::PopStyleColor();
     }
     else
     {
         ImGui::PushStyleColor(ImGuiCol_Text, 0xFF0000FF);
-        ImGui::Text("'archivehashes.txt' is not loaded.");
+        ImGui::TextUnformatted("'archivehashes.txt' is not loaded.");
         ImGui::PopStyleColor();
         ImGui::TreePush();
         ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32_BLACK_TRANS);
@@ -1930,8 +1930,8 @@ void TweakDBEditor::DrawAdvancedTab()
         char pLink[] = "https://github.com/WolvenKit/Wolvenkit/raw/master/WolvenKit.Common/Resources/archivehashes.zip";
         ImGui::InputText("##wkitLink", pLink, sizeof(pLink) - 1, ImGuiInputTextFlags_ReadOnly);
         ImGui::PopStyleColor(2);
-        ImGui::Text("1) Download and unpack 'archivehashes.zip'");
-        ImGui::Text("2) Copy 'archivehashes.txt' to 'plugins\\cyber_engine_tweaks\\archivehashes.txt'");
+        ImGui::TextUnformatted("1) Download and unpack 'archivehashes.zip'");
+        ImGui::TextUnformatted("2) Copy 'archivehashes.txt' to 'plugins\\cyber_engine_tweaks\\archivehashes.txt'");
         std::string cetDir = CET::Get().GetPaths().CETRoot().string();
         ImGui::Text("Full path: %s", cetDir.c_str());
         if (ImGui::Button("3) Load archivehashes.txt"))
@@ -2040,7 +2040,7 @@ void TweakDBEditor::DrawAdvancedTab()
                 statusTimer = 0.0f;
             }
         }
-        ImGui::Text(status);
+        ImGui::TextUnformatted(status);
     }
     ImGui::EndChild();
 }
