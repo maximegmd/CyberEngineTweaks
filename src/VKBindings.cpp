@@ -188,12 +188,7 @@ void VKBindings::Save()
 
 void VKBindings::Update()
 {
-    const std::lock_guard lock(m_queuedCallbacksLock);
-    while (!m_queuedCallbacks.empty())
-    {
-        m_queuedCallbacks.front()();
-        m_queuedCallbacks.pop();
-    }
+    m_queuedCallbacks.Drain();
 }
 
 void VKBindings::Clear()
@@ -600,10 +595,8 @@ LRESULT VKBindings::RecordKeyDown(USHORT aVKCode)
             {
                 auto delayedCall { bind->DelayedCall(true) };
                 if (delayedCall)
-                {
-                    const std::lock_guard lock(m_queuedCallbacksLock);
-                    m_queuedCallbacks.push(delayedCall);
-                }
+                    m_queuedCallbacks.Add(delayedCall);
+
                 // reset recording for single input
                 if (bind->IsInput())
                 {
@@ -638,10 +631,7 @@ LRESULT VKBindings::RecordKeyUp(USHORT aVKCode)
                 if (m_pOverlay && !m_pOverlay->IsEnabled()) // we dont want to handle bindings if overlay is open
                 {
                     if (cpBind->IsValid()) // prevention for freshly loaded bind from file without rebinding
-                    {
-                        const std::lock_guard lock(m_queuedCallbacksLock);
-                        m_queuedCallbacks.push(cpBind->DelayedCall(false));
-                    }
+                        m_queuedCallbacks.Add(cpBind->DelayedCall(false));
                 }
                 else
                 {
@@ -690,10 +680,7 @@ LRESULT VKBindings::RecordKeyUp(USHORT aVKCode)
                     if (!bind->second.ID.compare(0, 4, "cet."))
                         bind->second.Call(false); // we need to execute this immediately, otherwise cursor will not show on overlay toggle
                     else
-                    {
-                        const std::lock_guard lock(m_queuedCallbacksLock); 
-                        m_queuedCallbacks.push(bind->second.DelayedCall(false));
-                    }
+                        m_queuedCallbacks.Add(bind->second.DelayedCall(false));
                 }
             }
             return 0;

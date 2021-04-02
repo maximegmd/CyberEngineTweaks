@@ -129,11 +129,10 @@ private:
 
     std::bitset<1 << 16> m_keyStates{ };
 
-    std::map<uint64_t, VKBind> m_binds{ };
+    std::map<uint64_t, VKBind> m_binds{ }; // this map needs to be ordered!
     TiltedPhoques::Map<std::string, uint64_t> m_idToBind{ };
-
-    std::mutex m_queuedCallbacksLock{ };
-    std::queue<std::function<void()>> m_queuedCallbacks{ };
+    
+    TiltedPhoques::TaskQueue m_queuedCallbacks{ };
     
     VKCodeBindDecoded m_recording{ };
     size_t m_recordingLength{ 0 };
