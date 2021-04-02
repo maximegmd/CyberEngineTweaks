@@ -6,7 +6,7 @@ namespace HelperWidgets
 {
 WidgetID ToolbarWidget();
 void BindWidget(VKBindInfo& aVKBindInfo, const std::string& acId);
-bool BoolWidget(const std::string& label, bool& current, bool saved, float offset_x = 0.0f);
+bool BoolWidget(const std::string& aLabel, bool& aCurrent, bool aSaved, float aOffsetX = 0.0f);
 
 using TUCHPSave = std::function<void()>;
 using TUCHPLoad = std::function<void()>;

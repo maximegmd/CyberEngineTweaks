@@ -87,25 +87,25 @@ namespace HelperWidgets
         }
     }
 
-    bool BoolWidget(const std::string& label, bool& current, bool saved, float offset_x)
+    bool BoolWidget(const std::string& aLabel, bool& aCurrent, bool aSaved, float aOffsetX)
     {
         ImVec4 curTextColor = ImGui::GetStyleColorVec4(ImGuiCol_Text);
-        if (current != saved)
+        if (aCurrent != aSaved)
             curTextColor = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
 
         ImGui::AlignTextToFramePadding();
 
-        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offset_x);
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + aOffsetX);
 
         ImGui::PushStyleColor(ImGuiCol_Text, curTextColor);
-        ImGui::TextUnformatted(label.c_str());
+        ImGui::TextUnformatted(aLabel.c_str());
         ImGui::PopStyleColor();
 
         ImGui::SameLine();
 
-        ImGui::Checkbox(("##" + label).c_str(), &current);
+        ImGui::Checkbox(("##" + aLabel).c_str(), &aCurrent);
 
-        return (current != saved);
+        return (aCurrent != aSaved);
     }
 
     int32_t UnsavedChangesPopup(bool& aFirstTime, bool aMadeChanges, TUCHPSave aSaveCB, TUCHPLoad aLoadCB)
