@@ -88,7 +88,7 @@ struct VKBindings
     static uint64_t EncodeVKCodeBind(VKCodeBindDecoded aVKCodeBindDecoded);
     static const char* GetSpecialKeyName(USHORT aVKCode);
     
-    bool Load(const Overlay& aOverlay);
+    bool Load(const Overlay& acOverlay);
     void Save();
 
     void Update();
