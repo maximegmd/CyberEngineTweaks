@@ -3,9 +3,6 @@
 #include "Paths.h"
 #include "Utils.h"
 
-// global definition "Enable ImGui Assertions"
-bool g_ImGuiAssertionsEnabled { true };
-
 void Options::Load()
 {
     if (exists(m_paths.Config()))

@@ -2,6 +2,9 @@
 
 // NOTE: imgui_user_config.h is included by imgui.h which is included with precompiled header, so no need to include it here once more
 
+// global definition "Enable ImGui Assertions"
+bool g_ImGuiAssertionsEnabled{ true };
+
 #ifdef NDEBUG
 // inline _wassert decl for NDEBUG as it is not emitted inside assert.h header in this case
 extern "C" _ACRTIMP void __cdecl _wassert(wchar_t const* _Message, wchar_t const* _File, unsigned _Line);
