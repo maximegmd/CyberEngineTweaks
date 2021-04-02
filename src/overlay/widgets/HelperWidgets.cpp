@@ -44,8 +44,6 @@ namespace HelperWidgets
             curTextColor = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
 
         std::string label { aVKBindInfo.Bind.Description + ':' };
-        if (aVKBindInfo.Bind.IsHotkey())
-            label.insert(0, "[HK] "); // insert [HK] prefix for hotkeys so user knows this input can be assigned up to 4-key combo
         
         ImGui::AlignTextToFramePadding();
 

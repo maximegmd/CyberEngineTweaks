@@ -20,6 +20,8 @@ struct Bindings : Widget
     void ResetChanges();
 
 private:
+    bool DrawBindings(bool aDrawHotkeys);
+
     std::vector<VKBindInfo> m_vkBindInfos{ };
     VKBindings& m_bindings;
     Overlay& m_overlay;
@@ -34,4 +36,7 @@ private:
     bool m_enabled{ false };
     bool m_madeChanges{ false };
     bool m_openChangesModal{ true };
+
+    bool m_hotkeysChanged{ false };
+    bool m_inputsChanged{ false };
 };
