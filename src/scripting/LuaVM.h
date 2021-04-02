@@ -87,8 +87,7 @@ private:
 
     bool m_initialized{ false };
     bool m_drawBlocked{ false };
-
-    Options& m_options;
+    
     D3D12& m_d3d12;
     size_t m_connectUpdate;
 };

@@ -74,9 +74,7 @@ void Settings::Update()
         {
             if (ImGui::BeginChild("##SETTINGS_DEV"))
             {
-
                 HelperWidgets::BoolWidget("Draw ImGui Diagnostic Window:", m_options.DrawImGuiDiagnosticWindow, m_options.DrawImGuiDiagnosticWindow);
-
                 m_devChanged  = HelperWidgets::BoolWidget("Remove Dead Bindings:", m_removeDeadBindings, m_options.RemoveDeadBindings);
                 m_devChanged |= HelperWidgets::BoolWidget("Enable ImGui Assertions:", m_enableImGuiAssertions, m_options.EnableImGuiAssertions);
                 m_devChanged |= HelperWidgets::BoolWidget("Enable Debug Menu:", m_patchEnableDebug, m_options.PatchEnableDebug);
