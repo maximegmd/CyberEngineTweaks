@@ -32,7 +32,7 @@ struct Options
     bool IsFirstLaunch { true };
     bool RemoveDeadBindings { true };
     bool DrawImGuiDiagnosticWindow { false };
-    bool EnableImGuiAssertions { true };
+    bool EnableImGuiAssertions { false };
 
 private:
 

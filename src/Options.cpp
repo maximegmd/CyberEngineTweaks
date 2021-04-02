@@ -85,7 +85,7 @@ void Options::ResetToDefaults()
     PatchDisableWin7Vsync = false;
 
     RemoveDeadBindings = true;
-    EnableImGuiAssertions = true;
+    EnableImGuiAssertions = false;
     PatchEnableDebug = false;
     DumpGameOptions = false;
 

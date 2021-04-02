@@ -3,7 +3,7 @@
 // NOTE: imgui_user_config.h is included by imgui.h which is included with precompiled header, so no need to include it here once more
 
 // global definition "Enable ImGui Assertions"
-bool g_ImGuiAssertionsEnabled{ true };
+bool g_ImGuiAssertionsEnabled{ false };
 
 #ifdef NDEBUG
 // inline _wassert decl for NDEBUG as it is not emitted inside assert.h header in this case
