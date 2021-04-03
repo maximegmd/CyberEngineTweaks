@@ -139,7 +139,8 @@ bool Bindings::DrawBindings(bool aDrawHotkeys)
              : ("This mod has no inputs, but it should have some hotkeys in other tab...")
         };
 
-        std::string_view prevMod{""};
+        std::string activeModName;
+        std::string_view prevMod { "" };
         size_t modBindsForType { 0 };
         for (auto& vkBindInfo : m_vkBindInfos)
         {
@@ -147,8 +148,14 @@ bool Bindings::DrawBindings(bool aDrawHotkeys)
             curMod = curMod.substr(0, curMod.find('.'));
             if (prevMod != curMod)
             {
-                // make it writable (also checks for "cet" modname)
-                std::string activeModName { (curMod == "cet") ? ("Cyber Engine Tweaks") : (curMod) };
+                if (curMod == "cet")
+                {
+                    if (!aDrawHotkeys)
+                        continue; // skip in this instance
+                    activeModName = "Cyber Engine Tweaks";
+                }
+                else
+                    activeModName = curMod;
 
                 // transform to nicer format till modinfo is in
                 bool capitalize = true;
@@ -169,7 +176,7 @@ bool Bindings::DrawBindings(bool aDrawHotkeys)
                 // add vertical spacing when this is not first iteration and check if we drawn anything
                 if (!prevMod.empty())
                 {
-                    if (!modBindsForType && (prevMod != "cet"))
+                    if (!modBindsForType)
                     {
                         // we did not draw anything, write appropriate message so it is not empty
                         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 10.0f);
