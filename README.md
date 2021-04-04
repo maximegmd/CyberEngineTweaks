@@ -9,25 +9,38 @@
 
 ## What's this?
 
-This plugin fixes some Cyberpunk 2077 issues and adds some features.
+**Cyber Engine Tweaks** is a framework giving modders a way to script mods using [Lua](https://www.lua.org/) with access to all the internal scripting features. It also comes with a [Dear ImGui](https://github.com/ocornut/imgui/tree/v1.82) to provide GUI for different mods you are using, along with console and TweakDB editor for more advanced usage. It also adds some patches for quality of life, all of which can be enabled/disabled through the settings menu or config files (requires game restart to apply).
 
-Works with 1.12.
+Current version works with 1.2 game version.
 
-### Current fixes
+### Current patches
 
-| Patches      | Description     |
+| Patch      | Description     |
 | :------------- | :------------------------------ |
-| Debug Menu | Enables the debug menus in game so you can ~~cheat~~, investigate...  |
-| Skip start menu | Skips the menu asking you to press space bar to continue (Breaching...) |
+| AMD SMT | For AMD CPUs that did not get a performance boost after CDPR's patch |
 | Remove pedestrians and traffic | Removes most of the pedestrians and traffic |
 | Disable Async Compute | Disables async compute, this can give a boost on older GPUs (Nvidia 10xx series for example)|
-| Disable Antialiasing TAA | Disables antialiasing, not recommended but you do what you want! |
+| Disable Temporal Antialiasing | Disables antialiasing, not recommended but you do what you want! |
+| Skip start menu | Skips the menu asking you to press space bar to continue (Breaching...) |
+| Suppress Intro Movies | Disables logos played at the beginning |
+| Disable Vignette | Disables vignetting along screen borders |
+| Disable Boundary Teleport | Allows players to access out-of-bounds locations |
 | Disable Windows 7 VSync | Disables VSync on Windows 7 to bypass the 60 FPS limit |
-| Save vulnerability | Protects the user from malicious saves that can execute arbitrary code on the machine |
+
+### Current mod development options
+| Development      | Description     |
+| :------------- | :------------------------------ |
+| Draw ImGui Diagnostics Window | Toggles drawing of internal ImGui diagnostics window to show what is going on behind the scenes (good for mod debugging) |
+| Remove Dead Bindings | Removes bindings for mods that were not loaded |
+| Enable ImGui Assertions | Enables all ImGui assertions (use this option to check mods for errors before shipping!) |
+| Debug Menu | Enables the debug menus in game |
+| Dump Game Options | Dumps all game options into main log file |
 
 ## Usage and configuration
 
 [Read the wiki](https://wiki.cybermods.net/cyber-engine-tweaks/)
+
+[Official mod examples](https://github.com/WolvenKit/cet-examples)
 
 [Usage with Proton](PROTON.md)
 
