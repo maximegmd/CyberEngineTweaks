@@ -29,13 +29,13 @@ struct Vector4
 
 struct EulerAngles
 {
-    EulerAngles(float aPitch = 0.f, float aYaw = 0.f, float aRoll = 0.f)
-        : pitch(aPitch), yaw(aYaw), roll(aRoll)
+    EulerAngles(float aRoll = 0.f, float aPitch = 0.f, float aYaw = 0.f)
+        : roll(aRoll), pitch(aPitch), yaw(aYaw)
     {}
     
+    float roll;
     float pitch;
     float yaw;
-    float roll;
     
     std::string ToString() const noexcept;
 };

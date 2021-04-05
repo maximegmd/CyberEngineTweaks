@@ -17,7 +17,7 @@ std::string Vector4::ToString() const noexcept
 
 std::string EulerAngles::ToString() const noexcept
 {
-    return fmt::format("ToEulerAngles{{ pitch = {0}, yaw = {1}, roll = {2} }}", pitch, yaw, roll);
+    return fmt::format("ToEulerAngles{{ roll = {0}, pitch = {1}, yaw = {2} }}", roll, pitch, yaw);
 }
 
 std::string Quaternion::ToString() const noexcept
