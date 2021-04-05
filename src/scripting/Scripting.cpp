@@ -180,16 +180,16 @@ void Scripting::Initialize()
     luaVm.new_usertype<EulerAngles>("EulerAngles",
         sol::constructors<EulerAngles(float, float, float), EulerAngles(float, float), EulerAngles(float), EulerAngles()>(),
         sol::meta_function::to_string, &EulerAngles::ToString,
+        "roll", &EulerAngles::roll,
         "pitch", &EulerAngles::pitch,
-        "yaw", &EulerAngles::yaw,
-        "roll", &EulerAngles::roll);
+        "yaw", &EulerAngles::yaw);
 
     luaVm["ToEulerAngles"] = [](sol::table table) -> EulerAngles
     {
         return EulerAngles
         {
-            table["pitch"].get_or(0.f),
             table["roll"].get_or(0.f),
+            table["pitch"].get_or(0.f),
             table["yaw"].get_or(0.f)
         };
     };
