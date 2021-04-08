@@ -99,7 +99,7 @@ std::vector<VKBindInfo> VKBindings::InitializeMods(std::vector<VKBindInfo> aVKBi
     }
 
     // insert CET overlay bind info
-    assert(m_pOverlay); // overlay must be set before first use!
+    assert(m_cpOverlay); // overlay must be set before first use!
     const auto overlayKeyBind { m_cpOverlay->GetBind() };
     const auto overlayKeyCodeIt { m_idToBind.find(overlayKeyBind.ID) };
     const auto overlayKeyCode { (overlayKeyCodeIt == m_idToBind.cend()) ? (0) : (overlayKeyCodeIt->second) };
