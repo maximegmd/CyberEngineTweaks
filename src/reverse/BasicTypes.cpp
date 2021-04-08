@@ -10,9 +10,19 @@ std::string Vector3::ToString() const noexcept
     return fmt::format("ToVector3{{ x = {0}, y = {1}, z = {2} }}", x, y, z);
 }
 
+bool Vector3::operator==(const Vector3& acRhs) const noexcept
+{
+    return x == acRhs.x && y == acRhs.y && z == acRhs.z;
+}
+
 std::string Vector4::ToString() const noexcept
 {
     return fmt::format("ToVector4{{ x = {0}, y = {1}, z = {2}, w = {3} }}", x, y, z, w);
+}
+
+bool Vector4::operator==(const Vector4& acRhs) const noexcept
+{
+    return x == acRhs.x && y == acRhs.y && z == acRhs.z && w == acRhs.w;
 }
 
 std::string EulerAngles::ToString() const noexcept
@@ -20,9 +30,19 @@ std::string EulerAngles::ToString() const noexcept
     return fmt::format("ToEulerAngles{{ roll = {0}, pitch = {1}, yaw = {2} }}", roll, pitch, yaw);
 }
 
+bool EulerAngles::operator==(const EulerAngles& acRhs) const noexcept
+{
+    return roll == acRhs.roll && pitch == acRhs.pitch && yaw == acRhs.yaw;
+}
+
 std::string Quaternion::ToString() const noexcept
 {
     return fmt::format("ToQuaternion{{ i = {0}, j = {1}, k = {2}, r = {3} }}", i, j, k, r);
+}
+
+bool Quaternion::operator==(const Quaternion& acRhs) const noexcept
+{
+    return i == acRhs.i && j == acRhs.j && k == acRhs.k && r == acRhs.r;
 }
 
 std::string CName::AsString() const noexcept
@@ -40,14 +60,34 @@ std::string CName::ToString() const noexcept
     return fmt::format("ToCName{{ hash_lo = 0x{0:08X}, hash_hi = 0x{1:08X} --[[ {2} --]] }}", hash_lo, hash_hi, resolved);
 }
 
+bool CName::operator==(const CName& acRhs) const noexcept
+{
+    return hash == acRhs.hash;
+}
+
 std::string TweakDBID::ToString() const noexcept
 {
     return fmt::format("ToTweakDBID{{ hash = 0x{0:08X}, length = {1:d} }}", name_hash, name_length);
 }
 
+bool TweakDBID::operator==(const TweakDBID& acRhs) const noexcept
+{
+    return name_hash == acRhs.name_hash && name_length == acRhs.name_length;
+}
+
+TweakDBID TweakDBID::operator+(const std::string_view acName) const noexcept
+{
+    return TweakDBID(*this, acName);
+}
+
 std::string ItemID::ToString() const noexcept
 {
     return fmt::format("ToItemID{{ id = {0}, rng_seed = {1}, unknown = {2}, maybe_type = {3} }}", id.ToString(), rng_seed, unknown, maybe_type);
+}
+
+bool ItemID::operator==(const ItemID& acRhs) const noexcept
+{
+    return id == acRhs.id && rng_seed == acRhs.rng_seed;
 }
 
 static const unsigned int crc32_table[] =

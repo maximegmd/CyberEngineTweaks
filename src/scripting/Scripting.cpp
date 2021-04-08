@@ -67,16 +67,6 @@ void Scripting::Initialize()
         return GetMod(acName);
     };
 
-    luaVm["ToVector3"] = [](sol::table table) -> Vector3
-    {
-        return Vector3
-        {
-            table["x"].get_or(0.f),
-            table["y"].get_or(0.f),
-            table["z"].get_or(0.f)
-        };
-    };
-
     luaVm.new_usertype<Scripting>("__Game",
         sol::meta_function::construct, sol::no_constructor,
         sol::meta_function::index, &Scripting::Index,
@@ -87,8 +77,7 @@ void Scripting::Initialize()
         sol::meta_function::index, &Type::Index,
         sol::meta_function::new_index, &Type::NewIndex);
 
-    luaVm.new_usertype<StrongReference>(
-        "StrongReference",
+    luaVm.new_usertype<StrongReference>("StrongReference",
         sol::meta_function::construct, sol::no_constructor,
         sol::base_classes, sol::bases<Type>(),
         sol::meta_function::index, &StrongReference::Index,
@@ -106,8 +95,7 @@ void Scripting::Initialize()
         sol::meta_function::index, &SingletonReference::Index,
         sol::meta_function::new_index, &SingletonReference::NewIndex);
 
-    luaVm.new_usertype<ClassReference>(
-        "ClassReference",
+    luaVm.new_usertype<ClassReference>("ClassReference",
         sol::meta_function::construct, sol::no_constructor,
         sol::base_classes, sol::bases<Type>(),
         sol::meta_function::index, &ClassReference::Index,
@@ -134,10 +122,16 @@ void Scripting::Initialize()
         "Dump", &GameOptions::Dump,
         "List", &GameOptions::List);
 
-    luaVm.new_usertype<Vector3>(
-        "Vector3",
+    luaVm.new_usertype<Enum>("Enum",
+        sol::constructors<Enum(const std::string&, const std::string&), Enum(const std::string&, uint32_t)>(),
+        sol::meta_function::to_string, &Enum::ToString,
+        sol::meta_function::equal_to, &Enum::operator==,
+        "value", sol::property(&Enum::GetValueName, &Enum::SetValueByName));
+
+    luaVm.new_usertype<Vector3>("Vector3",
         sol::constructors<Vector3(float, float, float), Vector3(float, float), Vector3(float), Vector3()>(),
         sol::meta_function::to_string, &Vector3::ToString,
+        sol::meta_function::equal_to, &Vector3::operator==,
         "x", &Vector3::x,
         "y", &Vector3::y,
         "z", &Vector3::z);
@@ -155,16 +149,11 @@ void Scripting::Initialize()
     luaVm.new_usertype<Vector4>("Vector4",
         sol::constructors<Vector4(float, float, float, float), Vector4(float, float, float), Vector4(float, float), Vector4(float), Vector4()>(),
         sol::meta_function::to_string, &Vector4::ToString,
+        sol::meta_function::equal_to, &Vector4::operator==,
         "x", &Vector4::x,
         "y", &Vector4::y,
         "z", &Vector4::z,
         "w", &Vector4::w);
-
-    luaVm.new_usertype<Enum>(
-        "Enum",
-        sol::constructors<Enum(const std::string&, const std::string&), Enum(const std::string&, uint32_t)>(),
-        sol::meta_function::to_string, &Enum::ToString,
-        "value", sol::property(&Enum::GetValueName, &Enum::SetValueByName));
 
     luaVm["ToVector4"] = [](sol::table table) -> Vector4
     {
@@ -180,6 +169,7 @@ void Scripting::Initialize()
     luaVm.new_usertype<EulerAngles>("EulerAngles",
         sol::constructors<EulerAngles(float, float, float), EulerAngles(float, float), EulerAngles(float), EulerAngles()>(),
         sol::meta_function::to_string, &EulerAngles::ToString,
+        sol::meta_function::equal_to, &EulerAngles::operator==,
         "roll", &EulerAngles::roll,
         "pitch", &EulerAngles::pitch,
         "yaw", &EulerAngles::yaw);
@@ -194,10 +184,10 @@ void Scripting::Initialize()
         };
     };
 
-    luaVm.new_usertype<Quaternion>(
-        "Quaternion",
+    luaVm.new_usertype<Quaternion>("Quaternion",
         sol::constructors<Quaternion(float, float, float, float), Quaternion(float, float, float), Quaternion(float, float), Quaternion(float), Quaternion()>(),
         sol::meta_function::to_string, &Quaternion::ToString,
+        sol::meta_function::equal_to, &Quaternion::operator==,
         "i", &Quaternion::i,
         "j", &Quaternion::j,
         "k", &Quaternion::k,
@@ -214,10 +204,10 @@ void Scripting::Initialize()
         };
     };
 
-    luaVm.new_usertype<CName>(
-        "CName",
+    luaVm.new_usertype<CName>("CName",
         sol::constructors<CName(const std::string&), CName(uint32_t), CName(uint32_t, uint32_t), CName()>(),
         sol::meta_function::to_string, &CName::ToString,
+        sol::meta_function::equal_to, &CName::operator==,
         "hash_lo", &CName::hash_lo,
         "hash_hi", &CName::hash_hi,
         "value", sol::property(&CName::AsString));
@@ -231,10 +221,12 @@ void Scripting::Initialize()
         };
     };
 
-    luaVm.new_usertype<TweakDBID>(
-        "TweakDBID",
+    luaVm.new_usertype<TweakDBID>("TweakDBID",
         sol::constructors<TweakDBID(const std::string&), TweakDBID(const TweakDBID&, const std::string&), TweakDBID(uint32_t, uint8_t), TweakDBID()>(),
         sol::meta_function::to_string, &TweakDBID::ToString,
+        sol::meta_function::equal_to, &TweakDBID::operator==,
+        sol::meta_function::addition, &TweakDBID::operator+,
+        sol::meta_function::concatenation, &TweakDBID::operator+,
         "hash", &TweakDBID::name_hash,
         "length", &TweakDBID::name_length);
 
@@ -247,10 +239,10 @@ void Scripting::Initialize()
         };
     };
 
-    luaVm.new_usertype<ItemID>(
-        "ItemID",
+    luaVm.new_usertype<ItemID>("ItemID",
         sol::constructors<ItemID(const TweakDBID&, uint32_t, uint16_t, uint8_t), ItemID(const TweakDBID&, uint32_t, uint16_t), ItemID(const TweakDBID&, uint32_t), ItemID(const TweakDBID&), ItemID()>(),
         sol::meta_function::to_string, &ItemID::ToString,
+        sol::meta_function::equal_to, &ItemID::operator==,
         "id", &ItemID::id,
         "tdbid", &ItemID::id,
         "rng_seed", &ItemID::rng_seed,

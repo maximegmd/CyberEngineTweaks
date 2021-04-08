@@ -11,6 +11,8 @@ struct Vector3
     float z;
 
     std::string ToString() const noexcept;
+
+	bool operator==(const Vector3& acRhs) const noexcept;
 };
 
 struct Vector4
@@ -25,6 +27,8 @@ struct Vector4
     float w;
 
     std::string ToString() const noexcept;
+
+	bool operator==(const Vector4& acRhs) const noexcept;
 };
 
 struct EulerAngles
@@ -38,6 +42,8 @@ struct EulerAngles
     float yaw;
     
     std::string ToString() const noexcept;
+
+	bool operator==(const EulerAngles& acRhs) const noexcept;
 };
 
 struct Quaternion
@@ -52,6 +58,8 @@ struct Quaternion
     float r;
 
     std::string ToString() const noexcept;
+
+	bool operator==(const Quaternion& acRhs) const noexcept;
 };
 
 uint32_t crc32(const char* buf, size_t len, uint32_t seed);
@@ -74,6 +82,8 @@ struct CName
 
     std::string AsString() const noexcept;
     std::string ToString() const noexcept;
+
+	bool operator==(const CName& acRhs) const noexcept;
 };
 
 #pragma pack(push, 1)
@@ -109,6 +119,9 @@ struct TweakDBID
     }
 
     std::string ToString() const noexcept;
+
+	bool operator==(const TweakDBID& acRhs) const noexcept;
+	TweakDBID operator+(const std::string_view acName) const noexcept;
     
     union
     {
@@ -132,6 +145,8 @@ struct ItemID
         : id(aId), rng_seed(aRngSeed), unknown(aUnknown), maybe_type(aMaybeType), pad(0) {}
 
     std::string ToString() const noexcept;
+
+	bool operator==(const ItemID& acRhs) const noexcept;
     
     TweakDBID id;
     uint32_t rng_seed{ 2 };

@@ -153,8 +153,15 @@ std::string Enum::ToString() const
     return "Invalid enum";
 }
 
+bool Enum::operator==(const Enum& acRhs) const noexcept
+{
+    if (!m_cpType || !acRhs.m_cpType)
+        return false;
+
+    return m_cpType->hash == acRhs.m_cpType->hash && m_value == acRhs.m_value;
+}
+
 const RED4ext::CEnum* Enum::GetType() const
 {
     return m_cpType;
 }
-
