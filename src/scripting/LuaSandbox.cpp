@@ -165,7 +165,11 @@ void LuaSandbox::Initialize()
 
 void LuaSandbox::ResetState()
 {
+    for (auto& cSandbox : m_sandboxes)
+        CloseDBForSandbox(cSandbox);
+
     m_modules.clear();
+
     if (m_sandboxes.size() > 1) // first one is always present, meant for console
         m_sandboxes.erase(m_sandboxes.cbegin()+1, m_sandboxes.cend());
 }
@@ -486,4 +490,13 @@ void LuaSandbox::InitializeLoggerForSandbox(Sandbox& aSandbox, const std::string
 
     // assign logger to special var so we can access it from our functions
     sbEnv["__logger"] = logger;
+}
+
+void LuaSandbox::CloseDBForSandbox(Sandbox& aSandbox) const
+{
+    aSandbox.ExecuteString(R"(
+        if type(db) == 'userdata' and tostring(db):find('^sqlite database') then
+            db:close()
+        end
+    )");
 }

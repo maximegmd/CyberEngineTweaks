@@ -232,15 +232,18 @@ sol::variadic_results Type::Execute(RED4ext::CBaseFunction* apFunc, const std::s
         return {};
     }
 
+    auto iArg = 0u;
+
     for (auto i = 0u; i < apFunc->params.size; ++i)
     {
         if (apFunc->params[i]->flags.isOut) // Deal with out params
         {
             args[i] = Scripting::ToRED(sol::nil, apFunc->params[i]->type, &s_scratchMemory);
         }
-        else if (i < aArgs.size())
+        else if (iArg < aArgs.size())
         {
-            args[i] = Scripting::ToRED(aArgs[i].get<sol::object>(), apFunc->params[i]->type, &s_scratchMemory);
+            args[i] = Scripting::ToRED(aArgs[iArg].get<sol::object>(), apFunc->params[i]->type, &s_scratchMemory);
+            ++iArg;
         }
         else if (apFunc->params[i]->flags.isOptional) // Deal with optional params
         {

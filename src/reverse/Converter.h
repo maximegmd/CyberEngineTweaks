@@ -172,6 +172,18 @@ struct ClassConverter : LuaRED<ClassReference, "ClassReference">
         {
             result.value = aObject.as<ClassReference*>()->GetHandle();
         }
+        else if (aObject == sol::nil)
+        {
+            RED4ext::CClass* pClass = static_cast<RED4ext::CClass*>(apRtti);
+            if (pClass && !pClass->flags.isAbstract)
+            {
+                result.value = pClass->AllocInstance();
+            }
+            else
+            {
+                result.value = nullptr;
+            }
+        }
         else
         {
             result.value = nullptr;

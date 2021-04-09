@@ -27,6 +27,8 @@ private:
     void InitializeIOForSandbox(Sandbox& aSandbox, const std::string& acName);
     void InitializeLoggerForSandbox(Sandbox& aSandbox, const std::string& acName) const;
 
+	void CloseDBForSandbox(Sandbox& aSandbox) const;
+
     Scripting* m_pScripting;
     const VKBindings& m_vkBindings;
     sol::environment m_env{ };
