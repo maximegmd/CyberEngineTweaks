@@ -182,7 +182,7 @@ struct ClassConverter : LuaRED<ClassReference, "ClassReference">
             else
             {
                 result.value = nullptr;
-			}
+            }
         }
         else
         {
