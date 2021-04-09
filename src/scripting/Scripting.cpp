@@ -964,15 +964,18 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
         return sol::nil;
     }
 
+    auto iArg = 0u;
+
     for (auto i = argOffset; i < pFunc->params.size; ++i)
     {
         if (pFunc->params[i]->flags.isOut) // Deal with out params
         {
             args[i] = ToRED(sol::nil, pFunc->params[i]->type, &s_scratchMemory);
         }
-        else if (i - argOffset < aArgs.size())
+        else if (iArg < aArgs.size())
         {
-            args[i] = ToRED(aArgs[i - argOffset].get<sol::object>(), pFunc->params[i]->type, &s_scratchMemory);
+            args[i] = ToRED(aArgs[iArg].get<sol::object>(), pFunc->params[i]->type, &s_scratchMemory);
+            ++iArg;
         }
         else if (pFunc->params[i]->flags.isOptional) // Deal with optional params
         {
