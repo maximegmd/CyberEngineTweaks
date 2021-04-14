@@ -840,33 +840,33 @@ sol::protected_function Scripting::InternalIndex(const std::string& acName, sol:
     auto obj = make_object(state, [this, name = acName](sol::variadic_args aArgs, sol::this_environment aThisEnv, sol::this_state aState)
     {
         std::string result;
-        auto code = this->Execute(name, aArgs, result, aState);
+        auto funcRet = this->Execute(name, aArgs, result, aState);
 
-        if(!code)
+        if (!result.empty())
         {
             const sol::environment cEnv = aThisEnv;
             std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
-            logger->error("Error: {}", (result.empty()) ? ("Unknown error") : (result));
+            logger->error("Error: {}", result);
         }
-        return code;
+        return funcRet;
     });
 
     return NewIndex(acName, std::move(obj));
 }
 
-sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args aArgs, std::string& aReturnMessage, sol::this_state aState) const
+sol::variadic_results Scripting::Execute(const std::string& aFuncName, sol::variadic_args aArgs, std::string& aReturnMessage, sol::this_state aState) const
 {
     auto* pRtti = RED4ext::CRTTISystem::Get();
     if (pRtti == nullptr)
     {
         aReturnMessage = "Could not retrieve RTTISystem instance.";
-        return sol::nil;
+        return {};
     }
 
     if (s_stringType == nullptr)
     {
         aReturnMessage = "Could not retrieve String type instance.";
-        return sol::nil;
+        return {};
     }
 
     RED4ext::CBaseFunction* pFunc = pRtti->GetFunction(RED4ext::FNV1a(aFuncName.c_str()));
@@ -879,14 +879,14 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
     if (pPlayerSystem == nullptr)
     {
         aReturnMessage = "Could not retrieve cpPlayerSystem class.";
-        return sol::nil;
+        return {};
     }
 
     auto* gameInstanceType = pRtti->GetClass(hashGameInstance);
     if (gameInstanceType == nullptr)
     {
         aReturnMessage = "Could not retrieve ScriptGameInstance class.";
-        return sol::nil;
+        return {};
     }
 
     if (!pFunc)
@@ -895,7 +895,7 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
         if (!pFunc)
         {
             aReturnMessage = "Function '" + aFuncName + "' not found or is not a global.";
-            return sol::nil;
+            return {};
         }
     }
 
@@ -915,21 +915,21 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
     if (engine == nullptr)
     {
         aReturnMessage = "Could not retrieve GameEngine instance.";
-        return sol::nil;
+        return {};
     }
 
     auto* framework = engine->framework;
     if (framework == nullptr)
     {
         aReturnMessage = "Could not retrieve GameFramework instance.";
-        return sol::nil;
+        return {};
     }
 
     auto* gameInstance = framework->gameInstance;
     if (gameInstance == nullptr)
     {
         aReturnMessage = "Could not retrieve GameInstance instance.";
-        return sol::nil;
+        return {};
     }
 
     RED4ext::CName name;
@@ -961,7 +961,7 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
     if (minArgs > aArgs.size())
     {
         aReturnMessage = "Function '" + aFuncName + "' requires at least " + std::to_string(minArgs) + " parameter(s).";
-        return sol::nil;
+        return {};
     }
 
     auto iArg = 0u;
@@ -995,7 +995,7 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
                     "Function '" + aFuncName + "' parameter " + std::to_string(i - argOffset) + " must be " + typeName + ".";
             }
 
-            return sol::nil;
+            return {};
         }
     }
 
@@ -1013,22 +1013,32 @@ sol::object Scripting::Execute(const std::string& aFuncName, sol::variadic_args 
     if (pScriptable == nullptr)
     {
         aReturnMessage = "Could not retrieve ScriptInstance from cpPlayerSystem instance.";
-        return sol::nil;
+        return {};
     }
     RED4ext::CStack stack(pScriptable, args.data(), static_cast<uint32_t>(args.size()), hasReturnType ? &result : nullptr, 0);
 
     const auto success = pFunc->Execute(&stack);
+
     if (!success)
     {
         aReturnMessage = "Function '" + aFuncName + "' failed to execute!";
-        return sol::nil;
+        return {};
     }
+
+    sol::variadic_results results;
+
+    auto state = GetState();
 
     if (hasReturnType)
+        results.push_back(ToLua(state, result));
+
+    for (auto i = 0; i < pFunc->params.size; ++i)
     {
-        auto state = GetState();
-        return ToLua(state, result);
+        if (!pFunc->params[i]->flags.isOut)
+            continue;
+
+        results.push_back(ToLua(state, args[i]));
     }
 
-    return make_object(aState, true);
+    return results;
 }
