@@ -54,22 +54,4 @@ target("cyber_engine_tweaks")
 		os.cp(target:targetfile(), "package/bin/x64/plugins/")
 		os.cp("scripts/*", "package/bin/x64/plugins/cyber_engine_tweaks/scripts")
 		os.rm("package/*.zip")
-
-		import("modules.version")
-
-		local branch, commitHash = version()
-
-		-- This is a hack provided by ruki until find_7z returns the full path
-		--[[
-		import("core.platform.environment")
-		function do_zip()
-			environment.enter("toolchains")
-			os.cd("package/")
-			os.vrunv("7z", {"a", "cet_"..commitHash..".zip", "."})
-			environment.leave("toolchains")
-		end
-
-		do_zip()
-		]]--
-
 	end)
