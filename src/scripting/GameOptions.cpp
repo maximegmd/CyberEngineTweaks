@@ -122,7 +122,7 @@ bool GameOption::SetColor(int value)
 
 bool GameOption::Toggle()
 {
-    if (GetType() == kBoolean)
+    if (GetType() != kBoolean)
         return false;
 
     Boolean = !Boolean;

@@ -42,7 +42,7 @@ protected:
     sol::object GetSingletonHandle(const std::string& acName, sol::this_environment aThisEnv);
     sol::protected_function InternalIndex(const std::string& acName, sol::this_environment aThisEnv);
     
-    sol::object Execute(const std::string& aFuncName, sol::variadic_args aArgs, std::string& aReturnMessage, sol::this_state aState) const;
+    sol::variadic_results Execute(const std::string& aFuncName, sol::variadic_args aArgs, std::string& aReturnMessage, sol::this_state aState) const;
 
 private:
     TiltedPhoques::Lockable<sol::state, std::recursive_mutex> m_lua;
