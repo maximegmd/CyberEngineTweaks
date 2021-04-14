@@ -1,0 +1,4 @@
+#pragma once
+
+#define CET_BUILD_BRANCH "${GIT_BRANCH}"
+#define CET_BUILD_COMMIT "${GIT_TAG}"

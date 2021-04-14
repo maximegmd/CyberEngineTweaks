@@ -1,4 +1,4 @@
-set_xmakever("2.5.2")
+set_xmakever("2.5.3")
 
 set_languages("cxx20")
 set_arch("x64")
@@ -26,33 +26,6 @@ end
 add_cxflags("/bigobj", "/MP")
 add_defines("RED4EXT_STATIC_LIB", "UNICODE")
 
-before_build(function (target)
-	import("modules.version")
-
-	local branch, commitHash = version()
-
-	local cetVersionString = string.format([[
-#pragma once
-
-#define CET_BUILD_BRANCH "%s"
-#define CET_BUILD_COMMIT "%s"
-]], branch, commitHash)
-	local cetVersionCurrent = try
-	{
-		function()
-			return io.open("src/CETVersion.h", "r")
-		end
-	}
-	if cetVersionCurrent~=nil then
-		local cetVersionCurrentString = cetVersionCurrent:read("*a")
-		cetVersionCurrent:close()
-		if (cetVersionCurrentString == cetVersionString) then
-			return
-		end
-	end
-	io.writefile("src/CETVersion.h", cetVersionString)
-end)
-
 target("RED4ext.SDK")
     set_kind("static")
     set_group("vendor")
@@ -66,11 +39,12 @@ target("cyber_engine_tweaks")
     set_kind("shared")
     set_filename("cyber_engine_tweaks.asi")
     add_files("src/**.c", "src/**.cpp")
-    add_headerfiles("src/**.h")
-    add_includedirs("src/")
+    add_headerfiles("src/**.h", "build/CETVersion.h")
+    add_includedirs("src/", "build/")
     add_syslinks("User32", "Version", "d3d11")
     add_packages("spdlog", "nlohmann_json", "minhook", "hopscotch-map", "imgui", "mem", "sol2", "tiltedcore", "sqlite3", "luajit")
     add_deps("RED4ext.SDK")
+	add_configfiles("src/CETVersion.h.in")
 
 	on_package(function(target)
 		os.mkdir("package/bin/x64/plugins/cyber_engine_tweaks/scripts")
