@@ -32,7 +32,19 @@ struct LuaRED
         }
         else if (!CheckObjectType || aObject.is<T>())
         {
-            result.value = apAllocator->New<T>(aObject.as<T>());
+            if constexpr (std::is_integral_v<T> && (sizeof(T) == sizeof(uint64_t)))
+            {
+                sol::state_view v(aObject.lua_state());
+                std::string str = v["tostring"](aObject);
+                if constexpr (std::is_signed_v<T>)
+                    result.value = apAllocator->New<T>(std::stoll(str));
+                else
+                    result.value = apAllocator->New<T>(std::stoull(str));
+            }
+            else
+            {
+                result.value = apAllocator->New<T>(aObject.as<T>());
+            }
         }
 
         return result;
@@ -46,7 +58,19 @@ struct LuaRED
         }
         else if (!CheckObjectType || aObject.is<T>())
         {
-            *reinterpret_cast<T*>(apType->value) = aObject.as<T>();
+            if constexpr (std::is_integral_v<T> && (sizeof(T) == sizeof(uint64_t)))
+            {
+                sol::state_view v(aObject.lua_state());
+                std::string str = v["tostring"](aObject);
+                if constexpr (std::is_signed_v<T>)
+                    *reinterpret_cast<T*>(apType->value) = std::stoll(str);
+                else
+                    *reinterpret_cast<T*>(apType->value) = std::stoull(str);
+            }
+            else
+            {
+                *reinterpret_cast<T*>(apType->value) = aObject.as<T>();
+            }
         }
     }
 
