@@ -55,3 +55,26 @@ target("cyber_engine_tweaks")
 		os.cp("scripts/*", "package/bin/x64/plugins/cyber_engine_tweaks/scripts")
 		os.rm("package/*.zip")
 	end)
+
+task("dephash")
+	on_run(function ()
+		import("core.project.project")
+		import("private.action.require.impl.package")
+
+		local requires, requires_extra = project.requires_str()
+
+		local key = {}
+		for _, instance in irpairs(package.load_packages(requires, {requires_extra = requires_extra})) do
+			table.insert(key, instance:name() .. "-" .. instance:version_str() .. "-" .. instance:buildhash())
+		end
+
+		table.sort(key)
+
+		key = table.concat(key, ",")
+		print(hash.uuid4(key):gsub('-', ''):lower())
+	end)
+
+	set_menu {
+		usage = "xmake dephash",
+		description = "Outputs a hash key of current dependencies version/configuration"
+	}
