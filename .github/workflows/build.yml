@@ -26,8 +26,8 @@ jobs:
         git submodule update --init --force --recursive --depth=1
 
     # Force xmake to a specific folder (for cache)
-    - name: Set xmake env
-      run: echo "XMAKE_GLOBALDIR=$(pwd)/xmake-global" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+    #- name: Set xmake env
+    #  run: echo "XMAKE_GLOBALDIR=$(pwd)/xmake-global" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
     # Install xmake
     - name: Setup xmake
