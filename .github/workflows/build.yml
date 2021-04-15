@@ -25,6 +25,10 @@ jobs:
         git submodule sync --recursive
         git submodule update --init --force --recursive --depth=1
 
+    # Force xmake to a specific folder (for cache)
+    - name: Set xmake env
+      run: echo "XMAKE_GLOBALDIR=$(pwd)/xmake-global" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
     # Install xmake
     - name: Setup xmake
       uses: xmake-io/github-action-setup-xmake@v1
@@ -33,11 +37,17 @@ jobs:
     - name: Update xmake repository
       run: xmake.exe repo --update
 
+    # Fetch xmake dephash
+    - name: Retrieve dependencies hash
+      id: dep_hash
+      run: echo "::set-output name=hash::$(xmake.exe dephash)"
+
     # Cache xmake dependencies
-    - uses: actions/cache@v2
+    - name: Retrieve cached xmake dependencies
+      uses: actions/cache@v2
       with:
-        path: C:\Users\runneradmin\AppData\Local\.xmake\packages
-        key: ${{ runner.os }}-${{ matrix.arch }}-${{ matrix.mode }}-${{ hashFiles('xmake.lua') }}-${{ hashFiles('C:\Users\runneradmin\AppData\Local\.xmake\xmake.conf') }}-${{ hashFiles('C:\Users\runneradmin\AppData\Local\.xmake\repositories\**') }}
+        path: xmake-global\.xmake\packages
+        key: ${{ runner.os }}-${{ matrix.arch }}-${{ matrix.mode }}-${{ steps.dep_hash.outputs.hash }}
 
     # Setup compilation mode and install project dependencies
     - name: Configure xmake and install dependencies
