@@ -53,6 +53,38 @@ struct CNameConverter : LuaRED<CName, "CName">
     }
 };
 
+// Specialization manages special case implicit casting for TweakDBID
+struct TweakDBIDConverter : LuaRED<TweakDBID, "TweakDBID">
+{
+    RED4ext::CStackType ToRED(sol::object aObject, RED4ext::IRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator)
+    {
+        RED4ext::CStackType result;
+        if (aObject.get_type() == sol::type::string)
+        {
+            result.type = apRtti;
+            result.value = apAllocator->New<TweakDBID>(aObject.as<std::string>());
+        }
+        else
+        {
+            return LuaRED<TweakDBID, "TweakDBID">::ToRED(aObject, apRtti, apAllocator);
+        }
+
+        return result;
+    }
+
+	void ToRED(sol::object aObject, RED4ext::CStackType* apType)
+    {
+        if (aObject.get_type() == sol::type::string)
+        {
+            *(TweakDBID*)apType->value = TweakDBID(aObject.as<std::string>());
+        }
+        else
+        {
+            LuaRED<TweakDBID, "TweakDBID">::ToRED(aObject, apType);
+        }
+    }
+};
+
 // Specialization manages wrapping and converting RT_Enum
 struct EnumConverter : LuaRED<Enum, "Enum">
 {

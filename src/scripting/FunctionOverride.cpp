@@ -48,10 +48,19 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
         const auto& calls = itor->second.Calls;
         for (const auto& call : calls)
         {
-            const auto result = call->ScriptFunction(as_args(args), call->Environment);
+            const auto result = call->ScriptFunction(as_args(args));
+
+            if (!result.valid())
+            {
+                auto logger = call->Environment["__logger"].get<std::shared_ptr<spdlog::logger>>();
+                logger->error(result.get<sol::error>().what());
+
+                continue;
+            }
+
             if (!call->Forward)
             {
-                if (result.valid() && ret.value && ret.type)
+                if (ret.value && ret.type)
                     Scripting::ToRED(result.get<sol::object>(), &ret);
 
                 return true;
@@ -211,7 +220,17 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
         const auto& calls = context.Calls;
         for (const auto& call : calls)
         {
-            const auto result = call->ScriptFunction(as_args(args), call->Environment);
+            const auto result = call->ScriptFunction(as_args(args));
+
+            if (!result.valid())
+            {
+                auto logger = call->Environment["__logger"].get<std::shared_ptr<spdlog::logger>>();
+                logger->error(result.get<sol::error>().what());
+
+                continue;
+            }
+
+
             if (!call->Forward)
             {
                 if (apFunction->returnType)
@@ -220,7 +239,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
                     redResult.type = apFunction->returnType->type;
                     redResult.value = apOut;
 
-                    if (result.valid() && apOut)
+                    if (apOut)
                         Scripting::ToRED(result.get<sol::object>(), &redResult);
                 }
 
