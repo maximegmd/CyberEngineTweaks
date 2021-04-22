@@ -165,6 +165,12 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
     for (auto& context : m_frameContexts)
         m_pd3d12Device->CreateRenderTargetView(context.BackBuffer, nullptr, context.MainRenderTargetDescriptor);
 
+    if (!checkCmdQueue(this))
+    {
+        spdlog::error("D3D12::Initialize() - missing command queue!");
+        return false;
+    }
+
     if (!InitializeImGui(buffersCounts))
     {
         spdlog::error("D3D12::Initialize() - failed to initialize ImGui!");
@@ -173,12 +179,6 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
 
     spdlog::info("D3D12::Initialize() - initialization successful!");
     m_initialized = true;
-
-    if (!checkCmdQueue(this))
-    {
-        spdlog::error("D3D12::Initialize() - missing command queue!");
-        return false;
-    }
 
     OnInitialized.Emit();
 
