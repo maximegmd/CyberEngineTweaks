@@ -41,6 +41,16 @@ struct LuaRED
                 else
                     result.value = apAllocator->New<T>(std::stoull(str));
             }
+            else if constexpr (std::is_same_v<T, bool>)
+            {
+                if (aObject.get_type() == sol::type::boolean)
+                    result.value = apAllocator->New<T>(aObject.as<T>());
+            }
+            else if constexpr (std::is_arithmetic_v<T>)
+            {
+                if (aObject.get_type() == sol::type::number)
+                    result.value = apAllocator->New<T>(aObject.as<T>());
+            }
             else
             {
                 result.value = apAllocator->New<T>(aObject.as<T>());
@@ -66,6 +76,16 @@ struct LuaRED
                     *reinterpret_cast<T*>(apType->value) = std::stoll(str);
                 else
                     *reinterpret_cast<T*>(apType->value) = std::stoull(str);
+            }
+            else if constexpr (std::is_same_v<T, bool>)
+            {
+                if (aObject.get_type() == sol::type::boolean)
+                    *reinterpret_cast<T*>(apType->value) = aObject.as<T>();
+            }
+            else if constexpr (std::is_arithmetic_v<T>)
+            {
+                if (aObject.get_type() == sol::type::number)
+                    *reinterpret_cast<T*>(apType->value) = aObject.as<T>();
             }
             else
             {

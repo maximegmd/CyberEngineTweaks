@@ -110,10 +110,10 @@ sol::object DeepCopySolObject(sol::object aObj, const sol::state_view& aStateVie
     return copy;
 }
 
-// makes sol object immutable when accessed from lua
-void MakeSolObjectImmutable(sol::object aObj, const sol::state_view& aStateView)
+// makes sol usertype or userdata immutable when accessed from lua
+void MakeSolUsertypeImmutable(sol::object aObj, const sol::state_view& aStateView)
 {
-    if (aObj.get_type() != sol::type::table && aObj.get_type() != sol::type::userdata)
+    if (!aObj.is<sol::metatable>() && !aObj.is<sol::userdata>())
         return;
 
     sol::table target = aObj;
@@ -130,9 +130,9 @@ void MakeSolObjectImmutable(sol::object aObj, const sol::state_view& aStateView)
         target[sol::metatable_key] = metatable;
     }
 
-    // prevent overriding metatable
-    metatable[sol::meta_function::metatable] = []() { return sol::nil; };
-
     // prevent adding new properties
     metatable[sol::meta_function::new_index] = []() {};
+
+    // prevent overriding metatable
+    metatable[sol::meta_function::metatable] = []() { return sol::nil; };
 }

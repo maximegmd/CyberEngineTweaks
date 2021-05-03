@@ -177,6 +177,8 @@ void LuaVM::PostInitialize()
 {
     assert(!m_initialized);
 
+    m_scripting.PostInitialize();
+
     m_scripting.TriggerOnInit();
     if (CET::Get().GetOverlay().IsEnabled())
         m_scripting.TriggerOnOverlayOpen();

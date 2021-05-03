@@ -2,6 +2,7 @@
 
 #include "FunctionOverride.h"
 #include "ScriptStore.h"
+#include "reverse/RTTIMapper.h"
 #include "reverse/SingletonReference.h"
 
 struct D3D12;
@@ -14,6 +15,7 @@ struct Scripting
     ~Scripting() = default;
 
     void Initialize();
+    void PostInitialize();
 
     const std::vector<VKBindInfo>& GetBinds() const;
 
@@ -29,6 +31,7 @@ struct Scripting
 
     bool ExecuteLua(const std::string& acCommand);
     LockedState GetState() const noexcept;
+    std::string GetGlobalName() const noexcept;
 
     static size_t Size(RED4ext::IRTTIType* apRttiType);
     static sol::object ToLua(LockedState& aState, RED4ext::CStackType& aResult);
@@ -41,13 +44,13 @@ protected:
     sol::object NewIndex(const std::string& acName, sol::object aParam);
     sol::object GetSingletonHandle(const std::string& acName, sol::this_environment aThisEnv);
     sol::protected_function InternalIndex(const std::string& acName, sol::this_environment aThisEnv);
-    
-    sol::variadic_results Execute(const std::string& aFuncName, sol::variadic_args aArgs, std::string& aReturnMessage, sol::this_state aState) const;
 
 private:
     TiltedPhoques::Lockable<sol::state, std::recursive_mutex> m_lua;
     std::unordered_map<std::string, sol::object> m_properties{ };
     std::unordered_map<std::string, SingletonReference> m_singletons{ };
+    std::string m_global{ "Global" };
+    RTTIMapper m_mapper;
     LuaSandbox m_sandbox;
     ScriptStore m_store;
     FunctionOverride m_override;

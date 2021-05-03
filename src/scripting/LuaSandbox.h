@@ -8,6 +8,7 @@ struct LuaSandbox
     ~LuaSandbox() = default;
 
     void Initialize();
+    void PostInitialize();
     void ResetState();
 
     size_t CreateSandbox(const std::filesystem::path& acPath = "", const std::string& acName = "", bool aEnableExtraLibs = true, bool aEnableDB = true, bool aEnableIO = true, bool aEnableLogger = true);

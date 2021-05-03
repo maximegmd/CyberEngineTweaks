@@ -14,6 +14,11 @@ Sandbox::Sandbox(Scripting* apScripting, sol::environment aBaseEnvironment, cons
     sol::state_view sv = apScripting->GetState().Get();
     for (const auto& cKV : aBaseEnvironment)
         m_env[cKV.first] = DeepCopySolObject(cKV.second, sv);
+
+    // set global fallback table for the environment
+    sol::table metatable(sv, sol::create);
+    metatable[sol::meta_function::index] = sv.get<sol::table>(apScripting->GetGlobalName());
+    m_env[sol::metatable_key] = metatable;
 }
 
 sol::protected_function_result Sandbox::ExecuteFile(const std::string& acPath) const
