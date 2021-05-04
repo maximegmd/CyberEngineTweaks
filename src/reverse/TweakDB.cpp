@@ -208,6 +208,30 @@ sol::object TweakDB::GetFlat(TweakDBID aDBID)
     return Scripting::ToLua(state, stackType);
 }
 
+bool TweakDB::SetFlatsByName(const std::string& acRecordName, sol::table aTable, sol::this_environment aThisEnv)
+{
+    return SetFlats(TweakDBID(acRecordName), std::move(aTable), std::move(aThisEnv));
+}
+
+bool TweakDB::SetFlats(TweakDBID aDBID, sol::table aTable, sol::this_environment aThisEnv)
+{
+    bool success = true;
+    TweakDBID prepDBID(aDBID, ".");
+
+    for (auto& [key, value] : aTable)
+    {
+        if (!key.is<std::string>())
+            continue;
+
+        TweakDBID flatDBID(prepDBID, key.as<std::string>());
+        success &= SetFlat(flatDBID, value, aThisEnv);
+    }
+
+    UpdateRecordByID(aDBID);
+
+    return success;
+}
+
 bool TweakDB::SetFlatByName(const std::string& acFlatName, sol::object aObject, sol::this_environment aThisEnv)
 {
     return SetFlat(TweakDBID(acFlatName), std::move(aObject), std::move(aThisEnv));

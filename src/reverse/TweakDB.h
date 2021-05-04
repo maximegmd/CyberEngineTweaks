@@ -19,6 +19,8 @@ struct TweakDB
     sol::object Query(TweakDBID aDBID);
     sol::object GetFlatByName(const std::string& acFlatName);
     sol::object GetFlat(TweakDBID aDBID);
+    bool SetFlatsByName(const std::string& acRecordName, sol::table aTable, sol::this_environment aThisEnv);
+    bool SetFlats(TweakDBID aDBID, sol::table aTable, sol::this_environment aThisEnv);
     bool SetFlatByName(const std::string& acFlatName, sol::object aObject, sol::this_environment aThisEnv);
     bool SetFlat(TweakDBID aDBID, sol::object aObject, sol::this_environment aThisEnv);
     bool SetFlatByNameAutoUpdate(const std::string& acFlatName, sol::object aObject, sol::this_environment aThisEnv);
