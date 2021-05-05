@@ -136,3 +136,13 @@ void MakeSolUsertypeImmutable(sol::object aObj, const sol::state_view& aStateVie
     // prevent overriding metatable
     metatable[sol::meta_function::metatable] = []() { return sol::nil; };
 }
+
+// Check if Lua object is of cdata type
+bool IsLuaCData(sol::object aObject)
+{
+    // Sol doesn't have enum for LuaJIT's cdata type since it's not a standard type.
+    // But it's possible to check the type using numeric code (10).
+    // LuaJIT packs int64/uint64 into cdata and some other types.
+    // Since we're not using other types, this should be enough to check for int64/uint64 value.
+    return (static_cast<int>(aObject.get_type()) == 10);
+}

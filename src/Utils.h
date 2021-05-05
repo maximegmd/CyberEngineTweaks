@@ -31,3 +31,6 @@ sol::function MakeSolFunction(sol::state& aState, F aFunc)
 
     return luaFunc;
 }
+
+// Check if Lua object is of cdata type
+bool IsLuaCData(sol::object aObject);
