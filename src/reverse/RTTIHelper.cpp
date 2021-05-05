@@ -13,9 +13,9 @@ static constexpr const bool s_cLogAllOverloadVariants = true;
 
 static std::unique_ptr<RTTIHelper> s_pInstance{ nullptr };
 
-void RTTIHelper::Initialize(const LockableState& aLua)
+void RTTIHelper::Initialize(const LockableState& acLua)
 {
-    s_pInstance.reset(new RTTIHelper(aLua));
+    s_pInstance.reset(new RTTIHelper(acLua));
 }
 
 void RTTIHelper::Shutdown()
@@ -31,8 +31,8 @@ RTTIHelper& RTTIHelper::Get()
     return *s_pInstance;
 }
 
-RTTIHelper::RTTIHelper(const LockableState& aLua)
-    : m_lua(aLua)
+RTTIHelper::RTTIHelper(const LockableState& acLua)
+    : m_lua(acLua)
 {
     InitializeRTTI();
     ParseGlobalStatics();
@@ -44,9 +44,9 @@ void RTTIHelper::InitializeRTTI()
     m_pEngine = RED4ext::CGameEngine::Get();
     m_pGameInstanceType = m_pRtti->GetClass(RED4ext::FNV1a("ScriptGameInstance"));
 
-    const auto pGameInstance = m_pEngine->framework->gameInstance;
-    const auto pPlayerSystemType = m_pRtti->GetType(RED4ext::FNV1a("cpPlayerSystem"));
-    m_pPlayerSystem = reinterpret_cast<RED4ext::ScriptInstance>(pGameInstance->GetInstance(pPlayerSystemType));
+    const auto cpGameInstance = m_pEngine->framework->gameInstance;
+    const auto cpPlayerSystemType = m_pRtti->GetType(RED4ext::FNV1a("cpPlayerSystem"));
+    m_pPlayerSystem = reinterpret_cast<RED4ext::ScriptInstance>(cpGameInstance->GetInstance(cpPlayerSystemType));
 }
 
 void RTTIHelper::ParseGlobalStatics()
@@ -83,7 +83,7 @@ void RTTIHelper::AddFunctionAlias(const std::string& acAliasFuncName, const std:
             if (!m_extendedFunctions.contains(kGlobalHash))
                 m_extendedFunctions.emplace(kGlobalHash, 0);
 
-            m_extendedFunctions.at(kGlobalHash).emplace(pFunc->shortName.hash, pFunc);
+            m_extendedFunctions.at(kGlobalHash).emplace(pFunc->fullName.hash, pFunc);
         }
     }
 }
@@ -98,12 +98,12 @@ void RTTIHelper::AddFunctionAlias(const std::string& acAliasClassName, const std
 
         if (pFunc)
         {
-            const auto classHash = RED4ext::FNV1a(acAliasClassName.c_str());
+            const auto cClassHash = RED4ext::FNV1a(acAliasClassName.c_str());
 
-            if (!m_extendedFunctions.contains(classHash))
-                m_extendedFunctions.emplace(classHash, 0);
+            if (!m_extendedFunctions.contains(cClassHash))
+                m_extendedFunctions.emplace(cClassHash, 0);
 
-            m_extendedFunctions.at(classHash).emplace(pFunc->shortName.hash, pFunc);
+            m_extendedFunctions.at(cClassHash).emplace(pFunc->fullName.hash, pFunc);
         }
     }
 }
@@ -206,10 +206,10 @@ std::map<uint64_t, RED4ext::CBaseFunction*> RTTIHelper::FindFunctions(const uint
     {
         auto& extendedFuncs = m_extendedFunctions.at(kGlobalHash);
 
-        for (const auto& entry : extendedFuncs)
+        for (const auto& cEntry : extendedFuncs)
         {
-            if (entry.second->shortName.hash == acShortNameHash)
-                results.emplace(entry.first, entry.second);
+            if (cEntry.second->shortName.hash == acShortNameHash)
+                results.emplace(cEntry.first, cEntry.second);
         }
     }
 
@@ -243,10 +243,10 @@ std::map<uint64_t, RED4ext::CBaseFunction*> RTTIHelper::FindFunctions(RED4ext::C
             {
                 auto& extendedFuncs = m_extendedFunctions.at(apClass->name.hash);
 
-                for (const auto& entry : extendedFuncs)
+                for (const auto& cEntry : extendedFuncs)
                 {
-                    if (entry.second->shortName.hash == acShortNameHash)
-                        results.emplace(entry.first, entry.second);
+                    if (cEntry.second->shortName.hash == acShortNameHash)
+                        results.emplace(cEntry.first, cEntry.second);
                 }
             }
         }
@@ -435,34 +435,34 @@ sol::function RTTIHelper::MakeInvokableOverload(std::map<uint64_t, RED4ext::CBas
     });
 }
 
-RED4ext::ScriptInstance RTTIHelper::ResolveHandle(RED4ext::CBaseFunction* apFunc, sol::variadic_args& aArgs, uint32_t& argOffset) const
+RED4ext::ScriptInstance RTTIHelper::ResolveHandle(RED4ext::CBaseFunction* apFunc, sol::variadic_args& aArgs, uint32_t& aArgOffset) const
 {
     // Case 1: obj:Member() -- Skip the first arg and pass it as a handle
     // Case 2: obj:Static() -- Pass args as is, including the implicit self
     // Case 3: Type.Static() -- Pass args as is
     // Case 4: Type.Member() -- Skip the first arg and pass it as a handle
-    // Case 5: Singleton("Type"):Static() -- Skip the first arg as it's a dummy
-    // Case 6: Singleton("Type"):Member() -- Skip the first arg as it's a dummy
+    // Case 5: GetSingleton("Type"):Static() -- Skip the first arg as it's a dummy
+    // Case 6: GetSingleton("Type"):Member() -- Skip the first arg as it's a dummy
 
     RED4ext::ScriptInstance pHandle = nullptr;
 
     if (apFunc->flags.isStatic)
     {
-        if (aArgs.size() > argOffset && aArgs[argOffset].is<SingletonReference>())
-            ++argOffset;
+        if (aArgs.size() > aArgOffset && aArgs[aArgOffset].is<SingletonReference>())
+            ++aArgOffset;
     }
     else
     {
-        if (aArgs.size() > argOffset)
+        if (aArgs.size() > aArgOffset)
         {
-            const auto& cArg = aArgs[argOffset];
+            const auto& cArg = aArgs[aArgOffset];
 
             if (cArg.is<Type>())
             {
                 pHandle = cArg.as<Type>().GetHandle();
 
                 if (pHandle || cArg.is<SingletonReference>())
-                    ++argOffset;
+                    ++aArgOffset;
             }
         }
     }

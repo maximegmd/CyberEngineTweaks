@@ -15,7 +15,7 @@ struct RTTIHelper
     sol::function ResolveFunction(const std::string& acFuncName);
     sol::function ResolveFunction(RED4ext::CClass* apClass, const std::string& acFuncName, bool aIsMember);
     
-    RED4ext::ScriptInstance ResolveHandle(RED4ext::CBaseFunction* apFunc, sol::variadic_args& aArgs, uint32_t& argOffset) const;
+    RED4ext::ScriptInstance ResolveHandle(RED4ext::CBaseFunction* apFunc, sol::variadic_args& aArgs, uint32_t& aArgOffset) const;
     sol::variadic_results ExecuteFunction(RED4ext::CBaseFunction* apFunc, RED4ext::ScriptInstance apHandle,
                                           sol::variadic_args aLuaArgs, uint32_t aLuaArgOffset,
                                           bool aExactNumArgs, std::string& aErrorMessage) const;
@@ -27,13 +27,13 @@ struct RTTIHelper
     sol::object GetProperty(RED4ext::CClass* apClass, RED4ext::ScriptInstance apHandle, const std::string& acPropName, bool& aSuccess) const;
     void SetProperty(RED4ext::CClass* apClass, RED4ext::ScriptInstance apHandle, const std::string& acPropName, sol::object aPropValue, bool& aSuccess) const;
 
-    static void Initialize(const LockableState& aLua);
+    static void Initialize(const LockableState& acLua);
     static void Shutdown();
     static RTTIHelper& Get();
 
 private:
 
-    RTTIHelper(const LockableState& aLua);
+    RTTIHelper(const LockableState& acLua);
 
     void InitializeRTTI();
     void ParseGlobalStatics();

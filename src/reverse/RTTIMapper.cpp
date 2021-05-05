@@ -9,8 +9,8 @@
 #include "scripting/Scripting.h"
 #include "Utils.h"
 
-RTTIMapper::RTTIMapper(const LockableState& aLua, const std::string& acGlobal)
-    : m_lua(aLua)
+RTTIMapper::RTTIMapper(const LockableState& acLua, const std::string& acGlobal)
+    : m_lua(acLua)
     , m_global(acGlobal)
 {
 }
@@ -57,13 +57,13 @@ void RTTIMapper::RegisterSimpleTypes(sol::state& aLuaState, sol::table& aLuaGlob
         return sol::object(luaState, sol::in_place, Variant(pType, pHandle));
     };
 
-    aLuaGlobal["FromVariant"] = [this](const Variant& aVariant) -> sol::object {
-        if (aVariant.type == 0 || aVariant.unknown != 0)
+    aLuaGlobal["FromVariant"] = [this](const Variant& acVariant) -> sol::object {
+        if (acVariant.type == 0 || acVariant.unknown != 0)
             return sol::nil;
 
         RED4ext::CStackType result;
-        result.type = reinterpret_cast<RED4ext::IRTTIType*>(aVariant.type);
-        result.value = reinterpret_cast<RED4ext::ScriptInstance>(aVariant.value);
+        result.type = reinterpret_cast<RED4ext::IRTTIType*>(acVariant.type);
+        result.value = reinterpret_cast<RED4ext::ScriptInstance>(acVariant.value);
 
         auto lockedState = m_lua.Lock();
         

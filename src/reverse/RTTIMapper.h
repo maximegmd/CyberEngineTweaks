@@ -6,7 +6,7 @@ struct RTTIMapper
 {
     using LockableState = TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref;
 
-    RTTIMapper(const LockableState& aLua, const std::string& acGlobal);
+    RTTIMapper(const LockableState& acLua, const std::string& acGlobal);
     ~RTTIMapper();
 
     void Register();
