@@ -861,7 +861,20 @@ void RTTIHelper::FreeInstance(RED4ext::IRTTIType* apType, void* apValue, bool aO
     }
     case RED4ext::ERTTIType::Array:
     {
-        apType->Destroy(apValue);
+        // Free array recursively
+        auto* pArrayType = reinterpret_cast<RED4ext::CArray*>(apType);
+        auto* pInnerType = pArrayType->GetInnerType();
+
+        if (pInnerType->GetType() == RED4ext::ERTTIType::Handle ||
+            pInnerType->GetType() == RED4ext::ERTTIType::WeakHandle ||
+            pInnerType->GetType() == RED4ext::ERTTIType::Array)
+        {
+            const auto cLength = pArrayType->GetLength(apValue);
+            for (auto i = 0u; i < cLength; ++i)
+                FreeInstance(pInnerType, pArrayType->GetElement(apValue, i), aOwn, aNew, apAllocator);
+        }
+
+        pArrayType->Destroy(apValue);
         break;
     }
     }
