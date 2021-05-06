@@ -8,6 +8,7 @@
 
 static constexpr const char* s_cGlobalObjectsWhitelist[] =
 {
+    "_VERSION",
     "assert",
     "error",
     "getmetatable", //< Used to extend string class
@@ -20,6 +21,7 @@ static constexpr const char* s_cGlobalObjectsWhitelist[] =
     // Required for implementing classes
     "rawequal",
     "rawget",
+    "rawlen",
     "rawset",
 
     "select",
@@ -28,41 +30,9 @@ static constexpr const char* s_cGlobalObjectsWhitelist[] =
     "tostring",
     "type",
     "unpack",
-    "_VERSION",
     "xpcall",
 
-    // CET specific
-    "NewObject",
-    "DumpReflection",
-    "DumpVtables",
-    "GetVersion",
-    "DumpAllTypeNames",
-    "GetDisplayResolution",
-    "Dump",
-    "ToVector3",
-    "Vector4",
-    "Game",
-    "DumpType",
-    "Enum",
-    "ToEulerAngles",
-    "GameOptions",
-    "GameDump",
-    "GetSingleton",
-    "ItemID",
-    "ToItemID",
-    "TweakDBID",
-    "ToCName",
-    "CName",
-    "Vector3",
-    "Quaternion",
-    "EulerAngles",
-    "ToVector4",
-    "ToQuaternion",
-    "ToTweakDBID",
-    "GetMod",
-    "TweakDB",
-    "Override",
-    "Observe"
+    //"collectgarbage", //< Good for testing memory leaks and ref counters: `collectgarbage("collect")`
 };
 
 static constexpr const char* s_cGlobalTablesWhitelist[] =
@@ -75,6 +45,8 @@ static constexpr const char* s_cGlobalTablesWhitelist[] =
 
 static constexpr const char* s_cGlobalImmutablesList[] =
 {
+    "__Game",
+    "__Type",
     "ClassReference",
     "CName",
     "Descriptor",
@@ -156,11 +128,17 @@ void LuaSandbox::Initialize()
         m_env["os"] = osCopy;
     }
 
+    CreateSandbox();
+}
+
+void LuaSandbox::PostInitialize()
+{
+    auto lock = m_pScripting->GetState();
+    auto& luaView = lock.Get();
+
     // make shared things immutable
     for (const auto* cKey : s_cGlobalImmutablesList)
-        MakeSolObjectImmutable(cGlobals[cKey], luaView);
-
-    CreateSandbox();
+        MakeSolUsertypeImmutable(luaView[cKey], luaView);
 }
 
 void LuaSandbox::ResetState()
@@ -172,6 +150,10 @@ void LuaSandbox::ResetState()
 
     if (m_sandboxes.size() > 1) // first one is always present, meant for console
         m_sandboxes.erase(m_sandboxes.cbegin()+1, m_sandboxes.cend());
+
+    auto lock = m_pScripting->GetState();
+    auto& luaView = lock.Get();
+    luaView.collect_garbage();
 }
 
 size_t LuaSandbox::CreateSandbox(const std::filesystem::path& acPath, const std::string& acName, bool aEnableExtraLibs, bool aEnableDB, bool aEnableIO, bool aEnableLogger)

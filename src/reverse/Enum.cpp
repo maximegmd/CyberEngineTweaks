@@ -115,6 +115,9 @@ void Enum::Set(RED4ext::CStackType& acStackType) const noexcept
 
 std::string Enum::GetValueName() const
 {
+    if (!m_cpType)
+        return "";
+    
     for (auto i = 0; i < m_cpType->valueList.size; ++i)
     {
         if (m_cpType->valueList[i] == m_value)
@@ -129,6 +132,9 @@ std::string Enum::GetValueName() const
 
 void Enum::SetValueByName(const std::string& acValue)
 {
+    if (!m_cpType)
+        return;
+    
     const RED4ext::CName cValueName(acValue.c_str());
 
     for (auto i = 0; i < m_cpType->hashList.size; ++i)

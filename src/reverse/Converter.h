@@ -4,6 +4,7 @@
 #include "Enum.h"
 #include "ClassReference.h"
 #include "LuaRED.h"
+#include "RTTIHelper.h"
 
 namespace TiltedPhoques {
     struct Allocator;
@@ -23,7 +24,7 @@ struct CNameConverter : LuaRED<CName, "CName">
     RED4ext::CStackType ToRED(sol::object aObject, RED4ext::IRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator)
     {
         RED4ext::CStackType result;
-        if (aObject.get_type() == sol::type::string && aObject != sol::nil) // CName from String implicit cast
+        if (aObject != sol::nil && aObject.get_type() == sol::type::string) // CName from String implicit cast
         {
             sol::state_view v(aObject.lua_state());
             std::string str = v["tostring"](aObject);
@@ -40,7 +41,7 @@ struct CNameConverter : LuaRED<CName, "CName">
 
 	void ToRED(sol::object aObject, RED4ext::CStackType* apType)
     {
-        if (aObject.get_type() == sol::type::string && aObject != sol::nil) // CName from String implicit cast
+        if (aObject != sol::nil && aObject.get_type() == sol::type::string) // CName from String implicit cast
         {
             sol::state_view v(aObject.lua_state());
             std::string str = v["tostring"](aObject);
@@ -59,7 +60,7 @@ struct TweakDBIDConverter : LuaRED<TweakDBID, "TweakDBID">
     RED4ext::CStackType ToRED(sol::object aObject, RED4ext::IRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator)
     {
         RED4ext::CStackType result;
-        if (aObject.get_type() == sol::type::string)
+        if (aObject != sol::nil && aObject.get_type() == sol::type::string)
         {
             result.type = apRtti;
             result.value = apAllocator->New<TweakDBID>(aObject.as<std::string>());
@@ -74,7 +75,7 @@ struct TweakDBIDConverter : LuaRED<TweakDBID, "TweakDBID">
 
 	void ToRED(sol::object aObject, RED4ext::CStackType* apType)
     {
-        if (aObject.get_type() == sol::type::string)
+        if (aObject != sol::nil && aObject.get_type() == sol::type::string)
         {
             *(TweakDBID*)apType->value = TweakDBID(aObject.as<std::string>());
         }
@@ -109,25 +110,25 @@ struct EnumConverter : LuaRED<Enum, "Enum">
                 result.value = nullptr;
             }
         }
+        else if (aObject == sol::nil)
+        {
+            auto* enumType = static_cast<RED4ext::CEnum*>(apRtti);
+            Enum en(enumType, 0);
+            en.Set(result, apAllocator);
+        }
         else if (aObject.get_type() == sol::type::number) // Enum from number cast
         {
             auto* enumType = static_cast<RED4ext::CEnum*>(apRtti);
-            if (aObject != sol::nil)
-            {
-                Enum en(enumType, aObject.as<uint32_t>());
-                en.Set(result, apAllocator);
-            }
+            Enum en(enumType, aObject.as<uint32_t>());
+            en.Set(result, apAllocator);
         }
         else if (aObject.get_type() == sol::type::string) // Enum from string cast
         {
             auto* enumType = static_cast<RED4ext::CEnum*>(apRtti);
-            if (aObject != sol::nil)
-            {
-                sol::state_view v(aObject.lua_state());
-                std::string str = v["tostring"](aObject);
-                Enum en(enumType, str);
-                en.Set(result, apAllocator);
-            }
+            sol::state_view v(aObject.lua_state());
+            std::string str = v["tostring"](aObject);
+            Enum en(enumType, str);
+            en.Set(result, apAllocator);
         }
         else
         {
@@ -149,25 +150,25 @@ struct EnumConverter : LuaRED<Enum, "Enum">
                 pEnum->Set(*apType);
             }
         }
+        else if (aObject == sol::nil)
+        {
+            auto* enumType = static_cast<RED4ext::CEnum*>(apType->type);
+            Enum en(enumType, 0);
+            en.Set(*apType);
+        }
         else if (aObject.get_type() == sol::type::number) // Enum from number cast
         {
             auto* enumType = static_cast<RED4ext::CEnum*>(apType->type);
-            if (aObject != sol::nil)
-            {
-                Enum en(enumType, aObject.as<uint32_t>());
-                en.Set(*apType);
-            }
+            Enum en(enumType, aObject.as<uint32_t>());
+            en.Set(*apType);
         }
         else if (aObject.get_type() == sol::type::string) // Enum from string cast
         {
             auto* enumType = static_cast<RED4ext::CEnum*>(apType->type);
-            if (aObject != sol::nil)
-            {
-                sol::state_view v(aObject.lua_state());
-                std::string str = v["tostring"](aObject);
-                Enum en(enumType, str);
-                en.Set(*apType);
-            }
+            sol::state_view v(aObject.lua_state());
+            std::string str = v["tostring"](aObject);
+            Enum en(enumType, str);
+            en.Set(*apType);
         }
     }
 
@@ -206,15 +207,22 @@ struct ClassConverter : LuaRED<ClassReference, "ClassReference">
         }
         else if (aObject == sol::nil)
         {
-            RED4ext::CClass* pClass = static_cast<RED4ext::CClass*>(apRtti);
-            if (pClass && !pClass->flags.isAbstract)
-            {
-                result.value = pClass->AllocInstance();
-            }
+            result.value = RTTIHelper::Get().NewInstance(apRtti, sol::nullopt, apAllocator);
+        }
+        else if (aObject.get_type() == sol::type::table)
+        {
+            // The implicit table to instance conversion `Game.FindEntityByID({ hash = 1 })` has potential issue:
+            // When the overloaded function takes an array and an object for the same arg the implicit conversion
+            // can produce an empty instance making the unwanted overload callable. So for better experience it's 
+            // important to distinguish between linear array and array of props.
+            
+            // Size check excludes non-empty linear arrays since only the table with sequential and integral keys
+            // has size (length). And iterator check excludes empty tables `{}`.
+            sol::table props = aObject.as<sol::table>();
+            if (props.size() == 0 && props.begin() != props.end())
+                result.value = RTTIHelper::Get().NewInstance(apRtti, props, apAllocator);
             else
-            {
                 result.value = nullptr;
-            }
         }
         else
         {

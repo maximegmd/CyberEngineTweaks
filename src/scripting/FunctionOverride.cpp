@@ -54,13 +54,11 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
             {
                 auto logger = call->Environment["__logger"].get<std::shared_ptr<spdlog::logger>>();
                 logger->error(result.get<sol::error>().what());
-
-                continue;
             }
 
             if (!call->Forward)
             {
-                if (ret.value && ret.type)
+                if (result.valid() && ret.value && ret.type)
                     Scripting::ToRED(result.get<sol::object>(), &ret);
 
                 return true;
@@ -226,10 +224,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
             {
                 auto logger = call->Environment["__logger"].get<std::shared_ptr<spdlog::logger>>();
                 logger->error(result.get<sol::error>().what());
-
-                continue;
             }
-
 
             if (!call->Forward)
             {
@@ -239,7 +234,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
                     redResult.type = apFunction->returnType->type;
                     redResult.value = apOut;
 
-                    if (apOut)
+                    if (result.valid() && apOut)
                         Scripting::ToRED(result.get<sol::object>(), &redResult);
                 }
 

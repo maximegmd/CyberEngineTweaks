@@ -1,8 +1,9 @@
 #pragma once
 
 #include "common/Meta.h"
+#include "Utils.h"
 
-template<class T, FixedString REDName, bool CheckObjectType = !std::is_arithmetic_v<T>>
+template<class T, FixedString REDName>
 struct LuaRED
 {
     static constexpr char const* Name = REDName;
@@ -30,9 +31,15 @@ struct LuaRED
         {
             result.value = apAllocator->New<T>();
         }
-        else if (!CheckObjectType || aObject.is<T>())
+        else if constexpr (std::is_integral_v<T> && (sizeof(T) == sizeof(uint64_t)))
         {
-            if constexpr (std::is_integral_v<T> && (sizeof(T) == sizeof(uint64_t)))
+            if (aObject.get_type() == sol::type::number)
+            {
+                sol::state_view v(aObject.lua_state());
+                double value = v["tonumber"](aObject);
+                result.value = apAllocator->New<T>(value);
+            }
+            else if (IsLuaCData(aObject))
             {
                 sol::state_view v(aObject.lua_state());
                 std::string str = v["tostring"](aObject);
@@ -41,10 +48,28 @@ struct LuaRED
                 else
                     result.value = apAllocator->New<T>(std::stoull(str));
             }
-            else
+        }
+        else if constexpr (std::is_same_v<T, bool>)
+        {
+            if (aObject.get_type() == sol::type::boolean)
+                result.value = apAllocator->New<T>(aObject.as<T>());
+        }
+        else if constexpr (std::is_arithmetic_v<T>)
+        {
+            if (aObject.get_type() == sol::type::number)
             {
                 result.value = apAllocator->New<T>(aObject.as<T>());
             }
+            else if (IsLuaCData(aObject))
+            {
+                sol::state_view v(aObject.lua_state());
+                double value = v["tonumber"](aObject);
+                result.value = apAllocator->New<T>(value);
+            }
+        }
+        else if (aObject.is<T>())
+        {
+            result.value = apAllocator->New<T>(aObject.as<T>());
         }
 
         return result;
@@ -56,9 +81,15 @@ struct LuaRED
         {
             *reinterpret_cast<T*>(apType->value) = T{};
         }
-        else if (!CheckObjectType || aObject.is<T>())
+        else if constexpr (std::is_integral_v<T> && (sizeof(T) == sizeof(uint64_t)))
         {
-            if constexpr (std::is_integral_v<T> && (sizeof(T) == sizeof(uint64_t)))
+            if (aObject.get_type() == sol::type::number)
+            {
+                sol::state_view v(aObject.lua_state());
+                double value = v["tonumber"](aObject);
+                *reinterpret_cast<T*>(apType->value) = value;
+            }
+            else if (IsLuaCData(aObject))
             {
                 sol::state_view v(aObject.lua_state());
                 std::string str = v["tostring"](aObject);
@@ -67,10 +98,28 @@ struct LuaRED
                 else
                     *reinterpret_cast<T*>(apType->value) = std::stoull(str);
             }
-            else
+        }
+        else if constexpr (std::is_same_v<T, bool>)
+        {
+            if (aObject.get_type() == sol::type::boolean)
+                *reinterpret_cast<T*>(apType->value) = aObject.as<T>();
+        }
+        else if constexpr (std::is_arithmetic_v<T>)
+        {
+            if (aObject.get_type() == sol::type::number)
             {
                 *reinterpret_cast<T*>(apType->value) = aObject.as<T>();
             }
+            else if (IsLuaCData(aObject))
+            {
+                sol::state_view v(aObject.lua_state());
+                double value = v["tonumber"](aObject);
+                *reinterpret_cast<T*>(apType->value) = value;
+            }
+        }
+        else if (aObject.is<T>())
+        {
+            *reinterpret_cast<T*>(apType->value) = aObject.as<T>();
         }
     }
 

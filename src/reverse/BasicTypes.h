@@ -157,4 +157,21 @@ struct ItemID
 
 static_assert(sizeof(ItemID) == 0x10);
 
+struct Variant
+{
+    Variant() = default;
+
+    Variant(uint64_t aType, uint64_t aValue)
+        : type(aType), value(aValue), unknown(0) {}
+
+    Variant(RED4ext::IRTTIType* aType, RED4ext::ScriptInstance aValue)
+        : type(reinterpret_cast<std::uintptr_t>(aType)), value(reinterpret_cast<std::uintptr_t>(aValue)), unknown(0) {}
+
+    uint64_t type{ 0 };
+    uint64_t value{ 0 };
+    uint64_t unknown{ 0 };
+};
+
+static_assert(sizeof(Variant) == 0x18);
+
 #pragma pack(pop)
