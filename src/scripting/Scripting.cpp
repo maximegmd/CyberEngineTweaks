@@ -352,6 +352,7 @@ void Scripting::PostInitialize()
         "GetRecord", sol::overload(&TweakDB::GetRecordByName, &TweakDB::GetRecord),
         "Query", sol::overload(&TweakDB::QueryByName, &TweakDB::Query),
         "GetFlat", sol::overload(&TweakDB::GetFlatByName, &TweakDB::GetFlat),
+        "SetFlats", sol::overload(&TweakDB::SetFlatsByName, &TweakDB::SetFlats),
         "SetFlat", sol::overload(&TweakDB::SetFlatByNameAutoUpdate, &TweakDB::SetFlatAutoUpdate),
         "SetFlatNoUpdate", sol::overload(&TweakDB::SetFlatByName, &TweakDB::SetFlat),
         "Update", sol::overload(&TweakDB::UpdateRecordByName, &TweakDB::UpdateRecordByID, &TweakDB::UpdateRecord),
