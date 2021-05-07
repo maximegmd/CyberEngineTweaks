@@ -736,16 +736,24 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
 
                 if (hasData)
                 {
-                    auto* pArrayInnerType = pArrayType->GetInnerType();
-
-                    // Copy elements from the table into the array
                     auto tbl = aObject.as<sol::table>();
-                    pArrayType->Resize(pMemory, tbl.size());
-                    for (uint32_t i = 1; i <= tbl.size(); ++i)
+
+                    if (tbl.size() > 0)
                     {
-                        RED4ext::CStackType type = ToRED(tbl.get<sol::object>(i), pArrayInnerType, apAllocator);
-                        const auto pElement = pArrayType->GetElement(pMemory, i - 1);
-                        pArrayInnerType->Assign(pElement, type.value);
+                        auto* pArrayInnerType = pArrayType->GetInnerType();
+                        const auto shouldDestroy = pArrayInnerType->GetType() != RED4ext::ERTTIType::Class;
+
+                        // Copy elements from the table into the array
+                        pArrayType->Resize(pMemory, tbl.size());
+                        for (uint32_t i = 1; i <= tbl.size(); ++i)
+                        {
+                            RED4ext::CStackType type = ToRED(tbl.get<sol::object>(i), pArrayInnerType, apAllocator);
+                            const auto pElement = pArrayType->GetElement(pMemory, i - 1);
+                            pArrayInnerType->Assign(pElement, type.value);
+
+                            if (shouldDestroy)
+                                pArrayInnerType->Destroy(type.value);
+                        }
                     }
                 }
 

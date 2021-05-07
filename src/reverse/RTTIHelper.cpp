@@ -821,62 +821,32 @@ void RTTIHelper::FreeInstance(RED4ext::IRTTIType* apType, void* apValue, bool aO
     if (!apValue)
         return;
 
-    if (!aOwn)
+    if (aOwn)
+    {
+        if (apType->GetType() == RED4ext::ERTTIType::Class)
+        {
+            // Free instances created with AllocInstance()
+            if (aNew)
+            {
+                auto* pClass = reinterpret_cast<RED4ext::CClass*>(apType);
+
+                // Skip basic types
+                if (IsClassReferenceType(pClass))
+                {
+                    pClass->DestroyCls(reinterpret_cast<RED4ext::IScriptable*>(apValue));
+                    pClass->GetAllocator()->Free(apValue);
+                }
+            }
+        }
+        else
+        {
+            apType->Destroy(apValue);
+        }
+    }
+    else
     {
         if (aNew || apType->GetType() != RED4ext::ERTTIType::Class)
             apType->Destroy(apValue);
-
-        return;
-    }
-
-    switch (apType->GetType())
-    {
-    case RED4ext::ERTTIType::Class:
-    {
-        // Free instances created with AllocInstance()
-        if (aNew)
-        {
-            auto* pClass = reinterpret_cast<RED4ext::CClass*>(apType);
-
-            // Skip basic types
-            if (IsClassReferenceType(pClass))
-            {
-                pClass->DestroyCls(reinterpret_cast<RED4ext::IScriptable*>(apValue));
-                pClass->GetAllocator()->Free(apValue);
-            }
-        }
-        break;
-    }
-    case RED4ext::ERTTIType::Handle:
-    {
-        // Control the ref count
-        apAllocator->Delete(reinterpret_cast<RED4ext::Handle<RED4ext::IScriptable>*>(apValue));
-        break;
-    }
-    case RED4ext::ERTTIType::WeakHandle:
-    {
-        // Control the ref count
-        apAllocator->Delete(reinterpret_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(apValue));
-        break;
-    }
-    case RED4ext::ERTTIType::Array:
-    {
-        // Free array recursively
-        auto* pArrayType = reinterpret_cast<RED4ext::CArray*>(apType);
-        auto* pInnerType = pArrayType->GetInnerType();
-
-        if (pInnerType->GetType() == RED4ext::ERTTIType::Handle ||
-            pInnerType->GetType() == RED4ext::ERTTIType::WeakHandle ||
-            pInnerType->GetType() == RED4ext::ERTTIType::Array)
-        {
-            const auto cLength = pArrayType->GetLength(apValue);
-            for (auto i = 0u; i < cLength; ++i)
-                FreeInstance(pInnerType, pArrayType->GetElement(apValue, i), aOwn, aNew, apAllocator);
-        }
-
-        pArrayType->Destroy(apValue);
-        break;
-    }
     }
 
     // Right now it's a workaround that doesn't cover all cases but most.
