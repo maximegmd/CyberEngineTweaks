@@ -731,7 +731,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
             if (!hasData || aObject.get_type() == sol::type::table)
             {
                 auto* pArrayType = static_cast<RED4ext::CArray*>(apRttiType);
-                const auto pMemory = static_cast<RED4ext::DynArray<void*>*>(apAllocator->Allocate(apRttiType->GetSize()));
+                auto pMemory = static_cast<RED4ext::DynArray<void*>*>(apAllocator->Allocate(apRttiType->GetSize()));
                 apRttiType->Init(pMemory);
 
                 if (hasData)
@@ -748,6 +748,15 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
                         for (uint32_t i = 1; i <= tbl.size(); ++i)
                         {
                             RED4ext::CStackType type = ToRED(tbl.get<sol::object>(i), pArrayInnerType, apAllocator);
+
+                            // Break on first incompatible element
+                            if (!type.value)
+                            {
+                                pArrayType->Destroy(pMemory);
+                                pMemory = nullptr;
+                                break;
+                            }
+
                             const auto pElement = pArrayType->GetElement(pMemory, i - 1);
                             pArrayInnerType->Assign(pElement, type.value);
 
