@@ -728,26 +728,46 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
         }
         else if (apRttiType->GetType() == RED4ext::ERTTIType::Array)
         {
-            auto* pArrayType = static_cast<RED4ext::CArray*>(apRttiType);
-            const auto pMemory = static_cast<RED4ext::DynArray<void*>*>(apAllocator->Allocate(apRttiType->GetSize()));
-            apRttiType->Init(pMemory);
-
-            if (hasData && aObject.is<sol::table>())
+            if (!hasData || aObject.get_type() == sol::type::table)
             {
-                auto* pArrayInnerType = pArrayType->GetInnerType();
+                auto* pArrayType = static_cast<RED4ext::CArray*>(apRttiType);
+                auto pMemory = static_cast<RED4ext::DynArray<void*>*>(apAllocator->Allocate(apRttiType->GetSize()));
+                apRttiType->Init(pMemory);
 
-                // Copy elements from the table into the array
-                auto tbl = aObject.as<sol::table>();
-                pArrayType->Resize(pMemory, tbl.size());
-                for (uint32_t i = 1; i <= tbl.size(); ++i)
+                if (hasData)
                 {
-                    RED4ext::CStackType type = ToRED(tbl.get<sol::object>(i), pArrayInnerType, apAllocator);
-                    const auto pElement = pArrayType->GetElement(pMemory, i - 1);
-                    pArrayInnerType->Assign(pElement, type.value);
-                }
-            }
+                    auto tbl = aObject.as<sol::table>();
 
-            result.value = pMemory;
+                    if (tbl.size() > 0)
+                    {
+                        auto* pArrayInnerType = pArrayType->GetInnerType();
+                        const auto shouldDestroy = pArrayInnerType->GetType() != RED4ext::ERTTIType::Class;
+
+                        // Copy elements from the table into the array
+                        pArrayType->Resize(pMemory, tbl.size());
+                        for (uint32_t i = 1; i <= tbl.size(); ++i)
+                        {
+                            RED4ext::CStackType type = ToRED(tbl.get<sol::object>(i), pArrayInnerType, apAllocator);
+
+                            // Break on first incompatible element
+                            if (!type.value)
+                            {
+                                pArrayType->Destroy(pMemory);
+                                pMemory = nullptr;
+                                break;
+                            }
+
+                            const auto pElement = pArrayType->GetElement(pMemory, i - 1);
+                            pArrayInnerType->Assign(pElement, type.value);
+
+                            if (shouldDestroy)
+                                pArrayInnerType->Destroy(type.value);
+                        }
+                    }
+                }
+
+                result.value = pMemory;
+            }
         }
         else if (apRttiType->GetType() == RED4ext::ERTTIType::ScriptReference)
         {
