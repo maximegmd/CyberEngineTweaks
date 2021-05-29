@@ -20,6 +20,7 @@
 #include <reverse/TweakDB.h>
 #include <reverse/RTTILocator.h>
 #include <reverse/RTTIHelper.h>
+#include <reverse/RTTIExtender.h>
 
 #include "Utils.h"
 
@@ -443,6 +444,7 @@ void Scripting::PostInitialize()
     luaVm["Game"] = this;
     luaGlobal["Game"] = luaVm["Game"];
 
+    RTTIExtender::Initialize();
     m_mapper.Register();
     m_sandbox.PostInitialize();
 }
