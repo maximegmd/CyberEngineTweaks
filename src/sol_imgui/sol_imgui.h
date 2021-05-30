@@ -1637,6 +1637,10 @@ namespace sol_ImGui
     inline bool BeginChildFrame(unsigned int id, float sizeX, float sizeY)                 { return ImGui::BeginChildFrame(id, { sizeX, sizeY }); }
     inline bool BeginChildFrame(unsigned int id, float sizeX, float sizeY, int flags)      { return ImGui::BeginChildFrame(id, { sizeX, sizeY }, static_cast<ImGuiWindowFlags>(flags)); }
     inline void EndChildFrame()                                                            { return ImGui::EndChildFrame(); }
+    inline ImGuiStyle& GetStyle()
+    {
+      return ImGui::GetStyle();
+    }
 
     // Text Utilities
     inline std::tuple<float, float> CalcTextSize(const std::string& text)                                                      { const auto vec2{ ImGui::CalcTextSize(text.c_str()) }; return std::make_tuple(vec2.x, vec2.y); }
@@ -1730,6 +1734,63 @@ namespace sol_ImGui
     inline void ImDrawListAddBezierQuadratic(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, int col, float thickness)                                                  { drawlist->AddBezierQuadratic({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, ImU32(col), thickness); }
     inline void ImDrawListAddBezierQuadratic(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, int col, float thickness, int num_segments)                                { drawlist->AddBezierQuadratic({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, ImU32(col), thickness, num_segments); }
 
+    inline void InitUserType(sol::state& lua)
+    {
+        lua.new_usertype<ImVec2>("ImVec2", sol::constructors<ImVec2(), ImVec2(float, float)>(),
+            "x"                              , &ImVec2::x,
+            "y"                              , &ImVec2::y
+        );
+
+        lua.new_usertype<ImVec4>("ImVec4", sol::constructors<ImVec4(), ImVec4(float, float, float, float)>(),
+            "x"                              , &ImVec4::x,
+            "y"                              , &ImVec4::y,
+            "z"                              , &ImVec4::z,
+            "w"                              , &ImVec4::w
+        );
+
+        lua.new_usertype<ImGuiStyle>("ImGuiStyle",
+            "Alpha"                          , &ImGuiStyle::Alpha,
+            "WindowPadding"                  , &ImGuiStyle::WindowPadding,
+            "WindowRounding"                 , &ImGuiStyle::WindowRounding,
+            "WindowBorderSize"               , &ImGuiStyle::WindowBorderSize,
+            "WindowMinSize"                  , &ImGuiStyle::WindowMinSize,
+            "WindowTitleAlign"               , &ImGuiStyle::WindowTitleAlign,
+            "WindowMenuButtonPosition"       , &ImGuiStyle::WindowMenuButtonPosition,
+            "ChildRounding"                  , &ImGuiStyle::ChildRounding,
+            "ChildBorderSize"                , &ImGuiStyle::ChildBorderSize,
+            "PopupRounding"                  , &ImGuiStyle::PopupRounding,
+            "PopupBorderSize"                , &ImGuiStyle::PopupBorderSize,
+            "FramePadding"                   , &ImGuiStyle::FramePadding,
+            "FrameRounding"                  , &ImGuiStyle::FrameRounding,
+            "FrameBorderSize"                , &ImGuiStyle::FrameBorderSize,
+            "ItemSpacing"                    , &ImGuiStyle::ItemSpacing,
+            "ItemInnerSpacing"               , &ImGuiStyle::ItemInnerSpacing,
+            "CellPadding"                    , &ImGuiStyle::CellPadding,
+            "TouchExtraPadding"              , &ImGuiStyle::TouchExtraPadding,
+            "IndentSpacing"                  , &ImGuiStyle::IndentSpacing,
+            "ColumnsMinSpacing"              , &ImGuiStyle::ColumnsMinSpacing,
+            "ScrollbarSize"                  , &ImGuiStyle::ScrollbarSize,
+            "ScrollbarRounding"              , &ImGuiStyle::ScrollbarRounding,
+            "GrabMinSize"                    , &ImGuiStyle::GrabMinSize,
+            "GrabRounding"                   , &ImGuiStyle::GrabRounding,
+            "LogSliderDeadzone"              , &ImGuiStyle::LogSliderDeadzone,
+            "TabRounding"                    , &ImGuiStyle::TabRounding,
+            "TabBorderSize"                  , &ImGuiStyle::TabBorderSize,
+            "TabMinWidthForCloseButton"      , &ImGuiStyle::TabMinWidthForCloseButton,
+            "ColorButtonPosition"            , &ImGuiStyle::ColorButtonPosition,
+            "ButtonTextAlign"                , &ImGuiStyle::ButtonTextAlign,
+            "SelectableTextAlign"            , &ImGuiStyle::SelectableTextAlign,
+            "DisplayWindowPadding"           , &ImGuiStyle::DisplayWindowPadding,
+            "DisplaySafeAreaPadding"         , &ImGuiStyle::DisplaySafeAreaPadding,
+            "MouseCursorScale"               , &ImGuiStyle::MouseCursorScale,
+            "AntiAliasedLines"               , &ImGuiStyle::AntiAliasedLines,
+            "AntiAliasedLinesUseTex"         , &ImGuiStyle::AntiAliasedLinesUseTex,
+            "AntiAliasedFill"                , &ImGuiStyle::AntiAliasedFill,
+            "CurveTessellationTol"           , &ImGuiStyle::CurveTessellationTol,
+            "CircleTessellationMaxError"     , &ImGuiStyle::CircleTessellationMaxError,
+            "ScaleAllSizes"                  , &ImGuiStyle::ScaleAllSizes
+        );
+    }
 
     inline void InitEnums(sol::state& lua)
     {
@@ -2156,7 +2217,7 @@ namespace sol_ImGui
             "RoundCornersRight"                 , ImDrawFlags_RoundCornersRight,
             "RoundCornersAll"                   , ImDrawFlags_RoundCornersAll
         );
-#pragma endregion Draw Flags 
+#pragma endregion Draw Flags
 
 #pragma region TabBar Flags
         lua.new_enum("ImGuiTabBarFlags",
@@ -2215,6 +2276,7 @@ namespace sol_ImGui
 
     inline void InitBindings(sol::state& lua)
     {
+        InitUserType(lua);
         InitEnums(lua);
 
         sol::table ImGui = lua.create_named_table("ImGui");
@@ -2941,6 +3003,7 @@ namespace sol_ImGui
                                                                 sol::resolve<bool(unsigned int, float, float, int)>(BeginChildFrame)
                                                             ));
         ImGui.set_function("EndChildFrame"          , EndChildFrame);
+        ImGui.set_function("GetStyle"               , GetStyle);
 #pragma endregion Miscellaneous Utilities
 
 #pragma region Text Utilities
