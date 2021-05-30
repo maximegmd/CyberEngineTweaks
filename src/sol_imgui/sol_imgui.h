@@ -1637,47 +1637,9 @@ namespace sol_ImGui
     inline bool BeginChildFrame(unsigned int id, float sizeX, float sizeY)                 { return ImGui::BeginChildFrame(id, { sizeX, sizeY }); }
     inline bool BeginChildFrame(unsigned int id, float sizeX, float sizeY, int flags)      { return ImGui::BeginChildFrame(id, { sizeX, sizeY }, static_cast<ImGuiWindowFlags>(flags)); }
     inline void EndChildFrame()                                                            { return ImGui::EndChildFrame(); }
-    inline sol::as_table_t<std::unordered_map<std::string, std::variant<int, float, std::vector<float>>>> GetStyle()
+    inline ImGuiStyle& GetStyle()
     {
-      ImGuiStyle& style = ImGui::GetStyle();
-      std::unordered_map<std::string, std::variant<int, float, std::vector<float>>> style_map;
-
-      style_map["Alpha"]                       =     style.Alpha;
-      style_map["WindowPadding"]               =     std::vector<float>{style.WindowPadding.x, style.WindowPadding.y};
-      style_map["WindowRounding"]              =     style.WindowRounding;
-      style_map["WindowBorderSize"]            =     style.WindowBorderSize;
-      style_map["WindowMinSize"]               =     std::vector<float>{style.WindowMinSize.x, style.WindowMinSize.y};
-      style_map["WindowTitleAlign"]            =     std::vector<float>{style.WindowTitleAlign.x, style.WindowTitleAlign.y};
-      style_map["WindowMenuButtonPosition"]    =     style.WindowMenuButtonPosition;
-      style_map["ChildRounding"]               =     style.ChildRounding;
-      style_map["ChildBorderSize"]             =     style.ChildBorderSize;
-      style_map["PopupRounding"]               =     style.PopupRounding;
-      style_map["PopupBorderSize"]             =     style.PopupBorderSize;
-      style_map["FramePadding"]                =     std::vector<float>{style.FramePadding.x, style.FramePadding.y};
-      style_map["FrameRounding"]               =     style.FrameRounding;
-      style_map["FrameBorderSize"]             =     style.FrameBorderSize;
-      style_map["ItemSpacing"]                 =     std::vector<float>{style.ItemSpacing.x, style.ItemSpacing.y};
-      style_map["ItemInnerSpacing"]            =     std::vector<float>{style.ItemInnerSpacing.x, style.ItemInnerSpacing.y};
-      style_map["CellPadding"]                 =     std::vector<float>{style.CellPadding.x, style.CellPadding.y};
-      style_map["TouchExtraPadding"]           =     std::vector<float>{style.TouchExtraPadding.x, style.TouchExtraPadding.y};
-      style_map["IndentSpacing"]               =     style.IndentSpacing;
-      style_map["ColumnsMinSpacing"]           =     style.ColumnsMinSpacing;
-      style_map["ScrollbarSize"]               =     style.ScrollbarSize;
-      style_map["ScrollbarRounding"]           =     style.ScrollbarRounding;
-      style_map["GrabMinSize"]                 =     style.GrabMinSize;
-      style_map["GrabRounding"]                =     style.GrabRounding;
-      style_map["LogSliderDeadzone"]           =     style.LogSliderDeadzone;
-      style_map["TabRounding"]                 =     style.TabRounding;
-      style_map["TabBorderSize"]               =     style.TabBorderSize;
-      style_map["TabMinWidthForCloseButton"]   =     style.TabMinWidthForCloseButton;
-      style_map["ColorButtonPosition"]         =     style.ColorButtonPosition;
-      style_map["ButtonTextAlign"]             =     std::vector<float>{style.ButtonTextAlign.x, style.ButtonTextAlign.y};
-      style_map["SelectableTextAlign"]         =     std::vector<float>{style.SelectableTextAlign.x, style.SelectableTextAlign.y};
-      style_map["DisplayWindowPadding"]        =     std::vector<float>{style.DisplayWindowPadding.x, style.DisplayWindowPadding.y};
-      style_map["DisplaySafeAreaPadding"]      =     std::vector<float>{style.DisplaySafeAreaPadding.x, style.DisplaySafeAreaPadding.y};
-
-      sol::as_table_t style_tabel = sol::as_table(style_map);
-      return style_tabel;
+      return ImGui::GetStyle();
     }
 
     // Text Utilities
@@ -1772,6 +1734,63 @@ namespace sol_ImGui
     inline void ImDrawListAddBezierQuadratic(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, int col, float thickness)                                                  { drawlist->AddBezierQuadratic({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, ImU32(col), thickness); }
     inline void ImDrawListAddBezierQuadratic(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, int col, float thickness, int num_segments)                                { drawlist->AddBezierQuadratic({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, ImU32(col), thickness, num_segments); }
 
+    inline void InitUserType(sol::state& lua)
+    {
+        lua.new_usertype<ImVec2>("ImVec2", sol::constructors<ImVec2(), ImVec2(float, float)>(),
+            "x"                              , &ImVec2::x,
+            "y"                              , &ImVec2::y
+        );
+
+        lua.new_usertype<ImVec4>("ImVec4", sol::constructors<ImVec4(), ImVec4(float, float, float, float)>(),
+            "x"                              , &ImVec4::x,
+            "y"                              , &ImVec4::y,
+            "z"                              , &ImVec4::z,
+            "w"                              , &ImVec4::w
+        );
+
+        lua.new_usertype<ImGuiStyle>("ImGuiStyle",
+            "Alpha"                          , &ImGuiStyle::Alpha,
+            "WindowPadding"                  , &ImGuiStyle::WindowPadding,
+            "WindowRounding"                 , &ImGuiStyle::WindowRounding,
+            "WindowBorderSize"               , &ImGuiStyle::WindowBorderSize,
+            "WindowMinSize"                  , &ImGuiStyle::WindowMinSize,
+            "WindowTitleAlign"               , &ImGuiStyle::WindowTitleAlign,
+            "WindowMenuButtonPosition"       , &ImGuiStyle::WindowMenuButtonPosition,
+            "ChildRounding"                  , &ImGuiStyle::ChildRounding,
+            "ChildBorderSize"                , &ImGuiStyle::ChildBorderSize,
+            "PopupRounding"                  , &ImGuiStyle::PopupRounding,
+            "PopupBorderSize"                , &ImGuiStyle::PopupBorderSize,
+            "FramePadding"                   , &ImGuiStyle::FramePadding,
+            "FrameRounding"                  , &ImGuiStyle::FrameRounding,
+            "FrameBorderSize"                , &ImGuiStyle::FrameBorderSize,
+            "ItemSpacing"                    , &ImGuiStyle::ItemSpacing,
+            "ItemInnerSpacing"               , &ImGuiStyle::ItemInnerSpacing,
+            "CellPadding"                    , &ImGuiStyle::CellPadding,
+            "TouchExtraPadding"              , &ImGuiStyle::TouchExtraPadding,
+            "IndentSpacing"                  , &ImGuiStyle::IndentSpacing,
+            "ColumnsMinSpacing"              , &ImGuiStyle::ColumnsMinSpacing,
+            "ScrollbarSize"                  , &ImGuiStyle::ScrollbarSize,
+            "ScrollbarRounding"              , &ImGuiStyle::ScrollbarRounding,
+            "GrabMinSize"                    , &ImGuiStyle::GrabMinSize,
+            "GrabRounding"                   , &ImGuiStyle::GrabRounding,
+            "LogSliderDeadzone"              , &ImGuiStyle::LogSliderDeadzone,
+            "TabRounding"                    , &ImGuiStyle::TabRounding,
+            "TabBorderSize"                  , &ImGuiStyle::TabBorderSize,
+            "TabMinWidthForCloseButton"      , &ImGuiStyle::TabMinWidthForCloseButton,
+            "ColorButtonPosition"            , &ImGuiStyle::ColorButtonPosition,
+            "ButtonTextAlign"                , &ImGuiStyle::ButtonTextAlign,
+            "SelectableTextAlign"            , &ImGuiStyle::SelectableTextAlign,
+            "DisplayWindowPadding"           , &ImGuiStyle::DisplayWindowPadding,
+            "DisplaySafeAreaPadding"         , &ImGuiStyle::DisplaySafeAreaPadding,
+            "MouseCursorScale"               , &ImGuiStyle::MouseCursorScale,
+            "AntiAliasedLines"               , &ImGuiStyle::AntiAliasedLines,
+            "AntiAliasedLinesUseTex"         , &ImGuiStyle::AntiAliasedLinesUseTex,
+            "AntiAliasedFill"                , &ImGuiStyle::AntiAliasedFill,
+            "CurveTessellationTol"           , &ImGuiStyle::CurveTessellationTol,
+            "CircleTessellationMaxError"     , &ImGuiStyle::CircleTessellationMaxError,
+            "ScaleAllSizes"                  , &ImGuiStyle::ScaleAllSizes
+        );
+    }
 
     inline void InitEnums(sol::state& lua)
     {
@@ -2257,6 +2276,7 @@ namespace sol_ImGui
 
     inline void InitBindings(sol::state& lua)
     {
+        InitUserType(lua);
         InitEnums(lua);
 
         sol::table ImGui = lua.create_named_table("ImGui");
