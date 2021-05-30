@@ -2978,12 +2978,12 @@ namespace sol_ImGui
         ImGui.set_function("GetBackgroundDrawList"  , GetBackgroundDrawList);
         ImGui.set_function("GetForegroundDrawList"  , GetForegroundDrawList);
         ImGui.set_function("GetStyleColorName"      , GetStyleColorName);
-        ImGui.set_function("GetStyle"               , GetStyle);
         ImGui.set_function("BeginChildFrame"        , sol::overload(
                                                                 sol::resolve<bool(unsigned int, float, float)>(BeginChildFrame),
                                                                 sol::resolve<bool(unsigned int, float, float, int)>(BeginChildFrame)
                                                             ));
         ImGui.set_function("EndChildFrame"          , EndChildFrame);
+        ImGui.set_function("GetStyle"               , GetStyle);
 #pragma endregion Miscellaneous Utilities
 
 #pragma region Text Utilities
