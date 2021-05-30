@@ -1637,6 +1637,48 @@ namespace sol_ImGui
     inline bool BeginChildFrame(unsigned int id, float sizeX, float sizeY)                 { return ImGui::BeginChildFrame(id, { sizeX, sizeY }); }
     inline bool BeginChildFrame(unsigned int id, float sizeX, float sizeY, int flags)      { return ImGui::BeginChildFrame(id, { sizeX, sizeY }, static_cast<ImGuiWindowFlags>(flags)); }
     inline void EndChildFrame()                                                            { return ImGui::EndChildFrame(); }
+    inline sol::as_table_t<std::unordered_map<std::string, std::variant<int, float, std::vector<float>>>> GetStyle()
+    {
+      ImGuiStyle& style = ImGui::GetStyle();
+      std::unordered_map<std::string, std::variant<int, float, std::vector<float>>> style_map;
+
+      style_map["Alpha"]                       =     style.Alpha;
+      style_map["WindowPadding"]               =     std::vector<float>{style.WindowPadding.x, style.WindowPadding.y};
+      style_map["WindowRounding"]              =     style.WindowRounding;
+      style_map["WindowBorderSize"]            =     style.WindowBorderSize;
+      style_map["WindowMinSize"]               =     std::vector<float>{style.WindowMinSize.x, style.WindowMinSize.y};
+      style_map["WindowTitleAlign"]            =     std::vector<float>{style.WindowTitleAlign.x, style.WindowTitleAlign.y};
+      style_map["WindowMenuButtonPosition"]    =     style.WindowMenuButtonPosition;
+      style_map["ChildRounding"]               =     style.ChildRounding;
+      style_map["ChildBorderSize"]             =     style.ChildBorderSize;
+      style_map["PopupRounding"]               =     style.PopupRounding;
+      style_map["PopupBorderSize"]             =     style.PopupBorderSize;
+      style_map["FramePadding"]                =     std::vector<float>{style.FramePadding.x, style.FramePadding.y};
+      style_map["FrameRounding"]               =     style.FrameRounding;
+      style_map["FrameBorderSize"]             =     style.FrameBorderSize;
+      style_map["ItemSpacing"]                 =     std::vector<float>{style.ItemSpacing.x, style.ItemSpacing.y};
+      style_map["ItemInnerSpacing"]            =     std::vector<float>{style.ItemInnerSpacing.x, style.ItemInnerSpacing.y};
+      style_map["CellPadding"]                 =     std::vector<float>{style.CellPadding.x, style.CellPadding.y};
+      style_map["TouchExtraPadding"]           =     std::vector<float>{style.TouchExtraPadding.x, style.TouchExtraPadding.y};
+      style_map["IndentSpacing"]               =     style.IndentSpacing;
+      style_map["ColumnsMinSpacing"]           =     style.ColumnsMinSpacing;
+      style_map["ScrollbarSize"]               =     style.ScrollbarSize;
+      style_map["ScrollbarRounding"]           =     style.ScrollbarRounding;
+      style_map["GrabMinSize"]                 =     style.GrabMinSize;
+      style_map["GrabRounding"]                =     style.GrabRounding;
+      style_map["LogSliderDeadzone"]           =     style.LogSliderDeadzone;
+      style_map["TabRounding"]                 =     style.TabRounding;
+      style_map["TabBorderSize"]               =     style.TabBorderSize;
+      style_map["TabMinWidthForCloseButton"]   =     style.TabMinWidthForCloseButton;
+      style_map["ColorButtonPosition"]         =     style.ColorButtonPosition;
+      style_map["ButtonTextAlign"]             =     std::vector<float>{style.ButtonTextAlign.x, style.ButtonTextAlign.y};
+      style_map["SelectableTextAlign"]         =     std::vector<float>{style.SelectableTextAlign.x, style.SelectableTextAlign.y};
+      style_map["DisplayWindowPadding"]        =     std::vector<float>{style.DisplayWindowPadding.x, style.DisplayWindowPadding.y};
+      style_map["DisplaySafeAreaPadding"]      =     std::vector<float>{style.DisplaySafeAreaPadding.x, style.DisplaySafeAreaPadding.y};
+
+      sol::as_table_t style_tabel = sol::as_table(style_map);
+      return style_tabel;
+    }
 
     // Text Utilities
     inline std::tuple<float, float> CalcTextSize(const std::string& text)                                                      { const auto vec2{ ImGui::CalcTextSize(text.c_str()) }; return std::make_tuple(vec2.x, vec2.y); }
@@ -2156,7 +2198,7 @@ namespace sol_ImGui
             "RoundCornersRight"                 , ImDrawFlags_RoundCornersRight,
             "RoundCornersAll"                   , ImDrawFlags_RoundCornersAll
         );
-#pragma endregion Draw Flags 
+#pragma endregion Draw Flags
 
 #pragma region TabBar Flags
         lua.new_enum("ImGuiTabBarFlags",
@@ -2936,6 +2978,7 @@ namespace sol_ImGui
         ImGui.set_function("GetBackgroundDrawList"  , GetBackgroundDrawList);
         ImGui.set_function("GetForegroundDrawList"  , GetForegroundDrawList);
         ImGui.set_function("GetStyleColorName"      , GetStyleColorName);
+        ImGui.set_function("GetStyle"               , GetStyle);
         ImGui.set_function("BeginChildFrame"        , sol::overload(
                                                                 sol::resolve<bool(unsigned int, float, float)>(BeginChildFrame),
                                                                 sol::resolve<bool(unsigned int, float, float, int)>(BeginChildFrame)
