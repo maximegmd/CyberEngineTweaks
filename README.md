@@ -5,7 +5,7 @@
 * Bitcoin: bc1q0neujk5e8v8sc3934ajn8z8zav7hl6557fjj54
 * Bitcoin Cash: qps5ze9p8fxmu4rszyxwy3g0ctlmrhvc3uqq0fzsnl
 * Dogecoin: DMoReR33D87D6rYeUkyQb2BsEHJTqfBFva
-* Ethereum: 0x43D4071c06BC7b41634E677250Ba4108A2A424Aa
+* Ethereum: 0x7Cd23BE1C507Da85ABF0B05c7A3C03e6d3d0233B
 
 ## What's this?
 
