@@ -20,12 +20,13 @@ void Options::Load()
             PatchDisableVignette = config.value("disable_vignette", PatchDisableVignette);
             PatchDisableBoundaryTeleport = config.value("disable_boundary_teleport", PatchDisableBoundaryTeleport);
             PatchDisableWin7Vsync = config.value("disable_win7_vsync", PatchDisableWin7Vsync);
-            
+            PatchMinimapFlicker = config.value("minimap_flicker", PatchMinimapFlicker);
+
             RemoveDeadBindings = config.value("cetdev_remove_dead_bindings", RemoveDeadBindings);
             EnableImGuiAssertions = config.value("cetdev_enable_imgui_assertions", EnableImGuiAssertions);
             DumpGameOptions = config.value("dump_game_options", DumpGameOptions);
             PatchEnableDebug = config.value("enable_debug", PatchEnableDebug);
-            
+
             // font config
             FontPath = config.value("font_path", FontPath);
             FontGlyphRanges = config.value("font_glyph_ranges", FontGlyphRanges);
@@ -45,7 +46,7 @@ void Options::Load()
 void Options::Save()
 {
     nlohmann::json config;
-    
+
     config["remove_pedestrians"] = PatchRemovePedestrians;
     config["disable_async_compute"] = PatchAsyncCompute;
     config["disable_antialiasing"] = PatchAntialiasing;
@@ -55,6 +56,7 @@ void Options::Save()
     config["disable_vignette"] = PatchDisableVignette;
     config["disable_boundary_teleport"] = PatchDisableBoundaryTeleport;
     config["disable_win7_vsync"] = PatchDisableWin7Vsync;
+    config["minimap_flicker"] = PatchMinimapFlicker;
 
     config["cetdev_remove_dead_bindings"] = RemoveDeadBindings;
     config["cetdev_enable_imgui_assertions"] = EnableImGuiAssertions;
@@ -95,21 +97,21 @@ void Options::ResetToDefaults()
 Options::Options(Paths& aPaths)
     : m_paths(aPaths)
 {
-    const auto* exePathStr = aPaths.Executable().native().c_str(); 
+    const auto* exePathStr = aPaths.Executable().native().c_str();
     int verInfoSz = GetFileVersionInfoSize(exePathStr, nullptr);
-    if(verInfoSz) 
+    if(verInfoSz)
     {
         auto verInfo = std::make_unique<BYTE[]>(verInfoSz);
-        if(GetFileVersionInfo(exePathStr, 0, verInfoSz, verInfo.get())) 
+        if(GetFileVersionInfo(exePathStr, 0, verInfoSz, verInfo.get()))
         {
-            struct 
+            struct
             {
                 WORD Language;
                 WORD CodePage;
             } *pTranslations;
 
             UINT transBytes = 0;
-            if(VerQueryValue(verInfo.get(), _T("\\VarFileInfo\\Translation"), reinterpret_cast<void**>(&pTranslations), &transBytes)) 
+            if(VerQueryValue(verInfo.get(), _T("\\VarFileInfo\\Translation"), reinterpret_cast<void**>(&pTranslations), &transBytes))
             {
                 UINT dummy;
                 TCHAR* productName = nullptr;
@@ -117,8 +119,8 @@ Options::Options(Paths& aPaths)
                 for(UINT i = 0; i < (transBytes / sizeof(*pTranslations)); i++)
                 {
                     _stprintf(subBlock, _T("\\StringFileInfo\\%04x%04x\\ProductName"), pTranslations[i].Language, pTranslations[i].CodePage);
-                    if(VerQueryValue(verInfo.get(), subBlock, reinterpret_cast<void**>(&productName), &dummy)) 
-                        if (_tcscmp(productName, _T("Cyberpunk 2077")) == 0) 
+                    if(VerQueryValue(verInfo.get(), subBlock, reinterpret_cast<void**>(&productName), &dummy))
+                        if (_tcscmp(productName, _T("Cyberpunk 2077")) == 0)
                         {
                             ExeValid = true;
                             break;
@@ -154,7 +156,7 @@ Options::Options(Paths& aPaths)
             spdlog::error("Unsupported game version! Only {}.{:02d} is supported.", smajor, sminor);
             throw std::runtime_error("Unsupported version");
         }
-            
+
     }
     else
     {

@@ -32,6 +32,7 @@ private:
     bool m_patchDisableVignette{ false };
     bool m_patchDisableBoundaryTeleport{ false };
     bool m_patchDisableWin7Vsync{ false };
+    bool m_patchMinimapFlicker{ false };
     bool m_dumpGameOptions{ false };
     bool m_removeDeadBindings{ true };
     bool m_enableImGuiAssertions{ true };
