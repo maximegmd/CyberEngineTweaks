@@ -49,13 +49,13 @@ void Settings::Update()
         ResetToDefaults();
 
     ImGui::Spacing();
-    
+
     if (ImGui::BeginTabBar("##SETTINGS", ImGuiTabBarFlags_NoCloseWithMiddleMouseButton | ImGuiTabBarFlags_NoTooltip))
     {
         if (ImGui::BeginTabItem("Patches"))
         {
             if (ImGui::BeginChild("##SETTINGS_PATCHES"))
-            {                
+            {
                 m_patchesChanged = HelperWidgets::BoolWidget("AMD SMT Patch:", m_patchAmdSmt, m_options.PatchAmdSmt);
                 m_patchesChanged |= HelperWidgets::BoolWidget("Remove Pedestrians:", m_patchRemovePedestrians, m_options.PatchRemovePedestrians);
                 m_patchesChanged |= HelperWidgets::BoolWidget("Disable Async Compute:", m_patchAsyncCompute, m_options.PatchAsyncCompute);
@@ -65,11 +65,12 @@ void Settings::Update()
                 m_patchesChanged |= HelperWidgets::BoolWidget("Disable Vignette:", m_patchDisableVignette, m_options.PatchDisableVignette);
                 m_patchesChanged |= HelperWidgets::BoolWidget("Disable Boundary Teleport:", m_patchDisableBoundaryTeleport, m_options.PatchDisableBoundaryTeleport);
                 m_patchesChanged |= HelperWidgets::BoolWidget("Disable V-Sync (Windows 7 only):", m_patchDisableWin7Vsync, m_options.PatchDisableWin7Vsync);
+                m_patchesChanged |= HelperWidgets::BoolWidget("Fix Minimap Flicker:", m_patchMinimapFlicker, m_options.PatchMinimapFlicker);
             }
             ImGui::EndChild();
             ImGui::EndTabItem();
         }
-        
+
         if (ImGui::BeginTabItem("Dev"))
         {
             if (ImGui::BeginChild("##SETTINGS_DEV"))
@@ -93,7 +94,7 @@ void Settings::Update()
 void Settings::Load()
 {
     m_options.Load();
-    
+
     m_patchRemovePedestrians = m_options.PatchRemovePedestrians;
     m_patchAsyncCompute = m_options.PatchAsyncCompute;
     m_patchAntialiasing = m_options.PatchAntialiasing;
@@ -103,6 +104,7 @@ void Settings::Load()
     m_patchDisableVignette = m_options.PatchDisableVignette;
     m_patchDisableBoundaryTeleport = m_options.PatchDisableBoundaryTeleport;
     m_patchDisableWin7Vsync = m_options.PatchDisableWin7Vsync;
+    m_patchMinimapFlicker = m_options.PatchMinimapFlicker;
 
     m_removeDeadBindings = m_options.RemoveDeadBindings;
     m_enableImGuiAssertions = m_options.EnableImGuiAssertions;
@@ -121,6 +123,7 @@ void Settings::Save() const
     m_options.PatchDisableVignette = m_patchDisableVignette;
     m_options.PatchDisableBoundaryTeleport = m_patchDisableBoundaryTeleport;
     m_options.PatchDisableWin7Vsync = m_patchDisableWin7Vsync;
+    m_options.PatchMinimapFlicker = m_patchMinimapFlicker;
 
     m_options.RemoveDeadBindings = m_removeDeadBindings;
     m_options.EnableImGuiAssertions = m_enableImGuiAssertions;

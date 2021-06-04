@@ -24,6 +24,7 @@ struct Options
     bool PatchDisableVignette{ false };
     bool PatchDisableBoundaryTeleport{ false };
     bool PatchDisableWin7Vsync{ false };
+    bool PatchMinimapFlicker{ false };
     bool DumpGameOptions{ false };
     std::string FontPath;
     std::string FontGlyphRanges{""};
