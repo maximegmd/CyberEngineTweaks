@@ -85,6 +85,7 @@ void Options::ResetToDefaults()
     PatchDisableVignette = false;
     PatchDisableBoundaryTeleport = false;
     PatchDisableWin7Vsync = false;
+    PatchMinimapFlicker = false;
 
     RemoveDeadBindings = true;
     EnableImGuiAssertions = false;
