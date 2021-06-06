@@ -316,8 +316,15 @@ void FunctionOverride::Override(const std::string& acTypeName, const std::string
 
     if (!pClassType)
     {
-        spdlog::get("scripting")->error("Class type {} not found", acTypeName);
-        return;
+        auto* pNativeCName = pRtti->scriptToNative.Get(RED4ext::CName(acTypeName.c_str()));
+
+        if (!pNativeCName)
+        {
+            spdlog::get("scripting")->error("Class type {} not found", acTypeName);
+            return;
+        }
+
+        pClassType = pRtti->GetClass(*pNativeCName);
     }
 
     auto pContext = TiltedPhoques::MakeUnique<Context>();
