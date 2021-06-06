@@ -73,7 +73,6 @@ private:
 
     LockableState m_lua;
     RED4ext::CRTTISystem* m_pRtti;
-    RED4ext::CGameEngine* m_pEngine;
     RED4ext::CClass* m_pGameInstanceType;
     RED4ext::ScriptInstance m_pPlayerSystem;
     RedFunctionMap m_extendedFunctions;

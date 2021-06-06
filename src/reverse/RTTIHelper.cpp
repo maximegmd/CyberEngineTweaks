@@ -41,10 +41,10 @@ RTTIHelper::RTTIHelper(const LockableState& acLua)
 void RTTIHelper::InitializeRTTI()
 {
     m_pRtti = RED4ext::CRTTISystem::Get();
-    m_pEngine = RED4ext::CGameEngine::Get();
     m_pGameInstanceType = m_pRtti->GetClass(RED4ext::FNV1a("ScriptGameInstance"));
 
-    const auto cpGameInstance = m_pEngine->framework->gameInstance;
+    const auto cpEngine = RED4ext::CGameEngine::Get();
+    const auto cpGameInstance = cpEngine->framework->gameInstance;
     const auto cpPlayerSystemType = m_pRtti->GetType(RED4ext::FNV1a("cpPlayerSystem"));
     m_pPlayerSystem = reinterpret_cast<RED4ext::ScriptInstance>(cpGameInstance->GetInstance(cpPlayerSystemType));
 }
@@ -479,7 +479,12 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
                                                   sol::variadic_args aLuaArgs, uint32_t aLuaArgOffset,
                                                   bool aExactNumArgs, std::string& aErrorMessage) const
 {
-    if (!m_pRtti || !m_pEngine->framework)
+    if (!m_pRtti)
+        return {};
+
+    const auto* cpEngine = RED4ext::CGameEngine::Get();
+
+    if (!cpEngine || !cpEngine->framework)
         return {};
 
     // Optional params
@@ -533,7 +538,7 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
         if (cpParam->type == m_pGameInstanceType)
         {
             callArgs[i].type = m_pGameInstanceType;
-            callArgs[i].value = &m_pEngine->framework->gameInstance;
+            callArgs[i].value = &cpEngine->framework->gameInstance;
         }
         else if (cpParam->flags.isOut)
         {
@@ -649,7 +654,7 @@ RED4ext::ScriptInstance RTTIHelper::NewPlaceholder(RED4ext::IRTTIType* apType, T
 
 RED4ext::ScriptInstance RTTIHelper::NewInstance(RED4ext::IRTTIType* apType, sol::optional<sol::table> aProps, TiltedPhoques::Allocator* apAllocator) const
 {
-    if (!m_pRtti || !m_pEngine->framework)
+    if (!m_pRtti)
         return nullptr;
 
     RED4ext::CClass* pClass = nullptr;
@@ -688,7 +693,7 @@ RED4ext::ScriptInstance RTTIHelper::NewInstance(RED4ext::IRTTIType* apType, sol:
 
 sol::object RTTIHelper::NewInstance(RED4ext::IRTTIType* apType, sol::optional<sol::table> aProps) const
 {
-    if (!m_pRtti || !m_pEngine->framework)
+    if (!m_pRtti)
         return sol::nil;
 
     TiltedPhoques::StackAllocator<1 << 10> allocator;
@@ -715,7 +720,7 @@ sol::object RTTIHelper::NewHandle(RED4ext::IRTTIType* apType, sol::optional<sol:
     // The Handle<> wrapper prevents memory leaks that can occur in IRTTIType::Assign()
     // when called directly on an IScriptable instance.
 
-    if (!m_pRtti || !m_pEngine->framework)
+    if (!m_pRtti)
         return sol::nil;
 
     TiltedPhoques::StackAllocator<1 << 10> allocator;
@@ -754,7 +759,7 @@ sol::object RTTIHelper::GetProperty(RED4ext::CClass* apClass, RED4ext::ScriptIns
 {
     aSuccess = false;
 
-    if (!m_pRtti || !m_pEngine->framework)
+    if (!m_pRtti)
         return sol::nil;
 
     auto* pProp = apClass->GetProperty(acPropName.c_str());
@@ -773,7 +778,7 @@ void RTTIHelper::SetProperty(RED4ext::CClass* apClass, RED4ext::ScriptInstance a
 {
     aSuccess = false;
 
-    if (!m_pRtti || !m_pEngine->framework)
+    if (!m_pRtti)
         return;
 
     auto* pProp = apClass->GetProperty(acPropName.c_str());
