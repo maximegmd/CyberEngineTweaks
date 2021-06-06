@@ -61,6 +61,7 @@ private:
         kGlobalHash = 0,
         kStaticScope = 0,
         kMemberScope = 1,
+        kTrackedOverloadCalls = 256,
     };
 
     struct Overload

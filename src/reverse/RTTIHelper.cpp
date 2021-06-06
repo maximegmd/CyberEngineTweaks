@@ -398,6 +398,8 @@ sol::function RTTIHelper::MakeInvokableOverload(std::map<uint64_t, RED4ext::CBas
     return MakeSolFunction(luaState, [this, variants](sol::variadic_args aArgs, sol::this_environment aEnv) mutable -> sol::variadic_results {
         for (auto variant = variants.begin(); variant != variants.end(); variant++)
         {
+            variant->lastError.clear();
+
             uint32_t argOffset = 0;
             RED4ext::ScriptInstance pHandle = ResolveHandle(variant->func, aArgs, argOffset);
 
@@ -405,14 +407,17 @@ sol::function RTTIHelper::MakeInvokableOverload(std::map<uint64_t, RED4ext::CBas
 
             if (variant->lastError.empty())
             {
-                ++variant->totalCalls;
-
-                if (variant != variants.begin())
+                if (variant->totalCalls < kTrackedOverloadCalls)
                 {
-                    auto previous = variant - 1;
+                    ++variant->totalCalls;
 
-                    if (variant->totalCalls > previous->totalCalls)
-                        std::iter_swap(previous, variant);
+                    if (variant != variants.begin())
+                    {
+                        auto previous = variant - 1;
+
+                        if (variant->totalCalls > previous->totalCalls)
+                            std::iter_swap(previous, variant);
+                    }
                 }
 
                 return result;
