@@ -368,7 +368,7 @@ sol::function RTTIHelper::MakeInvokableFunction(RED4ext::CBaseFunction* apFunc)
     auto& luaState = lockedState.Get();
 
     return MakeSolFunction(luaState, [this, apFunc](sol::variadic_args aArgs, sol::this_environment aEnv) -> sol::variadic_results {
-        uint32_t argOffset = 0;
+        uint64_t argOffset = 0;
         RED4ext::ScriptInstance pHandle = ResolveHandle(apFunc, aArgs, argOffset);
 
         std::string error;
@@ -400,7 +400,7 @@ sol::function RTTIHelper::MakeInvokableOverload(std::map<uint64_t, RED4ext::CBas
         {
             variant->lastError.clear();
 
-            uint32_t argOffset = 0;
+            uint64_t argOffset = 0;
             RED4ext::ScriptInstance pHandle = ResolveHandle(variant->func, aArgs, argOffset);
 
             auto result = ExecuteFunction(variant->func, pHandle, aArgs, argOffset, true, variant->lastError);
@@ -440,25 +440,37 @@ sol::function RTTIHelper::MakeInvokableOverload(std::map<uint64_t, RED4ext::CBas
     });
 }
 
-RED4ext::ScriptInstance RTTIHelper::ResolveHandle(RED4ext::CBaseFunction* apFunc, sol::variadic_args& aArgs, uint32_t& aArgOffset) const
+RED4ext::ScriptInstance RTTIHelper::ResolveHandle(RED4ext::CBaseFunction* apFunc, sol::variadic_args& aArgs,
+                                                  uint64_t& aArgOffset) const
 {
     // Case 1: obj:Member() -- Skip the first arg and pass it as a handle
     // Case 2: obj:Static() -- Pass args as is, including the implicit self
-    // Case 3: Type.Static() -- Pass args as is
-    // Case 4: Type.Member() -- Skip the first arg and pass it as a handle
-    // Case 5: GetSingleton("Type"):Static() -- Skip the first arg as it's a dummy
-    // Case 6: GetSingleton("Type"):Member() -- Skip the first arg as it's a dummy
+    // Case 3: obj:Static(obj) -- Skip the first arg as it duplicates the second arg (for backward compatibility)
+    // Case 4: Type.Static() -- Pass args as is
+    // Case 5: Type.Member() -- Skip the first arg and pass it as a handle
+    // Case 6: GetSingleton("Type"):Static() -- Skip the first arg as it's a dummy
+    // Case 7: GetSingleton("Type"):Member() -- Skip the first arg as it's a dummy
 
     RED4ext::ScriptInstance pHandle = nullptr;
 
-    if (apFunc->flags.isStatic)
+    if (aArgs.size() > aArgOffset)
     {
-        if (aArgs.size() > aArgOffset && aArgs[aArgOffset].is<SingletonReference>())
-            ++aArgOffset;
-    }
-    else
-    {
-        if (aArgs.size() > aArgOffset)
+        if (apFunc->flags.isStatic)
+        {
+            if (aArgs[aArgOffset].is<SingletonReference>())
+            {
+                ++aArgOffset;
+            }
+            else if (aArgs[aArgOffset].is<ClassReference>() && aArgs.size() > aArgOffset + 1)
+            {
+                const auto& cFirst = aArgs[aArgOffset];
+                const auto& cSecond = aArgs[aArgOffset + 1];
+
+                if (cFirst.as<sol::object>() == cSecond.as<sol::object>())
+                    ++aArgOffset;
+            }
+        }
+        else
         {
             const auto& cArg = aArgs[aArgOffset];
 
@@ -476,7 +488,7 @@ RED4ext::ScriptInstance RTTIHelper::ResolveHandle(RED4ext::CBaseFunction* apFunc
 }
 
 sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc, RED4ext::ScriptInstance apHandle,
-                                                  sol::variadic_args aLuaArgs, uint32_t aLuaArgOffset,
+                                                  sol::variadic_args aLuaArgs, uint64_t aLuaArgOffset,
                                                   bool aExactNumArgs, std::string& aErrorMessage) const
 {
     if (!m_pRtti)
@@ -816,9 +828,9 @@ bool RTTIHelper::IsClassReferenceType(RED4ext::CClass* apClass) const
     static const auto s_cHashQuaternion = RED4ext::FNV1a("Quaternion");
     static const auto s_cHashItemID = RED4ext::FNV1a("gameItemID");
 
-    return apClass->name != s_cHashVector3 && apClass->name != s_cHashVector4 &&
-           apClass->name != s_cHashEulerAngles && apClass->name != s_cHashQuaternion &&
-           apClass->name != s_cHashItemID;
+    return apClass->name.hash != s_cHashVector3 && apClass->name.hash != s_cHashVector4 &&
+           apClass->name.hash != s_cHashEulerAngles && apClass->name.hash != s_cHashQuaternion &&
+           apClass->name.hash != s_cHashItemID;
 }
 
 void RTTIHelper::FreeInstance(RED4ext::CStackType& aStackType, bool aOwn, bool aNew, TiltedPhoques::Allocator* apAllocator) const

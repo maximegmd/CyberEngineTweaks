@@ -15,9 +15,9 @@ struct RTTIHelper
     sol::function ResolveFunction(const std::string& acFuncName);
     sol::function ResolveFunction(RED4ext::CClass* apClass, const std::string& acFuncName, bool aIsMember);
     
-    RED4ext::ScriptInstance ResolveHandle(RED4ext::CBaseFunction* apFunc, sol::variadic_args& aArgs, uint32_t& aArgOffset) const;
+    RED4ext::ScriptInstance ResolveHandle(RED4ext::CBaseFunction* apFunc, sol::variadic_args& aArgs, uint64_t& aArgOffset) const;
     sol::variadic_results ExecuteFunction(RED4ext::CBaseFunction* apFunc, RED4ext::ScriptInstance apHandle,
-                                          sol::variadic_args aLuaArgs, uint32_t aLuaArgOffset,
+                                          sol::variadic_args aLuaArgs, uint64_t aLuaArgOffset,
                                           bool aExactNumArgs, std::string& aErrorMessage) const;
     
     RED4ext::ScriptInstance NewInstance(RED4ext::IRTTIType* apType, sol::optional<sol::table> aProps, TiltedPhoques::Allocator* apAllocator) const;
