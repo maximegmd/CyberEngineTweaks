@@ -372,7 +372,7 @@ sol::function RTTIHelper::MakeInvokableFunction(RED4ext::CBaseFunction* apFunc)
         RED4ext::ScriptInstance pHandle = ResolveHandle(apFunc, aArgs, argOffset);
 
         std::string error;
-        auto result = ExecuteFunction(apFunc, pHandle, aArgs, argOffset, false, error);
+        auto result = ExecuteFunction(apFunc, pHandle, aArgs, argOffset, error);
 
         if (!error.empty())
         {
@@ -403,7 +403,7 @@ sol::function RTTIHelper::MakeInvokableOverload(std::map<uint64_t, RED4ext::CBas
             uint64_t argOffset = 0;
             RED4ext::ScriptInstance pHandle = ResolveHandle(variant->func, aArgs, argOffset);
 
-            auto result = ExecuteFunction(variant->func, pHandle, aArgs, argOffset, true, variant->lastError);
+            auto result = ExecuteFunction(variant->func, pHandle, aArgs, argOffset, variant->lastError);
 
             if (variant->lastError.empty())
             {
@@ -489,7 +489,7 @@ RED4ext::ScriptInstance RTTIHelper::ResolveHandle(RED4ext::CBaseFunction* apFunc
 
 sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc, RED4ext::ScriptInstance apHandle,
                                                   sol::variadic_args aLuaArgs, uint64_t aLuaArgOffset,
-                                                  bool aExactNumArgs, std::string& aErrorMessage) const
+                                                  std::string& aErrorMessage) const
 {
     if (!m_pRtti)
         return {};
@@ -499,35 +499,36 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
     if (!cpEngine || !cpEngine->framework)
         return {};
 
-    // Optional params
-    // Passing nullptr for optional parameters causes a lot of crashes.
-    // Users are forced to pass in the actual value anyway, so it is best
-    // to require the value until the optional parameters are implemented.
-
     // Out params
     // There are cases when out param must be passed to the function.
     // These functions cannot be used until more complex logic for input
     // args is implemented (should check if a compatible arg is actually
     // passed at the expected position + same for optionals).
 
-    // Overloads
-    // When dealing with overloads, it's better to require the exact
-    // number of arguments passed instead of the minimum number.
-
     auto numArgs = aLuaArgs.size() - aLuaArgOffset;
-    auto reqArgs = 0u; // required number of args
+    auto minArgs = 0u;
+    auto maxArgs = 0u;
 
     for (auto i = 0u; i < apFunc->params.size; ++i)
     {
         const auto cpParam = apFunc->params[i];
 
         if (!cpParam->flags.isOut && cpParam->type != m_pGameInstanceType)
-            reqArgs++;
+        {
+            maxArgs++;
+
+            if (!cpParam->flags.isOptional)
+                minArgs++;
+        }
     }
 
-    if (numArgs != reqArgs && (aExactNumArgs || numArgs < reqArgs))
+    if (numArgs < minArgs || numArgs > maxArgs)
     {
-        aErrorMessage = fmt::format("Function '{}' requires {} parameter(s).", apFunc->shortName.ToString(), reqArgs);
+        if (minArgs != maxArgs)
+            aErrorMessage = fmt::format("Function '{}' requires from {} to {} parameter(s).", apFunc->shortName.ToString(), minArgs, maxArgs);
+        else
+            aErrorMessage = fmt::format("Function '{}' requires {} parameter(s).", apFunc->shortName.ToString(), minArgs);
+
         return {};
     }
 
@@ -542,6 +543,8 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
     ResetAllocator ___allocatorReset;
 
     std::vector<RED4ext::CStackType> callArgs(apFunc->params.size);
+    std::vector<uint32_t> callArgToParam(apFunc->params.size);
+    auto callArgOffset = 0;
 
     for (auto i = 0u; i < apFunc->params.size; ++i)
     {
@@ -549,36 +552,56 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
 
         if (cpParam->type == m_pGameInstanceType)
         {
-            callArgs[i].type = m_pGameInstanceType;
-            callArgs[i].value = &cpEngine->framework->gameInstance;
+            callArgs[callArgOffset].type = m_pGameInstanceType;
+            callArgs[callArgOffset].value = &cpEngine->framework->gameInstance;
         }
         else if (cpParam->flags.isOut)
         {
             // It looks like constructing value with ToRED for out params is not required,
             // and memory allocation is enough.
-            callArgs[i].type = cpParam->type;
-            callArgs[i].value = NewPlaceholder(cpParam->type, &s_scratchMemory);
+            callArgs[callArgOffset].type = cpParam->type;
+            callArgs[callArgOffset].value = NewPlaceholder(cpParam->type, &s_scratchMemory);
 
             // But ToRED conversion is necessary for implementing required out params.
-            //callArgs[i] = Scripting::ToRED(sol::nil, cpParam->type, &s_scratchMemory);
+            //callArgs[callArgOffset] = Scripting::ToRED(sol::nil, cpParam->type, &s_scratchMemory);
+        }
+        else if (cpParam->flags.isOptional)
+        {
+            if (aLuaArgOffset >= aLuaArgs.size())
+            {
+                callArgs.pop_back();
+                continue;
+            }
+
+            callArgs[callArgOffset] = Scripting::ToRED(aLuaArgs[aLuaArgOffset], cpParam->type, &s_scratchMemory);
+
+            if (!callArgs[callArgOffset].value)
+            {
+                callArgs.pop_back();
+                continue;
+            }
+
+            ++aLuaArgOffset;
         }
         else if (aLuaArgOffset < aLuaArgs.size())
         {
-            callArgs[i] = Scripting::ToRED(aLuaArgs[aLuaArgOffset], cpParam->type, &s_scratchMemory);
+            callArgs[callArgOffset] = Scripting::ToRED(aLuaArgs[aLuaArgOffset], cpParam->type, &s_scratchMemory);
             ++aLuaArgOffset;
         }
 
-        if (!callArgs[i].value)
+        if (!callArgs[callArgOffset].value)
         {
             RED4ext::CName typeName;
             cpParam->type->GetName(typeName);
             aErrorMessage = fmt::format("Function '{}' parameter {} must be {}.", apFunc->shortName.ToString(), i + 1, typeName.ToString());
 
-            if (i > 0)
+            if (callArgOffset > 0)
             {
-                for (auto j = 0u; j < i; ++j)
+                for (auto j = 0u; j < callArgOffset; ++j)
                 {
-                    if (apFunc->params[j]->flags.isOut)
+                    const auto cpParam = apFunc->params[callArgToParam[j]];
+
+                    if (cpParam->flags.isOut)
                         FreeInstance(callArgs[j], false, true, &s_scratchMemory);
                     else
                         FreeInstance(callArgs[j], true, false, &s_scratchMemory);
@@ -587,6 +610,9 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
 
             return {};
         }
+
+        callArgToParam[callArgOffset] = i;
+        ++callArgOffset;
     }
 
     const bool hasReturnType = (apFunc->returnType) != nullptr && (apFunc->returnType->type) != nullptr;
@@ -612,9 +638,11 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
     {
         aErrorMessage = fmt::format("Function '{}' failed to execute.", apFunc->shortName.ToString());
 
-        for (auto i = 0u; i < apFunc->params.size; ++i)
+        for (auto i = 0u; i < callArgOffset; ++i)
         {
-            if (apFunc->params[i]->flags.isOut)
+            const auto cpParam = apFunc->params[callArgToParam[i]];
+
+            if (cpParam->flags.isOut)
                 FreeInstance(callArgs[i], false, true, &s_scratchMemory);
             else
                 FreeInstance(callArgs[i], true, false, &s_scratchMemory);
@@ -639,9 +667,11 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
         FreeInstance(result, false, false, &s_scratchMemory);
     }
 
-    for (auto i = 0u; i < apFunc->params.size; ++i)
+    for (auto i = 0u; i < callArgOffset; ++i)
     {
-        if (apFunc->params[i]->flags.isOut)
+        const auto cpParam = apFunc->params[callArgToParam[i]];
+
+        if (cpParam->flags.isOut)
         {
             results.push_back(Scripting::ToLua(lockedState, callArgs[i]));
             FreeInstance(callArgs[i], false, true, &s_scratchMemory);
@@ -683,7 +713,7 @@ RED4ext::ScriptInstance RTTIHelper::NewInstance(RED4ext::IRTTIType* apType, sol:
             pClass = reinterpret_cast<RED4ext::CClass*>(pInnerType);
     }
 
-    if (!pClass || pClass->flags.isAbstract || !IsClassReferenceType(pClass))
+    if (!pClass || pClass->flags.isAbstract)
         return nullptr;
 
     // AllocInstance() seems to be the only function that initializes an instance.
