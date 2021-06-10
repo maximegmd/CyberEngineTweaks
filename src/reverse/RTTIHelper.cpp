@@ -544,7 +544,7 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
 
     std::vector<RED4ext::CStackType> callArgs(apFunc->params.size);
     std::vector<uint32_t> callArgToParam(apFunc->params.size);
-    auto callArgOffset = 0;
+    uint32_t callArgOffset = 0u;
 
     for (auto i = 0u; i < apFunc->params.size; ++i)
     {
@@ -567,25 +567,24 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
         }
         else if (cpParam->flags.isOptional)
         {
+            // Skip undefined optionals in the tail
             if (aLuaArgOffset >= aLuaArgs.size())
-            {
-                callArgs.pop_back();
                 continue;
-            }
 
-            callArgs[callArgOffset] = Scripting::ToRED(aLuaArgs[aLuaArgOffset], cpParam->type, &s_scratchMemory);
+            sol::object argValue = aLuaArgs[aLuaArgOffset];
+            callArgs[callArgOffset] = Scripting::ToRED(argValue, cpParam->type, &s_scratchMemory);
 
+            // Skip incompatible value, assuming this optional is undefined
+            // and the value is intended for another param
             if (!callArgs[callArgOffset].value)
-            {
-                callArgs.pop_back();
                 continue;
-            }
 
             ++aLuaArgOffset;
         }
         else if (aLuaArgOffset < aLuaArgs.size())
         {
-            callArgs[callArgOffset] = Scripting::ToRED(aLuaArgs[aLuaArgOffset], cpParam->type, &s_scratchMemory);
+            sol::object argValue = aLuaArgs[aLuaArgOffset];
+            callArgs[callArgOffset] = Scripting::ToRED(argValue, cpParam->type, &s_scratchMemory);
             ++aLuaArgOffset;
         }
 
@@ -630,7 +629,7 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
     // which actually does not need the 'this' object, you can trick it into calling it as long as you pass something for the handle
 
     RED4ext::ScriptInstance pContext = apHandle ? apHandle : m_pPlayerSystem;
-    RED4ext::CStack stack(pContext, callArgs.data(), callArgs.size(), hasReturnType ? &result : nullptr, 0);
+    RED4ext::CStack stack(pContext, callArgs.data(), callArgOffset, hasReturnType ? &result : nullptr, 0);
 
     const auto success = apFunc->Execute(&stack);
 
