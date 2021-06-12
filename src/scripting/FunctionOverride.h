@@ -18,7 +18,8 @@ struct FunctionOverride
     void Clear();
 
     void Override(const std::string& acTypeName, const std::string& acFullName, const std::string& acShortName,
-                  bool aAbsolute, sol::protected_function aFunction, sol::this_environment aEnvironment);
+                  bool aAbsolute, sol::protected_function aFunction, sol::environment aEnvironment,
+                  bool aCollectGarbage = false);
 
 protected:
 
@@ -39,6 +40,7 @@ private:
         RED4ext::CClassFunction* Trampoline;
         Scripting* pScripting;
         TiltedPhoques::Vector<TiltedPhoques::UniquePtr<Context>> Calls;
+        bool CollectGarbage;
     };
 
     void* m_pBufferStart;

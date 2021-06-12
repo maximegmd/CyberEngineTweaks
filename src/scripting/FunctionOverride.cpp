@@ -22,48 +22,60 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
             return false;
         }
 
-        TiltedPhoques::StackAllocator<1 << 13> s_allocator;
+        bool isOverride = false;
 
-        TiltedPhoques::Allocator::Push(s_allocator);
-        TiltedPhoques::Vector<sol::object> args;
-        TiltedPhoques::Allocator::Pop();
-
-        auto state = itor->second.pScripting->GetState();
-
-        for (auto* p : apFunction->params)
+        if (!itor->second.Calls.empty())
         {
-            auto* pOffset = p->valueOffset + apContext->args;
+            TiltedPhoques::StackAllocator<1 << 13> s_allocator;
 
-            RED4ext::CStackType arg;
-            arg.type = p->type;
-            arg.value = pOffset;
+            TiltedPhoques::Allocator::Push(s_allocator);
+            TiltedPhoques::Vector<sol::object> args;
+            TiltedPhoques::Allocator::Pop();
 
-            args.push_back(Scripting::ToLua(state, arg));
-        }
+            auto state = itor->second.pScripting->GetState();
 
-        RED4ext::CStackType ret;
-        ret.value = apContext->GetResultAddr();
-        ret.type = apContext->GetType();
-
-        const auto& calls = itor->second.Calls;
-        for (const auto& call : calls)
-        {
-            const auto result = call->ScriptFunction(as_args(args));
-
-            if (!result.valid())
+            for (auto* p : apFunction->params)
             {
-                auto logger = call->Environment["__logger"].get<std::shared_ptr<spdlog::logger>>();
-                logger->error(result.get<sol::error>().what());
+                auto* pOffset = p->valueOffset + apContext->args;
+
+                RED4ext::CStackType arg;
+                arg.type = p->type;
+                arg.value = pOffset;
+
+                args.push_back(Scripting::ToLua(state, arg));
             }
 
-            if (!call->Forward)
-            {
-                if (result.valid() && ret.value && ret.type)
-                    Scripting::ToRED(result.get<sol::object>(), &ret);
+            RED4ext::CStackType ret;
+            ret.value = apContext->GetResultAddr();
+            ret.type = apContext->GetType();
 
-                return true;
+            const auto& calls = itor->second.Calls;
+            for (const auto& call : calls)
+            {
+                const auto result = call->ScriptFunction(as_args(args));
+
+                if (!result.valid())
+                {
+                    auto logger = call->Environment["__logger"].get<std::shared_ptr<spdlog::logger>>();
+                    logger->error(result.get<sol::error>().what());
+                }
+
+                if (!call->Forward)
+                {
+                    if (result.valid() && ret.value && ret.type)
+                        Scripting::ToRED(result.get<sol::object>(), &ret);
+
+                    isOverride = true;
+                    break;
+                }
             }
         }
+
+        if (itor->second.CollectGarbage)
+            s_pOverride->m_pScripting->CollectGarbage();
+
+        if (isOverride)
+            return true;
 
         auto* pTrampoline = itor->second.Trampoline;
 
@@ -170,15 +182,17 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
     }
 
     const auto& context = itor->second;
+    bool isOverride = false;
 
     // Save state so we can rollback to it after we popped for ourself
     auto* pCode = apFrame->code;
 
-    RED4ext::CStackType self;
-    self.type = apContext->classType;
-    self.value = apContext;
-
+    if (!context.Calls.empty())
     {
+        RED4ext::CStackType self;
+        self.type = apContext->classType;
+        self.value = apContext;
+
         // Cheap allocation
         TiltedPhoques::StackAllocator<1 << 13> s_allocator;
 
@@ -238,10 +252,17 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
                         Scripting::ToRED(result.get<sol::object>(), &redResult);
                 }
 
-                return;
+                isOverride = true;
+                break;
             }
         }
     }
+
+    if (context.CollectGarbage)
+        s_pOverride->m_pScripting->CollectGarbage();
+
+    if (isOverride)
+        return;
 
     RED4ext::IFunction* pRealFunction = context.Trampoline;
 
@@ -309,7 +330,8 @@ void FunctionOverride::Hook(Options& aOptions) const
 }
 
 void FunctionOverride::Override(const std::string& acTypeName, const std::string& acFullName, const std::string& acShortName,
-                                bool aAbsolute, sol::protected_function aFunction, sol::this_environment aEnvironment)
+                                bool aAbsolute, sol::protected_function aFunction, sol::environment aEnvironment,
+                                bool aCollectGarbage)
 {
     auto* pRtti = RED4ext::CRTTISystem::Get();
     auto* pClassType = pRtti->GetClass(acTypeName.c_str());
@@ -327,11 +349,6 @@ void FunctionOverride::Override(const std::string& acTypeName, const std::string
         pClassType = pRtti->GetClass(*pNativeCName);
     }
 
-    auto pContext = TiltedPhoques::MakeUnique<Context>();
-    pContext->ScriptFunction = std::move(aFunction);
-    pContext->Environment = aEnvironment;
-    pContext->Forward = !aAbsolute;
-
     // Get the real function
     auto* pRealFunction = pClassType->GetFunction(RED4ext::FNV1a(acFullName.c_str()));
 
@@ -339,12 +356,14 @@ void FunctionOverride::Override(const std::string& acTypeName, const std::string
     {
         std::unique_lock lock(m_lock);
 
+        CallChain* pEntry = nullptr;
         auto itor = m_functions.find(pRealFunction);
 
         // This function was never hooked
         if (itor == std::end(m_functions))
         {
-            auto& entry = m_functions[pRealFunction] = {};
+            m_functions[pRealFunction] = {};
+            pEntry = &m_functions[pRealFunction];
 
             /*
             sub rsp, 56
@@ -367,7 +386,8 @@ void FunctionOverride::Override(const std::string& acTypeName, const std::string
             using TNativeScriptFunction = void (*)(RED4ext::IScriptable*, RED4ext::CStackFrame*, void*, int64_t);
             auto* pExecutablePayload = static_cast<TNativeScriptFunction>(MakeExecutable(payload, std::size(payload)));
 
-            auto* const pFunc = RED4ext::CClassFunction::Create(pClassType, acFullName.c_str(), acShortName.c_str(), pExecutablePayload);
+            auto* const pFunc = RED4ext::CClassFunction::Create(pClassType, acFullName.c_str(), acShortName.c_str(),
+                                                                pExecutablePayload);
 
             pFunc->fullName = pRealFunction->fullName;
             pFunc->shortName = pRealFunction->shortName;
@@ -390,8 +410,9 @@ void FunctionOverride::Override(const std::string& acTypeName, const std::string
             pFunc->parent = pRealFunction->parent;
             pFunc->flags.isNative = true;
 
-            entry.Trampoline = pFunc;
-            entry.pScripting = m_pScripting;
+            pEntry->Trampoline = pFunc;
+            pEntry->pScripting = m_pScripting;
+            pEntry->CollectGarbage = aCollectGarbage;
 
             // Swap the content of the real function with the one we just created
             std::array<char, sizeof(RED4ext::CClassFunction)> tmpBuffer;
@@ -399,12 +420,21 @@ void FunctionOverride::Override(const std::string& acTypeName, const std::string
             std::memcpy(&tmpBuffer, pRealFunction, sizeof(RED4ext::CClassFunction));
             std::memcpy(pRealFunction, pFunc, sizeof(RED4ext::CClassFunction));
             std::memcpy(pFunc, &tmpBuffer, sizeof(RED4ext::CClassFunction));
-
-            entry.Calls.emplace_back(std::move(pContext));
         }
         else
-            itor.value().Calls.emplace_back(std::move(pContext));
-        
+        {
+            pEntry = &itor.value();
+        }
+
+        if (aFunction != sol::nil)
+        {
+            auto pContext = TiltedPhoques::MakeUnique<Context>();
+            pContext->ScriptFunction = std::move(aFunction);
+            pContext->Environment = aEnvironment;
+            pContext->Forward = !aAbsolute;
+
+            pEntry->Calls.emplace_back(std::move(pContext));
+        }
     }
     else
     {

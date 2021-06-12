@@ -106,8 +106,11 @@ void Scripting::Initialize()
     auto& consoleSBEnv = consoleSB.GetEnvironment();
     consoleSBEnv["__logger"] = spdlog::get("scripting");
 
+    // set current path for following scripts to our ModsPath
+    current_path(m_paths.ModsRoot());
+
     // load mods
-    ReloadAllMods();
+    m_store.LoadAll();
 }
 
 void Scripting::PostInitialize()
@@ -455,6 +458,13 @@ void Scripting::PostInitialize()
     RTTIExtender::Initialize();
     m_mapper.Register();
     m_sandbox.PostInitialize();
+
+    RegisterOverrides();
+}
+
+void Scripting::RegisterOverrides()
+{
+    m_override.Override("QuestTrackerGameController", "OnUninitialize", "OnUninitialize", false, sol::nil, sol::nil, true);
 }
 
 const std::vector<VKBindInfo>& Scripting::GetBinds() const
@@ -494,10 +504,8 @@ sol::object Scripting::GetMod(const std::string& acName) const
 
 void Scripting::ReloadAllMods()
 {
-    // set current path for following scripts to our ModsPath
-    current_path(m_paths.ModsRoot());
-
     m_override.Clear();
+    RegisterOverrides();
     m_store.LoadAll();
 }
 
@@ -519,6 +527,14 @@ bool Scripting::ExecuteLua(const std::string& acCommand)
         spdlog::get("scripting")->error(e.what());
     }
     return false;
+}
+
+void Scripting::CollectGarbage()
+{
+    auto lockedState = m_lua.Lock();
+    auto& luaState = lockedState.Get();
+
+    luaState.collect_garbage();
 }
 
 Scripting::LockedState Scripting::GetState() const noexcept
