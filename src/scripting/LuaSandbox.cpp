@@ -291,7 +291,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
         return func().get<sol::object>(); // is OK, dofile should throw if there is an error, we try to copy it...
     };
 
-    sbEnv["require"] = [this, cLoadString, cSBRootPath, sbStateView](const std::string& acPath) -> std::tuple<sol::object, sol::object>
+    sbEnv["require"] = [this, cLoadString, cSBRootPath, sbStateView, sbEnv](const std::string& acPath) -> std::tuple<sol::object, sol::object>
     {
         auto absPath = absolute(cSBRootPath / acPath).make_preferred();
         if (!exists(absPath) || !is_regular_file(absPath))
@@ -345,7 +345,11 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
                 this->m_modules[cKey] = obj;
                 return std::make_tuple(obj, sol::nil);
             }
+
             sol::error err = result;
+			std::shared_ptr<spdlog::logger> logger = sbEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+			logger->error("Error: Cannot load module '{}': {}", acPath, err.what());
+
             return std::make_tuple(sol::nil, make_object(sbStateView, err.what()));
         }
         return res;

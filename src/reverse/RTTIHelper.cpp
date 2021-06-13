@@ -41,10 +41,10 @@ RTTIHelper::RTTIHelper(const LockableState& acLua)
 void RTTIHelper::InitializeRTTI()
 {
     m_pRtti = RED4ext::CRTTISystem::Get();
-    m_pEngine = RED4ext::CGameEngine::Get();
     m_pGameInstanceType = m_pRtti->GetClass(RED4ext::FNV1a("ScriptGameInstance"));
 
-    const auto cpGameInstance = m_pEngine->framework->gameInstance;
+    const auto cpEngine = RED4ext::CGameEngine::Get();
+    const auto cpGameInstance = cpEngine->framework->gameInstance;
     const auto cpPlayerSystemType = m_pRtti->GetType(RED4ext::FNV1a("cpPlayerSystem"));
     m_pPlayerSystem = reinterpret_cast<RED4ext::ScriptInstance>(cpGameInstance->GetInstance(cpPlayerSystemType));
 }
@@ -368,11 +368,11 @@ sol::function RTTIHelper::MakeInvokableFunction(RED4ext::CBaseFunction* apFunc)
     auto& luaState = lockedState.Get();
 
     return MakeSolFunction(luaState, [this, apFunc](sol::variadic_args aArgs, sol::this_environment aEnv) -> sol::variadic_results {
-        uint32_t argOffset = 0;
+        uint64_t argOffset = 0;
         RED4ext::ScriptInstance pHandle = ResolveHandle(apFunc, aArgs, argOffset);
 
         std::string error;
-        auto result = ExecuteFunction(apFunc, pHandle, aArgs, argOffset, false, error);
+        auto result = ExecuteFunction(apFunc, pHandle, aArgs, argOffset, error);
 
         if (!error.empty())
         {
@@ -398,21 +398,26 @@ sol::function RTTIHelper::MakeInvokableOverload(std::map<uint64_t, RED4ext::CBas
     return MakeSolFunction(luaState, [this, variants](sol::variadic_args aArgs, sol::this_environment aEnv) mutable -> sol::variadic_results {
         for (auto variant = variants.begin(); variant != variants.end(); variant++)
         {
-            uint32_t argOffset = 0;
+            variant->lastError.clear();
+
+            uint64_t argOffset = 0;
             RED4ext::ScriptInstance pHandle = ResolveHandle(variant->func, aArgs, argOffset);
 
-            auto result = ExecuteFunction(variant->func, pHandle, aArgs, argOffset, true, variant->lastError);
+            auto result = ExecuteFunction(variant->func, pHandle, aArgs, argOffset, variant->lastError);
 
             if (variant->lastError.empty())
             {
-                ++variant->totalCalls;
-
-                if (variant != variants.begin())
+                if (variant->totalCalls < kTrackedOverloadCalls)
                 {
-                    auto previous = variant - 1;
+                    ++variant->totalCalls;
 
-                    if (variant->totalCalls > previous->totalCalls)
-                        std::iter_swap(previous, variant);
+                    if (variant != variants.begin())
+                    {
+                        auto previous = variant - 1;
+
+                        if (variant->totalCalls > previous->totalCalls)
+                            std::iter_swap(previous, variant);
+                    }
                 }
 
                 return result;
@@ -435,25 +440,37 @@ sol::function RTTIHelper::MakeInvokableOverload(std::map<uint64_t, RED4ext::CBas
     });
 }
 
-RED4ext::ScriptInstance RTTIHelper::ResolveHandle(RED4ext::CBaseFunction* apFunc, sol::variadic_args& aArgs, uint32_t& aArgOffset) const
+RED4ext::ScriptInstance RTTIHelper::ResolveHandle(RED4ext::CBaseFunction* apFunc, sol::variadic_args& aArgs,
+                                                  uint64_t& aArgOffset) const
 {
     // Case 1: obj:Member() -- Skip the first arg and pass it as a handle
     // Case 2: obj:Static() -- Pass args as is, including the implicit self
-    // Case 3: Type.Static() -- Pass args as is
-    // Case 4: Type.Member() -- Skip the first arg and pass it as a handle
-    // Case 5: GetSingleton("Type"):Static() -- Skip the first arg as it's a dummy
-    // Case 6: GetSingleton("Type"):Member() -- Skip the first arg as it's a dummy
+    // Case 3: obj:Static(obj) -- Skip the first arg as it duplicates the second arg (for backward compatibility)
+    // Case 4: Type.Static() -- Pass args as is
+    // Case 5: Type.Member() -- Skip the first arg and pass it as a handle
+    // Case 6: GetSingleton("Type"):Static() -- Skip the first arg as it's a dummy
+    // Case 7: GetSingleton("Type"):Member() -- Skip the first arg as it's a dummy
 
     RED4ext::ScriptInstance pHandle = nullptr;
 
-    if (apFunc->flags.isStatic)
+    if (aArgs.size() > aArgOffset)
     {
-        if (aArgs.size() > aArgOffset && aArgs[aArgOffset].is<SingletonReference>())
-            ++aArgOffset;
-    }
-    else
-    {
-        if (aArgs.size() > aArgOffset)
+        if (apFunc->flags.isStatic)
+        {
+            if (aArgs[aArgOffset].is<SingletonReference>())
+            {
+                ++aArgOffset;
+            }
+            else if (aArgs[aArgOffset].is<ClassReference>() && aArgs.size() > aArgOffset + 1)
+            {
+                const auto& cFirst = aArgs[aArgOffset];
+                const auto& cSecond = aArgs[aArgOffset + 1];
+
+                if (cFirst.as<sol::object>() == cSecond.as<sol::object>())
+                    ++aArgOffset;
+            }
+        }
+        else
         {
             const auto& cArg = aArgs[aArgOffset];
 
@@ -471,16 +488,16 @@ RED4ext::ScriptInstance RTTIHelper::ResolveHandle(RED4ext::CBaseFunction* apFunc
 }
 
 sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc, RED4ext::ScriptInstance apHandle,
-                                                  sol::variadic_args aLuaArgs, uint32_t aLuaArgOffset,
-                                                  bool aExactNumArgs, std::string& aErrorMessage) const
+                                                  sol::variadic_args aLuaArgs, uint64_t aLuaArgOffset,
+                                                  std::string& aErrorMessage) const
 {
-    if (!m_pRtti || !m_pEngine->framework)
+    if (!m_pRtti)
         return {};
 
-    // Optional params
-    // Passing nullptr for optional parameters causes a lot of crashes.
-    // Users are forced to pass in the actual value anyway, so it is best
-    // to require the value until the optional parameters are implemented.
+    const auto* cpEngine = RED4ext::CGameEngine::Get();
+
+    if (!cpEngine || !cpEngine->framework)
+        return {};
 
     // Out params
     // There are cases when out param must be passed to the function.
@@ -488,24 +505,30 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
     // args is implemented (should check if a compatible arg is actually
     // passed at the expected position + same for optionals).
 
-    // Overloads
-    // When dealing with overloads, it's better to require the exact
-    // number of arguments passed instead of the minimum number.
-
     auto numArgs = aLuaArgs.size() - aLuaArgOffset;
-    auto reqArgs = 0u; // required number of args
+    auto minArgs = 0u;
+    auto maxArgs = 0u;
 
     for (auto i = 0u; i < apFunc->params.size; ++i)
     {
         const auto cpParam = apFunc->params[i];
 
         if (!cpParam->flags.isOut && cpParam->type != m_pGameInstanceType)
-            reqArgs++;
+        {
+            maxArgs++;
+
+            if (!cpParam->flags.isOptional)
+                minArgs++;
+        }
     }
 
-    if (numArgs != reqArgs && (aExactNumArgs || numArgs < reqArgs))
+    if (numArgs < minArgs || numArgs > maxArgs)
     {
-        aErrorMessage = fmt::format("Function '{}' requires {} parameter(s).", apFunc->shortName.ToString(), reqArgs);
+        if (minArgs != maxArgs)
+            aErrorMessage = fmt::format("Function '{}' requires from {} to {} parameter(s).", apFunc->shortName.ToString(), minArgs, maxArgs);
+        else
+            aErrorMessage = fmt::format("Function '{}' requires {} parameter(s).", apFunc->shortName.ToString(), minArgs);
+
         return {};
     }
 
@@ -519,7 +542,10 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
     };
     ResetAllocator ___allocatorReset;
 
-    std::vector<RED4ext::CStackType> callArgs(apFunc->params.size);
+    TiltedPhoques::ScopedAllocator _(&s_scratchMemory);
+    TiltedPhoques::Vector<RED4ext::CStackType> callArgs(apFunc->params.size);
+    TiltedPhoques::Vector<uint32_t> callArgToParam(apFunc->params.size);
+    uint32_t callArgOffset = 0u;
 
     for (auto i = 0u; i < apFunc->params.size; ++i)
     {
@@ -527,36 +553,55 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
 
         if (cpParam->type == m_pGameInstanceType)
         {
-            callArgs[i].type = m_pGameInstanceType;
-            callArgs[i].value = &m_pEngine->framework->gameInstance;
+            callArgs[callArgOffset].type = m_pGameInstanceType;
+            callArgs[callArgOffset].value = &cpEngine->framework->gameInstance;
         }
         else if (cpParam->flags.isOut)
         {
             // It looks like constructing value with ToRED for out params is not required,
             // and memory allocation is enough.
-            callArgs[i].type = cpParam->type;
-            callArgs[i].value = NewPlaceholder(cpParam->type, &s_scratchMemory);
+            callArgs[callArgOffset].type = cpParam->type;
+            callArgs[callArgOffset].value = NewPlaceholder(cpParam->type, &s_scratchMemory);
 
             // But ToRED conversion is necessary for implementing required out params.
-            //callArgs[i] = Scripting::ToRED(sol::nil, cpParam->type, &s_scratchMemory);
+            //callArgs[callArgOffset] = Scripting::ToRED(sol::nil, cpParam->type, &s_scratchMemory);
+        }
+        else if (cpParam->flags.isOptional)
+        {
+            // Skip undefined optionals in the tail
+            if (aLuaArgOffset >= aLuaArgs.size())
+                continue;
+
+            sol::object argValue = aLuaArgs[aLuaArgOffset];
+            callArgs[callArgOffset] = Scripting::ToRED(argValue, cpParam->type, &s_scratchMemory);
+
+            // Skip incompatible value, assuming this optional is undefined
+            // and the value is intended for another param
+            if (!callArgs[callArgOffset].value)
+                continue;
+
+            ++aLuaArgOffset;
         }
         else if (aLuaArgOffset < aLuaArgs.size())
         {
-            callArgs[i] = Scripting::ToRED(aLuaArgs[aLuaArgOffset], cpParam->type, &s_scratchMemory);
+            sol::object argValue = aLuaArgs[aLuaArgOffset];
+            callArgs[callArgOffset] = Scripting::ToRED(argValue, cpParam->type, &s_scratchMemory);
             ++aLuaArgOffset;
         }
 
-        if (!callArgs[i].value)
+        if (!callArgs[callArgOffset].value)
         {
             RED4ext::CName typeName;
             cpParam->type->GetName(typeName);
             aErrorMessage = fmt::format("Function '{}' parameter {} must be {}.", apFunc->shortName.ToString(), i + 1, typeName.ToString());
 
-            if (i > 0)
+            if (callArgOffset > 0)
             {
-                for (auto j = 0u; j < i; ++j)
+                for (auto j = 0u; j < callArgOffset; ++j)
                 {
-                    if (apFunc->params[j]->flags.isOut)
+                    const auto cpParam = apFunc->params[callArgToParam[j]];
+
+                    if (cpParam->flags.isOut)
                         FreeInstance(callArgs[j], false, true, &s_scratchMemory);
                     else
                         FreeInstance(callArgs[j], true, false, &s_scratchMemory);
@@ -565,6 +610,9 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
 
             return {};
         }
+
+        callArgToParam[callArgOffset] = i;
+        ++callArgOffset;
     }
 
     const bool hasReturnType = (apFunc->returnType) != nullptr && (apFunc->returnType->type) != nullptr;
@@ -582,7 +630,7 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
     // which actually does not need the 'this' object, you can trick it into calling it as long as you pass something for the handle
 
     RED4ext::ScriptInstance pContext = apHandle ? apHandle : m_pPlayerSystem;
-    RED4ext::CStack stack(pContext, callArgs.data(), callArgs.size(), hasReturnType ? &result : nullptr, 0);
+    RED4ext::CStack stack(pContext, callArgs.data(), callArgOffset, hasReturnType ? &result : nullptr, 0);
 
     const auto success = apFunc->Execute(&stack);
 
@@ -590,9 +638,11 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
     {
         aErrorMessage = fmt::format("Function '{}' failed to execute.", apFunc->shortName.ToString());
 
-        for (auto i = 0u; i < apFunc->params.size; ++i)
+        for (auto i = 0u; i < callArgOffset; ++i)
         {
-            if (apFunc->params[i]->flags.isOut)
+            const auto cpParam = apFunc->params[callArgToParam[i]];
+
+            if (cpParam->flags.isOut)
                 FreeInstance(callArgs[i], false, true, &s_scratchMemory);
             else
                 FreeInstance(callArgs[i], true, false, &s_scratchMemory);
@@ -617,9 +667,11 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
         FreeInstance(result, false, false, &s_scratchMemory);
     }
 
-    for (auto i = 0u; i < apFunc->params.size; ++i)
+    for (auto i = 0u; i < callArgOffset; ++i)
     {
-        if (apFunc->params[i]->flags.isOut)
+        const auto cpParam = apFunc->params[callArgToParam[i]];
+
+        if (cpParam->flags.isOut)
         {
             results.push_back(Scripting::ToLua(lockedState, callArgs[i]));
             FreeInstance(callArgs[i], false, true, &s_scratchMemory);
@@ -644,7 +696,7 @@ RED4ext::ScriptInstance RTTIHelper::NewPlaceholder(RED4ext::IRTTIType* apType, T
 
 RED4ext::ScriptInstance RTTIHelper::NewInstance(RED4ext::IRTTIType* apType, sol::optional<sol::table> aProps, TiltedPhoques::Allocator* apAllocator) const
 {
-    if (!m_pRtti || !m_pEngine->framework)
+    if (!m_pRtti)
         return nullptr;
 
     RED4ext::CClass* pClass = nullptr;
@@ -661,7 +713,7 @@ RED4ext::ScriptInstance RTTIHelper::NewInstance(RED4ext::IRTTIType* apType, sol:
             pClass = reinterpret_cast<RED4ext::CClass*>(pInnerType);
     }
 
-    if (!pClass || pClass->flags.isAbstract || !IsClassReferenceType(pClass))
+    if (!pClass || pClass->flags.isAbstract)
         return nullptr;
 
     // AllocInstance() seems to be the only function that initializes an instance.
@@ -683,7 +735,7 @@ RED4ext::ScriptInstance RTTIHelper::NewInstance(RED4ext::IRTTIType* apType, sol:
 
 sol::object RTTIHelper::NewInstance(RED4ext::IRTTIType* apType, sol::optional<sol::table> aProps) const
 {
-    if (!m_pRtti || !m_pEngine->framework)
+    if (!m_pRtti)
         return sol::nil;
 
     TiltedPhoques::StackAllocator<1 << 10> allocator;
@@ -710,7 +762,7 @@ sol::object RTTIHelper::NewHandle(RED4ext::IRTTIType* apType, sol::optional<sol:
     // The Handle<> wrapper prevents memory leaks that can occur in IRTTIType::Assign()
     // when called directly on an IScriptable instance.
 
-    if (!m_pRtti || !m_pEngine->framework)
+    if (!m_pRtti)
         return sol::nil;
 
     TiltedPhoques::StackAllocator<1 << 10> allocator;
@@ -749,7 +801,7 @@ sol::object RTTIHelper::GetProperty(RED4ext::CClass* apClass, RED4ext::ScriptIns
 {
     aSuccess = false;
 
-    if (!m_pRtti || !m_pEngine->framework)
+    if (!m_pRtti)
         return sol::nil;
 
     auto* pProp = apClass->GetProperty(acPropName.c_str());
@@ -768,7 +820,7 @@ void RTTIHelper::SetProperty(RED4ext::CClass* apClass, RED4ext::ScriptInstance a
 {
     aSuccess = false;
 
-    if (!m_pRtti || !m_pEngine->framework)
+    if (!m_pRtti)
         return;
 
     auto* pProp = apClass->GetProperty(acPropName.c_str());
@@ -776,7 +828,7 @@ void RTTIHelper::SetProperty(RED4ext::CClass* apClass, RED4ext::ScriptInstance a
     if (!pProp)
         return;
 
-    static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 10);
+    static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 13);
     struct ResetAllocator
     {
         ~ResetAllocator()
@@ -806,9 +858,9 @@ bool RTTIHelper::IsClassReferenceType(RED4ext::CClass* apClass) const
     static const auto s_cHashQuaternion = RED4ext::FNV1a("Quaternion");
     static const auto s_cHashItemID = RED4ext::FNV1a("gameItemID");
 
-    return apClass->name != s_cHashVector3 && apClass->name != s_cHashVector4 &&
-           apClass->name != s_cHashEulerAngles && apClass->name != s_cHashQuaternion &&
-           apClass->name != s_cHashItemID;
+    return apClass->name.hash != s_cHashVector3 && apClass->name.hash != s_cHashVector4 &&
+           apClass->name.hash != s_cHashEulerAngles && apClass->name.hash != s_cHashQuaternion &&
+           apClass->name.hash != s_cHashItemID;
 }
 
 void RTTIHelper::FreeInstance(RED4ext::CStackType& aStackType, bool aOwn, bool aNew, TiltedPhoques::Allocator* apAllocator) const

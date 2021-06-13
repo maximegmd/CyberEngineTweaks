@@ -22,14 +22,14 @@ struct Scripting
     void TriggerOnInit() const;
     void TriggerOnUpdate(float aDeltaTime) const;
     void TriggerOnDraw() const;
-    
     void TriggerOnOverlayOpen() const;
     void TriggerOnOverlayClose() const;
 
     sol::object GetMod(const std::string& acName) const;
     void ReloadAllMods();
-
     bool ExecuteLua(const std::string& acCommand);
+    void CollectGarbage();
+
     LockedState GetState() const noexcept;
     std::string GetGlobalName() const noexcept;
 
@@ -39,6 +39,7 @@ struct Scripting
     static void ToRED(sol::object aObject, RED4ext::CStackType* apType);
 
 protected:
+    void RegisterOverrides();
 
     sol::object Index(const std::string& acName, sol::this_environment aThisEnv);
     sol::object NewIndex(const std::string& acName, sol::object aParam);

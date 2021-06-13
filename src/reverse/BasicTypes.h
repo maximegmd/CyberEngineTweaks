@@ -67,8 +67,16 @@ uint32_t crc32(const char* buf, size_t len, uint32_t seed);
 struct CName
 {
     CName(uint64_t aHash = 0) : hash(aHash){}
+
     CName(uint32_t aHashLo, uint32_t aHashHi) : hash_lo(aHashLo), hash_hi(aHashHi) {}
-    CName(const std::string& aName) : hash(RED4ext::FNV1a(aName.c_str())){}
+
+    CName(const std::string& aName)
+    {
+        if (aName != "None")
+            hash = RED4ext::FNV1a(aName.c_str());
+        else
+            hash = 0;
+    }
 
     union
     {

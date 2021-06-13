@@ -15,10 +15,10 @@ struct RTTIHelper
     sol::function ResolveFunction(const std::string& acFuncName);
     sol::function ResolveFunction(RED4ext::CClass* apClass, const std::string& acFuncName, bool aIsMember);
     
-    RED4ext::ScriptInstance ResolveHandle(RED4ext::CBaseFunction* apFunc, sol::variadic_args& aArgs, uint32_t& aArgOffset) const;
+    RED4ext::ScriptInstance ResolveHandle(RED4ext::CBaseFunction* apFunc, sol::variadic_args& aArgs, uint64_t& aArgOffset) const;
     sol::variadic_results ExecuteFunction(RED4ext::CBaseFunction* apFunc, RED4ext::ScriptInstance apHandle,
-                                          sol::variadic_args aLuaArgs, uint32_t aLuaArgOffset,
-                                          bool aExactNumArgs, std::string& aErrorMessage) const;
+                                          sol::variadic_args aLuaArgs, uint64_t aLuaArgOffset,
+                                          std::string& aErrorMessage) const;
     
     RED4ext::ScriptInstance NewInstance(RED4ext::IRTTIType* apType, sol::optional<sol::table> aProps, TiltedPhoques::Allocator* apAllocator) const;
     sol::object NewInstance(RED4ext::IRTTIType* apType, sol::optional<sol::table> aProps) const;
@@ -61,6 +61,7 @@ private:
         kGlobalHash = 0,
         kStaticScope = 0,
         kMemberScope = 1,
+        kTrackedOverloadCalls = 256,
     };
 
     struct Overload
@@ -72,7 +73,6 @@ private:
 
     LockableState m_lua;
     RED4ext::CRTTISystem* m_pRtti;
-    RED4ext::CGameEngine* m_pEngine;
     RED4ext::CClass* m_pGameInstanceType;
     RED4ext::ScriptInstance m_pPlayerSystem;
     RedFunctionMap m_extendedFunctions;
