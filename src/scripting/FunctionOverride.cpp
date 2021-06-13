@@ -34,6 +34,15 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
 
             auto state = itor->second.pScripting->GetState();
 
+            if (apContext->context18)
+            {
+                RED4ext::CStackType self;
+                self.type = reinterpret_cast<RED4ext::IScriptable*>(apContext->context18)->classType;
+                self.value = apContext->context18;
+
+                args.push_back(Scripting::ToLua(state, self));
+            }
+
             for (auto* p : apFunction->params)
             {
                 auto* pOffset = p->valueOffset + apContext->args;
@@ -190,8 +199,16 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
     if (!context.Calls.empty())
     {
         RED4ext::CStackType self;
-        self.type = apContext->classType;
-        self.value = apContext;
+        if (apContext->valueHolder)
+        {
+            self.type = apContext->classType;
+            self.value = apContext;
+        }
+        else
+        {
+            self.type = apFrame->context->classType;
+            self.value = apFrame->context;
+        }
 
         // Cheap allocation
         TiltedPhoques::StackAllocator<1 << 13> s_allocator;
@@ -221,7 +238,6 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
             apFrame->unk38 = 0;
             const auto opcode = *(apFrame->code++);
             RED4ext::OpcodeHandlers::Run(opcode, apFrame->context, apFrame, pInstance, nullptr);
-            apFrame->code++; // skip ParamEnd
 
             args.push_back(Scripting::ToLua(state, arg));
 
