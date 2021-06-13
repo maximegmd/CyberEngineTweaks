@@ -542,8 +542,9 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
     };
     ResetAllocator ___allocatorReset;
 
-    std::vector<RED4ext::CStackType> callArgs(apFunc->params.size);
-    std::vector<uint32_t> callArgToParam(apFunc->params.size);
+    TiltedPhoques::ScopedAllocator _(&s_scratchMemory);
+    TiltedPhoques::Vector<RED4ext::CStackType> callArgs(apFunc->params.size);
+    TiltedPhoques::Vector<uint32_t> callArgToParam(apFunc->params.size);
     uint32_t callArgOffset = 0u;
 
     for (auto i = 0u; i < apFunc->params.size; ++i)
