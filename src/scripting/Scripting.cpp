@@ -171,7 +171,8 @@ void Scripting::PostInitialize()
         sol::meta_function::new_index, &UnknownType::NewIndex);
 
     luaVm.new_usertype<Enum>("Enum",
-        sol::constructors<Enum(const std::string&, const std::string&), Enum(const std::string&, uint32_t)>(),
+        sol::constructors<Enum(const std::string&, const std::string&),
+                          Enum(const std::string&, uint32_t), Enum(const Enum&)>(),
         sol::meta_function::to_string, &Enum::ToString,
         sol::meta_function::equal_to, &Enum::operator==,
         "value", sol::property(&Enum::GetValueName, &Enum::SetValueByName));
@@ -179,7 +180,7 @@ void Scripting::PostInitialize()
     luaGlobal["Enum"] = luaVm["Enum"];
 
     luaVm.new_usertype<Vector3>("Vector3",
-        sol::constructors<Vector3(float, float, float), Vector3(float, float), Vector3(float), Vector3()>(),
+        sol::constructors<Vector3(float, float, float), Vector3(float, float), Vector3(float), Vector3(const Vector3&), Vector3()>(),
         sol::meta_function::to_string, &Vector3::ToString,
         sol::meta_function::equal_to, &Vector3::operator==,
         "x", &Vector3::x,
@@ -198,7 +199,8 @@ void Scripting::PostInitialize()
     };
 
     luaVm.new_usertype<Vector4>("Vector4",
-        sol::constructors<Vector4(float, float, float, float), Vector4(float, float, float), Vector4(float, float), Vector4(float), Vector4()>(),
+        sol::constructors<Vector4(float, float, float, float), Vector4(float, float, float), Vector4(float, float),
+                          Vector4(float), Vector4(const Vector4&), Vector4()>(),
         sol::meta_function::to_string, &Vector4::ToString,
         sol::meta_function::equal_to, &Vector4::operator==,
         "x", &Vector4::x,
@@ -219,7 +221,8 @@ void Scripting::PostInitialize()
     };
 
     luaVm.new_usertype<EulerAngles>("EulerAngles",
-        sol::constructors<EulerAngles(float, float, float), EulerAngles(float, float), EulerAngles(float), EulerAngles()>(),
+        sol::constructors<EulerAngles(float, float, float), EulerAngles(float, float), EulerAngles(float),
+                          EulerAngles(const EulerAngles&), EulerAngles()>(),
         sol::meta_function::to_string, &EulerAngles::ToString,
         sol::meta_function::equal_to, &EulerAngles::operator==,
         "roll", &EulerAngles::roll,
@@ -238,7 +241,8 @@ void Scripting::PostInitialize()
     };
 
     luaVm.new_usertype<Quaternion>("Quaternion",
-        sol::constructors<Quaternion(float, float, float, float), Quaternion(float, float, float), Quaternion(float, float), Quaternion(float), Quaternion()>(),
+        sol::constructors<Quaternion(float, float, float, float), Quaternion(float, float, float),
+                          Quaternion(float, float), Quaternion(float), Quaternion(const Quaternion&), Quaternion()>(),
         sol::meta_function::to_string, &Quaternion::ToString,
         sol::meta_function::equal_to, &Quaternion::operator==,
         "i", &Quaternion::i,
@@ -259,7 +263,8 @@ void Scripting::PostInitialize()
     };
 
     luaVm.new_usertype<CName>("CName",
-        sol::constructors<CName(const std::string&), CName(uint32_t), CName(uint32_t, uint32_t), CName()>(),
+        sol::constructors<CName(const std::string&), CName(uint32_t), CName(uint32_t, uint32_t),
+                          CName(const CName&), CName()>(),
         sol::meta_function::to_string, &CName::ToString,
         sol::meta_function::equal_to, &CName::operator==,
         "hash_lo", &CName::hash_lo,
@@ -277,7 +282,8 @@ void Scripting::PostInitialize()
     };
 
     luaVm.new_usertype<TweakDBID>("TweakDBID",
-        sol::constructors<TweakDBID(const std::string&), TweakDBID(const TweakDBID&, const std::string&), TweakDBID(uint32_t, uint8_t), TweakDBID()>(),
+        sol::constructors<TweakDBID(const std::string&), TweakDBID(const TweakDBID&, const std::string&),
+                          TweakDBID(uint32_t, uint8_t), TweakDBID(const TweakDBID&), TweakDBID()>(),
         sol::meta_function::to_string, &TweakDBID::ToString,
         sol::meta_function::equal_to, &TweakDBID::operator==,
         sol::meta_function::addition, &TweakDBID::operator+,
@@ -296,7 +302,9 @@ void Scripting::PostInitialize()
     };
 
     luaVm.new_usertype<ItemID>("ItemID",
-        sol::constructors<ItemID(const TweakDBID&, uint32_t, uint16_t, uint8_t), ItemID(const TweakDBID&, uint32_t, uint16_t), ItemID(const TweakDBID&, uint32_t), ItemID(const TweakDBID&), ItemID()>(),
+        sol::constructors<ItemID(const TweakDBID&, uint32_t, uint16_t, uint8_t),
+                          ItemID(const TweakDBID&, uint32_t, uint16_t), ItemID(const TweakDBID&, uint32_t),
+                          ItemID(const TweakDBID&), ItemID(const ItemID&), ItemID()>(),
         sol::meta_function::to_string, &ItemID::ToString,
         sol::meta_function::equal_to, &ItemID::operator==,
         "id", &ItemID::id,
