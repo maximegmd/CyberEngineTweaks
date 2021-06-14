@@ -200,11 +200,14 @@ namespace sol_ImGui
     inline void EndCombo()                                                                           { ImGui::EndCombo(); }
     inline std::tuple<int, bool> Combo(const std::string& label, int currentItem, const sol::table& items, int itemsCount)
     {
+        TiltedPhoques::Vector<std::string> strings;
+        strings.reserve(itemsCount);
         TiltedPhoques::Vector<const char*> cstrings;
-        for (int i{ 1 }; i <= itemsCount; i++)
+        cstrings.reserve(itemsCount);
+        for (int i{1}; i <= itemsCount; i++)
         {
             const auto& stringItem = items.get<sol::optional<std::string>>(i);
-            cstrings.push_back(stringItem.value_or("Missing").c_str());
+            cstrings.emplace_back(strings.emplace_back(std::move(stringItem.value_or("Missing"))).c_str());
         }
 
         bool clicked = ImGui::Combo(label.c_str(), &currentItem, cstrings.data(), itemsCount);
@@ -212,11 +215,14 @@ namespace sol_ImGui
     }
     inline std::tuple<int, bool> Combo(const std::string& label, int currentItem, const sol::table& items, int itemsCount, int popupMaxHeightInItems)
     {
+        TiltedPhoques::Vector<std::string> strings;
+        strings.reserve(itemsCount);
         TiltedPhoques::Vector<const char*> cstrings;
-        for (int i{ 1 }; i <= itemsCount; i++)
+        cstrings.reserve(itemsCount);
+        for (int i{1}; i <= itemsCount; i++)
         {
             const auto& stringItem = items.get<sol::optional<std::string>>(i);
-            cstrings.push_back(stringItem.value_or("Missing").c_str());
+            cstrings.emplace_back(strings.emplace_back(std::move(stringItem.value_or("Missing"))).c_str());
         }
 
         bool clicked = ImGui::Combo(label.c_str(), &currentItem, cstrings.data(), itemsCount, popupMaxHeightInItems);
