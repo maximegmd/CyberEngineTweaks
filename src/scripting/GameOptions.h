@@ -105,6 +105,6 @@ public:
     static void Dump();
     static void List(const std::string& category);
 
-    static std::vector<GameOption*>& GetList();
+    static TiltedPhoques::Vector<GameOption*>& GetList();
 
 };

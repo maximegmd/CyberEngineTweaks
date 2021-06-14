@@ -3,8 +3,8 @@
 struct RTTIHelper
 {
     using LockableState = TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref;
-    using RedFunctionMap = std::unordered_map<uint64_t, std::unordered_map<uint64_t, RED4ext::CBaseFunction*>>;
-    using LuaFunctionMap = std::unordered_map<uint64_t, std::unordered_map<uint64_t, sol::function>>;
+    using RedFunctionMap = TiltedPhoques::Map<uint64_t, TiltedPhoques::Map<uint64_t, RED4ext::CBaseFunction*>>;
+    using LuaFunctionMap = TiltedPhoques::Map<uint64_t, TiltedPhoques::Map<uint64_t, sol::function>>;
 
     ~RTTIHelper() = default;
 

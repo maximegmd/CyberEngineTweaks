@@ -103,7 +103,7 @@ struct FlatPool
 private:
     std::mutex m_mutex;
     Type m_poolType = Type::Unknown;
-    std::vector<Item> m_items;
+    TiltedPhoques::Vector<Item> m_items;
 
     static bool s_initialized;
     static std::array<FlatPool, (size_t)Type::Count> s_pools;
@@ -471,7 +471,7 @@ bool TweakDB::InternalCloneRecord(const std::string& acRecordName, const RED4ext
     vm.RegisterTDBIDString(recordDBID, 0, acRecordName);
 
     // List of flats the game tried to read for our record
-    std::vector<uint64_t> recordFlats;
+    TiltedPhoques::Vector<uint64_t> recordFlats;
     vm.GetTDBIDDerivedFrom(recordDBID, recordFlats);
     bool success = true;
     size_t lastCreatedFlatIdx;
@@ -576,7 +576,7 @@ bool TweakDB::InternalDeleteRecord(RED4ext::TweakDBID aDBID, std::shared_ptr<spd
     }
 
     auto& vm = CET::Get().GetVM();
-    std::vector<uint64_t> recordFlats;
+    TiltedPhoques::Vector<uint64_t> recordFlats;
     vm.GetTDBIDDerivedFrom(aDBID, recordFlats);
     for (const auto& flatID : recordFlats)
     {

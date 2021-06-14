@@ -10,7 +10,7 @@ struct ScriptContext
 
     [[nodiscard]] bool IsValid() const;
 
-    const std::vector<VKBindInfo>& GetBinds() const;
+    const TiltedPhoques::Vector<VKBindInfo>& GetBinds() const;
     
     void TriggerOnInit() const;
     void TriggerOnUpdate(float aDeltaTime) const;
@@ -36,7 +36,7 @@ private:
     sol::function m_onDraw{ };
     sol::function m_onOverlayOpen{ };
     sol::function m_onOverlayClose{ };
-    std::vector<VKBindInfo> m_vkBindInfos{ };
+    TiltedPhoques::Vector<VKBindInfo> m_vkBindInfos{ };
     std::string m_name{ };
     std::shared_ptr<spdlog::logger> m_logger{ nullptr };
     bool m_initialized{ false };

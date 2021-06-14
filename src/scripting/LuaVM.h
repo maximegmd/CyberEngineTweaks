@@ -26,7 +26,7 @@ struct LuaVM
     LuaVM(Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12, Options& aOptions);
     ~LuaVM();
 
-    const std::vector<VKBindInfo>& GetBinds() const;
+    const TiltedPhoques::Vector<VKBindInfo>& GetBinds() const;
     
     bool ExecuteLua(const std::string& acCommand);
         
@@ -44,7 +44,7 @@ struct LuaVM
 
     // Used by TweakDB when you delete a custom record
     void RemoveTDBIDDerivedFrom(uint64_t aDBID);
-    bool GetTDBIDDerivedFrom(uint64_t aDBID, std::vector<uint64_t>& aDerivedList);
+    bool GetTDBIDDerivedFrom(uint64_t aDBID, TiltedPhoques::Vector<uint64_t>& aDerivedList);
     uint64_t GetTDBIDBase(uint64_t aDBID);
     TDBIDLookupEntry GetTDBIDLookupEntry(uint64_t aDBID);
     std::string GetTDBDIDDebugString(TDBID aDBID);
@@ -68,9 +68,9 @@ protected:
 private:
   
     std::shared_mutex m_tdbidLock{ };
-    std::unordered_map<uint64_t, TDBIDLookupEntry> m_tdbidLookup{ };
+    TiltedPhoques::Map<uint64_t, TDBIDLookupEntry> m_tdbidLookup{ };
     // Used by TweakDB to get the flats associated with a record
-    std::unordered_map<uint64_t, std::set<uint64_t>> m_tdbidDerivedLookup{ };
+    TiltedPhoques::Map<uint64_t, std::set<uint64_t>> m_tdbidDerivedLookup{ };
     
     RED4ext::OpcodeHandlers::Handler_t m_realLog{ nullptr };
     RED4ext::OpcodeHandlers::Handler_t m_realLogChannel{nullptr};

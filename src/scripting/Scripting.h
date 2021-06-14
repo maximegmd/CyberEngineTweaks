@@ -17,7 +17,7 @@ struct Scripting
     void Initialize();
     void PostInitialize();
 
-    const std::vector<VKBindInfo>& GetBinds() const;
+    const TiltedPhoques::Vector<VKBindInfo>& GetBinds() const;
 
     void TriggerOnInit() const;
     void TriggerOnUpdate(float aDeltaTime) const;
@@ -48,8 +48,8 @@ protected:
 
 private:
     TiltedPhoques::Lockable<sol::state, std::recursive_mutex> m_lua;
-    std::unordered_map<std::string, sol::object> m_properties{ };
-    std::unordered_map<std::string, SingletonReference> m_singletons{ };
+    TiltedPhoques::Map<std::string, sol::object> m_properties{ };
+    TiltedPhoques::Map<std::string, SingletonReference> m_singletons{ };
     std::string m_global{ "Global" };
     RTTIMapper m_mapper;
     LuaSandbox m_sandbox;

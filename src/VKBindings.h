@@ -82,7 +82,7 @@ struct VKBindings
 
     [[nodiscard]] bool IsInitialized() const noexcept;
 
-    std::vector<VKBindInfo> InitializeMods(std::vector<VKBindInfo> aVKBindInfos);
+    TiltedPhoques::Vector<VKBindInfo> InitializeMods(TiltedPhoques::Vector<VKBindInfo> aVKBindInfos);
 
     static VKCodeBindDecoded DecodeVKCodeBind(uint64_t aVKCodeBind);
     static uint64_t EncodeVKCodeBind(VKCodeBindDecoded aVKCodeBindDecoded);

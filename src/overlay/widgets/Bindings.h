@@ -22,7 +22,7 @@ struct Bindings : Widget
 private:
     bool DrawBindings(bool aDrawHotkeys);
 
-    std::vector<VKBindInfo> m_vkBindInfos{ };
+    TiltedPhoques::Vector<VKBindInfo> m_vkBindInfos{ };
     VKBindings& m_bindings;
     Overlay& m_overlay;
     LuaVM& m_vm;

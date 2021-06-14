@@ -85,7 +85,7 @@ private:
         bool m_isFiltered = false;
         bool m_isInitialized = false;
         std::string m_name;
-        std::vector<CachedFlat> m_flats;
+        TiltedPhoques::Vector<CachedFlat> m_flats;
         ImGuiVisibilityChecker m_visibilityChecker;
 
         CachedFlatGroup(std::string aName) noexcept;
@@ -101,7 +101,7 @@ private:
         bool m_isInitialized = false;
         std::string m_name;
         RED4ext::TweakDBID m_dbid;
-        std::vector<CachedFlat> m_flats;
+        TiltedPhoques::Vector<CachedFlat> m_flats;
         ImGuiVisibilityChecker m_visibilityChecker;
 
         CachedRecord(std::string aName, RED4ext::TweakDBID aDBID) noexcept;
@@ -118,7 +118,7 @@ private:
         bool m_isInitialized = false;
         std::string m_name;
         RED4ext::CName m_typeName;
-        std::vector<CachedRecord> m_records;
+        TiltedPhoques::Vector<CachedRecord> m_records;
         ImGuiVisibilityChecker m_visibilityChecker;
 
         CachedRecordGroup(RED4ext::CName aTypeName);
@@ -130,8 +130,8 @@ private:
     LuaVM& m_vm;
     bool m_initialized = false;
     int32_t m_flatGroupNameDepth = 1;
-    std::vector<CachedFlatGroup> m_cachedFlatGroups;
-    std::vector<CachedRecordGroup> m_cachedRecords;
+    TiltedPhoques::Vector<CachedFlatGroup> m_cachedFlatGroups;
+    TiltedPhoques::Vector<CachedRecordGroup> m_cachedRecords;
     static bool s_recordsFilterIsRegex;
     static bool s_flatsFilterIsRegex;
     static char s_recordsFilterBuffer[256];

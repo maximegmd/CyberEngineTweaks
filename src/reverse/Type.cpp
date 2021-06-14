@@ -82,7 +82,7 @@ std::string Type::FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithH
 {
     std::stringstream ret;
     RED4ext::CName typeName;
-    std::vector<std::string> params;
+    TiltedPhoques::Vector<std::string> params;
     bool hasOutParams = false;
 
     // name2 seems to be a cleaner representation of the name

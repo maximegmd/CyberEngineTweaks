@@ -467,7 +467,7 @@ void Scripting::RegisterOverrides()
     m_override.Override("QuestTrackerGameController", "OnUninitialize", "OnUninitialize", false, sol::nil, sol::nil, true);
 }
 
-const std::vector<VKBindInfo>& Scripting::GetBinds() const
+const TiltedPhoques::Vector<VKBindInfo>& Scripting::GetBinds() const
 {
     return m_store.GetBinds();
 }

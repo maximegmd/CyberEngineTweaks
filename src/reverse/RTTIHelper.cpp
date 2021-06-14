@@ -390,7 +390,7 @@ sol::function RTTIHelper::MakeInvokableOverload(std::map<uint64_t, RED4ext::CBas
     auto lockedState = m_lua.Lock();
     auto& luaState = lockedState.Get();
 
-    std::vector<Overload> variants;
+    TiltedPhoques::Vector<Overload> variants;
 
     for (const auto& cFunc : aOverloadedFuncs)
         variants.emplace_back(cFunc.second);

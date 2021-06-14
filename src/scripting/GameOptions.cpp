@@ -2,7 +2,7 @@
 
 #include "GameOptions.h"
 
-static std::vector<GameOption*> s_gameOptions;
+static TiltedPhoques::Vector<GameOption*> s_gameOptions;
 
 std::string GameOption::GetInfo()
 {
@@ -344,7 +344,7 @@ void GameOptions::List(const std::string& category)
     consoleLogger->info("Found {} options", count);
 }
 
-std::vector<GameOption*>& GameOptions::GetList()
+TiltedPhoques::Vector<GameOption*>& GameOptions::GetList()
 {
     return s_gameOptions;
 }

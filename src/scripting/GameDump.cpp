@@ -8,7 +8,7 @@ namespace GameDump
 {
 void DumpVTablesTask::Run()
 {
-    std::unordered_map<uintptr_t, std::string> vtableMap;
+    TiltedPhoques::Map<uintptr_t, std::string> vtableMap;
 
     HMODULE ModuleBase = GetModuleHandle(nullptr);
     uintptr_t begin = reinterpret_cast<uintptr_t>(ModuleBase);

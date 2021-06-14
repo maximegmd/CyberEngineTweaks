@@ -5,9 +5,9 @@ struct Type
     struct Descriptor
     {
         std::string name{ "Unknown" };
-        std::vector<std::string> functions;
-        std::vector<std::string> staticFunctions;
-        std::vector<std::string> properties;
+        TiltedPhoques::Vector<std::string> functions;
+        TiltedPhoques::Vector<std::string> staticFunctions;
+        TiltedPhoques::Vector<std::string> properties;
 
         std::string ToString() const;
     };
@@ -36,6 +36,7 @@ protected:
     friend struct Scripting;
 
     TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref m_lua;
+    // NOTE: this single unordered_map cannot be changed to TP::Map due to map corruption in function NewIndex_Impl
     std::unordered_map<std::string, sol::object> m_properties;
 };
 

@@ -150,7 +150,7 @@ bool ScriptContext::IsValid() const
     return m_initialized;
 }
 
-const std::vector<VKBindInfo>& ScriptContext::GetBinds() const
+const TiltedPhoques::Vector<VKBindInfo>& ScriptContext::GetBinds() const
 {
     return m_vkBindInfos;
 }

@@ -29,7 +29,7 @@ bool VKBindings::IsInitialized() const noexcept
     return m_initialized;
 }
 
-std::vector<VKBindInfo> VKBindings::InitializeMods(std::vector<VKBindInfo> aVKBindInfos)
+TiltedPhoques::Vector<VKBindInfo> VKBindings::InitializeMods(TiltedPhoques::Vector<VKBindInfo> aVKBindInfos)
 {
     // first, check existing bindings and try to bind in case there is no binding
     for (auto& vkBindInfo : aVKBindInfos)
@@ -63,7 +63,7 @@ std::vector<VKBindInfo> VKBindings::InitializeMods(std::vector<VKBindInfo> aVKBi
     if (m_cOptions.RemoveDeadBindings)
     {
         // now, find all dead bindings
-        std::vector<std::pair<std::string, UINT>> deadIDToBinds;
+        TiltedPhoques::Vector<std::pair<std::string, UINT>> deadIDToBinds;
         for (auto& idToBind : m_idToBind)
         {
             // always ignore internal CET binds here!

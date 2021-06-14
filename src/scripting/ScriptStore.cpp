@@ -55,7 +55,7 @@ void ScriptStore::LoadAll()
     m_bindings.InitializeMods(m_vkBindInfos);
 }
 
-const std::vector<VKBindInfo>& ScriptStore::GetBinds() const
+const TiltedPhoques::Vector<VKBindInfo>& ScriptStore::GetBinds() const
 {
     return m_vkBindInfos;
 }

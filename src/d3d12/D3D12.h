@@ -61,8 +61,8 @@ private:
     
     bool m_initialized{ false };
 
-    std::vector<FrameContext> m_frameContexts{ };
-    std::vector<ID3D12Resource*> m_downlevelBackbuffers{ };
+    TiltedPhoques::Vector<FrameContext> m_frameContexts{ };
+    TiltedPhoques::Vector<ID3D12Resource*> m_downlevelBackbuffers{ };
     IDXGISwapChain3* m_pdxgiSwapChain{ nullptr };
     CComPtr<ID3D12Device> m_pd3d12Device{ nullptr };
     CComPtr<ID3D12DescriptorHeap> m_pd3dRtvDescHeap{ nullptr };

@@ -33,6 +33,6 @@ private:
     Scripting* m_pScripting;
     const VKBindings& m_vkBindings;
     sol::environment m_env{ };
-    std::vector<Sandbox> m_sandboxes{ };
+    TiltedPhoques::Vector<Sandbox> m_sandboxes{};
     TiltedPhoques::Map<std::string, sol::object> m_modules{ };
 };

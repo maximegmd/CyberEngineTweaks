@@ -200,32 +200,24 @@ namespace sol_ImGui
     inline void EndCombo()                                                                           { ImGui::EndCombo(); }
     inline std::tuple<int, bool> Combo(const std::string& label, int currentItem, const sol::table& items, int itemsCount)
     {
-        std::vector<std::string> strings;
+        TiltedPhoques::Vector<const char*> cstrings;
         for (int i{ 1 }; i <= itemsCount; i++)
         {
             const auto& stringItem = items.get<sol::optional<std::string>>(i);
-            strings.push_back(stringItem.value_or("Missing"));
+            cstrings.push_back(stringItem.value_or("Missing").c_str());
         }
-
-        std::vector<const char*> cstrings;
-        for (auto& string : strings)
-            cstrings.push_back(string.c_str());
 
         bool clicked = ImGui::Combo(label.c_str(), &currentItem, cstrings.data(), itemsCount);
         return std::make_tuple(currentItem, clicked);
     }
     inline std::tuple<int, bool> Combo(const std::string& label, int currentItem, const sol::table& items, int itemsCount, int popupMaxHeightInItems)
     {
-        std::vector<std::string> strings;
+        TiltedPhoques::Vector<const char*> cstrings;
         for (int i{ 1 }; i <= itemsCount; i++)
         {
             const auto& stringItem = items.get<sol::optional<std::string>>(i);
-            strings.push_back(stringItem.value_or("Missing"));
+            cstrings.push_back(stringItem.value_or("Missing").c_str());
         }
-
-        std::vector<const char*> cstrings;
-        for (auto& string : strings)
-            cstrings.push_back(string.c_str());
 
         bool clicked = ImGui::Combo(label.c_str(), &currentItem, cstrings.data(), itemsCount, popupMaxHeightInItems);
         return std::make_tuple(currentItem, clicked);
@@ -249,85 +241,85 @@ namespace sol_ImGui
     inline std::tuple<float, bool> DragFloat(const std::string& label, float v, float v_speed, float v_min, float v_max)                                            { bool used = ImGui::DragFloat(label.c_str(), &v, v_speed, v_min, v_max); return std::make_tuple(v, used); }
     inline std::tuple<float, bool> DragFloat(const std::string& label, float v, float v_speed, float v_min, float v_max, const std::string& format)                 { bool used = ImGui::DragFloat(label.c_str(), &v, v_speed, v_min, v_max, format.c_str()); return std::make_tuple(v, used); }
     inline std::tuple<float, bool> DragFloat(const std::string& label, float v, float v_speed, float v_min, float v_max, const std::string& format, int flags)      { bool used = ImGui::DragFloat(label.c_str(), &v, v_speed, v_min, v_max, format.c_str(), static_cast<ImGuiSliderFlags>(flags)); return std::make_tuple(v, used); }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> DragFloat2(const std::string& label, const sol::table& v)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat2(const std::string& label, const sol::table& v)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         float value[2] = { float(v1), float(v2) };
         bool used = ImGui::DragFloat2(label.c_str(), value);
 
-        sol::as_table_t float2 = sol::as_table(std::vector<float>{
+        sol::as_table_t float2 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1]
         });
 
         return std::make_tuple(float2, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> DragFloat2(const std::string& label, const sol::table& v, float v_speed)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat2(const std::string& label, const sol::table& v, float v_speed)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         float value[2] = { float(v1), float(v2) };
         bool used = ImGui::DragFloat2(label.c_str(), value, v_speed);
 
-        sol::as_table_t float2 = sol::as_table(std::vector<float>{
+        sol::as_table_t float2 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1]
         });
 
         return std::make_tuple(float2, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> DragFloat2(const std::string& label, const sol::table& v, float v_speed, float v_min)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat2(const std::string& label, const sol::table& v, float v_speed, float v_min)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         float value[2] = { float(v1), float(v2) };
         bool used = ImGui::DragFloat2(label.c_str(), value, v_speed, v_min);
 
-        sol::as_table_t float2 = sol::as_table(std::vector<float>{
+        sol::as_table_t float2 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1]
         });
 
         return std::make_tuple(float2, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> DragFloat2(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat2(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         float value[2] = { float(v1), float(v2) };
         bool used = ImGui::DragFloat2(label.c_str(), value, v_speed, v_min, v_max);
 
-        sol::as_table_t float2 = sol::as_table(std::vector<float>{
+        sol::as_table_t float2 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1]
         });
 
         return std::make_tuple(float2, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> DragFloat2(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max, const std::string& format)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat2(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max, const std::string& format)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         float value[2] = { float(v1), float(v2) };
         bool used = ImGui::DragFloat2(label.c_str(), value, v_speed, v_min, v_max, format.c_str());
 
-        sol::as_table_t float2 = sol::as_table(std::vector<float>{
+        sol::as_table_t float2 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1]
         });
 
         return std::make_tuple(float2, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> DragFloat2(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max, const std::string& format, int flags)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat2(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max, const std::string& format, int flags)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         float value[2] = { float(v1), float(v2) };
         bool used = ImGui::DragFloat2(label.c_str(), value, v_speed, v_min, v_max, format.c_str(), static_cast<ImGuiSliderFlags>(flags));
 
-        sol::as_table_t float2 = sol::as_table(std::vector<float>{
+        sol::as_table_t float2 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1]
         });
 
         return std::make_tuple(float2, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> DragFloat3(const std::string& label, const sol::table& v)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat3(const std::string& label, const sol::table& v)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -335,13 +327,13 @@ namespace sol_ImGui
         float value[3] = { float(v1), float(v2), float(v3) };
         bool used = ImGui::DragFloat3(label.c_str(), value);
 
-        sol::as_table_t float3 = sol::as_table(std::vector<float>{
+        sol::as_table_t float3 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1], value[2]
         });
 
         return std::make_tuple(float3, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> DragFloat3(const std::string& label, const sol::table& v, float v_speed)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat3(const std::string& label, const sol::table& v, float v_speed)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -349,13 +341,13 @@ namespace sol_ImGui
         float value[3] = { float(v1), float(v2), float(v3) };
         bool used = ImGui::DragFloat3(label.c_str(), value, v_speed);
 
-        sol::as_table_t float3 = sol::as_table(std::vector<float>{
+        sol::as_table_t float3 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1], value[2]
         });
 
         return std::make_tuple(float3, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> DragFloat3(const std::string& label, const sol::table& v, float v_speed, float v_min)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat3(const std::string& label, const sol::table& v, float v_speed, float v_min)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -363,13 +355,13 @@ namespace sol_ImGui
         float value[3] = { float(v1), float(v2), float(v3) };
         bool used = ImGui::DragFloat3(label.c_str(), value, v_speed, v_min);
 
-        sol::as_table_t float3 = sol::as_table(std::vector<float>{
+        sol::as_table_t float3 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1], value[2]
         });
 
         return std::make_tuple(float3, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> DragFloat3(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat3(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -377,13 +369,13 @@ namespace sol_ImGui
         float value[3] = { float(v1), float(v2), float(v3) };
         bool used = ImGui::DragFloat3(label.c_str(), value, v_speed, v_min, v_max);
 
-        sol::as_table_t float3 = sol::as_table(std::vector<float>{
+        sol::as_table_t float3 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1], value[2]
         });
 
         return std::make_tuple(float3, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> DragFloat3(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max, const std::string& format)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat3(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max, const std::string& format)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -391,13 +383,13 @@ namespace sol_ImGui
         float value[3] = { float(v1), float(v2), float(v3) };
         bool used = ImGui::DragFloat3(label.c_str(), value, v_speed, v_min, v_max, format.c_str());
 
-        sol::as_table_t float3 = sol::as_table(std::vector<float>{
+        sol::as_table_t float3 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1], value[2]
         });
 
         return std::make_tuple(float3, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> DragFloat3(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max, const std::string& format, int flags)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat3(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max, const std::string& format, int flags)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -405,13 +397,13 @@ namespace sol_ImGui
         float value[3] = { float(v1), float(v2), float(v3) };
         bool used = ImGui::DragFloat3(label.c_str(), value, v_speed, v_min, v_max, format.c_str(), static_cast<ImGuiSliderFlags>(flags));
 
-        sol::as_table_t float3 = sol::as_table(std::vector<float>{
+        sol::as_table_t float3 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1], value[2]
         });
 
         return std::make_tuple(float3, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> DragFloat4(const std::string& label, const sol::table& v)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat4(const std::string& label, const sol::table& v)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -420,13 +412,13 @@ namespace sol_ImGui
         float value[4] = { float(v1), float(v2), float(v3), float(v4) };
         bool used = ImGui::DragFloat4(label.c_str(), value);
 
-        sol::as_table_t float4 = sol::as_table(std::vector<float>{
+        sol::as_table_t float4 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1], value[2], value[3]
         });
 
         return std::make_tuple(float4, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> DragFloat4(const std::string& label, const sol::table& v, float v_speed)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat4(const std::string& label, const sol::table& v, float v_speed)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -435,13 +427,13 @@ namespace sol_ImGui
         float value[4] = { float(v1), float(v2), float(v3), float(v4) };
         bool used = ImGui::DragFloat4(label.c_str(), value, v_speed);
 
-        sol::as_table_t float4 = sol::as_table(std::vector<float>{
+        sol::as_table_t float4 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1], value[2], value[3]
         });
 
         return std::make_tuple(float4, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> DragFloat4(const std::string& label, const sol::table& v, float v_speed, float v_min)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat4(const std::string& label, const sol::table& v, float v_speed, float v_min)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -450,13 +442,13 @@ namespace sol_ImGui
         float value[4] = { float(v1), float(v2), float(v3), float(v4) };
         bool used = ImGui::DragFloat4(label.c_str(), value, v_speed, v_min);
 
-        sol::as_table_t float4 = sol::as_table(std::vector<float>{
+        sol::as_table_t float4 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1], value[2], value[3]
         });
 
         return std::make_tuple(float4, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> DragFloat4(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat4(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -465,13 +457,13 @@ namespace sol_ImGui
         float value[4] = { float(v1), float(v2), float(v3), float(v4) };
         bool used = ImGui::DragFloat4(label.c_str(), value, v_speed, v_min, v_max);
 
-        sol::as_table_t float4 = sol::as_table(std::vector<float>{
+        sol::as_table_t float4 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1], value[2], value[3]
         });
 
         return std::make_tuple(float4, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> DragFloat4(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max, const std::string& format)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat4(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max, const std::string& format)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -480,13 +472,13 @@ namespace sol_ImGui
         float value[4] = { float(v1), float(v2), float(v3), float(v4) };
         bool used = ImGui::DragFloat4(label.c_str(), value, v_speed, v_min, v_max, format.c_str());
 
-        sol::as_table_t float4 = sol::as_table(std::vector<float>{
+        sol::as_table_t float4 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1], value[2], value[3]
         });
 
         return std::make_tuple(float4, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> DragFloat4(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max, const std::string& format, int flags)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat4(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max, const std::string& format, int flags)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -495,7 +487,7 @@ namespace sol_ImGui
         float value[4] = { float(v1), float(v2), float(v3), float(v4) };
         bool used = ImGui::DragFloat4(label.c_str(), value, v_speed, v_min, v_max, format.c_str(), static_cast<ImGuiSliderFlags>(flags));
 
-        sol::as_table_t float4 = sol::as_table(std::vector<float>{
+        sol::as_table_t float4 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1], value[2], value[3]
         });
 
@@ -508,85 +500,85 @@ namespace sol_ImGui
     inline std::tuple<int, bool> DragInt(const std::string& label, int v, float v_speed, int v_min, int v_max)                                        { bool used = ImGui::DragInt(label.c_str(), &v, v_speed, v_min, v_max); return std::make_tuple(v, used); }
     inline std::tuple<int, bool> DragInt(const std::string& label, int v, float v_speed, int v_min, int v_max, const std::string& format)             { bool used = ImGui::DragInt(label.c_str(), &v, v_speed, v_min, v_max, format.c_str()); return std::make_tuple(v, used); }
     inline std::tuple<int, bool> DragInt(const std::string& label, int v, float v_speed, int v_min, int v_max, const std::string& format, int flags)  { bool used = ImGui::DragInt(label.c_str(), &v, v_speed, v_min, v_max, format.c_str(), static_cast<ImGuiSliderFlags>(flags)); return std::make_tuple(v, used); }
-    inline std::tuple<sol::as_table_t<std::vector<int>>, bool> DragInt2(const std::string& label, const sol::table& v)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt2(const std::string& label, const sol::table& v)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         int value[2] = { int(v1), int(v2) };
         bool used = ImGui::DragInt2(label.c_str(), value);
 
-        sol::as_table_t int2 = sol::as_table(std::vector<int>{
+        sol::as_table_t int2 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1]
         });
 
         return std::make_tuple(int2, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<int>>, bool> DragInt2(const std::string& label, const sol::table& v, float v_speed)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt2(const std::string& label, const sol::table& v, float v_speed)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         int value[2] = { int(v1), int(v2) };
         bool used = ImGui::DragInt2(label.c_str(), value, v_speed);
 
-        sol::as_table_t int2 = sol::as_table(std::vector<int>{
+        sol::as_table_t int2 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1]
         });
 
         return std::make_tuple(int2, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<int>>, bool> DragInt2(const std::string& label, const sol::table& v, float v_speed, int v_min)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt2(const std::string& label, const sol::table& v, float v_speed, int v_min)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         int value[2] = { int(v1), int(v2) };
         bool used = ImGui::DragInt2(label.c_str(), value, v_speed, v_min);
 
-        sol::as_table_t int2 = sol::as_table(std::vector<int>{
+        sol::as_table_t int2 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1]
         });
 
         return std::make_tuple(int2, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<int>>, bool> DragInt2(const std::string& label, const sol::table& v, float v_speed, int v_min, int v_max)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt2(const std::string& label, const sol::table& v, float v_speed, int v_min, int v_max)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         int value[2] = { int(v1), int(v2) };
         bool used = ImGui::DragInt2(label.c_str(), value, v_speed, v_min, v_max);
 
-        sol::as_table_t int2 = sol::as_table(std::vector<int>{
+        sol::as_table_t int2 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1]
         });
 
         return std::make_tuple(int2, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<int>>, bool> DragInt2(const std::string& label, const sol::table& v, float v_speed, int v_min, int v_max, const std::string& format)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt2(const std::string& label, const sol::table& v, float v_speed, int v_min, int v_max, const std::string& format)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         int value[2] = { int(v1), int(v2) };
         bool used = ImGui::DragInt2(label.c_str(), value, v_speed, v_min, v_max, format.c_str());
 
-        sol::as_table_t int2 = sol::as_table(std::vector<int>{
+        sol::as_table_t int2 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1]
         });
 
         return std::make_tuple(int2, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<int>>, bool> DragInt2(const std::string& label, const sol::table& v, float v_speed, int v_min, int v_max, const std::string& format, int flags)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt2(const std::string& label, const sol::table& v, float v_speed, int v_min, int v_max, const std::string& format, int flags)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         int value[2] = { int(v1), int(v2) };
         bool used = ImGui::DragInt2(label.c_str(), value, v_speed, v_min, v_max, format.c_str(), static_cast<ImGuiSliderFlags>(flags));
 
-        sol::as_table_t int2 = sol::as_table(std::vector<int>{
+        sol::as_table_t int2 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1]
         });
 
         return std::make_tuple(int2, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<int>>, bool> DragInt3(const std::string& label, const sol::table& v)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt3(const std::string& label, const sol::table& v)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -594,13 +586,13 @@ namespace sol_ImGui
         int value[3] = { int(v1), int(v2), int(v3) };
         bool used = ImGui::DragInt3(label.c_str(), value);
 
-        sol::as_table_t int3 = sol::as_table(std::vector<int>{
+        sol::as_table_t int3 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1], value[2]
         });
 
         return std::make_tuple(int3, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<int>>, bool> DragInt3(const std::string& label, const sol::table& v, float v_speed)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt3(const std::string& label, const sol::table& v, float v_speed)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -608,13 +600,13 @@ namespace sol_ImGui
         int value[3] = { int(v1), int(v2), int(v3) };
         bool used = ImGui::DragInt3(label.c_str(), value, v_speed);
 
-        sol::as_table_t int3 = sol::as_table(std::vector<int>{
+        sol::as_table_t int3 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1], value[2]
         });
 
         return std::make_tuple(int3, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<int>>, bool> DragInt3(const std::string& label, const sol::table& v, float v_speed, int v_min)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt3(const std::string& label, const sol::table& v, float v_speed, int v_min)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -622,13 +614,13 @@ namespace sol_ImGui
         int value[3] = { int(v1), int(v2), int(v3) };
         bool used = ImGui::DragInt3(label.c_str(), value, v_speed, v_min);
 
-        sol::as_table_t int3 = sol::as_table(std::vector<int>{
+        sol::as_table_t int3 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1], value[2]
         });
 
         return std::make_tuple(int3, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<int>>, bool> DragInt3(const std::string& label, const sol::table& v, float v_speed, int v_min, int v_max)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt3(const std::string& label, const sol::table& v, float v_speed, int v_min, int v_max)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -636,13 +628,13 @@ namespace sol_ImGui
         int value[3] = { int(v1), int(v2), int(v3) };
         bool used = ImGui::DragInt3(label.c_str(), value, v_speed, v_min, v_max);
 
-        sol::as_table_t int3 = sol::as_table(std::vector<int>{
+        sol::as_table_t int3 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1], value[2]
         });
 
         return std::make_tuple(int3, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<int>>, bool> DragInt3(const std::string& label, const sol::table& v, float v_speed, int v_min, int v_max, const std::string& format)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt3(const std::string& label, const sol::table& v, float v_speed, int v_min, int v_max, const std::string& format)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -650,13 +642,13 @@ namespace sol_ImGui
         int value[3] = { int(v1), int(v2), int(v3) };
         bool used = ImGui::DragInt3(label.c_str(), value, v_speed, v_min, v_max, format.c_str());
 
-        sol::as_table_t int3 = sol::as_table(std::vector<int>{
+        sol::as_table_t int3 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1], value[2]
         });
 
         return std::make_tuple(int3, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<int>>, bool> DragInt3(const std::string& label, const sol::table& v, float v_speed, int v_min, int v_max, const std::string& format, int flags)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt3(const std::string& label, const sol::table& v, float v_speed, int v_min, int v_max, const std::string& format, int flags)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -664,13 +656,13 @@ namespace sol_ImGui
         int value[3] = { int(v1), int(v2), int(v3) };
         bool used = ImGui::DragInt3(label.c_str(), value, v_speed, v_min, v_max, format.c_str(), static_cast<ImGuiSliderFlags>(flags));
 
-        sol::as_table_t int3 = sol::as_table(std::vector<int>{
+        sol::as_table_t int3 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1], value[2]
         });
 
         return std::make_tuple(int3, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<int>>, bool> DragInt4(const std::string& label, const sol::table& v)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt4(const std::string& label, const sol::table& v)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -679,13 +671,13 @@ namespace sol_ImGui
         int value[4] = { int(v1), int(v2), int(v3), int(v4) };
         bool used = ImGui::DragInt4(label.c_str(), value);
 
-        sol::as_table_t int4 = sol::as_table(std::vector<int>{
+        sol::as_table_t int4 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1], value[2], value[3]
         });
 
         return std::make_tuple(int4, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<int>>, bool> DragInt4(const std::string& label, const sol::table& v, float v_speed)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt4(const std::string& label, const sol::table& v, float v_speed)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -694,13 +686,13 @@ namespace sol_ImGui
         int value[4] = { int(v1), int(v2), int(v3), int(v4) };
         bool used = ImGui::DragInt4(label.c_str(), value, v_speed);
 
-        sol::as_table_t int4 = sol::as_table(std::vector<int>{
+        sol::as_table_t int4 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1], value[2], value[3]
         });
 
         return std::make_tuple(int4, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<int>>, bool> DragInt4(const std::string& label, const sol::table& v, float v_speed, int v_min)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt4(const std::string& label, const sol::table& v, float v_speed, int v_min)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -709,13 +701,13 @@ namespace sol_ImGui
         int value[4] = { int(v1), int(v2), int(v3), int(v4) };
         bool used = ImGui::DragInt4(label.c_str(), value, v_speed, v_min);
 
-        sol::as_table_t int4 = sol::as_table(std::vector<int>{
+        sol::as_table_t int4 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1], value[2], value[3]
         });
 
         return std::make_tuple(int4, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<int>>, bool> DragInt4(const std::string& label, const sol::table& v, float v_speed, int v_min, int v_max)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt4(const std::string& label, const sol::table& v, float v_speed, int v_min, int v_max)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -724,13 +716,13 @@ namespace sol_ImGui
         int value[4] = { int(v1), int(v2), int(v3), int(v4) };
         bool used = ImGui::DragInt4(label.c_str(), value, v_speed, v_min, v_max);
 
-        sol::as_table_t int4 = sol::as_table(std::vector<int>{
+        sol::as_table_t int4 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1], value[2], value[3]
         });
 
         return std::make_tuple(int4, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<int>>, bool> DragInt4(const std::string& label, const sol::table& v, float v_speed, int v_min, int v_max, const std::string& format)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt4(const std::string& label, const sol::table& v, float v_speed, int v_min, int v_max, const std::string& format)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -739,13 +731,13 @@ namespace sol_ImGui
         int value[4] = { int(v1), int(v2), int(v3), int(v4) };
         bool used = ImGui::DragInt4(label.c_str(), value, v_speed, v_min, v_max, format.c_str());
 
-        sol::as_table_t int4 = sol::as_table(std::vector<int>{
+        sol::as_table_t int4 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1], value[2], value[3]
         });
 
         return std::make_tuple(int4, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<int>>, bool> DragInt4(const std::string& label, const sol::table& v, float v_speed, int v_min, int v_max, const std::string& format, int flags)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt4(const std::string& label, const sol::table& v, float v_speed, int v_min, int v_max, const std::string& format, int flags)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -754,7 +746,7 @@ namespace sol_ImGui
         int value[4] = { int(v1), int(v2), int(v3), int(v4) };
         bool used = ImGui::DragInt4(label.c_str(), value, v_speed, v_min, v_max, format.c_str(), static_cast<ImGuiSliderFlags>(flags));
 
-        sol::as_table_t int4 = sol::as_table(std::vector<int>{
+        sol::as_table_t int4 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1], value[2], value[3]
         });
 
@@ -768,46 +760,46 @@ namespace sol_ImGui
     inline std::tuple<float, bool> SliderFloat(const std::string& label, float v, float v_min, float v_max)                                              { bool used = ImGui::SliderFloat(label.c_str(), &v, v_min, v_max); return std::make_tuple(v, used); }
     inline std::tuple<float, bool> SliderFloat(const std::string& label, float v, float v_min, float v_max, const std::string& format)                   { bool used = ImGui::SliderFloat(label.c_str(), &v, v_min, v_max, format.c_str()); return std::make_tuple(v, used); }
     inline std::tuple<float, bool> SliderFloat(const std::string& label, float v, float v_min, float v_max, const std::string& format, int flags)        { bool used = ImGui::SliderFloat(label.c_str(), &v, v_min, v_max, format.c_str(), static_cast<ImGuiSliderFlags>(flags)); return std::make_tuple(v, used); }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> SliderFloat2(const std::string& label, const sol::table& v, float v_min, float v_max)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> SliderFloat2(const std::string& label, const sol::table& v, float v_min, float v_max)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         float value[2] = { float(v1), float(v2) };
         bool used = ImGui::SliderFloat2(label.c_str(), value, v_min, v_max);
 
-        sol::as_table_t float2 = sol::as_table(std::vector<float>{
+        sol::as_table_t float2 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1]
         });
 
         return std::make_tuple(float2, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> SliderFloat2(const std::string& label, const sol::table& v, float v_min, float v_max, const std::string& format)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> SliderFloat2(const std::string& label, const sol::table& v, float v_min, float v_max, const std::string& format)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         float value[2] = { float(v1), float(v2) };
         bool used = ImGui::SliderFloat2(label.c_str(), value, v_min, v_max, format.c_str());
 
-        sol::as_table_t float2 = sol::as_table(std::vector<float>{
+        sol::as_table_t float2 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1]
         });
 
         return std::make_tuple(float2, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> SliderFloat2(const std::string& label, const sol::table& v, float v_min, float v_max, const std::string& format, int flags)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> SliderFloat2(const std::string& label, const sol::table& v, float v_min, float v_max, const std::string& format, int flags)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         float value[2] = { float(v1), float(v2) };
         bool used = ImGui::SliderFloat2(label.c_str(), value, v_min, v_max, format.c_str(), static_cast<ImGuiSliderFlags>(flags));
 
-        sol::as_table_t float2 = sol::as_table(std::vector<float>{
+        sol::as_table_t float2 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1]
         });
 
         return std::make_tuple(float2, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> SliderFloat3(const std::string& label, const sol::table& v, float v_min, float v_max)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> SliderFloat3(const std::string& label, const sol::table& v, float v_min, float v_max)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -815,13 +807,13 @@ namespace sol_ImGui
         float value[3] = { float(v1), float(v2), float(v3) };
         bool used = ImGui::SliderFloat3(label.c_str(), value, v_min, v_max);
 
-        sol::as_table_t float3 = sol::as_table(std::vector<float>{
+        sol::as_table_t float3 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1], value[3]
         });
 
         return std::make_tuple(float3, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> SliderFloat3(const std::string& label, const sol::table& v, float v_min, float v_max, const std::string& format)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> SliderFloat3(const std::string& label, const sol::table& v, float v_min, float v_max, const std::string& format)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -829,13 +821,13 @@ namespace sol_ImGui
         float value[3] = { float(v1), float(v2), float(v3) };
         bool used = ImGui::SliderFloat3(label.c_str(), value, v_min, v_max, format.c_str());
 
-        sol::as_table_t float3 = sol::as_table(std::vector<float>{
+        sol::as_table_t float3 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1], value[3]
         });
 
         return std::make_tuple(float3, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> SliderFloat3(const std::string& label, const sol::table& v, float v_min, float v_max, const std::string& format, int flags)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> SliderFloat3(const std::string& label, const sol::table& v, float v_min, float v_max, const std::string& format, int flags)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -843,13 +835,13 @@ namespace sol_ImGui
         float value[3] = { float(v1), float(v2), float(v3) };
         bool used = ImGui::SliderFloat3(label.c_str(), value, v_min, v_max, format.c_str(), static_cast<ImGuiSliderFlags>(flags));
 
-        sol::as_table_t float3 = sol::as_table(std::vector<float>{
+        sol::as_table_t float3 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1], value[3]
         });
 
         return std::make_tuple(float3, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> SliderFloat4(const std::string& label, const sol::table& v, float v_min, float v_max)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> SliderFloat4(const std::string& label, const sol::table& v, float v_min, float v_max)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -858,13 +850,13 @@ namespace sol_ImGui
         float value[4] = { float(v1), float(v2), float(v3), float(v4) };
         bool used = ImGui::SliderFloat4(label.c_str(), value, v_min, v_max);
 
-        sol::as_table_t float4 = sol::as_table(std::vector<float>{
+        sol::as_table_t float4 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1], value[2], value[3]
         });
 
         return std::make_tuple(float4, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> SliderFloat4(const std::string& label, const sol::table& v, float v_min, float v_max, const std::string& format)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> SliderFloat4(const std::string& label, const sol::table& v, float v_min, float v_max, const std::string& format)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -873,13 +865,13 @@ namespace sol_ImGui
         float value[4] = { float(v1), float(v2), float(v3), float(v4) };
         bool used = ImGui::SliderFloat4(label.c_str(), value, v_min, v_max, format.c_str());
 
-        sol::as_table_t float4 = sol::as_table(std::vector<float>{
+        sol::as_table_t float4 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1], value[2], value[3]
         });
 
         return std::make_tuple(float4, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> SliderFloat4(const std::string& label, const sol::table& v, float v_min, float v_max, const std::string& format, int flags)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> SliderFloat4(const std::string& label, const sol::table& v, float v_min, float v_max, const std::string& format, int flags)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -888,7 +880,7 @@ namespace sol_ImGui
         float value[4] = { float(v1), float(v2), float(v3), float(v4) };
         bool used = ImGui::SliderFloat4(label.c_str(), value, v_min, v_max, format.c_str(), static_cast<ImGuiSliderFlags>(flags));
 
-        sol::as_table_t float4 = sol::as_table(std::vector<float>{
+        sol::as_table_t float4 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1], value[2], value[3]
         });
 
@@ -902,46 +894,46 @@ namespace sol_ImGui
     inline std::tuple<int, bool> SliderInt(const std::string& label, int v, int v_min, int v_max)                                                                        { bool used = ImGui::SliderInt(label.c_str(), &v, v_min, v_max); return std::make_tuple(v, used); }
     inline std::tuple<int, bool> SliderInt(const std::string& label, int v, int v_min, int v_max, const std::string& format)                                             { bool used = ImGui::SliderInt(label.c_str(), &v, v_min, v_max, format.c_str()); return std::make_tuple(v, used); }
     inline std::tuple<int, bool> SliderInt(const std::string& label, int v, int v_min, int v_max, const std::string& format, int flags)                                  { bool used = ImGui::SliderInt(label.c_str(), &v, v_min, v_max, format.c_str(), static_cast<ImGuiSliderFlags>(flags)); return std::make_tuple(v, used); }
-    inline std::tuple<sol::as_table_t<std::vector<int>>, bool> SliderInt2(const std::string& label, const sol::table& v, int v_min, int v_max)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> SliderInt2(const std::string& label, const sol::table& v, int v_min, int v_max)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         int value[2] = { int(v1), int(v2) };
         bool used = ImGui::SliderInt2(label.c_str(), value, v_min, v_max);
 
-        sol::as_table_t int2 = sol::as_table(std::vector<int>{
+        sol::as_table_t int2 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1]
         });
 
         return std::make_tuple(int2, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<int>>, bool> SliderInt2(const std::string& label, const sol::table& v, int v_min, int v_max, const std::string& format)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> SliderInt2(const std::string& label, const sol::table& v, int v_min, int v_max, const std::string& format)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         int value[2] = { int(v1), int(v2) };
         bool used = ImGui::SliderInt2(label.c_str(), value, v_min, v_max, format.c_str());
 
-        sol::as_table_t int2 = sol::as_table(std::vector<int>{
+        sol::as_table_t int2 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1]
         });
 
         return std::make_tuple(int2, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<int>>, bool> SliderInt2(const std::string& label, const sol::table& v, int v_min, int v_max, const std::string& format, int flags)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> SliderInt2(const std::string& label, const sol::table& v, int v_min, int v_max, const std::string& format, int flags)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         int value[2] = { int(v1), int(v2) };
         bool used = ImGui::SliderInt2(label.c_str(), value, v_min, v_max, format.c_str(), static_cast<ImGuiSliderFlags>(flags));
 
-        sol::as_table_t int2 = sol::as_table(std::vector<int>{
+        sol::as_table_t int2 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1]
         });
 
         return std::make_tuple(int2, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<int>>, bool> SliderInt3(const std::string& label, const sol::table& v, int v_min, int v_max)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> SliderInt3(const std::string& label, const sol::table& v, int v_min, int v_max)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -949,13 +941,13 @@ namespace sol_ImGui
         int value[3] = { int(v1), int(v2), int(v3) };
         bool used = ImGui::SliderInt3(label.c_str(), value, v_min, v_max);
 
-        sol::as_table_t int3 = sol::as_table(std::vector<int>{
+        sol::as_table_t int3 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1], value[2]
         });
 
         return std::make_tuple(int3, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<int>>, bool> SliderInt3(const std::string& label, const sol::table& v, int v_min, int v_max, const std::string& format)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> SliderInt3(const std::string& label, const sol::table& v, int v_min, int v_max, const std::string& format)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -963,13 +955,13 @@ namespace sol_ImGui
         int value[3] = { int(v1), int(v2), int(v3) };
         bool used = ImGui::SliderInt3(label.c_str(), value, v_min, v_max, format.c_str());
 
-        sol::as_table_t int3 = sol::as_table(std::vector<int>{
+        sol::as_table_t int3 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1], value[2]
         });
 
         return std::make_tuple(int3, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<int>>, bool> SliderInt3(const std::string& label, const sol::table& v, int v_min, int v_max, const std::string& format, int flags)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> SliderInt3(const std::string& label, const sol::table& v, int v_min, int v_max, const std::string& format, int flags)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -977,13 +969,13 @@ namespace sol_ImGui
         int value[3] = { int(v1), int(v2), int(v3) };
         bool used = ImGui::SliderInt3(label.c_str(), value, v_min, v_max, format.c_str(), static_cast<ImGuiSliderFlags>(flags));
 
-        sol::as_table_t int3 = sol::as_table(std::vector<int>{
+        sol::as_table_t int3 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1], value[2]
         });
 
         return std::make_tuple(int3, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<int>>, bool> SliderInt4(const std::string& label, const sol::table& v, int v_min, int v_max)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> SliderInt4(const std::string& label, const sol::table& v, int v_min, int v_max)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -992,13 +984,13 @@ namespace sol_ImGui
         int value[4] = { int(v1), int(v2), int(v3), int(v4) };
         bool used = ImGui::SliderInt4(label.c_str(), value, v_min, v_max);
 
-        sol::as_table_t int4 = sol::as_table(std::vector<int>{
+        sol::as_table_t int4 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1], value[2], value[3]
         });
 
         return std::make_tuple(int4, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<int>>, bool> SliderInt4(const std::string& label, const sol::table& v, int v_min, int v_max, const std::string& format)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> SliderInt4(const std::string& label, const sol::table& v, int v_min, int v_max, const std::string& format)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1007,13 +999,13 @@ namespace sol_ImGui
         int value[4] = { int(v1), int(v2), int(v3), int(v4) };
         bool used = ImGui::SliderInt4(label.c_str(), value, v_min, v_max, format.c_str());
 
-        sol::as_table_t int4 = sol::as_table(std::vector<int>{
+        sol::as_table_t int4 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1], value[2], value[3]
         });
 
         return std::make_tuple(int4, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<int>>, bool> SliderInt4(const std::string& label, const sol::table& v, int v_min, int v_max, const std::string& format, int flags)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> SliderInt4(const std::string& label, const sol::table& v, int v_min, int v_max, const std::string& format, int flags)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1022,7 +1014,7 @@ namespace sol_ImGui
         int value[4] = { int(v1), int(v2), int(v3), int(v4) };
         bool used = ImGui::SliderInt4(label.c_str(), value, v_min, v_max, format.c_str(), static_cast<ImGuiSliderFlags>(flags));
 
-        sol::as_table_t int4 = sol::as_table(std::vector<int>{
+        sol::as_table_t int4 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1], value[2], value[3]
         });
 
@@ -1051,46 +1043,46 @@ namespace sol_ImGui
     inline std::tuple<float, bool> InputFloat(const std::string& label, float v, float step, float step_fast)                                                           { bool selected = ImGui::InputFloat(label.c_str(), &v, step, step_fast); return std::make_tuple(v, selected); }
     inline std::tuple<float, bool> InputFloat(const std::string& label, float v, float step, float step_fast, const std::string& format)                                { bool selected = ImGui::InputFloat(label.c_str(), &v, step, step_fast, format.c_str()); return std::make_tuple(v, selected); }
     inline std::tuple<float, bool> InputFloat(const std::string& label, float v, float step, float step_fast, const std::string& format, int flags)                     { bool selected = ImGui::InputFloat(label.c_str(), &v, step, step_fast, format.c_str(), static_cast<ImGuiInputTextFlags>(flags)); return std::make_tuple(v, selected); }
-    inline std::tuple <sol::as_table_t<std::vector<float>>, bool> InputFloat2(const std::string& label, const sol::table& v)
+    inline std::tuple <sol::as_table_t<TiltedPhoques::Vector<float>>, bool> InputFloat2(const std::string& label, const sol::table& v)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         float value[2] = { float(v1), float(v2) };
         bool used = ImGui::InputFloat2(label.c_str(), value);
 
-        sol::as_table_t float2 = sol::as_table(std::vector<float>{
+        sol::as_table_t float2 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1]
         });
 
         return std::make_tuple(float2, used);
     }
-    inline std::tuple <sol::as_table_t<std::vector<float>>, bool> InputFloat2(const std::string& label, const sol::table& v, const std::string& format)
+    inline std::tuple <sol::as_table_t<TiltedPhoques::Vector<float>>, bool> InputFloat2(const std::string& label, const sol::table& v, const std::string& format)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         float value[2] = { float(v1), float(v2) };
         bool used = ImGui::InputFloat2(label.c_str(), value, format.c_str());
 
-        sol::as_table_t float2 = sol::as_table(std::vector<float>{
+        sol::as_table_t float2 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1]
         });
 
         return std::make_tuple(float2, used);
     }
-    inline std::tuple <sol::as_table_t<std::vector<float>>, bool> InputFloat2(const std::string& label, const sol::table& v, const std::string& format, int flags)
+    inline std::tuple <sol::as_table_t<TiltedPhoques::Vector<float>>, bool> InputFloat2(const std::string& label, const sol::table& v, const std::string& format, int flags)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         float value[2] = { float(v1), float(v2) };
         bool used = ImGui::InputFloat2(label.c_str(), value, format.c_str(), static_cast<ImGuiInputTextFlags>(flags));
 
-        sol::as_table_t float2 = sol::as_table(std::vector<float>{
+        sol::as_table_t float2 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1]
         });
 
         return std::make_tuple(float2, used);
     }
-    inline std::tuple <sol::as_table_t<std::vector<float>>, bool> InputFloat3(const std::string& label, const sol::table& v)
+    inline std::tuple <sol::as_table_t<TiltedPhoques::Vector<float>>, bool> InputFloat3(const std::string& label, const sol::table& v)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1098,13 +1090,13 @@ namespace sol_ImGui
         float value[3] = { float(v1), float(v2), float(v3) };
         bool used = ImGui::InputFloat3(label.c_str(), value);
 
-        sol::as_table_t float3 = sol::as_table(std::vector<float>{
+        sol::as_table_t float3 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1], value[2]
         });
 
         return std::make_tuple(float3, used);
     }
-    inline std::tuple <sol::as_table_t<std::vector<float>>, bool> InputFloat3(const std::string& label, const sol::table& v, const std::string& format)
+    inline std::tuple <sol::as_table_t<TiltedPhoques::Vector<float>>, bool> InputFloat3(const std::string& label, const sol::table& v, const std::string& format)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1112,13 +1104,13 @@ namespace sol_ImGui
         float value[3] = { float(v1), float(v2), float(v3) };
         bool used = ImGui::InputFloat3(label.c_str(), value, format.c_str());
 
-        sol::as_table_t float3 = sol::as_table(std::vector<float>{
+        sol::as_table_t float3 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1], value[2]
         });
 
         return std::make_tuple(float3, used);
     }
-    inline std::tuple <sol::as_table_t<std::vector<float>>, bool> InputFloat3(const std::string& label, const sol::table& v, const std::string& format, int flags)
+    inline std::tuple <sol::as_table_t<TiltedPhoques::Vector<float>>, bool> InputFloat3(const std::string& label, const sol::table& v, const std::string& format, int flags)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1126,13 +1118,13 @@ namespace sol_ImGui
         float value[3] = { float(v1), float(v2), float(v3) };
         bool used = ImGui::InputFloat3(label.c_str(), value, format.c_str(), static_cast<ImGuiInputTextFlags>(flags));
 
-        sol::as_table_t float3 = sol::as_table(std::vector<float>{
+        sol::as_table_t float3 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1], value[2]
         });
 
         return std::make_tuple(float3, used);
     }
-    inline std::tuple <sol::as_table_t<std::vector<float>>, bool> InputFloat4(const std::string& label, const sol::table& v)
+    inline std::tuple <sol::as_table_t<TiltedPhoques::Vector<float>>, bool> InputFloat4(const std::string& label, const sol::table& v)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1141,13 +1133,13 @@ namespace sol_ImGui
         float value[4] = { float(v1), float(v2), float(v3), float(v4) };
         bool used = ImGui::InputFloat4(label.c_str(), value);
 
-        sol::as_table_t float4 = sol::as_table(std::vector<float>{
+        sol::as_table_t float4 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1], value[2], value[3]
         });
 
         return std::make_tuple(float4, used);
     }
-    inline std::tuple <sol::as_table_t<std::vector<float>>, bool> InputFloat4(const std::string& label, const sol::table& v, const std::string& format)
+    inline std::tuple <sol::as_table_t<TiltedPhoques::Vector<float>>, bool> InputFloat4(const std::string& label, const sol::table& v, const std::string& format)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1156,13 +1148,13 @@ namespace sol_ImGui
         float value[4] = { float(v1), float(v2), float(v3), float(v4) };
         bool used = ImGui::InputFloat4(label.c_str(), value, format.c_str());
 
-        sol::as_table_t float4 = sol::as_table(std::vector<float>{
+        sol::as_table_t float4 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1], value[2], value[3]
         });
 
         return std::make_tuple(float4, used);
     }
-    inline std::tuple <sol::as_table_t<std::vector<float>>, bool> InputFloat4(const std::string& label, const sol::table& v, const std::string& format, int flags)
+    inline std::tuple <sol::as_table_t<TiltedPhoques::Vector<float>>, bool> InputFloat4(const std::string& label, const sol::table& v, const std::string& format, int flags)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1171,7 +1163,7 @@ namespace sol_ImGui
         float value[4] = { float(v1), float(v2), float(v3), float(v4) };
         bool used = ImGui::InputFloat4(label.c_str(), value, format.c_str(), static_cast<ImGuiInputTextFlags>(flags));
 
-        sol::as_table_t float4 = sol::as_table(std::vector<float>{
+        sol::as_table_t float4 = sol::as_table(TiltedPhoques::Vector<float>{
             value[0], value[1], value[2], value[3]
         });
 
@@ -1181,33 +1173,33 @@ namespace sol_ImGui
     inline std::tuple<int, bool> InputInt(const std::string& label, int v, int step)                                              { bool selected = ImGui::InputInt(label.c_str(), &v, step); return std::make_tuple(v, selected); }
     inline std::tuple<int, bool> InputInt(const std::string& label, int v, int step, int step_fast)                               { bool selected = ImGui::InputInt(label.c_str(), &v, step, step_fast); return std::make_tuple(v, selected); }
     inline std::tuple<int, bool> InputInt(const std::string& label, int v, int step, int step_fast, int flags)                    { bool selected = ImGui::InputInt(label.c_str(), &v, step, step_fast, static_cast<ImGuiInputTextFlags>(flags)); return std::make_tuple(v, selected); }
-    inline std::tuple <sol::as_table_t<std::vector<int>>, bool> InputInt2(const std::string& label, const sol::table& v)
+    inline std::tuple <sol::as_table_t<TiltedPhoques::Vector<int>>, bool> InputInt2(const std::string& label, const sol::table& v)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         int value[2] = { int(v1), int(v2) };
         bool used = ImGui::InputInt2(label.c_str(), value);
 
-        sol::as_table_t int2 = sol::as_table(std::vector<int>{
+        sol::as_table_t int2 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1]
         });
 
         return std::make_tuple(int2, used);
     }
-    inline std::tuple <sol::as_table_t<std::vector<int>>, bool> InputInt2(const std::string& label, const sol::table& v, int flags)
+    inline std::tuple <sol::as_table_t<TiltedPhoques::Vector<int>>, bool> InputInt2(const std::string& label, const sol::table& v, int flags)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         int value[2] = { int(v1), int(v2) };
         bool used = ImGui::InputInt2(label.c_str(), value, static_cast<ImGuiInputTextFlags>(flags));
 
-        sol::as_table_t int2 = sol::as_table(std::vector<int>{
+        sol::as_table_t int2 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1]
         });
 
         return std::make_tuple(int2, used);
     }
-    inline std::tuple <sol::as_table_t<std::vector<int>>, bool> InputInt3(const std::string& label, const sol::table& v)
+    inline std::tuple <sol::as_table_t<TiltedPhoques::Vector<int>>, bool> InputInt3(const std::string& label, const sol::table& v)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1215,13 +1207,13 @@ namespace sol_ImGui
         int value[3] = { int(v1), int(v2), int(v3) };
         bool used = ImGui::InputInt3(label.c_str(), value);
 
-        sol::as_table_t int3 = sol::as_table(std::vector<int>{
+        sol::as_table_t int3 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1], value[2]
         });
 
         return std::make_tuple(int3, used);
     }
-    inline std::tuple <sol::as_table_t<std::vector<int>>, bool> InputInt3(const std::string& label, const sol::table& v, int flags)
+    inline std::tuple <sol::as_table_t<TiltedPhoques::Vector<int>>, bool> InputInt3(const std::string& label, const sol::table& v, int flags)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1229,13 +1221,13 @@ namespace sol_ImGui
         int value[3] = { int(v1), int(v2), int(v3) };
         bool used = ImGui::InputInt3(label.c_str(), value, static_cast<ImGuiInputTextFlags>(flags));
 
-        sol::as_table_t int3 = sol::as_table(std::vector<int>{
+        sol::as_table_t int3 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1], value[2]
         });
 
         return std::make_tuple(int3, used);
     }
-    inline std::tuple <sol::as_table_t<std::vector<int>>, bool> InputInt4(const std::string& label, const sol::table& v)
+    inline std::tuple <sol::as_table_t<TiltedPhoques::Vector<int>>, bool> InputInt4(const std::string& label, const sol::table& v)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1244,13 +1236,13 @@ namespace sol_ImGui
         int value[4] = { int(v1), int(v2), int(v3), int(v4) };
         bool used = ImGui::InputInt4(label.c_str(), value);
 
-        sol::as_table_t int4 = sol::as_table(std::vector<int>{
+        sol::as_table_t int4 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1], value[2], value[3]
         });
 
         return std::make_tuple(int4, used);
     }
-    inline std::tuple <sol::as_table_t<std::vector<int>>, bool> InputInt4(const std::string& label, const sol::table& v, int flags)
+    inline std::tuple <sol::as_table_t<TiltedPhoques::Vector<int>>, bool> InputInt4(const std::string& label, const sol::table& v, int flags)
     {
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1259,7 +1251,7 @@ namespace sol_ImGui
         int value[4] = { int(v1), int(v2), int(v3), int(v4) };
         bool used = ImGui::InputInt4(label.c_str(), value, static_cast<ImGuiInputTextFlags>(flags));
 
-        sol::as_table_t int4 = sol::as_table(std::vector<int>{
+        sol::as_table_t int4 = sol::as_table(TiltedPhoques::Vector<int>{
             value[0], value[1], value[2], value[3]
         });
 
@@ -1274,7 +1266,7 @@ namespace sol_ImGui
     inline void InputScalarN()                                                                                                                               { /* TODO: InputScalarN(...) ==> UNSUPPORTED */ }
 
     // Widgets: Color Editor / Picker
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> ColorEdit3(const std::string& label, const sol::table& col)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> ColorEdit3(const std::string& label, const sol::table& col)
     {
         const lua_Number  r{ col[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
             g{ col[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1282,13 +1274,13 @@ namespace sol_ImGui
         float color[3] = { float(r), float(g), float(b) };
         bool used = ImGui::ColorEdit3(label.c_str(), color);
 
-        sol::as_table_t rgb = sol::as_table(std::vector<float>{
+        sol::as_table_t rgb = sol::as_table(TiltedPhoques::Vector<float>{
             color[0], color[1], color[2]
         });
 
         return std::make_tuple(rgb, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> ColorEdit3(const std::string& label, const sol::table& col, int flags)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> ColorEdit3(const std::string& label, const sol::table& col, int flags)
     {
         const lua_Number  r{ col[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           g{ col[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1296,13 +1288,13 @@ namespace sol_ImGui
         float color[3] = { float(r), float(g), float(b) };
         bool used = ImGui::ColorEdit3(label.c_str(), color, static_cast<ImGuiColorEditFlags>(flags));
 
-        sol::as_table_t rgb = sol::as_table(std::vector<float>{
+        sol::as_table_t rgb = sol::as_table(TiltedPhoques::Vector<float>{
             color[0], color[1], color[2]
         });
 
         return std::make_tuple(rgb, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> ColorEdit4(const std::string& label, const sol::table& col)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> ColorEdit4(const std::string& label, const sol::table& col)
     {
         const lua_Number  r{ col[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           g{ col[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1311,13 +1303,13 @@ namespace sol_ImGui
         float color[4] = { float(r), float(g), float(b), float(a) };
         bool used = ImGui::ColorEdit4(label.c_str(), color);
 
-        sol::as_table_t rgba = sol::as_table(std::vector<float>{
+        sol::as_table_t rgba = sol::as_table(TiltedPhoques::Vector<float>{
             color[0], color[1], color[2], color[3]
         });
 
         return std::make_tuple(rgba, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> ColorEdit4(const std::string& label, const sol::table& col, int flags)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> ColorEdit4(const std::string& label, const sol::table& col, int flags)
     {
         const lua_Number  r{ col[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           g{ col[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1326,13 +1318,13 @@ namespace sol_ImGui
         float color[4] = { float(r), float(g), float(b), float(a) };
         bool used = ImGui::ColorEdit4(label.c_str(), color, static_cast<ImGuiColorEditFlags>(flags));
 
-        sol::as_table_t rgba = sol::as_table(std::vector<float>{
+        sol::as_table_t rgba = sol::as_table(TiltedPhoques::Vector<float>{
             color[0], color[1], color[2], color[3]
         });
 
         return std::make_tuple(rgba, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> ColorPicker3(const std::string& label, const sol::table& col)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> ColorPicker3(const std::string& label, const sol::table& col)
     {
         const lua_Number  r{ col[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           g{ col[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1340,13 +1332,13 @@ namespace sol_ImGui
         float color[3] = { float(r), float(g), float(b) };
         bool used = ImGui::ColorPicker3(label.c_str(), color);
 
-        sol::as_table_t rgb = sol::as_table(std::vector<float>{
+        sol::as_table_t rgb = sol::as_table(TiltedPhoques::Vector<float>{
             color[0], color[1], color[2]
         });
 
         return std::make_tuple(rgb, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> ColorPicker3(const std::string& label, const sol::table& col, int flags)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> ColorPicker3(const std::string& label, const sol::table& col, int flags)
     {
         const lua_Number  r{ col[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           g{ col[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1354,13 +1346,13 @@ namespace sol_ImGui
         float color[3] = { float(r), float(g), float(b) };
         bool used = ImGui::ColorPicker3(label.c_str(), color, static_cast<ImGuiColorEditFlags>(flags));
 
-        sol::as_table_t rgb = sol::as_table(std::vector<float>{
+        sol::as_table_t rgb = sol::as_table(TiltedPhoques::Vector<float>{
             color[0], color[1], color[2]
         });
 
         return std::make_tuple(rgb, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> ColorPicker4(const std::string& label, const sol::table& col)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> ColorPicker4(const std::string& label, const sol::table& col)
     {
         const lua_Number  r{ col[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           g{ col[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1369,13 +1361,13 @@ namespace sol_ImGui
         float color[4] = { float(r), float(g), float(b), float(a) };
         bool used = ImGui::ColorPicker4(label.c_str(), color);
 
-        sol::as_table_t rgba = sol::as_table(std::vector<float>{
+        sol::as_table_t rgba = sol::as_table(TiltedPhoques::Vector<float>{
             color[0], color[1], color[2], color[3]
         });
 
         return std::make_tuple(rgba, used);
     }
-    inline std::tuple<sol::as_table_t<std::vector<float>>, bool> ColorPicker4(const std::string& label, const sol::table& col, int flags)
+    inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> ColorPicker4(const std::string& label, const sol::table& col, int flags)
     {
         const lua_Number  r{ col[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           g{ col[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1384,7 +1376,7 @@ namespace sol_ImGui
         float color[4] = { float(r), float(g), float(b), float(a) };
         bool used = ImGui::ColorPicker4(label.c_str(), color, static_cast<ImGuiColorEditFlags>(flags));
 
-        sol::as_table_t rgba = sol::as_table(std::vector<float>{
+        sol::as_table_t rgba = sol::as_table(TiltedPhoques::Vector<float>{
             color[0], color[1], color[2], color[3]
         });
 
@@ -1448,14 +1440,14 @@ namespace sol_ImGui
     // Widgets: List Boxes
     inline std::tuple<int, bool> ListBox(const std::string& label, int current_item, const sol::table& items, int items_count)
     {
-        std::vector<std::string> strings;
+        TiltedPhoques::Vector<std::string> strings;
         for (int i{ 1 }; i <= items_count; i++)
         {
             const auto& stringItem = items.get<sol::optional<std::string>>(i);
             strings.push_back(stringItem.value_or("Missing"));
         }
 
-        std::vector<const char*> cstrings;
+        TiltedPhoques::Vector<const char*> cstrings;
         for (auto& string : strings)
             cstrings.push_back(string.c_str());
 
@@ -1464,14 +1456,14 @@ namespace sol_ImGui
     }
     inline std::tuple<int, bool> ListBox(const std::string& label, int current_item, const sol::table& items, int items_count, int height_in_items)
     {
-        std::vector<std::string> strings;
+        TiltedPhoques::Vector<std::string> strings;
         for (int i{ 1 }; i <= items_count; i++)
         {
             const auto& stringItem = items.get<sol::optional<std::string>>(i);
             strings.push_back(stringItem.value_or("Missing"));
         }
 
-        std::vector<const char*> cstrings;
+        TiltedPhoques::Vector<const char*> cstrings;
         for (auto& string : strings)
             cstrings.push_back(string.c_str());
 
@@ -1648,10 +1640,10 @@ namespace sol_ImGui
     inline std::tuple<float, float> CalcTextSize(const std::string& text, bool hide_text_after_double_hash, float wrap_width)  { const auto vec2{ ImGui::CalcTextSize(text.c_str(), nullptr, hide_text_after_double_hash, wrap_width) }; return std::make_tuple(vec2.x, vec2.y); }
 
     // Color Utilities
-    inline sol::as_table_t<std::vector<float>> ColorConvertU32ToFloat4(unsigned int in)
+    inline sol::as_table_t<TiltedPhoques::Vector<float>> ColorConvertU32ToFloat4(unsigned int in)
     {
         const auto vec4 = ImGui::ColorConvertU32ToFloat4(in);
-        sol::as_table_t rgba = sol::as_table(std::vector<float>{
+        sol::as_table_t rgba = sol::as_table(TiltedPhoques::Vector<float>{
             vec4.x, vec4.y, vec4.z, vec4.w
         });
 
@@ -2544,28 +2536,28 @@ namespace sol_ImGui
                                                                 sol::resolve<std::tuple<float, bool>(const std::string&, float, float, float, float, const std::string&, int)>(DragFloat)
                                                             ));
         ImGui.set_function("DragFloat2"            , sol::overload(
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&)>(DragFloat2),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float)>(DragFloat2),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float)>(DragFloat2),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, float)>(DragFloat2),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, float, const std::string&)>(DragFloat2),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, float, const std::string&, int)>(DragFloat2)
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&)>(DragFloat2),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, float)>(DragFloat2),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, float, float)>(DragFloat2),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, float, float, float)>(DragFloat2),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, float, float, float, const std::string&)>(DragFloat2),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, float, float, float, const std::string&, int)>(DragFloat2)
                                                             ));
         ImGui.set_function("DragFloat3"            , sol::overload(
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&)>(DragFloat3),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float)>(DragFloat3),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float)>(DragFloat3),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, float)>(DragFloat3),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, float, const std::string&)>(DragFloat3),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, float, const std::string&, int)>(DragFloat3)
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&)>(DragFloat3),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, float)>(DragFloat3),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, float, float)>(DragFloat3),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, float, float, float)>(DragFloat3),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, float, float, float, const std::string&)>(DragFloat3),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, float, float, float, const std::string&, int)>(DragFloat3)
                                                             ));
         ImGui.set_function("DragFloat4"            , sol::overload(
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&)>(DragFloat4),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float)>(DragFloat4),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float)>(DragFloat4),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, float)>(DragFloat4),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, float, const std::string&)>(DragFloat4),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, float, const std::string&, int)>(DragFloat4)
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&)>(DragFloat4),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, float)>(DragFloat4),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, float, float)>(DragFloat4),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, float, float, float)>(DragFloat4),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, float, float, float, const std::string&)>(DragFloat4),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, float, float, float, const std::string&, int)>(DragFloat4)
                                                             ));
         ImGui.set_function("DragInt"            , sol::overload(
                                                                 sol::resolve<std::tuple<int, bool>(const std::string&, int)>(DragInt),
@@ -2576,28 +2568,28 @@ namespace sol_ImGui
                                                                 sol::resolve<std::tuple<int, bool>(const std::string&, int, float, int, int, const std::string&, int)>(DragInt)
                                                             ));
         ImGui.set_function("DragInt2"            , sol::overload(
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&)>(DragInt2),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, float)>(DragInt2),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, float, int)>(DragInt2),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, float, int, int)>(DragInt2),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, float, int, int, const std::string&)>(DragInt2),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, float, int, int, const std::string&, int)>(DragInt2)
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&)>(DragInt2),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&, float)>(DragInt2),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&, float, int)>(DragInt2),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&, float, int, int)>(DragInt2),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&, float, int, int, const std::string&)>(DragInt2),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&, float, int, int, const std::string&, int)>(DragInt2)
                                                             ));
         ImGui.set_function("DragInt3"            , sol::overload(
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&)>(DragInt3),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, float)>(DragInt3),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, float, int)>(DragInt3),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, float, int, int)>(DragInt3),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, float, int, int, const std::string&)>(DragInt3),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, float, int, int, const std::string&, int)>(DragInt3)
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&)>(DragInt3),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&, float)>(DragInt3),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&, float, int)>(DragInt3),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&, float, int, int)>(DragInt3),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&, float, int, int, const std::string&)>(DragInt3),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&, float, int, int, const std::string&, int)>(DragInt3)
                                                             ));
         ImGui.set_function("DragInt4"            , sol::overload(
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&)>(DragInt4),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, float)>(DragInt4),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, float, int)>(DragInt4),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, float, int, int)>(DragInt4),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, float, int, int, const std::string&)>(DragInt4),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, float, int, int, const std::string&, int)>(DragInt4)
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&)>(DragInt4),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&, float)>(DragInt4),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&, float, int)>(DragInt4),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&, float, int, int)>(DragInt4),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&, float, int, int, const std::string&)>(DragInt4),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&, float, int, int, const std::string&, int)>(DragInt4)
                                                             ));
 #pragma endregion Widgets: Drags
 
@@ -2608,19 +2600,19 @@ namespace sol_ImGui
                                                                 sol::resolve<std::tuple<float, bool>(const std::string&, float, float, float, const std::string&, int)>(SliderFloat)
                                                             ));
         ImGui.set_function("SliderFloat2"          , sol::overload(
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float)>(SliderFloat2),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, const std::string&)>(SliderFloat2),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, const std::string&, int)>(SliderFloat2)
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, float, float)>(SliderFloat2),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, float, float, const std::string&)>(SliderFloat2),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, float, float, const std::string&, int)>(SliderFloat2)
                                                             ));
         ImGui.set_function("SliderFloat3"          , sol::overload(
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float)>(SliderFloat3),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, const std::string&)>(SliderFloat3),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, const std::string&, int)>(SliderFloat3)
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, float, float)>(SliderFloat3),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, float, float, const std::string&)>(SliderFloat3),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, float, float, const std::string&, int)>(SliderFloat3)
                                                             ));
         ImGui.set_function("SliderFloat4"          , sol::overload(
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float)>(SliderFloat4),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, const std::string&)>(SliderFloat4),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, float, float, const std::string&, int)>(SliderFloat4)
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, float, float)>(SliderFloat4),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, float, float, const std::string&)>(SliderFloat4),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, float, float, const std::string&, int)>(SliderFloat4)
                                                             ));
         ImGui.set_function("SliderAngle"          , sol::overload(
                                                                 sol::resolve<std::tuple<float, bool>(const std::string&, float)>(SliderAngle),
@@ -2635,19 +2627,19 @@ namespace sol_ImGui
                                                                 sol::resolve<std::tuple<int, bool>(const std::string&, int, int, int, const std::string&, int)>(SliderInt)
                                                             ));
         ImGui.set_function("SliderInt2"            , sol::overload(
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, int, int)>(SliderInt2),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, int, int, const std::string&)>(SliderInt2),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, int, int, const std::string&, int)>(SliderInt2)
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&, int, int)>(SliderInt2),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&, int, int, const std::string&)>(SliderInt2),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&, int, int, const std::string&, int)>(SliderInt2)
                                                             ));
         ImGui.set_function("SliderInt3"            , sol::overload(
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, int, int)>(SliderInt3),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, int, int, const std::string&)>(SliderInt3),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, int, int, const std::string&, int)>(SliderInt3)
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&, int, int)>(SliderInt3),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&, int, int, const std::string&)>(SliderInt3),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&, int, int, const std::string&, int)>(SliderInt3)
                                                             ));
         ImGui.set_function("SliderInt4"            , sol::overload(
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, int, int)>(SliderInt4),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, int, int, const std::string&)>(SliderInt4),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, int, int, const std::string&, int)>(SliderInt4)
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&, int, int)>(SliderInt4),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&, int, int, const std::string&)>(SliderInt4),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&, int, int, const std::string&, int)>(SliderInt4)
                                                             ));
         ImGui.set_function("VSliderFloat"          , sol::overload(
                                                                 sol::resolve<std::tuple<float, bool>(const std::string&, float, float, float, float, float)>(VSliderFloat),
@@ -2683,19 +2675,19 @@ namespace sol_ImGui
                                                                 sol::resolve<std::tuple<float, bool>(const std::string&, float, float, float, const std::string&, int)>(InputFloat)
                                                             ));
         ImGui.set_function("InputFloat2"          , sol::overload(
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&)>(InputFloat2),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, const std::string&)>(InputFloat2),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, const std::string&, int)>(InputFloat2)
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&)>(InputFloat2),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, const std::string&)>(InputFloat2),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, const std::string&, int)>(InputFloat2)
                                                             ));
         ImGui.set_function("InputFloat3"          , sol::overload(
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&)>(InputFloat3),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, const std::string&)>(InputFloat3),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, const std::string&, int)>(InputFloat3)
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&)>(InputFloat3),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, const std::string&)>(InputFloat3),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, const std::string&, int)>(InputFloat3)
                                                             ));
         ImGui.set_function("InputFloat4"          , sol::overload(
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&)>(InputFloat4),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, const std::string&)>(InputFloat4),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, const std::string&, int)>(InputFloat4)
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&)>(InputFloat4),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, const std::string&)>(InputFloat4),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, const std::string&, int)>(InputFloat4)
                                                             ));
         ImGui.set_function("InputInt"            , sol::overload(
                                                                 sol::resolve<std::tuple<int, bool>(const std::string&, int)>(InputInt),
@@ -2705,16 +2697,16 @@ namespace sol_ImGui
                                                                 sol::resolve<std::tuple<int, bool>(const std::string&, int, int, int, int)>(InputInt)
                                                             ));
         ImGui.set_function("InputInt2"            , sol::overload(
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&)>(InputInt2),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, int)>(InputInt2)
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&)>(InputInt2),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&, int)>(InputInt2)
                                                             ));
         ImGui.set_function("InputInt3"            , sol::overload(
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&)>(InputInt3),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, int)>(InputInt3)
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&)>(InputInt3),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&, int)>(InputInt3)
                                                             ));
         ImGui.set_function("InputInt4"            , sol::overload(
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&)>(InputInt4),
-                                                                sol::resolve<std::tuple<sol::as_table_t<std::vector<int>>, bool>(const std::string&, const sol::table&, int)>(InputInt4)
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&)>(InputInt4),
+                                                                sol::resolve<std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool>(const std::string&, const sol::table&, int)>(InputInt4)
                                                             ));
         ImGui.set_function("InputDouble"          , sol::overload(
                                                                 sol::resolve<std::tuple<double, bool>(const std::string&, double)>(InputDouble),
@@ -2727,20 +2719,20 @@ namespace sol_ImGui
 
 #pragma region Widgets: Color Editor / Picker
         ImGui.set_function("ColorEdit3"            , sol::overload(
-                                                                sol::resolve<std::tuple <sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&)>(ColorEdit3),
-                                                                sol::resolve<std::tuple <sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, int)>(ColorEdit3)
+                                                                sol::resolve<std::tuple <sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&)>(ColorEdit3),
+                                                                sol::resolve<std::tuple <sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, int)>(ColorEdit3)
                                                             ));
         ImGui.set_function("ColorEdit4"            , sol::overload(
-                                                                sol::resolve<std::tuple <sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&)>(ColorEdit4),
-                                                                sol::resolve<std::tuple <sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, int)>(ColorEdit4)
+                                                                sol::resolve<std::tuple <sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&)>(ColorEdit4),
+                                                                sol::resolve<std::tuple <sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, int)>(ColorEdit4)
                                                             ));
         ImGui.set_function("ColorPicker3"          , sol::overload(
-                                                                sol::resolve<std::tuple <sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&)>(ColorPicker3),
-                                                                sol::resolve<std::tuple <sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, int)>(ColorPicker3)
+                                                                sol::resolve<std::tuple <sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&)>(ColorPicker3),
+                                                                sol::resolve<std::tuple <sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, int)>(ColorPicker3)
                                                             ));
         ImGui.set_function("ColorPicker4"          , sol::overload(
-                                                                sol::resolve<std::tuple <sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&)>(ColorPicker4),
-                                                                sol::resolve<std::tuple <sol::as_table_t<std::vector<float>>, bool>(const std::string&, const sol::table&, int)>(ColorPicker4)
+                                                                sol::resolve<std::tuple <sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&)>(ColorPicker4),
+                                                                sol::resolve<std::tuple <sol::as_table_t<TiltedPhoques::Vector<float>>, bool>(const std::string&, const sol::table&, int)>(ColorPicker4)
                                                             ));
         ImGui.set_function("ColorButton"           , sol::overload(
                                                                 sol::resolve<bool(const std::string&, const sol::table&)>(ColorButton),

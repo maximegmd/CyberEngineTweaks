@@ -4,7 +4,7 @@
 #include "CET.h"
 #include "overlay/Overlay.h"
 
-const std::vector<VKBindInfo>& LuaVM::GetBinds() const
+const TiltedPhoques::Vector<VKBindInfo>& LuaVM::GetBinds() const
 {
     return m_scripting.GetBinds();
 }
@@ -94,7 +94,7 @@ void LuaVM::RemoveTDBIDDerivedFrom(uint64_t aDBID)
     }
 }
 
-bool LuaVM::GetTDBIDDerivedFrom(uint64_t aDBID, std::vector<uint64_t>& aDerivedList)
+bool LuaVM::GetTDBIDDerivedFrom(uint64_t aDBID, TiltedPhoques::Vector<uint64_t>& aDerivedList)
 {
     std::shared_lock<std::shared_mutex> _{ m_tdbidLock };
 

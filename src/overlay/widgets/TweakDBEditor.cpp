@@ -127,7 +127,7 @@ protected:
         return uncompressed;
     }
 
-    void ReadTDBIDNameArray(std::ifstream& aFile, uint32_t aCount, std::unordered_map<uint64_t, std::string>& aOutMap)
+    void ReadTDBIDNameArray(std::ifstream& aFile, uint32_t aCount, TiltedPhoques::Map<uint64_t, std::string>& aOutMap)
     {
         for (int32_t i = 0; i != aCount; ++i)
         {
@@ -159,9 +159,9 @@ private:
 
     bool m_isInitialized = false;
     Header m_header;
-    std::unordered_map<uint64_t, std::string> m_records;
-    std::unordered_map<uint64_t, std::string> m_flats;
-    std::unordered_map<uint64_t, std::string> m_queries;
+    TiltedPhoques::Map<uint64_t, std::string> m_records;
+    TiltedPhoques::Map<uint64_t, std::string> m_flats;
+    TiltedPhoques::Map<uint64_t, std::string> m_queries;
 };
 
 struct ResourcesList
@@ -243,7 +243,7 @@ struct ResourcesList
             return it->second->m_name;
     }
 
-    std::vector<Resource>& GetResources()
+    TiltedPhoques::Vector<Resource>& GetResources()
     {
         return m_resources;
     }
@@ -258,8 +258,8 @@ protected:
 
 private:
     bool m_isInitialized = false;
-    std::vector<Resource> m_resources;
-    std::unordered_map<uint64_t, Resource*> m_resourcesByHash;
+    TiltedPhoques::Vector<Resource> m_resources;
+    TiltedPhoques::Map<uint64_t, Resource*> m_resourcesByHash;
 };
 
 namespace ImGui
@@ -437,7 +437,7 @@ void TweakDBEditor::RefreshRecords()
     auto* pTDB = RED4ext::TweakDB::Get();
 
     std::shared_lock<RED4ext::SharedMutex> _(pTDB->mutex01);
-    std::unordered_map<uint64_t, std::vector<CachedRecord>> map;
+    TiltedPhoques::Map<uint64_t, TiltedPhoques::Vector<CachedRecord>> map;
 
     size_t recordsCount = 0;
     pTDB->recordsByType.for_each(
@@ -448,7 +448,7 @@ void TweakDBEditor::RefreshRecords()
             RED4ext::CName typeName;
             aRTTIType->GetName(typeName);
 
-            std::vector<CachedRecord>& recordsVec = map[typeName];
+            TiltedPhoques::Vector<CachedRecord>& recordsVec = map[typeName];
             recordsVec.reserve(aRecords.size);
             for (RED4ext::Handle<RED4ext::IScriptable> handle : aRecords)
             {
@@ -463,21 +463,24 @@ void TweakDBEditor::RefreshRecords()
 
     m_cachedRecords.clear();
     m_cachedRecords.reserve(recordsCount);
-    for (auto& [typeName, records] : map)
+    for (auto it = map.begin(); it != map.end(); ++it)
     {
+        const auto cTypeName = it.key();
+        auto& records = it.value();
+
         std::for_each(std::execution::par_unseq, records.begin(), records.end(),
                       [](CachedRecord& record) { record.InitializeFlats(); });
 
-        CachedRecordGroup recordGroup(typeName);
+        CachedRecordGroup recordGroup(cTypeName);
         recordGroup.m_records = std::move(records);
         m_cachedRecords.emplace_back(std::move(recordGroup));
     }
 
-    std::sort(m_cachedRecords.begin(), m_cachedRecords.end(),
-              [](const CachedRecordGroup& acLeft, const CachedRecordGroup& acRight)
-              {
-                  return SortString(acLeft.m_name, acRight.m_name);
-              });
+    std::ranges::sort(m_cachedRecords,
+                      [](const CachedRecordGroup& acLeft, const CachedRecordGroup& acRight)
+                      {
+                          return SortString(acLeft.m_name, acRight.m_name);
+                      });
 }
 
 void TweakDBEditor::RefreshFlats()
@@ -489,7 +492,7 @@ void TweakDBEditor::RefreshFlats()
     std::shared_lock<RED4ext::SharedMutex> _1(pTDB->mutex00);
     std::shared_lock<RED4ext::SharedMutex> _2(pTDB->mutex01);
     std::mutex mapMutex;
-    std::unordered_map<uint64_t, CachedFlatGroup> map;
+    TiltedPhoques::Map<uint64_t, CachedFlatGroup> map;
 
     std::for_each(std::execution::par_unseq, pTDB->flats.begin(), pTDB->flats.end(), [&](RED4ext::TweakDBID& dbid)
     {
@@ -505,9 +508,9 @@ void TweakDBEditor::RefreshFlats()
         {
             const auto it = map.find(unknownGroupHash);
             if (it == map.end())
-                flatGroup = &map.emplace(unknownGroupHash, CachedFlatGroup("!Unknown!")).first->second;
+                flatGroup = &map.emplace(unknownGroupHash, CachedFlatGroup("!Unknown!")).first.value();
             else
-                flatGroup = &it->second;
+                flatGroup = &it.value();
         }
         else
         {
@@ -516,9 +519,9 @@ void TweakDBEditor::RefreshFlats()
             {
                 const auto it = map.find(badGroupHash);
                 if (it == map.end())
-                    flatGroup = &map.emplace(badGroupHash, CachedFlatGroup("!BadName!")).first->second;
+                    flatGroup = &map.emplace(badGroupHash, CachedFlatGroup("!BadName!")).first.value();
                 else
-                    flatGroup = &it->second;
+                    flatGroup = &it.value();
             }
             else
             {
@@ -539,9 +542,9 @@ void TweakDBEditor::RefreshFlats()
                 uint64_t groupHash = RED4ext::FNV1a(groupName.c_str());
                 const auto it = map.find(groupHash);
                 if (it == map.end())
-                    flatGroup = &map.emplace(groupHash, std::move(groupName)).first->second;
+                    flatGroup = &map.emplace(groupHash, std::move(groupName)).first.value();
                 else
-                    flatGroup = &it->second;
+                    flatGroup = &it.value();
             }
         }
 
@@ -550,19 +553,21 @@ void TweakDBEditor::RefreshFlats()
 
     m_cachedFlatGroups.clear();
     m_cachedFlatGroups.reserve(map.size());
-    for (auto& [groupHash, group] : map)
+    for (auto it = map.begin(); it != map.end(); ++it)
     {
-        if (groupHash == unknownGroupHash || groupHash == badGroupHash)
+        const auto cGroupHash = it.key();
+        auto& group = it.value();
+        if (cGroupHash == unknownGroupHash || cGroupHash == badGroupHash)
             group.m_name = fmt::format("{} - {} flats!", group.m_name, group.m_flats.size());
 
         m_cachedFlatGroups.emplace_back(std::move(group));
     }
 
-    std::sort(m_cachedFlatGroups.begin(), m_cachedFlatGroups.end(),
-              [](const CachedFlatGroup& acLeft, const CachedFlatGroup& acRight)
-              {
-                  return SortString(acLeft.m_name, acRight.m_name);
-              });
+    std::ranges::sort(m_cachedFlatGroups,
+                      [](const CachedFlatGroup& acLeft, const CachedFlatGroup& acRight)
+                      {
+                          return SortString(acLeft.m_name, acRight.m_name);
+                      });
 }
 
 void TweakDBEditor::FilterAll()
@@ -895,7 +900,7 @@ bool TweakDBEditor::DrawFlat(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aSta
 bool TweakDBEditor::DrawFlatArray(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly,
                                   bool aCollapsable)
 {
-    static std::unordered_map<uint64_t, RED4ext::ScriptInstance> editedArrays;
+    static TiltedPhoques::Map<uint64_t, RED4ext::ScriptInstance> editedArrays;
 
     auto* pArrayType = reinterpret_cast<RED4ext::CArray*>(aStackType.type);
     auto* pArrayInnerType = pArrayType->GetInnerType();
@@ -2122,7 +2127,7 @@ void TweakDBEditor::CachedRecord::InitializeFlats()
     if (m_flats.size() != 0)
         return;
 
-    std::vector<uint64_t> recordFlats;
+    TiltedPhoques::Vector<uint64_t> recordFlats;
     CET::Get().GetVM().GetTDBIDDerivedFrom(m_dbid.value, recordFlats);
     if (!recordFlats.empty())
     {

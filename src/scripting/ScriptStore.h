@@ -9,7 +9,7 @@ struct ScriptStore
 
     void LoadAll();
 
-    const std::vector<VKBindInfo>& GetBinds() const;
+    const TiltedPhoques::Vector<VKBindInfo>& GetBinds() const;
     
     void TriggerOnInit() const;
     void TriggerOnUpdate(float aDeltaTime) const;
@@ -22,8 +22,8 @@ struct ScriptStore
 
 private:
     
-    std::unordered_map<std::string, ScriptContext> m_contexts{ };
-    std::vector<VKBindInfo> m_vkBindInfos{ };
+    TiltedPhoques::Map<std::string, ScriptContext> m_contexts{ };
+    TiltedPhoques::Vector<VKBindInfo> m_vkBindInfos{ };
     LuaSandbox& m_sandbox;
     const Paths& m_paths;
     VKBindings& m_bindings;
