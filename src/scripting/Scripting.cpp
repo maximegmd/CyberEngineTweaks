@@ -254,8 +254,8 @@ void Scripting::PostInitialize()
                           ItemID(const TweakDBID&), ItemID(sol::table), ItemID(const ItemID&), ItemID()>(),
         sol::meta_function::to_string, &ItemID::ToString,
         sol::meta_function::equal_to, &ItemID::operator==,
-        "id", &ItemID::tdbid,
-        "tdbid", &ItemID::tdbid,
+        "id", sol::property(&ItemID::GetTweakDBID, &ItemID::SetTweakDBID),
+        "tdbid", sol::property(&ItemID::GetTweakDBID, &ItemID::SetTweakDBID),
         "rng_seed", &ItemID::rngSeed,
         "unknown", &ItemID::unk0C,
         "maybe_type", &ItemID::unk0E);

@@ -1,23 +1,6 @@
 #pragma once
 
-#include <RED4ext/REDfunc.hpp>
-#include <RED4ext/DynArray.hpp>
-#include <RED4ext/REDptr.hpp>
-#include <RED4ext/REDhash.hpp>
-#include <RED4ext/CName.hpp>
-#include <RED4ext/CString.hpp>
-#include <RED4ext/ISerializable.hpp>
-#include <RED4ext/Types/InstanceType.hpp>
-#include <RED4ext/Types/SimpleTypes.hpp>
-#include <RED4ext/Types/CharacterCustomization.hpp>
-#include <RED4ext/RTTISystem.hpp>
-#include <RED4ext/RTTITypes.hpp>
-#include <RED4ext/GameEngine.hpp>
-#include <RED4ext/Scripting/Stack.hpp>
-#include <RED4ext/Scripting/CProperty.hpp>
-#include <RED4ext/Scripting/Functions.hpp>
-#include <RED4ext/Scripting/OpcodeHandlers.hpp>
-#include <RED4ext/MemoryAllocators.hpp>
+#include <RED4ext/RED4ext.hpp>
 
 #include "RED4ext/Types/generated/EulerAngles.hpp"
 #include "RED4ext/Types/generated/Quaternion.hpp"
@@ -236,6 +219,16 @@ struct ItemID : RED4ext::ItemID
         : ItemID { aTable["id"].get_or<TweakDBID>(0), aTable["rng_seed"].get_or<uint32_t>(2),
                    aTable["unknown"].get_or<uint16_t>(0), aTable["maybe_type"].get_or<uint8_t>(0) }
     {
+    }
+
+    void SetTweakDBID(TweakDBID aValue)
+    {
+        tdbid = static_cast<RED4ext::TweakDBID>(aValue);
+    }
+
+    TweakDBID GetTweakDBID() const
+    {
+        return TweakDBID(tdbid);
     }
 
     [[nodiscard]] std::string ToString() const noexcept
