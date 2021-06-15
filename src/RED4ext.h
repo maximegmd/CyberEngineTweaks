@@ -33,6 +33,11 @@ struct Vector3 : RED4ext::Vector3
         : base { aX, aY, aZ }
     {
     }
+
+    Vector3(sol::table aTable)
+        : base { aTable["x"].get_or(0.f), aTable["y"].get_or(0.f), aTable["z"].get_or(0.f) }
+    {
+    }
     
     [[nodiscard]] std::string ToString() const noexcept
     {
@@ -52,6 +57,11 @@ struct Vector4 : RED4ext::Vector4
 
     Vector4(float aX = 0.f, float aY = 0.f, float aZ = 0.f, float aW = 0.f)
         : base { aX, aY, aZ, aW }
+    {
+    }
+
+    Vector4(sol::table aTable)
+        : base { aTable["x"].get_or(0.f), aTable["y"].get_or(0.f), aTable["z"].get_or(0.f), aTable["w"].get_or(0.f) }
     {
     }
 
@@ -75,6 +85,11 @@ struct EulerAngles : RED4ext::EulerAngles
         : base { aRoll, aPitch, aYaw }
     {
     }
+
+    EulerAngles(sol::table aTable)
+        : base { aTable["roll"].get_or(0.f), aTable["pitch"].get_or(0.f), aTable["yaw"].get_or(0.f) }
+    {
+    }
     
     [[nodiscard]] std::string ToString() const noexcept
     {
@@ -94,6 +109,11 @@ struct Quaternion : RED4ext::Quaternion
 
     Quaternion(float aI = 0.f, float aJ = 0.f, float aK = 0.f, float aR = 1.f)
         : base { aI, aJ, aK, aR }
+    {
+    }
+
+    Quaternion(sol::table aTable)
+        : base { aTable["i"].get_or(0.f), aTable["j"].get_or(0.f), aTable["k"].get_or(0.f), aTable["r"].get_or(0.f) }
     {
     }
 
@@ -128,6 +148,11 @@ struct CName : RED4ext::CName
 
     CName(const std::string& aName)
         : base(aName.c_str())
+    {
+    }
+
+    CName(sol::table aTable)
+        : CName { aTable["hash_lo"].get_or<uint32_t>(0), aTable["hash_hi"].get_or<uint32_t>(0) }
     {
     }
 
@@ -176,6 +201,11 @@ struct TweakDBID : RED4ext::TweakDBID
     {
     }
 
+    TweakDBID(sol::table aTable)
+        : TweakDBID { aTable["hash"].get_or<uint32_t>(0), aTable["length"].get_or<uint8_t>(0) }
+    {
+    }
+
     [[nodiscard]] std::string ToString() const noexcept
     {
         return fmt::format("ToTweakDBID{{ hash = 0x{0:08X}, length = {1:d} }}", nameHash, nameLength);
@@ -199,6 +229,12 @@ struct ItemID : RED4ext::ItemID
 
     ItemID(const TweakDBID& aId, uint32_t aRngSeed = 2, uint16_t aUnknown = 0, uint8_t aMaybeType = 0)
         : base { reinterpret_cast<const RED4ext::TweakDBID&>(aId), aRngSeed, aUnknown, aMaybeType, 0 }
+    {
+    }
+
+    ItemID(sol::table aTable)
+        : ItemID { aTable["id"].get_or<TweakDBID>(0), aTable["rng_seed"].get_or<uint32_t>(2),
+                   aTable["unknown"].get_or<uint16_t>(0), aTable["maybe_type"].get_or<uint8_t>(0) }
     {
     }
 
