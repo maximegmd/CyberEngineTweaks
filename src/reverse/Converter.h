@@ -1,6 +1,5 @@
 #pragma once
 
-#include "BasicTypes.h"
 #include "Enum.h"
 #include "ClassReference.h"
 #include "LuaRED.h"
@@ -29,7 +28,7 @@ struct CNameConverter : LuaRED<CName, "CName">
             sol::state_view v(aObject.lua_state());
             std::string str = v["tostring"](aObject);
             result.type = apRtti;
-            result.value = apAllocator->New<CName>(str);
+            result.value = apAllocator->New<CName>(str.c_str());
         }
         else
         {
@@ -45,7 +44,7 @@ struct CNameConverter : LuaRED<CName, "CName">
         {
             sol::state_view v(aObject.lua_state());
             std::string str = v["tostring"](aObject);
-            *(CName*)apType->value = CName(str);
+            *(CName*)apType->value = CName(str.c_str());
         }
         else
         {

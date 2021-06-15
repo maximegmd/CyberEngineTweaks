@@ -65,7 +65,7 @@ struct CDPRTweakDBMetadata
         return m_isInitialized;
     }
 
-    bool GetRecordName(RED4ext::TweakDBID aDBID, std::string& aName)
+    bool GetRecordName(TweakDBID aDBID, std::string& aName)
     {
         const auto it = m_records.find(aDBID.value & 0xFFFFFFFFFF);
         if (it == m_records.end())
@@ -75,7 +75,7 @@ struct CDPRTweakDBMetadata
         return true;
     }
 
-    bool GetFlatName(RED4ext::TweakDBID aDBID, std::string& aName)
+    bool GetFlatName(TweakDBID aDBID, std::string& aName)
     {
         const auto it = m_flats.find(aDBID.value & 0xFFFFFFFFFF);
         if (it == m_flats.end())
@@ -85,7 +85,7 @@ struct CDPRTweakDBMetadata
         return true;
     }
 
-    bool GetQueryName(RED4ext::TweakDBID aDBID, std::string& aName)
+    bool GetQueryName(TweakDBID aDBID, std::string& aName)
     {
         const auto it = m_queries.find(aDBID.value & 0xFFFFFFFFFF);
         if (it == m_queries.end())
@@ -576,12 +576,12 @@ void TweakDBEditor::FilterAll()
     FilterFlats();
 }
 
-RED4ext::TweakDBID ExtractTweakDBIDFromString(const char* acString)
+TweakDBID ExtractTweakDBIDFromString(const char* acString)
 {
     if (acString[0] == '\0')
         return 0;
 
-    RED4ext::TweakDBID dbid = 0;
+    TweakDBID dbid = 0;
     if (sscanf(acString, "%llX", &dbid.value) != 1)
     {
         if (sscanf(acString, "<TDBID:%X:%hhX", &dbid.nameHash, &dbid.nameLength) != 2)
@@ -593,8 +593,8 @@ RED4ext::TweakDBID ExtractTweakDBIDFromString(const char* acString)
 
 void TweakDBEditor::FilterRecords(bool aFilterTab, bool aFilterDropdown)
 {
-    RED4ext::TweakDBID dbid = ExtractTweakDBIDFromString(s_recordsFilterBuffer);
-    RED4ext::TweakDBID dbidDropdown = ExtractTweakDBIDFromString(s_tweakdbidFilterBuffer);
+    TweakDBID dbid = ExtractTweakDBIDFromString(s_recordsFilterBuffer);
+    TweakDBID dbidDropdown = ExtractTweakDBIDFromString(s_tweakdbidFilterBuffer);
     for (CachedRecordGroup& group : m_cachedRecords)
     {
         bool anyRecordsVisible = false;
@@ -667,7 +667,7 @@ void TweakDBEditor::FilterFlats()
     }
     else
     {
-        RED4ext::TweakDBID dbid = ExtractTweakDBIDFromString(s_flatsFilterBuffer);
+        TweakDBID dbid = ExtractTweakDBIDFromString(s_flatsFilterBuffer);
         for (CachedFlatGroup& group : m_cachedFlatGroups)
         {
             bool anyFlatsVisible = false;
@@ -690,7 +690,7 @@ void TweakDBEditor::FilterFlats()
     }
 }
 
-bool TweakDBEditor::DrawRecordDropdown(const char* acpLabel, RED4ext::TweakDBID& aDBID, float aWidth)
+bool TweakDBEditor::DrawRecordDropdown(const char* acpLabel, TweakDBID& aDBID, float aWidth)
 {
     bool valueChanged = false;
     if (aWidth)
@@ -770,14 +770,14 @@ bool TweakDBEditor::DrawRecordDropdown(const char* acpLabel, RED4ext::TweakDBID&
 
 #pragma region TweakDBID to string
 
-std::string TweakDBEditor::GetTweakDBIDStringRecord(RED4ext::TweakDBID aDBID)
+std::string TweakDBEditor::GetTweakDBIDStringRecord(TweakDBID aDBID)
 {
     std::string name;
     GetTweakDBIDStringRecord(aDBID, name);
     return std::move(name);
 }
 
-bool TweakDBEditor::GetTweakDBIDStringRecord(RED4ext::TweakDBID aDBID, std::string& aString)
+bool TweakDBEditor::GetTweakDBIDStringRecord(TweakDBID aDBID, std::string& aString)
 {
     if (CDPRTweakDBMetadata::Get()->GetRecordName(aDBID, aString))
         return true;
@@ -786,14 +786,14 @@ bool TweakDBEditor::GetTweakDBIDStringRecord(RED4ext::TweakDBID aDBID, std::stri
     return aString[0] != '<' || aString[aString.size() - 1] != '>';
 }
 
-std::string TweakDBEditor::GetTweakDBIDStringFlat(RED4ext::TweakDBID aDBID)
+std::string TweakDBEditor::GetTweakDBIDStringFlat(TweakDBID aDBID)
 {
     std::string name;
     GetTweakDBIDStringFlat(aDBID, name);
     return std::move(name);
 }
 
-bool TweakDBEditor::GetTweakDBIDStringFlat(RED4ext::TweakDBID aDBID, std::string& aString)
+bool TweakDBEditor::GetTweakDBIDStringFlat(TweakDBID aDBID, std::string& aString)
 {
     if (CDPRTweakDBMetadata::Get()->GetFlatName(aDBID, aString))
         return true;
@@ -802,14 +802,14 @@ bool TweakDBEditor::GetTweakDBIDStringFlat(RED4ext::TweakDBID aDBID, std::string
     return aString[0] != '<' || aString[aString.size() - 1] != '>';
 }
 
-std::string TweakDBEditor::GetTweakDBIDStringQuery(RED4ext::TweakDBID aDBID)
+std::string TweakDBEditor::GetTweakDBIDStringQuery(TweakDBID aDBID)
 {
     std::string name;
     GetTweakDBIDStringQuery(aDBID, name);
     return std::move(name);
 }
 
-bool TweakDBEditor::GetTweakDBIDStringQuery(RED4ext::TweakDBID aDBID, std::string& aString)
+bool TweakDBEditor::GetTweakDBIDStringQuery(TweakDBID aDBID, std::string& aString)
 {
     if (CDPRTweakDBMetadata::Get()->GetQueryName(aDBID, aString))
         return true;
@@ -822,7 +822,7 @@ bool TweakDBEditor::GetTweakDBIDStringQuery(RED4ext::TweakDBID aDBID, std::strin
 
 #pragma region Drawing flats
 
-bool TweakDBEditor::DrawFlat(RED4ext::TweakDBID aDBID)
+bool TweakDBEditor::DrawFlat(TweakDBID aDBID)
 {
     auto* pTDB = RED4ext::TweakDB::Get();
 
@@ -844,7 +844,7 @@ bool TweakDBEditor::DrawFlat(RED4ext::TweakDBID aDBID)
     return isModified;
 }
 
-bool TweakDBEditor::DrawFlat(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
+bool TweakDBEditor::DrawFlat(TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
 {
     static auto* pRTTI = RED4ext::CRTTISystem::Get();
     static auto* pTweakDBIDType = pRTTI->GetType("TweakDBID");
@@ -897,7 +897,7 @@ bool TweakDBEditor::DrawFlat(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aSta
 }
 
 // Needs a refactor
-bool TweakDBEditor::DrawFlatArray(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly,
+bool TweakDBEditor::DrawFlatArray(TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly,
                                   bool aCollapsable)
 {
     static TiltedPhoques::Map<uint64_t, RED4ext::ScriptInstance> editedArrays;
@@ -1056,9 +1056,9 @@ bool TweakDBEditor::DrawFlatArray(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
     return isModified;
 }
 
-bool TweakDBEditor::DrawFlatTweakDBID(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
+bool TweakDBEditor::DrawFlatTweakDBID(TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
 {
-    auto* pDBID = reinterpret_cast<RED4ext::TweakDBID*>(aStackType.value);
+    auto* pDBID = reinterpret_cast<TweakDBID*>(aStackType.value);
 
     if (aReadOnly)
     {
@@ -1087,7 +1087,7 @@ bool TweakDBEditor::DrawFlatTweakDBID(RED4ext::TweakDBID aDBID, RED4ext::CStackT
     }
     else
     {
-        RED4ext::TweakDBID dbid = *pDBID;
+        TweakDBID dbid = *pDBID;
         bool valueChanged = DrawRecordDropdown("", dbid, -FLT_MIN);
 
         int32_t flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsHexadecimal;
@@ -1112,7 +1112,7 @@ bool TweakDBEditor::DrawFlatTweakDBID(RED4ext::TweakDBID aDBID, RED4ext::CStackT
     return false;
 }
 
-bool TweakDBEditor::DrawFlatQuaternion(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
+bool TweakDBEditor::DrawFlatQuaternion(TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
 {
     auto* pQuat = static_cast<RED4ext::Quaternion*>(aStackType.value);
 
@@ -1166,7 +1166,7 @@ bool TweakDBEditor::DrawFlatQuaternion(RED4ext::TweakDBID aDBID, RED4ext::CStack
     return false;
 }
 
-bool TweakDBEditor::DrawFlatEulerAngles(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
+bool TweakDBEditor::DrawFlatEulerAngles(TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
 {
     auto* pEular = static_cast<RED4ext::EulerAngles*>(aStackType.value);
 
@@ -1213,7 +1213,7 @@ bool TweakDBEditor::DrawFlatEulerAngles(RED4ext::TweakDBID aDBID, RED4ext::CStac
     return false;
 }
 
-bool TweakDBEditor::DrawFlatVector3(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
+bool TweakDBEditor::DrawFlatVector3(TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
 {
     auto* pVec = static_cast<RED4ext::Vector3*>(aStackType.value);
 
@@ -1260,7 +1260,7 @@ bool TweakDBEditor::DrawFlatVector3(RED4ext::TweakDBID aDBID, RED4ext::CStackTyp
     return false;
 }
 
-bool TweakDBEditor::DrawFlatVector2(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
+bool TweakDBEditor::DrawFlatVector2(TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
 {
     auto* pVec = static_cast<RED4ext::Vector2*>(aStackType.value);
 
@@ -1300,7 +1300,7 @@ bool TweakDBEditor::DrawFlatVector2(RED4ext::TweakDBID aDBID, RED4ext::CStackTyp
     return false;
 }
 
-bool TweakDBEditor::DrawFlatColor(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
+bool TweakDBEditor::DrawFlatColor(TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
 {
     auto* pColor = static_cast<RED4ext::Color*>(aStackType.value);
 
@@ -1345,7 +1345,7 @@ bool TweakDBEditor::DrawFlatColor(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
     return false;
 }
 
-bool TweakDBEditor::DrawFlatLocKeyWrapper(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
+bool TweakDBEditor::DrawFlatLocKeyWrapper(TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
 {
     auto* pLocKey = static_cast<RED4ext::gamedataLocKeyWrapper*>(aStackType.value);
 
@@ -1385,7 +1385,7 @@ bool TweakDBEditor::DrawFlatLocKeyWrapper(RED4ext::TweakDBID aDBID, RED4ext::CSt
     return false;
 }
 
-bool TweakDBEditor::DrawFlatResourceAsyncRef(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
+bool TweakDBEditor::DrawFlatResourceAsyncRef(TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
 {
     auto* pRaRef = static_cast<RED4ext::ResourceAsyncReference<void>*>(aStackType.value);
 
@@ -1508,7 +1508,7 @@ bool TweakDBEditor::DrawFlatResourceAsyncRef(RED4ext::TweakDBID aDBID, RED4ext::
     return false;
 }
 
-bool TweakDBEditor::DrawFlatCName(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
+bool TweakDBEditor::DrawFlatCName(TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
 {
     auto* pCName = static_cast<RED4ext::CName*>(aStackType.value);
 
@@ -1567,7 +1567,7 @@ bool TweakDBEditor::DrawFlatCName(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
     return valueChanged;
 }
 
-bool TweakDBEditor::DrawFlatBool(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
+bool TweakDBEditor::DrawFlatBool(TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
 {
     auto* pBool = static_cast<bool*>(aStackType.value);
 
@@ -1590,7 +1590,7 @@ bool TweakDBEditor::DrawFlatBool(RED4ext::TweakDBID aDBID, RED4ext::CStackType& 
     return false;
 }
 
-bool TweakDBEditor::DrawFlatString(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
+bool TweakDBEditor::DrawFlatString(TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
 {
     auto* pCString = reinterpret_cast<RED4ext::CString*>(aStackType.value);
 
@@ -1622,7 +1622,7 @@ bool TweakDBEditor::DrawFlatString(RED4ext::TweakDBID aDBID, RED4ext::CStackType
     return false;
 }
 
-bool TweakDBEditor::DrawFlatFloat(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
+bool TweakDBEditor::DrawFlatFloat(TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
 {
     auto* pFloat = reinterpret_cast<float*>(aStackType.value);
 
@@ -1647,7 +1647,7 @@ bool TweakDBEditor::DrawFlatFloat(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
     return false;
 }
 
-bool TweakDBEditor::DrawFlatInt32(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
+bool TweakDBEditor::DrawFlatInt32(TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly)
 {
     auto* pInt = static_cast<int32_t*>(aStackType.value);
 
@@ -1783,7 +1783,7 @@ void TweakDBEditor::DrawQueriesTab()
     auto* pTDB = RED4ext::TweakDB::Get();
 
     std::shared_lock<RED4ext::SharedMutex> _(pTDB->mutex01);
-    pTDB->queries.ForEach([this](const RED4ext::TweakDBID& queryID, RED4ext::DynArray<RED4ext::TweakDBID>& recordIDs)
+    pTDB->queries.ForEach([this](const TweakDBID& queryID, RED4ext::DynArray<RED4ext::TweakDBID>& recordIDs)
     {
         const auto queryName = GetTweakDBIDStringQuery(queryID.value);
 
@@ -1970,7 +1970,7 @@ void TweakDBEditor::DrawAdvancedTab()
         static float statusTimer = 0.0f;
         static char recordName[256]{};
         static char comboSearchBuffer[70]{};
-        static RED4ext::TweakDBID clonedRecordDBID;
+        static TweakDBID clonedRecordDBID;
         static RED4ext::CName recordTypeName;
 
         constexpr auto SetStatus = [](const char* acpStatus) {
@@ -1982,7 +1982,7 @@ void TweakDBEditor::DrawAdvancedTab()
 
         if (ImGui::Button("Delete Record"))
         {
-            if (TweakDB::InternalDeleteRecord(RED4ext::TweakDBID(recordName), spdlog::get("scripting")))
+            if (TweakDB::InternalDeleteRecord(TweakDBID(recordName), spdlog::get("scripting")))
                 SetStatus("Success!");
             else
                 SetStatus("Failed. check console!");
@@ -2052,7 +2052,7 @@ void TweakDBEditor::DrawAdvancedTab()
     ImGui::EndChild();
 }
 
-TweakDBEditor::CachedFlat::CachedFlat(std::string aName, RED4ext::TweakDBID aDBID) noexcept
+TweakDBEditor::CachedFlat::CachedFlat(std::string aName, TweakDBID aDBID) noexcept
     : m_name(std::move(aName))
     , m_dbid(aDBID)
 {
@@ -2101,7 +2101,7 @@ void TweakDBEditor::CachedFlatGroup::Initialize()
     m_isInitialized = true;
 }
 
-TweakDBEditor::CachedRecord::CachedRecord(std::string aName, RED4ext::TweakDBID aDBID) noexcept
+TweakDBEditor::CachedRecord::CachedRecord(std::string aName, TweakDBID aDBID) noexcept
     : m_name(std::move(aName))
     , m_dbid(aDBID)
 {

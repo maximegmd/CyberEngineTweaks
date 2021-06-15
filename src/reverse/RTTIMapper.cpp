@@ -2,7 +2,6 @@
 
 #include "RTTIMapper.h"
 #include "RTTIHelper.h"
-#include "BasicTypes.h"
 #include "Type.h"
 #include "EnumStatic.h"
 #include "ClassStatic.h"

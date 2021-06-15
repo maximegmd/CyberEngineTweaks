@@ -1,7 +1,5 @@
 #pragma once
 
-#include <reverse/BasicTypes.h>
-
 namespace RED4ext
 {
 struct gamedataTweakDBRecord;
@@ -37,10 +35,10 @@ struct TweakDB
 
 protected:
     friend struct TweakDBEditor;
-    static int32_t InternalSetFlat(RED4ext::TweakDBID aDBID, const RED4ext::CStackType& acStackType);
+    static int32_t InternalSetFlat(TweakDBID aDBID, const RED4ext::CStackType& acStackType);
     static bool InternalCreateRecord(const std::string& acRecordName, const std::string& acRecordTypeName,
                                      std::shared_ptr<spdlog::logger> aLogger = nullptr);
-    static bool InternalCloneRecord(const std::string& acRecordName, RED4ext::TweakDBID aClonedRecordDBID,
+    static bool InternalCloneRecord(const std::string& acRecordName, TweakDBID aClonedRecordDBID,
                                     std::shared_ptr<spdlog::logger> aLogger = nullptr);
     // Can't figure out a good name for this function.
     // Creates a record of the same type as 'acClonedRecord'
@@ -49,12 +47,12 @@ protected:
     static bool InternalCloneRecord(const std::string& acRecordName,
                                     const RED4ext::gamedataTweakDBRecord* acClonedRecord, bool cloneValues = true,
                                     std::shared_ptr<spdlog::logger> aLogger = nullptr);
-    static bool InternalDeleteRecord(RED4ext::TweakDBID aDBID, std::shared_ptr<spdlog::logger> aLogger = nullptr);
-    static bool RemoveFlat(RED4ext::TweakDBID aDBID);
-    static bool IsACreatedRecord(RED4ext::TweakDBID aDBID);
+    static bool InternalDeleteRecord(TweakDBID aDBID, std::shared_ptr<spdlog::logger> aLogger = nullptr);
+    static bool RemoveFlat(TweakDBID aDBID);
+    static bool IsACreatedRecord(TweakDBID aDBID);
 
 private: 
     TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref m_lua;
     static std::mutex s_mutex;
-    static std::set<RED4ext::TweakDBID> s_createdRecords;
+    static std::set<TweakDBID> s_createdRecords;
 };

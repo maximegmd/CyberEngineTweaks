@@ -92,7 +92,7 @@ LuaVM::~LuaVM()
     m_d3d12.OnUpdate.Disconnect(m_connectUpdate);
 }
 
-TDBID* LuaVM::HookTDBIDCtor(TDBID* apThis, const char* acpName)
+TweakDBID* LuaVM::HookTDBIDCtor(TweakDBID* apThis, const char* acpName)
 {
     auto& luavm = CET::Get().GetVM();
     auto result = luavm.m_realTDBIDCtor(apThis, acpName);
@@ -100,7 +100,7 @@ TDBID* LuaVM::HookTDBIDCtor(TDBID* apThis, const char* acpName)
     return result;
 }
 
-TDBID* LuaVM::HookTDBIDCtorCString(TDBID* apThis, const RED4ext::CString* acpName)
+TweakDBID* LuaVM::HookTDBIDCtorCString(TweakDBID* apThis, const RED4ext::CString* acpName)
 {
     auto& luavm = CET::Get().GetVM();
     auto result = luavm.m_realTDBIDCtorCString(apThis, acpName);
@@ -108,7 +108,7 @@ TDBID* LuaVM::HookTDBIDCtorCString(TDBID* apThis, const RED4ext::CString* acpNam
     return result;
 }
 
-TDBID* LuaVM::HookTDBIDCtorDerive(TDBID* apBase, TDBID* apThis, const char* acpName)
+TweakDBID* LuaVM::HookTDBIDCtorDerive(TweakDBID* apBase, TweakDBID* apThis, const char* acpName)
 {
     auto& luavm = CET::Get().GetVM();
     auto result = luavm.m_realTDBIDCtorDerive(apBase, apThis, acpName);
@@ -122,7 +122,7 @@ struct UnknownString
     uint32_t size;
 };
 
-TDBID* LuaVM::HookTDBIDCtorUnknown(TDBID* apThis, uint64_t aName)
+TweakDBID* LuaVM::HookTDBIDCtorUnknown(TweakDBID* apThis, uint64_t aName)
 {
     auto& luavm = CET::Get().GetVM();
     auto result = luavm.m_realTDBIDCtorUnknown(apThis, aName);
@@ -134,7 +134,7 @@ TDBID* LuaVM::HookTDBIDCtorUnknown(TDBID* apThis, uint64_t aName)
 
 void LuaVM::HookTDBIDToStringDEBUG(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void* apResult, void*)
 {
-    TDBID tdbid;
+    TweakDBID tdbid;
     apStack->unk30 = 0;
     apStack->unk38 = 0;
     uint8_t opcode = *(apStack->code++);

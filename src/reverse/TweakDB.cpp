@@ -110,7 +110,7 @@ private:
 };
 
 std::mutex TweakDB::s_mutex;
-std::set<RED4ext::TweakDBID> TweakDB::s_createdRecords;
+std::set<TweakDBID> TweakDB::s_createdRecords;
 bool FlatPool::s_initialized = false;
 std::array<FlatPool, (size_t)FlatPool::Type::Count> FlatPool::s_pools;
 
@@ -364,10 +364,10 @@ bool TweakDB::DeleteRecord(const std::string& acRecordName, sol::this_environmen
     const sol::environment cEnv = aThisEnv;
     std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
 
-    return InternalDeleteRecord(RED4ext::TweakDBID(acRecordName), logger);
+    return InternalDeleteRecord(TweakDBID(acRecordName), logger);
 }
 
-int32_t TweakDB::InternalSetFlat(RED4ext::TweakDBID aDBID, const RED4ext::CStackType& acStackType)
+int32_t TweakDB::InternalSetFlat(TweakDBID aDBID, const RED4ext::CStackType& acStackType)
 {
     auto* pTDB = RED4ext::TweakDB::Get();
 
@@ -435,7 +435,7 @@ bool TweakDB::InternalCreateRecord(const std::string& acRecordName, const std::s
     return InternalCloneRecord(acRecordName, pTweakRecord, false, aLogger);
 }
 
-bool TweakDB::InternalCloneRecord(const std::string& acRecordName, RED4ext::TweakDBID aClonedRecordDBID,
+bool TweakDB::InternalCloneRecord(const std::string& acRecordName, TweakDBID aClonedRecordDBID,
                                   std::shared_ptr<spdlog::logger> aLogger)
 {
     auto* pTDB = RED4ext::TweakDB::Get();
@@ -459,7 +459,7 @@ bool TweakDB::InternalCloneRecord(const std::string& acRecordName, const RED4ext
                                   bool cloneValues, std::shared_ptr<spdlog::logger> aLogger)
 {
     auto* pTDB = RED4ext::TweakDB::Get();
-    RED4ext::TweakDBID recordDBID(acRecordName);
+    TweakDBID recordDBID(acRecordName);
 
     if (!pTDB->CreateRecord(recordDBID, acClonedRecord->GetTweakBaseHash()))
     {
@@ -477,7 +477,7 @@ bool TweakDB::InternalCloneRecord(const std::string& acRecordName, const RED4ext
     size_t lastCreatedFlatIdx;
     for (lastCreatedFlatIdx = 0; lastCreatedFlatIdx != recordFlats.size(); ++lastCreatedFlatIdx)
     {
-        RED4ext::TweakDBID flatID = recordFlats[lastCreatedFlatIdx];
+        TweakDBID flatID = recordFlats[lastCreatedFlatIdx];
         const TDBIDLookupEntry lookup = vm.GetTDBIDLookupEntry(flatID);
         const std::string& propertyName = lookup.name;
 
@@ -552,7 +552,7 @@ bool TweakDB::InternalCloneRecord(const std::string& acRecordName, const RED4ext
     return true;
 }
 
-bool TweakDB::InternalDeleteRecord(RED4ext::TweakDBID aDBID, std::shared_ptr<spdlog::logger> aLogger)
+bool TweakDB::InternalDeleteRecord(TweakDBID aDBID, std::shared_ptr<spdlog::logger> aLogger)
 {
     auto* pTDB = RED4ext::TweakDB::Get();
 
@@ -590,7 +590,7 @@ bool TweakDB::InternalDeleteRecord(RED4ext::TweakDBID aDBID, std::shared_ptr<spd
     return true;
 }
 
-bool TweakDB::RemoveFlat(RED4ext::TweakDBID aDBID)
+bool TweakDB::RemoveFlat(TweakDBID aDBID)
 {
     auto* pTDB = RED4ext::TweakDB::Get();
 
@@ -610,7 +610,7 @@ bool TweakDB::RemoveFlat(RED4ext::TweakDBID aDBID)
     return pTDB->RemoveFlat(aDBID);
 }
 
-bool TweakDB::IsACreatedRecord(RED4ext::TweakDBID aDBID)
+bool TweakDB::IsACreatedRecord(TweakDBID aDBID)
 {
     std::lock_guard<std::mutex> _(s_mutex);
     return s_createdRecords.find(aDBID) != s_createdRecords.end();
@@ -875,7 +875,7 @@ bool FlatPool::Initialize()
     // value: FlatPool::m_items index
     // reason: optimization, much faster than linear lookup
     std::map<int32_t, size_t> tdbOffToIndex;
-    for (const RED4ext::TweakDBID flatID : pTDB->flats)
+    for (const TweakDBID flatID : pTDB->flats)
     {
         auto* pFlatValue = pTDB->GetFlatValue(flatID);
         RED4ext::CStackType stackType = pFlatValue->GetValue();

@@ -128,9 +128,9 @@ TDBIDLookupEntry LuaVM::GetTDBIDLookupEntry(uint64_t aDBID)
     return it->second;
 }
 
-std::string LuaVM::GetTDBDIDDebugString(TDBID aDBID)
+std::string LuaVM::GetTDBDIDDebugString(TweakDBID aDBID)
 {
-    RED4ext::TweakDBID internal(aDBID.value);
+    TweakDBID internal(aDBID.value);
     return internal.HasTDBOffset()
         ? fmt::format("<TDBID:{:08X}:{:02X}:{:06X}>",
             internal.nameHash, internal.nameLength, internal.ToTDBOffset())
@@ -144,7 +144,7 @@ std::string LuaVM::GetTDBIDString(uint64_t aDBID)
 
     auto it = m_tdbidLookup.find(aDBID & 0xFFFFFFFFFF);
     if (it == m_tdbidLookup.end())
-        return GetTDBDIDDebugString(TDBID{ aDBID });
+        return GetTDBDIDDebugString(TweakDBID{aDBID});
 
     std::string string = it->second.name;
     uint64_t base = it->second.base;
@@ -153,7 +153,7 @@ std::string LuaVM::GetTDBIDString(uint64_t aDBID)
         it = m_tdbidLookup.find(it->second.base);
         if (it == m_tdbidLookup.end())
         {
-            string.insert(0, GetTDBDIDDebugString(TDBID{ base }));
+            string.insert(0, GetTDBDIDDebugString(TweakDBID{base}));
             break;
         }
         string.insert(0, it->second.name);

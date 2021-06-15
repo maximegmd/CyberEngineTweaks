@@ -11,7 +11,6 @@
 #include <d3d12/D3D12.h>
 
 #include <reverse/Type.h>
-#include <reverse/BasicTypes.h>
 #include <reverse/SingletonReference.h>
 #include <reverse/StrongReference.h>
 #include <reverse/WeakReference.h>
@@ -183,9 +182,9 @@ void Scripting::PostInitialize()
         sol::constructors<Vector3(float, float, float), Vector3(float, float), Vector3(float), Vector3(const Vector3&), Vector3()>(),
         sol::meta_function::to_string, &Vector3::ToString,
         sol::meta_function::equal_to, &Vector3::operator==,
-        "x", &Vector3::x,
-        "y", &Vector3::y,
-        "z", &Vector3::z);
+        "x", &Vector3::X,
+        "y", &Vector3::Y,
+        "z", &Vector3::Z);
 
     luaGlobal["Vector3"] = luaVm["Vector3"];
     luaGlobal["ToVector3"] = [](sol::table table) -> Vector3
@@ -203,10 +202,10 @@ void Scripting::PostInitialize()
                           Vector4(float), Vector4(const Vector4&), Vector4()>(),
         sol::meta_function::to_string, &Vector4::ToString,
         sol::meta_function::equal_to, &Vector4::operator==,
-        "x", &Vector4::x,
-        "y", &Vector4::y,
-        "z", &Vector4::z,
-        "w", &Vector4::w);
+        "x", &Vector4::X,
+        "y", &Vector4::Y,
+        "z", &Vector4::Z,
+        "w", &Vector4::W);
 
     luaGlobal["Vector4"] = luaVm["Vector4"];
     luaGlobal["ToVector4"] = [](sol::table table) -> Vector4
@@ -225,9 +224,9 @@ void Scripting::PostInitialize()
                           EulerAngles(const EulerAngles&), EulerAngles()>(),
         sol::meta_function::to_string, &EulerAngles::ToString,
         sol::meta_function::equal_to, &EulerAngles::operator==,
-        "roll", &EulerAngles::roll,
-        "pitch", &EulerAngles::pitch,
-        "yaw", &EulerAngles::yaw);
+        "roll", &EulerAngles::Roll,
+        "pitch", &EulerAngles::Pitch,
+        "yaw", &EulerAngles::Yaw);
 
     luaGlobal["EulerAngles"] = luaVm["EulerAngles"];
     luaGlobal["ToEulerAngles"] = [](sol::table table) -> EulerAngles
@@ -263,13 +262,13 @@ void Scripting::PostInitialize()
     };
 
     luaVm.new_usertype<CName>("CName",
-        sol::constructors<CName(const std::string&), CName(uint32_t), CName(uint32_t, uint32_t),
+        sol::constructors<CName(const std::string&), CName(uint32_t, uint32_t),
                           CName(const CName&), CName()>(),
         sol::meta_function::to_string, &CName::ToString,
         sol::meta_function::equal_to, &CName::operator==,
-        "hash_lo", &CName::hash_lo,
-        "hash_hi", &CName::hash_hi,
-        "value", sol::property(&CName::AsString));
+        "hash_lo", sol::property(&CName::GetHashLo, &CName::SetHashLo),
+        "hash_hi", sol::property(&CName::GetHashHi, &CName::SetHashHi),
+        "value", sol::property(&CName::ToString));
 
     luaGlobal["CName"] = luaVm["CName"];
     luaGlobal["ToCName"] = [](sol::table table) -> CName
@@ -288,8 +287,8 @@ void Scripting::PostInitialize()
         sol::meta_function::equal_to, &TweakDBID::operator==,
         sol::meta_function::addition, &TweakDBID::operator+,
         sol::meta_function::concatenation, &TweakDBID::operator+,
-        "hash", &TweakDBID::name_hash,
-        "length", &TweakDBID::name_length);
+        "hash", &TweakDBID::nameHash,
+        "length", &TweakDBID::nameLength);
 
     luaGlobal["TweakDBID"] = luaVm["TweakDBID"];
     luaGlobal["ToTweakDBID"] = [](sol::table table) -> TweakDBID
@@ -307,11 +306,11 @@ void Scripting::PostInitialize()
                           ItemID(const TweakDBID&), ItemID(const ItemID&), ItemID()>(),
         sol::meta_function::to_string, &ItemID::ToString,
         sol::meta_function::equal_to, &ItemID::operator==,
-        "id", &ItemID::id,
-        "tdbid", &ItemID::id,
-        "rng_seed", &ItemID::rng_seed,
-        "unknown", &ItemID::unknown,
-        "maybe_type", &ItemID::maybe_type);
+        "id", &ItemID::tdbid,
+        "tdbid", &ItemID::tdbid,
+        "rng_seed", &ItemID::rngSeed,
+        "unknown", &ItemID::unk0C,
+        "maybe_type", &ItemID::unk0E);
 
     luaGlobal["ItemID"] = luaVm["ItemID"];
     luaGlobal["ToItemID"] = [](sol::table table) -> ItemID

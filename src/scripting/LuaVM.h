@@ -1,17 +1,14 @@
 #pragma once
 
 #include "Scripting.h"
-#include "reverse/BasicTypes.h"
-
-typedef TweakDBID TDBID;
 
 struct UnknownString;
 
 using TSetMousePosition = BOOL(void*, HWND, long, long);
-using TTDBIDCtor = TDBID*(TDBID*, const char*);
-using TTDBIDCtorCString = TDBID*(TDBID*, const RED4ext::CString*);
-using TTDBIDCtorDerive = TDBID*(const TDBID*, TDBID*, const char*);
-using TTDBIDCtorUnknown = TDBID*(TDBID*, uint64_t);
+using TTDBIDCtor = TweakDBID*(TweakDBID*, const char*);
+using TTDBIDCtorCString = TweakDBID*(TweakDBID*, const RED4ext::CString*);
+using TTDBIDCtorDerive = TweakDBID*(const TweakDBID*, TweakDBID*, const char*);
+using TTDBIDCtorUnknown = TweakDBID*(TweakDBID*, uint64_t);
 using TSomeStringLookup = UnknownString*(const uint64_t*, UnknownString*);
 
 struct TDBIDLookupEntry
@@ -47,7 +44,7 @@ struct LuaVM
     bool GetTDBIDDerivedFrom(uint64_t aDBID, TiltedPhoques::Vector<uint64_t>& aDerivedList);
     uint64_t GetTDBIDBase(uint64_t aDBID);
     TDBIDLookupEntry GetTDBIDLookupEntry(uint64_t aDBID);
-    std::string GetTDBDIDDebugString(TDBID aDBID);
+    std::string GetTDBDIDDebugString(TweakDBID aDBID);
     std::string GetTDBIDString(uint64_t aDBID);
 
     void RegisterTDBIDString(uint64_t aValue, uint64_t aBase, const std::string& acString);
@@ -59,10 +56,10 @@ protected:
     
     static void HookLog(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*, void*);
     static void HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*, void*);
-    static TDBID* HookTDBIDCtor(TDBID* apThis, const char* acpName);
-    static TDBID* HookTDBIDCtorCString(TDBID* apThis, const RED4ext::CString* acpName);
-    static TDBID* HookTDBIDCtorDerive(TDBID* apBase, TDBID* apThis, const char* acpName);
-    static TDBID* HookTDBIDCtorUnknown(TDBID* apThis, uint64_t apName);
+    static TweakDBID* HookTDBIDCtor(TweakDBID* apThis, const char* acpName);
+    static TweakDBID* HookTDBIDCtorCString(TweakDBID* apThis, const RED4ext::CString* acpName);
+    static TweakDBID* HookTDBIDCtorDerive(TweakDBID* apBase, TweakDBID* apThis, const char* acpName);
+    static TweakDBID* HookTDBIDCtorUnknown(TweakDBID* apThis, uint64_t apName);
     static void HookTDBIDToStringDEBUG(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void* apResult, void*);
 
 private:

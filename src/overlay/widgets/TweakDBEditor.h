@@ -20,33 +20,33 @@ protected:
     void FilterAll();
     void FilterRecords(bool aFilterTab = true, bool aFilterDropdown = false);
     void FilterFlats();
-    bool DrawRecordDropdown(const char* acpLabel, RED4ext::TweakDBID& aDBID, float aWidth = 0);
+    bool DrawRecordDropdown(const char* acpLabel, TweakDBID& aDBID, float aWidth = 0);
 
-    static std::string GetTweakDBIDStringRecord(RED4ext::TweakDBID aDBID);
-    static bool GetTweakDBIDStringRecord(RED4ext::TweakDBID aDBID, std::string& aString);
-    static std::string GetTweakDBIDStringFlat(RED4ext::TweakDBID aDBID);
-    static bool GetTweakDBIDStringFlat(RED4ext::TweakDBID aDBID, std::string& aString);
-    static std::string GetTweakDBIDStringQuery(RED4ext::TweakDBID aDBID);
-    static bool GetTweakDBIDStringQuery(RED4ext::TweakDBID aDBID, std::string& aString);
+    static std::string GetTweakDBIDStringRecord(TweakDBID aDBID);
+    static bool GetTweakDBIDStringRecord(TweakDBID aDBID, std::string& aString);
+    static std::string GetTweakDBIDStringFlat(TweakDBID aDBID);
+    static bool GetTweakDBIDStringFlat(TweakDBID aDBID, std::string& aString);
+    static std::string GetTweakDBIDStringQuery(TweakDBID aDBID);
+    static bool GetTweakDBIDStringQuery(TweakDBID aDBID, std::string& aString);
 
-    bool DrawFlat(RED4ext::TweakDBID aDBID);
-    bool DrawFlat(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
-    bool DrawFlatArray(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false,
+    bool DrawFlat(TweakDBID aDBID);
+    bool DrawFlat(TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
+    bool DrawFlatArray(TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false,
                        bool aCollapsable = true);
-    bool DrawFlatTweakDBID(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
-    static bool DrawFlatQuaternion(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
-    static bool DrawFlatEulerAngles(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
-    static bool DrawFlatVector3(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
-    static bool DrawFlatVector2(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
-    static bool DrawFlatColor(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
-    static bool DrawFlatLocKeyWrapper(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType,
+    bool DrawFlatTweakDBID(TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
+    static bool DrawFlatQuaternion(TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
+    static bool DrawFlatEulerAngles(TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
+    static bool DrawFlatVector3(TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
+    static bool DrawFlatVector2(TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
+    static bool DrawFlatColor(TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
+    static bool DrawFlatLocKeyWrapper(TweakDBID aDBID, RED4ext::CStackType& aStackType,
                                       bool aReadOnly = false);
-    static bool DrawFlatResourceAsyncRef(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
-    static bool DrawFlatCName(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
-    static bool DrawFlatBool(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
-    static bool DrawFlatString(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
-    static bool DrawFlatFloat(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
-    static bool DrawFlatInt32(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
+    static bool DrawFlatResourceAsyncRef(TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
+    static bool DrawFlatCName(TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
+    static bool DrawFlatBool(TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
+    static bool DrawFlatString(TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
+    static bool DrawFlatFloat(TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
+    static bool DrawFlatInt32(TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
 
     void DrawRecordsTab();
     void DrawQueriesTab();
@@ -71,10 +71,10 @@ private:
         bool m_isFiltered = false;
         bool m_isMissing = false;
         std::string m_name;
-        RED4ext::TweakDBID m_dbid;
+        TweakDBID m_dbid;
         ImGuiVisibilityChecker m_visibilityChecker;
 
-        CachedFlat(std::string aName, RED4ext::TweakDBID aDBID) noexcept;
+        CachedFlat(std::string aName, TweakDBID aDBID) noexcept;
         CachedFlat(CachedFlat&&) noexcept = default;
         CachedFlat& operator=(CachedFlat&&) noexcept = default;
         void Update(int32_t aTDBOffset = -1);
@@ -100,11 +100,11 @@ private:
         bool m_isDropdownFiltered = false;
         bool m_isInitialized = false;
         std::string m_name;
-        RED4ext::TweakDBID m_dbid;
+        TweakDBID m_dbid;
         TiltedPhoques::Vector<CachedFlat> m_flats;
         ImGuiVisibilityChecker m_visibilityChecker;
 
-        CachedRecord(std::string aName, RED4ext::TweakDBID aDBID) noexcept;
+        CachedRecord(std::string aName, TweakDBID aDBID) noexcept;
         CachedRecord(CachedRecord&&) noexcept = default;
         CachedRecord& operator=(CachedRecord&&) noexcept = default;
         void Initialize();
