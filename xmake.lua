@@ -68,7 +68,7 @@ target("cyber_engine_tweaks")
       local fileHnd = io.open(".installpath", "r")
       local installpath = fileHnd:read("*l")
       fileHnd:close()
-      assert(os.exists(installpath), format("Install path doesn't exist: %s", installpath))
+      assert(os.isdir(installpath), format("Install path doesn't exist or isn't a directory: %s", installpath))
       os.cp(target:targetfile(), installpath)
       print("cyber_engine_tweaks installed at", installpath)
     end
