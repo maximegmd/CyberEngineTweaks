@@ -57,19 +57,24 @@ target("cyber_engine_tweaks")
 		os.rm("package/*.zip")
 	end)
   on_install(function (target)
-    print("Installing Cyber Engine Tweaks ..")
+    cprint("${green bright}Installing Cyber Engine Tweaks ..")
     if not os.exists(".installpath") then
-      print(".installpath doesn't exist.")
+      cprint("${red bright}.installpath doesn't exist.")
+      ::input_path::
+      cprint("${yellow}Enter install path:${clear} (e.g. ${underline}%s)", [[C:\Program Files (x86)\Steam\steamapps\common\Cyberpunk 2077\bin\x64\plugins]])
+      local input = io.read()
+      if not os.isdir(input) then
+        cprint("${red bright}error: ${clear}The path you entered doesn't exist or isn't a directory: ${underline}%s", input)
+        goto input_path
+      end
       print("Creating .installpath at project root directory ..")
-      io.writefile(".installpath", [[C:\Program Files (x86)\Steam\steamapps\common\Cyberpunk 2077\bin\x64\plugins]])
-      print("Opening .installpath, please edit the install path and save.")
-      os.run("notepad.exe .installpath")
+      io.writefile(".installpath", input)
       print(".installpath created.")
     end
     local fileHnd = io.open(".installpath", "r")
     local installpath = fileHnd:read("*l")
     fileHnd:close()
-    assert(os.isdir(installpath), format("Install path doesn't exist or isn't a directory: %s", installpath))
+    assert(os.isdir(installpath), format("Install path doesn't exist or isn't a directory: ${underline}%s", installpath))
     os.cp(target:targetfile(), installpath)
     print("Cyber Engine Tweaks installed at", installpath)
   end)
