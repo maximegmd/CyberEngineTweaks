@@ -32,6 +32,7 @@ target("RED4ext.SDK")
     add_files("vendor/RED4ext.SDK/src/**.cpp")
     add_headerfiles("vendor/RED4ext.SDK/include/**.hpp")
     add_includedirs("vendor/RED4ext.SDK/include/", { public = true })
+  on_install(function() end)
 
 target("cyber_engine_tweaks")
     add_defines("WIN32_LEAN_AND_MEAN", "NOMINMAX", "WINVER=0x0601", "SOL_ALL_SAFETIES_ON", "SOL_LUAJIT=1", "SPDLOG_WCHAR_TO_UTF8_SUPPORT", "IMGUI_USER_CONFIG=\""..imguiUserConfig.."\"") -- WINVER=0x0601 == Windows 7, we need this specified now for some reason
@@ -56,7 +57,7 @@ target("cyber_engine_tweaks")
 		os.rm("package/*.zip")
 	end)
   on_install(function (target)
-    print("installing cyber_engine_tweaks ..")
+    print("Installing Cyber Engine Tweaks ..")
     if not os.exists(".installpath") then
       print(".installpath doesn't exist.")
       print("Creating .installpath at project root directory ..")
@@ -70,7 +71,7 @@ target("cyber_engine_tweaks")
       fileHnd:close()
       assert(os.isdir(installpath), format("Install path doesn't exist or isn't a directory: %s", installpath))
       os.cp(target:targetfile(), installpath)
-      print("cyber_engine_tweaks installed at", installpath)
+      print("Cyber Engine Tweaks installed at", installpath)
     end
   end)
 
