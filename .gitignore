@@ -14,3 +14,4 @@ build/*
 *.asi
 src/CETVersion.h
 package/*
+.installpath
