@@ -58,26 +58,15 @@ target("cyber_engine_tweaks")
 	end)
   on_install(function (target)
     cprint("${green bright}Installing Cyber Engine Tweaks ..")
-    if not os.exists(".installpath") then
-      cprint("${red bright}.installpath doesn't exist.")
-      ::input_path::
-      cprint("${yellow}Enter install path:${clear} (e.g. ${underline}%s${clear})", [[C:\Program Files (x86)\Steam\steamapps\common\Cyberpunk 2077\bin\x64\plugins]])
-      local input = io.read()
-      if input == "" or not os.isdir(input) then
-        cprint("${red bright}error: ${clear}The path you entered doesn't exist or isn't a directory: ${underline}%s", input)
-        goto input_path
-      end
-      print("Creating .installpath at project root directory ..")
-      io.writefile(".installpath", input)
-      print(".installpath created.")
-    end
-    local fileHnd = io.open(".installpath", "r")
-    local installpath = fileHnd:read("*l")
-    fileHnd:close()
-    assert(installpath ~= nil and os.isdir(installpath), format("Install path doesn't exist or isn't a directory: ${underline}%s", installpath))
-    os.cp(target:targetfile(), installpath)
-    cprint("Cyber Engine Tweaks installed at: ${underline}%s", installpath)
+    assert(os.isdir("$(installpath)"), format("The path in your configuration doesn't exist or isn't a directory.\n\tUse the follow command to set install path:\n\txmake f --installpath=%s", [["C:\Program Files (x86)\Steam\steamapps\common\Cyberpunk 2077\bin\x64\plugins"]]))
+    os.cp(target:targetfile(), "$(installpath)")
+    cprint("Cyber Engine Tweaks installed at: ${underline}%s", "$(installpath)")
   end)
+
+option("installpath")
+  set_default("installpath")
+  set_showmenu(true)
+  set_description("Set the path to install cyber_engine_tweaks.asi to.", "e.g.", format("\t-xmake f --installpath=%s", [["C:\Program Files (x86)\Steam\steamapps\common\Cyberpunk 2077\bin\x64\plugins"]]))
 
 task("dephash")
 	on_run(function ()
