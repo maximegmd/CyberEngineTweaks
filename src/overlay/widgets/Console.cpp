@@ -125,6 +125,18 @@ void Console::Update()
     ImGui::SetItemDefaultFocus();
     if (execute)
     {
+        // trim end
+        {
+            size_t commandLength = strlen(m_Command);
+            for (size_t i = commandLength - 1; i != 0; --i)
+            {
+                if (std::isspace(m_Command[i]))
+                    m_Command[i] = '\0';
+                else
+                    break;
+            }
+        }
+
         auto consoleLogger = spdlog::get("scripting");
         consoleLogger->info("> {}", m_Command);
 
