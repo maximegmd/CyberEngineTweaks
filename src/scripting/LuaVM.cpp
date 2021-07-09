@@ -22,9 +22,6 @@ bool LuaVM::ExecuteLua(const std::string& acCommand)
 
 void LuaVM::Update(float aDeltaTime)
 {
-    if (!m_initialized && m_logCount.load(std::memory_order_relaxed) > 0)
-        PostInitialize();
-
     if (!m_initialized)
         return;
 

@@ -13,6 +13,8 @@ using TTDBIDCtorCString = TDBID*(TDBID*, const RED4ext::CString*);
 using TTDBIDCtorDerive = TDBID*(const TDBID*, TDBID*, const char*);
 using TTDBIDCtorUnknown = TDBID*(TDBID*, uint64_t);
 using TSomeStringLookup = UnknownString*(const uint64_t*, UnknownString*);
+using TRunningStateRun = bool(uintptr_t, uintptr_t);
+using TSetLoadingState = uintptr_t(uintptr_t, int);
 
 struct TDBIDLookupEntry
 {
@@ -52,11 +54,12 @@ struct LuaVM
 
     void RegisterTDBIDString(uint64_t aValue, uint64_t aBase, const std::string& acString);
 
+    void PostInitialize();
+
 protected:
     
     void Hook(Options& aOptions);
-    void PostInitialize();
-    
+
     static void HookLog(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*, void*);
     static void HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*, void*);
     static TDBID* HookTDBIDCtor(TDBID* apThis, const char* acpName);
@@ -64,6 +67,8 @@ protected:
     static TDBID* HookTDBIDCtorDerive(TDBID* apBase, TDBID* apThis, const char* acpName);
     static TDBID* HookTDBIDCtorUnknown(TDBID* apThis, uint64_t apName);
     static void HookTDBIDToStringDEBUG(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void* apResult, void*);
+    static bool HookRunningStateRun(uintptr_t aThis, uintptr_t aApp);
+    static uintptr_t HookSetLoadingState(uintptr_t aThis, int aState);
 
 private:
   
@@ -78,8 +83,12 @@ private:
     TTDBIDCtorCString* m_realTDBIDCtorCString{ nullptr };
     TTDBIDCtorDerive* m_realTDBIDCtorDerive{ nullptr };
     TTDBIDCtorUnknown* m_realTDBIDCtorUnknown{ nullptr };
+    TRunningStateRun* m_realRunningStateRun{ nullptr };
+    TSetLoadingState* m_realSetLoadingState{ nullptr };
     TSomeStringLookup* m_someStringLookup{ nullptr };
     RED4ext::OpcodeHandlers::Handler_t m_realTDBIDToStringDEBUG{nullptr};
+
+    std::chrono::time_point<std::chrono::high_resolution_clock> m_lastframe;
 
     std::atomic<uint64_t> m_logCount{ 0 };
 

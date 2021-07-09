@@ -81,15 +81,13 @@ void LuaVM::HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack,
 LuaVM::LuaVM(Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12, Options& aOptions)
     : m_scripting(aPaths, aBindings, aD3D12, aOptions)
     , m_d3d12(aD3D12)
+    , m_lastframe(std::chrono::high_resolution_clock::now())
 {
     Hook(aOptions);
-
-    m_connectUpdate = aD3D12.OnUpdate.Connect([this]() { Update(ImGui::GetIO().DeltaTime); });
 }
 
 LuaVM::~LuaVM()
 {
-    m_d3d12.OnUpdate.Disconnect(m_connectUpdate);
 }
 
 TDBID* LuaVM::HookTDBIDCtor(TDBID* apThis, const char* acpName)
@@ -147,6 +145,36 @@ void LuaVM::HookTDBIDToStringDEBUG(RED4ext::IScriptable*, RED4ext::CStackFrame* 
         RED4ext::CString s(name.c_str());
         *static_cast<RED4ext::CString*>(apResult) = s;
     }
+}
+
+bool LuaVM::HookRunningStateRun(uintptr_t aThis, uintptr_t aApp)
+{
+    auto& luavm = CET::Get().GetVM();
+
+    const auto cNow = std::chrono::high_resolution_clock::now();
+    const auto cDelta = cNow - luavm.m_lastframe;
+    auto cSeconds = std::chrono::duration_cast<std::chrono::duration<float>>(cDelta);
+
+    luavm.Update(cSeconds.count());
+
+    return luavm.m_realRunningStateRun(aThis, aApp);
+}
+
+uintptr_t LuaVM::HookSetLoadingState(uintptr_t aThis, int aState)
+{
+    auto& luavm = CET::Get().GetVM();
+
+    static std::once_flag s_initBarrier;
+
+    if (aState == 2)
+    {
+        std::call_once(s_initBarrier, [&luavm]()
+        {
+            luavm.PostInitialize();
+        });
+    }
+
+    return luavm.m_realSetLoadingState(aThis, aState);
 }
 
 void LuaVM::Hook(Options& aOptions)
@@ -279,4 +307,41 @@ void LuaVM::Hook(Options& aOptions)
             }
         }
     }
+
+    {
+        const mem::pattern cPattern("40 53 48 83 EC 20 48 8B 0D ? ? ? ? 48 8B DA E8 ? ? ? ? 84 C0");
+        const mem::default_scanner cScanner(cPattern);
+        uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
+
+        if (pLocation)
+        {
+            if (MH_CreateHook(pLocation, &HookRunningStateRun, reinterpret_cast<void**>(&m_realRunningStateRun)) !=
+                    MH_OK ||
+                MH_EnableHook(pLocation) != MH_OK)
+                spdlog::error("Could not hook RunningState::Run function!");
+            else
+            {
+                spdlog::info("RunningState::Run function hook complete!");
+            }
+        }
+    }
+
+    {
+        const mem::pattern cPattern("48 89 5C 24 18 89 54 24 10 57 48 83 EC 20 48 8B D9 C7");
+        const mem::default_scanner cScanner(cPattern);
+        uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
+
+        if (pLocation)
+        {
+            if (MH_CreateHook(pLocation, &HookSetLoadingState, reinterpret_cast<void**>(&m_realSetLoadingState)) != MH_OK
+             || MH_EnableHook(pLocation) != MH_OK)
+                spdlog::error("Could not hook SetLoadingState function!");
+            else
+            {
+                spdlog::info("SetLoadingState function hook complete!");
+            }
+        }
+    }
+
+    
 }
