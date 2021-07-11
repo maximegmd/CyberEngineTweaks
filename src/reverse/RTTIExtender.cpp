@@ -1,6 +1,7 @@
 #include "RTTIExtender.h"
 #include <CET.h>
 #include <Image.h>
+#include <RED4ext/Types/TweakDB.hpp>
 #include <RED4ext/Types/SharedMutex.hpp>
 #include <RED4ext/Types/generated/Transform.hpp>
 #include <RED4ext/Types/generated/WorldTransform.hpp>
@@ -280,38 +281,46 @@ struct TEMP_Spawner
         func(this);
     }
 
-    RED4ext::ent::EntityID Spawn(const RED4ext::CName acEntityPath, const TEMP_SpawnSettings& acSettings)
+    RED4ext::ent::EntityID Spawn(const RED4ext::CName acEntityPath, TEMP_SpawnSettings& aSettings)
     {
         // REDSmartPtr<TEMP_PendingEntity::Unk00> TEMP_Spawner::func(this, TEMP_SpawnSettings&, RED4ext::CName&)
-        using TFunc = void (*)(TEMP_Spawner*, REDSmartPtr<TEMP_PendingEntity::Unk00>*, const TEMP_SpawnSettings&, const RED4ext::CName&);
+        using TFunc = void (*)(TEMP_Spawner*, REDSmartPtr<TEMP_PendingEntity::Unk00>*, TEMP_SpawnSettings&, const RED4ext::CName&);
         static PatternCall<TFunc> func("FF 90 A8 01 00 00 48 8B 00 4C 8D 85 80 00 00 00", -0x55);
 
         REDSmartPtr<TEMP_PendingEntity::Unk00> pendingEntity;
-        func(this, &pendingEntity, acSettings, acEntityPath);
+        func(this, &pendingEntity, aSettings, acEntityPath);
 
         RED4ext::ent::EntityID entityID;
         entityID.hash = pendingEntity ? pendingEntity->entityID.hash : 0;
         return entityID;
     }
 
-    // This is used by photomode
-    // Extracts entity path from a TDB record, spawns and assigns the record
-    RED4ext::ent::EntityID SpawnRecord(const RED4ext::TweakDBID acRecordDBID, const TEMP_SpawnSettings& acSettings)
+    RED4ext::ent::EntityID SpawnRecord(const RED4ext::TweakDBID acRecordDBID, TEMP_SpawnSettings& aSettings)
     {
-        // we can code this ourselves using RED4ext::TweakDB
-        // get the record and look for .entityTemplatePath or something
-        // really need to reduce the amount of patterns
+        auto* pTDB = RED4ext::TweakDB::Get();
 
-        // REDSmartPtr<TEMP_PendingEntity::Unk00> TEMP_Spawner::func(this, TEMP_SpawnSettings&, RED4ext::TweakDBID&)
-        using TFunc = void (*)(TEMP_Spawner*, REDSmartPtr<TEMP_PendingEntity::Unk00>*, const TEMP_SpawnSettings&, const RED4ext::TweakDBID&);
-        static PatternCall<TFunc> func("E9 29 01 00 00 49 8B D6 48 8D 4D E8", -0x2F);
+        RED4ext::CName entityPath;
+        if (!pTDB->TryGetValue(RED4ext::TweakDBID(acRecordDBID, ".entityTemplatePath"), entityPath))
+        {
+            RED4ext::ent::EntityID entityID;
+            entityID.hash = 0;
+            return entityID;
+        }
 
-        REDSmartPtr<TEMP_PendingEntity::Unk00> pendingEntity;
-        func(this, &pendingEntity, acSettings, acRecordDBID);
+        // if not set by user, use the default one from TweakDB
+        RED4ext::CName defaultAppearance;
+        if (pTDB->TryGetValue(RED4ext::TweakDBID(acRecordDBID, ".appearanceName"), defaultAppearance)
+            && aSettings.appearance == "default")
+        {
+            // ... as long as it's not empty.
+            if (!defaultAppearance.IsNone() && defaultAppearance != "")
+            {
+                aSettings.appearance = defaultAppearance;
+            }
+        }
 
-        RED4ext::ent::EntityID entityID;
-        entityID.hash = pendingEntity ? pendingEntity->entityID.hash : 0;
-        return entityID;
+        aSettings.SetRecordID(acRecordDBID);
+        return Spawn(entityPath, aSettings);
     }
 
     void Despawn(RED4ext::Handle<RED4ext::IScriptable> aEntity)
