@@ -833,7 +833,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
                 }
                 else if (aObject.get_type() == sol::type::string)
                 {
-                    hash = RED4ext::FNV1a(aObject.as<std::string>().c_str());
+                    hash = ResourceAsyncReference::Hash(aObject.as<std::string>());
                 }
                 else if (aObject.is<CName>())
                 {

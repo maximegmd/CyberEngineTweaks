@@ -11,6 +11,17 @@ ResourceAsyncReference::ResourceAsyncReference(const TiltedPhoques::Locked<sol::
 {
 }
 
+uint64_t ResourceAsyncReference::Hash(const std::string& aPath)
+{
+    // Should probably be moved to RED4ext.SDK after fixing RED4ext::RaRef
+    // Needs normalization
+    // 1) all lower case
+    // 2) / becomes \
+    // 3) /\/\\ becomes \
+
+    return RED4ext::FNV1a(aPath.c_str());
+}
+
 RED4ext::ScriptInstance ResourceAsyncReference::GetHandle()
 {
     return &m_reference;
