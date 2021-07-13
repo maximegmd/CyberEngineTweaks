@@ -103,7 +103,8 @@ std::string Type::FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithH
             continue;
         }
         param->type->GetName(typeName);
-        params.push_back(param->name.ToString() + std::string(": ") + typeName.ToString());
+        params.push_back(fmt::format("{}{}: {}", param->flags.isOptional ? "[opt] " : "",
+                                    param->name.ToString(), typeName.ToString()));
     }
 
     for (auto i = 0u; i < params.size(); ++i)
