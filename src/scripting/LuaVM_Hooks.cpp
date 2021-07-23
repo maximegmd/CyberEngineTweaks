@@ -326,22 +326,24 @@ void LuaVM::Hook(Options& aOptions)
         }
     }
 
-    {
-        const mem::pattern cPattern("48 89 5C 24 18 89 54 24 10 57 48 83 EC 20 48 8B D9 C7");
-        const mem::default_scanner cScanner(cPattern);
-        uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
-
-        if (pLocation)
-        {
-            if (MH_CreateHook(pLocation, &HookSetLoadingState, reinterpret_cast<void**>(&m_realSetLoadingState)) != MH_OK
-             || MH_EnableHook(pLocation) != MH_OK)
-                spdlog::error("Could not hook SetLoadingState function!");
-            else
-            {
-                spdlog::info("SetLoadingState function hook complete!");
-            }
-        }
-    }
+    // Disable SetLoadingState hook temporarily and get back to log count workaround
+    // as it introduces major breaking change for onInit handler.
+    //{
+    //    const mem::pattern cPattern("48 89 5C 24 18 89 54 24 10 57 48 83 EC 20 48 8B D9 C7");
+    //    const mem::default_scanner cScanner(cPattern);
+    //    uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
+    //
+    //    if (pLocation)
+    //    {
+    //        if (MH_CreateHook(pLocation, &HookSetLoadingState, reinterpret_cast<void**>(&m_realSetLoadingState)) != MH_OK
+    //         || MH_EnableHook(pLocation) != MH_OK)
+    //            spdlog::error("Could not hook SetLoadingState function!");
+    //        else
+    //        {
+    //            spdlog::info("SetLoadingState function hook complete!");
+    //        }
+    //    }
+    //}
 
     
 }
