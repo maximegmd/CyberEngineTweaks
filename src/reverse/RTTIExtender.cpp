@@ -335,14 +335,6 @@ RED4EXT_ASSERT_SIZE(TEMP_Spawner, 0x68);
 
 #pragma endregion
 
-void GetParameter(RED4ext::CStackFrame* apFrame, void* apInstance)
-{
-    apFrame->unk30 = 0;
-    apFrame->unk38 = 0;
-    const auto opcode = *(apFrame->code++);
-    RED4ext::OpcodeHandlers::Run(opcode, apFrame->context, apFrame, apInstance, nullptr);
-}
-
 void CreateSingleton(RED4ext::Handle<RED4ext::IScriptable> apClassInstance)
 {
     auto* pRTTI = RED4ext::CRTTISystem::Get();
@@ -437,9 +429,9 @@ void WorldFunctionalTests_SpawnEntity(RED4ext::IScriptable* apContext, RED4ext::
     RED4ext::WorldTransform worldTransform;
     RED4ext::CString unknown;
 
-    GetParameter(apFrame, &entityPath);
-    GetParameter(apFrame, &worldTransform);
-    GetParameter(apFrame, &unknown);
+    RED4ext::GetParameter(apFrame, &entityPath);
+    RED4ext::GetParameter(apFrame, &worldTransform);
+    RED4ext::GetParameter(apFrame, &unknown);
     apFrame->code++; // skip ParamEnd
 
     auto* pRTTI = RED4ext::CRTTISystem::Get();
@@ -465,7 +457,7 @@ void WorldFunctionalTests_DespawnEntity(RED4ext::IScriptable* apContext, RED4ext
 {
     RED4ext::Handle<RED4ext::IScriptable> entity;
 
-    GetParameter(apFrame, &entity);
+    RED4ext::GetParameter(apFrame, &entity);
     apFrame->code++; // skip ParamEnd
 
     RED4ext::ExecuteFunction("WorldFunctionalTests", "Internal_DespawnEntity", nullptr, entity);
@@ -570,10 +562,10 @@ public:
         RED4ext::CName appearance = "default";
         RED4ext::TweakDBID recordDBID = 0;
 
-        GetParameter(apFrame, &entityPath);
-        GetParameter(apFrame, &worldTransform);
-        GetParameter(apFrame, &appearance);
-        GetParameter(apFrame, &recordDBID);
+        RED4ext::GetParameter(apFrame, &entityPath);
+        RED4ext::GetParameter(apFrame, &worldTransform);
+        RED4ext::GetParameter(apFrame, &appearance);
+        RED4ext::GetParameter(apFrame, &recordDBID);
         apFrame->code++; // skip ParamEnd
 
         if (appearance == RED4ext::CName(""))
@@ -602,9 +594,9 @@ public:
         RED4ext::TweakDBID recordDBID = 0;
         RED4ext::WorldTransform worldTransform;
         RED4ext::CName appearance = "default";
-        GetParameter(apFrame, &recordDBID);
-        GetParameter(apFrame, &worldTransform);
-        GetParameter(apFrame, &appearance);
+        RED4ext::GetParameter(apFrame, &recordDBID);
+        RED4ext::GetParameter(apFrame, &worldTransform);
+        RED4ext::GetParameter(apFrame, &appearance);
         apFrame->code++; // skip ParamEnd
 
         if (appearance == RED4ext::CName(""))
@@ -630,7 +622,7 @@ public:
     {
         RED4ext::Handle<RED4ext::IScriptable> entity;
 
-        GetParameter(apFrame, &entity);
+        RED4ext::GetParameter(apFrame, &entity);
         apFrame->code++; // skip ParamEnd
 
         exEntitySpawner_Spawner.Despawn(entity);
