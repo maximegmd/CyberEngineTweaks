@@ -532,12 +532,19 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
         return {};
     }
 
-    static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 13);
+    static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 14);
+    static thread_local uint32_t s_callDepth = 0u;
+
+    ++s_callDepth;
+
     struct ResetAllocator
     {
         ~ResetAllocator()
         {
-            s_scratchMemory.Reset();
+            --s_callDepth;
+
+            if (s_callDepth == 0u)
+                s_scratchMemory.Reset();
         }
     };
     ResetAllocator ___allocatorReset;
