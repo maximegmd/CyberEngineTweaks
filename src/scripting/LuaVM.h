@@ -33,6 +33,7 @@ struct LuaVM
     bool ExecuteLua(const std::string& acCommand);
         
     void Update(float aDeltaTime);
+    void Draw();
     void ReloadAllMods();
 
     void OnOverlayOpen() const;
