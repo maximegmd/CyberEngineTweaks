@@ -84,10 +84,13 @@ LuaVM::LuaVM(Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12, Options& aOpti
     , m_lastframe(std::chrono::high_resolution_clock::now())
 {
     Hook(aOptions);
+
+    m_connectUpdate = aD3D12.OnUpdate.Connect([this]() { Draw(); });
 }
 
 LuaVM::~LuaVM()
 {
+    m_d3d12.OnUpdate.Disconnect(m_connectUpdate);
 }
 
 TDBID* LuaVM::HookTDBIDCtor(TDBID* apThis, const char* acpName)
