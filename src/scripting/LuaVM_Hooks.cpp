@@ -160,6 +160,8 @@ bool LuaVM::HookRunningStateRun(uintptr_t aThis, uintptr_t aApp)
 
     luavm.Update(cSeconds.count());
 
+    luavm.m_lastframe = cNow;
+
     return luavm.m_realRunningStateRun(aThis, aApp);
 }
 
