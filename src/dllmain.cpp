@@ -12,7 +12,6 @@
 void EnableDebugPatch(const Image* apImage);
 void StartScreenPatch(const Image* apImage);
 void RemovePedsPatch(const Image* apImage);
-void OptionsPatch(const Image* apImage);
 void OptionsInitHook(const Image* apImage);
 void DisableIntroMoviesPatch(const Image* apImage);
 void DisableVignettePatch(const Image* apImage);
@@ -48,9 +47,6 @@ static void Initialize()
 
         if (options.PatchRemovePedestrians)
             RemovePedsPatch(&options.GameImage);
-
-        if (options.PatchAsyncCompute || options.PatchAntialiasing)
-            OptionsPatch(&options.GameImage);
 
         if (options.PatchDisableIntroMovies)
             DisableIntroMoviesPatch(&options.GameImage);
