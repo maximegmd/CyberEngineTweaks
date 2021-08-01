@@ -6,79 +6,35 @@
 #include "Options.h"
 #include "scripting/GameOptions.h"
 
-bool HookGameOptionGetBoolean(GameOption* apThis, uint8_t* apVariable, uint8_t aType)
-{
-    auto& pVariable = apThis->Boolean;
-
-    auto& options = CET::Get().GetOptions();
-    if (options.PatchAsyncCompute && strcmp(apThis->pCategory, "Rendering/AsyncCompute") == 0)
-    {
-        pVariable = false;
-    }
-    else if (options.PatchAntialiasing && strcmp(apThis->pName, "Antialiasing") == 0)
-    {
-        pVariable = false;
-    }
-    else if (options.PatchAntialiasing && strcmp(apThis->pName, "ScreenSpaceReflection") == 0)
-    {
-        pVariable = false;
-    }
-
-    if (aType != apThis->unk28)
-        return false;
-
-    *apVariable = pVariable;
-
-    return true;
-}
-
-void OptionsPatch(const Image* apImage)
-{
-    const mem::pattern cPattern("44 3A 41 28 75 11 48 8B 41 30 48 85 C0");
-    const mem::default_scanner cScanner(cPattern);
-    auto pLocation = cScanner(apImage->TextRegion).as<uint8_t*>();
-
-    if (pLocation)
-    {
-        DWORD oldProtect = 0;
-        VirtualProtect(pLocation, 32, PAGE_EXECUTE_WRITECOPY, &oldProtect);
-
-        void* pAddress = &HookGameOptionGetBoolean;
-
-        // mov rax, HookSpin
-        pLocation[0] = 0x48;
-        pLocation[1] = 0xB8;
-        std::memcpy(pLocation + 2, &pAddress, 8);
-
-        // jmp rax
-        pLocation[10] = 0xFF;
-        pLocation[11] = 0xE0;
-        VirtualProtect(pLocation, 32, oldProtect, nullptr);
-        
-        spdlog::info("Hidden options patch: success");
-    }
-    else
-        spdlog::warn("Hidden options patch: failed");
-}
-
 using TGameOptionInit = void*(void*);
 TGameOptionInit* RealGameOptionInit = nullptr;
 
 void* HookGameOptionInit(GameOption* apThis)
 {
     auto& gameOptions = GameOptions::GetList();
+    auto& options = CET::Get().GetOptions();
 
     if (std::find(gameOptions.begin(), gameOptions.end(), apThis) == gameOptions.end())
     {
         gameOptions.push_back(apThis);
     }
-    else
-    {
-        // GameOptionInit seems to be called twice per option, value isn't set until after the first call though
-        // Since we've already seen this option once we can now grab the value
 
-        if (CET::Get().GetOptions().DumpGameOptions)
-            spdlog::info(apThis->GetInfo());
+    if (options.DumpGameOptions)
+        spdlog::info(apThis->GetInfo());
+
+    if (options.PatchAsyncCompute && strcmp(apThis->pCategory, "Rendering/AsyncCompute") == 0)
+    {
+        if (apThis->SetBool(false))
+            spdlog::info("Disabled hidden setting \"{}/{}\"", apThis->pCategory, apThis->pName);
+        else
+            spdlog::warn("Failed to disable hidden setting \"{}/{}\"", apThis->pCategory, apThis->pName);
+    }
+    else if (options.PatchAntialiasing && (strcmp(apThis->pName, "Antialiasing") == 0 || strcmp(apThis->pName, "ScreenSpaceReflection") == 0))
+    {
+        if (apThis->SetBool(false))
+            spdlog::info("Disabled hidden setting \"{}/{}\"", apThis->pCategory, apThis->pName);
+        else
+            spdlog::warn("Failed to disable hidden setting \"{}/{}\"", apThis->pCategory, apThis->pName);
     }
 
     return RealGameOptionInit(apThis);
