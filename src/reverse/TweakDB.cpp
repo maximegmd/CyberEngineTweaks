@@ -515,7 +515,7 @@ bool TweakDB::InternalCloneRecord(const std::string& acRecordName, const RED4ext
             const auto* pDefaultFlatValue = pTDB->GetDefaultFlatValue(flatTypeName);
             RED4ext::CStackType defaultStackType = pDefaultFlatValue->GetValue();
 
-            flatID.SetTDBOffset(pPool->GetOrCreate(defaultStackType, pDefaultFlatValue->ToTDBOffset()));
+            flatID.SetTDBOffset(pPool->GetOrCreate(defaultStackType));
         }
 
         // add our flat pointing to that value
@@ -738,7 +738,6 @@ int32_t FlatPool::GetOrCreate(const RED4ext::CStackType& acStackType, HashType a
     int32_t existingTDBOffset = Get(acStackType, aHash);
     if (existingTDBOffset != -1)
     {
-        assert((aTDBOffset == -1) || (existingTDBOffset == aTDBOffset));
         return existingTDBOffset;
     }
 
