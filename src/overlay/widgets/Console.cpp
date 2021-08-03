@@ -149,9 +149,20 @@ void Console::Log(const std::string& acpText)
     std::lock_guard<std::recursive_mutex> _{ m_outputLock };
 
     size_t first = 0;
-    while (first < acpText.size())
+    size_t size = acpText.size();
+    while (first < size)
     {
-        const auto second = acpText.find_first_of('\n', first);
+        // find_first_of \r or \n
+        size_t second = std::string::npos;
+        for (size_t i = first; i != size; ++i)
+        {
+            char ch = acpText[i];
+            if (ch == '\r' || ch == '\n')
+            {
+                second = i;
+                break;
+            }
+        }
 
         if (second == std::string_view::npos)
         {
@@ -163,6 +174,9 @@ void Console::Log(const std::string& acpText)
             m_outputLines.emplace_back(acpText.substr(first, second-first));
 
         first = second + 1;
+        char ch = acpText[first];
+        while (ch == '\r' || ch == '\n')
+            ch = acpText[++first];
     }
 
     m_outputScroll = true;

@@ -3,8 +3,8 @@
 
 class RTTIExtender
 {
-    static void CreateSingleton(RED4ext::CName aTypeName);
     static void AddFunctionalTests();
+    static void AddEntitySpawner();
 
 public:
     static void Initialize();
