@@ -295,6 +295,13 @@ std::pair<bool, std::string*> InputTextCStr(const char* acpLabel, const char* ac
     }
 }
 
+void SetTooltipUnformatted(const char* acpText)
+{
+    ImGui::BeginTooltip();
+    ImGui::TextUnformatted(acpText);
+    ImGui::EndTooltip();
+}
+
 bool NextItemVisible(const ImVec2& aSize = ImVec2(1, 1), bool aClaimSpaceIfInvisible = true)
 {
     ImVec2 rectMin = ImGui::GetCursorScreenPos();
@@ -704,11 +711,11 @@ bool TweakDBEditor::DrawRecordDropdown(const char* acpLabel, RED4ext::TweakDBID&
         {
             RED4ext::CName typeName;
             record->GetType()->GetName(typeName);
-            ImGui::SetTooltip(typeName.ToString());
+            ImGui::SetTooltipUnformatted(typeName.ToString());
         }
         else
         {
-            ImGui::SetTooltip("ERROR_RECORD_NOT_FOUND");
+            ImGui::SetTooltipUnformatted("ERROR_RECORD_NOT_FOUND");
         }
     }
     if (comboOpened)
@@ -751,7 +758,7 @@ bool TweakDBEditor::DrawRecordDropdown(const char* acpLabel, RED4ext::TweakDBID&
                     }
 
                     if (ImGui::IsItemHovered())
-                        ImGui::SetTooltip(recordGroup.m_name.c_str());
+                        ImGui::SetTooltipUnformatted(recordGroup.m_name.c_str());
 
                     if (isSelected)
                         ImGui::SetItemDefaultFocus();
@@ -1073,11 +1080,11 @@ bool TweakDBEditor::DrawFlatTweakDBID(RED4ext::TweakDBID aDBID, RED4ext::CStackT
             {
                 RED4ext::CName typeName;
                 record->GetType()->GetName(typeName);
-                ImGui::SetTooltip(typeName.ToString());
+                ImGui::SetTooltipUnformatted(typeName.ToString());
             }
             else
             {
-                ImGui::SetTooltip("ERROR_RECORD_NOT_FOUND");
+                ImGui::SetTooltipUnformatted("ERROR_RECORD_NOT_FOUND");
             }
         }
 
@@ -1537,7 +1544,7 @@ bool TweakDBEditor::DrawFlatCName(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
     {
         RED4ext::CString localizedText;
         ExecuteGlobalFunction("GetLocalizedTextByKey", &localizedText, atoll(pStr + 7));
-        ImGui::SetTooltip(localizedText.c_str());
+        ImGui::SetTooltipUnformatted(localizedText.c_str());
     }
 
     uint64_t hash = pCName->hash;
@@ -1601,7 +1608,7 @@ bool TweakDBEditor::DrawFlatString(RED4ext::TweakDBID aDBID, RED4ext::CStackType
     {
         RED4ext::CString localizedText;
         RED4ext::ExecuteGlobalFunction("GetLocalizedTextByKey", &localizedText, atoll(pCString->c_str() + 7));
-        ImGui::SetTooltip(localizedText.c_str());
+        ImGui::SetTooltipUnformatted(localizedText.c_str());
     }
 
     if (valueChanged)
