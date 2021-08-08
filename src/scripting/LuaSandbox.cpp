@@ -32,7 +32,7 @@ static constexpr const char* s_cGlobalObjectsWhitelist[] =
     "unpack",
     "xpcall",
 
-    //"collectgarbage", //< Good for testing memory leaks and ref counters: `collectgarbage("collect")`
+    "collectgarbage", //< Good for testing memory leaks and ref counters: `collectgarbage("collect")`, also used for forcing the release of some refs
 };
 
 static constexpr const char* s_cGlobalTablesWhitelist[] =
