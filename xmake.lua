@@ -3,7 +3,7 @@ set_xmakever("2.5.3")
 set_languages("cxx20")
 set_arch("x64")
 
-add_requires("spdlog", "nlohmann_json", "hopscotch-map", "minhook", "mem", "imgui 1.82", "sol2", "tiltedcore 0.2.2", "sqlite3", "luajit")
+add_requires("spdlog", "nlohmann_json", "hopscotch-map", "minhook", "mem", "imgui 1.83", "sol2", "tiltedcore 0.2.3", "sqlite3", "luajit")
 add_requireconfs("sol2", { configs = { includes_lua = false } })
 add_requireconfs("luajit", { configs = { gc64 = true } })
 
