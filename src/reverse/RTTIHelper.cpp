@@ -575,11 +575,11 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
         }
         else if (cpParam->flags.isOptional)
         {
-            // Skip undefined optionals in the tail
-            if (aLuaArgOffset >= aLuaArgs.size())
-                continue;
+            // Generate a default value if not passed
+            sol::object argValue = sol::nil;
+            if (aLuaArgOffset < aLuaArgs.size())
+                argValue = aLuaArgs[aLuaArgOffset];
 
-            sol::object argValue = aLuaArgs[aLuaArgOffset];
             callArgs[callArgOffset] = Scripting::ToRED(argValue, cpParam->type, &s_scratchMemory);
 
             // Skip incompatible value, assuming this optional is undefined
