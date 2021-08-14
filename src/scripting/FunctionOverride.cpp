@@ -28,9 +28,10 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
         {
             TiltedPhoques::StackAllocator<1 << 13> s_allocator;
 
-            TiltedPhoques::Allocator::Push(s_allocator);
+            auto pAllocator = TiltedPhoques::Allocator::Get();
+            TiltedPhoques::Allocator::Set(&s_allocator);
             TiltedPhoques::Vector<sol::object> args;
-            TiltedPhoques::Allocator::Pop();
+            TiltedPhoques::Allocator::Set(pAllocator);
 
             auto state = itor->second.pScripting->GetState();
 
@@ -213,9 +214,10 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
         // Cheap allocation
         TiltedPhoques::StackAllocator<1 << 13> s_allocator;
 
-        TiltedPhoques::Allocator::Push(s_allocator);
+        auto pAllocator = TiltedPhoques::Allocator::Get();
+        TiltedPhoques::Allocator::Set(&s_allocator);
         TiltedPhoques::Vector<sol::object> args;
-        TiltedPhoques::Allocator::Pop();
+        TiltedPhoques::Allocator::Set(pAllocator);
 
         auto state = context.pScripting->GetState();
 

@@ -1999,10 +1999,7 @@ namespace sol_ImGui
             "NoUndoRedo"                     , ImGuiInputTextFlags_NoUndoRedo,
             "CharsScientific"                , ImGuiInputTextFlags_CharsScientific,
             "CallbackResize"                 , ImGuiInputTextFlags_CallbackResize,
-            "CallbackEdit"                   , ImGuiInputTextFlags_CallbackEdit,
-            // [Internal]
-            "Multiline"                      , ImGuiInputTextFlags_Multiline,
-            "NoMarkEdited"                   , ImGuiInputTextFlags_NoMarkEdited
+            "CallbackEdit"                   , ImGuiInputTextFlags_CallbackEdit
         );
 #pragma endregion InputText Flags
 
