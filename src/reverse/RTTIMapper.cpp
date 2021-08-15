@@ -51,10 +51,14 @@ void RTTIMapper::RegisterSimpleTypes(sol::state& aLuaState, sol::table& aLuaGlob
         if (!pType || !pHandle)
             return sol::nil;
 
+        auto* pClone = pType->GetAllocator()->AllocAligned(pType->GetSize(), pType->GetAlignment()).memory;
+        pType->Init(pClone);
+        pType->Assign(pClone, pHandle);
+
         auto lockedState = m_lua.Lock();
         auto& luaState = lockedState.Get();
 
-        return sol::object(luaState, sol::in_place, Variant(pType, pHandle));
+        return sol::object(luaState, sol::in_place, Variant(pType, pClone));
     };
 
     aLuaGlobal["FromVariant"] = [this](const Variant& acVariant) -> sol::object {
