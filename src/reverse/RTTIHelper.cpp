@@ -7,6 +7,7 @@
 #include "StrongReference.h"
 #include "scripting/Scripting.h"
 #include "Utils.h"
+#include <common/ScopeGuard.h>
 
 static constexpr const bool s_cEnableOverloads = true;
 static constexpr const bool s_cLogAllOverloadVariants = true;
@@ -491,6 +492,9 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
                                                   sol::variadic_args aLuaArgs, uint64_t aLuaArgOffset,
                                                   std::string& aErrorMessage) const
 {
+    static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 14);
+    static thread_local uint32_t s_callDepth = 0u;
+
     if (!m_pRtti)
         return {};
 
@@ -532,27 +536,32 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
         return {};
     }
 
-    static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 14);
-    static thread_local uint32_t s_callDepth = 0u;
-
+    // Allocator management
     ++s_callDepth;
 
-    struct ResetAllocator
-    {
-        ~ResetAllocator()
-        {
-            --s_callDepth;
+    ScopeGuard allocatorGuard([&]() {
+        --s_callDepth;
 
-            if (s_callDepth == 0u)
-                s_scratchMemory.Reset();
-        }
-    };
-    ResetAllocator ___allocatorReset;
+        if (s_callDepth == 0u)
+            s_scratchMemory.Reset();
+    });
 
     TiltedPhoques::ScopedAllocator _(&s_scratchMemory);
+
     TiltedPhoques::Vector<RED4ext::CStackType> callArgs(apFunc->params.size);
     TiltedPhoques::Vector<uint32_t> callArgToParam(apFunc->params.size);
+    TiltedPhoques::Vector<bool> argNeedsFree(apFunc->params.size, false);
     uint32_t callArgOffset = 0u;
+
+    ScopeGuard argsGuard([&]() {
+        for (auto j = 0u; j < callArgOffset; ++j)
+        {
+            const auto cpParam = apFunc->params[callArgToParam[j]];
+            const bool isNew = argNeedsFree[j];
+
+            FreeInstance(callArgs[j], !isNew, isNew, &s_scratchMemory);
+        }
+    });
 
     for (auto i = 0u; i < apFunc->params.size; ++i)
     {
@@ -569,6 +578,7 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
             // and memory allocation is enough.
             callArgs[callArgOffset].type = cpParam->type;
             callArgs[callArgOffset].value = NewPlaceholder(cpParam->type, &s_scratchMemory);
+            argNeedsFree[callArgOffset] = true;
 
             // But ToRED conversion is necessary for implementing required out params.
             //callArgs[callArgOffset] = Scripting::ToRED(sol::nil, cpParam->type, &s_scratchMemory);
@@ -586,6 +596,7 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
             {
                 callArgs[callArgOffset].type = cpParam->type;
                 callArgs[callArgOffset].value = NewPlaceholder(cpParam->type, &s_scratchMemory);
+                argNeedsFree[callArgOffset] = true;
             }
             else
             {
@@ -604,19 +615,6 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
             RED4ext::CName typeName;
             cpParam->type->GetName(typeName);
             aErrorMessage = fmt::format("Function '{}' parameter {} must be {}.", apFunc->shortName.ToString(), i + 1, typeName.ToString());
-
-            if (callArgOffset > 0)
-            {
-                for (auto j = 0u; j < callArgOffset; ++j)
-                {
-                    const auto cpParam = apFunc->params[callArgToParam[j]];
-
-                    if (cpParam->flags.isOut)
-                        FreeInstance(callArgs[j], false, true, &s_scratchMemory);
-                    else
-                        FreeInstance(callArgs[j], true, false, &s_scratchMemory);
-                }
-            }
 
             return {};
         }
@@ -648,16 +646,6 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
     {
         aErrorMessage = fmt::format("Function '{}' failed to execute.", apFunc->shortName.ToString());
 
-        for (auto i = 0u; i < callArgOffset; ++i)
-        {
-            const auto cpParam = apFunc->params[callArgToParam[i]];
-
-            if (cpParam->flags.isOut)
-                FreeInstance(callArgs[i], false, true, &s_scratchMemory);
-            else
-                FreeInstance(callArgs[i], true, false, &s_scratchMemory);
-        }
-
         return {};
     }
 
@@ -682,14 +670,7 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
         const auto cpParam = apFunc->params[callArgToParam[i]];
 
         if (cpParam->flags.isOut)
-        {
             results.push_back(Scripting::ToLua(lockedState, callArgs[i]));
-            FreeInstance(callArgs[i], false, true, &s_scratchMemory);
-        }
-        else
-        {
-            FreeInstance(callArgs[i], true, false, &s_scratchMemory);
-        }
     }
 
     return results;
