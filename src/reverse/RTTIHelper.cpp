@@ -47,6 +47,10 @@ void RTTIHelper::InitializeRTTI()
     const auto cpEngine = RED4ext::CGameEngine::Get();
     const auto cpGameInstance = cpEngine->framework->gameInstance;
     const auto cpPlayerSystemType = m_pRtti->GetType(RED4ext::FNV1a("cpPlayerSystem"));
+
+    m_pGameInstance = reinterpret_cast<ScriptGameInstance*>(m_pGameInstanceType->AllocInstance());
+    m_pGameInstance->gameInstance = cpGameInstance;
+
     m_pPlayerSystem = reinterpret_cast<RED4ext::ScriptInstance>(cpGameInstance->GetInstance(cpPlayerSystemType));
 }
 
@@ -570,7 +574,7 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
         if (cpParam->type == m_pGameInstanceType)
         {
             callArgs[callArgOffset].type = m_pGameInstanceType;
-            callArgs[callArgOffset].value = &cpEngine->framework->gameInstance;
+            callArgs[callArgOffset].value = m_pGameInstance;
         }
         else if (cpParam->flags.isOut)
         {

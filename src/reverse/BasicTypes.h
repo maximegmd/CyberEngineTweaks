@@ -182,4 +182,13 @@ struct Variant
 
 static_assert(sizeof(Variant) == 0x18);
 
+struct alignas(8) ScriptGameInstance
+{
+    RED4ext::GameInstance* gameInstance;
+    int8_t unk8;
+    int64_t unk10;
+};
+
+static_assert(sizeof(ScriptGameInstance) == 0x18);
+
 #pragma pack(pop)
