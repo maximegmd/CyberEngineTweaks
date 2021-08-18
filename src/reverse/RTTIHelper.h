@@ -1,5 +1,7 @@
 #pragma once
 
+#include "BasicTypes.h"
+
 struct RTTIHelper
 {
     using LockableState = TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref;
@@ -74,6 +76,7 @@ private:
     LockableState m_lua;
     RED4ext::CRTTISystem* m_pRtti;
     RED4ext::CClass* m_pGameInstanceType;
+    ScriptGameInstance* m_pGameInstance;
     RED4ext::ScriptInstance m_pPlayerSystem;
     RedFunctionMap m_extendedFunctions;
     LuaFunctionMap m_resolvedFunctions[2];
