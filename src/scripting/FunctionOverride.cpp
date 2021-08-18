@@ -196,6 +196,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
 
     // Save state so we can rollback to it after we popped for ourself
     auto* pCode = apFrame->code;
+    uint8_t currentParam = apFrame->currentParam;
 
     if (!context.Calls.empty())
     {
@@ -236,6 +237,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
             arg.type = pArg->type;
             arg.value = pInstance;
 
+            apFrame->currentParam++;
             apFrame->unk30 = 0;
             apFrame->unk38 = 0;
             const auto opcode = *(apFrame->code++);
@@ -290,6 +292,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
     {
         // Rollback so the real function will manage to pop everything
         apFrame->code = pCode;
+        apFrame->currentParam = currentParam;
 
         using TCallScriptFunction = bool (*)(RED4ext::IFunction * apFunction, RED4ext::IScriptable * apContext,
                                              RED4ext::CStackFrame * apFrame, int32_t * apOut, int64_t a4);
