@@ -192,7 +192,7 @@ BOOL Overlay::ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis)
 
     auto& overlay = CET::Get().GetOverlay();
 
-    if (wnd == foreground && apThis->unk164 && !apThis->unk140 && !overlay.IsEnabled())
+    if (wnd == foreground && apThis->unk15C && !apThis->unk14C && !overlay.IsEnabled())
     {
         RECT rect;
         GetClientRect(wnd, &rect);
@@ -218,7 +218,7 @@ BOOL Overlay::ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis)
 
 void Overlay::Hook()
 {
-    const mem::pattern cClipToCenterPattern("48 89 5C 24 08 57 48 83 EC 30 48 8B 99 68 01 00 00 48 8B F9 FF");
+    const mem::pattern cClipToCenterPattern("48 89 5C 24 08 57 48 83 EC 30 48 8B 99 ? 01 00 00 48 8B F9 FF");
     const mem::default_scanner scanner(cClipToCenterPattern);
 
     uint8_t* pLocation = scanner(m_options.GameImage.TextRegion).as<uint8_t*>();

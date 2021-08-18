@@ -1,12 +1,12 @@
 #include <stdafx.h>
 #include <chrono>
 
-#include <RED4ext/Types/TweakDB.hpp>
-
 #include <CET.h>
 #include <reverse/WeakReference.h>
 #include <reverse/StrongReference.h>
 #include <scripting/Scripting.h>
+
+#include <RED4ext/Hashing/CRC.hpp>
 
 #include "TweakDB.h"
 

@@ -66,7 +66,7 @@ protected:
     static TDBID* HookTDBIDCtor(TDBID* apThis, const char* acpName);
     static TDBID* HookTDBIDCtorCString(TDBID* apThis, const RED4ext::CString* acpName);
     static TDBID* HookTDBIDCtorDerive(TDBID* apBase, TDBID* apThis, const char* acpName);
-    static TDBID* HookTDBIDCtorUnknown(TDBID* apThis, uint64_t apName);
+    static UnknownString* HookSomeStringLookup(const uint64_t*, UnknownString*);
     static void HookTDBIDToStringDEBUG(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void* apResult, void*);
     static bool HookRunningStateRun(uintptr_t aThis, uintptr_t aApp);
     static uintptr_t HookSetLoadingState(uintptr_t aThis, int aState);
@@ -83,7 +83,6 @@ private:
     TTDBIDCtor* m_realTDBIDCtor{ nullptr };
     TTDBIDCtorCString* m_realTDBIDCtorCString{ nullptr };
     TTDBIDCtorDerive* m_realTDBIDCtorDerive{ nullptr };
-    TTDBIDCtorUnknown* m_realTDBIDCtorUnknown{ nullptr };
     TRunningStateRun* m_realRunningStateRun{ nullptr };
     TSetLoadingState* m_realSetLoadingState{ nullptr };
     TSomeStringLookup* m_someStringLookup{ nullptr };

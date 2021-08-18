@@ -4,7 +4,7 @@
 
 void MinimapFlickerPatch(const Image* apImage)
 {
-    const mem::pattern cPattern("F3 44 0F 10 10 F3 45 0F 5F D7 F3 45 0F 5D D5 E8 ? ? ? ? 80 3D ? ? ? ? 00 44 0F 28 C8 F3 45 0F 5F CF F3 45 0F 5D CD");
+    const mem::pattern cPattern("83 79 2C 00 48 8B F2 4C");
     const mem::default_scanner cScanner(cPattern);
     auto pLocation = cScanner(apImage->TextRegion).as<uint8_t*>();
 
@@ -14,9 +14,11 @@ void MinimapFlickerPatch(const Image* apImage)
         return;
     }
 
+    pLocation += 0xEB;
+
     DWORD oldProtect = 0;
     VirtualProtect(pLocation, 32, PAGE_EXECUTE_WRITECOPY, &oldProtect);
-    pLocation[26] = 0x01;
+    pLocation[0] = 0x01;
     VirtualProtect(pLocation, 32, oldProtect, nullptr);
 
     spdlog::info("Minimap Flicker Patch: success");

@@ -7,11 +7,23 @@
 
 void LuaVM::HookLog(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*, void*)
 {
-    RED4ext::CString text("");
+    RED4ext::CString text{};
+
     apStack->unk30 = 0;
     apStack->unk38 = 0;
+
+    uint8_t memory[sizeof(RED4ext::CRTTIScriptReferenceType)];
+    auto* pRef = RED4ext::CRTTIScriptReferenceType::New(memory);
+
+    if (!apStack->IsCurrentParamSet())
+    {
+        pRef->Set(pRef->innerType, &text);
+    }
+
+    apStack->currentParam++;
     const auto opcode = *(apStack->code++);
-    RED4ext::OpcodeHandlers::Run(opcode, apStack->context, apStack, &text, nullptr);
+
+    RED4ext::OpcodeHandlers::Run(opcode, apStack->context, apStack, pRef, pRef);
     apStack->code++; // skip ParamEnd
 
     auto& console = CET::Get().GetOverlay().GetConsole();
@@ -52,13 +64,25 @@ void LuaVM::HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack,
     apStack->unk30 = 0;
     apStack->unk38 = 0;
     uint8_t opcode = *(apStack->code++);
+    apStack->currentParam++;
+
     RED4ext::OpcodeHandlers::Run(opcode, apStack->context, apStack, &channel_hash, nullptr);
 
-    RED4ext::CString text("");
+    uint8_t memory[sizeof(RED4ext::CRTTIScriptReferenceType)];
+    auto* pRef = RED4ext::CRTTIScriptReferenceType::New(memory);
+
+    RED4ext::CString text{};
+    if (!apStack->IsCurrentParamSet())
+    {
+        pRef->Set(pRef->innerType, &text);
+    }
+
+    apStack->currentParam++;
+
     apStack->unk30 = 0;
     apStack->unk38 = 0;
     opcode = *(apStack->code++);
-    RED4ext::OpcodeHandlers::Run(opcode, apStack->context, apStack, &text, nullptr);
+    RED4ext::OpcodeHandlers::Run(opcode, apStack->context, apStack, pRef, pRef);
 
     apStack->code++; // skip ParamEnd
 
@@ -123,16 +147,6 @@ struct UnknownString
     uint32_t size;
 };
 
-TDBID* LuaVM::HookTDBIDCtorUnknown(TDBID* apThis, uint64_t aName)
-{
-    auto& luavm = CET::Get().GetVM();
-    auto result = luavm.m_realTDBIDCtorUnknown(apThis, aName);
-    UnknownString unknown;
-    luavm.m_someStringLookup(&aName, &unknown);
-    luavm.RegisterTDBIDString(apThis->value, 0, std::string(unknown.string, unknown.size));
-    return result;
-}
-
 void LuaVM::HookTDBIDToStringDEBUG(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void* apResult, void*)
 {
     TDBID tdbid;
@@ -187,7 +201,7 @@ void LuaVM::Hook(Options& aOptions)
     auto& gameImage = aOptions.GameImage;
 
     {
-        const mem::pattern cPattern("40 53 48 83 EC 40 48 8B DA E8 ?? ?? ?? ?? 48 8B D0 48 8D 4C 24 20");
+        const mem::pattern cPattern("40 53 48 83 EC ? 48 8D 4C 24 20 48 8B DA E8 ? ? ? ? 33 D2 48 8D 4C  24 40 E8");
         const mem::default_scanner cScanner(cPattern);
         uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
 
@@ -202,7 +216,7 @@ void LuaVM::Hook(Options& aOptions)
     }
 
     {
-        const mem::pattern cPattern("48 89 5C 24 08 48 89 74 24 18 57 48 83 EC 40 48 8B 02 48 8D 3D ?? ?? ?? ?? 33 F6 4C 8D 44 24 58 48 89 74 24 58 45 33 C9 48 89 72 30 48 8B DA 48 89 72 38 0F B6 08 48 FF C0 48 89 02 8B C1 48 8B 4A 40 FF 14 C7 E8 ?? ?? ?? ?? 48 8B D0");
+        const mem::pattern cPattern("4C 8B DC 49 89 5B 08 49  89 73 18 57 48 83 EC 70 48 8B 02 ? ? ? ? ? ? ? FE 42 62 4D 8D 43 10 33 FF 45 33 C9 49 89  7B 10 48 8B DA 48 89 7A");
         const mem::default_scanner cScanner(cPattern);
         uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
 
@@ -217,7 +231,7 @@ void LuaVM::Hook(Options& aOptions)
     }
 
     {
-        const mem::pattern cPattern("48 89 5C 24 08 48 89 74 24 10 57 48 83 EC 40 80 3A 00 48 8B FA");
+        const mem::pattern cPattern("40 53 48 83 EC 30 33 C0 48 89 54 24 20 48 8B D9");
         const mem::default_scanner cScanner(cPattern);
         uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
 
@@ -230,9 +244,9 @@ void LuaVM::Hook(Options& aOptions)
                 spdlog::info("TDBID::ctor function hook complete!");
         }
     }
-
+    /*
     {
-        const mem::pattern cPattern("48 89 5C 24 08 48 89 74 24 10 57 48 83 EC 30 48 8B F1 48 8B DA 48 8B CA E8 ?? ?? ?? ?? 48 8B CB");
+        const mem::pattern cPattern("48 89 5C 24 10 57 48 83 EC 30 48 8B F9 48 8B DA 48 8B CA E8 ? ? ? ? 48 8B CB 48 89 44 24 20 E8 ? ? ? ? F2 0F 10  44 24 20 48 8D 54 24 20 89 44 24 28 48 8B CF 33  C0 C7 44 24 40 00 00 00");
         const mem::default_scanner cScanner(cPattern);
         uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
 
@@ -248,7 +262,7 @@ void LuaVM::Hook(Options& aOptions)
     }
 
     {
-        const mem::pattern cPattern("48 89 5C 24 10 48 89 74 24 18 57 48 83 EC 20 33 C0 4D 8B C8 48 8B F2 4D 85 C0 74 0F 41 38 00");
+        const mem::pattern cPattern("40 53 48 83 EC 30 33 C0 4C 89 44 24 20 48 8B DA");
         const mem::default_scanner cScanner(cPattern);
         uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
 
@@ -263,8 +277,10 @@ void LuaVM::Hook(Options& aOptions)
         }
     }
 
+    /*
+    This function was inlined in 1.30, waiting for whoever knows more about TweakDB to jump in
     {
-        const mem::pattern cPattern("48 89 5C 24 08 48 89 54 24 10 57 48 83 EC 50 48 8B F9 48 8D 54 24 20 48 8D 4C 24 68 E8");
+        const mem::pattern cPattern("40 53 48 83 EC 20 48 8B DA 48 8B 11 48 8B CB E8");
         const mem::default_scanner cScanner(cPattern);
         uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
 
@@ -277,15 +293,12 @@ void LuaVM::Hook(Options& aOptions)
             else
             {
                 spdlog::info("TDBID::ctor[Unknown] function hook complete!");
-                *reinterpret_cast<void**>(&m_someStringLookup) =
-                    &pLocation[33] + *reinterpret_cast<int32_t*>(&pLocation[29]);
             }
         }
-    }
+    }*/
 
-    {
-        const mem::pattern cPattern("48 BF 58 D1 78 A0 18 09 BA EC 75 16 48 8D 15 ?? ?? ?? ?? 48 8B CF E8 ?? ?? ?? ?? "
-                                    "C6 05 ?? ?? ?? ?? 01 41 8B 06 39 05 ?? ?? ?? ?? 7F");
+    /* {
+        const mem::pattern cPattern("48 BF 58 D1 78 A0 18 09 BA EC 75 16 48 8D 15 ? ? ? ? 48 8B CF E8 ? ? ? ? C6 05 ?? ?? ?? ?? 01 41 8B 06 39 05 ? ? ? ? 7F");
         const mem::default_scanner cScanner(cPattern);
         uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
 
@@ -312,7 +325,7 @@ void LuaVM::Hook(Options& aOptions)
             }
         }
     }
-
+    */
     {
         const mem::pattern cPattern("40 53 48 83 EC 20 48 8B 0D ? ? ? ? 48 8B DA E8 ? ? ? ? 84 C0");
         const mem::default_scanner cScanner(cPattern);

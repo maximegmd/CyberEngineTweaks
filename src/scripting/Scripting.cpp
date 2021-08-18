@@ -463,11 +463,11 @@ void Scripting::PostInitialize()
     luaVm["Game"] = this;
     luaGlobal["Game"] = luaVm["Game"];
 
-    RTTIExtender::Initialize();
+    //RTTIExtender::Initialize();
     m_mapper.Register();
-    m_sandbox.PostInitialize();
+    /* m_sandbox.PostInitialize();
 
-    RegisterOverrides();
+    RegisterOverrides();*/
 }
 
 void Scripting::RegisterOverrides()

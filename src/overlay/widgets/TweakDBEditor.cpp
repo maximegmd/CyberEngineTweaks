@@ -1,11 +1,10 @@
 #include <stdafx.h>
 
-#include <RED4ext/Types/TweakDB.hpp>
-#include <RED4ext/Types/generated/Color.hpp>
-#include <RED4ext/Types/generated/EulerAngles.hpp>
-#include <RED4ext/Types/generated/Quaternion.hpp>
-#include <RED4ext/Types/generated/Vector2.hpp>
-#include <RED4ext/Types/generated/Vector3.hpp>
+#include <RED4ext/Scripting/Natives/Generated/Color.hpp>
+#include <RED4ext/Scripting/Natives/Generated/EulerAngles.hpp>
+#include <RED4ext/Scripting/Natives/Generated/Quaternion.hpp>
+#include <RED4ext/Scripting/Natives/Generated/Vector2.hpp>
+#include <RED4ext/Scripting/Natives/Generated/Vector3.hpp>
 
 #include "HelperWidgets.h"
 #include <CET.h>
@@ -949,7 +948,7 @@ bool TweakDBEditor::DrawFlatArray(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
             {
                 if (ImGui::Button("edit"))
                 {
-                    RED4ext::IMemoryAllocator* allocator = pArrayType->GetAllocator();
+                    auto* allocator = pArrayType->GetAllocator();
                     auto result = allocator->AllocAligned(pArrayType->GetSize(), pArrayType->GetAlignment());
                     pArrayType->Init(result.memory);
                     pArrayType->Assign(result.memory, arrayInstance);

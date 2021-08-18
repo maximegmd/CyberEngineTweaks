@@ -1,12 +1,11 @@
 #include "RTTIExtender.h"
 #include <CET.h>
 #include <Image.h>
-#include <RED4ext/Types/TweakDB.hpp>
-#include <RED4ext/Types/SharedMutex.hpp>
-#include <RED4ext/Types/generated/Transform.hpp>
-#include <RED4ext/Types/generated/WorldTransform.hpp>
-#include <RED4ext/Types/generated/ent/Entity.hpp>
-#include <RED4ext/Types/generated/ent/EntityID.hpp>
+#include <RED4ext/SharedMutex.hpp>
+#include <RED4ext/Scripting/Natives/Generated/Transform.hpp>
+#include <RED4ext/Scripting/Natives/Generated/WorldTransform.hpp>
+#include <RED4ext/Scripting/Natives/Generated/ent/Entity.hpp>
+#include <RED4ext/Scripting/Natives/Generated/ent/EntityID.hpp>
 
 template<typename T>
 struct PatternCall
@@ -126,7 +125,7 @@ struct gameIGameSystem : IUpdatableSystem
 
     static void CallConstructor(void* apAddress)
     {
-        // expected: 5, index: 0
+        // expected: 2, index: 0
         using TFunc = void (*)(void*);
         static PatternCall<TFunc> func("48 8B D9 E8 ?? ?? ?? ?? 48 8D 05 ?? ?? ?? ?? 48 C7 43 40 00 00 00 00", -6);
         func(apAddress); // gameIGameSystem::ctor()

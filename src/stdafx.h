@@ -6,16 +6,11 @@
 #include <MinHook.h>
 #include <nlohmann/json.hpp>
 
-#include <RED4ext/REDfunc.hpp>
+#include <RED4ext/Relocation.hpp>
 #include <RED4ext/DynArray.hpp>
-#include <RED4ext/REDptr.hpp>
-#include <RED4ext/REDhash.hpp>
 #include <RED4ext/CName.hpp>
 #include <RED4ext/CString.hpp>
 #include <RED4ext/ISerializable.hpp>
-#include <RED4ext/Types/InstanceType.hpp>
-#include <RED4ext/Types/SimpleTypes.hpp>
-#include <RED4ext/Types/CharacterCustomization.hpp>
 #include <RED4ext/RTTISystem.hpp>
 #include <RED4ext/RTTITypes.hpp>
 #include <RED4ext/GameEngine.hpp>
@@ -23,7 +18,7 @@
 #include <RED4ext/Scripting/CProperty.hpp>
 #include <RED4ext/Scripting/Functions.hpp>
 #include <RED4ext/Scripting/OpcodeHandlers.hpp>
-#include <RED4ext/MemoryAllocators.hpp>
+#include <RED4ext/TweakDB.hpp>
 
 #include <filesystem>
 #include <iostream>
