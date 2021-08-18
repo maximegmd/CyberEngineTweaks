@@ -117,51 +117,12 @@ LuaVM::~LuaVM()
     m_d3d12.OnUpdate.Disconnect(m_connectUpdate);
 }
 
-TDBID* LuaVM::HookTDBIDCtor(TDBID* apThis, const char* acpName)
-{
-    auto& luavm = CET::Get().GetVM();
-    auto result = luavm.m_realTDBIDCtor(apThis, acpName);
-    luavm.RegisterTDBIDString(apThis->value, 0, acpName);
-    return result;
-}
-
-TDBID* LuaVM::HookTDBIDCtorCString(TDBID* apThis, const RED4ext::CString* acpName)
-{
-    auto& luavm = CET::Get().GetVM();
-    auto result = luavm.m_realTDBIDCtorCString(apThis, acpName);
-    luavm.RegisterTDBIDString(apThis->value, 0, acpName->c_str());
-    return result;
-}
-
 TDBID* LuaVM::HookTDBIDCtorDerive(TDBID* apBase, TDBID* apThis, const char* acpName)
 {
     auto& luavm = CET::Get().GetVM();
     auto result = luavm.m_realTDBIDCtorDerive(apBase, apThis, acpName);
     luavm.RegisterTDBIDString(apThis->value, apBase->value, std::string(acpName));
     return result;
-}
-
-struct UnknownString
-{
-    const char* string;
-    uint32_t size;
-};
-
-void LuaVM::HookTDBIDToStringDEBUG(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void* apResult, void*)
-{
-    TDBID tdbid;
-    apStack->unk30 = 0;
-    apStack->unk38 = 0;
-    uint8_t opcode = *(apStack->code++);
-    RED4ext::OpcodeHandlers::Run(opcode, apStack->context, apStack, &tdbid, nullptr);
-    apStack->code++; // skip ParamEnd
-
-    if (apResult)
-    {
-        std::string name = CET::Get().GetVM().GetTDBIDString(tdbid.value);
-        RED4ext::CString s(name.c_str());
-        *static_cast<RED4ext::CString*>(apResult) = s;
-    }
 }
 
 bool LuaVM::HookRunningStateRun(uintptr_t aThis, uintptr_t aApp)
@@ -231,37 +192,6 @@ void LuaVM::Hook(Options& aOptions)
     }
 
     {
-        const mem::pattern cPattern("40 53 48 83 EC 30 33 C0 48 89 54 24 20 48 8B D9");
-        const mem::default_scanner cScanner(cPattern);
-        uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
-
-        if (pLocation)
-        {
-            if (MH_CreateHook(pLocation, &HookTDBIDCtor, reinterpret_cast<void**>(&m_realTDBIDCtor)) != MH_OK ||
-                MH_EnableHook(pLocation) != MH_OK)
-                spdlog::error("Could not hook TDBID::ctor function!");
-            else
-                spdlog::info("TDBID::ctor function hook complete!");
-        }
-    }
-    /*
-    {
-        const mem::pattern cPattern("48 89 5C 24 10 57 48 83 EC 30 48 8B F9 48 8B DA 48 8B CA E8 ? ? ? ? 48 8B CB 48 89 44 24 20 E8 ? ? ? ? F2 0F 10  44 24 20 48 8D 54 24 20 89 44 24 28 48 8B CF 33  C0 C7 44 24 40 00 00 00");
-        const mem::default_scanner cScanner(cPattern);
-        uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
-
-        if (pLocation)
-        {
-            if (MH_CreateHook(pLocation, &HookTDBIDCtorCString, reinterpret_cast<void**>(&m_realTDBIDCtorCString)) !=
-                    MH_OK ||
-                MH_EnableHook(pLocation) != MH_OK)
-                spdlog::error("Could not hook TDBID::ctor[CString] function!");
-            else
-                spdlog::info("TDBID::ctor[CString] function hook complete!");
-        }
-    }
-
-    {
         const mem::pattern cPattern("40 53 48 83 EC 30 33 C0 4C 89 44 24 20 48 8B DA");
         const mem::default_scanner cScanner(cPattern);
         uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
@@ -277,55 +207,6 @@ void LuaVM::Hook(Options& aOptions)
         }
     }
 
-    /*
-    This function was inlined in 1.30, waiting for whoever knows more about TweakDB to jump in
-    {
-        const mem::pattern cPattern("40 53 48 83 EC 20 48 8B DA 48 8B 11 48 8B CB E8");
-        const mem::default_scanner cScanner(cPattern);
-        uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
-
-        if (pLocation)
-        {
-            if (MH_CreateHook(pLocation, &HookTDBIDCtorUnknown, reinterpret_cast<void**>(&m_realTDBIDCtorUnknown)) !=
-                    MH_OK ||
-                MH_EnableHook(pLocation) != MH_OK)
-                spdlog::error("Could not hook TDBID::ctor[Unknown] function!");
-            else
-            {
-                spdlog::info("TDBID::ctor[Unknown] function hook complete!");
-            }
-        }
-    }*/
-
-    /* {
-        const mem::pattern cPattern("48 BF 58 D1 78 A0 18 09 BA EC 75 16 48 8D 15 ? ? ? ? 48 8B CF E8 ? ? ? ? C6 05 ?? ?? ?? ?? 01 41 8B 06 39 05 ? ? ? ? 7F");
-        const mem::default_scanner cScanner(cPattern);
-        uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
-
-        if (pLocation)
-        {
-            pLocation = &pLocation[45] + static_cast<int8_t>(pLocation[44]);
-
-            mem::region reg(pLocation, 45);
-            const mem::pattern cSecondaryPattern(
-                "48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 83 3D ?? ?? ?? ?? FF 75 ?? 48 8D 05");
-            const mem::default_scanner cSecondaryScanner(cSecondaryPattern);
-
-            pLocation = cSecondaryScanner(reg).as<uint8_t*>();
-
-            if (pLocation)
-            {
-                pLocation = &pLocation[28] + *reinterpret_cast<int32_t*>(&pLocation[24]);
-                if (MH_CreateHook(pLocation, &HookTDBIDToStringDEBUG,
-                                  reinterpret_cast<void**>(&m_realTDBIDToStringDEBUG)) != MH_OK ||
-                    MH_EnableHook(pLocation) != MH_OK)
-                    spdlog::error("Could not hook TDBID::ToStringDEBUG function!");
-                else
-                    spdlog::info("TDBID::ToStringDEBUG function hook complete!");
-            }
-        }
-    }
-    */
     {
         const mem::pattern cPattern("40 53 48 83 EC 20 48 8B 0D ? ? ? ? 48 8B DA E8 ? ? ? ? 84 C0");
         const mem::default_scanner cScanner(cPattern);

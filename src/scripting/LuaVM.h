@@ -8,11 +8,7 @@ typedef TweakDBID TDBID;
 struct UnknownString;
 
 using TSetMousePosition = BOOL(void*, HWND, long, long);
-using TTDBIDCtor = TDBID*(TDBID*, const char*);
-using TTDBIDCtorCString = TDBID*(TDBID*, const RED4ext::CString*);
 using TTDBIDCtorDerive = TDBID*(const TDBID*, TDBID*, const char*);
-using TTDBIDCtorUnknown = TDBID*(TDBID*, uint64_t);
-using TSomeStringLookup = UnknownString*(const uint64_t*, UnknownString*);
 using TRunningStateRun = bool(uintptr_t, uintptr_t);
 using TSetLoadingState = uintptr_t(uintptr_t, int);
 
@@ -63,11 +59,7 @@ protected:
 
     static void HookLog(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*, void*);
     static void HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*, void*);
-    static TDBID* HookTDBIDCtor(TDBID* apThis, const char* acpName);
-    static TDBID* HookTDBIDCtorCString(TDBID* apThis, const RED4ext::CString* acpName);
     static TDBID* HookTDBIDCtorDerive(TDBID* apBase, TDBID* apThis, const char* acpName);
-    static UnknownString* HookSomeStringLookup(const uint64_t*, UnknownString*);
-    static void HookTDBIDToStringDEBUG(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void* apResult, void*);
     static bool HookRunningStateRun(uintptr_t aThis, uintptr_t aApp);
     static uintptr_t HookSetLoadingState(uintptr_t aThis, int aState);
 
@@ -80,13 +72,9 @@ private:
     
     RED4ext::OpcodeHandlers::Handler_t m_realLog{ nullptr };
     RED4ext::OpcodeHandlers::Handler_t m_realLogChannel{nullptr};
-    TTDBIDCtor* m_realTDBIDCtor{ nullptr };
-    TTDBIDCtorCString* m_realTDBIDCtorCString{ nullptr };
     TTDBIDCtorDerive* m_realTDBIDCtorDerive{ nullptr };
     TRunningStateRun* m_realRunningStateRun{ nullptr };
     TSetLoadingState* m_realSetLoadingState{ nullptr };
-    TSomeStringLookup* m_someStringLookup{ nullptr };
-    RED4ext::OpcodeHandlers::Handler_t m_realTDBIDToStringDEBUG{nullptr};
 
     std::chrono::time_point<std::chrono::high_resolution_clock> m_lastframe;
 
