@@ -11,7 +11,7 @@ static TRunPureScriptFunction RealRunPureScriptFunction = nullptr;
 
 bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunction, RED4ext::CScriptStack* apContext, void* a3)
 {
-    /* if (apFunction->flags.isNative == 1 && s_pOverride)
+    if (apFunction->flags.isNative == 1 && s_pOverride)
     {
         std::shared_lock lock(s_pOverride->m_lock);
 
@@ -92,7 +92,7 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
         lock.unlock();
 
         return RealRunPureScriptFunction(pTrampoline, apContext, a3);
-    }*/
+    }
 
     return RealRunPureScriptFunction(apFunction, apContext, a3);
 }
@@ -104,7 +104,7 @@ FunctionOverride::FunctionOverride(Scripting* apScripting, Options& aOptions)
 
     m_pBuffer = m_pBufferStart = VirtualAlloc(nullptr, m_size, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 
-    //Hook(aOptions);
+    Hook(aOptions);
 }
 
 FunctionOverride::~FunctionOverride()
@@ -207,7 +207,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
         }
         else
         {
-            self.type = apFrame->context->classType;
+            self.type = ((RED4ext::IScriptable*)apFrame->context)->classType;
             self.value = apFrame->context;
         }
 
@@ -239,7 +239,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
             apFrame->unk30 = 0;
             apFrame->unk38 = 0;
             const auto opcode = *(apFrame->code++);
-            RED4ext::OpcodeHandlers::Run(opcode, apFrame->context, apFrame, pInstance, nullptr);
+            RED4ext::OpcodeHandlers::Run(opcode, (RED4ext::IScriptable*)apFrame->context, apFrame, pInstance, nullptr);
 
             args.push_back(Scripting::ToLua(state, arg));
 
@@ -321,7 +321,7 @@ void FunctionOverride::Hook(Options& aOptions) const
         }
     }
 
-    /* {
+     {
         const mem::pattern cPattern("48 89 5C 24 08 57 48 83 EC 40 8B F9 48 8D 54 24 30 48 8B 0D ?? ?? ?? ?? 41 B8 B8 00 00 00");
         const mem::default_scanner cScanner(cPattern);
         uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
@@ -331,11 +331,12 @@ void FunctionOverride::Hook(Options& aOptions) const
             auto* pFirstLocation = pLocation + 0x1A;
             auto* pSecondLocation = pLocation + 0x3A;
 
-            if (*pFirstLocation == 0xB8 && *pSecondLocation == 0xB8)
+            if (*pFirstLocation == sizeof(RED4ext::CScriptedFunction) &&
+                *pSecondLocation == sizeof(RED4ext::CScriptedFunction))
             {
                 DWORD oldProtect;
                 VirtualProtect(pLocation, 0x40, PAGE_READWRITE, &oldProtect);
-                *pFirstLocation = *pSecondLocation = std::max(sizeof(RED4ext::CClassFunction), 0xB8ull);
+                *pFirstLocation = *pSecondLocation = std::max(sizeof(RED4ext::CClassFunction), sizeof(RED4ext::CScriptedFunction));
                 VirtualProtect(pLocation, 0x40, oldProtect, &oldProtect);
 
                 spdlog::info("Override function allocator patched!");
@@ -343,7 +344,7 @@ void FunctionOverride::Hook(Options& aOptions) const
             else
                 spdlog::error("Could not fix allocator for override functions!");
         }
-    }*/
+    }
 }
 
 void FunctionOverride::Override(const std::string& acTypeName, const std::string& acFullName, const std::string& acShortName,
@@ -421,8 +422,9 @@ void FunctionOverride::Override(const std::string& acTypeName, const std::string
             }
 
             pFunc->unk20 = pRealFunction->unk20;
-            std::copy_n(pRealFunction->unk48, std::size(pRealFunction->unk48), pFunc->unk48);
-            pFunc->unk7C = pRealFunction->unk7C;
+            std::copy_n(pRealFunction->unk78, std::size(pRealFunction->unk78), pFunc->unk78);
+            pFunc->unk48 = pRealFunction->unk48;
+            pFunc->unkAC = pRealFunction->unkAC;
             pFunc->flags = pRealFunction->flags;
             pFunc->parent = pRealFunction->parent;
             pFunc->flags.isNative = true;
