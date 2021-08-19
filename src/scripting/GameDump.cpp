@@ -19,7 +19,7 @@ void DumpVTablesTask::Run()
 
     auto* pRttiSystem = RED4ext::CRTTISystem::Get();
 
-    auto dumpClass = [begin, end](auto& aVtableMap, RED4ext::IRTTIType* apType)
+    auto dumpClass = [begin, end](auto& aVtableMap, RED4ext::CBaseRTTIType* apType)
     {
         uintptr_t vtable = *reinterpret_cast<uintptr_t*>(apType);
         RED4ext::CName typeName;
@@ -59,7 +59,7 @@ void DumpVTablesTask::Run()
         }
     };
 
-    pRttiSystem->types.for_each([&dumpClass, &vtableMap](RED4ext::CName aName, RED4ext::IRTTIType*& apType)
+    pRttiSystem->types.for_each([&dumpClass, &vtableMap](RED4ext::CName aName, RED4ext::CBaseRTTIType*& apType)
     {
         TP_UNUSED(aName);
 

@@ -93,7 +93,7 @@ void RTTIMapper::RegisterDirectTypes(sol::state& aLuaState, sol::table& aLuaGlob
     MakeSolUsertypeImmutable(aLuaState["EnumStatic"], aLuaState);
     MakeSolUsertypeImmutable(aLuaState["ClassStatic"], aLuaState);
 
-    apRtti->types.for_each([&](RED4ext::CName aTypeName, RED4ext::IRTTIType* apType) {
+    apRtti->types.for_each([&](RED4ext::CName aTypeName, RED4ext::CBaseRTTIType* apType) {
         switch (apType->GetType())
         {
         case RED4ext::ERTTIType::Enum:

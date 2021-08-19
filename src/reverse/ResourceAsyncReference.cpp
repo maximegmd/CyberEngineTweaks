@@ -5,7 +5,8 @@
 #include "Converter.h"
 
 ResourceAsyncReference::ResourceAsyncReference(const TiltedPhoques::Locked<sol::state, std::recursive_mutex>& aView,
-                                               RED4ext::IRTTIType* apType, RED4ext::ResourceAsyncReference<void>* apReference)
+                                               RED4ext::CBaseRTTIType* apType,
+                                               RED4ext::ResourceAsyncReference<void>* apReference)
     : ClassType(aView, reinterpret_cast<RED4ext::CResourceAsyncReference*>(apType)->innerType)
     , m_reference(*apReference)
 {

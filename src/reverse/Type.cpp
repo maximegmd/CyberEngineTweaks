@@ -30,7 +30,7 @@ std::string Type::Descriptor::ToString() const
     return result;
 }
 
-Type::Type(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::IRTTIType* apClass)
+Type::Type(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::CBaseRTTIType* apClass)
     : m_lua(aView)
     , m_pType(apClass)
 {
@@ -205,7 +205,7 @@ std::string Type::GameDump()
 }
 
 ClassType::ClassType(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView,
-                     RED4ext::IRTTIType* apClass)
+                     RED4ext::CBaseRTTIType* apClass)
     : Type(aView, apClass)
 {
 
@@ -306,7 +306,7 @@ sol::object ClassType::NewIndex_Impl(const std::string& acName, sol::object aPar
 }
 
 UnknownType::UnknownType(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView,
-                         RED4ext::IRTTIType* apClass,
+                         RED4ext::CBaseRTTIType* apClass,
                          RED4ext::ScriptInstance apInstance)
     : Type(aView, apClass)
 {

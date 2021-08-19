@@ -12,10 +12,10 @@ struct Type
         std::string ToString() const;
     };
 
-    Type(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::IRTTIType* apClass);
+    Type(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::CBaseRTTIType* apClass);
     virtual ~Type(){};
 
-    RED4ext::IRTTIType* GetType() { return m_pType; }
+    RED4ext::CBaseRTTIType* GetType() { return m_pType; }
     virtual RED4ext::ScriptInstance GetHandle() { return nullptr; }
 
     sol::object Index(const std::string& acName, sol::this_environment aThisEnv);
@@ -31,7 +31,7 @@ struct Type
     std::string FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithHashes) const;
 
 protected:
-    RED4ext::IRTTIType* m_pType{ nullptr };
+    RED4ext::CBaseRTTIType* m_pType{nullptr};
 
     friend struct Scripting;
 
@@ -42,7 +42,8 @@ protected:
 
 struct ClassType : Type
 {
-    ClassType(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::IRTTIType* apClass);
+    ClassType(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView,
+              RED4ext::CBaseRTTIType* apClass);
     virtual ~ClassType(){};
 
     Descriptor Dump(bool aWithHashes) const override;
@@ -53,7 +54,7 @@ struct ClassType : Type
 struct UnknownType : Type
 {
     UnknownType(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView,
-                RED4ext::IRTTIType* apClass,
+                RED4ext::CBaseRTTIType* apClass,
                 RED4ext::ScriptInstance apInstance);
 
     Descriptor Dump(bool aWithHashes) const override;

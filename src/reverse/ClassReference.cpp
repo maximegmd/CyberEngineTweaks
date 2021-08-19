@@ -3,7 +3,7 @@
 #include "ClassReference.h"
 
 ClassReference::ClassReference(const TiltedPhoques::Locked<sol::state, std::recursive_mutex>& aView,
-                               RED4ext::IRTTIType* apClass, RED4ext::ScriptInstance apInstance)
+                               RED4ext::CBaseRTTIType* apClass, RED4ext::ScriptInstance apInstance)
     : ClassType(aView, apClass)
 {
     // Hack for now until we use their allocators, classes can actually be pointers to structs

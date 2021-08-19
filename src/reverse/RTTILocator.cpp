@@ -8,7 +8,7 @@ RTTILocator::RTTILocator(RED4ext::CName aName)
 {
 }
 
-RTTILocator::operator RED4ext::IRTTIType *()
+RTTILocator::operator RED4ext::CBaseRTTIType *()
 {
     if (m_pRtti)
         return m_pRtti;

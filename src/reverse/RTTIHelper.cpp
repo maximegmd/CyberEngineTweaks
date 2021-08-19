@@ -680,7 +680,8 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
     return results;
 }
 
-RED4ext::ScriptInstance RTTIHelper::NewPlaceholder(RED4ext::IRTTIType* apType, TiltedPhoques::Allocator* apAllocator) const
+RED4ext::ScriptInstance RTTIHelper::NewPlaceholder(RED4ext::CBaseRTTIType* apType,
+                                                   TiltedPhoques::Allocator* apAllocator) const
 {
     auto* pMemory = apAllocator->Allocate(apType->GetSize());
     memset(pMemory, 0, apType->GetSize());
@@ -689,7 +690,8 @@ RED4ext::ScriptInstance RTTIHelper::NewPlaceholder(RED4ext::IRTTIType* apType, T
     return pMemory;
 }
 
-RED4ext::ScriptInstance RTTIHelper::NewInstance(RED4ext::IRTTIType* apType, sol::optional<sol::table> aProps, TiltedPhoques::Allocator* apAllocator) const
+RED4ext::ScriptInstance RTTIHelper::NewInstance(RED4ext::CBaseRTTIType* apType, sol::optional<sol::table> aProps,
+                                                TiltedPhoques::Allocator* apAllocator) const
 {
     if (!m_pRtti)
         return nullptr;
@@ -728,7 +730,7 @@ RED4ext::ScriptInstance RTTIHelper::NewInstance(RED4ext::IRTTIType* apType, sol:
         return pInstance;
 }
 
-sol::object RTTIHelper::NewInstance(RED4ext::IRTTIType* apType, sol::optional<sol::table> aProps) const
+sol::object RTTIHelper::NewInstance(RED4ext::CBaseRTTIType* apType, sol::optional<sol::table> aProps) const
 {
     if (!m_pRtti)
         return sol::nil;
@@ -748,7 +750,7 @@ sol::object RTTIHelper::NewInstance(RED4ext::IRTTIType* apType, sol::optional<so
 }
 
 // Create new instance and wrap it in Handle<> if possible
-sol::object RTTIHelper::NewHandle(RED4ext::IRTTIType* apType, sol::optional<sol::table> aProps) const
+sol::object RTTIHelper::NewHandle(RED4ext::CBaseRTTIType* apType, sol::optional<sol::table> aProps) const
 {
     // This method should be preferred over NewInstance() for creating objects in Lua userland.
     // The behavior is similar to what can be seen in scripts, where variables of IScriptable
@@ -863,7 +865,8 @@ void RTTIHelper::FreeInstance(RED4ext::CStackType& aStackType, bool aOwn, bool a
     FreeInstance(aStackType.type, aStackType.value, aOwn, aNew, apAllocator);
 }
 
-void RTTIHelper::FreeInstance(RED4ext::IRTTIType* apType, void* apValue, bool aOwn, bool aNew, TiltedPhoques::Allocator* apAllocator) const
+void RTTIHelper::FreeInstance(RED4ext::CBaseRTTIType* apType, void* apValue, bool aOwn, bool aNew,
+                              TiltedPhoques::Allocator* apAllocator) const
 {
     if (!apValue)
         return;

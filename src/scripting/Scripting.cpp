@@ -428,7 +428,7 @@ void Scripting::PostInitialize()
         auto* pRtti = RED4ext::CRTTISystem::Get();
 
         uint32_t count = 0;
-        pRtti->types.for_each([&count](RED4ext::CName name, RED4ext::IRTTIType*& type)
+        pRtti->types.for_each([&count](RED4ext::CName name, RED4ext::CBaseRTTIType*& type)
         {
             spdlog::info(name.ToString());
             count++;
@@ -611,7 +611,7 @@ sol::object Scripting::GetSingletonHandle(const std::string& acName, sol::this_e
     return make_object(lua, result.first->second);
 }
 
-size_t Scripting::Size(RED4ext::IRTTIType* apRttiType)
+size_t Scripting::Size(RED4ext::CBaseRTTIType* apRttiType)
 {
     if (apRttiType == s_stringType)
         return sizeof(RED4ext::CString);
@@ -685,7 +685,7 @@ sol::object Scripting::ToLua(LockedState& aState, RED4ext::CStackType& aResult)
     return sol::nil;
 }
 
-RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* apRttiType,
+RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRttiType,
                                      TiltedPhoques::Allocator* apAllocator)
 {
     RED4ext::CStackType result;

@@ -22,9 +22,10 @@ struct RTTIHelper
                                           sol::variadic_args aLuaArgs, uint64_t aLuaArgOffset,
                                           std::string& aErrorMessage) const;
     
-    RED4ext::ScriptInstance NewInstance(RED4ext::IRTTIType* apType, sol::optional<sol::table> aProps, TiltedPhoques::Allocator* apAllocator) const;
-    sol::object NewInstance(RED4ext::IRTTIType* apType, sol::optional<sol::table> aProps) const;
-    sol::object NewHandle(RED4ext::IRTTIType* apType, sol::optional<sol::table> aProps) const;
+    RED4ext::ScriptInstance NewInstance(RED4ext::CBaseRTTIType* apType, sol::optional<sol::table> aProps,
+                                        TiltedPhoques::Allocator* apAllocator) const;
+    sol::object NewInstance(RED4ext::CBaseRTTIType* apType, sol::optional<sol::table> aProps) const;
+    sol::object NewHandle(RED4ext::CBaseRTTIType* apType, sol::optional<sol::table> aProps) const;
 
     sol::object GetProperty(RED4ext::CClass* apClass, RED4ext::ScriptInstance apHandle, const std::string& acPropName, bool& aSuccess) const;
     void SetProperty(RED4ext::CClass* apClass, RED4ext::ScriptInstance apHandle, const std::string& acPropName, sol::object aPropValue, bool& aSuccess) const;
@@ -53,10 +54,11 @@ private:
     sol::function MakeInvokableFunction(RED4ext::CBaseFunction* apFunc);
     sol::function MakeInvokableOverload(std::map<uint64_t, RED4ext::CBaseFunction*> aOverloadedFuncs);
 
-    RED4ext::ScriptInstance NewPlaceholder(RED4ext::IRTTIType* apType, TiltedPhoques::Allocator* apAllocator) const;
+    RED4ext::ScriptInstance NewPlaceholder(RED4ext::CBaseRTTIType* apType, TiltedPhoques::Allocator* apAllocator) const;
     bool IsClassReferenceType(RED4ext::CClass* apClass) const;
     void FreeInstance(RED4ext::CStackType& aStackType, bool aOwnValue, bool aNewValue, TiltedPhoques::Allocator* apAllocator) const;
-    void FreeInstance(RED4ext::IRTTIType* apType, void* apValue, bool aOwnValue, bool aNewValue, TiltedPhoques::Allocator* apAllocator) const;
+    void FreeInstance(RED4ext::CBaseRTTIType* apType, void* apValue, bool aOwnValue, bool aNewValue,
+                      TiltedPhoques::Allocator* apAllocator) const;
 
     enum
     {

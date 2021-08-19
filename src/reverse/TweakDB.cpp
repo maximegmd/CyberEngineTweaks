@@ -97,8 +97,8 @@ struct FlatPool
     HashType HashValue(const RED4ext::CStackType& acStackType, Type aType, HashType aSeed = HashSeed);
 
     static bool Initialize();
-    static FlatPool* GetPool(const RED4ext::IRTTIType* acpType);
-    static Type RTTIToPoolType(const RED4ext::IRTTIType* acpType);
+    static FlatPool* GetPool(const RED4ext::CBaseRTTIType* acpType);
+    static Type RTTIToPoolType(const RED4ext::CBaseRTTIType* acpType);
 
 private:
     std::mutex m_mutex;
@@ -912,7 +912,7 @@ bool FlatPool::Initialize()
     return true;
 }
 
-FlatPool* FlatPool::GetPool(const RED4ext::IRTTIType* acpType)
+FlatPool* FlatPool::GetPool(const RED4ext::CBaseRTTIType* acpType)
 {
     if (!Initialize())
         return nullptr;
@@ -924,7 +924,7 @@ FlatPool* FlatPool::GetPool(const RED4ext::IRTTIType* acpType)
     return &s_pools[static_cast<size_t>(flatPoolType)];
 }
 
-FlatPool::Type FlatPool::RTTIToPoolType(const RED4ext::IRTTIType* acpType)
+FlatPool::Type FlatPool::RTTIToPoolType(const RED4ext::CBaseRTTIType* acpType)
 {
     static auto* pRTTI = RED4ext::CRTTISystem::Get();
     static auto* pArrayTweakDBIDType = pRTTI->GetType("array:TweakDBID");

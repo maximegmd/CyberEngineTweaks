@@ -23,7 +23,8 @@ struct LuaRED
         }
     }
 
-    RED4ext::CStackType ToRED(sol::object aObject, RED4ext::IRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator)
+    RED4ext::CStackType ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRtti,
+                              TiltedPhoques::Allocator* apAllocator)
     {
         RED4ext::CStackType result;
         result.type = m_pRtti;
@@ -128,7 +129,7 @@ struct LuaRED
         return sizeof(T);
     }
 
-    bool Is(RED4ext::IRTTIType* apRtti) const
+    bool Is(RED4ext::CBaseRTTIType* apRtti) const
     {
         if (!Resolve())
             return false;
@@ -149,5 +150,5 @@ protected:
         return m_pRtti != nullptr;
     }
 
-    mutable RED4ext::IRTTIType* m_pRtti{nullptr};
+    mutable RED4ext::CBaseRTTIType* m_pRtti{nullptr};
 };

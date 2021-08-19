@@ -500,7 +500,7 @@ private:
         return reinterpret_cast<exEntitySpawnerSystem*>(apAddress);
     }
 
-    static RED4ext::IRTTIType* HOOK_GetNativeType(exEntitySpawnerSystem* apThis)
+    static RED4ext::CBaseRTTIType* HOOK_GetNativeType(exEntitySpawnerSystem* apThis)
     {
         auto* pRTTI = RED4ext::CRTTISystem::Get();
         return pRTTI->GetClass(NATIVE_TYPE_STR);
@@ -546,7 +546,7 @@ public:
         RED4ext::CClass::Flags classFlags{};
         classFlags.isNative = 1;
         RED4ext::CNamePool::Add(NATIVE_TYPE_STR);
-        pRTTI->RegisterScriptedType(NATIVE_TYPE, classFlags, pRTTI->GetClass(PARENT_TYPE));
+        pRTTI->CreateScriptedClass(NATIVE_TYPE, classFlags, pRTTI->GetClass(PARENT_TYPE));
 
         auto* pAllocator = pRTTI->GetClass(PARENT_TYPE)->GetAllocator();
         Singleton = CreateNew(pAllocator->AllocAligned(sizeof(exEntitySpawnerSystem), alignof(exEntitySpawnerSystem)).memory);

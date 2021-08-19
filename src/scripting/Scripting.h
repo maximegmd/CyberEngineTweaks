@@ -33,9 +33,10 @@ struct Scripting
     LockedState GetState() const noexcept;
     std::string GetGlobalName() const noexcept;
 
-    static size_t Size(RED4ext::IRTTIType* apRttiType);
+    static size_t Size(RED4ext::CBaseRTTIType* apRttiType);
     static sol::object ToLua(LockedState& aState, RED4ext::CStackType& aResult);
-    static RED4ext::CStackType ToRED(sol::object aObject, RED4ext::IRTTIType* apRttiType, TiltedPhoques::Allocator* apAllocator);
+    static RED4ext::CStackType ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRttiType,
+                                     TiltedPhoques::Allocator* apAllocator);
     static void ToRED(sol::object aObject, RED4ext::CStackType* apType);
 
 protected:

@@ -447,7 +447,7 @@ void TweakDBEditor::RefreshRecords()
 
     size_t recordsCount = 0;
     pTDB->recordsByType.for_each(
-        [this, &map, &recordsCount](RED4ext::IRTTIType* aRTTIType,
+        [this, &map, &recordsCount](RED4ext::CBaseRTTIType* aRTTIType,
                                     RED4ext::DynArray<RED4ext::Handle<RED4ext::IScriptable>> aRecords)
         {
             recordsCount += aRecords.size;

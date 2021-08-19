@@ -4,10 +4,10 @@ struct RTTILocator
 {
     RTTILocator(RED4ext::CName aName);
 
-    operator RED4ext::IRTTIType*();
+    operator RED4ext::CBaseRTTIType*();
 
 private:
 
     const RED4ext::CName m_name;
-    RED4ext::IRTTIType* m_pRtti;
+    RED4ext::CBaseRTTIType* m_pRtti;
 };

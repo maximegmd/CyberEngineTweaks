@@ -29,7 +29,7 @@ auto s_metaVisitor = [](auto... args) {
     RawConverter() // Should always be last resort
     );
 
-size_t Converter::Size(RED4ext::IRTTIType* apRtti)
+size_t Converter::Size(RED4ext::CBaseRTTIType* apRtti)
 {
     size_t s = 0;
 
@@ -76,7 +76,7 @@ sol::object Converter::ToLua(RED4ext::CStackType& aResult, TiltedPhoques::Locked
     return o;
 }
 
-RED4ext::CStackType Converter::ToRED(sol::object aObject, RED4ext::IRTTIType* apRtti,
+RED4ext::CStackType Converter::ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRtti,
                                      TiltedPhoques::Allocator* apAllocator)
 {
     RED4ext::CStackType r;
