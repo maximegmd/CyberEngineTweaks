@@ -472,6 +472,7 @@ void Scripting::PostInitialize()
 
 void Scripting::RegisterOverrides()
 {
+    m_override.Override("SingleplayerMenuGameController", "OnUninitialize", "OnUninitialize", false, sol::nil, sol::nil, true);
     m_override.Override("QuestTrackerGameController", "OnUninitialize", "OnUninitialize", false, sol::nil, sol::nil, true);
 }
 
