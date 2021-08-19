@@ -233,6 +233,18 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
             auto* pInstance = pAllocator->Alloc(pType->GetSize()).memory;
             pType->Init(pInstance);
 
+            // Exception here we need to allocate the inner object as well
+            if (pArg->type->GetType() == RED4ext::ERTTIType::ScriptReference)
+            {
+                RED4ext::ScriptRef<void>* pScriptRef = (RED4ext::ScriptRef<void>*)pInstance;
+                auto pInnerType = pScriptRef->innerType;
+
+                auto pInnerInstance = pInnerType->GetAllocator()->Alloc(pInnerType->GetSize()).memory;
+                pInnerType->Init(pInnerInstance);
+
+                pScriptRef->ref = pInnerInstance;
+            }
+
             RED4ext::CStackType arg;
             arg.type = pArg->type;
             arg.value = pInstance;
@@ -244,6 +256,14 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
             RED4ext::OpcodeHandlers::Run(opcode, (RED4ext::IScriptable*)apFrame->context, apFrame, pInstance, nullptr);
 
             args.push_back(Scripting::ToLua(state, arg));
+
+            // Release inner values
+            if (pArg->type->GetType() == RED4ext::ERTTIType::ScriptReference)
+            {
+                RED4ext::ScriptRef<void>* pScriptRef = (RED4ext::ScriptRef<void>*)pInstance;
+                pScriptRef->innerType->Destroy(pScriptRef->ref);
+                pScriptRef->innerType->GetAllocator()->Free(pScriptRef->ref);
+            }
 
             pType->Destroy(pInstance);
             pAllocator->Free(pInstance);

@@ -667,6 +667,14 @@ sol::object Scripting::ToLua(LockedState& aState, RED4ext::CStackType& aResult)
         if (pInstance)
             return make_object(state, ResourceAsyncReference(aState, aResult.type, pInstance));
     }
+    else if (pType->GetType() == RED4ext::ERTTIType::ScriptReference)
+    {
+        auto* pInstance = static_cast<RED4ext::ScriptRef<void>*>(aResult.value);
+        RED4ext::CStackType innerStack;
+        innerStack.value = pInstance->ref;
+        innerStack.type = pInstance->innerType;
+        return ToLua(aState, innerStack);
+    }
     else
     {
         auto result = Converter::ToLua(aResult, aState);
@@ -811,12 +819,14 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::IRTTIType* ap
         }
         else if (apRttiType->GetType() == RED4ext::ERTTIType::ScriptReference)
         {
-            if (aObject.is<ClassReference>())
+            auto* pInnerType = static_cast<RED4ext::CRTTIScriptReferenceType*>(apRttiType)->innerType;
+            RED4ext::CStackType innerValue = ToRED(aObject, pInnerType, apAllocator);
+
+            if (innerValue.value)
             {
-                auto* pClassRef = aObject.as<ClassReference*>();
                 auto* pScriptRef = apAllocator->New<RED4ext::ScriptRef<void>>();
-                pScriptRef->innerType = pClassRef->m_pType;
-                pScriptRef->ref = pClassRef->GetHandle();
+                pScriptRef->innerType = innerValue.type;
+                pScriptRef->ref = innerValue.value;
                 apRttiType->GetName(pScriptRef->hash);
                 result.value = pScriptRef;
             }
