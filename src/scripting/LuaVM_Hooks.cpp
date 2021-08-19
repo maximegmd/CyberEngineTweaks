@@ -4,26 +4,26 @@
 #include "LuaVM.h"
 
 #include <overlay/Overlay.h>
+#include <reverse/RTTILocator.h>
 
 void LuaVM::HookLog(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*, void*)
 {
+    static RTTILocator s_stringLocator("String");
+
     RED4ext::CString text{};
 
     apStack->unk30 = 0;
     apStack->unk38 = 0;
 
-    uint8_t memory[sizeof(RED4ext::CRTTIScriptReferenceType)];
-    auto* pRef = RED4ext::CRTTIScriptReferenceType::New(memory);
-
-    if (!apStack->IsCurrentParamSet())
-    {
-        pRef->Set(pRef->innerType, &text);
-    }
+    RED4ext::ScriptRef<RED4ext::CString> ref;
+    ref.innerType = s_stringLocator;
+    ref.ref = &text;
+    ref.innerType->GetName(ref.hash);
 
     apStack->currentParam++;
     const auto opcode = *(apStack->code++);
 
-    RED4ext::OpcodeHandlers::Run(opcode, apStack->context, apStack, pRef, pRef);
+    RED4ext::OpcodeHandlers::Run(opcode, apStack->context, apStack, &ref, &ref);
     apStack->code++; // skip ParamEnd
 
     auto& console = CET::Get().GetOverlay().GetConsole();
@@ -60,6 +60,8 @@ static const char* GetChannelStr(uint64_t hash)
 
 void LuaVM::HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*, void*)
 {
+    static RTTILocator s_stringLocator("String");
+
     uint64_t channel_hash = 0;
     apStack->unk30 = 0;
     apStack->unk38 = 0;
@@ -68,21 +70,18 @@ void LuaVM::HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack,
 
     RED4ext::OpcodeHandlers::Run(opcode, apStack->context, apStack, &channel_hash, nullptr);
 
-    uint8_t memory[sizeof(RED4ext::CRTTIScriptReferenceType)];
-    auto* pRef = RED4ext::CRTTIScriptReferenceType::New(memory);
-
     RED4ext::CString text{};
-    if (!apStack->IsCurrentParamSet())
-    {
-        pRef->Set(pRef->innerType, &text);
-    }
+    RED4ext::ScriptRef<RED4ext::CString> ref;
+    ref.innerType = s_stringLocator;
+    ref.ref = &text;
+    ref.innerType->GetName(ref.hash);
 
     apStack->currentParam++;
 
     apStack->unk30 = 0;
     apStack->unk38 = 0;
     opcode = *(apStack->code++);
-    RED4ext::OpcodeHandlers::Run(opcode, apStack->context, apStack, pRef, pRef);
+    RED4ext::OpcodeHandlers::Run(opcode, apStack->context, apStack, &ref, &ref);
 
     apStack->code++; // skip ParamEnd
 

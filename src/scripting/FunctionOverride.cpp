@@ -233,8 +233,10 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
             auto* pInstance = pAllocator->Alloc(pType->GetSize()).memory;
             pType->Init(pInstance);
 
+            bool isScriptRef = pArg->type->GetType() == RED4ext::ERTTIType::ScriptReference;
+
             // Exception here we need to allocate the inner object as well
-            if (pArg->type->GetType() == RED4ext::ERTTIType::ScriptReference)
+            if (isScriptRef)
             {
                 RED4ext::ScriptRef<void>* pScriptRef = (RED4ext::ScriptRef<void>*)pInstance;
                 auto pInnerType = pScriptRef->innerType;
@@ -253,12 +255,12 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
             apFrame->unk30 = 0;
             apFrame->unk38 = 0;
             const auto opcode = *(apFrame->code++);
-            RED4ext::OpcodeHandlers::Run(opcode, (RED4ext::IScriptable*)apFrame->context, apFrame, pInstance, nullptr);
+            RED4ext::OpcodeHandlers::Run(opcode, (RED4ext::IScriptable*)apFrame->context, apFrame, pInstance, isScriptRef ? pInstance : nullptr);
 
             args.push_back(Scripting::ToLua(state, arg));
 
             // Release inner values
-            if (pArg->type->GetType() == RED4ext::ERTTIType::ScriptReference)
+            if (isScriptRef)
             {
                 RED4ext::ScriptRef<void>* pScriptRef = (RED4ext::ScriptRef<void>*)pInstance;
                 pScriptRef->innerType->Destroy(pScriptRef->ref);
