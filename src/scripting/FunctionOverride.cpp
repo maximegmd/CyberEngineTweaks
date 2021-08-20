@@ -2,6 +2,7 @@
 
 #include "FunctionOverride.h"
 #include "Scripting.h"
+#include <reverse/StrongReference.h>
 
 
 static FunctionOverride* s_pOverride = nullptr;
@@ -35,13 +36,13 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
 
             auto state = itor->second.pScripting->GetState();
 
-            if (apContext->context18)
+            auto pContext = apContext->GetContext();
+            if (pContext)
             {
-                RED4ext::CStackType self;
-                self.type = reinterpret_cast<RED4ext::IScriptable*>(apContext->context18)->classType;
-                self.value = apContext->context18;
+                const auto handle = RED4ext::Handle<RED4ext::IScriptable>(pContext);
+                auto obj = sol::make_object(state.Get(), StrongReference(state, handle));
 
-                args.push_back(Scripting::ToLua(state, self));
+                args.push_back(obj);
             }
 
             for (auto* p : apFunction->params)
@@ -208,7 +209,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
         }
         else
         {
-            self.type = ((RED4ext::IScriptable*)apFrame->context)->classType;
+            self.type = apFrame->context->classType;
             self.value = apFrame->context;
         }
 
@@ -222,7 +223,10 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
 
         auto state = context.pScripting->GetState();
 
-        args.push_back(Scripting::ToLua(state, self)); // Push self
+        const auto handle = RED4ext::Handle<RED4ext::IScriptable>((RED4ext::IScriptable*)self.value);
+        auto obj = sol::make_object(state.Get(), StrongReference(state, handle));
+
+        args.push_back(obj);
 
         // Nasty way of popping all args
         for (auto& pArg : apFunction->params)
