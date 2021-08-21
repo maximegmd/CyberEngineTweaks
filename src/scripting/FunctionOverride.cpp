@@ -3,6 +3,7 @@
 #include "FunctionOverride.h"
 #include "Scripting.h"
 #include <reverse/StrongReference.h>
+#include <reverse/RTTIHelper.h>
 
 
 static FunctionOverride* s_pOverride = nullptr;
@@ -399,93 +400,97 @@ void FunctionOverride::Override(const std::string& acTypeName, const std::string
     // Get the real function
     auto* pRealFunction = pClassType->GetFunction(RED4ext::FNV1a(acFullName.c_str()));
 
-    if (pRealFunction)
+    if (!pRealFunction)
     {
-        std::unique_lock lock(m_lock);
+        pRealFunction = reinterpret_cast<RED4ext::CClassFunction*>(RTTIHelper::Get().FindFunction(pClassType, RED4ext::FNV1a(acFullName.c_str())));
 
-        CallChain* pEntry = nullptr;
-        auto itor = m_functions.find(pRealFunction);
-
-        // This function was never hooked
-        if (itor == std::end(m_functions))
+        if (!pRealFunction)
         {
-            m_functions[pRealFunction] = {};
-            pEntry = &m_functions[pRealFunction];
-
-            /*
-            sub rsp, 56
-            mov rax, 0xDEADBEEFC0DEBAAD
-            mov qword ptr[rsp + 32], rax
-            mov rax, 0xDEADBEEFC0DEBAAD
-            call rax
-            add rsp, 56
-            ret
-             */
-            uint8_t payload[] = {0x48, 0x83, 0xEC, 0x38, 0x48, 0xB8, 0xAD, 0xBA, 0xDE, 0xC0, 0xEF, 0xBE,
-                                 0xAD, 0xDE, 0x48, 0x89, 0x44, 0x24, 0x20, 0x48, 0xB8, 0xAD, 0xBA, 0xDE,
-                                 0xC0, 0xEF, 0xBE, 0xAD, 0xDE, 0xFF, 0xD0, 0x48, 0x83, 0xC4, 0x38, 0xC3};
-
-            auto funcAddr = reinterpret_cast<uintptr_t>(&FunctionOverride::HandleOverridenFunction);
-
-            std::memcpy(payload + 6, &pRealFunction, 8);
-            std::memcpy(payload + 21, &funcAddr, 8);
-
-            using TNativeScriptFunction = void (*)(RED4ext::IScriptable*, RED4ext::CStackFrame*, void*, int64_t);
-            auto* pExecutablePayload = static_cast<TNativeScriptFunction>(MakeExecutable(payload, std::size(payload)));
-
-            auto* const pFunc = RED4ext::CClassFunction::Create(pClassType, acFullName.c_str(), acShortName.c_str(),
-                                                                pExecutablePayload);
-
-            pFunc->fullName = pRealFunction->fullName;
-            pFunc->shortName = pRealFunction->shortName;
-
-            pFunc->returnType = pRealFunction->returnType;
-            for (auto* p : pRealFunction->params)
-            {
-                pFunc->params.PushBack(p);
-            }
-
-            for (auto* p : pRealFunction->localVars)
-            {
-                pFunc->localVars.PushBack(p);
-            }
-
-            pFunc->unk20 = pRealFunction->unk20;
-            std::copy_n(pRealFunction->unk78, std::size(pRealFunction->unk78), pFunc->unk78);
-            pFunc->unk48 = pRealFunction->unk48;
-            pFunc->unkAC = pRealFunction->unkAC;
-            pFunc->flags = pRealFunction->flags;
-            pFunc->parent = pRealFunction->parent;
-            pFunc->flags.isNative = true;
-
-            pEntry->Trampoline = pFunc;
-            pEntry->pScripting = m_pScripting;
-            pEntry->CollectGarbage = aCollectGarbage;
-
-            // Swap the content of the real function with the one we just created
-            std::array<char, sizeof(RED4ext::CClassFunction)> tmpBuffer;
-
-            std::memcpy(&tmpBuffer, pRealFunction, sizeof(RED4ext::CClassFunction));
-            std::memcpy(pRealFunction, pFunc, sizeof(RED4ext::CClassFunction));
-            std::memcpy(pFunc, &tmpBuffer, sizeof(RED4ext::CClassFunction));
+            spdlog::get("scripting")->error("Function {} in class {} does not exist", acFullName, acTypeName);
+            return;
         }
-        else
+    }
+
+    std::unique_lock lock(m_lock);
+
+    CallChain* pEntry = nullptr;
+    auto itor = m_functions.find(pRealFunction);
+
+    // This function was never hooked
+    if (itor == std::end(m_functions))
+    {
+        m_functions[pRealFunction] = {};
+        pEntry = &m_functions[pRealFunction];
+
+        /*
+        sub rsp, 56
+        mov rax, 0xDEADBEEFC0DEBAAD
+        mov qword ptr[rsp + 32], rax
+        mov rax, 0xDEADBEEFC0DEBAAD
+        call rax
+        add rsp, 56
+        ret
+            */
+        uint8_t payload[] = {0x48, 0x83, 0xEC, 0x38, 0x48, 0xB8, 0xAD, 0xBA, 0xDE, 0xC0, 0xEF, 0xBE,
+                                0xAD, 0xDE, 0x48, 0x89, 0x44, 0x24, 0x20, 0x48, 0xB8, 0xAD, 0xBA, 0xDE,
+                                0xC0, 0xEF, 0xBE, 0xAD, 0xDE, 0xFF, 0xD0, 0x48, 0x83, 0xC4, 0x38, 0xC3};
+
+        auto funcAddr = reinterpret_cast<uintptr_t>(&FunctionOverride::HandleOverridenFunction);
+
+        std::memcpy(payload + 6, &pRealFunction, 8);
+        std::memcpy(payload + 21, &funcAddr, 8);
+
+        using TNativeScriptFunction = void (*)(RED4ext::IScriptable*, RED4ext::CStackFrame*, void*, int64_t);
+        auto* pExecutablePayload = static_cast<TNativeScriptFunction>(MakeExecutable(payload, std::size(payload)));
+
+        auto* const pFunc = RED4ext::CClassFunction::Create(pClassType, acFullName.c_str(), acShortName.c_str(),
+                                                            pExecutablePayload);
+
+        pFunc->fullName = pRealFunction->fullName;
+        pFunc->shortName = pRealFunction->shortName;
+
+        pFunc->returnType = pRealFunction->returnType;
+        for (auto* p : pRealFunction->params)
         {
-            pEntry = &itor.value();
+            pFunc->params.PushBack(p);
         }
 
-        if (aFunction != sol::nil)
+        for (auto* p : pRealFunction->localVars)
         {
-            auto pContext = TiltedPhoques::MakeUnique<Context>();
-            pContext->ScriptFunction = std::move(aFunction);
-            pContext->Environment = aEnvironment;
-            pContext->Forward = !aAbsolute;
-
-            pEntry->Calls.emplace_back(std::move(pContext));
+            pFunc->localVars.PushBack(p);
         }
+
+        pFunc->unk20 = pRealFunction->unk20;
+        std::copy_n(pRealFunction->unk78, std::size(pRealFunction->unk78), pFunc->unk78);
+        pFunc->unk48 = pRealFunction->unk48;
+        pFunc->unkAC = pRealFunction->unkAC;
+        pFunc->flags = pRealFunction->flags;
+        pFunc->parent = pRealFunction->parent;
+        pFunc->flags.isNative = true;
+
+        pEntry->Trampoline = pFunc;
+        pEntry->pScripting = m_pScripting;
+        pEntry->CollectGarbage = aCollectGarbage;
+
+        // Swap the content of the real function with the one we just created
+        std::array<char, sizeof(RED4ext::CClassFunction)> tmpBuffer;
+
+        std::memcpy(&tmpBuffer, pRealFunction, sizeof(RED4ext::CClassFunction));
+        std::memcpy(pRealFunction, pFunc, sizeof(RED4ext::CClassFunction));
+        std::memcpy(pFunc, &tmpBuffer, sizeof(RED4ext::CClassFunction));
     }
     else
     {
-        spdlog::get("scripting")->error("Function {} in class {} does not exist", acFullName, acTypeName);
+        pEntry = &itor.value();
+    }
+
+    if (aFunction != sol::nil)
+    {
+        auto pContext = TiltedPhoques::MakeUnique<Context>();
+        pContext->ScriptFunction = std::move(aFunction);
+        pContext->Environment = aEnvironment;
+        pContext->Forward = !aAbsolute;
+
+        pEntry->Calls.emplace_back(std::move(pContext));
     }
 }
