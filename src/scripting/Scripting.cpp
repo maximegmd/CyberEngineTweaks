@@ -472,6 +472,18 @@ void Scripting::PostInitialize()
 
 void Scripting::RegisterOverrides()
 {
+    auto lua = m_lua.Lock();
+    auto& luaVm = lua.Get();
+
+    luaVm["RegisterGlobalInputListener"] = [](StrongReference& aSelf, sol::this_environment aThisEnv) {
+        sol::protected_function unregisterInputListener = aSelf.Index("UnregisterInputListener", aThisEnv);
+        sol::protected_function registerInputListener = aSelf.Index("RegisterInputListener", aThisEnv);
+
+        unregisterInputListener(aSelf, aSelf);
+        registerInputListener(aSelf, aSelf);
+    };
+
+    m_override.Override("PlayerPuppet", "EnableUIBlackboardListener", "EnableUIBlackboardListener", false, luaVm["RegisterGlobalInputListener"], sol::nil, false);
     m_override.Override("PlayerPuppet", "OnDetach", "OnDetach", false, sol::nil, sol::nil, true);
     m_override.Override("QuestTrackerGameController", "OnUninitialize", "OnUninitialize", false, sol::nil, sol::nil, true);
 }

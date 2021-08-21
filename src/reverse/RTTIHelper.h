@@ -30,6 +30,11 @@ struct RTTIHelper
     sol::object GetProperty(RED4ext::CClass* apClass, RED4ext::ScriptInstance apHandle, const std::string& acPropName, bool& aSuccess) const;
     void SetProperty(RED4ext::CClass* apClass, RED4ext::ScriptInstance apHandle, const std::string& acPropName, sol::object aPropValue, bool& aSuccess) const;
 
+    RED4ext::CBaseFunction* FindFunction(const uint64_t acFullNameHash) const;
+    RED4ext::CBaseFunction* FindFunction(RED4ext::CClass* apClass, const uint64_t acFullNameHash) const;
+    std::map<uint64_t, RED4ext::CBaseFunction*> FindFunctions(const uint64_t acShortNameHash) const;
+    std::map<uint64_t, RED4ext::CBaseFunction*> FindFunctions(RED4ext::CClass* apClass, const uint64_t acShortNameHash, bool aIsMember) const;
+    
     static void Initialize(const LockableState& acLua);
     static void Shutdown();
     static RTTIHelper& Get();
@@ -46,11 +51,6 @@ private:
     void AddResolvedFunction(const uint64_t acFuncHash, sol::function& acFunc);
     void AddResolvedFunction(const uint64_t acClassHash, const uint64_t acFuncHash, sol::function& acFunc, bool aIsMember);
 
-    RED4ext::CBaseFunction* FindFunction(const uint64_t acFullNameHash) const;
-    RED4ext::CBaseFunction* FindFunction(RED4ext::CClass* apClass, const uint64_t acFullNameHash) const;
-    std::map<uint64_t, RED4ext::CBaseFunction*> FindFunctions(const uint64_t acShortNameHash) const;
-    std::map<uint64_t, RED4ext::CBaseFunction*> FindFunctions(RED4ext::CClass* apClass, const uint64_t acShortNameHash, bool aIsMember) const;
-    
     sol::function MakeInvokableFunction(RED4ext::CBaseFunction* apFunc);
     sol::function MakeInvokableOverload(std::map<uint64_t, RED4ext::CBaseFunction*> aOverloadedFuncs);
 
