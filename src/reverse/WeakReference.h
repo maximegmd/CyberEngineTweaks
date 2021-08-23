@@ -10,7 +10,7 @@ struct WeakReference : ClassType
 
 protected:
 
-    virtual RED4ext::ScriptInstance GetHandle();
+    virtual RED4ext::ScriptInstance GetHandle() const override;
     
 private:
     friend struct Scripting;

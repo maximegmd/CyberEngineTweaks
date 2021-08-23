@@ -27,7 +27,7 @@ WeakReference::~WeakReference()
 }
 
 
-RED4ext::ScriptInstance WeakReference::GetHandle()
+RED4ext::ScriptInstance WeakReference::GetHandle() const
 {
     const auto ref = m_weakHandle.Lock();
     if (ref)

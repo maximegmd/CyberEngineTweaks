@@ -15,8 +15,8 @@ struct Type
     Type(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::CBaseRTTIType* apClass);
     virtual ~Type(){};
 
-    RED4ext::CBaseRTTIType* GetType() { return m_pType; }
-    virtual RED4ext::ScriptInstance GetHandle() { return nullptr; }
+    RED4ext::CBaseRTTIType* GetType() const { return m_pType; }
+    virtual RED4ext::ScriptInstance GetHandle() const { return nullptr; }
 
     sol::object Index(const std::string& acName, sol::this_environment aThisEnv);
     sol::object NewIndex(const std::string& acName, sol::object aParam);
@@ -58,7 +58,7 @@ struct UnknownType : Type
                 RED4ext::ScriptInstance apInstance);
 
     Descriptor Dump(bool aWithHashes) const override;
-    RED4ext::ScriptInstance GetHandle() override { return m_pInstance.get(); }
+    RED4ext::ScriptInstance GetHandle() const override { return m_pInstance.get(); }
 
 private:
     std::unique_ptr<uint8_t[]> m_pInstance;

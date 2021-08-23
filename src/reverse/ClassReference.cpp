@@ -12,7 +12,7 @@ ClassReference::ClassReference(const TiltedPhoques::Locked<sol::state, std::recu
     memcpy(m_pInstance.get(), apInstance, apClass->GetSize());
 }
 
-RED4ext::ScriptInstance ClassReference::GetHandle()
+RED4ext::ScriptInstance ClassReference::GetHandle() const
 {
     return m_pInstance.get();
 }

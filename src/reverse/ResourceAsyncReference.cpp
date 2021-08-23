@@ -23,9 +23,9 @@ uint64_t ResourceAsyncReference::Hash(const std::string& aPath)
     return RED4ext::FNV1a(aPath.c_str());
 }
 
-RED4ext::ScriptInstance ResourceAsyncReference::GetHandle()
+RED4ext::ScriptInstance ResourceAsyncReference::GetHandle() const
 {
-    return &m_reference;
+    return const_cast<RED4ext::ResourceAsyncReference<void>*>(&m_reference);
 }
 
 uint64_t ResourceAsyncReference::GetHash() const

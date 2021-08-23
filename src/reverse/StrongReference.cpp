@@ -26,7 +26,7 @@ StrongReference::~StrongReference()
 }
 
 
-RED4ext::ScriptInstance StrongReference::GetHandle()
+RED4ext::ScriptInstance StrongReference::GetHandle() const
 {
     return m_strongHandle.instance;
 }

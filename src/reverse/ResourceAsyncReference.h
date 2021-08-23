@@ -9,7 +9,7 @@ struct ResourceAsyncReference : ClassType
 
     static uint64_t Hash(const std::string& aPath);
 
-    virtual RED4ext::ScriptInstance GetHandle();
+    virtual RED4ext::ScriptInstance GetHandle() const override;
 
     uint64_t GetHash() const;
     sol::object GetLuaHash();

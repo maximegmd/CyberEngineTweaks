@@ -8,7 +8,7 @@ struct ClassReference : ClassType
                    RED4ext::CBaseRTTIType* apClass,
                    RED4ext::ScriptInstance apInstance);
 
-    virtual RED4ext::ScriptInstance GetHandle();
+    virtual RED4ext::ScriptInstance GetHandle() const override;
 
 private:
     std::unique_ptr<uint8_t[]> m_pInstance;

@@ -9,5 +9,5 @@ struct SingletonReference : ClassType
     ~SingletonReference();
 
 protected:
-    RED4ext::ScriptInstance GetHandle() override;
+    RED4ext::ScriptInstance GetHandle() const override;
 };
