@@ -28,47 +28,21 @@ void LuaVM::HookLog(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*,
 
     auto& console = CET::Get().GetOverlay().GetConsole();
     if (console.GameLogEnabled())
-        spdlog::get("scripting")->info(text.c_str());
-}
-
-static const char* GetChannelStr(uint64_t hash)
-{
-    switch (hash)
-    {
-#define HASH_CASE(x) case RED4ext::FNV1a(x): return x
-        HASH_CASE("AI");
-        HASH_CASE("AICover");
-        HASH_CASE("ASSERT");
-        HASH_CASE("Damage");
-        HASH_CASE("DevelopmentManager");
-        HASH_CASE("Device");
-        HASH_CASE("Items");
-        HASH_CASE("ItemManager");
-        HASH_CASE("Puppet");
-        HASH_CASE("Scanner");
-        HASH_CASE("Stats");
-        HASH_CASE("StatPools");
-        HASH_CASE("Strike");
-        HASH_CASE("TargetManager");
-        HASH_CASE("Test");
-        HASH_CASE("UI");
-        HASH_CASE("Vehicles");
-#undef HASH_CASE
-    }
-    return "";
+        spdlog::get("scripting")->info(ref.ref->c_str());
 }
 
 void LuaVM::HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*, void*)
 {
     static RTTILocator s_stringLocator("String");
+    static RED4ext::CName s_debugChannel("DEBUG");
 
-    uint64_t channel_hash = 0;
+    RED4ext::CName channel;
     apStack->unk30 = 0;
     apStack->unk38 = 0;
     uint8_t opcode = *(apStack->code++);
     apStack->currentParam++;
 
-    RED4ext::OpcodeHandlers::Run(opcode, apStack->context, apStack, &channel_hash, nullptr);
+    RED4ext::OpcodeHandlers::Run(opcode, apStack->context, apStack, &channel, nullptr);
 
     RED4ext::CString text{};
     RED4ext::ScriptRef<RED4ext::CString> ref;
@@ -86,14 +60,14 @@ void LuaVM::HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack,
     apStack->code++; // skip ParamEnd
 
     auto& console = CET::Get().GetOverlay().GetConsole();
-    if (console.GameLogEnabled())
+    if (console.GameLogEnabled() || channel == s_debugChannel)
     {
         auto consoleLogger = spdlog::get("scripting");
 
-        std::string_view textSV = text.c_str();
-        std::string_view channelSV = GetChannelStr(channel_hash);
+        std::string_view textSV = ref.ref->c_str();
+        std::string_view channelSV = channel.ToString();
         if (channelSV == "")
-            consoleLogger->info("[?{0:x}] {}", channel_hash, textSV);
+            consoleLogger->info("[?{0:x}] {}", channel.hash, textSV);
         else
             consoleLogger->info("[{}] {}", channelSV, textSV);
     }
