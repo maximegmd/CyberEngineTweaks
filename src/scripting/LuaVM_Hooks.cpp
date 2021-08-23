@@ -98,6 +98,24 @@ TDBID* LuaVM::HookTDBIDCtorDerive(TDBID* apBase, TDBID* apThis, const char* acpN
     return result;
 }
 
+void LuaVM::HookTDBIDToStringDEBUG(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void* apResult, void*)
+{
+    TDBID tdbid;
+    apStack->unk30 = 0;
+    apStack->unk38 = 0;
+    apStack->currentParam++;
+    uint8_t opcode = *(apStack->code++);
+    RED4ext::OpcodeHandlers::Run(opcode, apStack->context, apStack, &tdbid, nullptr);
+    apStack->code++; // skip ParamEnd
+
+    if (apResult)
+    {
+        std::string name = CET::Get().GetVM().GetTDBIDString(tdbid.value);
+        RED4ext::CString s(name.c_str());
+        *static_cast<RED4ext::CString*>(apResult) = s;
+    }
+}
+
 bool LuaVM::HookRunningStateRun(uintptr_t aThis, uintptr_t aApp)
 {
     auto& luavm = CET::Get().GetVM();
@@ -194,6 +212,32 @@ void LuaVM::Hook(Options& aOptions)
             else
             {
                 spdlog::info("RunningState::Run function hook complete!");
+            }
+        }
+    }
+
+    {
+        const mem::pattern cPattern("48 BF 58 D1 78 A0 18 09 BA EC 75 16 48 8D 15 ? ? ? ? 48 8B CF E8 ? ? ? ? C6 05 ?? "
+                                    "?? ?? ?? 01 41 8B 06 39 05 ? ? ? ? 7F");
+        const mem::default_scanner cScanner(cPattern);
+        uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
+        if (pLocation)
+        {
+            pLocation = &pLocation[45] + static_cast<int8_t>(pLocation[44]);
+            mem::region reg(pLocation, 45);
+            const mem::pattern cSecondaryPattern(
+                "48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 83 3D ?? ?? ?? ?? FF 75 ?? 48 8D 05");
+            const mem::default_scanner cSecondaryScanner(cSecondaryPattern);
+            pLocation = cSecondaryScanner(reg).as<uint8_t*>();
+            if (pLocation)
+            {
+                pLocation = &pLocation[28] + *reinterpret_cast<int32_t*>(&pLocation[24]);
+                if (MH_CreateHook(pLocation, &HookTDBIDToStringDEBUG,
+                                  reinterpret_cast<void**>(&m_realTDBIDToStringDEBUG)) != MH_OK ||
+                    MH_EnableHook(pLocation) != MH_OK)
+                    spdlog::error("Could not hook TDBID::ToStringDEBUG function!");
+                else
+                    spdlog::info("TDBID::ToStringDEBUG function hook complete!");
             }
         }
     }

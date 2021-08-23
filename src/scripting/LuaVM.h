@@ -59,6 +59,7 @@ protected:
 
     static void HookLog(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*, void*);
     static void HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*, void*);
+    static void HookTDBIDToStringDEBUG(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void* apResult, void*);
     static TDBID* HookTDBIDCtorDerive(TDBID* apBase, TDBID* apThis, const char* acpName);
     static bool HookRunningStateRun(uintptr_t aThis, uintptr_t aApp);
     static uintptr_t HookSetLoadingState(uintptr_t aThis, int aState);
@@ -72,6 +73,7 @@ private:
     
     RED4ext::OpcodeHandlers::Handler_t m_realLog{ nullptr };
     RED4ext::OpcodeHandlers::Handler_t m_realLogChannel{nullptr};
+    RED4ext::OpcodeHandlers::Handler_t m_realTDBIDToStringDEBUG{nullptr};
     TTDBIDCtorDerive* m_realTDBIDCtorDerive{ nullptr };
     TRunningStateRun* m_realRunningStateRun{ nullptr };
     TSetLoadingState* m_realSetLoadingState{ nullptr };
