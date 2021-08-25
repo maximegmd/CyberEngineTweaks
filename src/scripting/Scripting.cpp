@@ -483,7 +483,7 @@ void Scripting::RegisterOverrides()
         registerInputListener(aSelf, aSelf);
     };
 
-    m_override.Override("PlayerPuppet", "EnableUIBlackboardListener", "EnableUIBlackboardListener", false, luaVm["RegisterGlobalInputListener"], sol::nil, false);
+    m_override.Override("PlayerPuppet", "GracePeriodAfterSpawn", "GracePeriodAfterSpawn", false, luaVm["RegisterGlobalInputListener"], sol::nil, true);
     m_override.Override("PlayerPuppet", "OnDetach", "OnDetach", false, sol::nil, sol::nil, true);
     m_override.Override("QuestTrackerGameController", "OnUninitialize", "OnUninitialize", false, sol::nil, sol::nil, true);
 }
