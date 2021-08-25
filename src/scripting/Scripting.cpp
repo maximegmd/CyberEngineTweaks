@@ -265,8 +265,9 @@ void Scripting::PostInitialize()
     };
 
     luaVm.new_usertype<CName>("CName",
-        sol::constructors<CName(const std::string&), CName(uint32_t), CName(uint32_t, uint32_t),
+        sol::constructors<CName(const std::string&), CName(uint64_t), CName(uint32_t, uint32_t),
                           CName(const CName&), CName()>(),
+        sol::call_constructor, sol::constructors<CName(const std::string&), CName(uint64_t)>(),
         sol::meta_function::to_string, &CName::ToString,
         sol::meta_function::equal_to, &CName::operator==,
         "hash_lo", &CName::hash_lo,
@@ -286,6 +287,7 @@ void Scripting::PostInitialize()
     luaVm.new_usertype<TweakDBID>("TweakDBID",
         sol::constructors<TweakDBID(const std::string&), TweakDBID(const TweakDBID&, const std::string&),
                           TweakDBID(uint32_t, uint8_t), TweakDBID(const TweakDBID&), TweakDBID()>(),
+        sol::call_constructor, sol::constructors<TweakDBID(const std::string&)>(),
         sol::meta_function::to_string, &TweakDBID::ToString,
         sol::meta_function::equal_to, &TweakDBID::operator==,
         sol::meta_function::addition, &TweakDBID::operator+,
