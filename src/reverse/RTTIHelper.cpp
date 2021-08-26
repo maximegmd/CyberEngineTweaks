@@ -11,6 +11,7 @@
 
 static constexpr const bool s_cEnableOverloads = true;
 static constexpr const bool s_cLogAllOverloadVariants = true;
+static constexpr const bool s_cThrowLuaErrors = true;
 
 static std::unique_ptr<RTTIHelper> s_pInstance{ nullptr };
 
@@ -372,18 +373,25 @@ sol::function RTTIHelper::MakeInvokableFunction(RED4ext::CBaseFunction* apFunc)
     auto lockedState = m_lua.Lock();
     auto& luaState = lockedState.Get();
 
-    return MakeSolFunction(luaState, [this, apFunc](sol::variadic_args aArgs, sol::this_environment aEnv) -> sol::variadic_results {
+    return MakeSolFunction(luaState, [this, apFunc](sol::variadic_args aArgs, sol::this_state aState, sol::this_environment aEnv) -> sol::variadic_results {
         uint64_t argOffset = 0;
         RED4ext::ScriptInstance pHandle = ResolveHandle(apFunc, aArgs, argOffset);
 
-        std::string error;
-        auto result = ExecuteFunction(apFunc, pHandle, aArgs, argOffset, error);
+        std::string errorMessage;
+        auto result = ExecuteFunction(apFunc, pHandle, aArgs, argOffset, errorMessage);
 
-        if (!error.empty())
+        if (!errorMessage.empty())
         {
-            const sol::environment cEnv = aEnv;
-            auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
-            logger->error("Error: {}", error);
+            if constexpr (s_cThrowLuaErrors)
+            {
+                luaL_error(aState, errorMessage.c_str());
+            }
+            else
+            {
+                const sol::environment cEnv = aEnv;
+                auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+                logger->error("Error: {}", errorMessage);
+            }
         }
 
         return result;
@@ -400,7 +408,7 @@ sol::function RTTIHelper::MakeInvokableOverload(std::map<uint64_t, RED4ext::CBas
     for (const auto& cFunc : aOverloadedFuncs)
         variants.emplace_back(cFunc.second);
 
-    return MakeSolFunction(luaState, [this, variants](sol::variadic_args aArgs, sol::this_environment aEnv) mutable -> sol::variadic_results {
+    return MakeSolFunction(luaState, [this, variants](sol::variadic_args aArgs, sol::this_state aState, sol::this_environment aEnv) mutable -> sol::variadic_results {
         for (auto variant = variants.begin(); variant != variants.end(); variant++)
         {
             variant->lastError.clear();
@@ -429,16 +437,28 @@ sol::function RTTIHelper::MakeInvokableOverload(std::map<uint64_t, RED4ext::CBas
             }
         }
 
-        const sol::environment cEnv = aEnv;
-        auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
-        logger->error("Error: No matching overload of '{}' function.", variants.begin()->func->shortName.ToString());
-
         if constexpr (s_cLogAllOverloadVariants)
         {
+            const sol::environment cEnv = aEnv;
+            auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+
             for (auto variant = variants.begin(); variant != variants.end(); variant++)
                 logger->info("{}: {}", variant->func->fullName.ToString(), variant->lastError);
 
             logger->flush();
+        }
+
+        std::string errorMessage = fmt::format("No matching overload of '{}' function.", variants.begin()->func->shortName.ToString());
+
+        if constexpr (s_cThrowLuaErrors)
+        {
+            luaL_error(aState, errorMessage.c_str());
+        }
+        else
+        {
+            const sol::environment cEnv = aEnv;
+            auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+            logger->error("Error: {}", errorMessage);
         }
 
         return {};

@@ -33,6 +33,7 @@ void RTTIMapper::Register()
 
     RegisterSimpleTypes(luaState, luaGlobal);
     RegisterDirectTypes(luaState, luaGlobal, pRtti);
+    RegisterDirectGlobals(luaGlobal, pRtti);
     RegisterScriptAliases(luaGlobal, pRtti);
     RegisterSpecialAccessors(luaState, luaGlobal);
 }
@@ -116,6 +117,26 @@ void RTTIMapper::RegisterDirectTypes(sol::state& aLuaState, sol::table& aLuaGlob
             aLuaGlobal[aTypeName.ToString()] = luaClass;
             break;
         }
+        }
+        });
+}
+
+void RTTIMapper::RegisterDirectGlobals(sol::table& aLuaGlobal, RED4ext::CRTTISystem* apRtti)
+{
+    apRtti->funcs.for_each([&aLuaGlobal](RED4ext::CName aOrigName, RED4ext::CGlobalFunction* apFunc) {
+        const std::string cShortName = apFunc->shortName.ToString();
+        const FuncFlags cFlags = *(FuncFlags*)(&apFunc->flags);
+        
+        if (aLuaGlobal[cShortName] == sol::nil && !cFlags.isExec)
+        {
+            const std::string cFullName = apFunc->fullName.ToString();
+            const auto cIsClassFunc = cFullName.find("::") != std::string::npos;
+            const auto cIsOperatorFunc = cShortName.find(";") != std::string::npos;
+
+            if (!cIsClassFunc && !cIsOperatorFunc)
+            {
+                aLuaGlobal[cShortName] = RTTIHelper::Get().ResolveFunction(cShortName);
+            }
         }
         });
 }

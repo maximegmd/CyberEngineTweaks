@@ -277,7 +277,7 @@ sol::object ClassType::Index_Impl(const std::string& acName, sol::this_environme
     {
         const sol::environment cEnv = aThisEnv;
         std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
-        logger->error("Error: {} not found in {}.", acName, GetName());
+        logger->warn("Warning: {} not found in {}.", acName, GetName());
         return sol::nil;
     }
 

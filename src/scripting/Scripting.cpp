@@ -31,6 +31,8 @@
 #include <RED4ext/Dump/Reflection.hpp>
 #endif
 
+static constexpr const bool s_cThrowLuaErrors = true;
+
 static RTTILocator s_stringType{RED4ext::FNV1a("String")};
 
 Scripting::Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12, Options& aOptions)
@@ -263,8 +265,9 @@ void Scripting::PostInitialize()
     };
 
     luaVm.new_usertype<CName>("CName",
-        sol::constructors<CName(const std::string&), CName(uint32_t), CName(uint32_t, uint32_t),
+        sol::constructors<CName(const std::string&), CName(uint64_t), CName(uint32_t, uint32_t),
                           CName(const CName&), CName()>(),
+        sol::call_constructor, sol::constructors<CName(const std::string&), CName(uint64_t)>(),
         sol::meta_function::to_string, &CName::ToString,
         sol::meta_function::equal_to, &CName::operator==,
         "hash_lo", &CName::hash_lo,
@@ -284,6 +287,7 @@ void Scripting::PostInitialize()
     luaVm.new_usertype<TweakDBID>("TweakDBID",
         sol::constructors<TweakDBID(const std::string&), TweakDBID(const TweakDBID&, const std::string&),
                           TweakDBID(uint32_t, uint8_t), TweakDBID(const TweakDBID&), TweakDBID()>(),
+        sol::call_constructor, sol::constructors<TweakDBID(const std::string&)>(),
         sol::meta_function::to_string, &TweakDBID::ToString,
         sol::meta_function::equal_to, &TweakDBID::operator==,
         sol::meta_function::addition, &TweakDBID::operator+,
@@ -483,7 +487,7 @@ void Scripting::RegisterOverrides()
         registerInputListener(aSelf, aSelf);
     };
 
-    m_override.Override("PlayerPuppet", "EnableUIBlackboardListener", "EnableUIBlackboardListener", false, luaVm["RegisterGlobalInputListener"], sol::nil, false);
+    m_override.Override("PlayerPuppet", "GracePeriodAfterSpawn", "GracePeriodAfterSpawn", false, luaVm["RegisterGlobalInputListener"], sol::nil, true);
     m_override.Override("PlayerPuppet", "OnDetach", "OnDetach", false, sol::nil, sol::nil, true);
     m_override.Override("QuestTrackerGameController", "OnUninitialize", "OnUninitialize", false, sol::nil, sol::nil, true);
 }
@@ -568,14 +572,14 @@ std::string Scripting::GetGlobalName() const noexcept
     return m_global;
 }
 
-sol::object Scripting::Index(const std::string& acName, sol::this_environment aThisEnv)
+sol::object Scripting::Index(const std::string& acName, sol::this_state aState, sol::this_environment aEnv)
 {
     if (const auto itor = m_properties.find(acName); itor != m_properties.end())
     {
         return itor->second;
     }
 
-    return InternalIndex(acName, aThisEnv);
+    return InternalIndex(acName, aState, aEnv);
 }
 
 sol::object Scripting::NewIndex(const std::string& acName, sol::object aParam)
@@ -585,15 +589,24 @@ sol::object Scripting::NewIndex(const std::string& acName, sol::object aParam)
     return property;
 }
 
-sol::protected_function Scripting::InternalIndex(const std::string& acName, sol::this_environment aThisEnv)
+sol::protected_function Scripting::InternalIndex(const std::string& acName, sol::this_state aState, sol::this_environment aEnv)
 {
     auto func = RTTIHelper::Get().ResolveFunction(acName);
 
     if (!func)
     {
-        const sol::environment cEnv = aThisEnv;
-        std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
-        logger->error("Error: Function {} not found or is not a global.", acName);
+        std::string errorMessage = fmt::format("Function {} is not a GameInstance member and is not a global.", acName);
+
+        if constexpr (s_cThrowLuaErrors)
+        {
+            luaL_error(aState, errorMessage.c_str());
+        }
+        else
+        {
+            const sol::environment cEnv = aEnv;
+            std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+            logger->error("Error: {}", errorMessage);
+        }
 
         return sol::nil;
     }
