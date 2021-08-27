@@ -410,7 +410,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
         sbEnv["io"] = ioSB;
     }
 
-    // add in rename and remove repacements for os lib
+    // add in rename and remove replacements for os lib
     {
         const auto cOS = cGlobals["os"].get<sol::table>();
         sol::table osSB = sbEnv["os"].get<sol::table>();

@@ -54,7 +54,7 @@ void DumpVTablesTask::Run()
             }
 
             // Lets just leak memory from nested objects for now, this is broken on certain classes,
-            // havent determined why
+            // haven't determined why
             // type->Destroy(buffer);
         }
     };

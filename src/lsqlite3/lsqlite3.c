@@ -1088,7 +1088,7 @@ static void db_sql_finalize_function(sqlite3_context *context) {
 /*
 ** Register a normal function
 ** Params: db, function name, number arguments, [ callback | step, finalize], user data
-** Returns: true on sucess
+** Returns: true on success
 **
 ** Normal function:
 ** Params: context, params
@@ -1491,7 +1491,7 @@ static int db_rollback_hook(lua_State *L) {
 **
 ** callback function:
 ** Params: userdata
-** returns: 0 to return immediatly and return SQLITE_ABORT, non-zero to continue
+** returns: 0 to return immediately and return SQLITE_ABORT, non-zero to continue
 */
 static int db_progress_callback(void *user) {
     int result = 1; /* abort by default */
@@ -1675,7 +1675,7 @@ static int dbbu_finish(lua_State *L) {
 **
 ** callback function:
 ** Params: userdata, number of tries
-** returns: 0 to return immediatly and return SQLITE_BUSY, non-zero to try again
+** returns: 0 to return immediately and return SQLITE_BUSY, non-zero to try again
 */
 static int db_busy_callback(void *user, int tries) {
     int retry = 0; /* abort by default */
