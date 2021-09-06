@@ -708,8 +708,7 @@ bool TweakDBEditor::DrawRecordDropdown(const char* acpLabel, RED4ext::TweakDBID&
         RED4ext::Handle<RED4ext::IScriptable> record;
         if (RED4ext::TweakDB::Get()->TryGetRecord(aDBID, record))
         {
-            RED4ext::CName typeName;
-            record->GetType()->GetName(typeName);
+            RED4ext::CName typeName = record->GetType()->GetName();
             ImGui::SetTooltipUnformatted(typeName.ToString());
         }
         else
@@ -1077,8 +1076,7 @@ bool TweakDBEditor::DrawFlatTweakDBID(RED4ext::TweakDBID aDBID, RED4ext::CStackT
             RED4ext::Handle<RED4ext::IScriptable> record;
             if (pDBID->IsValid() && RED4ext::TweakDB::Get()->TryGetRecord(pDBID->value, record))
             {
-                RED4ext::CName typeName;
-                record->GetType()->GetName(typeName);
+                RED4ext::CName typeName = record->GetType()->GetName();
                 ImGui::SetTooltipUnformatted(typeName.ToString());
             }
             else

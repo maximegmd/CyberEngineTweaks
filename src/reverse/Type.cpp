@@ -197,7 +197,7 @@ std::string Type::GameDump()
         auto handle = GetHandle();
         if (handle)
         {
-            m_pType->GetDebugString(handle, str);
+            m_pType->ToString(handle, str);
         }
     }
 

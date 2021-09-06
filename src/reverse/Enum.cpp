@@ -151,8 +151,7 @@ std::string Enum::ToString() const
 {
     if (m_cpType)
     {
-        RED4ext::CName name;
-        m_cpType->GetName(name);
+        RED4ext::CName name = m_cpType->GetName();
         return name.ToString() + std::string(" : ") + GetValueName() + std::string(" (") + std::to_string(m_value) + std::string(")");
     }
 
@@ -164,9 +163,8 @@ bool Enum::operator==(const Enum& acRhs) const noexcept
     if (!m_cpType || !acRhs.m_cpType)
         return false;
 
-    RED4ext::CName name, nameRhs;
-    m_cpType->GetName(name);
-    acRhs.m_cpType->GetName(nameRhs);
+    RED4ext::CName name = m_cpType->GetName();
+    RED4ext::CName nameRhs = acRhs.m_cpType->GetName();
 
     return name == nameRhs && m_value == acRhs.m_value;
 }

@@ -404,7 +404,7 @@ void CreateSingleton(const RED4ext::CName acTypeName)
     if (pGameInstance->GetInstance(pType) != nullptr)
         return; // already init
 
-    auto* pClassInstance = pType->AllocInstance();
+    auto* pClassInstance = (RED4ext::IScriptable*)pType->AllocInstance();
     RED4ext::Handle<RED4ext::IScriptable> handle(pClassInstance);
 
     CreateSingleton(handle);

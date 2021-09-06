@@ -745,7 +745,7 @@ RED4ext::ScriptInstance RTTIHelper::NewInstance(RED4ext::CBaseRTTIType* apType, 
     }
 
     if (apType->GetType() == RED4ext::ERTTIType::Handle)
-        return apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>(pInstance);
+        return apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>((RED4ext::IScriptable*)pInstance);
     else
         return pInstance;
 }
