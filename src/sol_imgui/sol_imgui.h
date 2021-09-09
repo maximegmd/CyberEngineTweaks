@@ -1592,6 +1592,11 @@ namespace sol_ImGui
     // Drag and Drop
     // TODO: Drag and Drop ==> UNSUPPORTED
 
+    // Disabling
+    inline void BeginDisabled()                                                                     { ImGui::BeginDisabled(); }
+    inline void BeginDisabled(bool disabled)                                                        { ImGui::BeginDisabled(disabled); }
+    inline void EndDisabled()                                                                       { ImGui::EndDisabled(); }
+
     // Clipping
     inline void PushClipRect(float min_x, float min_y, float max_x, float max_y, bool intersect_current)   { ImGui::PushClipRect({ min_x, min_y }, { max_x, max_y }, intersect_current); }
     inline void PopClipRect()                                                                              { ImGui::PopClipRect(); }
@@ -1748,6 +1753,7 @@ namespace sol_ImGui
 
         lua.new_usertype<ImGuiStyle>("ImGuiStyle",
             "Alpha"                          , &ImGuiStyle::Alpha,
+            "DisabledAlpha"                  , &ImGuiStyle::DisabledAlpha,
             "WindowPadding"                  , &ImGuiStyle::WindowPadding,
             "WindowRounding"                 , &ImGuiStyle::WindowRounding,
             "WindowBorderSize"               , &ImGuiStyle::WindowBorderSize,
@@ -1925,6 +1931,7 @@ namespace sol_ImGui
 #pragma region Style
         lua.new_enum("ImGuiStyleVar",
             "Alpha"                          , ImGuiStyleVar_Alpha,
+            "DisabledAlpha"                  , ImGuiStyleVar_DisabledAlpha,
             "WindowPadding"                  , ImGuiStyleVar_WindowPadding,
             "WindowRounding"                 , ImGuiStyleVar_WindowRounding,
             "WindowBorderSize"               , ImGuiStyleVar_WindowBorderSize,
@@ -2041,12 +2048,12 @@ namespace sol_ImGui
             "InputRGB"                       , ImGuiColorEditFlags_InputRGB,
             "InputHSV"                       , ImGuiColorEditFlags_InputHSV,
 
-            "_OptionsDefault"                , ImGuiColorEditFlags__OptionsDefault,
+            "_OptionsDefault"                , ImGuiColorEditFlags_DefaultOptions_,
 
-            "_DisplayMask"                   , ImGuiColorEditFlags__DisplayMask,
-            "_DataTypeMask"                  , ImGuiColorEditFlags__DataTypeMask,
-            "_PickerMask"                    , ImGuiColorEditFlags__PickerMask,
-            "_InputMask"                     , ImGuiColorEditFlags__InputMask
+            "_DisplayMask"                   , ImGuiColorEditFlags_DisplayMask_,
+            "_DataTypeMask"                  , ImGuiColorEditFlags_DataTypeMask_,
+            "_PickerMask"                    , ImGuiColorEditFlags_PickerMask_,
+            "_InputMask"                     , ImGuiColorEditFlags_InputMask_
         );
 #pragma endregion ColorEdit Flags
 
@@ -2152,6 +2159,7 @@ namespace sol_ImGui
         lua.new_enum("ImGuiTableColumnFlags",
         // Input configuration flags
             "None"                           , ImGuiTableColumnFlags_None,
+            "Disabled"                       , ImGuiTableColumnFlags_Disabled,
             "DefaultHide"                    , ImGuiTableColumnFlags_DefaultHide,
             "DefaultSort"                    , ImGuiTableColumnFlags_DefaultSort,
             "WidthStretch"                   , ImGuiTableColumnFlags_WidthStretch,
@@ -2163,6 +2171,7 @@ namespace sol_ImGui
             "NoSort"                         , ImGuiTableColumnFlags_NoSort,
             "NoSortAscending"                , ImGuiTableColumnFlags_NoSortAscending,
             "NoSortDescending"               , ImGuiTableColumnFlags_NoSortDescending,
+            "NoHeaderLabel"                  , ImGuiTableColumnFlags_NoHeaderLabel,
             "NoHeaderWidth"                  , ImGuiTableColumnFlags_NoHeaderWidth,
             "PreferSortAscending"            , ImGuiTableColumnFlags_PreferSortAscending,
             "PreferSortDescending"           , ImGuiTableColumnFlags_PreferSortDescending,
@@ -2943,6 +2952,15 @@ namespace sol_ImGui
         ImGui.set_function("EndTabItem"              , EndTabItem);
         ImGui.set_function("SetTabItemClosed"        , SetTabItemClosed);
 #pragma endregion Tab Bars, Tabs
+
+#pragma region Disabling
+        ImGui.set_function("BeginDisabled"          , sol::overload(
+                                                                sol::resolve<void()>(BeginDisabled),
+                                                                sol::resolve<void(bool)>(BeginDisabled)
+                                                            ));
+        ImGui.set_function("EndDisabled"            , EndDisabled);
+
+#pragma endregion Disabling
 
 #pragma region Clipping
         ImGui.set_function("PushClipRect"           , PushClipRect);
