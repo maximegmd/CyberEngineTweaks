@@ -1247,6 +1247,16 @@ selected, activated = ImGui.MenuItem("Label", "ALT+F4", selected, true)
   ImGui.SetTabItemClosed("MyDockedWindow")
 ```
 
+## Disabling
+```lua
+  -- ImGui.BeginDisabled()
+  -- ImGui.BeginDisabled(disabled) -- bool: disabled
+  -- ImGui.EndDisabled()
+  ImGui.BeginDisabled()
+  ImGui.BeginDisabled(false)
+  ImGui.EndDisabled()
+```
+
 ## Clipping
 ```lua
   -- ImGui.PushClipRect(...)
