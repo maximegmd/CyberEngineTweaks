@@ -275,6 +275,8 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
             pType->Destroy(pInstance);
             pAllocator->Free(pInstance);
         }
+        
+        apFrame->code++; // skip ParamEnd
 
         const auto& calls = context.Calls;
         for (const auto& call : calls)
