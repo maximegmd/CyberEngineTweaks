@@ -181,6 +181,19 @@ void Scripting::PostInitialize()
 
     luaGlobal["Enum"] = luaVm["Enum"];
 
+    luaGlobal["EnumInt"] = [this](Enum& aEnum) -> sol::object
+    {
+        static RTTILocator s_uint64Type{RED4ext::FNV1a("Uint64")};
+
+        auto lockedState = m_lua.Lock();
+
+        RED4ext::CStackType stackType;
+        stackType.type = s_uint64Type;
+        stackType.value = &aEnum.m_value;
+
+        return Converter::ToLua(stackType, lockedState);
+    };
+
     luaVm.new_usertype<Vector3>("Vector3",
         sol::constructors<Vector3(float, float, float), Vector3(float, float), Vector3(float), Vector3(const Vector3&), Vector3()>(),
         sol::meta_function::to_string, &Vector3::ToString,

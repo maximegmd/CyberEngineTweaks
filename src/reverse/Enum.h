@@ -28,6 +28,8 @@ struct Enum
     const RED4ext::CEnum* GetType() const;
 
 protected:
+    friend struct Scripting;
+
     const RED4ext::CEnum*   m_cpType{ nullptr };
     uint64_t                m_value{ 0 };
 };
