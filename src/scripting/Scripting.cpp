@@ -740,11 +740,8 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
                 auto* pType = static_cast<RED4ext::CClass*>(aObject.as<StrongReference*>()->m_pType);
                 if (pType && pType->IsA(pSubType))
                 {
-                    if (hasData)
-                        result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>(
-                            aObject.as<StrongReference>().m_strongHandle);
-                    else
-                        result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>();
+                    result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>(
+                        aObject.as<StrongReference>().m_strongHandle);
                 }
             }
             else if (aObject.is<WeakReference>())
@@ -753,22 +750,13 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
                 auto* pType = static_cast<RED4ext::CClass*>(aObject.as<WeakReference*>()->m_pType);
                 if (pType && pType->IsA(pSubType))
                 {
-                    if (hasData)
-                        result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>(
-                            aObject.as<WeakReference>().m_weakHandle);
-                    else
-                        result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>();
+                    result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>(
+                        aObject.as<WeakReference>().m_weakHandle);
                 }
             }
-            else if (aObject.is<ClassReference>())
+            else if (!hasData)
             {
-                auto* pSubType = static_cast<RED4ext::CClass*>(apRttiType)->parent;
-                auto* pType = static_cast<RED4ext::CClass*>(aObject.as<ClassReference*>()->m_pType);
-                if (pType && pType->IsA(pSubType))
-                {
-                    result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>(
-                        static_cast<RED4ext::IScriptable*>(aObject.as<ClassReference>().GetHandle()));
-                }
+                result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>();
             }
         }
         else if (apRttiType->GetType() == RED4ext::ERTTIType::WeakHandle)
@@ -779,11 +767,8 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
                 auto* pType = static_cast<RED4ext::CClass*>(aObject.as<WeakReference*>()->m_pType);
                 if (pType && pType->IsA(pSubType))
                 {
-                    if (hasData)
-                        result.value = apAllocator->New<RED4ext::WeakHandle<RED4ext::IScriptable>>(
-                            aObject.as<WeakReference>().m_weakHandle);
-                    else
-                        result.value = apAllocator->New<RED4ext::WeakHandle<RED4ext::IScriptable>>();
+                    result.value = apAllocator->New<RED4ext::WeakHandle<RED4ext::IScriptable>>(
+                        aObject.as<WeakReference>().m_weakHandle);
                 }
             }
             else if (aObject.is<StrongReference>()) // Handle Implicit Cast
@@ -792,12 +777,13 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
                 auto* pType = static_cast<RED4ext::CClass*>(aObject.as<StrongReference*>()->m_pType);
                 if (pType && pType->IsA(pSubType))
                 {
-                    if (hasData)
-                        result.value = apAllocator->New<RED4ext::WeakHandle<RED4ext::IScriptable>>(
-                            aObject.as<StrongReference>().m_strongHandle);
-                    else
-                        result.value = apAllocator->New<RED4ext::WeakHandle<RED4ext::IScriptable>>();
+                    result.value = apAllocator->New<RED4ext::WeakHandle<RED4ext::IScriptable>>(
+                        aObject.as<StrongReference>().m_strongHandle);
                 }
+            }
+            else if (!hasData)
+            {
+                result.value = apAllocator->New<RED4ext::WeakHandle<RED4ext::IScriptable>>();
             }
         }
         else if (apRttiType->GetType() == RED4ext::ERTTIType::Array)
