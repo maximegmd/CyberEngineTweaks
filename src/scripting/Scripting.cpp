@@ -172,6 +172,24 @@ void Scripting::PostInitialize()
         sol::meta_function::index, &UnknownType::Index,
         sol::meta_function::new_index, &UnknownType::NewIndex);
 
+    luaGlobal["IsDefined"] =  sol::overload(
+        // Check if weak reference is still valid
+        [](WeakReference& aRef) -> bool
+        {
+            return !aRef.m_weakHandle.Expired();
+        },
+        // To make it callable for strong reference
+        // although it's always valid unless it's null
+        [](StrongReference& aRef) -> bool
+        {
+            return true;
+        },
+        // To make it callable for null refs
+        [](sol::nil_t aNil) -> bool
+        {
+            return false;
+        });
+
     luaVm.new_usertype<Enum>("Enum",
         sol::constructors<Enum(const std::string&, const std::string&),
                           Enum(const std::string&, uint32_t), Enum(const Enum&)>(),
