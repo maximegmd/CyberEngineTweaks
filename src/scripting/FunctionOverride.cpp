@@ -4,9 +4,11 @@
 #include "Scripting.h"
 #include <reverse/StrongReference.h>
 #include <reverse/RTTIHelper.h>
+#include <reverse/RTTILocator.h>
 
 
 static FunctionOverride* s_pOverride = nullptr;
+static RTTILocator s_inkGameControllerType("gameuiWidgetGameController");
 
 using TRunPureScriptFunction = bool (*)(RED4ext::CClassFunction* apFunction, RED4ext::CScriptStack*, void*);
 static TRunPureScriptFunction RealRunPureScriptFunction = nullptr;
@@ -472,7 +474,7 @@ void FunctionOverride::Override(const std::string& acTypeName, const std::string
 
         pEntry->Trampoline = pFunc;
         pEntry->pScripting = m_pScripting;
-        pEntry->CollectGarbage = aCollectGarbage;
+        pEntry->CollectGarbage = aCollectGarbage || pClassType->IsA(s_inkGameControllerType);
 
         // Swap the content of the real function with the one we just created
         std::array<char, sizeof(RED4ext::CClassFunction)> tmpBuffer;

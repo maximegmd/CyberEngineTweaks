@@ -11,6 +11,8 @@ struct RTTIMapper
 
     void Register();
 
+    static void SanitizeName(std::string& aName);
+
 private:
 
     struct FuncFlags

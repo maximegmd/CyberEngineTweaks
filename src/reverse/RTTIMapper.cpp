@@ -104,7 +104,10 @@ void RTTIMapper::RegisterDirectTypes(sol::state& aLuaState, sol::table& aLuaGlob
 
             MakeSolUsertypeImmutable(luaEnum, aLuaState);
 
-            aLuaGlobal[aTypeName.ToString()] = luaEnum;
+            std::string typeName = aTypeName.ToString();
+            SanitizeName(typeName);
+
+            aLuaGlobal[typeName] = luaEnum;
             break;
         }
         case RED4ext::ERTTIType::Class:
@@ -114,7 +117,10 @@ void RTTIMapper::RegisterDirectTypes(sol::state& aLuaState, sol::table& aLuaGlob
 
             MakeSolUsertypeImmutable(luaClass, aLuaState);
 
-            aLuaGlobal[aTypeName.ToString()] = luaClass;
+            std::string typeName = aTypeName.ToString();
+            SanitizeName(typeName);
+
+            aLuaGlobal[typeName] = luaClass;
             break;
         }
         }
@@ -179,4 +185,9 @@ void RTTIMapper::ExtendUsertype(const std::string acTypeName, sol::state& aLuaSt
 
     aLuaState["__" + acTypeName] = aLuaGlobal[acTypeName];
     aLuaGlobal[acTypeName] = aLuaState[acTypeName];
+}
+
+void RTTIMapper::SanitizeName(std::string& aName)
+{
+    std::replace(aName.begin(), aName.end(), '.', '_');
 }
