@@ -329,6 +329,24 @@ void Scripting::PostInitialize()
         };
     };
 
+    luaVm.new_usertype<CRUID>("CRUID",
+        sol::constructors<CRUID(uint64_t)>(),
+        sol::call_constructor, sol::constructors<CRUID(uint64_t)>(),
+        sol::meta_function::to_string, &CRUID::ToString,
+        sol::meta_function::equal_to, &CRUID::operator==,
+        "hash", &CRUID::hash);
+
+    luaGlobal["CRUID"] = luaVm["CRUID"];
+
+    luaVm.new_usertype<gamedataLocKeyWrapper>("LocKey",
+        sol::constructors<gamedataLocKeyWrapper(uint64_t)>(),
+        sol::call_constructor, sol::constructors<gamedataLocKeyWrapper(uint64_t)>(),
+        sol::meta_function::to_string, &gamedataLocKeyWrapper::ToString,
+        sol::meta_function::equal_to, &gamedataLocKeyWrapper::operator==,
+        "hash", &gamedataLocKeyWrapper::hash);
+
+    luaGlobal["LocKey"] = luaVm["LocKey"];
+
     luaGlobal["NewObject"] = [this](const std::string& acName, sol::this_environment aEnv) -> sol::object
     {
         auto* pRtti = RED4ext::CRTTISystem::Get();

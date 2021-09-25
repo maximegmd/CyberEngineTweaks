@@ -90,6 +90,26 @@ bool ItemID::operator==(const ItemID& acRhs) const noexcept
     return id == acRhs.id && rng_seed == acRhs.rng_seed;
 }
 
+std::string CRUID::ToString() const noexcept
+{
+    return fmt::format("CRUID({0}ull)", hash);
+}
+
+bool CRUID::operator==(const CRUID& acRhs) const noexcept
+{
+    return hash == acRhs.hash;
+}
+
+std::string gamedataLocKeyWrapper::ToString() const noexcept
+{
+    return fmt::format("LocKey({0}ull)", hash);
+}
+
+bool gamedataLocKeyWrapper::operator==(const gamedataLocKeyWrapper& acRhs) const noexcept
+{
+    return hash == acRhs.hash;
+}
+
 static const unsigned int crc32_table[] =
 {
     0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f,
