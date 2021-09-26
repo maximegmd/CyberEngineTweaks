@@ -22,6 +22,8 @@ auto s_metaVisitor = [](auto... args) {
     LuaRED<EulerAngles, "EulerAngles">(),
     LuaRED<ItemID, "gameItemID">(),
     LuaRED<Variant, "Variant">(),
+    LuaRED<CRUID, "CRUID">(),
+    LuaRED<gamedataLocKeyWrapper, "gamedataLocKeyWrapper">(),
     CNameConverter(),
     TweakDBIDConverter(),
     EnumConverter(),

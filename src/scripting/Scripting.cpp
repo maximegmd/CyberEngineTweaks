@@ -172,6 +172,24 @@ void Scripting::PostInitialize()
         sol::meta_function::index, &UnknownType::Index,
         sol::meta_function::new_index, &UnknownType::NewIndex);
 
+    luaGlobal["IsDefined"] =  sol::overload(
+        // Check if weak reference is still valid
+        [](WeakReference& aRef) -> bool
+        {
+            return !aRef.m_weakHandle.Expired();
+        },
+        // To make it callable for strong reference
+        // although it's always valid unless it's null
+        [](StrongReference& aRef) -> bool
+        {
+            return true;
+        },
+        // To make it callable for null refs
+        [](sol::nil_t aNil) -> bool
+        {
+            return false;
+        });
+
     luaVm.new_usertype<Enum>("Enum",
         sol::constructors<Enum(const std::string&, const std::string&),
                           Enum(const std::string&, uint32_t), Enum(const Enum&)>(),
@@ -180,6 +198,19 @@ void Scripting::PostInitialize()
         "value", sol::property(&Enum::GetValueName, &Enum::SetValueByName));
 
     luaGlobal["Enum"] = luaVm["Enum"];
+
+    luaGlobal["EnumInt"] = [this](Enum& aEnum) -> sol::object
+    {
+        static RTTILocator s_uint64Type{RED4ext::FNV1a("Uint64")};
+
+        auto lockedState = m_lua.Lock();
+
+        RED4ext::CStackType stackType;
+        stackType.type = s_uint64Type;
+        stackType.value = &aEnum.m_value;
+
+        return Converter::ToLua(stackType, lockedState);
+    };
 
     luaVm.new_usertype<Vector3>("Vector3",
         sol::constructors<Vector3(float, float, float), Vector3(float, float), Vector3(float), Vector3(const Vector3&), Vector3()>(),
@@ -328,6 +359,24 @@ void Scripting::PostInitialize()
             table["maybe_type"].get_or<uint8_t>(0),
         };
     };
+
+    luaVm.new_usertype<CRUID>("CRUID",
+        sol::constructors<CRUID(uint64_t)>(),
+        sol::call_constructor, sol::constructors<CRUID(uint64_t)>(),
+        sol::meta_function::to_string, &CRUID::ToString,
+        sol::meta_function::equal_to, &CRUID::operator==,
+        "hash", &CRUID::hash);
+
+    luaGlobal["CRUID"] = luaVm["CRUID"];
+
+    luaVm.new_usertype<gamedataLocKeyWrapper>("LocKey",
+        sol::constructors<gamedataLocKeyWrapper(uint64_t)>(),
+        sol::call_constructor, sol::constructors<gamedataLocKeyWrapper(uint64_t)>(),
+        sol::meta_function::to_string, &gamedataLocKeyWrapper::ToString,
+        sol::meta_function::equal_to, &gamedataLocKeyWrapper::operator==,
+        "hash", &gamedataLocKeyWrapper::hash);
+
+    luaGlobal["LocKey"] = luaVm["LocKey"];
 
     luaGlobal["NewObject"] = [this](const std::string& acName, sol::this_environment aEnv) -> sol::object
     {
@@ -740,11 +789,8 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
                 auto* pType = static_cast<RED4ext::CClass*>(aObject.as<StrongReference*>()->m_pType);
                 if (pType && pType->IsA(pSubType))
                 {
-                    if (hasData)
-                        result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>(
-                            aObject.as<StrongReference>().m_strongHandle);
-                    else
-                        result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>();
+                    result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>(
+                        aObject.as<StrongReference>().m_strongHandle);
                 }
             }
             else if (aObject.is<WeakReference>())
@@ -753,22 +799,13 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
                 auto* pType = static_cast<RED4ext::CClass*>(aObject.as<WeakReference*>()->m_pType);
                 if (pType && pType->IsA(pSubType))
                 {
-                    if (hasData)
-                        result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>(
-                            aObject.as<WeakReference>().m_weakHandle);
-                    else
-                        result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>();
+                    result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>(
+                        aObject.as<WeakReference>().m_weakHandle);
                 }
             }
-            else if (aObject.is<ClassReference>())
+            else if (!hasData)
             {
-                auto* pSubType = static_cast<RED4ext::CClass*>(apRttiType)->parent;
-                auto* pType = static_cast<RED4ext::CClass*>(aObject.as<ClassReference*>()->m_pType);
-                if (pType && pType->IsA(pSubType))
-                {
-                    result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>(
-                        static_cast<RED4ext::IScriptable*>(aObject.as<ClassReference>().GetHandle()));
-                }
+                result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>();
             }
         }
         else if (apRttiType->GetType() == RED4ext::ERTTIType::WeakHandle)
@@ -779,11 +816,8 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
                 auto* pType = static_cast<RED4ext::CClass*>(aObject.as<WeakReference*>()->m_pType);
                 if (pType && pType->IsA(pSubType))
                 {
-                    if (hasData)
-                        result.value = apAllocator->New<RED4ext::WeakHandle<RED4ext::IScriptable>>(
-                            aObject.as<WeakReference>().m_weakHandle);
-                    else
-                        result.value = apAllocator->New<RED4ext::WeakHandle<RED4ext::IScriptable>>();
+                    result.value = apAllocator->New<RED4ext::WeakHandle<RED4ext::IScriptable>>(
+                        aObject.as<WeakReference>().m_weakHandle);
                 }
             }
             else if (aObject.is<StrongReference>()) // Handle Implicit Cast
@@ -792,12 +826,13 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
                 auto* pType = static_cast<RED4ext::CClass*>(aObject.as<StrongReference*>()->m_pType);
                 if (pType && pType->IsA(pSubType))
                 {
-                    if (hasData)
-                        result.value = apAllocator->New<RED4ext::WeakHandle<RED4ext::IScriptable>>(
-                            aObject.as<StrongReference>().m_strongHandle);
-                    else
-                        result.value = apAllocator->New<RED4ext::WeakHandle<RED4ext::IScriptable>>();
+                    result.value = apAllocator->New<RED4ext::WeakHandle<RED4ext::IScriptable>>(
+                        aObject.as<StrongReference>().m_strongHandle);
                 }
+            }
+            else if (!hasData)
+            {
+                result.value = apAllocator->New<RED4ext::WeakHandle<RED4ext::IScriptable>>();
             }
         }
         else if (apRttiType->GetType() == RED4ext::ERTTIType::Array)

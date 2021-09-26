@@ -182,6 +182,32 @@ struct Variant
 
 static_assert(sizeof(Variant) == 0x18);
 
+struct CRUID
+{
+    CRUID(uint64_t aHash = 0) : hash(aHash) {}
+
+    uint64_t hash;
+
+    std::string ToString() const noexcept;
+
+	bool operator==(const CRUID& acRhs) const noexcept;
+};
+
+static_assert(sizeof(CRUID) == 0x8);
+
+struct gamedataLocKeyWrapper
+{
+    gamedataLocKeyWrapper(uint64_t aHash = 0) : hash(aHash) {}
+
+    uint64_t hash;
+
+    std::string ToString() const noexcept;
+
+	bool operator==(const gamedataLocKeyWrapper& acRhs) const noexcept;
+};
+
+static_assert(sizeof(gamedataLocKeyWrapper) == 0x8);
+
 struct alignas(8) ScriptGameInstance
 {
     RED4ext::GameInstance* gameInstance;
