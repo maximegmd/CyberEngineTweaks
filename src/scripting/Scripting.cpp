@@ -132,36 +132,42 @@ void Scripting::PostInitialize()
         sol::meta_function::index, &Type::Index,
         sol::meta_function::new_index, &Type::NewIndex);
 
+    luaVm.new_usertype<ClassType>("__ClassType",
+        sol::meta_function::construct, sol::no_constructor,
+        sol::base_classes, sol::bases<Type>(),
+        sol::meta_function::index, &ClassType::Index,
+        sol::meta_function::new_index, &ClassType::NewIndex);
+
     luaVm.new_usertype<Type::Descriptor>("Descriptor",
         sol::meta_function::to_string, &Type::Descriptor::ToString);
 
     luaVm.new_usertype<StrongReference>("StrongReference",
         sol::meta_function::construct, sol::no_constructor,
-        sol::base_classes, sol::bases<Type>(),
+        sol::base_classes, sol::bases<Type, ClassType>(),
         sol::meta_function::index, &StrongReference::Index,
         sol::meta_function::new_index, &StrongReference::NewIndex);
 
     luaVm.new_usertype<WeakReference>("WeakReference",
         sol::meta_function::construct, sol::no_constructor,
-        sol::base_classes, sol::bases<Type>(),
+        sol::base_classes, sol::bases<Type, ClassType>(),
         sol::meta_function::index, &WeakReference::Index,
         sol::meta_function::new_index, &WeakReference::NewIndex);
 
     luaVm.new_usertype<SingletonReference>("SingletonReference",
         sol::meta_function::construct, sol::no_constructor,
-        sol::base_classes, sol::bases<Type>(),
+        sol::base_classes, sol::bases<Type, ClassType>(),
         sol::meta_function::index, &SingletonReference::Index,
         sol::meta_function::new_index, &SingletonReference::NewIndex);
 
     luaVm.new_usertype<ClassReference>("ClassReference",
         sol::meta_function::construct, sol::no_constructor,
-        sol::base_classes, sol::bases<Type>(),
+        sol::base_classes, sol::bases<Type, ClassType>(),
         sol::meta_function::index, &ClassReference::Index,
         sol::meta_function::new_index, &ClassReference::NewIndex);
 
     luaVm.new_usertype<ResourceAsyncReference>("ResourceAsyncReference",
         sol::meta_function::construct, sol::no_constructor,
-        sol::base_classes, sol::bases<Type>(),
+        sol::base_classes, sol::bases<Type, ClassType>(),
         sol::meta_function::index, &ResourceAsyncReference::Index,
         sol::meta_function::new_index, &ResourceAsyncReference::NewIndex,
         "hash", sol::property(&ResourceAsyncReference::GetLuaHash));
