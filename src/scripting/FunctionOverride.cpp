@@ -26,7 +26,7 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
             return false;
         }
 
-        bool isOverride = false;
+        bool isOverridden = false;
 
         if (!itor->second.Calls.empty())
         {
@@ -66,6 +66,9 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
             const auto& calls = itor->second.Calls;
             for (const auto& call : calls)
             {
+                if (!call->Forward && isOverridden)
+                    continue;
+
                 const auto result = call->ScriptFunction(as_args(args));
 
                 if (!result.valid())
@@ -79,8 +82,7 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
                     if (result.valid() && ret.value && ret.type)
                         Scripting::ToRED(result.get<sol::object>(), &ret);
 
-                    isOverride = true;
-                    break;
+                    isOverridden = true;
                 }
             }
         }
@@ -88,7 +90,7 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
         if (itor->second.CollectGarbage)
             s_pOverride->m_pScripting->CollectGarbage();
 
-        if (isOverride)
+        if (isOverridden)
             return true;
 
         auto* pTrampoline = itor->second.Trampoline;
@@ -196,7 +198,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
     }
 
     const auto& context = itor->second;
-    bool isOverride = false;
+    bool isOverridden = false;
 
     // Save state so we can rollback to it after we popped for ourself
     auto* pCode = apFrame->code;
@@ -283,6 +285,9 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
         const auto& calls = context.Calls;
         for (const auto& call : calls)
         {
+            if (!call->Forward && isOverridden)
+                continue;
+
             const auto result = call->ScriptFunction(as_args(args));
 
             if (!result.valid())
@@ -303,8 +308,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
                         Scripting::ToRED(result.get<sol::object>(), &redResult);
                 }
 
-                isOverride = true;
-                break;
+                isOverridden = true;
             }
         }
     }
@@ -312,7 +316,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
     if (context.CollectGarbage)
         s_pOverride->m_pScripting->CollectGarbage();
 
-    if (isOverride)
+    if (isOverridden)
         return;
 
     RED4ext::IFunction* pRealFunction = context.Trampoline;
