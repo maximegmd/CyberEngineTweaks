@@ -5,6 +5,7 @@
 #include "Type.h"
 #include "ClassReference.h"
 #include "StrongReference.h"
+#include "WeakReference.h"
 #include "scripting/Scripting.h"
 #include "Utils.h"
 #include <common/ScopeGuard.h>
@@ -112,6 +113,39 @@ void RTTIHelper::AddFunctionAlias(const std::string& acAliasClassName, const std
             m_extendedFunctions.at(cClassHash).emplace(pFunc->fullName.hash, pFunc);
         }
     }
+}
+
+bool RTTIHelper::IsFunctionAlias(RED4ext::CBaseFunction* apFunc)
+{
+    static const auto s_cTweakDBInterfaceHash = RED4ext::FNV1a("gamedataTweakDBInterface");
+
+    if (m_extendedFunctions.contains(kGlobalHash))
+    {
+        auto& extendedFuncs = m_extendedFunctions.at(kGlobalHash);
+
+        if (extendedFuncs.contains(apFunc->fullName.hash))
+            return true;
+    }
+
+    if (apFunc->GetParent())
+    {
+        const auto cClassHash = apFunc->GetParent()->name.hash;
+
+        // TweakDBInterface is special.
+        // All of its methods are non-static, but they can only be used as static ones.
+        if (cClassHash == s_cTweakDBInterfaceHash)
+            return true;
+
+        if (m_extendedFunctions.contains(cClassHash))
+        {
+            auto& extendedFuncs = m_extendedFunctions.at(cClassHash);
+
+            if (extendedFuncs.contains(apFunc->fullName.hash))
+                return true;
+        }
+    }
+
+    return false;
 }
 
 sol::function RTTIHelper::GetResolvedFunction(const uint64_t acFuncHash) const
@@ -373,12 +407,14 @@ sol::function RTTIHelper::MakeInvokableFunction(RED4ext::CBaseFunction* apFunc)
     auto lockedState = m_lua.Lock();
     auto& luaState = lockedState.Get();
 
-    return MakeSolFunction(luaState, [this, apFunc](sol::variadic_args aArgs, sol::this_state aState, sol::this_environment aEnv) -> sol::variadic_results {
+    const bool cAllowNull = IsFunctionAlias(apFunc);
+
+    return MakeSolFunction(luaState, [this, apFunc, cAllowNull](sol::variadic_args aArgs, sol::this_state aState, sol::this_environment aEnv) -> sol::variadic_results {
         uint64_t argOffset = 0;
         RED4ext::ScriptInstance pHandle = ResolveHandle(apFunc, aArgs, argOffset);
 
         std::string errorMessage;
-        auto result = ExecuteFunction(apFunc, pHandle, aArgs, argOffset, errorMessage);
+        auto result = ExecuteFunction(apFunc, pHandle, aArgs, argOffset, errorMessage, cAllowNull);
 
         if (!errorMessage.empty())
         {
@@ -501,10 +537,19 @@ RED4ext::ScriptInstance RTTIHelper::ResolveHandle(RED4ext::CBaseFunction* apFunc
 
             if (cArg.is<Type>())
             {
-                pHandle = cArg.as<Type>().GetHandle();
+                pHandle = cArg.as<Type*>()->GetHandle();
 
-                if (pHandle || cArg.is<SingletonReference>())
+                if (cArg.is<StrongReference>() || cArg.is<WeakReference>())
+                {
                     ++aArgOffset;
+
+                    if (pHandle && !reinterpret_cast<RED4ext::IScriptable*>(pHandle)->GetType()->IsA(apFunc->GetParent()))
+                        pHandle = nullptr;
+                }
+                else if (cArg.is<SingletonReference>())
+                {
+                    ++aArgOffset;
+                }
             }
         }
     }
@@ -514,7 +559,7 @@ RED4ext::ScriptInstance RTTIHelper::ResolveHandle(RED4ext::CBaseFunction* apFunc
 
 sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc, RED4ext::ScriptInstance apHandle,
                                                   sol::variadic_args aLuaArgs, uint64_t aLuaArgOffset,
-                                                  std::string& aErrorMessage) const
+                                                  std::string& aErrorMessage, bool aAllowNull) const
 {
     static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 14);
     static thread_local uint32_t s_callDepth = 0u;
@@ -532,6 +577,14 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
     // These functions cannot be used until more complex logic for input
     // args is implemented (should check if a compatible arg is actually
     // passed at the expected position + same for optionals).
+
+    if (!apFunc->flags.isStatic && !apHandle && !aAllowNull)
+    {
+        aErrorMessage = fmt::format("Function '{}' context must be '{}'.",
+                                    apFunc->shortName.ToString(),
+                                    apFunc->GetParent()->name.ToString());
+        return {};
+    }
 
     auto numArgs = aLuaArgs.size() - aLuaArgOffset;
     auto minArgs = 0u;
