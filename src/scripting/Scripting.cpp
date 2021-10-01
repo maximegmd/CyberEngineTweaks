@@ -712,13 +712,13 @@ sol::object Scripting::ToLua(LockedState& aState, RED4ext::CStackType& aResult)
     {
         const auto handle = *static_cast<RED4ext::Handle<RED4ext::IScriptable>*>(aResult.value);
         if (handle)
-            return make_object(state, StrongReference(aState, handle));
+            return make_object(state, StrongReference(aState, handle, static_cast<RED4ext::CHandle*>(pType)));
     }
     else if (pType->GetType() == RED4ext::ERTTIType::WeakHandle)
     {
         const auto handle = *static_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(aResult.value);
         if (!handle.Expired())
-            return make_object(state, WeakReference(aState, handle));
+            return make_object(state, WeakReference(aState, handle, static_cast<RED4ext::CWeakHandle*>(pType)));
     }
     else if (pType->GetType() == RED4ext::ERTTIType::Array)
     {

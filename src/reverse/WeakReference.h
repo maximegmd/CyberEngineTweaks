@@ -6,6 +6,9 @@ struct WeakReference : ClassType
 {
     WeakReference(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView,
                   RED4ext::WeakHandle<RED4ext::IScriptable> aWeakHandle);
+    WeakReference(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView,
+                  RED4ext::WeakHandle<RED4ext::IScriptable> aWeakHandle,
+                  RED4ext::CWeakHandle* apWeakHandleType);
     virtual ~WeakReference();
 
 protected:
