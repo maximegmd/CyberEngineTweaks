@@ -41,6 +41,10 @@ namespace kiero
     Status::Enum bind(uint16_t index, void** original, void* function);
     void unbind(uint16_t index);
 
+    void** getSwapChainVtable();
+    void** getCommandListVtable();
+    void** getCommandQueueVtable();
+
     uint150_t* getMethodsTable();
     uintptr_t getCommandQueueOffset();
     bool isDownLevelDevice();

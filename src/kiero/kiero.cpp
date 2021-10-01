@@ -10,6 +10,9 @@
 
 static bool g_kieroInitialized = false;
 static uint150_t* g_methodsTable = NULL;
+static void** g_swapChainVtable = nullptr;
+static void** g_commandListVtable = nullptr;
+static void** g_commandQueueVtable = nullptr;
 static uintptr_t g_commandQueueOffset = 0;
 static bool g_isDownLevelDevice = false;
 
@@ -211,6 +214,11 @@ kiero::Status::Enum kiero::init()
     }
 
     g_methodsTable = (uint150_t*)::calloc(176, sizeof(uint150_t));
+
+    g_swapChainVtable = *(void***)swapChain.operator IDXGISwapChain3 *();
+    g_commandListVtable = *(void***)commandList.operator ID3D12GraphicsCommandList *();
+    g_commandQueueVtable = *(void***)commandQueue.operator ID3D12CommandQueue*();
+
     ::memcpy(g_methodsTable, *(uint150_t**)(void*)device, 44 * sizeof(uint150_t));
     ::memcpy(g_methodsTable + 44, *(uint150_t**)(void*)commandQueue, 19 * sizeof(uint150_t));
     ::memcpy(g_methodsTable + 44 + 19, *(uint150_t**)(void*)commandAllocator, 9 * sizeof(uint150_t));
@@ -267,6 +275,21 @@ void kiero::unbind(uint16_t _index)
         MH_RemoveHook(target);
 #endif
     }
+}
+
+void** kiero::getSwapChainVtable()
+{
+    return g_swapChainVtable;
+}
+
+void** kiero::getCommandListVtable()
+{
+    return g_commandListVtable;
+}
+
+void** kiero::getCommandQueueVtable()
+{
+    return g_commandQueueVtable;
 }
 
 uint150_t* kiero::getMethodsTable()
