@@ -946,102 +946,16 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
     return result;
 }
 
-void Scripting::ToRED(sol::object aObject, RED4ext::CStackType* apType)
+void Scripting::ToRED(sol::object aObject, RED4ext::CStackType* apRet)
 {
-    const bool hasData = aObject != sol::nil;
+    static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 13);
 
-    if (apType->type)
-    {
-        if (apType->type == s_stringType)
-        {
-            std::string str;
-            if (hasData)
-            {
-                sol::state_view v(aObject.lua_state());
-                str = v["tostring"](aObject);
-            }
-            RED4ext::CString value(str.c_str());
-            *static_cast<RED4ext::CString*>(apType->value) = value;
-        }
-        else if (apType->type->GetType() == RED4ext::ERTTIType::Handle)
-        {
-            if (aObject.is<StrongReference>())
-            {
-                auto* pSubType = static_cast<RED4ext::CClass*>(apType->type)->parent;
-                auto* pType = static_cast<RED4ext::CClass*>(aObject.as<StrongReference*>()->m_pType);
-                if (pType && pType->IsA(pSubType))
-                {
-                    if (hasData)
-                        *static_cast<RED4ext::Handle<RED4ext::IScriptable>*>(apType->value) =
-                            RED4ext::Handle<RED4ext::IScriptable>(aObject.as<StrongReference>().m_strongHandle);
-                    else
-                        *static_cast<RED4ext::Handle<RED4ext::IScriptable>*>(apType->value) =
-                            RED4ext::Handle<RED4ext::IScriptable>();
-                }
-            }
-            else if (aObject.is<WeakReference>())
-            {
-                auto* pSubType = static_cast<RED4ext::CClass*>(apType->type)->parent;
-                auto* pType = static_cast<RED4ext::CClass*>(aObject.as<WeakReference*>()->m_pType);
-                if (pType && pType->IsA(pSubType))
-                {
-                    if (hasData)
-                        *static_cast<RED4ext::Handle<RED4ext::IScriptable>*>(apType->value) =
-                            RED4ext::Handle<RED4ext::IScriptable>(aObject.as<WeakReference>().m_weakHandle);
-                    else
-                        *static_cast<RED4ext::Handle<RED4ext::IScriptable>*>(apType->value) =
-                            RED4ext::Handle<RED4ext::IScriptable>();
-                }
-            }
-        }
-        else if (apType->type->GetType() == RED4ext::ERTTIType::WeakHandle)
-        {
-            if (aObject.is<WeakReference>())
-            {
-                auto* pSubType = static_cast<RED4ext::CClass*>(apType->type)->parent;
-                auto* pType = static_cast<RED4ext::CClass*>(aObject.as<WeakReference*>()->m_pType);
-                if (pType && pType->IsA(pSubType))
-                {
-                    if (hasData)
-                        *static_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(apType->value) =
-                            RED4ext::WeakHandle<RED4ext::IScriptable>(aObject.as<WeakReference>().m_weakHandle);
-                    else
-                        *static_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(apType->value) =
-                            RED4ext::WeakHandle<RED4ext::IScriptable>();
-                }
-            }
-            else if (aObject.is<StrongReference>()) // Handle Implicit Cast
-            {
-                auto* pSubType = static_cast<RED4ext::CClass*>(apType->type)->parent;
-                auto* pType = static_cast<RED4ext::CClass*>(aObject.as<StrongReference*>()->m_pType);
-                if (pType && pType->IsA(pSubType))
-                {
-                    if (hasData)
-                        *static_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(apType->value) =
-                            RED4ext::WeakHandle<RED4ext::IScriptable>(aObject.as<StrongReference>().m_strongHandle);
-                    else
-                        *static_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(apType->value) =
-                            RED4ext::WeakHandle<RED4ext::IScriptable>();
-                }
-            }
-        }
-        else if (apType->type->GetType() == RED4ext::ERTTIType::Array)
-        {
-            //TODO: Support arrays
-        }
-        else if (apType->type->GetType() == RED4ext::ERTTIType::ScriptReference)
-        {
-            if (aObject.is<ClassReference>())
-            {
-                auto* pClassRef = aObject.as<ClassReference*>();
-                auto* pScriptRef = static_cast<RED4ext::ScriptRef<void>*>(apType->value);
-                pScriptRef->innerType = pClassRef->m_pType;
-                pScriptRef->ref = pClassRef->GetHandle();
-            }
-        }
-        else
-        {
-            Converter::ToRED(aObject, apType);
-        }
-    }
+    auto result = ToRED(aObject, apRet->type, &s_scratchMemory);
+
+    apRet->type->Assign(apRet->value, result.value);
+
+    if (apRet->type->GetType() != RED4ext::ERTTIType::Class)
+        apRet->type->Destroy(result.value);
+
+    s_scratchMemory.Reset();
 }
