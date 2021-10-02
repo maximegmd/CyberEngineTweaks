@@ -164,8 +164,7 @@ void D3D12::Hook()
     }
     else
     {
-        m_realPresentD3D12 = (decltype(m_realPresentD3D12))ApplyHook(kiero::getSwapChainVtable(), 8, &Present);
-        if (m_realPresentD3D12 == nullptr)
+        if (kiero::bind(140, reinterpret_cast<void**>(&m_realPresentD3D12), &Present) != kiero::Status::Success)
         {
             spdlog::error("{0} Present hook failed!", d3d12type);
             ++d3d12FailedHooksCount;
@@ -176,8 +175,8 @@ void D3D12::Hook()
             ++d3d12CompleteHooksCount;
         }
 
-        m_realResizeBuffersD3D12 = (decltype(m_realResizeBuffersD3D12))ApplyHook(kiero::getSwapChainVtable(), 13, &ResizeBuffers);
-        if (m_realResizeBuffersD3D12 == nullptr) // 13
+        if (kiero::bind(145, reinterpret_cast<void**>(&m_realResizeBuffersD3D12), &ResizeBuffers) !=
+            kiero::Status::Success)
         {
             spdlog::error("{0} ResizeBuffers hook failed!", d3d12type);
             ++d3d12FailedHooksCount;
@@ -189,8 +188,8 @@ void D3D12::Hook()
         }
     }
 
-    m_realExecuteCommandLists = (decltype(m_realExecuteCommandLists))ApplyHook(kiero::getCommandQueueVtable(), 10, &ExecuteCommandLists);
-    if (m_realExecuteCommandLists == nullptr) // 10
+    if (kiero::bind(54, reinterpret_cast<void**>(&m_realExecuteCommandLists), &ExecuteCommandLists) !=
+        kiero::Status::Success)
     {
         spdlog::error("{0} ExecuteCommandLists hook failed!", d3d12type);
         ++d3d12FailedHooksCount;
