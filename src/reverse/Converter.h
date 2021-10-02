@@ -212,21 +212,23 @@ struct ClassConverter : LuaRED<ClassReference, "ClassReference">
         {
             result.value = RTTIHelper::Get().NewInstance(apRtti, sol::nullopt, apAllocator);
         }
-        else if (aObject.get_type() == sol::type::table)
-        {
-            // The implicit table to instance conversion `Game.FindEntityByID({ hash = 1 })` has potential issue:
-            // When the overloaded function takes an array and an object for the same arg the implicit conversion
-            // can produce an empty instance making the unwanted overload callable. So for better experience it's 
-            // important to distinguish between linear array and array of props.
-            
-            // Size check excludes non-empty linear arrays since only the table with sequential and integral keys
-            // has size (length). And iterator check excludes empty tables `{}`.
-            sol::table props = aObject.as<sol::table>();
-            if (props.size() == 0 && props.begin() != props.end())
-                result.value = RTTIHelper::Get().NewInstance(apRtti, props, apAllocator);
-            else
-                result.value = nullptr;
-        }
+        // Disabled until new allocator is implemented
+        // Current implementation can leak
+        //else if (aObject.get_type() == sol::type::table)
+        //{
+        //    // The implicit table to instance conversion `Game.FindEntityByID({ hash = 1 })` has potential issue:
+        //    // When the overloaded function takes an array and an object for the same arg the implicit conversion
+        //    // can produce an empty instance making the unwanted overload callable. So for better experience it's 
+        //    // important to distinguish between linear array and array of props.
+        //    
+        //    // Size check excludes non-empty linear arrays since only the table with sequential and integral keys
+        //    // has size (length). And iterator check excludes empty tables `{}`.
+        //    sol::table props = aObject.as<sol::table>();
+        //    if (props.size() == 0 && props.begin() != props.end())
+        //        result.value = RTTIHelper::Get().NewInstance(apRtti, props, apAllocator);
+        //    else
+        //        result.value = nullptr;
+        //}
         else
         {
             result.value = nullptr;

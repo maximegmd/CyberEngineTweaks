@@ -92,6 +92,8 @@ struct CName
     std::string ToString() const noexcept;
 
 	bool operator==(const CName& acRhs) const noexcept;
+
+    static void Add(const std::string& aName);
 };
 
 #pragma pack(push, 1)

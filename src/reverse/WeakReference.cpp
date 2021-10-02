@@ -1,8 +1,11 @@
 #include <stdafx.h>
 
 #include "WeakReference.h"
+#include "RTTILocator.h"
 
 #include "CET.h"
+
+static RTTILocator s_sIScriptableType{RED4ext::FNV1a("IScriptable")};
 
 WeakReference::WeakReference(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView,
                              RED4ext::WeakHandle<RED4ext::IScriptable> aWeakHandle)
@@ -13,6 +16,21 @@ WeakReference::WeakReference(const TiltedPhoques::Lockable<sol::state, std::recu
     if (ref)
     {
         m_pType = ref->GetType();
+    }
+}
+
+WeakReference::WeakReference(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView,
+                             RED4ext::WeakHandle<RED4ext::IScriptable> aWeakHandle,
+                             RED4ext::CWeakHandle* apWeakHandleType)
+    : ClassType(aView, nullptr)
+    , m_weakHandle(std::move(aWeakHandle))
+{
+    auto ref = m_weakHandle.Lock();
+    if (ref)
+    {
+        auto const cpClass = reinterpret_cast<RED4ext::CClass*>(apWeakHandleType->GetInnerType());
+
+        m_pType = cpClass->IsA(s_sIScriptableType) ? ref->GetType() : cpClass;
     }
 }
 

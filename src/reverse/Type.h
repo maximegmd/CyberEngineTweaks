@@ -49,6 +49,8 @@ struct ClassType : Type
     Descriptor Dump(bool aWithHashes) const override;
     sol::object Index_Impl(const std::string& acName, sol::this_environment aThisEnv) override;
     sol::object NewIndex_Impl(const std::string& acName, sol::object aParam) override;
+
+    RED4ext::CClass* GetClass() const { return reinterpret_cast<RED4ext::CClass*>(m_pType); };
 };
 
 struct UnknownType : Type

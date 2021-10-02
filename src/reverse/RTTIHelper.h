@@ -20,7 +20,7 @@ struct RTTIHelper
     RED4ext::ScriptInstance ResolveHandle(RED4ext::CBaseFunction* apFunc, sol::variadic_args& aArgs, uint64_t& aArgOffset) const;
     sol::variadic_results ExecuteFunction(RED4ext::CBaseFunction* apFunc, RED4ext::ScriptInstance apHandle,
                                           sol::variadic_args aLuaArgs, uint64_t aLuaArgOffset,
-                                          std::string& aErrorMessage) const;
+                                          std::string& aErrorMessage, bool aAllowNull = false) const;
     
     RED4ext::ScriptInstance NewInstance(RED4ext::CBaseRTTIType* apType, sol::optional<sol::table> aProps,
                                         TiltedPhoques::Allocator* apAllocator) const;
@@ -29,6 +29,7 @@ struct RTTIHelper
 
     sol::object GetProperty(RED4ext::CClass* apClass, RED4ext::ScriptInstance apHandle, const std::string& acPropName, bool& aSuccess) const;
     void SetProperty(RED4ext::CClass* apClass, RED4ext::ScriptInstance apHandle, const std::string& acPropName, sol::object aPropValue, bool& aSuccess) const;
+    void SetProperties(RED4ext::CClass* apClass, RED4ext::ScriptInstance apHandle, sol::optional<sol::table> aProps) const;
 
     RED4ext::CBaseFunction* FindFunction(const uint64_t acFullNameHash) const;
     RED4ext::CBaseFunction* FindFunction(RED4ext::CClass* apClass, const uint64_t acFullNameHash) const;
@@ -45,6 +46,8 @@ private:
 
     void InitializeRTTI();
     void ParseGlobalStatics();
+
+    bool IsFunctionAlias(RED4ext::CBaseFunction* apFunc);
 
     sol::function GetResolvedFunction(const uint64_t acFuncHash) const;
     sol::function GetResolvedFunction(const uint64_t acClassHash, const uint64_t acFuncHash, bool aIsMember) const;

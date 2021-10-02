@@ -6,6 +6,9 @@ struct StrongReference : ClassType
 {
     StrongReference(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView,
                     RED4ext::Handle<RED4ext::IScriptable> aStrongHandle);
+    StrongReference(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView,
+                    RED4ext::Handle<RED4ext::IScriptable> aStrongHandle, 
+                    RED4ext::CHandle* apStrongHandleType);
     virtual ~StrongReference();
 
 protected:

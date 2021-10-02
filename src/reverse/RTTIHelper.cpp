@@ -5,6 +5,7 @@
 #include "Type.h"
 #include "ClassReference.h"
 #include "StrongReference.h"
+#include "WeakReference.h"
 #include "scripting/Scripting.h"
 #include "Utils.h"
 #include <common/ScopeGuard.h>
@@ -112,6 +113,39 @@ void RTTIHelper::AddFunctionAlias(const std::string& acAliasClassName, const std
             m_extendedFunctions.at(cClassHash).emplace(pFunc->fullName.hash, pFunc);
         }
     }
+}
+
+bool RTTIHelper::IsFunctionAlias(RED4ext::CBaseFunction* apFunc)
+{
+    static const auto s_cTweakDBInterfaceHash = RED4ext::FNV1a("gamedataTweakDBInterface");
+
+    if (m_extendedFunctions.contains(kGlobalHash))
+    {
+        auto& extendedFuncs = m_extendedFunctions.at(kGlobalHash);
+
+        if (extendedFuncs.contains(apFunc->fullName.hash))
+            return true;
+    }
+
+    if (apFunc->GetParent())
+    {
+        const auto cClassHash = apFunc->GetParent()->name.hash;
+
+        // TweakDBInterface is special.
+        // All of its methods are non-static, but they can only be used as static ones.
+        if (cClassHash == s_cTweakDBInterfaceHash)
+            return true;
+
+        if (m_extendedFunctions.contains(cClassHash))
+        {
+            auto& extendedFuncs = m_extendedFunctions.at(cClassHash);
+
+            if (extendedFuncs.contains(apFunc->fullName.hash))
+                return true;
+        }
+    }
+
+    return false;
 }
 
 sol::function RTTIHelper::GetResolvedFunction(const uint64_t acFuncHash) const
@@ -373,12 +407,14 @@ sol::function RTTIHelper::MakeInvokableFunction(RED4ext::CBaseFunction* apFunc)
     auto lockedState = m_lua.Lock();
     auto& luaState = lockedState.Get();
 
-    return MakeSolFunction(luaState, [this, apFunc](sol::variadic_args aArgs, sol::this_state aState, sol::this_environment aEnv) -> sol::variadic_results {
+    const bool cAllowNull = IsFunctionAlias(apFunc);
+
+    return MakeSolFunction(luaState, [this, apFunc, cAllowNull](sol::variadic_args aArgs, sol::this_state aState, sol::this_environment aEnv) -> sol::variadic_results {
         uint64_t argOffset = 0;
         RED4ext::ScriptInstance pHandle = ResolveHandle(apFunc, aArgs, argOffset);
 
         std::string errorMessage;
-        auto result = ExecuteFunction(apFunc, pHandle, aArgs, argOffset, errorMessage);
+        auto result = ExecuteFunction(apFunc, pHandle, aArgs, argOffset, errorMessage, cAllowNull);
 
         if (!errorMessage.empty())
         {
@@ -501,10 +537,19 @@ RED4ext::ScriptInstance RTTIHelper::ResolveHandle(RED4ext::CBaseFunction* apFunc
 
             if (cArg.is<Type>())
             {
-                pHandle = cArg.as<Type>().GetHandle();
+                pHandle = cArg.as<Type*>()->GetHandle();
 
-                if (pHandle || cArg.is<SingletonReference>())
+                if (cArg.is<StrongReference>() || cArg.is<WeakReference>())
+                {
                     ++aArgOffset;
+
+                    if (pHandle && !reinterpret_cast<RED4ext::IScriptable*>(pHandle)->GetType()->IsA(apFunc->GetParent()))
+                        pHandle = nullptr;
+                }
+                else if (cArg.is<SingletonReference>())
+                {
+                    ++aArgOffset;
+                }
             }
         }
     }
@@ -514,7 +559,7 @@ RED4ext::ScriptInstance RTTIHelper::ResolveHandle(RED4ext::CBaseFunction* apFunc
 
 sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc, RED4ext::ScriptInstance apHandle,
                                                   sol::variadic_args aLuaArgs, uint64_t aLuaArgOffset,
-                                                  std::string& aErrorMessage) const
+                                                  std::string& aErrorMessage, bool aAllowNull) const
 {
     static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 14);
     static thread_local uint32_t s_callDepth = 0u;
@@ -532,6 +577,14 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
     // These functions cannot be used until more complex logic for input
     // args is implemented (should check if a compatible arg is actually
     // passed at the expected position + same for optionals).
+
+    if (!apFunc->flags.isStatic && !apHandle && !aAllowNull)
+    {
+        aErrorMessage = fmt::format("Function '{}' context must be '{}'.",
+                                    apFunc->shortName.ToString(),
+                                    apFunc->GetParent()->name.ToString());
+        return {};
+    }
 
     auto numArgs = aLuaArgs.size() - aLuaArgOffset;
     auto minArgs = 0u;
@@ -738,11 +791,7 @@ RED4ext::ScriptInstance RTTIHelper::NewInstance(RED4ext::CBaseRTTIType* apType, 
     auto* pInstance = pClass->AllocInstance();
 
     if (aProps.has_value())
-    {
-        bool success;
-        for (const auto& cProp : aProps.value())
-            SetProperty(pClass, pInstance, cProp.first.as<std::string>(), cProp.second, success);
-    }
+        SetProperties(pClass, pInstance, aProps.value());
 
     if (apType->GetType() == RED4ext::ERTTIType::Handle)
         return apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>((RED4ext::IScriptable*)pInstance);
@@ -759,12 +808,18 @@ sol::object RTTIHelper::NewInstance(RED4ext::CBaseRTTIType* apType, sol::optiona
 
     RED4ext::CStackType result;
     result.type = apType;
-    result.value = NewInstance(apType, aProps, &allocator);
+    result.value = NewInstance(apType, sol::nullopt, &allocator);
 
     auto lockedState = m_lua.Lock();
     auto instance = Scripting::ToLua(lockedState, result);
 
     FreeInstance(result, true, true, &allocator);
+    
+    if (aProps.has_value())
+    {
+        const auto pInstance = instance.as<ClassType*>();
+        SetProperties(pInstance->GetClass(), pInstance->GetHandle(), aProps);
+    }
 
     return instance;
 }
@@ -776,9 +831,6 @@ sol::object RTTIHelper::NewHandle(RED4ext::CBaseRTTIType* apType, sol::optional<
     // The behavior is similar to what can be seen in scripts, where variables of IScriptable
     // types are declared with the ref<> modifier (which means Handle<>).
 
-    // The Handle<> wrapper prevents memory leaks that can occur in IRTTIType::Assign()
-    // when called directly on an IScriptable instance.
-
     if (!m_pRtti)
         return sol::nil;
 
@@ -786,7 +838,7 @@ sol::object RTTIHelper::NewHandle(RED4ext::CBaseRTTIType* apType, sol::optional<
 
     RED4ext::CStackType result;
     result.type = apType;
-    result.value = NewInstance(apType, aProps, &allocator);
+    result.value = NewInstance(apType, sol::nullopt, &allocator);
 
     // Wrap IScriptable descendants in Handle
     if (result.value && apType->GetType() == RED4ext::ERTTIType::Class)
@@ -810,6 +862,12 @@ sol::object RTTIHelper::NewHandle(RED4ext::CBaseRTTIType* apType, sol::optional<
     auto instance = Scripting::ToLua(lockedState, result);
 
     FreeInstance(result, true, true, &allocator);
+
+    if (aProps.has_value())
+    {
+        const auto pInstance = instance.as<ClassType*>();
+        SetProperties(pInstance->GetClass(), pInstance->GetHandle(), aProps);
+    }
 
     return instance;
 }
@@ -864,6 +922,14 @@ void RTTIHelper::SetProperty(RED4ext::CClass* apClass, RED4ext::ScriptInstance a
         FreeInstance(stackType, true, false, &s_scratchMemory);
         aSuccess = true;
     }
+}
+
+void RTTIHelper::SetProperties(RED4ext::CClass* apClass, RED4ext::ScriptInstance apHandle, sol::optional<sol::table> aProps) const
+{
+    bool success;
+
+    for (const auto& cProp : aProps.value())
+        SetProperty(apClass, apHandle, cProp.first.as<std::string>(), cProp.second, success);
 }
 
 // Check if type is implemented using ClassReference
