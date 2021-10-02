@@ -499,6 +499,16 @@ void FunctionOverride::Override(const std::string& acTypeName, const std::string
         pContext->Environment = aEnvironment;
         pContext->Forward = !aAbsolute;
 
-        pEntry->Calls.emplace_back(std::move(pContext));
+        if (aAbsolute || pEntry->Calls.empty())
+        {
+            pEntry->Calls.emplace_back(std::move(pContext));
+        }
+        else
+        {
+            auto pos = std::find_if(pEntry->Calls.rbegin(), pEntry->Calls.rend(),
+                                    [](TiltedPhoques::UniquePtr<Context>& aContext) { return aContext->Forward; });
+
+            pEntry->Calls.insert(pos.base(), std::move(pContext));
+        }
     }
 }
