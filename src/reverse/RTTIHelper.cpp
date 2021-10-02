@@ -118,6 +118,7 @@ void RTTIHelper::AddFunctionAlias(const std::string& acAliasClassName, const std
 bool RTTIHelper::IsFunctionAlias(RED4ext::CBaseFunction* apFunc)
 {
     static const auto s_cTweakDBInterfaceHash = RED4ext::FNV1a("gamedataTweakDBInterface");
+    static const auto s_cTDBIDHelperHash = RED4ext::FNV1a("gamedataTDBIDHelper");
 
     if (m_extendedFunctions.contains(kGlobalHash))
     {
@@ -131,9 +132,9 @@ bool RTTIHelper::IsFunctionAlias(RED4ext::CBaseFunction* apFunc)
     {
         const auto cClassHash = apFunc->GetParent()->name.hash;
 
-        // TweakDBInterface is special.
-        // All of its methods are non-static, but they can only be used as static ones.
-        if (cClassHash == s_cTweakDBInterfaceHash)
+        // TweakDBInterface and TDBID classes are special.
+        // All of their methods are non-static, but they can only be used as static ones.
+        if (cClassHash == s_cTweakDBInterfaceHash || cClassHash == s_cTDBIDHelperHash)
             return true;
 
         if (m_extendedFunctions.contains(cClassHash))
