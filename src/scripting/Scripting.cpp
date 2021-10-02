@@ -309,7 +309,8 @@ void Scripting::PostInitialize()
         sol::meta_function::equal_to, &CName::operator==,
         "hash_lo", &CName::hash_lo,
         "hash_hi", &CName::hash_hi,
-        "value", sol::property(&CName::AsString));
+        "value", sol::property(&CName::AsString),
+        "add", &CName::Add);
 
     luaGlobal["CName"] = luaVm["CName"];
     luaGlobal["ToCName"] = [](sol::table table) -> CName

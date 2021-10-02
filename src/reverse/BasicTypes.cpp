@@ -65,6 +65,11 @@ bool CName::operator==(const CName& acRhs) const noexcept
     return hash == acRhs.hash;
 }
 
+void CName::Add(const std::string& aName)
+{
+    RED4ext::CNamePool::Add(aName.c_str());
+}
+
 std::string TweakDBID::ToString() const noexcept
 {
     return fmt::format("ToTweakDBID{{ hash = 0x{0:08X}, length = {1:d} }}", name_hash, name_length);
