@@ -10,6 +10,9 @@ Sandbox::Sandbox(Scripting* apScripting, sol::environment aBaseEnvironment, cons
     , m_env(apScripting->GetState().Get(), sol::create)
     , m_path(acRootPath)
 {
+    if (is_symlink(m_path / "init.lua"))
+        m_path = read_symlink(m_path / "init.lua").parent_path();
+
     // copy base environment, do not set it as fallback, as it may cause globals to bleed into other things!
     sol::state_view sv = apScripting->GetState().Get();
     for (const auto& cKV : aBaseEnvironment)
