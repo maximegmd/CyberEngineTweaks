@@ -791,11 +791,7 @@ RED4ext::ScriptInstance RTTIHelper::NewInstance(RED4ext::CBaseRTTIType* apType, 
     auto* pInstance = pClass->AllocInstance();
 
     if (aProps.has_value())
-    {
-        bool success;
-        for (const auto& cProp : aProps.value())
-            SetProperty(pClass, pInstance, cProp.first.as<std::string>(), cProp.second, success);
-    }
+        SetProperties(pClass, pInstance, aProps.value());
 
     if (apType->GetType() == RED4ext::ERTTIType::Handle)
         return apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>((RED4ext::IScriptable*)pInstance);
@@ -812,12 +808,18 @@ sol::object RTTIHelper::NewInstance(RED4ext::CBaseRTTIType* apType, sol::optiona
 
     RED4ext::CStackType result;
     result.type = apType;
-    result.value = NewInstance(apType, aProps, &allocator);
+    result.value = NewInstance(apType, sol::nullopt, &allocator);
 
     auto lockedState = m_lua.Lock();
     auto instance = Scripting::ToLua(lockedState, result);
 
     FreeInstance(result, true, true, &allocator);
+    
+    if (aProps.has_value())
+    {
+        const auto pInstance = instance.as<ClassType*>();
+        SetProperties(pInstance->GetClass(), pInstance->GetHandle(), aProps);
+    }
 
     return instance;
 }
@@ -829,9 +831,6 @@ sol::object RTTIHelper::NewHandle(RED4ext::CBaseRTTIType* apType, sol::optional<
     // The behavior is similar to what can be seen in scripts, where variables of IScriptable
     // types are declared with the ref<> modifier (which means Handle<>).
 
-    // The Handle<> wrapper prevents memory leaks that can occur in IRTTIType::Assign()
-    // when called directly on an IScriptable instance.
-
     if (!m_pRtti)
         return sol::nil;
 
@@ -839,7 +838,7 @@ sol::object RTTIHelper::NewHandle(RED4ext::CBaseRTTIType* apType, sol::optional<
 
     RED4ext::CStackType result;
     result.type = apType;
-    result.value = NewInstance(apType, aProps, &allocator);
+    result.value = NewInstance(apType, sol::nullopt, &allocator);
 
     // Wrap IScriptable descendants in Handle
     if (result.value && apType->GetType() == RED4ext::ERTTIType::Class)
@@ -863,6 +862,12 @@ sol::object RTTIHelper::NewHandle(RED4ext::CBaseRTTIType* apType, sol::optional<
     auto instance = Scripting::ToLua(lockedState, result);
 
     FreeInstance(result, true, true, &allocator);
+
+    if (aProps.has_value())
+    {
+        const auto pInstance = instance.as<ClassType*>();
+        SetProperties(pInstance->GetClass(), pInstance->GetHandle(), aProps);
+    }
 
     return instance;
 }
@@ -917,6 +922,14 @@ void RTTIHelper::SetProperty(RED4ext::CClass* apClass, RED4ext::ScriptInstance a
         FreeInstance(stackType, true, false, &s_scratchMemory);
         aSuccess = true;
     }
+}
+
+void RTTIHelper::SetProperties(RED4ext::CClass* apClass, RED4ext::ScriptInstance apHandle, sol::optional<sol::table> aProps) const
+{
+    bool success;
+
+    for (const auto& cProp : aProps.value())
+        SetProperty(apClass, apHandle, cProp.first.as<std::string>(), cProp.second, success);
 }
 
 // Check if type is implemented using ClassReference

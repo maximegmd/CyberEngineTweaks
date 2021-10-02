@@ -210,7 +210,7 @@ struct ClassConverter : LuaRED<ClassReference, "ClassReference">
         }
         else if (aObject == sol::nil)
         {
-            result.value = RTTIHelper::Get().NewInstance(apRtti, apAllocator);
+            result.value = RTTIHelper::Get().NewInstance(apRtti, sol::nullopt, apAllocator);
         }
         // Disabled until new allocator is implemented
         // Current implementation can leak
