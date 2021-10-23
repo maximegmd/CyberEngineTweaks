@@ -562,7 +562,7 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
                                                   sol::variadic_args aLuaArgs, uint64_t aLuaArgOffset,
                                                   std::string& aErrorMessage, bool aAllowNull) const
 {
-    static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 14);
+    static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 15);
     static thread_local uint32_t s_callDepth = 0u;
 
     if (!m_pRtti)
