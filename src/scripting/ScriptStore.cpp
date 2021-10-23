@@ -24,21 +24,29 @@ void ScriptStore::LoadAll()
             continue;
 
         auto fPath = file.path();
+
+        if (is_symlink(fPath))
+            fPath = read_symlink(fPath);
+        else if (is_symlink(fPath / "init.lua"))
+            fPath = read_symlink(fPath / "init.lua").parent_path();
+
+        fPath = absolute(fPath);
         auto fPathStr = fPath.string();
+
         if (!exists(fPath / "init.lua"))
         {
             consoleLogger->warn("Ignoring directory that does not contain init.lua! ('{}')", fPathStr);
             continue;
         }
 
-        auto name = relative(fPath, cModsRoot).string();
+        auto name = file.path().filename().string();
         if (name.find('.') != std::string::npos)
         {
             consoleLogger->info("Ignoring directory containing '.', as this is reserved character! ('{}')", fPathStr);
             continue;
         }
 
-        auto ctx = ScriptContext{m_sandbox, file.path(), name};
+        auto ctx = ScriptContext{m_sandbox, fPath, name};
         if (ctx.IsValid())
         {
             auto& ctxBinds = ctx.GetBinds();

@@ -598,6 +598,7 @@ void Scripting::ReloadAllMods()
 {
     m_override.Clear();
     RegisterOverrides();
+    current_path(m_paths.ModsRoot());
     m_store.LoadAll();
 }
 
