@@ -30,6 +30,11 @@ const std::filesystem::path& Paths::ModsRoot() const
     return m_modsRoot; 
 }
 
+const std::filesystem::path& Paths::ArchiveModsRoot() const 
+{ 
+    return m_archiveModsRoot; 
+}
+
 Paths::Paths()
 {
     TCHAR exePathBuf[MAX_PATH] = { 0 };
@@ -55,4 +60,11 @@ Paths::Paths()
 
     m_modsRoot = m_cetRoot / "mods";
     create_directories(m_modsRoot);
+
+    m_archiveModsRoot = m_gameRoot;
+    m_archiveModsRoot /= "..";
+    m_archiveModsRoot /= "..";
+    m_archiveModsRoot /= "archive";
+    m_archiveModsRoot /= "pc";
+    m_archiveModsRoot /= "mod";
 }

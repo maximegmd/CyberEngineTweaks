@@ -88,6 +88,17 @@ void Scripting::Initialize()
         const auto resolution = m_d3d12.GetResolution();
         return {static_cast<float>(resolution.cx), static_cast<float>(resolution.cy)};
     };
+    
+    luaGlobal["ModArchiveExists"] = [this](const std::string& acArchiveName) -> bool
+    {
+        const auto cAbsPath = absolute(m_paths.ArchiveModsRoot() / acArchiveName);
+        const auto cRelPathStr = relative(cAbsPath, m_paths.ArchiveModsRoot()).string();
+
+        if (cRelPathStr.find("..") != std::string::npos)
+            return false;
+
+        return exists(cAbsPath);
+    };
 
     // fake game object to prevent errors from older autoexec.lua
     luaVm["Game"] = sol::table(luaVm, sol::create);
@@ -587,6 +598,7 @@ void Scripting::ReloadAllMods()
 {
     m_override.Clear();
     RegisterOverrides();
+    current_path(m_paths.ModsRoot());
     m_store.LoadAll();
 }
 
