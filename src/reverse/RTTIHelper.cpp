@@ -562,7 +562,7 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
                                                   sol::variadic_args aLuaArgs, uint64_t aLuaArgOffset,
                                                   std::string& aErrorMessage, bool aAllowNull) const
 {
-    static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 15);
+    static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 14);
     static thread_local uint32_t s_callDepth = 0u;
 
     if (!m_pRtti)
@@ -624,11 +624,13 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
             s_scratchMemory.Reset();
     });
 
-    TiltedPhoques::ScopedAllocator _(&s_scratchMemory);
-
+    auto pAllocator = TiltedPhoques::Allocator::Get();
+    TiltedPhoques::Allocator::Set(&s_scratchMemory);
     TiltedPhoques::Vector<RED4ext::CStackType> callArgs(apFunc->params.size);
     TiltedPhoques::Vector<uint32_t> callArgToParam(apFunc->params.size);
     TiltedPhoques::Vector<bool> argNeedsFree(apFunc->params.size, false);
+    TiltedPhoques::Allocator::Set(pAllocator);
+
     uint32_t callArgOffset = 0u;
 
     ScopeGuard argsGuard([&]() {
