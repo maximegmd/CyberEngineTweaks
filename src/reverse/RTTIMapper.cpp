@@ -2,8 +2,10 @@
 
 #include "RTTIMapper.h"
 #include "RTTIHelper.h"
+#include "RTTILocator.h"
 #include "BasicTypes.h"
 #include "Type.h"
+#include "Enum.h"
 #include "EnumStatic.h"
 #include "ClassStatic.h"
 #include "scripting/Scripting.h"
@@ -38,6 +40,53 @@ void RTTIMapper::Register()
     RegisterSpecialAccessors(luaState, luaGlobal);
 }
 
+RED4ext::CName TryResolveTypeName(sol::object aValue)
+{
+    if (IsLuaCData(aValue))
+        return "Uint64";
+
+    switch (aValue.get_type())
+    {
+    case sol::type::string:
+        return "String";
+
+    case sol::type::boolean:
+        return "Bool";
+
+    // case sol::type::number:
+    //    return "Int32";
+
+    case sol::type::userdata:
+    {
+        sol::userdata userdata = aValue;
+        sol::table metatable = userdata[sol::metatable_key];
+        std::string name = metatable.raw_get_or<std::string>("__name", "");
+
+        if (!name.empty())
+            return name.c_str() + 4;
+
+        break;
+    }
+
+    case sol::type::table:
+    {
+        sol::table table = aValue;
+
+        if (table.size() > 0)
+        {
+            RED4ext::CName innerType = TryResolveTypeName(table[1]);
+
+            if (!innerType.IsNone())
+                return std::string("array:").append(innerType.ToString()).c_str();
+        }
+
+        break;
+    }
+    }
+
+    return RED4ext::CName();
+}
+
 void RTTIMapper::RegisterSimpleTypes(sol::state& aLuaState, sol::table& aLuaGlobal)
 {
     aLuaState.new_usertype<Variant>("Variant",
@@ -45,34 +94,91 @@ void RTTIMapper::RegisterSimpleTypes(sol::state& aLuaState, sol::table& aLuaGlob
 
     MakeSolUsertypeImmutable(aLuaState["Variant"], aLuaState);
 
-    aLuaGlobal["ToVariant"] = [this](Type& aInstance) -> sol::object {
-        auto* pType = aInstance.GetType();
-        auto* pHandle = aInstance.GetHandle();
+    aLuaGlobal["ToVariant"] = sol::overload(
+        [this](Type& aInstance, sol::this_state aState) -> sol::object {
+            auto* pType = aInstance.GetType();
+            auto* pValue = aInstance.GetValuePtr();
 
-        if (!pType || !pHandle)
+            if (!pType || !pValue)
+            {
+                luaL_error(aState, "ToVariant: Invalid instance.");
+                return sol::nil;
+            }
+
+            auto luaLock = m_lua.Lock();
+            auto& luaState = luaLock.Get();
+
+            return sol::object(luaState, sol::in_place, Variant(pType, pValue));
+        },
+        [this](Enum& aEnum) -> sol::object {
+            RED4ext::CStackType data;
+            data.type = const_cast<RED4ext::CEnum*>(aEnum.GetType());
+            data.value = const_cast<void*>(aEnum.GetValuePtr());
+
+            auto luaLock = m_lua.Lock();
+            auto& luaState = luaLock.Get();
+
+            return sol::object(luaState, sol::in_place, Variant(data));
+        },
+        [this](sol::object aValue, const std::string& aTypeName, sol::this_state aState) -> sol::object {
+            auto* pType = RED4ext::CRTTISystem::Get()->GetType(aTypeName.c_str());
+
+            if (!pType)
+            {
+                luaL_error(aState, "ToVariant: Unknown type '%s'.", aTypeName.c_str());
+                return sol::nil;
+            }
+
+            Variant variant(pType);
+            RED4ext::CStackType data(pType, variant.GetDataPtr());
+
+            Scripting::ToRED(aValue, data);
+
+            auto luaLock = m_lua.Lock();
+            auto& luaState = luaLock.Get();
+
+            return sol::object(luaState, sol::in_place, std::move(variant));
+        },
+        [this](sol::object aValue, sol::this_state aState) -> sol::object {
+            RED4ext::CName typeName = TryResolveTypeName(aValue);
+
+            if (typeName.IsNone())
+            {
+                luaL_error(aState, "ToVariant: Cannot resolve type from value.");
+                return sol::nil;
+            }
+
+            auto* pType = RED4ext::CRTTISystem::Get()->GetType(typeName);
+
+            if (!pType)
+            {
+                luaL_error(aState, "ToVariant: Unknown type '%s'.", typeName.ToString());
+                return sol::nil;
+            }
+
+            Variant variant(pType);
+            RED4ext::CStackType data(pType, variant.GetDataPtr());
+
+            Scripting::ToRED(aValue, data);
+
+            auto luaLock = m_lua.Lock();
+            auto& luaState = luaLock.Get();
+
+            return sol::object(luaState, sol::in_place, std::move(variant));
+        }
+    );
+
+    aLuaGlobal["FromVariant"] = [this](Variant& aVariant) -> sol::object {
+        if (aVariant.IsEmpty())
             return sol::nil;
 
-        auto* pClone = pType->GetAllocator()->AllocAligned(pType->GetSize(), pType->GetAlignment()).memory;
-        pType->Init(pClone);
-        pType->Assign(pClone, pHandle);
+        RED4ext::CStackType data;
+        data.type = aVariant.GetType();
+        data.value = aVariant.GetDataPtr();
 
-        auto lockedState = m_lua.Lock();
-        auto& luaState = lockedState.Get();
-
-        return sol::object(luaState, sol::in_place, Variant(pType, pClone));
-    };
-
-    aLuaGlobal["FromVariant"] = [this](const Variant& acVariant) -> sol::object {
-        if (acVariant.type == 0 || acVariant.unknown != 0)
-            return sol::nil;
-
-        RED4ext::CStackType result;
-        result.type = reinterpret_cast<RED4ext::IRTTIType*>(acVariant.type);
-        result.value = reinterpret_cast<RED4ext::ScriptInstance>(acVariant.value);
-
-        auto lockedState = m_lua.Lock();
+        auto luaLock = m_lua.Lock();
         
-        return Scripting::ToLua(lockedState, result);
+        return Scripting::ToLua(luaLock, data);
     };
 }
 

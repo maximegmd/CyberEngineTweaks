@@ -28,6 +28,11 @@ RED4ext::ScriptInstance ResourceAsyncReference::GetHandle() const
     return const_cast<RED4ext::ResourceAsyncReference<void>*>(&m_reference);
 }
 
+RED4ext::ScriptInstance ResourceAsyncReference::GetValuePtr() const
+{
+    return GetHandle();
+}
+
 uint64_t ResourceAsyncReference::GetHash() const
 {
     return reinterpret_cast<uint64_t>(m_reference.ref);

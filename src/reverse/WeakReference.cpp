@@ -55,3 +55,8 @@ RED4ext::ScriptInstance WeakReference::GetHandle() const
 
     return nullptr;
 }
+
+RED4ext::ScriptInstance WeakReference::GetValuePtr() const
+{
+    return const_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(&m_weakHandle);
+}

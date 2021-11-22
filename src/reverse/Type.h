@@ -17,6 +17,7 @@ struct Type
 
     RED4ext::CBaseRTTIType* GetType() const { return m_pType; }
     virtual RED4ext::ScriptInstance GetHandle() const { return nullptr; }
+    virtual RED4ext::ScriptInstance GetValuePtr() const { return nullptr; }
 
     sol::object Index(const std::string& acName, sol::this_environment aThisEnv);
     sol::object NewIndex(const std::string& acName, sol::object aParam);

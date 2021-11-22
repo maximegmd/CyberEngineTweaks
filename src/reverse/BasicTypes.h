@@ -169,17 +169,44 @@ static_assert(sizeof(ItemID) == 0x10);
 
 struct Variant
 {
-    Variant() = default;
+    Variant() noexcept = default;
+    Variant(const RED4ext::CBaseRTTIType* aType);
+    Variant(const RED4ext::CBaseRTTIType* aType, const RED4ext::ScriptInstance aData);
+    Variant(const RED4ext::CName& aTypeName, const RED4ext::ScriptInstance aData);
+    Variant(const RED4ext::CStackType& aStack);
+    Variant(const Variant& aOther);
+    ~Variant();
 
-    Variant(uint64_t aType, uint64_t aValue)
-        : type(aType), value(aValue), unknown(0) {}
+    bool IsEmpty() const noexcept;
+    bool IsInlined() const noexcept;
+    
+    RED4ext::CBaseRTTIType* GetType() const noexcept;
+    RED4ext::ScriptInstance GetDataPtr() const noexcept;
+    
+    bool Init(const RED4ext::CBaseRTTIType* aType);
+    bool Fill(const RED4ext::CBaseRTTIType* aType, const RED4ext::ScriptInstance aData);
+    bool Extract(RED4ext::ScriptInstance aBuffer);
+    void Free();
 
-    Variant(RED4ext::CBaseRTTIType* aType, RED4ext::ScriptInstance aValue)
-        : type(reinterpret_cast<std::uintptr_t>(aType)), value(reinterpret_cast<std::uintptr_t>(aValue)), unknown(0) {}
+    inline static bool CanBeInlined(const RED4ext::CBaseRTTIType* aType) noexcept;
 
-    uint64_t type{ 0 };
-    uint64_t value{ 0 };
-    uint64_t unknown{ 0 };
+    enum
+    {
+        kInlineSize = 16,
+        kInlineAlignment = 8
+    };
+
+    enum : uintptr_t
+    {
+        kInlineFlag = 1,
+        kTypeMask = ~kInlineFlag,
+    };
+
+    const RED4ext::CBaseRTTIType* type{ nullptr };
+    union {
+        uint8_t inlined[kInlineSize]{ 0 };
+        RED4ext::ScriptInstance instance;
+    };
 };
 
 static_assert(sizeof(Variant) == 0x18);

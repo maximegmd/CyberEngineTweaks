@@ -173,3 +173,8 @@ const RED4ext::CEnum* Enum::GetType() const
 {
     return m_cpType;
 }
+
+const void* Enum::GetValuePtr() const
+{
+    return &m_value;
+}
