@@ -135,7 +135,7 @@ Variant::~Variant()
 
 bool Variant::IsEmpty() const noexcept
 {
-    return type == nullptr;
+    return !type;
 }
 
 bool Variant::IsInlined() const noexcept
@@ -150,12 +150,12 @@ RED4ext::CBaseRTTIType* Variant::GetType() const noexcept
 
 RED4ext::ScriptInstance Variant::GetDataPtr() const noexcept
 {
-    return IsInlined() ? (RED4ext::ScriptInstance)inlined : instance;
+    return IsInlined() ? const_cast<uint8_t*>(inlined) : instance;
 }
 
 bool Variant::Init(const RED4ext::CBaseRTTIType* aType)
 {
-    if (aType == nullptr)
+    if (!aType)
     {
         Free();
         return false;
@@ -164,13 +164,18 @@ bool Variant::Init(const RED4ext::CBaseRTTIType* aType)
     RED4ext::CBaseRTTIType* ownType = GetType();
     RED4ext::ScriptInstance ownData = GetDataPtr();
 
-    if (ownType != nullptr)
+    if (ownType)
     {
-        if (ownData != nullptr)
-            ownType->Destruct(ownData);
-
         if (aType == ownType)
             return true;
+
+        if (ownData)
+        {
+            ownType->Destruct(ownData);
+
+            if (!IsInlined())
+                ownType->GetAllocator()->Free(ownData);
+        }
     }
 
     type = aType;
@@ -182,9 +187,6 @@ bool Variant::Init(const RED4ext::CBaseRTTIType* aType)
     }
     else
     {
-        if (ownType != nullptr && ownData != nullptr)
-            ownType->GetAllocator()->Free(ownData);
-
         instance = aType->GetAllocator()->AllocAligned(aType->GetSize(), aType->GetAlignment()).memory;
         ownData = instance;
     }
@@ -199,7 +201,7 @@ bool Variant::Fill(const RED4ext::CBaseRTTIType* aType, const RED4ext::ScriptIns
     if (!Init(aType))
         return false;
 
-    if (aData == nullptr)
+    if (!aData)
         return false;
 
     GetType()->Assign(GetDataPtr(), aData);
@@ -225,7 +227,7 @@ void Variant::Free()
     RED4ext::CBaseRTTIType* ownType = GetType();
     RED4ext::ScriptInstance ownData = GetDataPtr();
 
-    if (ownData != nullptr)
+    if (ownData)
     {
         ownType->Destruct(ownData);
 
