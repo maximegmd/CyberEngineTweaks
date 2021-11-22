@@ -37,7 +37,7 @@ struct Scripting
     static sol::object ToLua(LockedState& aState, RED4ext::CStackType& aResult);
     static RED4ext::CStackType ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRttiType,
                                      TiltedPhoques::Allocator* apAllocator);
-    static void ToRED(sol::object aObject, RED4ext::CStackType* apType);
+    static void ToRED(sol::object aObject, RED4ext::CStackType& apType);
 
 protected:
     void RegisterOverrides();
