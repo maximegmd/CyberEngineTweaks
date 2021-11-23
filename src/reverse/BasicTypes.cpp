@@ -95,6 +95,155 @@ bool ItemID::operator==(const ItemID& acRhs) const noexcept
     return id == acRhs.id && rng_seed == acRhs.rng_seed;
 }
 
+Variant::Variant(const RED4ext::CBaseRTTIType* aType)
+    : Variant()
+{
+    if (aType)
+    {
+        Init(aType);
+    }
+}
+
+Variant::Variant(const RED4ext::CBaseRTTIType* aType, const RED4ext::ScriptInstance aData)
+    : Variant()
+{
+    if (aType)
+    {
+        Fill(aType, aData);
+    }
+}
+
+Variant::Variant(const RED4ext::CName& aTypeName, const RED4ext::ScriptInstance aData)
+    : Variant(RED4ext::CRTTISystem::Get()->GetType(aTypeName), aData)
+{
+}
+
+Variant::Variant(const RED4ext::CStackType& aStack)
+    : Variant(aStack.type, aStack.value)
+{
+}
+
+Variant::Variant(const Variant& aOther)
+    : Variant(aOther.GetType(), aOther.GetDataPtr())
+{
+}
+
+Variant::~Variant()
+{
+    Free();
+}
+
+bool Variant::IsEmpty() const noexcept
+{
+    return !type;
+}
+
+bool Variant::IsInlined() const noexcept
+{
+    return reinterpret_cast<uintptr_t>(type) & kInlineFlag;
+}
+
+RED4ext::CBaseRTTIType* Variant::GetType() const noexcept
+{
+    return reinterpret_cast<RED4ext::CBaseRTTIType*>(reinterpret_cast<uintptr_t>(type) & kTypeMask);
+}
+
+RED4ext::ScriptInstance Variant::GetDataPtr() const noexcept
+{
+    return IsInlined() ? const_cast<uint8_t*>(inlined) : instance;
+}
+
+bool Variant::Init(const RED4ext::CBaseRTTIType* aType)
+{
+    if (!aType)
+    {
+        Free();
+        return false;
+    }
+
+    RED4ext::CBaseRTTIType* ownType = GetType();
+    RED4ext::ScriptInstance ownData = GetDataPtr();
+
+    if (ownType)
+    {
+        if (aType == ownType)
+            return true;
+
+        if (ownData)
+        {
+            ownType->Destruct(ownData);
+
+            if (!IsInlined())
+                ownType->GetAllocator()->Free(ownData);
+        }
+    }
+
+    type = aType;
+
+    if (CanBeInlined(aType))
+    {
+        reinterpret_cast<uintptr_t&>(type) |= kInlineFlag;
+        ownData = inlined;
+    }
+    else
+    {
+        instance = aType->GetAllocator()->AllocAligned(aType->GetSize(), aType->GetAlignment()).memory;
+        ownData = instance;
+    }
+
+    aType->Construct(ownData);
+
+    return true;
+}
+
+bool Variant::Fill(const RED4ext::CBaseRTTIType* aType, const RED4ext::ScriptInstance aData)
+{
+    if (!Init(aType))
+        return false;
+
+    if (!aData)
+        return false;
+
+    GetType()->Assign(GetDataPtr(), aData);
+
+    return true;
+}
+
+bool Variant::Extract(RED4ext::ScriptInstance aBuffer)
+{
+    if (IsEmpty())
+        return false;
+    
+    GetType()->Assign(aBuffer, GetDataPtr());
+
+    return true;
+}
+
+void Variant::Free()
+{
+    if (IsEmpty())
+        return;
+    
+    RED4ext::CBaseRTTIType* ownType = GetType();
+    RED4ext::ScriptInstance ownData = GetDataPtr();
+
+    if (ownData)
+    {
+        ownType->Destruct(ownData);
+
+        if (!IsInlined())
+            ownType->GetAllocator()->Free(ownData);
+    }
+
+    instance = nullptr;
+    type = nullptr;
+}
+
+bool Variant::CanBeInlined(const RED4ext::CBaseRTTIType* aType) noexcept
+{
+    return aType->GetSize() <= kInlineSize && aType->GetAlignment() <= kInlineAlignment;
+}
+
 std::string CRUID::ToString() const noexcept
 {
     return fmt::format("CRUID({0}ull)", hash);

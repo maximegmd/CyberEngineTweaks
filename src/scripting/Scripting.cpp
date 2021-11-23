@@ -453,25 +453,22 @@ void Scripting::PostInitialize()
 
     luaGlobal["TweakDB"] = TweakDB(m_lua.AsRef());
 
-    luaGlobal["Override"] = sol::overload(
-        [this](const std::string& acTypeName, const std::string& acFullName, sol::protected_function aFunction,
-               sol::this_environment aThisEnv) {
-            m_override.Override(acTypeName, acFullName, acFullName, true, aFunction, aThisEnv);
-        },
-        [this](const std::string& acTypeName, const std::string& acFullName, const std::string& acShortName,
-               sol::protected_function aFunction, sol::this_environment aThisEnv) {
-            m_override.Override(acTypeName, acFullName, acShortName, true, aFunction, aThisEnv);
-        });
+    luaGlobal["Override"] = [this](const std::string& acTypeName, const std::string& acFullName,
+                                   sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
+        m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, true);
+    };
 
-    luaGlobal["Observe"] = sol::overload(
-        [this](const std::string& acTypeName, const std::string& acFullName, sol::protected_function aFunction,
-               sol::this_environment aThisEnv) {
-            m_override.Override(acTypeName, acFullName, acFullName, false, aFunction, aThisEnv);
-        },
-        [this](const std::string& acTypeName, const std::string& acFullName, const std::string& acShortName,
-               sol::protected_function aFunction, sol::this_environment aThisEnv) {
-            m_override.Override(acTypeName, acFullName, acShortName, false, aFunction, aThisEnv);
-        });
+    luaGlobal["ObserveBefore"] = [this](const std::string& acTypeName, const std::string& acFullName,
+                                        sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
+        m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, false, false);
+    };
+
+    luaGlobal["ObserveAfter"] = [this](const std::string& acTypeName, const std::string& acFullName,
+                                       sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
+        m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, false, true);
+    };
+
+    luaGlobal["Observe"] = luaGlobal["ObserveBefore"];
 
     luaGlobal["GameDump"] = [this](Type* apType)
     {
@@ -554,9 +551,9 @@ void Scripting::RegisterOverrides()
         registerInputListener(aSelf, aSelf);
     };
 
-    m_override.Override("PlayerPuppet", "GracePeriodAfterSpawn", "GracePeriodAfterSpawn", false, luaVm["RegisterGlobalInputListener"], sol::nil, true);
-    m_override.Override("PlayerPuppet", "OnDetach", "OnDetach", false, sol::nil, sol::nil, true);
-    m_override.Override("QuestTrackerGameController", "OnUninitialize", "OnUninitialize", false, sol::nil, sol::nil, true);
+    m_override.Override("PlayerPuppet", "GracePeriodAfterSpawn", luaVm["RegisterGlobalInputListener"], sol::nil, false, false, true);
+    m_override.Override("PlayerPuppet", "OnDetach", sol::nil, sol::nil, false, false, true);
+    m_override.Override("QuestTrackerGameController", "OnUninitialize", sol::nil, sol::nil, false, false, true);
 }
 
 const TiltedPhoques::Vector<VKBindInfo>& Scripting::GetBinds() const
@@ -958,16 +955,16 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
     return result;
 }
 
-void Scripting::ToRED(sol::object aObject, RED4ext::CStackType* apRet)
+void Scripting::ToRED(sol::object aObject, RED4ext::CStackType& aRet)
 {
     static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 13);
 
-    auto result = ToRED(aObject, apRet->type, &s_scratchMemory);
+    auto result = ToRED(aObject, aRet.type, &s_scratchMemory);
 
-    apRet->type->Assign(apRet->value, result.value);
+    aRet.type->Assign(aRet.value, result.value);
 
-    if (apRet->type->GetType() != RED4ext::ERTTIType::Class)
-        apRet->type->Destroy(result.value);
+    if (aRet.type->GetType() != RED4ext::ERTTIType::Class)
+        aRet.type->Destroy(result.value);
 
     s_scratchMemory.Reset();
 }

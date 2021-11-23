@@ -16,3 +16,8 @@ RED4ext::ScriptInstance ClassReference::GetHandle() const
 {
     return m_pInstance.get();
 }
+
+RED4ext::ScriptInstance ClassReference::GetValuePtr() const
+{
+    return GetHandle();
+}

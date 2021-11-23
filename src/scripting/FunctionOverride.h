@@ -11,37 +11,48 @@ struct FunctionOverride
         bool Forward;
     };
 
+    struct CallChain
+    {
+        RED4ext::CBaseFunction* Trampoline;
+        Scripting* pScripting;
+        TiltedPhoques::Vector<TiltedPhoques::UniquePtr<Context>> Before;
+        TiltedPhoques::Vector<TiltedPhoques::UniquePtr<Context>> After;
+        TiltedPhoques::Vector<TiltedPhoques::UniquePtr<Context>> Overrides;
+        bool IsEmpty;
+        bool CollectGarbage;
+    };
+
     FunctionOverride(Scripting* apScripting, Options& aOptions);
     ~FunctionOverride();
 
     void* MakeExecutable(uint8_t* apData, size_t aSize);
     void Clear();
 
-    void Override(const std::string& acTypeName, const std::string& acFullName, const std::string& acShortName,
-                  bool aAbsolute, sol::protected_function aFunction, sol::environment aEnvironment,
-                  bool aCollectGarbage = false);
+    void Override(const std::string& acTypeName, const std::string& acFullName, 
+                  sol::protected_function aFunction, sol::environment aEnvironment,
+                  bool aAbsolute, bool aAfter = false, bool aCollectGarbage = false);
 
 protected:
 
-    static void HandleOverridenFunction(RED4ext::IScriptable* aContext, RED4ext::CStackFrame* aFrame, int32_t* aOut, int64_t a4, RED4ext::CClassFunction* apFunction);
-    static bool HookRunPureScriptFunction(RED4ext::CClassFunction* apFunction, RED4ext::CScriptStack* apContext, void* a3);
+    static void HandleOverridenFunction(RED4ext::IScriptable* aContext, RED4ext::CStackFrame* aFrame, void* aOut, void* a4, RED4ext::CClassFunction* apFunction);
+    static bool HookRunPureScriptFunction(RED4ext::CClassFunction* apFunction, RED4ext::CScriptStack* apContext, RED4ext::CStackFrame* a3);
+    static bool ExecuteChain(const CallChain& aChain, std::shared_lock<std::shared_mutex>& aLock,
+                             RED4ext::IScriptable* apContext, TiltedPhoques::Vector<sol::object>* apArgs,
+                             RED4ext::CStackType* apResult, RED4ext::CScriptStack* apStack,
+                             RED4ext::CStackFrame* apFrame, char* apCode, uint8_t aParam);
+    static sol::function WrapNextOverride(const CallChain& aChain, int aStep, sol::state& aLuaState,
+                                          sol::object& aLuaContext, TiltedPhoques::Vector<sol::object>& aLuaArgs,
+                                          RED4ext::CBaseFunction* apRealFunction, RED4ext::IScriptable* apRealContext,
+                                          std::shared_lock<std::shared_mutex>& aLock);
 
 private:
-
-    void Hook(Options& aOptions) const;
 
     enum
     {
         kExecutableSize = 1 << 20
     };
 
-    struct CallChain
-    {
-        RED4ext::CClassFunction* Trampoline;
-        Scripting* pScripting;
-        TiltedPhoques::Vector<TiltedPhoques::UniquePtr<Context>> Calls;
-        bool CollectGarbage;
-    };
+    void Hook(Options& aOptions) const;
 
     void* m_pBufferStart;
     void* m_pBuffer;

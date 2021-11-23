@@ -26,6 +26,7 @@ struct Enum
 	bool operator==(const Enum& acRhs) const noexcept;
 
     const RED4ext::CEnum* GetType() const;
+    const void* GetValuePtr() const;
 
 protected:
     friend struct Scripting;

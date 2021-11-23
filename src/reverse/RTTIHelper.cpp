@@ -843,18 +843,18 @@ sol::object RTTIHelper::NewHandle(RED4ext::CBaseRTTIType* apType, sol::optional<
     result.type = apType;
     result.value = NewInstance(apType, sol::nullopt, &allocator);
 
-    // Wrap IScriptable descendants in Handle
+    // Wrap ISerializable descendants in Handle
     if (result.value && apType->GetType() == RED4ext::ERTTIType::Class)
     {
         static auto* s_pHandleType = m_pRtti->GetType(RED4ext::FNV1a("handle:Activator"));
-        static auto* s_pIScriptableType = m_pRtti->GetType(RED4ext::FNV1a("IScriptable"));
+        static auto* s_pISerializableType = m_pRtti->GetType(RED4ext::FNV1a("ISerializable"));
 
         auto* pClass = reinterpret_cast<RED4ext::CClass*>(apType);
 
-        if (pClass->IsA(s_pIScriptableType))
+        if (pClass->IsA(s_pISerializableType))
         {
-            auto* pInstance = reinterpret_cast<RED4ext::IScriptable*>(result.value);
-            auto* pHandle = allocator.New<RED4ext::Handle<RED4ext::IScriptable>>(pInstance);
+            auto* pInstance = reinterpret_cast<RED4ext::ISerializable*>(result.value);
+            auto* pHandle = allocator.New<RED4ext::Handle<RED4ext::ISerializable>>(pInstance);
 
             result.type = s_pHandleType; // To trick converter and deallocator
             result.value = pHandle;

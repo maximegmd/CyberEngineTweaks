@@ -14,6 +14,7 @@ struct StrongReference : ClassType
 protected:
 
     virtual RED4ext::ScriptInstance GetHandle() const override;
+    virtual RED4ext::ScriptInstance GetValuePtr() const override;
     
 private:
     friend struct Scripting;
