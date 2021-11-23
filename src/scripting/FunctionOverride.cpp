@@ -595,7 +595,7 @@ void FunctionOverride::Override(const std::string& acTypeName, const std::string
         }
 
         pFunc->unk20 = pRealFunction->unk20;
-        std::copy_n(pRealFunction->unk78, std::size(pRealFunction->unk78), pFunc->unk78);
+        pFunc->bytecode = pRealFunction->bytecode;
         pFunc->unk48 = pRealFunction->unk48;
         pFunc->unkAC = pRealFunction->unkAC;
         pFunc->flags = pRealFunction->flags;
