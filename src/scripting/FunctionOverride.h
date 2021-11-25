@@ -38,8 +38,8 @@ protected:
     static bool HookRunPureScriptFunction(RED4ext::CClassFunction* apFunction, RED4ext::CScriptStack* apContext, RED4ext::CStackFrame* a3);
     static bool ExecuteChain(const CallChain& aChain, std::shared_lock<std::shared_mutex>& aLock,
                              RED4ext::IScriptable* apContext, TiltedPhoques::Vector<sol::object>* apArgs,
-                             RED4ext::CStackType* apResult, RED4ext::CScriptStack* apStack,
-                             RED4ext::CStackFrame* apFrame, char* apCode, uint8_t aParam);
+                             RED4ext::CStackType* apResult, TiltedPhoques::Vector<RED4ext::CStackType>* apOutArgs, 
+                             RED4ext::CScriptStack* apStack, RED4ext::CStackFrame* apFrame, char* apCode, uint8_t aParam);
     static sol::function WrapNextOverride(const CallChain& aChain, int aStep, sol::state& aLuaState,
                                           sol::object& aLuaContext, TiltedPhoques::Vector<sol::object>& aLuaArgs,
                                           RED4ext::CBaseFunction* apRealFunction, RED4ext::IScriptable* apRealContext,

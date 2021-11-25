@@ -136,6 +136,7 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
             auto pAllocator = TiltedPhoques::Allocator::Get();
             TiltedPhoques::Allocator::Set(&s_allocator);
             TiltedPhoques::Vector<sol::object> args;
+            TiltedPhoques::Vector<RED4ext::CStackType> outArgs;
             TiltedPhoques::Allocator::Set(pAllocator);
 
             auto state = chain.pScripting->GetState();
@@ -158,13 +159,16 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
                 arg.value = pOffset;
 
                 args.push_back(Scripting::ToLua(state, arg));
+
+                if (p->flags.isOut)
+                    outArgs.push_back(arg);
             }
 
             RED4ext::CStackType ret;
             ret.value = apStack->GetResultAddr();
             ret.type = apStack->GetType();
 
-            return ExecuteChain(chain, lock, pContext, &args, &ret, apStack, a3, nullptr, 0);
+            return ExecuteChain(chain, lock, pContext, &args, &ret, &outArgs, apStack, a3, nullptr, 0);
         }
 
         if (chain.CollectGarbage)
@@ -209,6 +213,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
         auto pAllocator = TiltedPhoques::Allocator::Get();
         TiltedPhoques::Allocator::Set(&s_allocator);
         TiltedPhoques::Vector<sol::object> args;
+        TiltedPhoques::Vector<RED4ext::CStackType> outArgs;
         TiltedPhoques::Allocator::Set(pAllocator);
 
         auto state = chain.pScripting->GetState();
@@ -269,6 +274,15 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
 
             args.push_back(Scripting::ToLua(state, arg));
 
+            if (pArg->flags.isOut)
+            {
+                // This is an original arg, pInstance contains copy
+                if (apFrame->unk30)
+                    arg.value = reinterpret_cast<RED4ext::ScriptInstance>(apFrame->unk30);
+
+                outArgs.push_back(arg);
+            }
+
             // Release inner values
             if (isScriptRef)
             {
@@ -277,8 +291,11 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
                 pScriptRef->innerType->GetAllocator()->Free(pScriptRef->ref);
             }
 
-            pType->Destroy(pInstance);
-            pAllocator->Free(pInstance);
+            if (!pArg->flags.isOut || apFrame->unk30)
+            {
+                pType->Destroy(pInstance);
+                pAllocator->Free(pInstance);
+            }
         }
         
         apFrame->code++; // skip ParamEnd
@@ -291,7 +308,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
             ret.value = apOut;
         }
 
-        ExecuteChain(chain, lock, apContext, &args, &ret, nullptr, apFrame, pCode, currentParam);
+        ExecuteChain(chain, lock, apContext, &args, &ret, &outArgs, nullptr, apFrame, pCode, currentParam);
         return;
     }
 
@@ -307,8 +324,9 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
 
 bool FunctionOverride::ExecuteChain(const CallChain& aChain, std::shared_lock<std::shared_mutex>& aLock,
                                     RED4ext::IScriptable* apContext, TiltedPhoques::Vector<sol::object>* apOrigArgs, 
-                                    RED4ext::CStackType* apResult, RED4ext::CScriptStack* apStack,
-                                    RED4ext::CStackFrame* apFrame, char* apCode, uint8_t aParam)
+                                    RED4ext::CStackType* apResult, TiltedPhoques::Vector<RED4ext::CStackType>* apOutArgs,
+                                    RED4ext::CScriptStack* apStack, RED4ext::CStackFrame* apFrame,
+                                    char* apCode, uint8_t aParam)
 {
     if (!aChain.Before.empty())
     {
@@ -329,19 +347,36 @@ bool FunctionOverride::ExecuteChain(const CallChain& aChain, std::shared_lock<st
 
     if (!aChain.Overrides.empty())
     {
-        auto argSelfOffset = pRealFunction->flags.isStatic ? 0 : 1;
         sol::object luaContext = pRealFunction->flags.isStatic ? sol::nil : apOrigArgs->at(0);
-        TiltedPhoques::Vector<sol::object> luaArgs(apOrigArgs->begin() + argSelfOffset, apOrigArgs->end());
+        TiltedPhoques::Vector<sol::object> luaArgs(apOrigArgs->begin() + (pRealFunction->flags.isStatic ? 0 : 1),
+                                                   apOrigArgs->end());
 
         auto lockedState = aChain.pScripting->GetState();
         auto& luaState = lockedState.Get();
 
-        auto wrapped = WrapNextOverride(aChain, 0, luaState, luaContext, luaArgs, pRealFunction, apContext, aLock);
-        auto result = wrapped(as_args(luaArgs));
+        auto luaWrapped = WrapNextOverride(aChain, 0, luaState, luaContext, luaArgs, pRealFunction, apContext, aLock);
+        auto luaResult = luaWrapped(as_args(luaArgs));
 
-        if (result.valid() && apResult && apResult->value)
+        if (luaResult.valid())
         {
-            Scripting::ToRED(result.get<sol::object>(), *apResult);
+            auto luaRetOffset = 0;
+
+            if (apResult && apResult->value)
+            {
+                Scripting::ToRED(luaResult.get<sol::object>(), *apResult);
+                ++luaRetOffset;
+            }
+
+            if (apOutArgs && !apOutArgs->empty())
+            {
+                for (auto i = 0; i < apOutArgs->size(); ++i)
+                {
+                    auto luaOutArg = luaResult.get<sol::object>(i + luaRetOffset);
+
+                    if (luaOutArg != sol::nil)
+                        Scripting::ToRED(luaOutArg, apOutArgs->at(i));
+                }
+            }
         }
     }
     else
