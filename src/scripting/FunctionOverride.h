@@ -57,7 +57,8 @@ private:
     void* m_pBufferStart;
     void* m_pBuffer;
     size_t m_size{ kExecutableSize };
-    TiltedPhoques::Map<RED4ext::CClassFunction*, CallChain> m_functions;
+    TiltedPhoques::Map<RED4ext::CBaseFunction*, CallChain> m_functions;
+    TiltedPhoques::Map<RED4ext::CBaseFunction*, RED4ext::CBaseFunction*> m_trampolines;
     Scripting* m_pScripting;
     std::shared_mutex m_lock;
 };

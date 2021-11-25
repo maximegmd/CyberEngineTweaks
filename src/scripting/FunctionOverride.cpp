@@ -72,45 +72,17 @@ void FunctionOverride::Clear()
     // Reverse order as we want to swap from most recent to oldest change
     for (auto& [pFunction, pContext] : m_functions)
     {
-        // Just an added function, not an override
-        if (pContext.Trampoline == nullptr)
-        {
-            auto* pClassType = pFunction->parent;
-            auto* pArray = &pClassType->funcs;
+        auto* pRealFunction = pContext.Trampoline;
 
-            if (pFunction->flags.isStatic)
-                pClassType->staticFuncs;
+        std::array<char, s_cMaxFunctionSize> tmpBuffer;
+        size_t funcSize = GetFunctionSize(pRealFunction);
 
-            for (auto*& pItor : *pArray)
-            {
-                if (pItor == pFunction)
-                {
-                    // Swap our self with the last element
-                    pItor = *(pArray->End() - 1);
-                    // Pop last
-                    pArray->size -= 1;
-
-                    break;
-                }
-            }
-        }
-        else
-        {
-            auto* pRealFunction = pContext.Trampoline;
-
-            std::array<char, s_cMaxFunctionSize> tmpBuffer;
-            size_t funcSize = GetFunctionSize(pRealFunction);
-
-            std::memcpy(&tmpBuffer, pRealFunction, funcSize);
-            std::memcpy(pRealFunction, pFunction, funcSize);
-            std::memcpy(pFunction, &tmpBuffer, funcSize);
-        }
+        std::memcpy(&tmpBuffer, pRealFunction, funcSize);
+        std::memcpy(pRealFunction, pFunction, funcSize);
+        std::memcpy(pFunction, &tmpBuffer, funcSize);
     }
 
     m_functions.clear();
-
-    m_pBuffer = m_pBufferStart;
-    m_size = kExecutableSize;
 }
 
 bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunction, RED4ext::CScriptStack* apStack, RED4ext::CStackFrame* a3)
@@ -517,7 +489,7 @@ void FunctionOverride::Hook(Options& aOptions) const
             {
                 DWORD oldProtect;
                 VirtualProtect(pLocation, 0x40, PAGE_READWRITE, &oldProtect);
-                *pFirstLocation = *pSecondLocation = std::max(sizeof(RED4ext::CClassFunction), sizeof(RED4ext::CScriptedFunction));
+                *pFirstLocation = *pSecondLocation = std::max(s_cMaxFunctionSize, sizeof(RED4ext::CScriptedFunction));
                 VirtualProtect(pLocation, 0x40, oldProtect, &oldProtect);
 
                 spdlog::info("Override function allocator patched!");
@@ -573,73 +545,82 @@ void FunctionOverride::Override(const std::string& acTypeName, const std::string
         m_functions[pRealFunction] = {};
         pEntry = &m_functions[pRealFunction];
 
-        /*
-        sub rsp, 56
-        mov rax, 0xDEADBEEFC0DEBAAD
-        mov qword ptr[rsp + 32], rax
-        mov rax, 0xDEADBEEFC0DEBAAD
-        call rax
-        add rsp, 56
-        ret
-        */
-        uint8_t payload[] = {0x48, 0x83, 0xEC, 0x38, 0x48, 0xB8, 0xAD, 0xBA, 0xDE, 0xC0, 0xEF, 0xBE,
-                             0xAD, 0xDE, 0x48, 0x89, 0x44, 0x24, 0x20, 0x48, 0xB8, 0xAD, 0xBA, 0xDE,
-                             0xC0, 0xEF, 0xBE, 0xAD, 0xDE, 0xFF, 0xD0, 0x48, 0x83, 0xC4, 0x38, 0xC3};
-
-        auto funcAddr = reinterpret_cast<uintptr_t>(&FunctionOverride::HandleOverridenFunction);
-
-        std::memcpy(payload + 6, &pRealFunction, 8);
-        std::memcpy(payload + 21, &funcAddr, 8);
-
-        using TNativeScriptFunction = void (*)(RED4ext::IScriptable*, RED4ext::CStackFrame*, void*, int64_t);
-        auto* pExecutablePayload = static_cast<TNativeScriptFunction>(MakeExecutable(payload, std::size(payload)));
-
         RED4ext::CBaseFunction* pFunc;
 
-        if (pRealFunction->flags.isStatic)
+        if (!m_trampolines.contains(pRealFunction))
         {
-            if (pRealFunction->flags.isNative)
+            /*
+            sub rsp, 56
+            mov rax, 0xDEADBEEFC0DEBAAD
+            mov qword ptr[rsp + 32], rax
+            mov rax, 0xDEADBEEFC0DEBAAD
+            call rax
+            add rsp, 56
+            ret
+            */
+            uint8_t payload[] = {0x48, 0x83, 0xEC, 0x38, 0x48, 0xB8, 0xAD, 0xBA, 0xDE, 0xC0, 0xEF, 0xBE,
+                                 0xAD, 0xDE, 0x48, 0x89, 0x44, 0x24, 0x20, 0x48, 0xB8, 0xAD, 0xBA, 0xDE,
+                                 0xC0, 0xEF, 0xBE, 0xAD, 0xDE, 0xFF, 0xD0, 0x48, 0x83, 0xC4, 0x38, 0xC3};
+
+            auto funcAddr = reinterpret_cast<uintptr_t>(&FunctionOverride::HandleOverridenFunction);
+
+            std::memcpy(payload + 6, &pRealFunction, 8);
+            std::memcpy(payload + 21, &funcAddr, 8);
+
+            using TNativeScriptFunction = void (*)(RED4ext::IScriptable*, RED4ext::CStackFrame*, void*, int64_t);
+            auto* pExecutablePayload = static_cast<TNativeScriptFunction>(MakeExecutable(payload, std::size(payload)));
+
+            if (pRealFunction->flags.isStatic)
             {
-                pFunc = RED4ext::CClassStaticFunction::Create(pClassType, acFullName.c_str(), acFullName.c_str(),
-                                                              pExecutablePayload, pRealFunction->flags);
-                reinterpret_cast<RED4ext::CClassStaticFunction*>(pFunc)->parent = pRealFunction->parent;
+                if (pRealFunction->flags.isNative)
+                {
+                    pFunc = RED4ext::CClassStaticFunction::Create(pClassType, acFullName.c_str(), acFullName.c_str(),
+                                                                  pExecutablePayload, pRealFunction->flags);
+                    reinterpret_cast<RED4ext::CClassStaticFunction*>(pFunc)->parent = pRealFunction->parent;
+                }
+                else
+                {
+                    pFunc = RED4ext::CGlobalFunction::Create(acFullName.c_str(), acFullName.c_str(), pExecutablePayload);
+                }
             }
             else
             {
-                pFunc = RED4ext::CGlobalFunction::Create(acFullName.c_str(), acFullName.c_str(), pExecutablePayload);
+                pFunc = RED4ext::CClassFunction::Create(pClassType, acFullName.c_str(), acFullName.c_str(),
+                                                        pExecutablePayload, pRealFunction->flags);
+                reinterpret_cast<RED4ext::CClassFunction*>(pFunc)->parent = pRealFunction->parent;
             }
+
+            pFunc->fullName = pRealFunction->fullName;
+            pFunc->shortName = pRealFunction->shortName;
+
+            pFunc->returnType = pRealFunction->returnType;
+            for (auto* p : pRealFunction->params)
+            {
+                pFunc->params.PushBack(p);
+            }
+
+            for (auto* p : pRealFunction->localVars)
+            {
+                pFunc->localVars.PushBack(p);
+            }
+
+            pFunc->unk20 = pRealFunction->unk20;
+            pFunc->bytecode = pRealFunction->bytecode;
+            pFunc->unk48 = pRealFunction->unk48;
+            pFunc->unkAC = pRealFunction->unkAC;
+            pFunc->flags = pRealFunction->flags;
+            pFunc->flags.isNative = true;
+
+            m_trampolines[pRealFunction] = pFunc;
         }
         else
         {
-            pFunc = RED4ext::CClassFunction::Create(pClassType, acFullName.c_str(), acFullName.c_str(),
-                                                    pExecutablePayload, pRealFunction->flags);
-            reinterpret_cast<RED4ext::CClassFunction*>(pFunc)->parent = pRealFunction->parent;
+            pFunc = m_trampolines[pRealFunction];
         }
-
-        pFunc->fullName = pRealFunction->fullName;
-        pFunc->shortName = pRealFunction->shortName;
-
-        pFunc->returnType = pRealFunction->returnType;
-        for (auto* p : pRealFunction->params)
-        {
-            pFunc->params.PushBack(p);
-        }
-
-        for (auto* p : pRealFunction->localVars)
-        {
-            pFunc->localVars.PushBack(p);
-        }
-
-        pFunc->unk20 = pRealFunction->unk20;
-        pFunc->bytecode = pRealFunction->bytecode;
-        pFunc->unk48 = pRealFunction->unk48;
-        pFunc->unkAC = pRealFunction->unkAC;
-        pFunc->flags = pRealFunction->flags;
-        pFunc->flags.isNative = true;
 
         pEntry->Trampoline = pFunc;
         pEntry->pScripting = m_pScripting;
-        pEntry->CollectGarbage = aCollectGarbage || pClassType->IsA(s_inkGameControllerType);
+        pEntry->CollectGarbage = aCollectGarbage;
         pEntry->IsEmpty = true;
 
         // Swap the content of the real function with the one we just created
