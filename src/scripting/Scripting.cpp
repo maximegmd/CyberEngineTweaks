@@ -543,7 +543,7 @@ void Scripting::RegisterOverrides()
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
 
-    luaVm["RegisterGlobalInputListener"] = [](StrongReference& aSelf, sol::this_environment aThisEnv) {
+    luaVm["RegisterGlobalInputListener"] = [](WeakReference& aSelf, sol::this_environment aThisEnv) {
         sol::protected_function unregisterInputListener = aSelf.Index("UnregisterInputListener", aThisEnv);
         sol::protected_function registerInputListener = aSelf.Index("RegisterInputListener", aThisEnv);
 

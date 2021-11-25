@@ -3,13 +3,12 @@
 #include "FunctionOverride.h"
 #include "Scripting.h"
 #include "Utils.h"
-#include <reverse/StrongReference.h>
+#include <reverse/WeakReference.h>
 #include <reverse/RTTIHelper.h>
 #include <reverse/RTTILocator.h>
 
 
 static FunctionOverride* s_pOverride = nullptr;
-static RTTILocator s_inkGameControllerType("gameuiWidgetGameController");
 
 using TRunPureScriptFunction = bool (*)(RED4ext::CBaseFunction* apFunction, RED4ext::CScriptStack*, void*);
 using TCallScriptFunction = bool (*)(RED4ext::IFunction* apFunction, RED4ext::IScriptable* apContext,
@@ -144,8 +143,9 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
             auto pContext = apStack->GetContext();
             if (!apFunction->flags.isStatic && pContext)
             {
-                const auto handle = RED4ext::Handle<RED4ext::IScriptable>(pContext);
-                auto obj = sol::make_object(state.Get(), StrongReference(state, handle));
+                const auto weak = RED4ext::WeakHandle<RED4ext::IScriptable>(
+                    *(RED4ext::WeakHandle<RED4ext::IScriptable>*)&pContext->ref);
+                auto obj = sol::make_object(state.Get(), WeakReference(state, weak));
 
                 args.push_back(obj);
             }
@@ -233,8 +233,9 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
                 self.value = apFrame->context;
             }
 
-            const auto handle = RED4ext::Handle<RED4ext::IScriptable>((RED4ext::IScriptable*)self.value);
-            auto obj = sol::make_object(state.Get(), StrongReference(state, handle));
+            const auto ref = (RED4ext::WeakHandle<RED4ext::IScriptable>*)&((RED4ext::IScriptable*)self.value)->ref;
+            const auto weak = RED4ext::WeakHandle<RED4ext::IScriptable>(*ref);
+            auto obj = sol::make_object(state.Get(), WeakReference(state, weak));
 
             args.push_back(obj);
         }
