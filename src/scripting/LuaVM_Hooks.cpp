@@ -141,11 +141,22 @@ uintptr_t LuaVM::HookSetLoadingState(uintptr_t aThis, int aState)
     {
         std::call_once(s_initBarrier, [&luavm]()
         {
-            luavm.PostInitialize();
+            luavm.PostInitializeStage2();
         });
     }
 
     return luavm.m_realSetLoadingState(aThis, aState);
+}
+
+uint64_t LuaVM::HookTweakDBLoad(uintptr_t aThis, uintptr_t aParam)
+{
+    auto& luavm = CET::Get().GetVM();
+
+    const auto ret = luavm.m_realTweakDBLoad(aThis, aParam);
+
+    luavm.PostInitializeStage1();
+
+    return ret;
 }
 
 void LuaVM::Hook(Options& aOptions)
@@ -238,6 +249,23 @@ void LuaVM::Hook(Options& aOptions)
                     spdlog::error("Could not hook TDBID::ToStringDEBUG function!");
                 else
                     spdlog::info("TDBID::ToStringDEBUG function hook complete!");
+            }
+        }
+    }
+    
+    {
+        const mem::pattern cPattern("48 89 5C 24 10 48 89 7C 24 18 4C 89 74 24 20 55 48 8B EC 48 83 EC 70 48");
+        const mem::default_scanner cScanner(cPattern);
+        uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
+
+        if (pLocation)
+        {
+            if (MH_CreateHook(pLocation, &HookTweakDBLoad, reinterpret_cast<void**>(&m_realTweakDBLoad)) != MH_OK ||
+                MH_EnableHook(pLocation) != MH_OK)
+                spdlog::error("Could not hook TweakDB::Load function!");
+            else
+            {
+                spdlog::info("TweakDB::Load function hook complete!");
             }
         }
     }

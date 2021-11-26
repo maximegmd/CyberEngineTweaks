@@ -15,10 +15,12 @@ struct Scripting
     ~Scripting() = default;
 
     void Initialize();
-    void PostInitialize();
+    void PostInitializeStage1();
+    void PostInitializeStage2();
 
     const TiltedPhoques::Vector<VKBindInfo>& GetBinds() const;
 
+    void TriggerOnTweak() const;
     void TriggerOnInit() const;
     void TriggerOnUpdate(float aDeltaTime) const;
     void TriggerOnDraw() const;

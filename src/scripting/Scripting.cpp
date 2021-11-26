@@ -126,7 +126,7 @@ void Scripting::Initialize()
     m_store.LoadAll();
 }
 
-void Scripting::PostInitialize()
+void Scripting::PostInitializeStage1()
 {
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
@@ -396,29 +396,6 @@ void Scripting::PostInitialize()
 
     luaGlobal["LocKey"] = luaVm["LocKey"];
 
-    luaGlobal["NewObject"] = [this](const std::string& acName, sol::this_environment aEnv) -> sol::object
-    {
-        auto* pRtti = RED4ext::CRTTISystem::Get();
-        auto* pType = pRtti->GetType(RED4ext::FNV1a(acName.c_str()));
-
-        if (!pType)
-        {
-            const sol::environment cEnv = aEnv;
-            std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
-            logger->info("Type '{}' not found.", acName);
-            return sol::nil;
-        }
-
-        // Always try to return instance wrapped in Handle<> if the type allows it.
-        // See NewHandle() for more info.
-        return RTTIHelper::Get().NewHandle(pType, sol::nullopt);
-    };
-
-    luaGlobal["GetSingleton"] = [this](const std::string& acName, sol::this_environment aThisEnv)
-    {
-        return this->GetSingletonHandle(acName, aThisEnv);
-    };
-
     luaVm.new_usertype<GameOptions>("GameOptions",
         sol::meta_function::construct, sol::no_constructor,
         "Print", &GameOptions::Print,
@@ -452,23 +429,6 @@ void Scripting::PostInitialize()
         "DeleteRecord", &TweakDB::DeleteRecord);
 
     luaGlobal["TweakDB"] = TweakDB(m_lua.AsRef());
-
-    luaGlobal["Override"] = [this](const std::string& acTypeName, const std::string& acFullName,
-                                   sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
-        m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, true);
-    };
-
-    luaGlobal["ObserveBefore"] = [this](const std::string& acTypeName, const std::string& acFullName,
-                                        sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
-        m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, false, false);
-    };
-
-    luaGlobal["ObserveAfter"] = [this](const std::string& acTypeName, const std::string& acFullName,
-                                       sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
-        m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, false, true);
-    };
-
-    luaGlobal["Observe"] = luaGlobal["ObserveBefore"];
 
     luaGlobal["GameDump"] = [this](Type* apType)
     {
@@ -522,18 +482,67 @@ void Scripting::PostInitialize()
     };
 #endif
 
+    luaVm["Game"] = this;
+    luaGlobal["Game"] = luaVm["Game"];
+
+    m_sandbox.PostInitialize();
+}
+
+void Scripting::PostInitializeStage2()
+{
+    auto lua = m_lua.Lock();
+    auto& luaVm = lua.Get();
+
+    sol::table luaGlobal = luaVm[m_global];
+
+    luaGlobal["NewObject"] = [this](const std::string& acName, sol::this_environment aEnv) -> sol::object
+    {
+        auto* pRtti = RED4ext::CRTTISystem::Get();
+        auto* pType = pRtti->GetType(RED4ext::FNV1a(acName.c_str()));
+
+        if (!pType)
+        {
+            const sol::environment cEnv = aEnv;
+            std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+            logger->info("Type '{}' not found.", acName);
+            return sol::nil;
+        }
+
+        // Always try to return instance wrapped in Handle<> if the type allows it.
+        // See NewHandle() for more info.
+        return RTTIHelper::Get().NewHandle(pType, sol::nullopt);
+    };
+
+    luaGlobal["GetSingleton"] = [this](const std::string& acName, sol::this_environment aThisEnv)
+    {
+        return this->GetSingletonHandle(acName, aThisEnv);
+    };
+
+    luaGlobal["Override"] = [this](const std::string& acTypeName, const std::string& acFullName,
+                                   sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
+        m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, true);
+    };
+
+    luaGlobal["ObserveBefore"] = [this](const std::string& acTypeName, const std::string& acFullName,
+                                        sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
+        m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, false, false);
+    };
+
+    luaGlobal["ObserveAfter"] = [this](const std::string& acTypeName, const std::string& acFullName,
+                                       sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
+        m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, false, true);
+    };
+
+    luaGlobal["Observe"] = luaGlobal["ObserveBefore"];
+
     // Doesn't require RTTI, but still shouldn't be used before onInit as there is no guarantee that the required mod will be loaded before
     luaGlobal["GetMod"] = [this](const std::string& acName) -> sol::object
     {
         return GetMod(acName);
     };
 
-    luaVm["Game"] = this;
-    luaGlobal["Game"] = luaVm["Game"];
-
     RTTIExtender::Initialize();
     m_mapper.Register();
-    m_sandbox.PostInitialize();
 
     RegisterOverrides();
 }
@@ -559,6 +568,11 @@ void Scripting::RegisterOverrides()
 const TiltedPhoques::Vector<VKBindInfo>& Scripting::GetBinds() const
 {
     return m_store.GetBinds();
+}
+
+void Scripting::TriggerOnTweak() const
+{
+    m_store.TriggerOnTweak();
 }
 
 void Scripting::TriggerOnInit() const

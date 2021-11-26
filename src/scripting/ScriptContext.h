@@ -12,6 +12,7 @@ struct ScriptContext
 
     const TiltedPhoques::Vector<VKBindInfo>& GetBinds() const;
     
+    void TriggerOnTweak() const;
     void TriggerOnInit() const;
     void TriggerOnUpdate(float aDeltaTime) const;
     void TriggerOnDraw() const;
@@ -30,6 +31,7 @@ private:
     LuaSandbox& m_sandbox;
     size_t m_sandboxID;
     sol::object m_object{ };
+    sol::function m_onTweak{ };
     sol::function m_onInit{ };
     sol::function m_onShutdown{ };
     sol::function m_onUpdate{ };

@@ -74,6 +74,12 @@ const TiltedPhoques::Vector<VKBindInfo>& ScriptStore::GetBinds() const
     return m_vkBindInfos;
 }
 
+void ScriptStore::TriggerOnTweak() const
+{
+    for (const auto& kvp : m_contexts)
+        kvp.second.TriggerOnTweak();
+}
+
 void ScriptStore::TriggerOnInit() const
 {
     for (const auto& kvp : m_contexts)
