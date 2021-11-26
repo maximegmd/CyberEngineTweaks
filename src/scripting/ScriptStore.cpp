@@ -25,10 +25,16 @@ void ScriptStore::LoadAll()
 
         auto fPath = file.path();
 
-        if (is_symlink(fPath))
-            fPath = read_symlink(fPath);
-        else if (is_symlink(fPath / "init.lua"))
-            fPath = read_symlink(fPath / "init.lua").parent_path();
+        try
+        {
+            if (is_symlink(fPath))
+                fPath = read_symlink(fPath);
+            else if (is_symlink(fPath / "init.lua"))
+                fPath = read_symlink(fPath / "init.lua").parent_path();
+        }
+        catch (std::exception& e)
+        {
+        }
 
         fPath = absolute(fPath);
         auto fPathStr = fPath.string();
