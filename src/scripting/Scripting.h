@@ -45,7 +45,7 @@ protected:
     void RegisterOverrides();
 
     sol::object Index(const std::string& acName, sol::this_state aState, sol::this_environment aEnv);
-    sol::object NewIndex(const std::string& acName, sol::object aParam);
+    sol::object InternalNewIndex(const std::string& acName, sol::object aParam);
     sol::object GetSingletonHandle(const std::string& acName, sol::this_environment aThisEnv);
     sol::protected_function InternalIndex(const std::string& acName, sol::this_state aState,
                                           sol::this_environment aEnv);

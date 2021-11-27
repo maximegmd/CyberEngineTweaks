@@ -135,8 +135,7 @@ void Scripting::PostInitializeStage1()
 
     luaVm.new_usertype<Scripting>("__Game",
         sol::meta_function::construct, sol::no_constructor,
-        sol::meta_function::index, &Scripting::Index,
-        sol::meta_function::new_index, &Scripting::NewIndex);
+        sol::meta_function::index, &Scripting::Index);
 
     luaVm.new_usertype<Type>("__Type",
         sol::meta_function::construct, sol::no_constructor,
@@ -430,61 +429,6 @@ void Scripting::PostInitializeStage1()
 
     luaGlobal["TweakDB"] = TweakDB(m_lua.AsRef());
 
-    luaGlobal["GameDump"] = [this](Type* apType)
-    {
-        return apType ? apType->GameDump() : "Null";
-    };
-
-    luaGlobal["Dump"] = [this](Type* apType, bool aDetailed)
-    {
-        return apType != nullptr ? apType->Dump(aDetailed) : Type::Descriptor{};
-    };
-
-    luaGlobal["DumpType"] = [this](const std::string& acName, bool aDetailed)
-    {
-        auto* pRtti = RED4ext::CRTTISystem::Get();
-        auto* pType = pRtti->GetClass(RED4ext::FNV1a(acName.c_str()));
-        if (!pType || pType->GetType() == RED4ext::ERTTIType::Simple)
-            return Type::Descriptor();
-
-        const ClassType type(m_lua.AsRef(), pType);
-        return type.Dump(aDetailed);
-    };
-    
-    luaGlobal["DumpAllTypeNames"] = [this](sol::this_environment aThisEnv)
-    {
-        auto* pRtti = RED4ext::CRTTISystem::Get();
-
-        uint32_t count = 0;
-        pRtti->types.for_each([&count](RED4ext::CName name, RED4ext::CBaseRTTIType*& type)
-        {
-            spdlog::info(name.ToString());
-            count++;
-        });
-        const sol::environment cEnv = aThisEnv;
-        std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
-        logger->info("Dumped {} types", count);
-    };
-
-#ifndef NDEBUG
-    luaGlobal["DumpVtables"] = [this]()
-    {
-        // Hacky RTTI dump, this should technically only dump IScriptable instances and RTTI types as they are guaranteed to have a vtable
-        // but there can occasionally be Class types that are not IScriptable derived that still have a vtable
-        // some hierarchies may also not be accurately reflected due to hash ordering
-        // technically this table is flattened and contains all hierarchy, but traversing the hierarchy first reduces
-        // error when there are classes that instantiate a parent class but don't actually have a subclass instance
-        GameMainThread::Get().AddTask(&GameDump::DumpVTablesTask::Run);
-    };
-    luaGlobal["DumpReflection"] = [this](bool aVerbose, bool aExtendedPath, bool aPropertyHolders)
-    {
-        RED4ext::GameReflection::Dump(m_paths.CETRoot() / "dumps", aVerbose, aExtendedPath, aPropertyHolders);
-    };
-#endif
-
-    luaVm["Game"] = this;
-    luaGlobal["Game"] = luaVm["Game"];
-
     m_sandbox.PostInitialize();
 }
 
@@ -541,8 +485,64 @@ void Scripting::PostInitializeStage2()
         return GetMod(acName);
     };
 
+    luaGlobal["GameDump"] = [this](Type* apType)
+    {
+        return apType ? apType->GameDump() : "Null";
+    };
+
+    luaGlobal["Dump"] = [this](Type* apType, bool aDetailed)
+    {
+        return apType != nullptr ? apType->Dump(aDetailed) : Type::Descriptor{};
+    };
+
+    luaGlobal["DumpType"] = [this](const std::string& acName, bool aDetailed)
+    {
+        auto* pRtti = RED4ext::CRTTISystem::Get();
+        auto* pType = pRtti->GetClass(RED4ext::FNV1a(acName.c_str()));
+        if (!pType || pType->GetType() == RED4ext::ERTTIType::Simple)
+            return Type::Descriptor();
+
+        const ClassType type(m_lua.AsRef(), pType);
+        return type.Dump(aDetailed);
+    };
+    
+    luaGlobal["DumpAllTypeNames"] = [this](sol::this_environment aThisEnv)
+    {
+        auto* pRtti = RED4ext::CRTTISystem::Get();
+
+        uint32_t count = 0;
+        pRtti->types.for_each([&count](RED4ext::CName name, RED4ext::CBaseRTTIType*& type)
+        {
+            spdlog::info(name.ToString());
+            count++;
+        });
+        const sol::environment cEnv = aThisEnv;
+        std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+        logger->info("Dumped {} types", count);
+    };
+
+#ifndef NDEBUG
+    luaGlobal["DumpVtables"] = [this]()
+    {
+        // Hacky RTTI dump, this should technically only dump IScriptable instances and RTTI types as they are guaranteed to have a vtable
+        // but there can occasionally be Class types that are not IScriptable derived that still have a vtable
+        // some hierarchies may also not be accurately reflected due to hash ordering
+        // technically this table is flattened and contains all hierarchy, but traversing the hierarchy first reduces
+        // error when there are classes that instantiate a parent class but don't actually have a subclass instance
+        GameMainThread::Get().AddTask(&GameDump::DumpVTablesTask::Run);
+    };
+    luaGlobal["DumpReflection"] = [this](bool aVerbose, bool aExtendedPath, bool aPropertyHolders)
+    {
+        RED4ext::GameReflection::Dump(m_paths.CETRoot() / "dumps", aVerbose, aExtendedPath, aPropertyHolders);
+    };
+#endif
+
+    luaVm["Game"] = this;
+    luaGlobal["Game"] = luaVm["Game"];
+
     RTTIExtender::Initialize();
     m_mapper.Register();
+    m_sandbox.PostInitialize();
 
     RegisterOverrides();
 }
@@ -661,7 +661,7 @@ sol::object Scripting::Index(const std::string& acName, sol::this_state aState, 
     return InternalIndex(acName, aState, aEnv);
 }
 
-sol::object Scripting::NewIndex(const std::string& acName, sol::object aParam)
+sol::object Scripting::InternalNewIndex(const std::string& acName, sol::object aParam)
 {
     auto& property = m_properties[acName];
     property = std::move(aParam);
@@ -690,7 +690,7 @@ sol::protected_function Scripting::InternalIndex(const std::string& acName, sol:
         return sol::nil;
     }
 
-    return NewIndex(acName, std::move(func));
+    return InternalNewIndex(acName, std::move(func));
 }
 
 sol::object Scripting::GetSingletonHandle(const std::string& acName, sol::this_environment aThisEnv)
