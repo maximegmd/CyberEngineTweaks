@@ -658,18 +658,6 @@ sol::object Scripting::Index(const std::string& acName, sol::this_state aState, 
         return itor->second;
     }
 
-    return InternalIndex(acName, aState, aEnv);
-}
-
-sol::object Scripting::InternalNewIndex(const std::string& acName, sol::object aParam)
-{
-    auto& property = m_properties[acName];
-    property = std::move(aParam);
-    return property;
-}
-
-sol::protected_function Scripting::InternalIndex(const std::string& acName, sol::this_state aState, sol::this_environment aEnv)
-{
     auto func = RTTIHelper::Get().ResolveFunction(acName);
 
     if (!func)
@@ -690,7 +678,9 @@ sol::protected_function Scripting::InternalIndex(const std::string& acName, sol:
         return sol::nil;
     }
 
-    return InternalNewIndex(acName, std::move(func));
+    auto& property = m_properties[acName];
+    property = std::move(func);
+    return property;
 }
 
 sol::object Scripting::GetSingletonHandle(const std::string& acName, sol::this_environment aThisEnv)
