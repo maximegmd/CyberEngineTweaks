@@ -11,6 +11,7 @@ struct ScriptStore
 
     const TiltedPhoques::Vector<VKBindInfo>& GetBinds() const;
     
+    void TriggerOnTweak() const;
     void TriggerOnInit() const;
     void TriggerOnUpdate(float aDeltaTime) const;
     void TriggerOnDraw() const;

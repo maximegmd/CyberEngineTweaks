@@ -88,7 +88,7 @@ void Scripting::Initialize()
         const auto resolution = m_d3d12.GetResolution();
         return {static_cast<float>(resolution.cx), static_cast<float>(resolution.cy)};
     };
-    
+
     luaGlobal["ModArchiveExists"] = [this](const std::string& acArchiveName) -> bool
     {
         const auto cAbsPath = absolute(m_paths.ArchiveModsRoot() / acArchiveName);
@@ -126,7 +126,7 @@ void Scripting::Initialize()
     m_store.LoadAll();
 }
 
-void Scripting::PostInitialize()
+void Scripting::PostInitializeStage1()
 {
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
@@ -135,8 +135,7 @@ void Scripting::PostInitialize()
 
     luaVm.new_usertype<Scripting>("__Game",
         sol::meta_function::construct, sol::no_constructor,
-        sol::meta_function::index, &Scripting::Index,
-        sol::meta_function::new_index, &Scripting::NewIndex);
+        sol::meta_function::index, &Scripting::Index);
 
     luaVm.new_usertype<Type>("__Type",
         sol::meta_function::construct, sol::no_constructor,
@@ -389,35 +388,38 @@ void Scripting::PostInitialize()
 
     luaVm.new_usertype<gamedataLocKeyWrapper>("LocKey",
         sol::constructors<gamedataLocKeyWrapper(uint64_t)>(),
-        sol::call_constructor, sol::constructors<gamedataLocKeyWrapper(uint64_t)>(),
         sol::meta_function::to_string, &gamedataLocKeyWrapper::ToString,
         sol::meta_function::equal_to, &gamedataLocKeyWrapper::operator==,
-        "hash", &gamedataLocKeyWrapper::hash);
+        sol::call_constructor, sol::factories([](sol::object aValue, sol::this_state aState) -> sol::object {
+            sol::state_view lua(aState);
+            gamedataLocKeyWrapper result(0);
+
+            if (aValue != sol::nil)
+            {
+                if (aValue.get_type() == sol::type::number)
+                {
+                    result.hash = aValue.as<uint64_t>();
+                }
+                else if (IsLuaCData(aValue))
+                {
+                    std::string str = lua["tostring"](aValue);
+                    result.hash = std::stoull(str);
+                }
+                else if (aValue.get_type() == sol::type::string)
+                {
+                    result.hash = RED4ext::FNV1a64(aValue.as<const char*>());
+                }
+            }
+
+            return sol::object(lua, sol::in_place, std::move(result));
+        }),
+        "hash", sol::property([](gamedataLocKeyWrapper& aThis, sol::this_state aState) -> sol::object {
+            sol::state_view lua(aState);
+            auto converted = lua.script(fmt::format("return {}ull", aThis.hash));
+            return converted.get<sol::object>();
+        }));
 
     luaGlobal["LocKey"] = luaVm["LocKey"];
-
-    luaGlobal["NewObject"] = [this](const std::string& acName, sol::this_environment aEnv) -> sol::object
-    {
-        auto* pRtti = RED4ext::CRTTISystem::Get();
-        auto* pType = pRtti->GetType(RED4ext::FNV1a(acName.c_str()));
-
-        if (!pType)
-        {
-            const sol::environment cEnv = aEnv;
-            std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
-            logger->info("Type '{}' not found.", acName);
-            return sol::nil;
-        }
-
-        // Always try to return instance wrapped in Handle<> if the type allows it.
-        // See NewHandle() for more info.
-        return RTTIHelper::Get().NewHandle(pType, sol::nullopt);
-    };
-
-    luaGlobal["GetSingleton"] = [this](const std::string& acName, sol::this_environment aThisEnv)
-    {
-        return this->GetSingletonHandle(acName, aThisEnv);
-    };
 
     luaVm.new_usertype<GameOptions>("GameOptions",
         sol::meta_function::construct, sol::no_constructor,
@@ -453,6 +455,39 @@ void Scripting::PostInitialize()
 
     luaGlobal["TweakDB"] = TweakDB(m_lua.AsRef());
 
+    m_sandbox.PostInitialize();
+}
+
+void Scripting::PostInitializeStage2()
+{
+    auto lua = m_lua.Lock();
+    auto& luaVm = lua.Get();
+
+    sol::table luaGlobal = luaVm[m_global];
+
+    luaGlobal["NewObject"] = [this](const std::string& acName, sol::this_environment aEnv) -> sol::object
+    {
+        auto* pRtti = RED4ext::CRTTISystem::Get();
+        auto* pType = pRtti->GetType(RED4ext::FNV1a(acName.c_str()));
+
+        if (!pType)
+        {
+            const sol::environment cEnv = aEnv;
+            std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+            logger->info("Type '{}' not found.", acName);
+            return sol::nil;
+        }
+
+        // Always try to return instance wrapped in Handle<> if the type allows it.
+        // See NewHandle() for more info.
+        return RTTIHelper::Get().NewHandle(pType, sol::nullopt);
+    };
+
+    luaGlobal["GetSingleton"] = [this](const std::string& acName, sol::this_environment aThisEnv)
+    {
+        return this->GetSingletonHandle(acName, aThisEnv);
+    };
+
     luaGlobal["Override"] = [this](const std::string& acTypeName, const std::string& acFullName,
                                    sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
         m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, true);
@@ -469,6 +504,12 @@ void Scripting::PostInitialize()
     };
 
     luaGlobal["Observe"] = luaGlobal["ObserveBefore"];
+
+    // Doesn't require RTTI, but still shouldn't be used before onInit as there is no guarantee that the required mod will be loaded before
+    luaGlobal["GetMod"] = [this](const std::string& acName) -> sol::object
+    {
+        return GetMod(acName);
+    };
 
     luaGlobal["GameDump"] = [this](Type* apType)
     {
@@ -490,7 +531,7 @@ void Scripting::PostInitialize()
         const ClassType type(m_lua.AsRef(), pType);
         return type.Dump(aDetailed);
     };
-    
+
     luaGlobal["DumpAllTypeNames"] = [this](sol::this_environment aThisEnv)
     {
         auto* pRtti = RED4ext::CRTTISystem::Get();
@@ -522,12 +563,6 @@ void Scripting::PostInitialize()
     };
 #endif
 
-    // Doesn't require RTTI, but still shouldn't be used before onInit as there is no guarantee that the required mod will be loaded before
-    luaGlobal["GetMod"] = [this](const std::string& acName) -> sol::object
-    {
-        return GetMod(acName);
-    };
-
     luaVm["Game"] = this;
     luaGlobal["Game"] = luaVm["Game"];
 
@@ -543,7 +578,7 @@ void Scripting::RegisterOverrides()
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
 
-    luaVm["RegisterGlobalInputListener"] = [](StrongReference& aSelf, sol::this_environment aThisEnv) {
+    luaVm["RegisterGlobalInputListener"] = [](WeakReference& aSelf, sol::this_environment aThisEnv) {
         sol::protected_function unregisterInputListener = aSelf.Index("UnregisterInputListener", aThisEnv);
         sol::protected_function registerInputListener = aSelf.Index("RegisterInputListener", aThisEnv);
 
@@ -559,6 +594,11 @@ void Scripting::RegisterOverrides()
 const TiltedPhoques::Vector<VKBindInfo>& Scripting::GetBinds() const
 {
     return m_store.GetBinds();
+}
+
+void Scripting::TriggerOnTweak() const
+{
+    m_store.TriggerOnTweak();
 }
 
 void Scripting::TriggerOnInit() const
@@ -644,18 +684,6 @@ sol::object Scripting::Index(const std::string& acName, sol::this_state aState, 
         return itor->second;
     }
 
-    return InternalIndex(acName, aState, aEnv);
-}
-
-sol::object Scripting::NewIndex(const std::string& acName, sol::object aParam)
-{
-    auto& property = m_properties[acName];
-    property = std::move(aParam);
-    return property;
-}
-
-sol::protected_function Scripting::InternalIndex(const std::string& acName, sol::this_state aState, sol::this_environment aEnv)
-{
     auto func = RTTIHelper::Get().ResolveFunction(acName);
 
     if (!func)
@@ -676,7 +704,9 @@ sol::protected_function Scripting::InternalIndex(const std::string& acName, sol:
         return sol::nil;
     }
 
-    return NewIndex(acName, std::move(func));
+    auto& property = m_properties[acName];
+    property = std::move(func);
+    return property;
 }
 
 sol::object Scripting::GetSingletonHandle(const std::string& acName, sol::this_environment aThisEnv)

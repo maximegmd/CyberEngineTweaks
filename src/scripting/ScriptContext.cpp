@@ -43,6 +43,8 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
     {
         if(acName == "onInit")
             m_onInit = aCallback;
+        else if(acName == "onTweak")
+            m_onTweak = aCallback;
         else if(acName == "onShutdown")
             m_onShutdown = aCallback;
         else if(acName == "onUpdate")
@@ -153,6 +155,13 @@ bool ScriptContext::IsValid() const
 const TiltedPhoques::Vector<VKBindInfo>& ScriptContext::GetBinds() const
 {
     return m_vkBindInfos;
+}
+
+void ScriptContext::TriggerOnTweak() const
+{
+    auto state = m_sandbox.GetState();
+
+    TryLuaFunction(m_logger, m_onTweak);
 }
 
 void ScriptContext::TriggerOnInit() const
