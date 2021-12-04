@@ -88,7 +88,7 @@ void Scripting::Initialize()
         const auto resolution = m_d3d12.GetResolution();
         return {static_cast<float>(resolution.cx), static_cast<float>(resolution.cy)};
     };
-    
+
     luaGlobal["ModArchiveExists"] = [this](const std::string& acArchiveName) -> bool
     {
         const auto cAbsPath = absolute(m_paths.ArchiveModsRoot() / acArchiveName);
@@ -388,10 +388,36 @@ void Scripting::PostInitializeStage1()
 
     luaVm.new_usertype<gamedataLocKeyWrapper>("LocKey",
         sol::constructors<gamedataLocKeyWrapper(uint64_t)>(),
-        sol::call_constructor, sol::constructors<gamedataLocKeyWrapper(uint64_t)>(),
         sol::meta_function::to_string, &gamedataLocKeyWrapper::ToString,
         sol::meta_function::equal_to, &gamedataLocKeyWrapper::operator==,
-        "hash", &gamedataLocKeyWrapper::hash);
+        sol::call_constructor, sol::factories([](sol::object aValue, sol::this_state aState) -> sol::object {
+            sol::state_view lua(aState);
+            gamedataLocKeyWrapper result(0);
+
+            if (aValue != sol::nil)
+            {
+                if (aValue.get_type() == sol::type::number)
+                {
+                    result.hash = aValue.as<uint64_t>();
+                }
+                else if (IsLuaCData(aValue))
+                {
+                    std::string str = lua["tostring"](aValue);
+                    result.hash = std::stoull(str);
+                }
+                else if (aValue.get_type() == sol::type::string)
+                {
+                    result.hash = RED4ext::FNV1a64(aValue.as<const char*>());
+                }
+            }
+
+            return sol::object(lua, sol::in_place, std::move(result));
+        }),
+        "hash", sol::property([](gamedataLocKeyWrapper& aThis, sol::this_state aState) -> sol::object {
+            sol::state_view lua(aState);
+            auto converted = lua.script(fmt::format("return {}ull", aThis.hash));
+            return converted.get<sol::object>();
+        }));
 
     luaGlobal["LocKey"] = luaVm["LocKey"];
 
@@ -505,7 +531,7 @@ void Scripting::PostInitializeStage2()
         const ClassType type(m_lua.AsRef(), pType);
         return type.Dump(aDetailed);
     };
-    
+
     luaGlobal["DumpAllTypeNames"] = [this](sol::this_environment aThisEnv)
     {
         auto* pRtti = RED4ext::CRTTISystem::Get();
