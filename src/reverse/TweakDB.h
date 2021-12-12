@@ -25,6 +25,10 @@ struct TweakDB
     bool SetFlat(TweakDBID aDBID, sol::object aObject, sol::this_environment aThisEnv);
     bool SetFlatByNameAutoUpdate(const std::string& acFlatName, sol::object aObject, sol::this_environment aThisEnv);
     bool SetFlatAutoUpdate(TweakDBID aDBID, sol::object aObject, sol::this_environment aThisEnv);
+    bool SetTypedFlatByName(const std::string& acFlatName, sol::object aObject, const std::string& acTypeName,
+                            sol::this_environment aThisEnv);
+    bool SetTypedFlat(TweakDBID aDBID, sol::object aObject, const std::string& acTypeName,
+                      sol::this_environment aThisEnv);
     bool UpdateRecordByName(const std::string& acRecordName);
     bool UpdateRecordByID(TweakDBID aDBID);
     bool UpdateRecord(sol::object aValue, sol::this_environment aThisEnv);
@@ -35,8 +39,12 @@ struct TweakDB
     bool CloneRecord(const std::string& acRecordName, TweakDBID aClonedRecordDBID, sol::this_environment aThisEnv);
     bool DeleteRecord(const std::string& acRecordName, sol::this_environment aThisEnv);
 
+    static void RefreshFlatPools();
+
 protected:
     friend struct TweakDBEditor;
+    bool SetOrCreateFlat(TweakDBID aDBID, sol::object aObject, const std::string& acFlatName,
+                         const std::string& acTypeName, std::shared_ptr<spdlog::logger> aLogger = nullptr);
     static int32_t InternalSetFlat(RED4ext::TweakDBID aDBID, const RED4ext::CStackType& acStackType);
     static bool InternalCreateRecord(const std::string& acRecordName, const std::string& acRecordTypeName,
                                      std::shared_ptr<spdlog::logger> aLogger = nullptr);

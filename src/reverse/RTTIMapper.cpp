@@ -40,53 +40,6 @@ void RTTIMapper::Register()
     RegisterSpecialAccessors(luaState, luaGlobal);
 }
 
-RED4ext::CName TryResolveTypeName(sol::object aValue)
-{
-    if (IsLuaCData(aValue))
-        return "Uint64";
-
-    switch (aValue.get_type())
-    {
-    case sol::type::string:
-        return "String";
-
-    case sol::type::boolean:
-        return "Bool";
-
-    // case sol::type::number:
-    //    return "Int32";
-
-    case sol::type::userdata:
-    {
-        sol::userdata userdata = aValue;
-        sol::table metatable = userdata[sol::metatable_key];
-        std::string name = metatable.raw_get_or<std::string>("__name", "");
-
-        if (!name.empty())
-            return name.c_str() + 4;
-
-        break;
-    }
-
-    case sol::type::table:
-    {
-        sol::table table = aValue;
-
-        if (table.size() > 0)
-        {
-            RED4ext::CName innerType = TryResolveTypeName(table[1]);
-
-            if (!innerType.IsNone())
-                return std::string("array:").append(innerType.ToString()).c_str();
-        }
-
-        break;
-    }
-    }
-
-    return RED4ext::CName();
-}
-
 void RTTIMapper::RegisterSimpleTypes(sol::state& aLuaState, sol::table& aLuaGlobal)
 {
     aLuaState.new_usertype<Variant>("Variant",
@@ -296,4 +249,48 @@ void RTTIMapper::ExtendUsertype(const std::string acTypeName, sol::state& aLuaSt
 void RTTIMapper::SanitizeName(std::string& aName)
 {
     std::replace(aName.begin(), aName.end(), '.', '_');
+}
+
+RED4ext::CName RTTIMapper::TryResolveTypeName(sol::object aValue)
+{
+    if (IsLuaCData(aValue))
+        return "Uint64";
+
+    switch (aValue.get_type())
+    {
+    case sol::type::string:
+        return "String";
+
+    case sol::type::boolean:
+        return "Bool";
+
+    case sol::type::userdata:
+    {
+        sol::userdata userdata = aValue;
+        sol::table metatable = userdata[sol::metatable_key];
+        std::string name = metatable.raw_get_or<std::string>("__name", "");
+
+        if (!name.empty())
+            return name.c_str() + 4;
+
+        break;
+    }
+
+    case sol::type::table:
+    {
+        sol::table table = aValue;
+
+        if (table.size() > 0)
+        {
+            RED4ext::CName innerType = TryResolveTypeName(table[1]);
+
+            if (!innerType.IsNone())
+                return std::string("array:").append(innerType.ToString()).c_str();
+        }
+
+        break;
+    }
+    }
+
+    return RED4ext::CName();
 }

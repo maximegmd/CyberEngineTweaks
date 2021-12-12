@@ -1516,7 +1516,6 @@ bool TweakDBEditor::DrawFlatCName(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
 {
     auto* pCName = static_cast<RED4ext::CName*>(aStackType.value);
 
-    ImGui::TextUnformatted("This is not just a string.");
     ImGui::TextUnformatted("Game is expecting specific values.");
     // Is it worth it to implement a dropdown like DrawTweakDBID?
 

@@ -4,6 +4,7 @@
 #include <CET.h>
 #include <reverse/WeakReference.h>
 #include <reverse/StrongReference.h>
+#include <reverse/RTTIMapper.h>
 #include <scripting/Scripting.h>
 
 #include <RED4ext/Hashing/CRC.hpp>
@@ -97,6 +98,7 @@ struct FlatPool
     HashType HashValue(const RED4ext::CStackType& acStackType, Type aType, HashType aSeed = HashSeed);
 
     static bool Initialize();
+    static void Invalidate();
     static FlatPool* GetPool(const RED4ext::CBaseRTTIType* acpType);
     static Type RTTIToPoolType(const RED4ext::CBaseRTTIType* acpType);
 
@@ -105,12 +107,14 @@ private:
     Type m_poolType = Type::Unknown;
     TiltedPhoques::Vector<Item> m_items;
 
+    static std::mutex s_mutex;
     static bool s_initialized;
     static std::array<FlatPool, (size_t)Type::Count> s_pools;
 };
 
 std::mutex TweakDB::s_mutex;
 std::set<RED4ext::TweakDBID> TweakDB::s_createdRecords;
+std::mutex FlatPool::s_mutex;
 bool FlatPool::s_initialized = false;
 std::array<FlatPool, (size_t)FlatPool::Type::Count> FlatPool::s_pools;
 
@@ -234,10 +238,75 @@ bool TweakDB::SetFlats(TweakDBID aDBID, sol::table aTable, sol::this_environment
 
 bool TweakDB::SetFlatByName(const std::string& acFlatName, sol::object aObject, sol::this_environment aThisEnv)
 {
-    return SetFlat(TweakDBID(acFlatName), std::move(aObject), std::move(aThisEnv));
+    const sol::environment cEnv = aThisEnv;
+    std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+
+    return SetOrCreateFlat(TweakDBID(acFlatName), std::move(aObject), acFlatName, "", logger);
 }
 
 bool TweakDB::SetFlat(TweakDBID aDBID, sol::object aObject, sol::this_environment aThisEnv)
+{
+    const sol::environment cEnv = aThisEnv;
+    std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+
+    return SetOrCreateFlat(aDBID, std::move(aObject), "", "", logger);
+}
+
+bool TweakDB::SetFlatByNameAutoUpdate(const std::string& acFlatName, sol::object aObject, sol::this_environment aThisEnv)
+{
+    const sol::environment cEnv = aThisEnv;
+    std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+
+    TweakDBID dbid(acFlatName);
+    if (SetOrCreateFlat(dbid, std::move(aObject), acFlatName, "", logger))
+    {
+        uint64_t recordDBID = CET::Get().GetVM().GetTDBIDBase(dbid.value);
+        if (recordDBID != 0)
+        {
+            UpdateRecordByID(recordDBID);
+        }
+        return true;
+    }
+
+    return false;
+}
+
+bool TweakDB::SetFlatAutoUpdate(TweakDBID aDBID, sol::object aObject, sol::this_environment aThisEnv)
+{
+    const sol::environment cEnv = aThisEnv;
+    std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+
+    if (SetOrCreateFlat(aDBID, std::move(aObject), "", "", logger))
+    {
+        uint64_t recordDBID = CET::Get().GetVM().GetTDBIDBase(aDBID.value);
+        if (recordDBID != 0)
+        {
+            UpdateRecordByID(recordDBID);
+        }
+        return true;
+    }
+
+    return false;
+}
+
+bool TweakDB::SetTypedFlatByName(const std::string& acFlatName, sol::object aObject, const std::string& acTypeName, sol::this_environment aThisEnv)
+{
+    const sol::environment cEnv = aThisEnv;
+    std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+
+    return SetOrCreateFlat(TweakDBID(acFlatName), aObject, acFlatName, acTypeName, logger);
+}
+
+bool TweakDB::SetTypedFlat(TweakDBID aDBID, sol::object aObject, const std::string& acTypeName, sol::this_environment aThisEnv)
+{
+    const sol::environment cEnv = aThisEnv;
+    std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+
+    return SetOrCreateFlat(aDBID, aObject, "", acTypeName, logger);
+}
+
+bool TweakDB::SetOrCreateFlat(TweakDBID aDBID, sol::object aObject, const std::string& acFlatName,
+                              const std::string& acTypeName, std::shared_ptr<spdlog::logger> aLogger)
 {
     auto* pTDB = RED4ext::TweakDB::Get();
     static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 22);
@@ -250,54 +319,122 @@ bool TweakDB::SetFlat(TweakDBID aDBID, sol::object aObject, sol::this_environmen
     };
     ResetAllocator ___allocatorReset;
 
-    const sol::environment cEnv = aThisEnv;
-    std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
-
     RED4ext::CStackType stackType;
-    {
-        auto* pFlatValue = pTDB->GetFlatValue(aDBID.value);
-        if (pFlatValue == nullptr)
-            return false;
 
+    auto* pFlatValue = pTDB->GetFlatValue(aDBID.value);
+    if (pFlatValue == nullptr)
+    {
+        auto* pRTTI = RED4ext::CRTTISystem::Get();
+
+        if (!acTypeName.empty())
+        {
+            stackType.type = pRTTI->GetType(acTypeName.c_str());
+        }
+        else
+        {
+            const auto cTypeName = RTTIMapper::TryResolveTypeName(aObject);
+
+            if (cTypeName.IsNone())
+            {
+                if (aLogger)
+                {
+                    aLogger->info("[TweakDB::SetFlat] Type is ambiguous, use third parameter to specify the type");
+                }
+                return false;
+            }
+
+            stackType.type = pRTTI->GetType(cTypeName);
+        }
+
+        if (stackType.type == nullptr)
+        {
+            if (aLogger)
+            {
+                aLogger->info("[TweakDB::SetFlat] Unknown type");
+            }
+            return false;
+        }
+
+        FlatPool* pPool = FlatPool::GetPool(stackType.type);
+        if (pPool == nullptr)
+        {
+            if (aLogger)
+            {
+                RED4ext::CName typeName;
+                stackType.type->GetName(typeName);
+                aLogger->info("[TweakDB::SetFlat] Unsupported type: {}", typeName.ToString());
+            }
+            return false;
+        }
+
+        stackType = Scripting::ToRED(aObject, stackType.type, &s_scratchMemory);
+        if (stackType.value == nullptr)
+        {
+            if (aLogger)
+            {
+                RED4ext::CName typeName;
+                stackType.type->GetName(typeName);
+                aLogger->info("[TweakDB::SetFlat] Failed to convert value. Expecting: {}", typeName.ToString());
+            }
+            return false;
+        }
+
+        int32_t newTDBOffset = pPool->GetOrCreate(stackType);
+        if (newTDBOffset == -1)
+        {
+            if (aLogger)
+            {
+                aLogger->info("[TweakDB::SetFlat] Failed to create a new TweakDB Flat");
+            }
+            return false;
+        }
+
+        RED4ext::TweakDBID flatID(aDBID.value);
+        flatID.SetTDBOffset(newTDBOffset);
+
+        if (!pTDB->AddFlat(flatID))
+        {
+            pPool->Remove(flatID.ToTDBOffset());
+            if (aLogger)
+            {
+                aLogger->info("[TweakDB::SetFlat] Failed to create a new TweakDB Flat");
+            }
+            return false;
+        }
+
+        if (!acFlatName.empty())
+        {
+            CET::Get().GetVM().RegisterTDBIDString(aDBID.value, 0, acFlatName);
+        }
+
+        return true;
+    }
+
+    {
         RED4ext::CStackType stackTypeCurrent = pFlatValue->GetValue();
         stackType = Scripting::ToRED(aObject, stackTypeCurrent.type, &s_scratchMemory);
         if (stackType.value == nullptr)
         {
-            RED4ext::CName typeName;
-            stackTypeCurrent.type->GetName(typeName);
-            logger->info("[TweakDB::SetFlat] Failed to convert value. Expecting: {}", typeName.ToString());
+            if (aLogger)
+            {
+                RED4ext::CName typeName;
+                stackTypeCurrent.type->GetName(typeName);
+                aLogger->info("[TweakDB::SetFlat] Failed to convert value. Expecting: {}", typeName.ToString());
+            }
             return false;
         }
     }
 
     if (InternalSetFlat(aDBID.value, stackType) == -1)
     {
-        logger->info("[TweakDB::SetFlat] Failed to create a new TweakDB Flat");
+        if (aLogger)
+        {
+            aLogger->info("[TweakDB::SetFlat] Failed to create a new TweakDB Flat");
+        }
         return false;
     }
 
     return true;
-}
-
-bool TweakDB::SetFlatByNameAutoUpdate(const std::string& acFlatName, sol::object aObject,
-                                      sol::this_environment aThisEnv)
-{
-    return SetFlatAutoUpdate(TweakDBID(acFlatName), std::move(aObject), std::move(aThisEnv));
-}
-
-bool TweakDB::SetFlatAutoUpdate(TweakDBID aDBID, sol::object aObject, sol::this_environment aThisEnv)
-{
-    if (SetFlat(aDBID, std::move(aObject), std::move(aThisEnv)))
-    {
-        uint64_t recordDBID = CET::Get().GetVM().GetTDBIDBase(aDBID.value);
-        if (recordDBID != 0)
-        {
-            UpdateRecordByID(recordDBID);
-        }
-        return true;
-    }
-
-    return false;
 }
 
 bool TweakDB::UpdateRecordByName(const std::string& acRecordName)
@@ -616,6 +753,11 @@ bool TweakDB::IsACreatedRecord(RED4ext::TweakDBID aDBID)
     return s_createdRecords.find(aDBID) != s_createdRecords.end();
 }
 
+void TweakDB::RefreshFlatPools()
+{
+    FlatPool::Invalidate();
+}
+
 FlatPool::Item::Item(HashType aHash, int32_t aTDBOffset) noexcept
     : m_hash(aHash)
     , m_useCount(1)
@@ -855,8 +997,7 @@ FlatPool::HashType FlatPool::HashValue(const RED4ext::CStackType& acStackType, T
 
 bool FlatPool::Initialize()
 {
-    static std::mutex mutex;
-    std::lock_guard<std::mutex> _1(mutex);
+    std::lock_guard<std::mutex> _1(s_mutex);
     if (s_initialized)
         return true;
 
@@ -910,6 +1051,20 @@ bool FlatPool::Initialize()
 
     s_initialized = true;
     return true;
+}
+
+void FlatPool::Invalidate()
+{
+    std::lock_guard<std::mutex> _1(s_mutex);
+    if (!s_initialized)
+        return;
+
+    for (size_t i = 0; i != (size_t)FlatPool::Type::Count; ++i)
+    {
+        s_pools[i].m_items.clear();
+    }
+
+    s_initialized = false;
 }
 
 FlatPool* FlatPool::GetPool(const RED4ext::CBaseRTTIType* acpType)

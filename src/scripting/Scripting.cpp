@@ -446,7 +446,7 @@ void Scripting::PostInitializeStage1()
         "Query", sol::overload(&TweakDB::QueryByName, &TweakDB::Query),
         "GetFlat", sol::overload(&TweakDB::GetFlatByName, &TweakDB::GetFlat),
         "SetFlats", sol::overload(&TweakDB::SetFlatsByName, &TweakDB::SetFlats),
-        "SetFlat", sol::overload(&TweakDB::SetFlatByNameAutoUpdate, &TweakDB::SetFlatAutoUpdate),
+        "SetFlat", sol::overload(&TweakDB::SetFlatByNameAutoUpdate, &TweakDB::SetFlatAutoUpdate, &TweakDB::SetTypedFlat, &TweakDB::SetTypedFlatByName),
         "SetFlatNoUpdate", sol::overload(&TweakDB::SetFlatByName, &TweakDB::SetFlat),
         "Update", sol::overload(&TweakDB::UpdateRecordByName, &TweakDB::UpdateRecordByID, &TweakDB::UpdateRecord),
         "CreateRecord", &TweakDB::CreateRecord,
@@ -565,6 +565,12 @@ void Scripting::PostInitializeStage2()
 
     luaVm["Game"] = this;
     luaGlobal["Game"] = luaVm["Game"];
+
+    // CET has its own flat pool manager
+    // If any other mod made changes to TweakDB, local flat pools will become invalid
+    // We assume that other mods only change TweakDB before the initialization state,
+    // so we refresh the local flat pools when enter this state
+    TweakDB::RefreshFlatPools();
 
     RTTIExtender::Initialize();
     m_mapper.Register();
