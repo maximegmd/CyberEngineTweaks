@@ -302,6 +302,9 @@ bool FunctionOverride::ExecuteChain(const CallChain& aChain, std::shared_lock<st
                                     RED4ext::CScriptStack* apStack, RED4ext::CStackFrame* apFrame,
                                     char* apCode, uint8_t aParam)
 {
+    auto lockedState = aChain.pScripting->GetState();
+    auto& luaState = lockedState.Get();
+
     if (!aChain.Before.empty())
     {
         for (const auto& call : aChain.Before)
@@ -324,9 +327,6 @@ bool FunctionOverride::ExecuteChain(const CallChain& aChain, std::shared_lock<st
         sol::object luaContext = pRealFunction->flags.isStatic ? sol::nil : apOrigArgs->at(0);
         TiltedPhoques::Vector<sol::object> luaArgs(apOrigArgs->begin() + (pRealFunction->flags.isStatic ? 0 : 1),
                                                    apOrigArgs->end());
-
-        auto lockedState = aChain.pScripting->GetState();
-        auto& luaState = lockedState.Get();
 
         auto luaWrapped = WrapNextOverride(aChain, 0, luaState, luaContext, luaArgs, pRealFunction, apContext, aLock);
         auto luaResult = luaWrapped(as_args(luaArgs));
