@@ -102,6 +102,9 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
 
         if (!chain.IsEmpty)
         {
+            auto lockedState = chain.pScripting->GetState();
+            auto& luaState = lockedState.Get();
+
             TiltedPhoques::StackAllocator<1 << 13> s_allocator;
 
             auto pAllocator = TiltedPhoques::Allocator::Get();
@@ -110,14 +113,12 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
             TiltedPhoques::Vector<RED4ext::CStackType> outArgs;
             TiltedPhoques::Allocator::Set(pAllocator);
 
-            auto state = chain.pScripting->GetState();
-
             auto pContext = apStack->GetContext();
             if (!apFunction->flags.isStatic && pContext)
             {
                 const auto weak = RED4ext::WeakHandle<RED4ext::IScriptable>(
                     *(RED4ext::WeakHandle<RED4ext::IScriptable>*)&pContext->ref);
-                auto obj = sol::make_object(state.Get(), WeakReference(state, weak));
+                auto obj = sol::make_object(luaState, WeakReference(lockedState, weak));
 
                 args.push_back(obj);
             }
@@ -130,7 +131,7 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
                 arg.type = p->type;
                 arg.value = pOffset;
 
-                args.push_back(Scripting::ToLua(state, arg));
+                args.push_back(Scripting::ToLua(lockedState, arg));
 
                 if (p->flags.isOut)
                     outArgs.push_back(arg);
@@ -171,7 +172,6 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
     }
 
     const auto& chain = itor->second;
-    bool isOverridden = false;
 
     // Save state so we can rollback to it after we popped for ourself
     auto* pCode = apFrame->code;
@@ -179,6 +179,9 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
 
     if (!chain.IsEmpty)
     {
+        auto lockedState = chain.pScripting->GetState();
+        auto& luaState = lockedState.Get();
+
         // Cheap allocation
         TiltedPhoques::StackAllocator<1 << 13> s_allocator;
 
@@ -187,8 +190,6 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
         TiltedPhoques::Vector<sol::object> args;
         TiltedPhoques::Vector<RED4ext::CStackType> outArgs;
         TiltedPhoques::Allocator::Set(pAllocator);
-
-        auto state = chain.pScripting->GetState();
 
         RED4ext::CStackType self;
 
@@ -207,7 +208,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
 
             const auto ref = (RED4ext::WeakHandle<RED4ext::IScriptable>*)&((RED4ext::IScriptable*)self.value)->ref;
             const auto weak = RED4ext::WeakHandle<RED4ext::IScriptable>(*ref);
-            auto obj = sol::make_object(state.Get(), WeakReference(state, weak));
+            auto obj = sol::make_object(luaState, WeakReference(lockedState, weak));
 
             args.push_back(obj);
         }
@@ -245,7 +246,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
             const auto opcode = *(apFrame->code++);
             RED4ext::OpcodeHandlers::Run(opcode, (RED4ext::IScriptable*)apFrame->context, apFrame, pInstance, isScriptRef ? pInstance : nullptr);
 
-            args.push_back(Scripting::ToLua(state, arg));
+            args.push_back(Scripting::ToLua(lockedState, arg));
 
             if (pArg->flags.isOut)
             {
@@ -270,7 +271,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
                 pAllocator->Free(pInstance);
             }
         }
-        
+
         apFrame->code++; // skip ParamEnd
 
         RED4ext::CStackType ret;
@@ -296,11 +297,14 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
 }
 
 bool FunctionOverride::ExecuteChain(const CallChain& aChain, std::shared_lock<std::shared_mutex>& aLock,
-                                    RED4ext::IScriptable* apContext, TiltedPhoques::Vector<sol::object>* apOrigArgs, 
+                                    RED4ext::IScriptable* apContext, TiltedPhoques::Vector<sol::object>* apOrigArgs,
                                     RED4ext::CStackType* apResult, TiltedPhoques::Vector<RED4ext::CStackType>* apOutArgs,
                                     RED4ext::CScriptStack* apStack, RED4ext::CStackFrame* apFrame,
                                     char* apCode, uint8_t aParam)
 {
+    auto lockedState = aChain.pScripting->GetState();
+    auto& luaState = lockedState.Get();
+
     if (!aChain.Before.empty())
     {
         for (const auto& call : aChain.Before)
@@ -323,9 +327,6 @@ bool FunctionOverride::ExecuteChain(const CallChain& aChain, std::shared_lock<st
         sol::object luaContext = pRealFunction->flags.isStatic ? sol::nil : apOrigArgs->at(0);
         TiltedPhoques::Vector<sol::object> luaArgs(apOrigArgs->begin() + (pRealFunction->flags.isStatic ? 0 : 1),
                                                    apOrigArgs->end());
-
-        auto lockedState = aChain.pScripting->GetState();
-        auto& luaState = lockedState.Get();
 
         auto luaWrapped = WrapNextOverride(aChain, 0, luaState, luaContext, luaArgs, pRealFunction, apContext, aLock);
         auto luaResult = luaWrapped(as_args(luaArgs));
@@ -500,7 +501,7 @@ void FunctionOverride::Hook(Options& aOptions) const
     }
 }
 
-void FunctionOverride::Override(const std::string& acTypeName, const std::string& acFullName, 
+void FunctionOverride::Override(const std::string& acTypeName, const std::string& acFullName,
                                 sol::protected_function aFunction, sol::environment aEnvironment,
                                 bool aAbsolute, bool aAfter, bool aCollectGarbage)
 {

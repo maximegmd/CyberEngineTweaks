@@ -59,7 +59,7 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
             m_logger->error("Tried to register an unknown event '{}'!", acName);
     };
 
-    env["registerHotkey"] = [this](const std::string& acID, const std::string& acDescription, sol::function aCallback)
+    env["registerHotkey"] = [this, &aLuaSandbox](const std::string& acID, const std::string& acDescription, sol::function aCallback)
     {
         if (acID.empty() ||
             (std::ranges::find_if(acID, [](char c){ return !(isalpha(c) || isdigit(c) || c == '_'); }) != acID.cend()))
@@ -76,15 +76,16 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
 
         auto loggerRef = m_logger;
         std::string vkBindID = m_name + '.' + acID;
-        VKBind vkBind = {vkBindID, acDescription, [loggerRef, aCallback]()
+        VKBind vkBind = {vkBindID, acDescription, [&aLuaSandbox, loggerRef, aCallback]()
         {
+            auto state = aLuaSandbox.GetState();
             TryLuaFunction(loggerRef, aCallback);
         }};
 
         m_vkBindInfos.emplace_back(VKBindInfo{vkBind});
     };
     
-    env["registerInput"] = [this](const std::string& acID, const std::string& acDescription, sol::function aCallback) {
+    env["registerInput"] = [this, &aLuaSandbox](const std::string& acID, const std::string& acDescription, sol::function aCallback) {
         if (acID.empty() ||
             (std::ranges::find_if(acID, [](char c) { return !(isalpha(c) || isdigit(c) || c == '_'); }) != acID.cend()))
         {
@@ -103,8 +104,9 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
 
         auto loggerRef = m_logger;
         std::string vkBindID = m_name + '.' + acID;
-        VKBind vkBind = {vkBindID, acDescription, [loggerRef, aCallback](bool isDown)
+        VKBind vkBind = {vkBindID, acDescription, [&aLuaSandbox, loggerRef, aCallback](bool isDown)
         {
+            auto state = aLuaSandbox.GetState();
             TryLuaFunction(loggerRef, aCallback, isDown);
         }};
 

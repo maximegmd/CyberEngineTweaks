@@ -12,6 +12,7 @@ struct RTTIMapper
     void Register();
 
     static void SanitizeName(std::string& aName);
+    static RED4ext::CName TryResolveTypeName(sol::object aValue);
 
 private:
 
