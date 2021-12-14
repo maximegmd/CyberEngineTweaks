@@ -219,7 +219,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
             auto* pType = pArg->type;
             auto* pAllocator = pType->GetAllocator();
 
-            auto* pInstance = pAllocator->Alloc(pType->GetSize()).memory;
+            auto* pInstance = pAllocator->AllocAligned(pType->GetSize(), pType->GetAlignment()).memory;
             pType->Init(pInstance);
 
             bool isScriptRef = pArg->type->GetType() == RED4ext::ERTTIType::ScriptReference;
@@ -227,13 +227,12 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
             // Exception here we need to allocate the inner object as well
             if (isScriptRef)
             {
-                RED4ext::ScriptRef<void>* pScriptRef = (RED4ext::ScriptRef<void>*)pInstance;
-                auto pInnerType = pScriptRef->innerType;
-
-                auto pInnerInstance = pInnerType->GetAllocator()->Alloc(pInnerType->GetSize()).memory;
-                pInnerType->Init(pInnerInstance);
-
-                pScriptRef->ref = pInnerInstance;
+                auto* pInnerType = ((RED4ext::CRTTIScriptReferenceType*)pType)->innerType;
+                auto* pScriptRef = (RED4ext::ScriptRef<void>*)pInstance;
+                pScriptRef->innerType = pInnerType;
+                pScriptRef->hash = pInnerType->GetName();
+                pScriptRef->ref = pInnerType->GetAllocator()->AllocAligned(pInnerType->GetSize(), pInnerType->GetAlignment()).memory;
+                pInnerType->Init(pScriptRef->ref);
             }
 
             RED4ext::CStackType arg;
@@ -260,9 +259,10 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
             // Release inner values
             if (isScriptRef)
             {
-                RED4ext::ScriptRef<void>* pScriptRef = (RED4ext::ScriptRef<void>*)pInstance;
+                auto* pScriptRef = (RED4ext::ScriptRef<void>*)pInstance;
                 pScriptRef->innerType->Destroy(pScriptRef->ref);
                 pScriptRef->innerType->GetAllocator()->Free(pScriptRef->ref);
+                pScriptRef->ref = nullptr;
             }
 
             if (!pArg->flags.isOut || apFrame->unk30)
