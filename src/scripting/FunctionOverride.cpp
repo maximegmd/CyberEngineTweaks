@@ -197,12 +197,12 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
         {
             if (apContext->valueHolder)
             {
-                self.type = apContext->classType;
+                self.type = apContext->unk30;
                 self.value = apContext;
             }
             else
             {
-                self.type = apFrame->context->classType;
+                self.type = apFrame->context->unk30;
                 self.value = apFrame->context;
             }
 

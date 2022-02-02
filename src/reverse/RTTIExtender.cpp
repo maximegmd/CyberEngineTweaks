@@ -376,7 +376,7 @@ void CreateSingleton(RED4ext::Handle<RED4ext::IScriptable> apClassInstance)
             pGameSystem->OnSystemInitializeAsync(&systemInitParams);
         }
 
-        auto* pParentType = reinterpret_cast<RED4ext::CClass*>(apClassInstance->GetParentType());
+        auto* pParentType = reinterpret_cast<RED4ext::CClass*>(apClassInstance->GetType());
         pGameInstance->unk08.Insert(pParentType, apClassInstance);
         pGameInstance->unk38.PushBack(apClassInstance);
 
@@ -390,7 +390,7 @@ void CreateSingleton(RED4ext::Handle<RED4ext::IScriptable> apClassInstance)
     }
     else
     {
-        auto* pParentType = apClassInstance->GetParentType();
+        auto* pParentType = apClassInstance->GetType();
         pGameInstance->unk08.Insert(pParentType, apClassInstance);
         pGameInstance->unk48.Insert(pParentType, pType);
     }
