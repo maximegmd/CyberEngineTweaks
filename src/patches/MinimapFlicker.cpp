@@ -10,7 +10,7 @@ void MinimapFlickerPatch(const Image* apImage)
 
     if (pLocation == nullptr)
     {
-        spdlog::warn("Minimap Flicker Patch: failed");
+        Log::Warn("Minimap Flicker Patch: failed");
         return;
     }
 
@@ -21,5 +21,5 @@ void MinimapFlickerPatch(const Image* apImage)
     pLocation[0] = 0x01;
     VirtualProtect(pLocation, 32, oldProtect, nullptr);
 
-    spdlog::info("Minimap Flicker Patch: success");
+    Log::Info("Minimap Flicker Patch: success");
 }

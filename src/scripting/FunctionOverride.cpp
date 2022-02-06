@@ -462,16 +462,16 @@ void FunctionOverride::Hook(Options& aOptions) const
         const mem::default_scanner cScanner(cPattern);
         RealRunPureScriptFunction = cScanner(gameImage.TextRegion).as<TRunPureScriptFunction>();
         if (!RealRunPureScriptFunction)
-            spdlog::error("Could not find pure run script function!");
+            Log::Error("Could not find pure run script function!");
         else
         {
             auto* pLocation = RealRunPureScriptFunction;
             if (MH_CreateHook(pLocation, &FunctionOverride::HookRunPureScriptFunction,
                               reinterpret_cast<void**>(&RealRunPureScriptFunction)) != MH_OK ||
                 MH_EnableHook(pLocation) != MH_OK)
-                spdlog::error("Could not hook RealRunScriptFunction function!");
+                Log::Error("Could not hook RealRunScriptFunction function!");
             else
-                spdlog::info("RealRunScriptFunction function hook complete!");
+                Log::Info("RealRunScriptFunction function hook complete!");
         }
     }
 
@@ -493,10 +493,10 @@ void FunctionOverride::Hook(Options& aOptions) const
                 *pFirstLocation = *pSecondLocation = std::max(s_cMaxFunctionSize, sizeof(RED4ext::CScriptedFunction));
                 VirtualProtect(pLocation, 0x40, oldProtect, &oldProtect);
 
-                spdlog::info("Override function allocator patched!");
+                Log::Info("Override function allocator patched!");
             }
             else
-                spdlog::error("Could not fix allocator for override functions!");
+                Log::Error("Could not fix allocator for override functions!");
         }
     }
 }

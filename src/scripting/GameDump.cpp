@@ -83,7 +83,7 @@ void DumpVTablesTask::Run()
 
     for (auto& [key, value] : vtableMap)
     {
-        spdlog::info("{:016X},{}", key, value);
+        Log::Info("{:016X},{}", key, value);
     }
 }
 } // namespace GameDump

@@ -1,6 +1,6 @@
-set_xmakever("2.5.3")
+set_xmakever("2.6.0")
 
-set_languages("cxx20")
+set_languages("c++20")
 set_arch("x64")
 
 add_requires("spdlog", "nlohmann_json", "hopscotch-map", "minhook", "mem", "imgui 1.84.2", "sol2", "tiltedcore 0.2.3", "sqlite3", "luajit")
@@ -12,6 +12,7 @@ add_requireconfs("imgui", { configs = { user_config = imguiUserConfig } })
 
 add_rules("mode.debug","mode.releasedbg", "mode.release")
 add_rules("plugin.vsxmake.autoupdate")
+add_rules("c.unity_build")
 
 if is_mode("debug") then
     add_defines("CET_DEBUG")

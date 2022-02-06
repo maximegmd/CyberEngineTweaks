@@ -4,10 +4,10 @@
 #include "window/Window.h"
 
 using TResizeBuffersD3D12 = HRESULT(IDXGISwapChain*, UINT, UINT, UINT, DXGI_FORMAT, UINT);
-using TPresentD3D12 = HRESULT(IDXGISwapChain*, UINT, UINT);
 using TPresentD3D12Downlevel = HRESULT(ID3D12CommandQueueDownlevel*, ID3D12GraphicsCommandList*, ID3D12Resource*, HWND, D3D12_DOWNLEVEL_PRESENT_FLAGS);
 using TCreateCommittedResource = HRESULT(ID3D12Device*, const D3D12_HEAP_PROPERTIES*, D3D12_HEAP_FLAGS, const D3D12_RESOURCE_DESC*, D3D12_RESOURCE_STATES, const D3D12_CLEAR_VALUE*, const IID*, void**);
 using TExecuteCommandLists = void(ID3D12CommandQueue*, UINT, ID3D12CommandList* const*);
+using TCRenderNode_Present_InternalPresent = void*(int32_t*, uint8_t ,UINT);
 
 struct D3D12
 {
@@ -30,6 +30,7 @@ struct D3D12
 protected:
     
     void Hook();
+    void HookGame();
 
     struct FrameContext
     {
@@ -46,18 +47,18 @@ protected:
     void Update();
 
     static HRESULT ResizeBuffers(IDXGISwapChain* apSwapChain, UINT aBufferCount, UINT aWidth, UINT aHeight, DXGI_FORMAT aNewFormat, UINT aSwapChainFlags);
-    static HRESULT Present(IDXGISwapChain* apSwapChain, UINT aSyncInterval, UINT aPresentFlags);
     static HRESULT PresentDownlevel(ID3D12CommandQueueDownlevel* apCommandQueueDownlevel, ID3D12GraphicsCommandList* apOpenCommandList, ID3D12Resource* apSourceTex2D, HWND ahWindow, D3D12_DOWNLEVEL_PRESENT_FLAGS aFlags);
     static HRESULT CreateCommittedResource(ID3D12Device* apDevice, const D3D12_HEAP_PROPERTIES* acpHeapProperties, D3D12_HEAP_FLAGS aHeapFlags, const D3D12_RESOURCE_DESC* acpDesc, D3D12_RESOURCE_STATES aInitialResourceState, const D3D12_CLEAR_VALUE* acpOptimizedClearValue, const IID* acpRIID, void** appvResource);
     static void ExecuteCommandLists(ID3D12CommandQueue* apCommandQueue, UINT aNumCommandLists, ID3D12CommandList* const* apcpCommandLists);
+    static void* CRenderNode_Present_InternalPresent(int32_t* apSomeInt, uint8_t aSomeSync, UINT aSyncInterval);
     
 private:
 
     TResizeBuffersD3D12* m_realResizeBuffersD3D12{ nullptr };
-    TPresentD3D12* m_realPresentD3D12{ nullptr };
     TPresentD3D12Downlevel* m_realPresentD3D12Downlevel{ nullptr };
     TCreateCommittedResource* m_realCreateCommittedResource{ nullptr };
     TExecuteCommandLists* m_realExecuteCommandLists{ nullptr };
+    TCRenderNode_Present_InternalPresent* m_realInternalPresent{ nullptr };
     
     bool m_initialized{ false };
 

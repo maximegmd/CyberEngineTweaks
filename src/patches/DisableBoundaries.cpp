@@ -12,7 +12,7 @@ void DisableBoundaryTeleportPatch(const Image* apImage)
 
     if (pLocation == nullptr)
     {
-        spdlog::warn("Disable boundary teleport: failed, could not be found");
+        Log::Warn("Disable boundary teleport: failed, could not be found");
         return;
     }
 
@@ -21,5 +21,5 @@ void DisableBoundaryTeleportPatch(const Image* apImage)
     pLocation[0] = 0xC3;
     VirtualProtect(pLocation, 32, oldProtect, nullptr);
 
-    spdlog::info("Disable boundary teleport: success");
+    Log::Info("Disable boundary teleport: success");
 }

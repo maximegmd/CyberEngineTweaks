@@ -35,6 +35,7 @@
 #include <bitset>
 #include <regex>
 #include <execution>
+#include <source_location>
 
 #include <atlcomcli.h>
 #include <d3d12.h>
@@ -60,3 +61,4 @@
 #include "VKBindings.h"
 #include "Options.h"
 #include "CETVersion.h"
+#include "common/Logging.h"

@@ -172,9 +172,9 @@ void LuaVM::Hook(Options& aOptions)
         {
             if (MH_CreateHook(pLocation, &HookLog, reinterpret_cast<void**>(&m_realLog)) != MH_OK ||
                 MH_EnableHook(pLocation) != MH_OK)
-                spdlog::error("Could not hook Log function!");
+                Log::Error("Could not hook Log function!");
             else
-                spdlog::info("Log function hook complete!");
+                Log::Info("Log function hook complete!");
         }
     }
 
@@ -187,9 +187,9 @@ void LuaVM::Hook(Options& aOptions)
         {
             if (MH_CreateHook(pLocation, &HookLogChannel, reinterpret_cast<void**>(&m_realLogChannel)) != MH_OK ||
                 MH_EnableHook(pLocation) != MH_OK)
-                spdlog::error("Could not hook LogChannel function!");
+                Log::Error("Could not hook LogChannel function!");
             else
-                spdlog::info("LogChannel function hook complete!");
+                Log::Info("LogChannel function hook complete!");
         }
     }
 
@@ -203,9 +203,9 @@ void LuaVM::Hook(Options& aOptions)
             if (MH_CreateHook(pLocation, &HookTDBIDCtorDerive, reinterpret_cast<void**>(&m_realTDBIDCtorDerive)) !=
                 MH_OK ||
                 MH_EnableHook(pLocation) != MH_OK)
-                spdlog::error("Could not hook TDBID::ctor[Derive] function!");
+                Log::Error("Could not hook TDBID::ctor[Derive] function!");
             else
-                spdlog::info("TDBID::ctor[Derive] function hook complete!");
+                Log::Info("TDBID::ctor[Derive] function hook complete!");
         }
     }
 
@@ -219,10 +219,10 @@ void LuaVM::Hook(Options& aOptions)
             if (MH_CreateHook(pLocation, &HookRunningStateRun, reinterpret_cast<void**>(&m_realRunningStateRun)) !=
                     MH_OK ||
                 MH_EnableHook(pLocation) != MH_OK)
-                spdlog::error("Could not hook RunningState::Run function!");
+                Log::Error("Could not hook RunningState::Run function!");
             else
             {
-                spdlog::info("RunningState::Run function hook complete!");
+                Log::Info("RunningState::Run function hook complete!");
             }
         }
     }
@@ -246,9 +246,9 @@ void LuaVM::Hook(Options& aOptions)
                 if (MH_CreateHook(pLocation, &HookTDBIDToStringDEBUG,
                                   reinterpret_cast<void**>(&m_realTDBIDToStringDEBUG)) != MH_OK ||
                     MH_EnableHook(pLocation) != MH_OK)
-                    spdlog::error("Could not hook TDBID::ToStringDEBUG function!");
+                    Log::Error("Could not hook TDBID::ToStringDEBUG function!");
                 else
-                    spdlog::info("TDBID::ToStringDEBUG function hook complete!");
+                    Log::Info("TDBID::ToStringDEBUG function hook complete!");
             }
         }
     }
@@ -262,10 +262,10 @@ void LuaVM::Hook(Options& aOptions)
         {
             if (MH_CreateHook(pLocation, &HookTweakDBLoad, reinterpret_cast<void**>(&m_realTweakDBLoad)) != MH_OK ||
                 MH_EnableHook(pLocation) != MH_OK)
-                spdlog::error("Could not hook TweakDB::Load function!");
+                Log::Error("Could not hook TweakDB::Load function!");
             else
             {
-                spdlog::info("TweakDB::Load function hook complete!");
+                Log::Info("TweakDB::Load function hook complete!");
             }
         }
     }
@@ -281,10 +281,10 @@ void LuaVM::Hook(Options& aOptions)
     //    {
     //        if (MH_CreateHook(pLocation, &HookSetLoadingState, reinterpret_cast<void**>(&m_realSetLoadingState)) != MH_OK
     //         || MH_EnableHook(pLocation) != MH_OK)
-    //            spdlog::error("Could not hook SetLoadingState function!");
+    //            Log::Error("Could not hook SetLoadingState function!");
     //        else
     //        {
-    //            spdlog::info("SetLoadingState function hook complete!");
+    //            Log::Info("SetLoadingState function hook complete!");
     //        }
     //    }
     //}

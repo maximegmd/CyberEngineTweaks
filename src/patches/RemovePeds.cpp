@@ -11,7 +11,7 @@ void RemovePedsPatch(const Image* apImage)
 
     if(pLocation == nullptr)
     {
-        spdlog::warn("Remove peds patch: failed, could not be found");
+        Log::Warn("Remove peds patch: failed, could not be found");
         return;
     }
 
@@ -21,5 +21,5 @@ void RemovePedsPatch(const Image* apImage)
     pLocation[10] = 0xE9;
     VirtualProtect(pLocation, 32, oldProtect, nullptr);
 
-    spdlog::info("Remove peds patch: success");
+    Log::Info("Remove peds patch: success");
 }

@@ -138,30 +138,31 @@ Options::Options(Paths& aPaths)
 
     set_default_logger(CreateLogger(m_paths.CETRoot() / "cyber_engine_tweaks.log", "main"));
 
-    spdlog::info("Cyber Engine Tweaks is starting...");
+
+    Log::Info("Cyber Engine Tweaks is starting...");
 
     GameImage.Initialize();
 
     if (GameImage.version)
     {
-        spdlog::info("CET version {} [{}]", CET_BUILD_COMMIT, CET_BUILD_BRANCH);
+        Log::Info("CET version {} [{}]", CET_BUILD_COMMIT, CET_BUILD_BRANCH);
         auto [major, minor] = GameImage.GetVersion();
-        spdlog::info("Game version {}.{:02d}", major, minor);
-        spdlog::info("Root path: \"{}\"", aPaths.GameRoot().string());
-        spdlog::info("Cyber Engine Tweaks path: \"{}\"", aPaths.CETRoot().string());
-        spdlog::info("Lua scripts search path: \"{}\"", aPaths.ModsRoot().string());
+        Log::Info("Game version {}.{:02d}", major, minor);
+        Log::Info("Root path: \"{}\"", aPaths.GameRoot().string());
+        Log::Info("Cyber Engine Tweaks path: \"{}\"", aPaths.CETRoot().string());
+        Log::Info("Lua scripts search path: \"{}\"", aPaths.ModsRoot().string());
 
         if (GameImage.GetVersion() != GameImage.GetSupportedVersion())
         {
             auto [smajor, sminor] = GameImage.GetSupportedVersion();
-            spdlog::error("Unsupported game version! Only {}.{:02d} is supported.", smajor, sminor);
+            Log::Error("Unsupported game version! Only {}.{:02d} is supported.", smajor, sminor);
             throw std::runtime_error("Unsupported version");
         }
 
     }
     else
     {
-        spdlog::info("Unknown Game Version, update the mod");
+        Log::Info("Unknown Game Version, update the mod");
         throw std::runtime_error("Unknown version");
     }
 

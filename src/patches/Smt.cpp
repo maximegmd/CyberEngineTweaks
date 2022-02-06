@@ -10,7 +10,7 @@ void SmtAmdPatch(const Image* apImage)
 
     if (pLocation == nullptr)
     {
-        spdlog::warn("AMD SMT Patch: failed");
+        Log::Warn("AMD SMT Patch: failed");
         return;
     }
 
@@ -19,5 +19,5 @@ void SmtAmdPatch(const Image* apImage)
     pLocation[0] = 0x74;
     VirtualProtect(pLocation, 8, oldProtect, nullptr);
 
-    spdlog::info("AMD SMT Patch: success");
+    Log::Info("AMD SMT Patch: success");
 }

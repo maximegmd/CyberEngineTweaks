@@ -3,6 +3,8 @@
 #include <stdafx.h>
 
 #include "D3D12.h"
+#include "reverse/Addresses.hpp"
+#include "reverse/RenderContext.h"
 
 #include <kiero/kiero.h>
 
@@ -13,21 +15,11 @@ HRESULT D3D12::ResizeBuffers(IDXGISwapChain* apSwapChain, UINT aBufferCount, UIN
     if (d3d12.m_initialized)
     {
         // NOTE: right now, done in case of any swap chain ResizeBuffers call, which may not be ideal. We have yet to encounter multiple swap chains in use though, so should be safe
-        spdlog::info("D3D12::ResizeBuffers() called with initialized D3D12, triggering D3D12::ResetState.");
+        Log::Info("D3D12::ResizeBuffers() called with initialized D3D12, triggering D3D12::ResetState.");
         d3d12.ResetState();
     }
 
     return d3d12.m_realResizeBuffersD3D12(apSwapChain, aBufferCount, aWidth, aHeight, aNewFormat, aSwapChainFlags);
-}
-
-HRESULT D3D12::Present(IDXGISwapChain* apSwapChain, UINT aSyncInterval, UINT aPresentFlags)
-{
-    auto& d3d12 = CET::Get().GetD3D12();
-
-    if (d3d12.Initialize(apSwapChain))
-        d3d12.Update(); 
-    
-    return d3d12.m_realPresentD3D12(apSwapChain, aSyncInterval, aPresentFlags);
 }
 
 HRESULT D3D12::PresentDownlevel(ID3D12CommandQueueDownlevel* apCommandQueueDownlevel, ID3D12GraphicsCommandList* apOpenCommandList, ID3D12Resource* apSourceTex2D, HWND ahWindow, D3D12_DOWNLEVEL_PRESENT_FLAGS aFlags)
@@ -110,11 +102,13 @@ void D3D12::ExecuteCommandLists(ID3D12CommandQueue* apCommandQueue, UINT aNumCom
         auto desc = apCommandQueue->GetDesc();
         if(desc.Type == D3D12_COMMAND_LIST_TYPE_DIRECT) 
         {
+            auto ret = (uintptr_t)_ReturnAddress() - (uintptr_t)GetModuleHandleA(nullptr);
+
             d3d12.m_pCommandQueue = apCommandQueue;
-            spdlog::info("D3D12::ExecuteCommandListsD3D12() - found valid command queue.");
+            Log::Info("D3D12::ExecuteCommandListsD3D12() - found valid command queue. {:X}", ret);
         }
         else 
-            spdlog::info("D3D12::ExecuteCommandListsD3D12() - ignoring command queue - unusable command list type");
+            Log::Info("D3D12::ExecuteCommandListsD3D12() - ignoring command queue - unusable command list type");
     }
 
     d3d12.m_realExecuteCommandLists(apCommandQueue, aNumCommandLists, apcpCommandLists);
@@ -131,77 +125,98 @@ void* ApplyHook(void** vtable, size_t index, void* target)
     return ret;
 }
 
+void* D3D12::CRenderNode_Present_InternalPresent(int32_t* apSomeInt, uint8_t aSomeSync, UINT aSyncInterval)
+{
+    auto& d3d12 = CET::Get().GetD3D12();
+
+    if (!kiero::isDownLevelDevice())
+    {
+        const auto idx = *apSomeInt - 1;
+
+        const auto* pContext = RenderContext::GetInstance();
+        if (pContext->unkED65C0 == nullptr)
+        {
+            auto* pDevice = pContext->devices[idx].pSwapChain;
+
+            static std::once_flag s_init;
+            std::call_once(s_init, [&]() {
+                void** vtbl = *reinterpret_cast<void***>(pDevice);
+                d3d12.m_realResizeBuffersD3D12 =
+                    static_cast<TResizeBuffersD3D12*>(ApplyHook(vtbl, 13, &D3D12::ResizeBuffers));
+                Log::Info("D3D12: Applied ResizeBuffers vtable hook");
+            });
+
+            if (d3d12.Initialize(pDevice))
+                d3d12.Update();
+        }
+    }
+
+    return d3d12.m_realInternalPresent(apSomeInt, aSomeSync, aSyncInterval);
+}
+
 void D3D12::Hook()
 {
-    int d3d12FailedHooksCount = 0;
-    int d3d12CompleteHooksCount = 0;
-    
-    std::string_view d3d12type = (kiero::isDownLevelDevice()) ? ("D3D12on7") : ("D3D12");
-
-    if (kiero::isDownLevelDevice()) 
+    if (kiero::isDownLevelDevice())
     {
-        if (kiero::bind(175, reinterpret_cast<void**>(&m_realPresentD3D12Downlevel), &PresentDownlevel) != kiero::Status::Success)
-        {
-            spdlog::error("{0} Downlevel Present hook failed!", d3d12type);
-            ++d3d12FailedHooksCount;
-        }
-        else 
-        {
-            spdlog::info("{0} Downlevel Present hook complete.", d3d12type);
-            ++d3d12CompleteHooksCount;
-        }
+        int d3d12FailedHooksCount = 0;
+        int d3d12CompleteHooksCount = 0;
 
-        if (kiero::bind(27, reinterpret_cast<void**>(&m_realCreateCommittedResource), &CreateCommittedResource) != kiero::Status::Success)
-        {
-            spdlog::error("{0} CreateCommittedResource Hook failed!", d3d12type);
-            ++d3d12FailedHooksCount;
-        }
-        else 
-        {
-            spdlog::info("{0} CreateCommittedResource hook complete.", d3d12type);
-            ++d3d12CompleteHooksCount;
-        }
-    }
-    else
-    {
-        if (kiero::bind(140, reinterpret_cast<void**>(&m_realPresentD3D12), &Present) != kiero::Status::Success)
-        {
-            spdlog::error("{0} Present hook failed!", d3d12type);
-            ++d3d12FailedHooksCount;
-        }
-        else 
-        {
-            spdlog::info("{0} Present hook complete.", d3d12type);
-            ++d3d12CompleteHooksCount;
-        }
-
-        if (kiero::bind(145, reinterpret_cast<void**>(&m_realResizeBuffersD3D12), &ResizeBuffers) !=
+        if (kiero::bind(175, reinterpret_cast<void**>(&m_realPresentD3D12Downlevel), &PresentDownlevel) !=
             kiero::Status::Success)
         {
-            spdlog::error("{0} ResizeBuffers hook failed!", d3d12type);
+            Log::Error("D3D12on7: Downlevel Present hook failed!");
             ++d3d12FailedHooksCount;
         }
-        else 
+        else
         {
-            spdlog::info("{0} ResizeBuffers hook complete.", d3d12type);
+            Log::Info("D3D12on7: Downlevel Present hook complete.");
             ++d3d12CompleteHooksCount;
         }
-    }
 
-    if (kiero::bind(54, reinterpret_cast<void**>(&m_realExecuteCommandLists), &ExecuteCommandLists) !=
-        kiero::Status::Success)
-    {
-        spdlog::error("{0} ExecuteCommandLists hook failed!", d3d12type);
-        ++d3d12FailedHooksCount;
-    }
-    else 
-    {
-        spdlog::info("{0} ExecuteCommandLists hook complete.", d3d12type);
-        ++d3d12CompleteHooksCount;
-    }
+        if (kiero::bind(27, reinterpret_cast<void**>(&m_realCreateCommittedResource), &CreateCommittedResource) !=
+            kiero::Status::Success)
+        {
+            Log::Error("D3D12on7: CreateCommittedResource Hook failed!");
+            ++d3d12FailedHooksCount;
+        }
+        else
+        {
+            Log::Info("D3D12on7: CreateCommittedResource hook complete.");
+            ++d3d12CompleteHooksCount;
+        }
 
-    if (d3d12FailedHooksCount == 0) 
-        spdlog::info("{0} hook complete. ({1}/{2})", d3d12type, d3d12CompleteHooksCount, d3d12CompleteHooksCount+d3d12FailedHooksCount);
-    else 
-        spdlog::error("{0} hook failed! ({1}/{2})", d3d12type, d3d12CompleteHooksCount, d3d12CompleteHooksCount+d3d12FailedHooksCount);
+        if (kiero::bind(54, reinterpret_cast<void**>(&m_realExecuteCommandLists), &ExecuteCommandLists) !=
+            kiero::Status::Success)
+        {
+            Log::Error("D3D12on7: ExecuteCommandLists hook failed!");
+            ++d3d12FailedHooksCount;
+        }
+        else
+        {
+            Log::Info("D3D12on7: ExecuteCommandLists hook complete.");
+            ++d3d12CompleteHooksCount;
+        }
+
+        if (d3d12FailedHooksCount == 0)
+            Log::Info("D3D12on7: hook complete. ({1}/{2})", d3d12CompleteHooksCount,
+                         d3d12CompleteHooksCount + d3d12FailedHooksCount);
+        else
+            Log::Error("D3D12on7: hook failed! ({1}/{2})", d3d12CompleteHooksCount,
+                          d3d12CompleteHooksCount + d3d12FailedHooksCount);
+    }
+    else
+        Log::Info("Skipping internal d3d12 hook, using game method");
 }
+
+void D3D12::HookGame()
+{
+    RED4ext::RelocPtr<void> presentInternal(CyberEngineTweaks::Addresses::CRenderNode_Present_DoInternal);
+
+    if (MH_CreateHook(presentInternal.GetAddr(), &CRenderNode_Present_InternalPresent,
+                      reinterpret_cast<void**>(&m_realInternalPresent)) != MH_OK ||
+        MH_EnableHook(presentInternal.GetAddr()) != MH_OK)
+        Log::Error("Could not hook CRenderNode_Present_InternalPresent function!");
+    else
+        Log::Info("CRenderNode_Present_InternalPresent function hook complete!");
+}
+

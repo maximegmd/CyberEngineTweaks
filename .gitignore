@@ -16,3 +16,4 @@ src/CETVersion.h
 package/*
 vs2022/*
 vsxmake*/
+*.pyc

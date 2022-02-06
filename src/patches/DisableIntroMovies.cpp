@@ -37,10 +37,10 @@ void DisableIntroMoviesPatch(const Image* apImage)
 
     if (RealInitScriptMemberVariable == nullptr)
     {
-        spdlog::warn("Disable intro movies patch: failed, could not be found");
+        Log::Warn("Disable intro movies patch: failed, could not be found");
         return;
     }
 
     MH_CreateHook(RealInitScriptMemberVariable, &HookInitScriptMemberVariable, reinterpret_cast<void**>(&RealInitScriptMemberVariable));
-    spdlog::info("Disable intro movies patch: success");
+    Log::Info("Disable intro movies patch: success");
 }

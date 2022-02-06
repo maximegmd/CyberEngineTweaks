@@ -10,7 +10,7 @@ void StartScreenPatch(const Image* apImage)
 
     if(pLocation == nullptr)
     {
-        spdlog::warn("Start screen patch: failed, could not be found");
+        Log::Warn("Start screen patch: failed, could not be found");
         return;
     }
 
@@ -22,5 +22,5 @@ void StartScreenPatch(const Image* apImage)
     pLocation[1] = 0x90;
     VirtualProtect(pLocation, 32, oldProtect, nullptr);
 
-    spdlog::info("Start screen patch: success");
+    Log::Info("Start screen patch: success");
 }

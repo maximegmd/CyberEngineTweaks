@@ -82,7 +82,7 @@ Window::Window(Overlay* apOverlay, VKBindings* apBindings, D3D12* apD3D12)
             {
                 m_wndProc = reinterpret_cast<WNDPROC>(
                     SetWindowLongPtr(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(WndProc)));
-                spdlog::info("Window::Initialize() - window hook complete.");
+                Log::Info("Window::Initialize() - window hook complete.");
             }
         }
 

@@ -539,7 +539,7 @@ void Scripting::PostInitializeStage2()
         uint32_t count = 0;
         pRtti->types.for_each([&count](RED4ext::CName name, RED4ext::CBaseRTTIType*& type)
         {
-            spdlog::info(name.ToString());
+            Log::Info(name.ToString());
             count++;
         });
         const sol::environment cEnv = aThisEnv;

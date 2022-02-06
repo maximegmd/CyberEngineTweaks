@@ -20,21 +20,21 @@ void* HookGameOptionInit(GameOption* apThis)
     }
 
     if (options.DumpGameOptions)
-        spdlog::info(apThis->GetInfo());
+        Log::Info(apThis->GetInfo());
 
     if (options.PatchAsyncCompute && strcmp(apThis->pCategory, "Rendering/AsyncCompute") == 0)
     {
         if (apThis->SetBool(false))
-            spdlog::info("Disabled hidden setting \"{}/{}\"", apThis->pCategory, apThis->pName);
+            Log::Info("Disabled hidden setting \"{}/{}\"", apThis->pCategory, apThis->pName);
         else
-            spdlog::warn("Failed to disable hidden setting \"{}/{}\"", apThis->pCategory, apThis->pName);
+            Log::Warn("Failed to disable hidden setting \"{}/{}\"", apThis->pCategory, apThis->pName);
     }
     else if (options.PatchAntialiasing && (strcmp(apThis->pName, "Antialiasing") == 0 || strcmp(apThis->pName, "ScreenSpaceReflection") == 0))
     {
         if (apThis->SetBool(false))
-            spdlog::info("Disabled hidden setting \"{}/{}\"", apThis->pCategory, apThis->pName);
+            Log::Info("Disabled hidden setting \"{}/{}\"", apThis->pCategory, apThis->pName);
         else
-            spdlog::warn("Failed to disable hidden setting \"{}/{}\"", apThis->pCategory, apThis->pName);
+            Log::Warn("Failed to disable hidden setting \"{}/{}\"", apThis->pCategory, apThis->pName);
     }
 
     return RealGameOptionInit(apThis);
@@ -51,8 +51,8 @@ void OptionsInitHook(const Image* apImage)
         MH_CreateHook(GameOptionInit, &HookGameOptionInit, reinterpret_cast<void**>(&RealGameOptionInit));
         MH_EnableHook(GameOptionInit);
 
-        spdlog::info("Hidden options hook: success");
+        Log::Info("Hidden options hook: success");
     }
     else
-        spdlog::warn("Hidden options hook: failed");
+        Log::Warn("Hidden options hook: failed");
 }

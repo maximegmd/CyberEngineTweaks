@@ -64,15 +64,18 @@ D3D12::D3D12(Window& aWindow, Paths& aPaths, Options& aOptions)
     , m_window(aWindow)
     , m_options(aOptions)
 {
+    HookGame();
+
     std::thread t([this]()
     {
         if (kiero::init() != kiero::Status::Success)
-            spdlog::error("Kiero failed!");
+            Log::Error("Kiero failed!");
         else
         {
             std::string_view d3d12type = (kiero::isDownLevelDevice()) ? ("D3D12on7") : ("D3D12");
-            spdlog::info("Kiero initialized for {0}", d3d12type);
-            this->Hook();
+            Log::Info("Kiero initialized for {0}", d3d12type);
+
+            Hook();
         }
     });
 

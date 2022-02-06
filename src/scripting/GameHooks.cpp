@@ -62,9 +62,9 @@ void GameMainThread::Hook()
     {
         if (MH_CreateHook(m_pMainThreadLocation, &GameMainThread::HookMainThread, reinterpret_cast<void**>(&m_pMainThreadOriginal)) != MH_OK ||
             MH_EnableHook(m_pMainThreadLocation) != MH_OK)
-            spdlog::error("Could not hook main thread function!");
+            Log::Error("Could not hook main thread function!");
         else
-            spdlog::info("Main thread function hook complete!");
+            Log::Info("Main thread function hook complete!");
     }
 }
 
