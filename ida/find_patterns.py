@@ -85,7 +85,7 @@ try:
     version = idc.get_strlit_contents(addr)
 
     print(f'Finding {total} item(s)...')
-    with open('Addresses.hpp', 'w') as file:
+    with open('Addresses.h', 'w') as file:
         file.write('#pragma once\n')
         file.write('\n')
         file.write('/*\n')

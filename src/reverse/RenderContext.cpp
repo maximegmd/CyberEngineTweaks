@@ -1,7 +1,7 @@
 #include <stdafx.h>
 
 #include "RenderContext.h"
-#include "Addresses.hpp"
+#include "Addresses.h"
 
 RenderContext* RenderContext::GetInstance() noexcept
 {

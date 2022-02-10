@@ -3,7 +3,7 @@
 #include <stdafx.h>
 
 #include "D3D12.h"
-#include "reverse/Addresses.hpp"
+#include "reverse/Addresses.h"
 #include "reverse/RenderContext.h"
 
 #include <kiero/kiero.h>
@@ -135,16 +135,6 @@ void* D3D12::CRenderNode_Present_InternalPresent(int32_t* apSomeInt, uint8_t aSo
         if (pContext->unkED65C0 == nullptr)
         {
             auto* pDevice = pContext->devices[idx].pSwapChain;
-
-            static std::once_flag s_init;
-            std::call_once(s_init, [&]() {
-                void** vtbl = *reinterpret_cast<void***>(pDevice);
-                d3d12.m_realResizeBuffersD3D12 =
-                    static_cast<TResizeBuffersD3D12*>(ApplyHook(vtbl, 13, &D3D12::ResizeBuffers));
-
-                Log::Info("D3D12: Applied ResizeBuffers vtable hook");
-            });
-
             d3d12.m_pCommandQueue = pContext->pDirectQueue;
 
             if (d3d12.Initialize(pDevice))
@@ -153,6 +143,19 @@ void* D3D12::CRenderNode_Present_InternalPresent(int32_t* apSomeInt, uint8_t aSo
     }
 
     return d3d12.m_realInternalPresent(apSomeInt, aSomeSync, aSyncInterval);
+}
+
+void* D3D12::CRenderGlobal_Resize(uint32_t a1, uint32_t a2, uint32_t a3, uint8_t a4, int* a5)
+{
+    auto& d3d12 = CET::Get().GetD3D12();
+
+    if (d3d12.m_initialized)
+    {
+        Log::Info("CRenderGlobal::Resize() called with initialized D3D12, triggering D3D12::ResetState.");
+        d3d12.ResetState();
+    }
+
+    return d3d12.m_realInternalResize(a1, a2, a3, a4, a5);
 }
 
 void D3D12::Hook()
@@ -211,7 +214,8 @@ void D3D12::Hook()
 
 void D3D12::HookGame()
 {
-    RED4ext::RelocPtr<void> presentInternal(CyberEngineTweaks::Addresses::CRenderNode_Present_DoInternal);
+    const RED4ext::RelocPtr<void> presentInternal(CyberEngineTweaks::Addresses::CRenderNode_Present_DoInternal);
+    const RED4ext::RelocPtr<void> resizeInternal(CyberEngineTweaks::Addresses::CRenderGlobal_Resize);
 
     if (MH_CreateHook(presentInternal.GetAddr(), &CRenderNode_Present_InternalPresent,
                       reinterpret_cast<void**>(&m_realInternalPresent)) != MH_OK ||
@@ -219,5 +223,12 @@ void D3D12::HookGame()
         Log::Error("Could not hook CRenderNode_Present_InternalPresent function!");
     else
         Log::Info("CRenderNode_Present_InternalPresent function hook complete!");
+
+    if (MH_CreateHook(resizeInternal.GetAddr(), &CRenderGlobal_Resize,
+                      reinterpret_cast<void**>(&m_realInternalResize)) != MH_OK ||
+        MH_EnableHook(resizeInternal.GetAddr()) != MH_OK)
+        Log::Error("Could not hook CRenderGlobal_Resize function!");
+    else
+        Log::Info("CRenderGlobal_Resize function hook complete!");
 }
 

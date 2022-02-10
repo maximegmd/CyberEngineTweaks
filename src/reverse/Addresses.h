@@ -15,6 +15,8 @@ constexpr uintptr_t ImageBase = 0x140000000;
 
 #pragma region CRenderGlobal
 constexpr uintptr_t CRenderGlobal_InstanceOffset = 0x144C91230 - ImageBase; // 48 8B 05 ? ? ? ? 8B D1 48 8B 88 18 8A 5A 01, expected: 1, index: 0, offset: 3
+constexpr uintptr_t CRenderGlobal__DoNotUse_RenderQueueOffset = 0x18BE22C76 - ImageBase; // 4D 8B 0E 49 39 31 0F 84 85 00 00 00 41 39 71 24 74 ? 49 8B 95, expected: 1, index: 0, offset: 0
+constexpr uintptr_t CRenderGlobal_Resize = 0x142D41700 - ImageBase; // 44 88 4C 24 20 44 89 44 24 18 89 54 24 10 89 4C, expected: 1, index: 0
 #pragma endregion
 
 #pragma region CRenderNode_Present
