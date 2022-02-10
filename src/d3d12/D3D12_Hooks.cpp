@@ -93,24 +93,22 @@ HRESULT D3D12::CreateCommittedResource(ID3D12Device* apDevice, const D3D12_HEAP_
     return result;
 }
 
-void D3D12::ExecuteCommandLists(ID3D12CommandQueue* apCommandQueue, UINT aNumCommandLists, ID3D12CommandList* const* apcpCommandLists)
+void D3D12::ExecuteCommandLists(ID3D12CommandQueue* apCommandQueue, UINT aNumCommandLists,
+                                ID3D12CommandList* const* apcpCommandLists)
 {
     auto& d3d12 = CET::Get().GetD3D12();
-
     if (d3d12.m_pCommandQueue == nullptr)
     {
         auto desc = apCommandQueue->GetDesc();
-        if(desc.Type == D3D12_COMMAND_LIST_TYPE_DIRECT) 
+        if (desc.Type == D3D12_COMMAND_LIST_TYPE_DIRECT)
         {
             auto ret = (uintptr_t)_ReturnAddress() - (uintptr_t)GetModuleHandleA(nullptr);
-
             d3d12.m_pCommandQueue = apCommandQueue;
             Log::Info("D3D12::ExecuteCommandListsD3D12() - found valid command queue. {:X}", ret);
         }
-        else 
+        else
             Log::Info("D3D12::ExecuteCommandListsD3D12() - ignoring command queue - unusable command list type");
     }
-
     d3d12.m_realExecuteCommandLists(apCommandQueue, aNumCommandLists, apcpCommandLists);
 }
 
@@ -143,8 +141,11 @@ void* D3D12::CRenderNode_Present_InternalPresent(int32_t* apSomeInt, uint8_t aSo
                 void** vtbl = *reinterpret_cast<void***>(pDevice);
                 d3d12.m_realResizeBuffersD3D12 =
                     static_cast<TResizeBuffersD3D12*>(ApplyHook(vtbl, 13, &D3D12::ResizeBuffers));
+
                 Log::Info("D3D12: Applied ResizeBuffers vtable hook");
             });
+
+            d3d12.m_pCommandQueue = pContext->pDirectQueue;
 
             if (d3d12.Initialize(pDevice))
                 d3d12.Update();

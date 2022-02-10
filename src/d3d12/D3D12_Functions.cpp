@@ -36,29 +36,6 @@ bool D3D12::ResetState(bool aClearDownlevelBackbuffers)
 
 bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
 {
-    static auto checkCmdQueue = [](D3D12* d3d12) 
-    {
-        if (d3d12->m_pCommandQueue == nullptr) 
-        {
-            auto swapChainAddr = reinterpret_cast<uintptr_t>(*(&d3d12->m_pdxgiSwapChain));
-            d3d12->m_pCommandQueue = *reinterpret_cast<ID3D12CommandQueue**>(swapChainAddr + kiero::getCommandQueueOffset());
-            if (d3d12->m_pCommandQueue != nullptr) 
-            {
-                auto desc = d3d12->m_pCommandQueue->GetDesc();
-                if(desc.Type != D3D12_COMMAND_LIST_TYPE_DIRECT) 
-                {
-                    d3d12->m_pCommandQueue = nullptr;
-                    Log::Warn("D3D12::Initialize() - invalid type of command list!");
-                    return false;
-                }
-                return true;
-            }
-            Log::Warn("D3D12::Initialize() - swap chain is missing command queue!");
-            return false;
-        }
-        return true;
-    };
-
     if (!apSwapChain)
         return false;
 
@@ -89,11 +66,7 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
             if (hWnd != sdesc.OutputWindow)
                 Log::Warn("D3D12::Initialize() - output window of current swap chain does not match hooked window! Currently hooked to {0} while swap chain output window is {1}.", reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(sdesc.OutputWindow));            
         }
-        if (!checkCmdQueue(this))
-        {
-            Log::Error("D3D12::Initialize() - missing command queue!");
-            return false;
-        }
+
         return true;
     }
 
@@ -167,12 +140,6 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
 
     for (auto& context : m_frameContexts)
         m_pd3d12Device->CreateRenderTargetView(context.BackBuffer, nullptr, context.MainRenderTargetDescriptor);
-
-    if (!checkCmdQueue(this))
-    {
-        Log::Error("D3D12::Initialize() - missing command queue!");
-        return false;
-    }
 
     if (!InitializeImGui(buffersCounts))
     {

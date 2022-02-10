@@ -17,8 +17,11 @@ struct RenderContext
     Device devices[0x30]; // Count unknown, it is at least 0x20
     uint8_t pad[0xED65C0 - 0xC9A1B8];
     void* unkED65C0; // Some pointer, might be related to d3d12on7, I have never seen it being anything other than null
+    uint8_t padED65C8[0x10];
+    ID3D12CommandQueue* pDirectQueue;
 };
 
 static_assert(sizeof(RenderContext::Device) == 0xB8);
 static_assert(offsetof(RenderContext, devices) == 0xC97F38);
 static_assert(offsetof(RenderContext, unkED65C0) == 0xED65C0);
+static_assert(offsetof(RenderContext, pDirectQueue) == 0xED65D8);
