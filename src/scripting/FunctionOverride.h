@@ -25,7 +25,7 @@ struct FunctionOverride
     FunctionOverride(Scripting* apScripting, Options& aOptions);
     ~FunctionOverride();
 
-    void* MakeExecutable(uint8_t* apData, size_t aSize);
+    void* MakeExecutable(const uint8_t* apData, size_t aSize);
     void Clear();
 
     void Override(const std::string& acTypeName, const std::string& acFullName, 

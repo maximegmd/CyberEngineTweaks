@@ -5,7 +5,7 @@
 #include "Utils.h"
 #include <reverse/WeakReference.h>
 #include <reverse/RTTIHelper.h>
-#include <reverse/RTTILocator.h>
+#include <xbyak/xbyak.h>
 
 
 static FunctionOverride* s_pOverride = nullptr;
@@ -49,7 +49,7 @@ FunctionOverride::~FunctionOverride()
     s_pOverride = nullptr;
 }
 
-void* FunctionOverride::MakeExecutable(uint8_t* apData, size_t aSize)
+void* FunctionOverride::MakeExecutable(const uint8_t* apData, size_t aSize)
 {
     if (std::align(0x10, aSize, m_pBuffer, m_size))
     {
@@ -501,6 +501,20 @@ void FunctionOverride::Hook(Options& aOptions) const
     }
 }
 
+struct OverrideCodegen : Xbyak::CodeGenerator
+{
+    OverrideCodegen(uintptr_t apRealFunc, uintptr_t apTrampoline)
+    {
+        sub(rsp, 56);
+        mov(rax, apRealFunc);
+        mov(ptr[rsp + 32], rax);
+        mov(rax, apTrampoline);
+        call(rax);
+        add(rsp, 56);
+        ret();
+    }
+};
+
 void FunctionOverride::Override(const std::string& acTypeName, const std::string& acFullName,
                                 sol::protected_function aFunction, sol::environment aEnvironment,
                                 bool aAbsolute, bool aAfter, bool aCollectGarbage)
@@ -538,7 +552,7 @@ void FunctionOverride::Override(const std::string& acTypeName, const std::string
     std::unique_lock lock(m_lock);
 
     CallChain* pEntry = nullptr;
-    auto itor = m_functions.find(pRealFunction);
+    const auto itor = m_functions.find(pRealFunction);
 
     // This function was never hooked
     if (itor == std::end(m_functions))
@@ -550,26 +564,12 @@ void FunctionOverride::Override(const std::string& acTypeName, const std::string
 
         if (!m_trampolines.contains(pRealFunction))
         {
-            /*
-            sub rsp, 56
-            mov rax, 0xDEADBEEFC0DEBAAD
-            mov qword ptr[rsp + 32], rax
-            mov rax, 0xDEADBEEFC0DEBAAD
-            call rax
-            add rsp, 56
-            ret
-            */
-            uint8_t payload[] = {0x48, 0x83, 0xEC, 0x38, 0x48, 0xB8, 0xAD, 0xBA, 0xDE, 0xC0, 0xEF, 0xBE,
-                                 0xAD, 0xDE, 0x48, 0x89, 0x44, 0x24, 0x20, 0x48, 0xB8, 0xAD, 0xBA, 0xDE,
-                                 0xC0, 0xEF, 0xBE, 0xAD, 0xDE, 0xFF, 0xD0, 0x48, 0x83, 0xC4, 0x38, 0xC3};
+            const auto funcAddr = reinterpret_cast<uintptr_t>(&FunctionOverride::HandleOverridenFunction);
 
-            auto funcAddr = reinterpret_cast<uintptr_t>(&FunctionOverride::HandleOverridenFunction);
-
-            std::memcpy(payload + 6, &pRealFunction, 8);
-            std::memcpy(payload + 21, &funcAddr, 8);
+            const OverrideCodegen codegen(reinterpret_cast<uintptr_t>(pRealFunction), funcAddr);
 
             using TNativeScriptFunction = void (*)(RED4ext::IScriptable*, RED4ext::CStackFrame*, void*, int64_t);
-            auto* pExecutablePayload = static_cast<TNativeScriptFunction>(MakeExecutable(payload, std::size(payload)));
+            auto* pExecutablePayload = static_cast<TNativeScriptFunction>(MakeExecutable(codegen.getCode(), codegen.getSize()));
 
             if (pRealFunction->flags.isStatic)
             {
