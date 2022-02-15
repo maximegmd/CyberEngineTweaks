@@ -458,9 +458,8 @@ void FunctionOverride::Hook(Options& aOptions) const
     auto& gameImage = aOptions.GameImage;
 
     {
-        const mem::pattern cPattern("40 55 48 81 EC D0 00 00 00 48 8D 6C 24 40 8B");
-        const mem::default_scanner cScanner(cPattern);
-        RealRunPureScriptFunction = cScanner(gameImage.TextRegion).as<TRunPureScriptFunction>();
+        RED4ext::RelocPtr<void> func(CyberEngineTweaks::Addresses::CScript_RunPureScript);
+        RealRunPureScriptFunction = static_cast<TRunPureScriptFunction>(func.GetAddr());
         if (!RealRunPureScriptFunction)
             Log::Error("Could not find pure run script function!");
         else
@@ -476,9 +475,8 @@ void FunctionOverride::Hook(Options& aOptions) const
     }
 
      {
-        const mem::pattern cPattern("48 89 5C 24 08 57 48 83 EC 40 8B F9 48 8D 54 24 30 48 8B 0D ?? ?? ?? ?? 41 B8 B8 00 00 00");
-        const mem::default_scanner cScanner(cPattern);
-        uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
+        RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_CreateFunction);
+        uint8_t* pLocation = func.GetAddr();
 
         if (pLocation)
         {

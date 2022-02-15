@@ -218,10 +218,9 @@ BOOL Overlay::ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis)
 
 void Overlay::Hook()
 {
-    const mem::pattern cClipToCenterPattern("48 89 5C 24 08 57 48 83 EC 30 48 8B 99 ? 01 00 00 48 8B F9 FF");
-    const mem::default_scanner scanner(cClipToCenterPattern);
+    RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CWinapi_ClipToCenter);
 
-    uint8_t* pLocation = scanner(m_options.GameImage.TextRegion).as<uint8_t*>();
+    uint8_t* pLocation = func.GetAddr();
 
     if (pLocation)
     {

@@ -1,21 +1,18 @@
 #include "RTTIExtender.h"
-#include <CET.h>
-#include <Image.h>
 #include <RED4ext/SharedMutex.hpp>
 #include <RED4ext/Scripting/Natives/Generated/Transform.hpp>
 #include <RED4ext/Scripting/Natives/Generated/WorldTransform.hpp>
 #include <RED4ext/Scripting/Natives/Generated/ent/Entity.hpp>
 #include <RED4ext/Scripting/Natives/Generated/ent/EntityID.hpp>
 
+
 template<typename T>
-struct PatternCall
+struct GameCall
 {
-    PatternCall(const char* acPattern, const int32_t acOffset = 0)
+    GameCall(uintptr_t aAddress, const int32_t acOffset = 0)
     {
-        const auto& gameImage = CET::Get().GetOptions().GameImage;
-        const mem::pattern cPattern(acPattern);
-        const mem::default_scanner cScanner(cPattern);
-        const auto* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
+        RED4ext::RelocPtr<uint8_t> addr(aAddress);
+        const auto* pLocation = addr.GetAddr();
         m_address = pLocation ? reinterpret_cast<T>(pLocation + acOffset) : nullptr;
     }
 
@@ -127,7 +124,7 @@ struct gameIGameSystem : IUpdatableSystem
     {
         // expected: 2, index: 0
         using TFunc = void (*)(void*);
-        static PatternCall<TFunc> func("48 8B D9 E8 ?? ?? ?? ?? 48 8D 05 ?? ?? ?? ?? 48 C7 43 40 00 00 00 00", -6);
+        static GameCall<TFunc> func(CyberEngineTweaks::Addresses::gameIGameSystem_Constructor, -6);
         func(apAddress); // gameIGameSystem::ctor()
     }
 
@@ -234,7 +231,7 @@ struct TEMP_SpawnSettings
     {
         // Copied from the function photomode uses to spawn 3rd person puppet
         using TFunc = void (*)(const RED4ext::TweakDBID&, RED4ext::Handle<RED4ext::IScriptable>&);
-        static PatternCall<TFunc> func("48 89 5C 24 08 48 89 74 24 18 55 57 41 56 48 8D 6C 24 B9 48 81 EC 90 00 00 00 48 8B F9");
+        static GameCall<TFunc> func(CyberEngineTweaks::Addresses::CPhotoMode_SetRecordID);
 
         DONOTUSE_recordDBID = acTweakDBID;
         func(acTweakDBID, unkB0);
@@ -269,14 +266,14 @@ struct TEMP_Spawner
     void Initialize(RED4ext::GameInstance* apGameInstance)
     {
         using TFunc = void (*)(TEMP_Spawner*, RED4ext::GameInstance*);
-        static PatternCall<TFunc> func("48 89 5C 24 18 48 89 6C 24 20 57 48 83 EC 30 48 8B 42 78");
+        static GameCall<TFunc> func(CyberEngineTweaks::Addresses::gameIGameSystem_Initialize);
         func(this, apGameInstance);
     }
 
     void UnInitialize()
     {
         using TFunc = void (*)(TEMP_Spawner*);
-        static PatternCall<TFunc> func("40 53 48 83 EC 20 48 8B D9 E8 ?? ?? ?? ?? 33 C0 48 89 43 50 48 89 43 48");
+        static GameCall<TFunc> func(CyberEngineTweaks::Addresses::gameIGameSystem_UnInitialize);
         func(this);
     }
 
@@ -284,7 +281,7 @@ struct TEMP_Spawner
     {
         // REDSmartPtr<TEMP_PendingEntity::Unk00> TEMP_Spawner::func(this, TEMP_SpawnSettings&, RED4ext::CName&)
         using TFunc = void (*)(TEMP_Spawner*, REDSmartPtr<TEMP_PendingEntity::Unk00>*, TEMP_SpawnSettings&, const RED4ext::CName&);
-        static PatternCall<TFunc> func("FF 90 A8 01 00 00 48 8B 00 4C 8D 85 80 00 00 00", -0x55);
+        static GameCall<TFunc> func(CyberEngineTweaks::Addresses::gameIGameSystem_Spawn, -0x55);
 
         REDSmartPtr<TEMP_PendingEntity::Unk00> pendingEntity;
         func(this, &pendingEntity, aSettings, acEntityPath);
@@ -325,7 +322,7 @@ struct TEMP_Spawner
     void Despawn(RED4ext::Handle<RED4ext::IScriptable> aEntity)
     {
         using TFunc = void(*)(TEMP_Spawner*, RED4ext::IScriptable*);
-        static PatternCall<TFunc> func("40 55 53 56 57 41 55 41 56 41 57 48 8B EC 48 83 EC 50");
+        static GameCall<TFunc> func(CyberEngineTweaks::Addresses::gameIGameSystem_Despawn);
         func(this, aEntity.GetPtr());
     }
 };
@@ -519,12 +516,12 @@ private:
     static void SpawnCallback(TEMP_PendingEntity::Unk00& aUnk)
     {
         using TFunc = void(*)(RED4ext::IScriptable*, RED4ext::ent::Entity*);
-        static PatternCall<TFunc> func("41 57 48 83 EC 70 48 8B E9 4C 8B FA", -0x0E);
+        static GameCall<TFunc> func(CyberEngineTweaks::Addresses::gameIGameSystem_SpawnCallback, -0xE);
 
         struct GameInstance_78_Unk
         {
             uint8_t unk00[0xD0];
-            RED4ext::IScriptable* worldRuntimeEntityRegistry;
+            IScriptable* worldRuntimeEntityRegistry;
         };
 
         struct GameInstance_78

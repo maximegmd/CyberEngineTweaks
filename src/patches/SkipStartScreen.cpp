@@ -4,9 +4,8 @@
 
 void StartScreenPatch(const Image* apImage)
 {
-    const mem::pattern cPattern("48 BB E6 F8 A5 A3 36 56 4E A7 C6 85 B0 ?? ?? ?? 01");
-    const mem::default_scanner cScanner(cPattern);
-    auto pLocation = cScanner(apImage->TextRegion).as<uint8_t*>();
+    RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CPatches_SkipStartScreen);
+    uint8_t* pLocation = func.GetAddr();
 
     if(pLocation == nullptr)
     {

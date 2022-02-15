@@ -30,10 +30,8 @@ void* HookInitScriptMemberVariable(void* a1, void* a2, uint64_t a3, uint64_t nam
 
 void DisableIntroMoviesPatch(const Image* apImage)
 {
-    const mem::pattern cPattern("48 89 5C 24 08 57 48 83 EC 20 48 8B 44 24 50 48 8B D9 48 89 41 08");
-    const mem::default_scanner scanner(cPattern);
-
-    RealInitScriptMemberVariable = scanner(apImage->TextRegion).as<TInitScriptMemberVariable*>();
+    RED4ext::RelocPtr<void> func(CyberEngineTweaks::Addresses::CPatches_IntroMovie);
+    RealInitScriptMemberVariable = static_cast<TInitScriptMemberVariable*>(func.GetAddr());
 
     if (RealInitScriptMemberVariable == nullptr)
     {

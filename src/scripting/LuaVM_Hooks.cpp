@@ -164,9 +164,8 @@ void LuaVM::Hook(Options& aOptions)
     auto& gameImage = aOptions.GameImage;
 
     {
-        const mem::pattern cPattern("40 53 48 83 EC ? 48 8D 4C 24 20 48 8B DA E8 ? ? ? ? 33 D2 48 8D 4C  24 40 E8");
-        const mem::default_scanner cScanner(cPattern);
-        uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
+        RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_Log);
+        uint8_t* pLocation = func.GetAddr();
 
         if (pLocation)
         {
@@ -179,9 +178,8 @@ void LuaVM::Hook(Options& aOptions)
     }
 
     {
-        const mem::pattern cPattern("4C 8B DC 49 89 5B 08 49  89 73 18 57 48 83 EC 70 48 8B 02 ? ? ? ? ? ? ? FE 42 62 4D 8D 43 10 33 FF 45 33 C9 49 89  7B 10 48 8B DA 48 89 7A");
-        const mem::default_scanner cScanner(cPattern);
-        uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
+        RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_LogChannel);
+        uint8_t* pLocation = func.GetAddr();
 
         if (pLocation)
         {
@@ -194,9 +192,8 @@ void LuaVM::Hook(Options& aOptions)
     }
 
     {
-        const mem::pattern cPattern("40 53 48 83 EC 30 33 C0 4C 89 44 24 20 48 8B DA");
-        const mem::default_scanner cScanner(cPattern);
-        uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
+        RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_TDBIDConstructorDerive);
+        uint8_t* pLocation = func.GetAddr();
 
         if (pLocation)
         {
@@ -210,9 +207,8 @@ void LuaVM::Hook(Options& aOptions)
     }
 
     {
-        const mem::pattern cPattern("40 53 48 83 EC 20 48 8B 0D ? ? ? ? 48 8B DA E8 ? ? ? ? 84 C0");
-        const mem::default_scanner cScanner(cPattern);
-        uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
+        RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_ProcessRunningState);
+        uint8_t* pLocation = func.GetAddr();
 
         if (pLocation)
         {
@@ -254,9 +250,8 @@ void LuaVM::Hook(Options& aOptions)
     }
     
     {
-        const mem::pattern cPattern("48 89 5C 24 10 48 89 7C 24 18 4C 89 74 24 20 55 48 8B EC 48 83 EC 70 48");
-        const mem::default_scanner cScanner(cPattern);
-        uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
+        RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_TweakDBLoad);
+        uint8_t* pLocation = func.GetAddr();
 
         if (pLocation)
         {

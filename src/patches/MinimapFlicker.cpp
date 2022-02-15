@@ -4,9 +4,8 @@
 
 void MinimapFlickerPatch(const Image* apImage)
 {
-    const mem::pattern cPattern("83 79 2C 00 48 8B F2 4C");
-    const mem::default_scanner cScanner(cPattern);
-    auto pLocation = cScanner(apImage->TextRegion).as<uint8_t*>();
+    RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CPatches_MinimapFlicker);
+    uint8_t* pLocation = func.GetAddr();
 
     if (pLocation == nullptr)
     {

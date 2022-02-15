@@ -4,10 +4,8 @@
 
 void RemovePedsPatch(const Image* apImage)
 {
-    const mem::pattern cPattern("3B D8 0F 4E C3 8B D8 85 DB 0F 8E");
-    const mem::default_scanner scanner(cPattern);
-
-    const auto pLocation = scanner(apImage->TextRegion).as<uint8_t*>();
+    RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CPatches_RemovePedestrians);
+    uint8_t* pLocation = func.GetAddr();
 
     if(pLocation == nullptr)
     {

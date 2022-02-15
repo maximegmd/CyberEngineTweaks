@@ -61,14 +61,11 @@ void EnableDebugPatch(const Image* apImage)
 {
     uint8_t* pChecksumLocations[] = { 0, 0 };
 
-    const mem::pattern cIsFinalPattern("48 BB 87 C9 B1 63 33 01 15 75");
-    const mem::pattern cCanDebugTeleportPattern("48 BB C3 63 E3 32 7C A2 3C C1");
+    RED4ext::RelocPtr<uint8_t> isFinal(CyberEngineTweaks::Addresses::CPatches_IsFinal);
+    RED4ext::RelocPtr<uint8_t> canDebugTeleport(CyberEngineTweaks::Addresses::CPatches_CanDebugTeleport);
 
-    const mem::default_scanner cIsFinalScanner(cIsFinalPattern);
-    const mem::default_scanner cCanDebugTeleportScanner(cCanDebugTeleportPattern);
-
-    pChecksumLocations[0] = cIsFinalScanner(apImage->TextRegion).as<uint8_t*>(); // "IsFinal", helps us find RegisterScriptFunction
-    pChecksumLocations[1] = cCanDebugTeleportScanner(apImage->TextRegion).as<uint8_t*>(); // "CanDebugTeleport", to find RegisterScriptMemberFunction
+    pChecksumLocations[0] = isFinal.GetAddr(); // "IsFinal", helps us find RegisterScriptFunction
+    pChecksumLocations[1] = canDebugTeleport.GetAddr(); // "CanDebugTeleport", to find RegisterScriptMemberFunction
 
     for (int i = 0; i < 2; i++)
     {

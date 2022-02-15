@@ -4,10 +4,8 @@
 
 void DisableVignettePatch(const Image* apImage)
 {
-    const mem::pattern cPattern("48 8B 41 30 48 83 78 68 00 74");
-    const mem::default_scanner scanner(cPattern);
-
-    const auto pLocation = scanner(apImage->TextRegion).as<uint8_t*>();
+    RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CPatches_Vignette);
+    const auto pLocation = func.GetAddr();
 
     if (pLocation == nullptr)
     {

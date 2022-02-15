@@ -51,11 +51,8 @@ void GameMainThread::Hook()
 {
     if (!m_pMainThreadLocation)
     {
-        auto& gameImage = CET::Get().GetOptions().GameImage;
-
-        const mem::pattern cPattern("40 55 57 41 57 48 81 EC");
-        const mem::default_scanner cScanner(cPattern);
-        m_pMainThreadLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
+        RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CGame_Main);
+        m_pMainThreadLocation = func.GetAddr();
     }
 
     if (m_pMainThreadLocation)

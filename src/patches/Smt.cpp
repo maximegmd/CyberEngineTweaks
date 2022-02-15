@@ -4,9 +4,8 @@
 
 void SmtAmdPatch(const Image* apImage)
 {
-    const mem::pattern cPattern("75 2D 33 C9 B8 01 00 00 00 0F A2 8B C8 C1 F9 08");
-    const mem::default_scanner cScanner(cPattern);
-    auto pLocation = cScanner(apImage->TextRegion).as<uint8_t*>();
+    RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CPatches_AmdSMT);
+    uint8_t* pLocation = func.GetAddr();
 
     if (pLocation == nullptr)
     {

@@ -42,14 +42,13 @@ void* HookGameOptionInit(GameOption* apThis)
 
 void OptionsInitHook(const Image* apImage)
 {
-    const mem::pattern cPattern("48 89 5C 24 08 48 89 74 24 10 57 48 83 EC 40 48 8B F1 48 8D 4C 24 20 E8");
-    const mem::default_scanner cScanner(cPattern);
-    auto GameOptionInit = cScanner(apImage->TextRegion).as<uint8_t*>();
+    RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CPatches_OptionsInit);
+    uint8_t* pLocation = func.GetAddr();
 
-    if (GameOptionInit)
+    if (pLocation)
     {
-        MH_CreateHook(GameOptionInit, &HookGameOptionInit, reinterpret_cast<void**>(&RealGameOptionInit));
-        MH_EnableHook(GameOptionInit);
+        MH_CreateHook(pLocation, &HookGameOptionInit, reinterpret_cast<void**>(&RealGameOptionInit));
+        MH_EnableHook(pLocation);
 
         Log::Info("Hidden options hook: success");
     }
