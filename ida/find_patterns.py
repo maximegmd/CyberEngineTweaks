@@ -62,8 +62,23 @@ def find_pattern(pattern: str, expected: int = 1, index: int = 0) -> int:
 
     return addrs[index]
 
-def find_function(pattern: str, expected: int = 1, index: int = 0) -> int:
-    return find_pattern(pattern, expected, index)
+def find_function(pattern: str, expected: int = 1, index: int = 0, offset: int = 0) -> int:
+    addr = find_pattern(pattern, expected, index)
+    if addr == ida_idaapi.BADADDR:
+        return addr
+
+    if offset != 0:
+        disp = ida_bytes.get_dword(addr + offset)
+
+        if disp >= 1 << 31:
+            disp = 0xFFFFFFFF - disp
+            disp = disp + 1
+            disp = -disp
+
+        # Real address is: pattern_addr + offset + displacement + size_of_displacement.
+        return addr + offset + disp + 4
+    
+    return addr
 
 def find_ptr(pattern: str, expected: int = 1, index: int = 0, offset: int = 0) -> int:
     addr = find_pattern(pattern, expected, index)
@@ -81,7 +96,7 @@ try:
 
     groups.sort(key=lambda g: g.name.lower())
 
-    addr = find_ptr(pattern='4C 8D 05 ? ? ? ? 49 89 AE 80 01 00 00 8D 55 11', offset=3)
+    addr = find_ptr(pattern='4C 8D 05 ? ? ? ? 45 89 BE 20 02 00 00', offset=3)
     version = idc.get_strlit_contents(addr)
 
     print(f'Finding {total} item(s)...')
@@ -92,7 +107,7 @@ try:
         file.write(' * This file is generated. DO NOT modify it!\n')
         file.write(' *\n')
         file.write(' * Add new patterns in "patterns.py" file located in "project_root/scripts" and run "find_patterns.py".\n')
-        file.write(' * The new file should be located in "idb_path/Addresses.hpp".\n')
+        file.write(' * The new file should be located in "idb_path/Addresses.h".\n')
         file.write(' */\n')
         file.write('#include <cstdint>\n')
         file.write('\n')
@@ -128,7 +143,7 @@ try:
                 file.write(f'// {ptr.pattern}, expected: {ptr.expected}, index: {ptr.index}, offset: {ptr.offset}\n')
 
             for func in group.functions:
-                addr = find_function(pattern=func.pattern, expected=func.expected, index=func.index)
+                addr = find_function(pattern=func.pattern, expected=func.expected, index=func.index, offset=func.offset)
                 if addr == ida_idaapi.BADADDR:
                     file.write(f'#error Could not find pattern "{func.pattern}", expected: {func.expected}, index: {func.index}\n')
                     continue

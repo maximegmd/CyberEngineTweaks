@@ -28,8 +28,8 @@ def get_groups() -> List[Group]:
     # Add new patterns here, please try to keep the groups ordering alphabetized.
     return [
         Group(name='CRenderGlobal', pointers=[
-            Item(name='InstanceOffset', pattern='48 8B 05 ? ? ? ? 8B D1 48 8B 88 18 8A 5A 01', expected=1, offset=3),
-            Item(name='_DoNotUse_RenderQueueOffset', pattern='4D 8B 0E 49 39 31 0F 84 85 00 00 00 41 39 71 24 74 ? 49 8B 95', expected=1)
+            Item(name='InstanceOffset', pattern='48 8B 05 ? ? ? ? 48 8B 88 18 8E 5A 01 8B 41 08 C3', expected=1, offset=3),
+            Item(name='_DoNotUse_RenderQueueOffset', pattern='49 39 29 0F 84 ? ? ? ? 41 39 69 24 0F 84 ? ? ? ? 49 8B 95', expected=1)
         ], functions=[
             Item(name='Resize', pattern='44 88 4C 24 20 44 89 44 24 18 89 54 24 10 89 4C', expected=1) 
         ]),
@@ -38,12 +38,13 @@ def get_groups() -> List[Group]:
         ]),
         Group(name='CScript', functions=[
             Item(name='RunPureScript', pattern='40 55 48 81 EC D0 00 00 00 48 8D 6C 24 40 8B', expected=1),
-            Item(name='CreateFunction', pattern='48 89 5C 24 08 57 48 83 EC 40 8B F9 48 8D 54 24 30 48 8B 0D ? ? ? ? 41 B8 B8 00 00 00', expected=1),
+            Item(name='AllocateFunction', pattern='BA B8 00 00 00 48 8D 4D D7 E8', expected=3, index=0, offset=10),
             Item(name='Log', pattern='40 53 48 83 EC ? 48 8D 4C 24 20 48 8B DA E8 ? ? ? ? 33 D2 48 8D 4C  24 40 E8', expected=1),
-            Item(name='LogChannel', pattern='40 53 48 83 EC ? 48 8D 4C 24 20 48 8B DA E8 ? ? ? ? 33 D2 48 8D 4C 24 40 E8', expected=1),
+            Item(name='LogChannel', pattern='4C 8B DC 49 89 5B 08 49  89 73 18 57 48 83 EC 70 48 8B 02 ? ? ? ? ? ? ? FE 42 62 4D 8D 43 10 33 FF 45 33 C9 49 89  7B 10 48 8B DA 48 89 7A', expected=1),
             Item(name='TDBIDConstructorDerive', pattern='40 53 48 83 EC 30 33 C0 4C 89 44 24 20 48 8B DA', expected=1),
             Item(name='ProcessRunningState', pattern='40 53 48 83 EC 20 48 8B 0D ? ? ? ? 48 8B DA E8 ? ? ? ? 84 C0', expected=1),
-            Item(name='TweakDBLoad', pattern='48 89 5C 24 10 48 89 7C 24 18 4C 89 74 24 20 55 48 8B EC 48 83 EC 70 48', expected=1)
+            Item(name='TweakDBLoad', pattern='48 89 5C 24 18 55 57 41 56 48 8B EC 48 83 EC 70 48 8B D9 45 33 F6 48 8D', expected=1),
+            Item(name='RegisterMemberFunction', pattern='48 89 5C 24 08 57 48 83 EC 20 49 8B C1 4D 8B D0 44 8B 4C 24 58 48 8B DA 41 83 C9 03', expected=1)
         ]),
         Group(name='CWinapi', functions=[
             Item(name='ClipToCenter', pattern='48 89 5C 24 08 57 48 83 EC 30 48 8B 99 ? 01 00 00 48 8B F9 FF', expected=1)
@@ -52,26 +53,25 @@ def get_groups() -> List[Group]:
             Item(name='Constructor', pattern='48 8B D9 E8 ? ? ? ? 48 8D 05 ? ? ? ? 48 C7 43 40 00 00 00 00', expected=2, index=0),
             Item(name='Initialize', pattern='48 89 5C 24 18 48 89 6C 24 20 57 48 83 EC 30 48 8B 42 78', expected=1),
             Item(name='UnInitialize', pattern='40 53 48 83 EC 20 48 8B D9 E8 ? ? ? ? 33 C0 48 89 43 50 48 89 43 48', expected=1),
-            Item(name='Spawn', pattern='FF 90 A8 01 00 00 48 8B 00 4C 8D 85 80 00 00 00', expected=1),
-            Item(name='Despawn', pattern='40 55 53 56 57 41 55 41 56 41 57 48 8B EC 48 83 EC 50', expected=1),
-            Item(name='SpawnCallback', pattern='41 57 48 83 EC 70 48 8B E9 4C 8B FA', expected=1)
+            Item(name='Spawn', pattern='48 89 5C 24 18 55 56 41 54 41 56 41 57 48 8D 6C 24 90 48 81 EC 70 01 00 00 48 83 79 50 00 49 8B', expected=1),
+            Item(name='Despawn', pattern='48 89 5C 24 10 48 89 6C  24 18 56 57 41 54 41 56 41 57 48 83 EC 50 4C 8B F9 0F 57 C0 48 83 C1 41', expected=1),
+            Item(name='SpawnCallback', pattern='48 89 5C 24 18 48 89 6C  24 20 56 57 41 56 48 83 EC 70 48 8B F1 48 8B EA  48 83 C1 48 E8', expected=1)
         ]),
         Group(name='CPhotoMode', functions=[
-            Item(name='SetRecordID', pattern='48 89 5C 24 08 48 89 74 24 18 55 57 41 56 48 8D 6C 24 B9 48 81 EC 90 00 00 00 48 8B F9', expected=1)
+            Item(name='SetRecordID', pattern='48 8B C4 55 57 48 8D 68 A1 48 81 EC 98 00 00 00 48 89 58 08 48 8B D9 48 89 70 18 48 8D 4D 27 48', expected=1)
         ]),
         Group(name='CPatches', functions=[
-            Item(name='BoundaryTeleport', pattern='48 8B C4 55 53 41 54 48 8D A8 78', expected=1),
+            Item(name='BoundaryTeleport', pattern='48 8B C4 55 53 41 54 48  8D A8 ? ? ? ? 48 81 EC ? ? ? ? 48 89 70 10 48 8D 59 48', expected=1),
             Item(name='IntroMovie', pattern='48 89 5C 24 08 57 48 83 EC 20 48 8B 44 24 50 48 8B D9 48 89 41 08', expected=1),
             Item(name='Vignette', pattern='48 8B 41 30 48 83 78 68 00 74', expected=1),
-            Item(name='IsFinal', pattern='48 BB 87 C9 B1 63 33 01 15 75', expected=1),
-            Item(name='CanDebugTeleport', pattern='48 BB C3 63 E3 32 7C A2 3C C1', expected=1),
             Item(name='MinimapFlicker', pattern='83 79 2C 00 48 8B F2 4C', expected=1),
-            Item(name='OptionsInit', pattern='48 89 5C 24 08 48 89 74 24 10 57 48 83 EC 40 48 8B F1 48 8D 4C 24 20 E8', expected=1),
-            Item(name='RemovePedestrians', pattern='3B D8 0F 4E C3 8B D8 85 DB 0F 8E', expected=1),
-            Item(name='SkipStartScreen', pattern='48 BB E6 F8 A5 A3 36 56 4E A7 C6 85 B0 ? ? ? 01', expected=1),
+            Item(name='OptionsInit', pattern='40 53 48 83 EC 40 48 8B D9 48 8D 4C 24 20 E8 ? ? ? ? E8 ? ? ? ? 4C 8B 43 08', expected=1),
+            #Item(name='RemovePedestrians', pattern='44 3B E0 41 0F 4E C4 44 8B E0 89 45 67 45 85 E4 0F 8E', expected=1), # not needed anymore?
+            Item(name='SkipStartScreen', pattern='80 3D ? ? ? ? 00 48 BB E6 F8 A5 A3 36 56 4E A7 C6 85 A0 00 00 00 01', expected=1),
             Item(name='AmdSMT', pattern='75 2D 33 C9 B8 01 00 00 00 0F A2 8B C8 C1 F9 08', expected=1)
         ]),
         Group(name='CGame', functions=[
-            Item(name='Main', pattern='40 55 57 41 57 48 81 EC', expected=1)
+            Item(name='Main', pattern='40 57 48 83 EC 70 48 8B F9 0F 29 7C 24 50 48 8D 4C 24 38', expected=1)
         ]),
     ]
+

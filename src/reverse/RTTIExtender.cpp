@@ -281,7 +281,7 @@ struct TEMP_Spawner
     {
         // REDSmartPtr<TEMP_PendingEntity::Unk00> TEMP_Spawner::func(this, TEMP_SpawnSettings&, RED4ext::CName&)
         using TFunc = void (*)(TEMP_Spawner*, REDSmartPtr<TEMP_PendingEntity::Unk00>*, TEMP_SpawnSettings&, const RED4ext::CName&);
-        static GameCall<TFunc> func(CyberEngineTweaks::Addresses::gameIGameSystem_Spawn, -0x55);
+        static GameCall<TFunc> func(CyberEngineTweaks::Addresses::gameIGameSystem_Spawn);
 
         REDSmartPtr<TEMP_PendingEntity::Unk00> pendingEntity;
         func(this, &pendingEntity, aSettings, acEntityPath);
@@ -516,7 +516,7 @@ private:
     static void SpawnCallback(TEMP_PendingEntity::Unk00& aUnk)
     {
         using TFunc = void(*)(RED4ext::IScriptable*, RED4ext::ent::Entity*);
-        static GameCall<TFunc> func(CyberEngineTweaks::Addresses::gameIGameSystem_SpawnCallback, -0xE);
+        static GameCall<TFunc> func(CyberEngineTweaks::Addresses::gameIGameSystem_SpawnCallback);
 
         struct GameInstance_78_Unk
         {

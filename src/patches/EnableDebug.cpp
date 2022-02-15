@@ -59,63 +59,15 @@ void HookRegisterScriptMemberFunction(void* a, void* parentClass, uint64_t hash,
 
 void EnableDebugPatch(const Image* apImage)
 {
-    uint8_t* pChecksumLocations[] = { 0, 0 };
+    RED4ext::RelocPtr<uint8_t> registerFunction(RED4ext::Addresses::CBaseFunction_Register);
+    RED4ext::RelocPtr<uint8_t> registerMemberFunction(CyberEngineTweaks::Addresses::CScript_RegisterMemberFunction);
 
-    RED4ext::RelocPtr<uint8_t> isFinal(CyberEngineTweaks::Addresses::CPatches_IsFinal);
-    RED4ext::RelocPtr<uint8_t> canDebugTeleport(CyberEngineTweaks::Addresses::CPatches_CanDebugTeleport);
+    RealRegisterScriptFunction = reinterpret_cast<TRegisterScriptFunction*>(registerFunction.GetAddr());
+    MH_CreateHook(RealRegisterScriptFunction, &HookRegisterScriptFunction,
+                  reinterpret_cast<void**>(&RealRegisterScriptFunction));
 
-    pChecksumLocations[0] = isFinal.GetAddr(); // "IsFinal", helps us find RegisterScriptFunction
-    pChecksumLocations[1] = canDebugTeleport.GetAddr(); // "CanDebugTeleport", to find RegisterScriptMemberFunction
+    RealRegisterScriptMemberFunction = reinterpret_cast<TRegisterScriptMemberFunction*>(registerMemberFunction.GetAddr());
+    MH_CreateHook(RealRegisterScriptMemberFunction, &HookRegisterScriptMemberFunction,
+                  reinterpret_cast<void**>(&RealRegisterScriptMemberFunction));
 
-    for (int i = 0; i < 2; i++)
-    {
-        const char* patchType = (i == 0 ? "Unlock menu patch" : "Unlock debug functions");
-
-        uint8_t* pCallLocation = nullptr;
-        if (pChecksumLocations[i])
-        {
-            mem::region reg(pChecksumLocations[i], 0x1000);
-
-            if (i == 0)
-            {
-                const mem::pattern cPattern("48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8D 0D");
-                const mem::default_scanner cScanner(cPattern);
-                pCallLocation = cScanner(reg).as<uint8_t*>();
-            }
-            else
-            {
-                const mem::pattern cPattern("48 8D 0D ?? ?? ?? ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8D 0D");
-                const mem::default_scanner cScanner(cPattern);
-                pCallLocation = cScanner(reg).as<uint8_t*>();
-            }
-
-            if (pCallLocation)
-                pCallLocation += (i == 0 ? 8 : 11);
-        }
-
-        if (pCallLocation)
-        {
-            DWORD oldProtect = 0;
-            VirtualProtect(pCallLocation, 32, PAGE_EXECUTE_WRITECOPY, &oldProtect);
-            int32_t offset = *(int32_t*)(pCallLocation)+4;
-            VirtualProtect(pCallLocation, 32, oldProtect, nullptr);
-
-            if (i == 0)
-            {
-                RealRegisterScriptFunction = reinterpret_cast<TRegisterScriptFunction*>(pCallLocation + offset);
-                MH_CreateHook(RealRegisterScriptFunction, &HookRegisterScriptFunction, reinterpret_cast<void**>(&RealRegisterScriptFunction));
-            }
-            else
-            {
-                RealRegisterScriptMemberFunction = reinterpret_cast<TRegisterScriptMemberFunction*>(pCallLocation + offset);
-                MH_CreateHook(RealRegisterScriptMemberFunction, &HookRegisterScriptMemberFunction, reinterpret_cast<void**>(&RealRegisterScriptMemberFunction));
-            }
-
-            Log::Info("{}: success", patchType);
-        }
-        else
-        {
-            Log::Warn("{}: failed, unknown version", patchType);
-        }
-    }
 }

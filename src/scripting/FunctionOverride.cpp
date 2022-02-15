@@ -11,10 +11,12 @@
 static FunctionOverride* s_pOverride = nullptr;
 
 using TRunPureScriptFunction = bool (*)(RED4ext::CBaseFunction* apFunction, RED4ext::CScriptStack*, void*);
+using TCreateFunction = void* (*)(void* apMemoryPool, size_t aSize);
 using TCallScriptFunction = bool (*)(RED4ext::IFunction* apFunction, RED4ext::IScriptable* apContext,
                                      RED4ext::CStackFrame* apFrame, void* apOut, void* a4);
 
 static TRunPureScriptFunction RealRunPureScriptFunction = nullptr;
+static TCreateFunction RealCreateFunction = nullptr;
 static RED4ext::REDfunc<TCallScriptFunction> CallScriptFunction(RED4ext::Addresses::CBaseFunction_InternalExecute);
 
 static constexpr size_t s_cMaxFunctionSize =
@@ -155,6 +157,16 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
     }
 
     return RealRunPureScriptFunction(apFunction, apStack, a3);
+}
+
+void* FunctionOverride::HookCreateFunction(void* apMemoryPool, size_t aSize)
+{
+    enum
+    {
+        kOverrideAllocationSize = std::max(s_cMaxFunctionSize, sizeof(RED4ext::CScriptedFunction))
+    };
+
+    return RealCreateFunction(apMemoryPool, kOverrideAllocationSize);
 }
 
 void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, RED4ext::CStackFrame* apFrame, void* apOut, void* a4, RED4ext::CClassFunction* apFunction)
@@ -474,27 +486,20 @@ void FunctionOverride::Hook(Options& aOptions) const
         }
     }
 
-     {
-        RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_CreateFunction);
-        uint8_t* pLocation = func.GetAddr();
-
-        if (pLocation)
+    {
+        RED4ext::RelocPtr<void> func(CyberEngineTweaks::Addresses::CScript_AllocateFunction);
+        RealCreateFunction = static_cast<TCreateFunction>(func.GetAddr());
+        if (!RealCreateFunction)
+             Log::Error("Could not find create function!");
+        else
         {
-            auto* pFirstLocation = pLocation + 0x1A;
-            auto* pSecondLocation = pLocation + 0x3A;
-
-            if (*pFirstLocation == sizeof(RED4ext::CScriptedFunction) &&
-                *pSecondLocation == sizeof(RED4ext::CScriptedFunction))
-            {
-                DWORD oldProtect;
-                VirtualProtect(pLocation, 0x40, PAGE_READWRITE, &oldProtect);
-                *pFirstLocation = *pSecondLocation = std::max(s_cMaxFunctionSize, sizeof(RED4ext::CScriptedFunction));
-                VirtualProtect(pLocation, 0x40, oldProtect, &oldProtect);
-
-                Log::Info("Override function allocator patched!");
-            }
-            else
-                Log::Error("Could not fix allocator for override functions!");
+            auto* pLocation = RealCreateFunction;
+             if (MH_CreateHook(pLocation, &FunctionOverride::HookCreateFunction,
+                              reinterpret_cast<void**>(&RealCreateFunction)) != MH_OK ||
+                 MH_EnableHook(pLocation) != MH_OK)
+                 Log::Error("Could not hook RealCreateFunction function!");
+             else
+                 Log::Info("RealCreateFunction function hook complete!");
         }
     }
 }

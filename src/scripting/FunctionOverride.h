@@ -36,6 +36,7 @@ protected:
 
     static void HandleOverridenFunction(RED4ext::IScriptable* aContext, RED4ext::CStackFrame* aFrame, void* aOut, void* a4, RED4ext::CClassFunction* apFunction);
     static bool HookRunPureScriptFunction(RED4ext::CClassFunction* apFunction, RED4ext::CScriptStack* apContext, RED4ext::CStackFrame* a3);
+    static void* HookCreateFunction(void* apMemoryPool, size_t aSize);
     static bool ExecuteChain(const CallChain& aChain, std::shared_lock<std::shared_mutex>& aLock,
                              RED4ext::IScriptable* apContext, TiltedPhoques::Vector<sol::object>* apArgs,
                              RED4ext::CStackType* apResult, TiltedPhoques::Vector<RED4ext::CStackType>* apOutArgs, 

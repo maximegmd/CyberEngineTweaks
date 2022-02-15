@@ -132,7 +132,7 @@ void* D3D12::CRenderNode_Present_InternalPresent(int32_t* apSomeInt, uint8_t aSo
         const auto idx = *apSomeInt - 1;
 
         const auto* pContext = RenderContext::GetInstance();
-        if (pContext->unkED65C0 == nullptr)
+        if (pContext->unkED69C0 == nullptr)
         {
             auto* pDevice = pContext->devices[idx].pSwapChain;
             d3d12.m_pCommandQueue = pContext->pDirectQueue;
