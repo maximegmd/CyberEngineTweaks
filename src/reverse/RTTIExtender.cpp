@@ -169,6 +169,7 @@ struct TEMP_PendingEntity
         virtual void AddRef() = 0;
     };
     RED4EXT_ASSERT_OFFSET(Unk00, entityID, 0x110);
+    RED4EXT_ASSERT_OFFSET(Unk00, entity, 0x118);
 
     Unk00* unk00;
     uint64_t unk08;
@@ -530,7 +531,9 @@ private:
         };
 
         auto* pGameInstance = Singleton->gameInstance;
-        func(reinterpret_cast<GameInstance_78*>(pGameInstance->unk78)->unk00->worldRuntimeEntityRegistry, aUnk.entity);
+
+        if (aUnk.entity)
+            func(reinterpret_cast<GameInstance_78*>(pGameInstance->unk78)->unk00->worldRuntimeEntityRegistry, aUnk.entity);
     }
 
 public:
