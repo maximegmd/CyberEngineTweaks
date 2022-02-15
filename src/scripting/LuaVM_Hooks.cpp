@@ -224,27 +224,19 @@ void LuaVM::Hook(Options& aOptions)
     }
 
     {
-        const mem::pattern cPattern("48 BF 58 D1 78 A0 18 09 BA EC 75 16 48 8D 15 ? ? ? ? 48 8B CF E8 ? ? ? ? C6 05 ?? "
-                                    "?? ?? ?? 01 41 8B 06 39 05 ? ? ? ? 7F");
-        const mem::default_scanner cScanner(cPattern);
-        uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
+        RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_ToStringDEBUG);
+        uint8_t* pLocation = func.GetAddr();
+
         if (pLocation)
         {
-            pLocation = &pLocation[45] + static_cast<int8_t>(pLocation[44]);
-            mem::region reg(pLocation, 45);
-            const mem::pattern cSecondaryPattern(
-                "48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 83 3D ?? ?? ?? ?? FF 75 ?? 48 8D 05");
-            const mem::default_scanner cSecondaryScanner(cSecondaryPattern);
-            pLocation = cSecondaryScanner(reg).as<uint8_t*>();
-            if (pLocation)
+            if (MH_CreateHook(pLocation, &HookTDBIDToStringDEBUG,
+                              reinterpret_cast<void**>(&m_realTDBIDToStringDEBUG)) !=
+                    MH_OK ||
+                MH_EnableHook(pLocation) != MH_OK)
+                Log::Error("Could not hook RunningState::Run function!");
+            else
             {
-                pLocation = &pLocation[28] + *reinterpret_cast<int32_t*>(&pLocation[24]);
-                if (MH_CreateHook(pLocation, &HookTDBIDToStringDEBUG,
-                                  reinterpret_cast<void**>(&m_realTDBIDToStringDEBUG)) != MH_OK ||
-                    MH_EnableHook(pLocation) != MH_OK)
-                    Log::Error("Could not hook TDBID::ToStringDEBUG function!");
-                else
-                    Log::Info("TDBID::ToStringDEBUG function hook complete!");
+                Log::Info("RunningState::Run function hook complete!");
             }
         }
     }
