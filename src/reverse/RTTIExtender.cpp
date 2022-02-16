@@ -231,7 +231,7 @@ struct TEMP_SpawnSettings
     void SetRecordID(const RED4ext::TweakDBID acTweakDBID)
     {
         // Copied from the function photomode uses to spawn 3rd person puppet
-        using TFunc = void (*)(const RED4ext::TweakDBID&, RED4ext::Handle<RED4ext::IScriptable>&);
+        using TFunc = void (*)(const RED4ext::TweakDBID, RED4ext::Handle<RED4ext::IScriptable>&);
         static GameCall<TFunc> func(CyberEngineTweaks::Addresses::CPhotoMode_SetRecordID);
 
         DONOTUSE_recordDBID = acTweakDBID;
@@ -281,7 +281,7 @@ struct TEMP_Spawner
     RED4ext::ent::EntityID Spawn(const RED4ext::CName acEntityPath, TEMP_SpawnSettings& aSettings)
     {
         // REDSmartPtr<TEMP_PendingEntity::Unk00> TEMP_Spawner::func(this, TEMP_SpawnSettings&, RED4ext::CName&)
-        using TFunc = void (*)(TEMP_Spawner*, REDSmartPtr<TEMP_PendingEntity::Unk00>*, TEMP_SpawnSettings&, const RED4ext::CName&);
+        using TFunc = void (*)(TEMP_Spawner*, REDSmartPtr<TEMP_PendingEntity::Unk00>*, TEMP_SpawnSettings&, const RED4ext::CName);
         static GameCall<TFunc> func(CyberEngineTweaks::Addresses::gameIGameSystem_Spawn);
 
         REDSmartPtr<TEMP_PendingEntity::Unk00> pendingEntity;
