@@ -23,7 +23,7 @@ constexpr uintptr_t CPatches_IntroMovie = 0x1401FA530 - ImageBase; // 48 89 5C 2
 constexpr uintptr_t CPatches_Vignette = 0x1411664F0 - ImageBase; // 48 8B 41 30 48 83 78 68 00 74, expected: 1, index: 0
 constexpr uintptr_t CPatches_MinimapFlicker = 0x14256793D - ImageBase; // 83 79 2C 00 48 8B F2 4C, expected: 1, index: 0
 constexpr uintptr_t CPatches_OptionsInit = 0x142B95870 - ImageBase; // 40 53 48 83 EC 40 48 8B D9 48 8D 4C 24 20 E8 ? ? ? ? E8 ? ? ? ? 4C 8B 43 08, expected: 1, index: 0
-constexpr uintptr_t CPatches_SkipStartScreen = 0x1429C8252 - ImageBase; // 80 3D ? ? ? ? 00 48 BB E6 F8 A5 A3 36 56 4E A7 C6 85 A0 00 00 00 01, expected: 1, index: 0
+constexpr uintptr_t CPatches_SkipStartScreen = 0x1429C8140 - ImageBase; // 74 5F E8 ? ? ? ? 48 8D 4C 24 20 8B D8 E8 ? ? ? ? 48 8B C8 8B D3 E8, expected: 2, index: 1
 constexpr uintptr_t CPatches_AmdSMT = 0x142B3E4FB - ImageBase; // 75 2D 33 C9 B8 01 00 00 00 0F A2 8B C8 C1 F9 08, expected: 1, index: 0
 #pragma endregion
 

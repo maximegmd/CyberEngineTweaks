@@ -68,7 +68,7 @@ def get_groups() -> List[Group]:
             Item(name='MinimapFlicker', pattern='83 79 2C 00 48 8B F2 4C', expected=1),
             Item(name='OptionsInit', pattern='40 53 48 83 EC 40 48 8B D9 48 8D 4C 24 20 E8 ? ? ? ? E8 ? ? ? ? 4C 8B 43 08', expected=1),
             #Item(name='RemovePedestrians', pattern='44 3B E0 41 0F 4E C4 44 8B E0 89 45 67 45 85 E4 0F 8E', expected=1), # not needed anymore?
-            Item(name='SkipStartScreen', pattern='80 3D ? ? ? ? 00 48 BB E6 F8 A5 A3 36 56 4E A7 C6 85 A0 00 00 00 01', expected=1),
+            Item(name='SkipStartScreen', pattern='74 5F E8 ? ? ? ? 48 8D 4C 24 20 8B D8 E8 ? ? ? ? 48 8B C8 8B D3 E8', expected=2, index=1),
             Item(name='AmdSMT', pattern='75 2D 33 C9 B8 01 00 00 00 0F A2 8B C8 C1 F9 08', expected=1)
         ]),
         Group(name='CGame', functions=[
