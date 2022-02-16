@@ -192,7 +192,7 @@ BOOL Overlay::ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis)
 
     auto& overlay = CET::Get().GetOverlay();
 
-    if (wnd == foreground && apThis->unk15C && !apThis->unk14C && !overlay.IsEnabled())
+    if (wnd == foreground && apThis->unk164 && !apThis->unk154 && !overlay.IsEnabled())
     {
         RECT rect;
         GetClientRect(wnd, &rect);
