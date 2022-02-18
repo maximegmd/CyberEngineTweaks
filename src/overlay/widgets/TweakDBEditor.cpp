@@ -221,11 +221,11 @@ struct ResourcesList
             std::ifstream file(filepath, std::ios::binary);
             file.exceptions(std::ios::badbit);
 
-            size_t headerSize = 4;
+            size_t headerSize = 8;
 
             std::string content((std::istreambuf_iterator(file)), std::istreambuf_iterator<char>());
             std::string buffer;
-            buffer.resize(* (uint32_t*)content.data());
+            buffer.resize(*reinterpret_cast<uint32_t*>(content.data() + 4));
 
             char workingMemory[0x80000];
 
