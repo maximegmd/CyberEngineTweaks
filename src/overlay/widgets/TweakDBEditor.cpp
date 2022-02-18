@@ -163,9 +163,11 @@ private:
     TiltedPhoques::Map<uint64_t, std::string> m_queries;
 };
 
+using TOodleLZ_Decompress = size_t(*)(char *in, int insz, char *out, int outsz, int wantsFuzzSafety, int b, int c, void *d, void *e, void *f, void *g, void *workBuffer, size_t workBufferSize, int j);
+
 struct ResourcesList
 {
-    static constexpr char c_defaultFilename[] = "archivehashes.txt";
+    static constexpr char c_defaultFilename[] = "usedhashes.kark";
 
     struct Resource
     {
@@ -194,22 +196,59 @@ struct ResourcesList
     {
         Reset();
 
+        auto hOodleHandle = GetModuleHandle(TEXT("oo2ext_7_win64.dll"));
+        if (hOodleHandle == nullptr)
+        {
+            spdlog::error("Could not get Oodle access");
+            return false;
+        }
+
+        auto OodleLZ_Decompress = reinterpret_cast<TOodleLZ_Decompress>(GetProcAddress(hOodleHandle, "OodleLZ_Decompress"));
+        if (OodleLZ_Decompress == nullptr)
+        {
+            spdlog::error("Could not get OodleLZ_Decompress");
+            return false;
+        }
+
         auto filepath = CET::Get().GetPaths().CETRoot() / c_defaultFilename;
-        if (!std::filesystem::exists(filepath))
+        if (!exists(filepath))
             return false;
 
         m_resources.reserve(1485150);
 
         try
         {
-            std::ifstream file(filepath);
+            std::ifstream file(filepath, std::ios::binary);
             file.exceptions(std::ios::badbit);
 
-            char buffer[1024]{};
-            while (file.getline(buffer, sizeof(buffer)))
+            size_t headerSize = 8;
+
+            std::string content((std::istreambuf_iterator(file)), std::istreambuf_iterator<char>());
+            std::string buffer;
+            buffer.resize(*reinterpret_cast<uint32_t*>(content.data() + 4));
+
+            char workingMemory[0x80000];
+
+            auto size = OodleLZ_Decompress(content.data() + headerSize, content.size() - headerSize, buffer.data(),
+                                           buffer.size(), 1, 1, 0, 0, 0, 0, 0, workingMemory, std::size(workingMemory), 3);
+
+            if (size > 0)
             {
-                // archivehashes.txt is already ordered
-                m_resources.emplace_back(buffer);
+                buffer.resize(size);
+            }
+            else
+            {
+                spdlog::error("Decompress failed!");
+                return false;
+            }
+
+            std::istringstream iss(buffer);
+
+            std::string filename;
+            while (std::getline(iss, filename))
+            {
+                filename.resize(filename.size() - 1);
+                m_resources.emplace_back(filename);
             }
 
             for (auto& resource : m_resources)
@@ -1926,25 +1965,24 @@ void TweakDBEditor::DrawAdvancedTab()
     if (ResourcesList::Get()->IsInitialized())
     {
         ImGui::PushStyleColor(ImGuiCol_Text, 0xFF00FF00);
-        ImGui::TextUnformatted("'archivehashes.txt' is loaded!");
+        ImGui::TextUnformatted("'usedhashes.kark' is loaded!");
         ImGui::PopStyleColor();
     }
     else
     {
         ImGui::PushStyleColor(ImGuiCol_Text, 0xFF0000FF);
-        ImGui::TextUnformatted("'archivehashes.txt' is not loaded.");
+        ImGui::TextUnformatted("'usedhashes.kark' is not loaded.");
         ImGui::PopStyleColor();
         ImGui::TreePush();
         ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32_BLACK_TRANS);
         ImGui::PushStyleColor(ImGuiCol_Text, 0xFFF66409);
-        char pLink[] = "https://github.com/yamashi/CyberEngineTweaks/raw/master/resources/archivehashes.zip";
+        char pLink[] = "https://github.com/WolvenKit/WolvenKit/raw/master/WolvenKit.Common/Resources/usedhashes.kark";
         ImGui::InputText("##wkitLink", pLink, sizeof(pLink) - 1, ImGuiInputTextFlags_ReadOnly);
         ImGui::PopStyleColor(2);
-        ImGui::TextUnformatted("1) Download and unpack 'archivehashes.zip'");
-        ImGui::TextUnformatted("2) Copy 'archivehashes.txt' to 'plugins\\cyber_engine_tweaks\\archivehashes.txt'");
+        ImGui::TextUnformatted("1) Download and put 'usedhashes.kark' in 'plugins\\cyber_engine_tweaks\\'");
         std::string cetDir = CET::Get().GetPaths().CETRoot().string();
         ImGui::Text("Full path: %s", cetDir.c_str());
-        if (ImGui::Button("3) Load archivehashes.txt"))
+        if (ImGui::Button("3) Load usedhashes.kark"))
         {
             ResourcesList::Get()->Initialize();
         }
