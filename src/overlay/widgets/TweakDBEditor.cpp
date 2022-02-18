@@ -221,17 +221,16 @@ struct ResourcesList
             std::ifstream file(filepath, std::ios::binary);
             file.exceptions(std::ios::badbit);
 
-            size_t headerSize = 8;
+            size_t headerSize = 4;
 
-            std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+            std::string content((std::istreambuf_iterator(file)), std::istreambuf_iterator<char>());
             std::string buffer;
-            buffer.resize(1 << 24);
+            buffer.resize(* (uint32_t*)content.data());
 
             char workingMemory[0x80000];
 
             auto size = OodleLZ_Decompress(content.data() + headerSize, content.size() - headerSize, buffer.data(),
-                                           buffer.size(), 0, 0,
-                                           0, 0, 0, 0, 0, 0, 0, 0);
+                                           buffer.size(), 0, 0, 0, 0, 0, 0, 0, workingMemory, std::size(workingMemory), 0);
 
             if (size > 0)
             {
@@ -243,17 +242,20 @@ struct ResourcesList
                 return false;
             }
 
-            /* char buffer[1024]{};
-            while (file.getline(buffer, sizeof(buffer)))
+            std::istringstream iss(buffer);
+
+            std::string filename;
+            while (std::getline(iss, filename))
             {
+                filename.resize(filename.size() - 1);
                 // archivehashes.txt is already ordered
-                m_resources.emplace_back(buffer);
+                m_resources.emplace_back(filename);
             }
 
             for (auto& resource : m_resources)
             {
                 m_resourcesByHash.emplace(resource.m_hash, &resource);
-            }*/
+            }
 
             return m_isInitialized = true;
         }
