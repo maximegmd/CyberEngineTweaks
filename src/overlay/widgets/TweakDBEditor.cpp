@@ -163,9 +163,11 @@ private:
     TiltedPhoques::Map<uint64_t, std::string> m_queries;
 };
 
+using TOodleLZ_Decompress = size_t(*)(char *in, int insz, char *out, int outsz, int wantsFuzzSafety, int b, int c, void *d, void *e, void *f, void *g, void *workBuffer, size_t workBufferSize, int j);
+
 struct ResourcesList
 {
-    static constexpr char c_defaultFilename[] = "archivehashes.txt";
+    static constexpr char c_defaultFilename[] = "usedhashes.kark";
 
     struct Resource
     {
@@ -194,18 +196,54 @@ struct ResourcesList
     {
         Reset();
 
+        auto hOodleHandle = GetModuleHandle(TEXT("oo2ext_7_win64.dll"));
+        if (hOodleHandle == nullptr)
+        {
+            spdlog::error("Could not get Oodle access");
+            return false;
+        }
+
+        auto OodleLZ_Decompress = reinterpret_cast<TOodleLZ_Decompress>(GetProcAddress(hOodleHandle, "OodleLZ_Decompress"));
+        if (OodleLZ_Decompress == nullptr)
+        {
+            spdlog::error("Could not get OodleLZ_Decompress");
+            return false;
+        }
+
         auto filepath = CET::Get().GetPaths().CETRoot() / c_defaultFilename;
-        if (!std::filesystem::exists(filepath))
+        if (!exists(filepath))
             return false;
 
         m_resources.reserve(1485150);
 
         try
         {
-            std::ifstream file(filepath);
+            std::ifstream file(filepath, std::ios::binary);
             file.exceptions(std::ios::badbit);
 
-            char buffer[1024]{};
+            size_t headerSize = 8;
+
+            std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+            std::string buffer;
+            buffer.resize(1 << 24);
+
+            char workingMemory[0x80000];
+
+            auto size = OodleLZ_Decompress(content.data() + headerSize, content.size() - headerSize, buffer.data(),
+                                           buffer.size(), 0, 0,
+                                           0, 0, 0, 0, 0, 0, 0, 0);
+
+            if (size > 0)
+            {
+                buffer.resize(size);
+            }
+            else
+            {
+                spdlog::error("Decompress failed!");
+                return false;
+            }
+
+            /* char buffer[1024]{};
             while (file.getline(buffer, sizeof(buffer)))
             {
                 // archivehashes.txt is already ordered
@@ -215,7 +253,7 @@ struct ResourcesList
             for (auto& resource : m_resources)
             {
                 m_resourcesByHash.emplace(resource.m_hash, &resource);
-            }
+            }*/
 
             return m_isInitialized = true;
         }
