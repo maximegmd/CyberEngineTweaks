@@ -248,7 +248,6 @@ struct ResourcesList
             while (std::getline(iss, filename))
             {
                 filename.resize(filename.size() - 1);
-                // archivehashes.txt is already ordered
                 m_resources.emplace_back(filename);
             }
 
@@ -1966,25 +1965,24 @@ void TweakDBEditor::DrawAdvancedTab()
     if (ResourcesList::Get()->IsInitialized())
     {
         ImGui::PushStyleColor(ImGuiCol_Text, 0xFF00FF00);
-        ImGui::TextUnformatted("'archivehashes.txt' is loaded!");
+        ImGui::TextUnformatted("'usedhashes.kark' is loaded!");
         ImGui::PopStyleColor();
     }
     else
     {
         ImGui::PushStyleColor(ImGuiCol_Text, 0xFF0000FF);
-        ImGui::TextUnformatted("'archivehashes.txt' is not loaded.");
+        ImGui::TextUnformatted("'usedhashes.kark' is not loaded.");
         ImGui::PopStyleColor();
         ImGui::TreePush();
         ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32_BLACK_TRANS);
         ImGui::PushStyleColor(ImGuiCol_Text, 0xFFF66409);
-        char pLink[] = "https://github.com/WolvenKit/Wolvenkit/raw/master/WolvenKit.Common/Resources/archivehashes.zip";
+        char pLink[] = "https://github.com/WolvenKit/WolvenKit/raw/master/WolvenKit.Common/Resources/usedhashes.kark";
         ImGui::InputText("##wkitLink", pLink, sizeof(pLink) - 1, ImGuiInputTextFlags_ReadOnly);
         ImGui::PopStyleColor(2);
-        ImGui::TextUnformatted("1) Download and unpack 'archivehashes.zip'");
-        ImGui::TextUnformatted("2) Copy 'archivehashes.txt' to 'plugins\\cyber_engine_tweaks\\archivehashes.txt'");
+        ImGui::TextUnformatted("1) Download and put 'usedhashes.kark' in 'plugins\\cyber_engine_tweaks\\'");
         std::string cetDir = CET::Get().GetPaths().CETRoot().string();
         ImGui::Text("Full path: %s", cetDir.c_str());
-        if (ImGui::Button("3) Load archivehashes.txt"))
+        if (ImGui::Button("3) Load usedhashes.kark"))
         {
             ResourcesList::Get()->Initialize();
         }
