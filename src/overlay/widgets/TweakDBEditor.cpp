@@ -230,7 +230,7 @@ struct ResourcesList
             char workingMemory[0x80000];
 
             auto size = OodleLZ_Decompress(content.data() + headerSize, content.size() - headerSize, buffer.data(),
-                                           buffer.size(), 0, 0, 0, 0, 0, 0, 0, workingMemory, std::size(workingMemory), 0);
+                                           buffer.size(), 1, 1, 0, 0, 0, 0, 0, workingMemory, std::size(workingMemory), 3);
 
             if (size > 0)
             {
