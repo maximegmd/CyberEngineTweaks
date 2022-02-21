@@ -38,11 +38,11 @@ Current version works with 1.5 game version.
 
 ## Usage and configuration
 
-[Read the wiki](https://wiki.cybermods.net/cyber-engine-tweaks/)
+[Read the wiki](https://wiki.redmodding.org/cyber-engine-tweaks/)
 
 [Official mod examples](https://github.com/WolvenKit/cet-examples)
 
-[Usage with Proton](PROTON.md)
+[Usage with Proton](https://wiki.redmodding.org/cyber-engine-tweaks/getting-started/installing/untitled)
 
 ## Contributing
 
