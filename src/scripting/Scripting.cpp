@@ -4,6 +4,7 @@
 
 #include "FunctionOverride.h"
 #include "GameOptions.h"
+#include "Texture.h"
 
 #include <sol_imgui/sol_imgui.h>
 #include <lsqlite3/lsqlite3.h>
@@ -56,6 +57,7 @@ void Scripting::Initialize()
     luaVm.require("sqlite3", luaopen_lsqlite3);
 
     sol_ImGui::InitBindings(luaVm);
+    Texture::BindTexture(luaVm);
 
     luaVm["print"] = [](sol::variadic_args aArgs, sol::this_state aState)
     {

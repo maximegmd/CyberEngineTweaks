@@ -28,6 +28,9 @@ struct D3D12
     TiltedPhoques::Signal<void()> OnInitialized;
     TiltedPhoques::Signal<void()> OnUpdate;
 
+    ID3D12Device* GetDevice() const;
+    std::tuple<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> CreateTextureDescriptor();
+
 protected:
     
     void Hook();
