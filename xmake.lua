@@ -3,7 +3,7 @@ set_xmakever("2.6.0")
 set_languages("c++20")
 set_arch("x64")
 
-add_requires("spdlog", "nlohmann_json", "hopscotch-map", "minhook", "mem", "imgui 1.84.2", "sol2", "tiltedcore 0.2.3", "sqlite3", "luajit", "xbyak")
+add_requires("spdlog", "nlohmann_json", "hopscotch-map", "minhook", "mem", "imgui 1.84.2", "sol2", "tiltedcore 0.2.3", "sqlite3", "luajit", "xbyak", "stb")
 add_requireconfs("sol2", { configs = { includes_lua = false } })
 add_requireconfs("luajit", { configs = { gc64 = true } })
 
@@ -45,7 +45,7 @@ target("cyber_engine_tweaks")
     add_headerfiles("src/**.h", "build/CETVersion.h")
     add_includedirs("src/", "build/")
     add_syslinks("User32", "Version", "d3d11")
-    add_packages("spdlog", "nlohmann_json", "minhook", "hopscotch-map", "imgui", "mem", "sol2", "tiltedcore", "sqlite3", "luajit", "xbyak")
+    add_packages("spdlog", "nlohmann_json", "minhook", "hopscotch-map", "imgui", "mem", "sol2", "tiltedcore", "sqlite3", "luajit", "xbyak", "stb")
     add_deps("RED4ext.SDK")
 	add_configfiles("src/CETVersion.h.in")
 

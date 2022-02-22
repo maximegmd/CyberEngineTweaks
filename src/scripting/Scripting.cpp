@@ -4,6 +4,7 @@
 
 #include "FunctionOverride.h"
 #include "GameOptions.h"
+#include "Texture.h"
 
 #include <sol_imgui/sol_imgui.h>
 #include <lsqlite3/lsqlite3.h>

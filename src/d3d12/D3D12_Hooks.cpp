@@ -158,6 +158,23 @@ void* D3D12::CRenderGlobal_Resize(uint32_t a1, uint32_t a2, uint32_t a3, uint8_t
     return d3d12.m_realInternalResize(a1, a2, a3, a4, a5);
 }
 
+ID3D12Device* D3D12::GetDevice() const
+{
+    return m_pd3d12Device;
+}
+
+std::tuple<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> D3D12::CreateTextureDescriptor()
+{
+    const UINT handle_increment = m_pd3d12Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    constexpr int descriptor_index = 1;
+    D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = m_pd3dSrvDescHeap->GetCPUDescriptorHandleForHeapStart();
+    cpuHandle.ptr += (handle_increment * descriptor_index);
+    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = m_pd3dSrvDescHeap->GetGPUDescriptorHandleForHeapStart();
+    gpuHandle.ptr += (handle_increment * descriptor_index);
+
+    return {cpuHandle, gpuHandle};
+}
+
 void D3D12::Hook()
 {
     if (kiero::isDownLevelDevice())
