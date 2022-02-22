@@ -6,16 +6,15 @@
 
 #include "CET.h"
 
-void Texture::BindTexture(sol::state& aVm)
+void Texture::BindTexture(sol::table& aTable)
 {
-    auto ImGui = aVm.get<sol::table>("ImGui");
+    sol::state_view vm(aTable.lua_state());
 
-    aVm.new_usertype<Texture>("ImguiTexture", sol::no_constructor,
+    vm.new_usertype<Texture>("ImguiTexture", sol::no_constructor,
         "size", sol::property(&Texture::GetSize),
         "Release", &Texture::Release);
 
-    ImGui.set_function("LoadTexture", &Texture::Load);
-    ImGui.set_function("Image", sol::overload(
+    aTable.set_function("Image", sol::overload(
         &Texture::ImGuiImage,
        [](const Texture& acTexture, ImVec2 aSize, const ImVec2& aUv0, const ImVec2& aUv1,
           const ImVec4& aTintCol) { ImGuiImage(acTexture, aSize, aUv0, aUv1, aTintCol); },

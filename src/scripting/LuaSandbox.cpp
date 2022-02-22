@@ -3,6 +3,7 @@
 #include "LuaSandbox.h"
 
 #include "Scripting.h"
+#include "Texture.h"
 
 #include <Utils.h>
 
@@ -207,6 +208,8 @@ TiltedPhoques::Locked<sol::state, std::recursive_mutex> LuaSandbox::GetState() c
 void LuaSandbox::InitializeExtraLibsForSandbox(Sandbox& aSandbox) const
 {
     auto& sbEnv = aSandbox.GetEnvironment();
+    sol::state_view sbStateView = GetState();
+    const auto cSBRootPath = aSandbox.GetRootPath();
 
     auto lock = m_pScripting->GetState();
     auto& luaView = lock.Get();
@@ -215,6 +218,24 @@ void LuaSandbox::InitializeExtraLibsForSandbox(Sandbox& aSandbox) const
     const auto cGlobals = luaView.globals();
     for (const auto* cKey : s_cGlobalExtraLibsWhitelist)
         sbEnv[cKey] = DeepCopySolObject(cGlobals[cKey].get<sol::object>(), luaView);
+
+    auto ImGui = sbEnv.get<sol::table>("ImGui");
+    Texture::BindTexture(ImGui);
+
+    const auto cLoadTexture = [cSBRootPath, sbStateView](const std::string& acPath) -> std::tuple<std::shared_ptr<Texture>, sol::object> {
+        auto absPath = absolute(cSBRootPath / acPath).make_preferred();
+
+        const auto cRelPathStr = relative(absPath, cSBRootPath).string();
+        if (!exists(absPath) || !is_regular_file(absPath) || (cRelPathStr.find("..") != std::string::npos))
+            return std::make_tuple(nullptr, make_object(sbStateView, "Invalid path!"));
+
+        auto texture = Texture::Load(absPath.string());
+        if (!texture)
+            return std::make_tuple(nullptr, make_object(sbStateView, "Failed to load '" + absPath.string() + "'"));
+
+        return std::make_tuple(texture, sol::nil);
+    };
+    ImGui.set_function("LoadTexture", cLoadTexture);
 }
 
 void LuaSandbox::InitializeDBForSandbox(Sandbox& aSandbox) const
