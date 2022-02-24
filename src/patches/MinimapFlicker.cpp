@@ -13,7 +13,7 @@ void MinimapFlickerPatch(const Image* apImage)
         return;
     }
 
-    pLocation += 0xEB;
+    pLocation += 0xEC;
 
     DWORD oldProtect = 0;
     VirtualProtect(pLocation, 32, PAGE_EXECUTE_WRITECOPY, &oldProtect);
