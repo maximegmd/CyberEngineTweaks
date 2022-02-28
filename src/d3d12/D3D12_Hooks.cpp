@@ -166,11 +166,17 @@ ID3D12Device* D3D12::GetDevice() const
 std::tuple<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> D3D12::CreateTextureDescriptor()
 {
     const UINT handle_increment = m_pd3d12Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-    constexpr int descriptor_index = 1;
+    static std::atomic descriptor_index = 1;
+
+    const auto index = descriptor_index++;
+
+    if (index >= 200)
+        return {{}, {}};
+
     D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = m_pd3dSrvDescHeap->GetCPUDescriptorHandleForHeapStart();
-    cpuHandle.ptr += (handle_increment * descriptor_index);
+    cpuHandle.ptr += (handle_increment * index);
     D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = m_pd3dSrvDescHeap->GetGPUDescriptorHandleForHeapStart();
-    gpuHandle.ptr += (handle_increment * descriptor_index);
+    gpuHandle.ptr += (handle_increment * index);
 
     return {cpuHandle, gpuHandle};
 }

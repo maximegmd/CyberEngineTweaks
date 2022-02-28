@@ -33,6 +33,14 @@ std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
     if (d3d_device == nullptr)
         return {};
 
+    auto [srvCpuHandle, srvGpuHandle] = CET::Get().GetD3D12().CreateTextureDescriptor();
+
+    if (srvCpuHandle.ptr == 0 || srvGpuHandle.ptr == 0)
+    {
+        spdlog::error("maximum number of textures reached!");
+        return {};
+    }
+
     // Load from disk into a raw RGBA buffer
     int image_width = 0;
     int image_height = 0;
@@ -169,8 +177,6 @@ std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
     CloseHandle(event);
     fence->Release();
     uploadBuffer->Release();
-
-    auto [srvCpuHandle, srvGpuHandle] = CET::Get().GetD3D12().CreateTextureDescriptor();
 
     // Create a shader resource view for the texture
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
