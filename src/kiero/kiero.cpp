@@ -215,7 +215,9 @@ kiero::Status::Enum kiero::init()
 
     g_methodsTable = (uint150_t*)::calloc(176, sizeof(uint150_t));
 
-    g_swapChainVtable = *(void***)swapChain.operator IDXGISwapChain3 *();
+    if (!g_isDownLevelDevice)
+        g_swapChainVtable = *(void***)swapChain.operator IDXGISwapChain3 *();
+
     g_commandListVtable = *(void***)commandList.operator ID3D12GraphicsCommandList *();
     g_commandQueueVtable = *(void***)commandQueue.operator ID3D12CommandQueue*();
 
