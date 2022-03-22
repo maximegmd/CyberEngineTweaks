@@ -161,8 +161,6 @@ uint64_t LuaVM::HookTweakDBLoad(uintptr_t aThis, uintptr_t aParam)
 
 void LuaVM::Hook(Options& aOptions)
 {
-    auto& gameImage = aOptions.GameImage;
-
     {
         RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_Log);
         uint8_t* pLocation = func.GetAddr();
