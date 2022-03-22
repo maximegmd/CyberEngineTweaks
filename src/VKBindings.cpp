@@ -63,7 +63,7 @@ TiltedPhoques::Vector<VKBindInfo> VKBindings::InitializeMods(TiltedPhoques::Vect
     if (m_cOptions.RemoveDeadBindings)
     {
         // now, find all dead bindings
-        TiltedPhoques::Vector<std::pair<std::string, UINT>> deadIDToBinds;
+        TiltedPhoques::Vector<std::pair<std::string, uint64_t>> deadIDToBinds;
         for (auto& idToBind : m_idToBind)
         {
             // always ignore internal CET binds here!
