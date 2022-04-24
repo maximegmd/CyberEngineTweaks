@@ -482,6 +482,15 @@ bool TweakDB::CreateRecord(const std::string& acRecordName, const std::string& a
     return InternalCreateRecord(acRecordName, acRecordTypeName, logger);
 }
 
+bool TweakDB::CreateRecordToID(TweakDBID aDBID, const std::string& acRecordTypeName,
+                           sol::this_environment aThisEnv)
+{
+    const sol::environment cEnv = aThisEnv;
+    std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+
+    return InternalCreateRecordToID(aDBID, acRecordTypeName, logger);
+}
+
 bool TweakDB::CloneRecordByName(const std::string& acRecordName, const std::string& acClonedRecordName,
                                 sol::this_environment aThisEnv)
 {
@@ -496,12 +505,28 @@ bool TweakDB::CloneRecord(const std::string& acRecordName, TweakDBID aClonedReco
     return InternalCloneRecord(acRecordName, aClonedRecordDBID.value, logger);
 }
 
+bool TweakDB::CloneRecordToID(TweakDBID aDBID, TweakDBID aClonedRecordDBID, sol::this_environment aThisEnv)
+{
+    const sol::environment cEnv = aThisEnv;
+    std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+
+    return InternalCloneRecordToID(aDBID, aClonedRecordDBID.value, logger);
+}
+
 bool TweakDB::DeleteRecord(const std::string& acRecordName, sol::this_environment aThisEnv)
 {
     const sol::environment cEnv = aThisEnv;
     std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
 
     return InternalDeleteRecord(RED4ext::TweakDBID(acRecordName), logger);
+}
+
+bool TweakDB::DeleteRecordByID(TweakDBID aDBID, sol::this_environment aThisEnv)
+{
+    const sol::environment cEnv = aThisEnv;
+    std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+
+    return InternalDeleteRecord(RED4ext::TweakDBID(aDBID.name_hash, aDBID.name_length), logger);
 }
 
 int32_t TweakDB::InternalSetFlat(RED4ext::TweakDBID aDBID, const RED4ext::CStackType& acStackType)
@@ -572,6 +597,33 @@ bool TweakDB::InternalCreateRecord(const std::string& acRecordName, const std::s
     return InternalCloneRecord(acRecordName, pTweakRecord, false, aLogger);
 }
 
+bool TweakDB::InternalCreateRecordToID(TweakDBID aDBID, const std::string& acRecordTypeName,
+                                   std::shared_ptr<spdlog::logger> aLogger)
+{
+    auto* pTDB = RED4ext::TweakDB::Get();
+
+    auto* pType = RED4ext::CRTTISystem::Get()->GetType(acRecordTypeName.c_str());
+    RED4ext::Handle<RED4ext::IScriptable> record;
+    {
+        std::shared_lock<RED4ext::SharedMutex> _(pTDB->mutex01);
+
+        RED4ext::DynArray<RED4ext::Handle<RED4ext::IScriptable>> recordsOfSameType;
+        if (!pTDB->TryGetRecordsByType(pType, recordsOfSameType) || recordsOfSameType.size == 0)
+        {
+            if (aLogger)
+            {
+                aLogger->info("Failed to create record '{}'. reason: Unknown type '{}'", aDBID.ToString(),
+                              acRecordTypeName);
+            }
+            return false;
+        }
+        record = recordsOfSameType[0];
+    }
+
+    auto* pTweakRecord = reinterpret_cast<RED4ext::gamedataTweakDBRecord*>(record.GetPtr());
+    return InternalCloneRecordToID(aDBID, pTweakRecord, false, aLogger);
+}
+
 bool TweakDB::InternalCloneRecord(const std::string& acRecordName, RED4ext::TweakDBID aClonedRecordDBID,
                                   std::shared_ptr<spdlog::logger> aLogger)
 {
@@ -590,6 +642,26 @@ bool TweakDB::InternalCloneRecord(const std::string& acRecordName, RED4ext::Twea
 
     auto* pTweakRecord = reinterpret_cast<RED4ext::gamedataTweakDBRecord*>(record.GetPtr());
     return InternalCloneRecord(acRecordName, pTweakRecord, true, aLogger);
+}
+
+bool TweakDB::InternalCloneRecordToID(TweakDBID aDBID, RED4ext::TweakDBID aClonedRecordDBID,
+                                  std::shared_ptr<spdlog::logger> aLogger)
+{
+    auto* pTDB = RED4ext::TweakDB::Get();
+
+    RED4ext::Handle<RED4ext::IScriptable> record;
+    if (!pTDB->TryGetRecord(aClonedRecordDBID, record))
+    {
+        if (aLogger)
+        {
+            aLogger->info("Failed to create record {}. reason: Couldn't find record '{}' to clone", aDBID.ToString(),
+                          CET::Get().GetVM().GetTDBIDString(aClonedRecordDBID));
+        }
+        return false;
+    }
+
+    auto* pTweakRecord = reinterpret_cast<RED4ext::gamedataTweakDBRecord*>(record.GetPtr());
+    return InternalCloneRecordToID(aDBID, pTweakRecord, true, aLogger);
 }
 
 bool TweakDB::InternalCloneRecord(const std::string& acRecordName, const RED4ext::gamedataTweakDBRecord* acClonedRecord,
@@ -664,6 +736,102 @@ bool TweakDB::InternalCloneRecord(const std::string& acRecordName, const RED4ext
             {
                 aLogger->info("Failed to create record '{}'. reason: Flat '{}' collision, pick another record name",
                               acRecordName, propertyName);
+            }
+            success = false;
+            break;
+        }
+    }
+
+    // revert changes
+    if (!success)
+    {
+        vm.RemoveTDBIDDerivedFrom(recordDBID);
+        // Only RemoveFlat the ones we made
+        for (size_t i = 0; i != lastCreatedFlatIdx; ++i)
+        {
+            RemoveFlat(recordFlats[i]);
+        }
+        return false;
+    }
+
+    pTDB->UpdateRecord(recordDBID);
+
+    std::lock_guard<std::mutex> _(s_mutex);
+    s_createdRecords.emplace(recordDBID);
+    return true;
+}
+
+bool TweakDB::InternalCloneRecordToID(TweakDBID aDBID, const RED4ext::gamedataTweakDBRecord* acClonedRecord,
+                                  bool cloneValues, std::shared_ptr<spdlog::logger> aLogger)
+{
+    auto* pTDB = RED4ext::TweakDB::Get();
+    RED4ext::TweakDBID recordDBID(aDBID.name_hash, aDBID.name_length);
+
+    if (!pTDB->CreateRecord(recordDBID, acClonedRecord->GetTweakBaseHash()))
+    {
+        aLogger->info("Failed to create record {}. reason: Record already exists", aDBID.ToString());
+        return false;
+    }
+
+    auto& vm = CET::Get().GetVM();
+    //vm.RegisterTDBIDString(recordDBID, 0, acRecordName);
+
+    // List of flats the game tried to read for our record
+    TiltedPhoques::Vector<uint64_t> recordFlats;
+    vm.GetTDBIDDerivedFrom(recordDBID, recordFlats);
+    bool success = true;
+    size_t lastCreatedFlatIdx;
+    for (lastCreatedFlatIdx = 0; lastCreatedFlatIdx != recordFlats.size(); ++lastCreatedFlatIdx)
+    {
+        RED4ext::TweakDBID flatID = recordFlats[lastCreatedFlatIdx];
+        const TDBIDLookupEntry lookup = vm.GetTDBIDLookupEntry(flatID);
+        const std::string& propertyName = lookup.name;
+
+        const auto* clonedFlatValue = pTDB->GetFlatValue(acClonedRecord->recordID + propertyName);
+        if (clonedFlatValue == nullptr)
+        {
+            if (aLogger)
+            {
+                aLogger->info("Failed to create record {}. reason: Couldn't find flat '<...>{}'", aDBID.ToString(),
+                              propertyName);
+            }
+            success = false;
+            break;
+        }
+
+        RED4ext::CStackType clonedStacktype = clonedFlatValue->GetValue();
+        FlatPool* pPool = FlatPool::GetPool(clonedStacktype.type);
+        if (pPool == nullptr)
+        {
+            // This should never happen
+            assert(false);
+            success = false;
+            break;
+        }
+
+        if (cloneValues)
+        {
+            flatID.SetTDBOffset(pPool->Get(clonedStacktype));
+        }
+        else
+        {
+            // get default FlatValue for this flat type
+            RED4ext::CName flatTypeName;
+            clonedStacktype.type->GetName(flatTypeName);
+            const auto* pDefaultFlatValue = pTDB->GetDefaultFlatValue(flatTypeName);
+            RED4ext::CStackType defaultStackType = pDefaultFlatValue->GetValue();
+
+            flatID.SetTDBOffset(pPool->GetOrCreate(defaultStackType));
+        }
+
+        // add our flat pointing to that value
+        if (!pTDB->AddFlat(flatID))
+        {
+            // Decreases 'm_useCount'
+            pPool->Remove(flatID.ToTDBOffset());
+            if (aLogger)
+            {
+                aLogger->info("Failed to create record. reason: Flat '{}' collision, pick another record name", propertyName);
             }
             success = false;
             break;

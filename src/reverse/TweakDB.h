@@ -34,10 +34,14 @@ struct TweakDB
     bool UpdateRecord(sol::object aValue, sol::this_environment aThisEnv);
     bool CreateRecord(const std::string& acRecordName, const std::string& acRecordTypeName,
                       sol::this_environment aThisEnv);
+    bool CreateRecordToID(TweakDBID aDBID, const std::string& acRecordTypeName,
+                      sol::this_environment aThisEnv);
     bool CloneRecordByName(const std::string& acRecordName, const std::string& acClonedRecordName,
                            sol::this_environment aThisEnv);
     bool CloneRecord(const std::string& acRecordName, TweakDBID aClonedRecordDBID, sol::this_environment aThisEnv);
+    bool CloneRecordToID(TweakDBID aDBID, TweakDBID aClonedRecordDBID, sol::this_environment aThisEnv);
     bool DeleteRecord(const std::string& acRecordName, sol::this_environment aThisEnv);
+    bool DeleteRecordByID(TweakDBID aDBID, sol::this_environment aThisEnv);
 
     static void RefreshFlatPools();
 
@@ -48,13 +52,20 @@ protected:
     static int32_t InternalSetFlat(RED4ext::TweakDBID aDBID, const RED4ext::CStackType& acStackType);
     static bool InternalCreateRecord(const std::string& acRecordName, const std::string& acRecordTypeName,
                                      std::shared_ptr<spdlog::logger> aLogger = nullptr);
+    static bool InternalCreateRecordToID(TweakDBID aDBID, const std::string& acRecordTypeName,
+                                     std::shared_ptr<spdlog::logger> aLogger = nullptr);
     static bool InternalCloneRecord(const std::string& acRecordName, RED4ext::TweakDBID aClonedRecordDBID,
+                                    std::shared_ptr<spdlog::logger> aLogger = nullptr);
+    static bool InternalCloneRecordToID(TweakDBID aDBID, RED4ext::TweakDBID aClonedRecordDBID,
                                     std::shared_ptr<spdlog::logger> aLogger = nullptr);
     // Can't figure out a good name for this function.
     // Creates a record of the same type as 'acClonedRecord'
     // Creates all of its flats
     // Setting 'cloneValues' to false will set default values
     static bool InternalCloneRecord(const std::string& acRecordName,
+                                    const RED4ext::gamedataTweakDBRecord* acClonedRecord, bool cloneValues = true,
+                                    std::shared_ptr<spdlog::logger> aLogger = nullptr);
+    static bool InternalCloneRecordToID(TweakDBID aDBID,
                                     const RED4ext::gamedataTweakDBRecord* acClonedRecord, bool cloneValues = true,
                                     std::shared_ptr<spdlog::logger> aLogger = nullptr);
     static bool InternalDeleteRecord(RED4ext::TweakDBID aDBID, std::shared_ptr<spdlog::logger> aLogger = nullptr);
