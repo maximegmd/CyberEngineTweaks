@@ -450,9 +450,9 @@ void Scripting::PostInitializeStage1()
         "SetFlat", sol::overload(&TweakDB::SetFlatByNameAutoUpdate, &TweakDB::SetFlatAutoUpdate, &TweakDB::SetTypedFlat, &TweakDB::SetTypedFlatByName),
         "SetFlatNoUpdate", sol::overload(&TweakDB::SetFlatByName, &TweakDB::SetFlat),
         "Update", sol::overload(&TweakDB::UpdateRecordByName, &TweakDB::UpdateRecordByID, &TweakDB::UpdateRecord),
-        "CreateRecord", &TweakDB::CreateRecord,
-        "CloneRecord", sol::overload(&TweakDB::CloneRecordByName, &TweakDB::CloneRecord),
-        "DeleteRecord", &TweakDB::DeleteRecord);
+        "CreateRecord", sol::overload(&TweakDB::CreateRecordToID, &TweakDB::CreateRecord),
+        "CloneRecord", sol::overload(&TweakDB::CloneRecordByName, &TweakDB::CloneRecordToID, &TweakDB::CloneRecord),
+        "DeleteRecord", sol::overload(&TweakDB::DeleteRecordByID, &TweakDB::DeleteRecord));
 
     luaGlobal["TweakDB"] = TweakDB(m_lua.AsRef());
 
