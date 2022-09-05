@@ -1976,7 +1976,7 @@ void TweakDBEditor::DrawAdvancedTab()
         ImGui::TreePush();
         ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32_BLACK_TRANS);
         ImGui::PushStyleColor(ImGuiCol_Text, 0xFFF66409);
-        char pLink[] = "https://github.com/WolvenKit/WolvenKit/raw/main/WolvenKit.Common/Resources/usedhashes.kark";
+        char pLink[] = "https://github.com/WolvenKit/WolvenKit/blob/main/WolvenKit.Common/Resources/usedhashes.kark";
         ImGui::InputText("##wkitLink", pLink, sizeof(pLink) - 1, ImGuiInputTextFlags_ReadOnly);
         ImGui::PopStyleColor(2);
         ImGui::TextUnformatted("1) Download and put 'usedhashes.kark' in 'plugins\\cyber_engine_tweaks\\'");
