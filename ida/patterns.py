@@ -28,7 +28,7 @@ def get_groups() -> List[Group]:
     # Add new patterns here, please try to keep the groups ordering alphabetized.
     return [
         Group(name='CRenderGlobal', pointers=[
-            Item(name='InstanceOffset', pattern='48 8B 05 ? ? ? ? 48 8B 88 18 8E 5A 01 8B 41 08 C3', expected=1, offset=3),
+            Item(name='InstanceOffset', pattern='49 8B 95 ? ? ? ? 48 8D 44 24 30 0F 57 C0', expected=1, offset=3),
             Item(name='_DoNotUse_RenderQueueOffset', pattern='49 39 29 0F 84 ? ? ? ? 41 39 69 24 0F 84 ? ? ? ? 49 8B 95', expected=1)
         ], functions=[
             Item(name='Resize', pattern='44 88 4C 24 20 44 89 44 24 18 89 54 24 10 89 4C', expected=1) 
