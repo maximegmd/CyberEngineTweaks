@@ -35,7 +35,7 @@ RED4ext::ScriptInstance ResourceAsyncReference::GetValuePtr() const
 
 uint64_t ResourceAsyncReference::GetHash() const
 {
-    return reinterpret_cast<uint64_t>(m_reference.ref);
+    return m_reference.path.hash;
 }
 
 // Manual uint64 to Lua conversion because sol + LuaJIT can't do it

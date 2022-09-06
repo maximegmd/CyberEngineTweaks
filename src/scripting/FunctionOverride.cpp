@@ -141,7 +141,7 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
 
             RED4ext::CStackType ret;
             ret.value = apStack->GetResultAddr();
-            ret.type = apStack->GetType();
+            ret.type = apStack->GetResultType();
 
             return ExecuteChain(chain, lock, pContext, &args, &ret, &outArgs, apStack, a3, nullptr, 0);
         }
@@ -252,8 +252,8 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
             arg.value = pInstance;
 
             apFrame->currentParam++;
-            apFrame->unk30 = 0;
-            apFrame->unk38 = 0;
+            apFrame->data = 0;
+            apFrame->dataType = 0;
             const auto opcode = *(apFrame->code++);
             RED4ext::OpcodeHandlers::Run(opcode, (RED4ext::IScriptable*)apFrame->context, apFrame, pInstance, isScriptRef ? pInstance : nullptr);
 
@@ -262,8 +262,8 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
             if (pArg->flags.isOut)
             {
                 // This is an original arg, pInstance contains copy
-                if (apFrame->unk30)
-                    arg.value = reinterpret_cast<RED4ext::ScriptInstance>(apFrame->unk30);
+                if (apFrame->data)
+                    arg.value = reinterpret_cast<RED4ext::ScriptInstance>(apFrame->data);
 
                 outArgs.push_back(arg);
             }
@@ -277,7 +277,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
                 pScriptRef->ref = nullptr;
             }
 
-            if (!pArg->flags.isOut || apFrame->unk30)
+            if (!pArg->flags.isOut || apFrame->data)
             {
                 pType->Destroy(pInstance);
                 pAllocator->Free(pInstance);

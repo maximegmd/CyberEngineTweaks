@@ -12,8 +12,8 @@ void LuaVM::HookLog(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*,
 
     RED4ext::CString text{};
 
-    apStack->unk30 = 0;
-    apStack->unk38 = 0;
+    apStack->data = 0;
+    apStack->dataType = 0;
 
     RED4ext::ScriptRef<RED4ext::CString> ref;
     ref.innerType = s_stringLocator;
@@ -37,8 +37,8 @@ void LuaVM::HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack,
     static RED4ext::CName s_debugChannel("DEBUG");
 
     RED4ext::CName channel;
-    apStack->unk30 = 0;
-    apStack->unk38 = 0;
+    apStack->data = 0;
+    apStack->dataType = 0;
     uint8_t opcode = *(apStack->code++);
     apStack->currentParam++;
 
@@ -52,8 +52,8 @@ void LuaVM::HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack,
 
     apStack->currentParam++;
 
-    apStack->unk30 = 0;
-    apStack->unk38 = 0;
+    apStack->data = 0;
+    apStack->dataType = 0;
     opcode = *(apStack->code++);
     RED4ext::OpcodeHandlers::Run(opcode, apStack->context, apStack, &ref, &ref);
 
@@ -101,8 +101,8 @@ TDBID* LuaVM::HookTDBIDCtorDerive(TDBID* apBase, TDBID* apThis, const char* acpN
 void LuaVM::HookTDBIDToStringDEBUG(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void* apResult, void*)
 {
     TDBID tdbid;
-    apStack->unk30 = 0;
-    apStack->unk38 = 0;
+    apStack->data = 0;
+    apStack->dataType = 0;
     apStack->currentParam++;
     uint8_t opcode = *(apStack->code++);
     RED4ext::OpcodeHandlers::Run(opcode, apStack->context, apStack, &tdbid, nullptr);

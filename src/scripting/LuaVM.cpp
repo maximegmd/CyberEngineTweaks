@@ -140,10 +140,8 @@ std::string LuaVM::GetTDBDIDDebugString(TDBID aDBID)
 {
     RED4ext::TweakDBID internal(aDBID.value);
     return internal.HasTDBOffset()
-        ? fmt::format("<TDBID:{:08X}:{:02X}:{:06X}>",
-            internal.nameHash, internal.nameLength, internal.ToTDBOffset())
-        : fmt::format("<TDBID:{:08X}:{:02X}>",
-            internal.nameHash, internal.nameLength);
+        ? fmt::format("<TDBID:{:08X}:{:02X}:{:06X}>", internal.name.hash, internal.name.length, internal.ToTDBOffset())
+        : fmt::format("<TDBID:{:08X}:{:02X}>", internal.name.hash, internal.name.length);
 }
 
 std::string LuaVM::GetTDBIDString(uint64_t aDBID)

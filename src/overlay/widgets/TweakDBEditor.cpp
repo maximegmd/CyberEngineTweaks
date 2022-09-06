@@ -629,8 +629,8 @@ RED4ext::TweakDBID ExtractTweakDBIDFromString(const char* acString)
     RED4ext::TweakDBID dbid = 0;
     if (sscanf(acString, "%llX", &dbid.value) != 1)
     {
-        if (sscanf(acString, "<TDBID:%X:%hhX", &dbid.nameHash, &dbid.nameLength) != 2)
-            (void)sscanf(acString, "ToTweakDBID{ hash = %X, length = %hhd", &dbid.nameHash, &dbid.nameLength);
+        if (sscanf(acString, "<TDBID:%X:%hhX", &dbid.name.hash, &dbid.name.length) != 2)
+            (void)sscanf(acString, "ToTweakDBID{ hash = %X, length = %hhd", &dbid.name.hash, &dbid.name.length);
     }
 
     return dbid;
@@ -879,8 +879,8 @@ bool TweakDBEditor::DrawFlat(RED4ext::TweakDBID aDBID)
 
     RED4ext::CStackType stackType = pFlatValue->GetValue();
 
-    ImGui::PushID(aDBID.nameHash);
-    ImGui::PushID(aDBID.nameLength);
+    ImGui::PushID(aDBID.name.hash);
+    ImGui::PushID(aDBID.name.length);
     bool isModified = DrawFlat(aDBID, stackType);
     ImGui::PopID();
     ImGui::PopID();
@@ -1395,7 +1395,7 @@ bool TweakDBEditor::DrawFlatLocKeyWrapper(RED4ext::TweakDBID aDBID, RED4ext::CSt
     ImGui::TextUnformatted("This is a LocalizationKey");
     ImGui::TextUnformatted("Game.GetLocalizedTextByKey(...)");
 
-    uint64_t key = pLocKey->unk00;
+    uint64_t key = pLocKey->primaryKey;
     int32_t flags = aReadOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_EnterReturnsTrue;
     ImGui::SetNextItemWidth(-FLT_MIN);
     bool valueChanged = ImGui::InputScalar("", ImGuiDataType_U64, &key, nullptr, nullptr, nullptr, flags);
@@ -1411,7 +1411,7 @@ bool TweakDBEditor::DrawFlatLocKeyWrapper(RED4ext::TweakDBID aDBID, RED4ext::CSt
     if (!aReadOnly && valueChanged)
     {
         RED4ext::gamedataLocKeyWrapper newLocKey;
-        newLocKey.unk00 = key;
+        newLocKey.primaryKey = key;
 
         if (aDBID.IsValid())
         {
@@ -1432,7 +1432,7 @@ bool TweakDBEditor::DrawFlatResourceAsyncRef(RED4ext::TweakDBID aDBID, RED4ext::
 {
     auto* pRaRef = static_cast<RED4ext::ResourceAsyncReference<void>*>(aStackType.value);
 
-    uint64_t hashRef = reinterpret_cast<uint64_t>(pRaRef->ref);
+    uint64_t hashRef = pRaRef->path.hash;
 
     int32_t flags = aReadOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_EnterReturnsTrue;
     flags |= ImGuiInputTextFlags_CharsHexadecimal;
@@ -1534,7 +1534,7 @@ bool TweakDBEditor::DrawFlatResourceAsyncRef(RED4ext::TweakDBID aDBID, RED4ext::
     if (!aReadOnly && valueChanged)
     {
         RED4ext::ResourceAsyncReference<void> newRaRef;
-        newRaRef.ref = reinterpret_cast<void*>(hashRef);
+        newRaRef.path.hash = hashRef;
 
         if (aDBID.IsValid())
         {
@@ -1829,8 +1829,8 @@ void TweakDBEditor::DrawQueriesTab()
     {
         const auto queryName = GetTweakDBIDStringQuery(queryID.value);
 
-        ImGui::PushID(queryID.nameHash);
-        ImGui::PushID(queryID.nameLength);
+        ImGui::PushID(queryID.name.hash);
+        ImGui::PushID(queryID.name.length);
         if (ImGui::CollapsingHeader(queryName.c_str()))
         {
             static RED4ext::CStackType stackType(RED4ext::CRTTISystem::Get()->GetType("array:TweakDBID"));

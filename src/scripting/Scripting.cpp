@@ -977,7 +977,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
                 if (hash != 0)
                 {
                     auto* pRaRef = apAllocator->New<RED4ext::ResourceAsyncReference<void>>();
-                    pRaRef->ref = reinterpret_cast<void*>(hash);
+                    pRaRef->path.hash = hash;
 
                     result.value = pRaRef;
                 }
