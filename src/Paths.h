@@ -11,6 +11,7 @@ struct Paths
     const std::filesystem::path& VKBindings() const;
     const std::filesystem::path& ModsRoot() const;
     const std::filesystem::path& ArchiveModsRoot() const;
+    const std::filesystem::path& R6CacheModdedRoot() const;
 
 private:
 
@@ -25,4 +26,5 @@ private:
     std::filesystem::path m_vkBindings{ };
     std::filesystem::path m_modsRoot{ };
     std::filesystem::path m_archiveModsRoot{ };
+    std::filesystem::path m_r6CacheModdedRoot{};
 };
