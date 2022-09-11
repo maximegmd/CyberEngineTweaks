@@ -35,6 +35,11 @@ const std::filesystem::path& Paths::ArchiveModsRoot() const
     return m_archiveModsRoot; 
 }
 
+const std::filesystem::path& Paths::R6CacheModdedRoot() const
+{
+    return m_r6CacheModdedRoot;
+}
+
 Paths::Paths()
 {
     TCHAR exePathBuf[MAX_PATH] = { 0 };
@@ -67,4 +72,11 @@ Paths::Paths()
     m_archiveModsRoot /= "archive";
     m_archiveModsRoot /= "pc";
     m_archiveModsRoot /= "mod";
+
+    m_r6CacheModdedRoot = m_gameRoot;
+    m_r6CacheModdedRoot /= "..";
+    m_r6CacheModdedRoot /= "..";
+    m_r6CacheModdedRoot /= "r6";
+    m_r6CacheModdedRoot /= "cache";
+    m_r6CacheModdedRoot /= "modded";
 }

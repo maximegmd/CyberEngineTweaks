@@ -50,13 +50,38 @@ struct CDPRTweakDBMetadata
             ReadTDBIDNameArray(file, m_header.m_flatsCount, m_flats);
             ReadTDBIDNameArray(file, m_header.m_queriesCount, m_queries);
             m_isInitialized = true;
-            return true;
         }
         // this is easier for now
         catch (std::exception&)
         {
             return false;
         }
+
+        // check if we have a tweakdb that was changed by REDmod
+        if (HasREDModTweakDB())
+        {
+            try
+            {
+                auto moddedTweakDbFilePath = CET::Get().GetPaths().R6CacheModdedRoot() / c_defaultFilename;
+                std::ifstream file(moddedTweakDbFilePath, std::ios::binary);
+                file.exceptions(std::ios::badbit | std::ios::failbit | std::ios::eofbit);
+                file.read(reinterpret_cast<char*>(&m_header), sizeof(Header));
+                assert(m_header.m_version == 1);
+                ReadTDBIDNameArray(file, m_header.m_recordsCount, m_records);
+                ReadTDBIDNameArray(file, m_header.m_flatsCount, m_flats);
+                ReadTDBIDNameArray(file, m_header.m_queriesCount, m_queries);
+                Log::Info("CDPRTweakDBMetadata::Initalize() - REDMod TweakDB initialization successful!");
+            }
+            // this is easier for now
+            // do not modify the return state since this isn't the main TweakDB
+            catch (std::exception&)
+            {
+                Log::Warn("CDPRTweakDBMetadata::Initalize() - Failed to load REDMod TweakDB. Modded entries may not "
+                          "be shown in the TweakDB Editor.");
+            }
+        }
+
+        return true;
     }
 
     bool IsInitialized()
@@ -92,6 +117,12 @@ struct CDPRTweakDBMetadata
 
         aName = it->second;
         return true;
+    }
+
+    bool HasREDModTweakDB()
+    {
+        auto filepath = CET::Get().GetPaths().R6CacheModdedRoot() / c_defaultFilename;
+        return std::filesystem::exists(filepath);
     }
 
 protected:
