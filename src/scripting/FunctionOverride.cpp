@@ -104,9 +104,6 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
 
         if (!chain.IsEmpty)
         {
-            auto lockedState = chain.pScripting->GetState();
-            auto& luaState = lockedState.Get();
-
             TiltedPhoques::StackAllocator<1 << 13> s_allocator;
 
             auto pAllocator = TiltedPhoques::Allocator::Get();
@@ -116,27 +113,33 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
             TiltedPhoques::Allocator::Set(pAllocator);
 
             auto pContext = apStack->GetContext();
-            if (!apFunction->flags.isStatic && pContext)
+
             {
-                const auto weak = RED4ext::WeakHandle<RED4ext::IScriptable>(
-                    *(RED4ext::WeakHandle<RED4ext::IScriptable>*)&pContext->ref);
-                auto obj = sol::make_object(luaState, WeakReference(lockedState, weak));
+                auto lockedState = chain.pScripting->GetState();
+                auto& luaState = lockedState.Get();
 
-                args.push_back(obj);
-            }
+                if (!apFunction->flags.isStatic && pContext)
+                {
+                    const auto weak = RED4ext::WeakHandle<RED4ext::IScriptable>(
+                        *(RED4ext::WeakHandle<RED4ext::IScriptable>*)&pContext->ref);
+                    auto obj = sol::make_object(luaState, WeakReference(lockedState, weak));
 
-            for (auto* p : apFunction->params)
-            {
-                auto* pOffset = p->valueOffset + apStack->args;
+                    args.push_back(obj);
+                }
 
-                RED4ext::CStackType arg;
-                arg.type = p->type;
-                arg.value = pOffset;
+                for (auto* p : apFunction->params)
+                {
+                    auto* pOffset = p->valueOffset + apStack->args;
 
-                args.push_back(Scripting::ToLua(lockedState, arg));
+                    RED4ext::CStackType arg;
+                    arg.type = p->type;
+                    arg.value = pOffset;
 
-                if (p->flags.isOut)
-                    outArgs.push_back(arg);
+                    args.push_back(Scripting::ToLua(lockedState, arg));
+
+                    if (p->flags.isOut)
+                        outArgs.push_back(arg);
+                }
             }
 
             RED4ext::CStackType ret;
@@ -191,9 +194,6 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
 
     if (!chain.IsEmpty)
     {
-        auto lockedState = chain.pScripting->GetState();
-        auto& luaState = lockedState.Get();
-
         // Cheap allocation
         TiltedPhoques::StackAllocator<1 << 13> s_allocator;
 
@@ -203,84 +203,89 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
         TiltedPhoques::Vector<RED4ext::CStackType> outArgs;
         TiltedPhoques::Allocator::Set(pAllocator);
 
-        RED4ext::CStackType self;
-
-        if (!apFunction->flags.isStatic)
         {
-            if (apContext->valueHolder)
+            auto lockedState = chain.pScripting->GetState();
+            auto& luaState = lockedState.Get();
+
+            if (!apFunction->flags.isStatic)
             {
-                self.type = apContext->unk30;
-                self.value = apContext;
-            }
-            else
-            {
-                self.type = apFrame->context->unk30;
-                self.value = apFrame->context;
-            }
+                RED4ext::CStackType self;
 
-            const auto ref = (RED4ext::WeakHandle<RED4ext::IScriptable>*)&((RED4ext::IScriptable*)self.value)->ref;
-            const auto weak = RED4ext::WeakHandle<RED4ext::IScriptable>(*ref);
-            auto obj = sol::make_object(luaState, WeakReference(lockedState, weak));
+                if (apContext->valueHolder)
+                {
+                    self.type = apContext->unk30;
+                    self.value = apContext;
+                }
+                else
+                {
+                    self.type = apFrame->context->unk30;
+                    self.value = apFrame->context;
+                }
 
-            args.push_back(obj);
-        }
+                const auto ref = (RED4ext::WeakHandle<RED4ext::IScriptable>*)&((RED4ext::IScriptable*)self.value)->ref;
+                const auto weak = RED4ext::WeakHandle<RED4ext::IScriptable>(*ref);
+                auto obj = sol::make_object(luaState, WeakReference(lockedState, weak));
 
-        // Nasty way of popping all args
-        for (auto& pArg : apFunction->params)
-        {
-            auto* pType = pArg->type;
-            auto* pAllocator = pType->GetAllocator();
-
-            auto* pInstance = pAllocator->AllocAligned(pType->GetSize(), pType->GetAlignment()).memory;
-            pType->Init(pInstance);
-
-            bool isScriptRef = pArg->type->GetType() == RED4ext::ERTTIType::ScriptReference;
-
-            // Exception here we need to allocate the inner object as well
-            if (isScriptRef)
-            {
-                auto* pInnerType = ((RED4ext::CRTTIScriptReferenceType*)pType)->innerType;
-                auto* pScriptRef = (RED4ext::ScriptRef<void>*)pInstance;
-                pScriptRef->innerType = pInnerType;
-                pScriptRef->hash = pInnerType->GetName();
-                pScriptRef->ref = pInnerType->GetAllocator()->AllocAligned(pInnerType->GetSize(), pInnerType->GetAlignment()).memory;
-                pInnerType->Init(pScriptRef->ref);
+                args.push_back(obj);
             }
 
-            RED4ext::CStackType arg;
-            arg.type = pArg->type;
-            arg.value = pInstance;
-
-            apFrame->currentParam++;
-            apFrame->data = 0;
-            apFrame->dataType = 0;
-            const auto opcode = *(apFrame->code++);
-            RED4ext::OpcodeHandlers::Run(opcode, (RED4ext::IScriptable*)apFrame->context, apFrame, pInstance, isScriptRef ? pInstance : nullptr);
-
-            args.push_back(Scripting::ToLua(lockedState, arg));
-
-            if (pArg->flags.isOut)
+            // Nasty way of popping all args
+            for (auto& pArg : apFunction->params)
             {
-                // This is an original arg, pInstance contains copy
-                if (apFrame->data)
-                    arg.value = reinterpret_cast<RED4ext::ScriptInstance>(apFrame->data);
+                auto* pType = pArg->type;
+                auto* pAllocator = pType->GetAllocator();
 
-                outArgs.push_back(arg);
-            }
+                auto* pInstance = pAllocator->AllocAligned(pType->GetSize(), pType->GetAlignment()).memory;
+                pType->Init(pInstance);
 
-            // Release inner values
-            if (isScriptRef)
-            {
-                auto* pScriptRef = (RED4ext::ScriptRef<void>*)pInstance;
-                pScriptRef->innerType->Destroy(pScriptRef->ref);
-                pScriptRef->innerType->GetAllocator()->Free(pScriptRef->ref);
-                pScriptRef->ref = nullptr;
-            }
+                bool isScriptRef = pArg->type->GetType() == RED4ext::ERTTIType::ScriptReference;
 
-            if (!pArg->flags.isOut || apFrame->data)
-            {
-                pType->Destroy(pInstance);
-                pAllocator->Free(pInstance);
+                // Exception here we need to allocate the inner object as well
+                if (isScriptRef)
+                {
+                    auto* pInnerType = ((RED4ext::CRTTIScriptReferenceType*)pType)->innerType;
+                    auto* pScriptRef = (RED4ext::ScriptRef<void>*)pInstance;
+                    pScriptRef->innerType = pInnerType;
+                    pScriptRef->hash = pInnerType->GetName();
+                    pScriptRef->ref = pInnerType->GetAllocator()->AllocAligned(pInnerType->GetSize(), pInnerType->GetAlignment()).memory;
+                    pInnerType->Init(pScriptRef->ref);
+                }
+
+                RED4ext::CStackType arg;
+                arg.type = pArg->type;
+                arg.value = pInstance;
+
+                apFrame->currentParam++;
+                apFrame->data = nullptr;
+                apFrame->dataType = nullptr;
+                const auto opcode = *(apFrame->code++);
+                RED4ext::OpcodeHandlers::Run(opcode, (RED4ext::IScriptable*)apFrame->context, apFrame, pInstance, isScriptRef ? pInstance : nullptr);
+
+                args.push_back(Scripting::ToLua(lockedState, arg));
+
+                if (pArg->flags.isOut)
+                {
+                    // This is an original arg, pInstance contains copy
+                    if (apFrame->data)
+                        arg.value = reinterpret_cast<RED4ext::ScriptInstance>(apFrame->data);
+
+                    outArgs.push_back(arg);
+                }
+
+                // Release inner values
+                if (isScriptRef)
+                {
+                    auto* pScriptRef = (RED4ext::ScriptRef<void>*)pInstance;
+                    pScriptRef->innerType->Destroy(pScriptRef->ref);
+                    pScriptRef->innerType->GetAllocator()->Free(pScriptRef->ref);
+                    pScriptRef->ref = nullptr;
+                }
+
+                if (!pArg->flags.isOut || apFrame->data)
+                {
+                    pType->Destroy(pInstance);
+                    pAllocator->Free(pInstance);
+                }
             }
         }
 
@@ -314,11 +319,11 @@ bool FunctionOverride::ExecuteChain(const CallChain& aChain, std::shared_lock<st
                                     RED4ext::CScriptStack* apStack, RED4ext::CStackFrame* apFrame,
                                     char* apCode, uint8_t aParam)
 {
-    auto lockedState = aChain.pScripting->GetState();
-    auto& luaState = lockedState.Get();
-
     if (!aChain.Before.empty())
     {
+        auto lockedState = aChain.pScripting->GetState();
+        auto& luaState = lockedState.Get();
+
         for (const auto& call : aChain.Before)
         {
             const auto result = call->ScriptFunction(as_args(*apOrigArgs));
@@ -336,6 +341,9 @@ bool FunctionOverride::ExecuteChain(const CallChain& aChain, std::shared_lock<st
 
     if (!aChain.Overrides.empty())
     {
+        auto lockedState = aChain.pScripting->GetState();
+        auto& luaState = lockedState.Get();
+
         sol::object luaContext = pRealFunction->flags.isStatic ? sol::nil : apOrigArgs->at(0);
         TiltedPhoques::Vector<sol::object> luaArgs(apOrigArgs->begin() + (pRealFunction->flags.isStatic ? 0 : 1),
                                                    apOrigArgs->end());
@@ -382,6 +390,9 @@ bool FunctionOverride::ExecuteChain(const CallChain& aChain, std::shared_lock<st
 
     if (!aChain.After.empty())
     {
+        auto lockedState = aChain.pScripting->GetState();
+        auto& luaState = lockedState.Get();
+
         for (const auto& call : aChain.After)
         {
             const auto result = call->ScriptFunction(as_args(*apOrigArgs));
