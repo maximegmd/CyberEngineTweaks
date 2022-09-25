@@ -277,6 +277,22 @@ void LuaVM::Hook(Options& aOptions)
     }
 
     {
+        RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_TranslateBytecode);
+        uint8_t* pLocation = func.GetAddr();
+
+        if (pLocation)
+        {
+            if (MH_CreateHook(pLocation, &HookTranslateBytecode, reinterpret_cast<void**>(&m_realTranslateBytecode)) != MH_OK ||
+                MH_EnableHook(pLocation) != MH_OK)
+                Log::Error("Could not hook ScriptBinder::TranslateBytecode function!");
+            else
+            {
+                Log::Info("ScriptBinder::TranslateBytecode function hook complete!");
+            }
+        }
+    }
+
+    {
         RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_TweakDBLoad);
         uint8_t* pLocation = func.GetAddr();
 
