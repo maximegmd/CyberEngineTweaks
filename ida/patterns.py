@@ -44,6 +44,7 @@ def get_groups() -> List[Group]:
             Item(name='LogChannel', pattern='4C 8B DC 49 89 5B 08 49  89 73 18 57 48 83 EC 70 48 8B 02 ? ? ? ? ? ? ? FE 42 62 4D 8D 43 10 33 FF 45 33 C9 49 89  7B 10 48 8B DA 48 89 7A', expected=1),
             Item(name='TDBIDConstructorDerive', pattern='40 53 48 83 EC 30 33 C0 4C 89 44 24 20 48 8B DA', expected=1),
             Item(name='ProcessRunningState', pattern='40 53 48 83 EC 20 48 8B 0D ? ? ? ? 48 8B DA E8 ? ? ? ? 84 C0', expected=1),
+            Item(name='TranslateBytecode', pattern='4C 8B DC 55 53 57 41 55 49 8D 6B A1 48 81 EC 98 00 00 00 48 8B 1A 4C 8B E9 8B 42 0C 48 8D 3C C3'),
             Item(name='TweakDBLoad', pattern='48 89 5C 24 18 55 57 41 56 48 8B EC 48 83 EC 70 48 8B D9 45 33 F6 48 8D', expected=1),
             Item(name='RegisterMemberFunction', pattern='48 89 5C 24 08 57 48 83 EC 20 49 8B C1 4D 8B D0 44 8B 4C 24 58 48 8B DA 41 83 C9 03', expected=1)
         ]),

@@ -67,6 +67,14 @@ void* FunctionOverride::MakeExecutable(const uint8_t* apData, size_t aSize)
     return nullptr;
 }
 
+void FunctionOverride::Refresh()
+{
+    for (auto& [pFunction, pContext] : s_pOverride->m_functions)
+    {
+        CopyFunctionDescription(pContext.Trampoline, pFunction, pContext.Trampoline->flags.isNative);
+    }
+}
+
 void FunctionOverride::Clear()
 {
     std::unique_lock lock(s_pOverride->m_lock);
@@ -85,6 +93,16 @@ void FunctionOverride::Clear()
     }
 
     m_functions.clear();
+}
+
+void* FunctionOverride::HookCreateFunction(void* apMemoryPool, size_t aSize)
+{
+    enum
+    {
+        kOverrideAllocationSize = std::max(s_cMaxFunctionSize, sizeof(RED4ext::CScriptedFunction))
+    };
+
+    return RealCreateFunction(apMemoryPool, kOverrideAllocationSize);
 }
 
 bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunction, RED4ext::CScriptStack* apStack, RED4ext::CStackFrame* a3)
@@ -160,16 +178,6 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
     }
 
     return RealRunPureScriptFunction(apFunction, apStack, a3);
-}
-
-void* FunctionOverride::HookCreateFunction(void* apMemoryPool, size_t aSize)
-{
-    enum
-    {
-        kOverrideAllocationSize = std::max(s_cMaxFunctionSize, sizeof(RED4ext::CScriptedFunction))
-    };
-
-    return RealCreateFunction(apMemoryPool, kOverrideAllocationSize);
 }
 
 void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, RED4ext::CStackFrame* apFrame, void* apOut, void* a4, RED4ext::CClassFunction* apFunction)
@@ -550,11 +558,11 @@ void FunctionOverride::Override(const std::string& acTypeName, const std::string
     }
 
     // Get the real function
-    auto* pRealFunction = pClassType->GetFunction(RED4ext::FNV1a(acFullName.c_str()));
+    auto* pRealFunction = pClassType->GetFunction(acFullName.c_str());
 
     if (!pRealFunction)
     {
-        pRealFunction = reinterpret_cast<RED4ext::CClassFunction*>(RTTIHelper::Get().FindFunction(pClassType, RED4ext::FNV1a(acFullName.c_str())));
+        pRealFunction = reinterpret_cast<RED4ext::CClassFunction*>(RTTIHelper::Get().FindFunction(pClassType, RED4ext::FNV1a64(acFullName.c_str())));
 
         if (!pRealFunction)
         {
@@ -605,26 +613,7 @@ void FunctionOverride::Override(const std::string& acTypeName, const std::string
                 reinterpret_cast<RED4ext::CClassFunction*>(pFunc)->parent = pRealFunction->parent;
             }
 
-            pFunc->fullName = pRealFunction->fullName;
-            pFunc->shortName = pRealFunction->shortName;
-
-            pFunc->returnType = pRealFunction->returnType;
-            for (auto* p : pRealFunction->params)
-            {
-                pFunc->params.PushBack(p);
-            }
-
-            for (auto* p : pRealFunction->localVars)
-            {
-                pFunc->localVars.PushBack(p);
-            }
-
-            pFunc->unk20 = pRealFunction->unk20;
-            pFunc->bytecode = pRealFunction->bytecode;
-            pFunc->unk48 = pRealFunction->unk48;
-            pFunc->unkAC = pRealFunction->unkAC;
-            pFunc->flags = pRealFunction->flags;
-            pFunc->flags.isNative = true;
+            CopyFunctionDescription(pFunc, pRealFunction, true);
 
             m_trampolines[pRealFunction] = pFunc;
         }
@@ -668,4 +657,33 @@ void FunctionOverride::Override(const std::string& acTypeName, const std::string
         if (pEntry->IsEmpty)
             pEntry->IsEmpty = false;
     }
+}
+
+void FunctionOverride::CopyFunctionDescription(RED4ext::CBaseFunction* aFunc, RED4ext::CBaseFunction* aRealFunc,
+                                               bool aForceNative)
+{
+    aFunc->fullName = aRealFunc->fullName;
+    aFunc->shortName = aRealFunc->shortName;
+
+    aFunc->returnType = aRealFunc->returnType;
+
+    aFunc->params.Clear();
+    for (auto* p : aRealFunc->params)
+    {
+        aFunc->params.PushBack(p);
+    }
+
+    aFunc->localVars.Clear();
+    for (auto* p : aRealFunc->localVars)
+    {
+        aFunc->localVars.PushBack(p);
+    }
+
+    aFunc->unk20 = aRealFunc->unk20;
+    aFunc->bytecode = aRealFunc->bytecode;
+    aFunc->unk48 = aRealFunc->unk48;
+    aFunc->unkAC = aRealFunc->unkAC;
+
+    aFunc->flags = aRealFunc->flags;
+    aFunc->flags.isNative = aForceNative;
 }

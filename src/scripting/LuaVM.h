@@ -12,6 +12,7 @@ using TTDBIDCtorDerive = TDBID*(const TDBID*, TDBID*, const char*);
 using TRunningStateRun = bool(uintptr_t, uintptr_t);
 using TSetLoadingState = uintptr_t(uintptr_t, int);
 using TTweakDBLoad = uint64_t(uintptr_t, uintptr_t);
+using TTranslateBytecode = bool(uintptr_t, uintptr_t);
 
 struct TDBIDLookupEntry
 {
@@ -54,8 +55,9 @@ struct LuaVM
 
     void RegisterTDBIDString(uint64_t aValue, uint64_t aBase, const std::string& acString);
 
-    void PostInitializeStage1();
-    void PostInitializeStage2();
+    void PostInitializeScripting();
+    void PostInitializeTweakDB();
+    void PostInitializeMods();
 
 protected:
 
@@ -68,6 +70,7 @@ protected:
     static bool HookRunningStateRun(uintptr_t aThis, uintptr_t aApp);
     static uintptr_t HookSetLoadingState(uintptr_t aThis, int aState);
     static uint64_t HookTweakDBLoad(uintptr_t aThis, uintptr_t aParam);
+    static bool HookTranslateBytecode(uintptr_t aBinder, uintptr_t aData);
 
 private:
 
@@ -83,6 +86,7 @@ private:
     TRunningStateRun* m_realRunningStateRun{ nullptr };
     TSetLoadingState* m_realSetLoadingState{ nullptr };
     TTweakDBLoad* m_realTweakDBLoad{ nullptr };
+    TTranslateBytecode* m_realTranslateBytecode{ nullptr };
 
     std::chrono::time_point<std::chrono::high_resolution_clock> m_lastframe;
 

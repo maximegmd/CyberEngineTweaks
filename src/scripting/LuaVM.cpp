@@ -35,7 +35,7 @@ void LuaVM::Update(float aDeltaTime)
     if (!m_initialized)
     {
         if (m_logCount.load(std::memory_order_relaxed) > 0)
-            PostInitializeStage2();
+            PostInitializeMods();
 
         return;
     }
@@ -189,17 +189,21 @@ void LuaVM::RegisterTDBIDString(uint64_t aValue, uint64_t aBase, const std::stri
         m_tdbidDerivedLookup[aBase].insert(aValue);
 }
 
-void LuaVM::PostInitializeStage1()
+void LuaVM::PostInitializeScripting()
 {
-    m_scripting.PostInitializeStage1();
+    m_scripting.PostInitializeScripting();
+}
+
+void LuaVM::PostInitializeTweakDB()
+{
     m_scripting.TriggerOnTweak();
 }
 
-void LuaVM::PostInitializeStage2()
+void LuaVM::PostInitializeMods()
 {
     assert(!m_initialized);
 
-    m_scripting.PostInitializeStage2();
+    m_scripting.PostInitializeMods();
     m_scripting.TriggerOnInit();
     if (CET::Get().GetOverlay().IsEnabled())
         m_scripting.TriggerOnOverlayOpen();

@@ -15,8 +15,8 @@ struct Scripting
     ~Scripting() = default;
 
     void Initialize();
-    void PostInitializeStage1();
-    void PostInitializeStage2();
+    void PostInitializeScripting();
+    void PostInitializeMods();
 
     [[nodiscard]] std::optional<std::reference_wrapper<const VKBind>> GetBind(const VKModBind& acModBind) const;
     [[nodiscard]] std::optional<std::reference_wrapper<const TiltedPhoques::Vector<VKBind>>> GetBinds(const std::string& acModName) const;
