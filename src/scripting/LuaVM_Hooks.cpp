@@ -52,8 +52,8 @@ void LuaVM::HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack,
 
     apStack->currentParam++;
 
-    apStack->data = 0;
-    apStack->dataType = 0;
+    apStack->data = nullptr;
+    apStack->dataType = nullptr;
     opcode = *(apStack->code++);
     RED4ext::OpcodeHandlers::Run(opcode, apStack->context, apStack, &ref, &ref);
 
@@ -65,13 +65,20 @@ void LuaVM::HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack,
         auto consoleLogger = spdlog::get("scripting");
 
         std::string_view textSV = ref.ref->c_str();
-        std::string_view channelSV = channel.ToString();
-        if (channelSV == "")
-            consoleLogger->info("[?{0:x}] {}", channel.hash, textSV);
+        if (channel == s_debugChannel)
+        {
+            consoleLogger->info(textSV);
+        }
         else
-            consoleLogger->info("[{}] {}", channelSV, textSV);
+        {
+            std::string_view channelSV = channel.ToString();
+            if (channelSV.empty())
+                consoleLogger->info("[?{0:x}] {}", channel.hash, textSV);
+            else
+                consoleLogger->info("[{}] {}", channelSV, textSV);
+        }
     }
-    
+
     CET::Get().GetVM().m_logCount.fetch_add(1);
 }
 
@@ -238,7 +245,7 @@ void LuaVM::Hook(Options& aOptions)
             }
         }
     }
-    
+
     {
         RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_TweakDBLoad);
         uint8_t* pLocation = func.GetAddr();
@@ -274,5 +281,5 @@ void LuaVM::Hook(Options& aOptions)
     //    }
     //}
 
-    
+
 }
