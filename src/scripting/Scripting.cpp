@@ -128,10 +128,18 @@ void Scripting::Initialize()
     m_store.LoadAll();
 }
 
-void Scripting::PostInitializeStage1()
+void Scripting::PostInitializeScripting()
 {
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
+
+    if (luaVm["__Game"] != sol::nil)
+    {
+        m_mapper.Refresh();
+        m_override.Refresh();
+        m_sandbox.PostInitialize();
+        return;
+    }
 
     sol::table luaGlobal = luaVm[m_global];
 
@@ -202,8 +210,8 @@ void Scripting::PostInitializeStage1()
         {
             return true;
         },
-        // To make it callable for null refs
-        [](sol::nil_t aNil) -> bool
+        // To make it callable on any value
+        [](const sol::object&) -> bool
         {
             return false;
         });
@@ -460,7 +468,7 @@ void Scripting::PostInitializeStage1()
     m_sandbox.PostInitialize();
 }
 
-void Scripting::PostInitializeStage2()
+void Scripting::PostInitializeMods()
 {
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
