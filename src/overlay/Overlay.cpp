@@ -251,6 +251,18 @@ Overlay::Overlay(D3D12& aD3D12, VKBindings& aBindings, Options& aOptions, LuaVM&
 
     m_connectInitialized = aD3D12.OnInitialized.Connect([this]() { PostInitialize(); });
     m_connectUpdate = aD3D12.OnUpdate.Connect([this]() { Update(); });
+
+    
+#ifdef _WIN32
+    int SysLangID = GetSystemDefaultLangID();
+
+    if (SysLangID == 1049)
+    {
+        ImGuiIO& io = ImGui::GetIO();
+        io.Fonts->AddFontFromFileTTF("RobotoCondensed.ttf", 14, nullptr,
+                                     io.Fonts->GetGlyphRangesCyrillic());
+    }
+#endif
 }
 
 Overlay::~Overlay()
