@@ -306,7 +306,47 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
             if (exists(fontPath))
             {
                 const ImWchar* cpGlyphRanges = io.Fonts->GetGlyphRangesDefault();
-                if (m_options.FontGlyphRanges == "ChineseFull")
+                if (m_options.FontGlyphRanges == "System")
+                {
+                    int langID = GetSystemDefaultLangID();
+
+                    switch (langID)
+                    {
+                    case MAKELANGID(LANG_BELARUSIAN, SUBLANG_DEFAULT):
+                    case MAKELANGID(LANG_RUSSIAN, SUBLANG_DEFAULT):
+                        cpGlyphRanges = io.Fonts->GetGlyphRangesCyrillic();
+                        break;
+
+                    case MAKELANGID(LANG_JAPANESE, SUBLANG_DEFAULT):
+                        cpGlyphRanges = io.Fonts->GetGlyphRangesJapanese();
+                        break;
+
+                    case MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_TRADITIONAL):
+                        cpGlyphRanges = io.Fonts->GetGlyphRangesChineseFull();
+                        break;
+
+                    case MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED):
+                        cpGlyphRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
+                        break;
+                        
+                    case MAKELANGID(LANG_KOREAN, SUBLANG_DEFAULT):
+                        cpGlyphRanges = io.Fonts->GetGlyphRangesKorean();
+                        break;
+
+                    case MAKELANGID(LANG_THAI, SUBLANG_DEFAULT):
+                        cpGlyphRanges = io.Fonts->GetGlyphRangesThai();
+                        break;
+
+                    case MAKELANGID(LANG_VIETNAMESE, SUBLANG_DEFAULT):
+                        cpGlyphRanges = io.Fonts->GetGlyphRangesVietnamese();
+                        break;
+
+                    default:
+                        cpGlyphRanges = io.Fonts->GetGlyphRangesDefault();
+                        break;
+                    }
+                }
+                else if (m_options.FontGlyphRanges == "ChineseFull")
                     cpGlyphRanges = io.Fonts->GetGlyphRangesChineseFull();
                 else if (m_options.FontGlyphRanges == "ChineseSimplifiedCommon")
                     cpGlyphRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
@@ -322,6 +362,7 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
                     cpGlyphRanges = io.Fonts->GetGlyphRangesVietnamese();
                 ImFont* pFont =
                     io.Fonts->AddFontFromFileTTF(fontPath.string().c_str(), m_options.FontSize, nullptr, cpGlyphRanges);
+
                 if (pFont != nullptr)
                 {
                     io.FontDefault = pFont;
