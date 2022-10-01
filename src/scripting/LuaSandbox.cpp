@@ -406,6 +406,10 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
     {
         const auto cIO = cGlobals["io"].get<sol::table>();
         sol::table ioSB(luaView, sol::create);
+        ioSB["read"] = DeepCopySolObject(cIO["read"], luaView);
+        ioSB["write"] = DeepCopySolObject(cIO["write"], luaView);
+        ioSB["input"] = DeepCopySolObject(cIO["input"], luaView);
+        ioSB["output"] = DeepCopySolObject(cIO["output"], luaView);
         ioSB["type"] = DeepCopySolObject(cIO["type"], luaView);
         ioSB["close"] = DeepCopySolObject(cIO["close"], luaView);
         ioSB["lines"] = [cIO, cSBRootPath](const std::string& acPath)
