@@ -56,6 +56,10 @@ void Scripting::Initialize()
                          sol::lib::os, sol::lib::table, sol::lib::bit32);
     luaVm.require("sqlite3", luaopen_lsqlite3);
 
+    // make sure to set package path to current directory scope
+    // as this could get overriden by LUA_PATH environment variable
+    luaVm["package"]["path"] = "./?.lua";
+
     sol_ImGui::InitBindings(luaVm);
 
     luaVm["print"] = [](sol::variadic_args aArgs, sol::this_state aState)
