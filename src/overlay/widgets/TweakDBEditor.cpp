@@ -1,16 +1,18 @@
 #include <stdafx.h>
 
+#include "TweakDBEditor.h"
+#include "HelperWidgets.h"
+#include "Utils.h"
+
 #include <RED4ext/Scripting/Natives/Generated/Color.hpp>
 #include <RED4ext/Scripting/Natives/Generated/EulerAngles.hpp>
 #include <RED4ext/Scripting/Natives/Generated/Quaternion.hpp>
 #include <RED4ext/Scripting/Natives/Generated/Vector2.hpp>
 #include <RED4ext/Scripting/Natives/Generated/Vector3.hpp>
 
-#include "HelperWidgets.h"
 #include <CET.h>
 #include <reverse/TweakDB.h>
 
-#include "TweakDBEditor.h"
 
 bool TweakDBEditor::s_recordsFilterIsRegex = false;
 bool TweakDBEditor::s_flatsFilterIsRegex = false;
@@ -1980,7 +1982,7 @@ void TweakDBEditor::DrawAdvancedTab()
         ImGui::PopStyleColor(2);
         ImGui::TextUnformatted("1) Download and unpack 'Metadata'");
         ImGui::TextUnformatted("2) Copy 'tweakdb.str' to 'plugins\\cyber_engine_tweaks\\tweakdb.str'");
-        std::string cetDir = CET::Get().GetPaths().CETRoot().string();
+        const auto cetDir = UTF16ToUTF8(CET::Get().GetPaths().CETRoot().native());
         ImGui::Text("Full path: %s", cetDir.c_str());
         if (ImGui::Button("3) Load tweakdb.str"))
         {
@@ -2011,7 +2013,7 @@ void TweakDBEditor::DrawAdvancedTab()
         ImGui::InputText("##wkitLink", pLink, sizeof(pLink) - 1, ImGuiInputTextFlags_ReadOnly);
         ImGui::PopStyleColor(2);
         ImGui::TextUnformatted("1) Download and put 'usedhashes.kark' in 'plugins\\cyber_engine_tweaks\\'");
-        std::string cetDir = CET::Get().GetPaths().CETRoot().string();
+        const auto cetDir = UTF16ToUTF8(CET::Get().GetPaths().CETRoot().native());
         ImGui::Text("Full path: %s", cetDir.c_str());
         if (ImGui::Button("3) Load usedhashes.kark"))
         {

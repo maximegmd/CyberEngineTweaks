@@ -225,13 +225,14 @@ void LuaSandbox::InitializeExtraLibsForSandbox(Sandbox& aSandbox) const
     const auto cLoadTexture = [cSBRootPath, sbStateView](const std::string& acPath) -> std::tuple<std::shared_ptr<Texture>, sol::object> {
         auto absPath = absolute(cSBRootPath / acPath).make_preferred();
 
-        const auto cRelPathStr = relative(absPath, cSBRootPath).string();
-        if (!exists(absPath) || !is_regular_file(absPath) || (cRelPathStr.find("..") != std::string::npos))
+        const auto cRelPathStr = relative(absPath, cSBRootPath).native();
+        if (!exists(absPath) || !is_regular_file(absPath) || (cRelPathStr.find(L"..") != std::wstring::npos))
             return std::make_tuple(nullptr, make_object(sbStateView, "Invalid path!"));
 
-        auto texture = Texture::Load(absPath.string());
+        const auto absPathUTF8 = UTF16ToUTF8(absPath.native());
+        auto texture = Texture::Load(absPathUTF8);
         if (!texture)
-            return std::make_tuple(nullptr, make_object(sbStateView, "Failed to load '" + absPath.string() + "'"));
+            return std::make_tuple(nullptr, make_object(sbStateView, "Failed to load '" + absPathUTF8 + "'"));
 
         return std::make_tuple(texture, sol::nil);
     };
@@ -257,7 +258,7 @@ void LuaSandbox::InitializeDBForSandbox(Sandbox& aSandbox) const
     }
     sbEnv["sqlite3"] = sqlite3Copy;
 
-    sbEnv["db"] = luaView["sqlite3"]["open"]((cSBRootPath / "db.sqlite3").string());
+    sbEnv["db"] = luaView["sqlite3"]["open"](UTF16ToUTF8((cSBRootPath / "db.sqlite3").native()));
 }
 
 void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& acName)
@@ -292,13 +293,13 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
         auto absPath = absolute(cSBRootPath / acPath).make_preferred();
         if (!exists(absPath) || !is_regular_file(absPath))
             absPath += ".lua";
-        const auto cRelPathStr = relative(absPath, cSBRootPath).string();
-        if (!exists(absPath) || !is_regular_file(absPath) || (cRelPathStr.find("..") != std::string::npos))
+        const auto cRelPathStr = relative(absPath, cSBRootPath).native();
+        if (!exists(absPath) || !is_regular_file(absPath) || (cRelPathStr.find(L"..") != std::wstring::npos))
             return std::make_tuple(sol::nil, make_object(sbStateView, "Invalid path!"));
 
         std::ifstream ifs(absPath);
         const std::string cScriptString((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
-        return cLoadString(cScriptString, "@" + absPath.string());
+        return cLoadString(cScriptString, "@" + UTF16ToUTF8(absPath.native()));
     };
     sbEnv["loadfile"] = cLoadFile;
 
@@ -330,18 +331,18 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
                 absPath = absPath3;
             }
         }
-        const auto cRelPathStr = relative(absPath, cSBRootPath).string();
-        if ((cRelPathStr.find("..") != std::string::npos))
+        const auto cRelPathStr = relative(absPath, cSBRootPath).native();
+        if ((cRelPathStr.find(L"..") != std::wstring::npos))
             return std::make_tuple(sol::nil, make_object(sbStateView, "Invalid path!"));
 
-        const auto cKey = absPath.string();
+        const auto cKey = UTF16ToUTF8(absPath.native());
         const auto cExistingModule = this->m_modules.find(cKey);
         if (cExistingModule != this->m_modules.end())
             return std::make_tuple(cExistingModule->second, sol::nil);
 
         std::ifstream ifs(absPath);
         const std::string cScriptString((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
-        auto res = cLoadString(cScriptString, "@" + absPath.string());
+        auto res = cLoadString(cScriptString, "@" + UTF16ToUTF8(absPath.native()));
         auto obj = std::get<0>(res);
         if (obj == sol::nil)
             return res;
@@ -381,8 +382,8 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
         sol::state_view sv = sbStateView;
 
         auto absPath = absolute(cSBRootPath / acPath).make_preferred();
-        const auto cRelPathStr = relative(absPath, cSBRootPath).string();
-        if (!exists(absPath) || !is_directory(absPath) || (cRelPathStr.find("..") != std::string::npos))
+        const auto cRelPathStr = relative(absPath, cSBRootPath).native();
+        if (!exists(absPath) || !is_directory(absPath) || (cRelPathStr.find(L"..") != std::wstring::npos))
             return sol::nil;
 
         sol::table res(sv, sol::create);
@@ -390,7 +391,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
         for (const auto& file : std::filesystem::directory_iterator(absPath))
         {
             sol::table item(sv, sol::create);
-            item["name"] = relative(file.path(), absPath).string();
+            item["name"] = UTF16ToUTF8(relative(file.path(), absPath).native());
             item["type"] = (file.is_directory()) ? ("directory") : ("file");
             res[index++] = item;
         }
@@ -410,17 +411,17 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
         ioSB["lines"] = [cIO, cSBRootPath](const std::string& acPath)
         {
             const auto cAbsPath = absolute(cSBRootPath / acPath).make_preferred();
-            const auto cRelPathStr = relative(cAbsPath, cSBRootPath).string();
-            if (cRelPathStr.find("..") == std::string::npos)
-                return cIO["lines"](cAbsPath.string());
+            const auto cRelPathStr = relative(cAbsPath, cSBRootPath).native();
+            if (cRelPathStr.find(L"..") == std::wstring::npos)
+                return cIO["lines"](UTF16ToUTF8(cAbsPath.native()));
             return cIO["lines"](""); // simulate invalid input even though it may be valid - we dont want mod access outside!
         };
         const auto cOpenWithMode = [cIO, cSBRootPath](const std::string& acPath, const std::string& acMode)
         {
             const auto cAbsPath = absolute(cSBRootPath / acPath).make_preferred();
-            const auto cRelPathStr = relative(cAbsPath, cSBRootPath).string();
-            if (cRelPathStr.find("..") == std::string::npos && (cRelPathStr != "db.sqlite3"))
-                return cIO["open"](cAbsPath.string(), acMode);
+            const auto cRelPathStr = relative(cAbsPath, cSBRootPath).native();
+            if (cRelPathStr.find(L"..") == std::string::npos && (cRelPathStr != L"db.sqlite3"))
+                return cIO["open"](UTF16ToUTF8(cAbsPath.native()), acMode);
             return cIO["open"]("", acMode); // simulate invalid input even though it may be valid - we dont want mod access outside!
         };
         auto cOpenDefault = [cOpenWithMode](const std::string& acPath)
@@ -438,16 +439,16 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
         osSB["rename"] = [cOS, cSBRootPath](const std::string& acOldPath, const std::string& acNewPath) -> std::tuple<sol::object, std::string>
         {
             const auto cAbsOldPath = absolute(cSBRootPath / acOldPath).make_preferred();
-            const auto cRelOldPathStr =  relative(cAbsOldPath, cSBRootPath).string();
-            if (!exists(cAbsOldPath) || (cRelOldPathStr.find("..") != std::string::npos) || (cRelOldPathStr == "db.sqlite3"))
+            const auto cRelOldPathStr =  relative(cAbsOldPath, cSBRootPath).native();
+            if (!exists(cAbsOldPath) || (cRelOldPathStr.find(L"..") != std::wstring::npos) || (cRelOldPathStr == L"db.sqlite3"))
                 return std::make_tuple(sol::nil, "Argument oldpath is invalid!");
 
             const auto cAbsNewPath = absolute(cSBRootPath / acNewPath).make_preferred();
-            const auto cRelNewPathStr =  relative(cAbsNewPath, cSBRootPath).string();
-            if (cRelNewPathStr.find("..") != std::string::npos)
+            const auto cRelNewPathStr =  relative(cAbsNewPath, cSBRootPath).native();
+            if (cRelNewPathStr.find(L"..") != std::wstring::npos)
                 return std::make_tuple(sol::nil, "Argument newpath is invalid!");
 
-            const auto cResult = cOS["rename"](cAbsOldPath.string(), cAbsNewPath.string());
+            const auto cResult = cOS["rename"](UTF16ToUTF8(cAbsOldPath.native()), UTF16ToUTF8(cAbsNewPath.native()));
             if (cResult.valid())
                 return std::make_tuple(cResult.get<sol::object>(), "");
             return std::make_tuple(cResult.get<sol::object>(0), cResult.get<std::string>(1));
@@ -455,11 +456,11 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
         osSB["remove"] = [cOS, cSBRootPath](const std::string& acPath) -> std::tuple<sol::object, std::string>
         {
             const auto cAbsPath = absolute(cSBRootPath / acPath).make_preferred();
-            const auto cRelPathStr = relative(cAbsPath, cSBRootPath).string();
-            if (!exists(cAbsPath) || (cRelPathStr.find("..") != std::string::npos) || (cRelPathStr == "db.sqlite3"))
+            const auto cRelPathStr = relative(cAbsPath, cSBRootPath).native();
+            if (!exists(cAbsPath) || (cRelPathStr.find(L"..") != std::wstring::npos) || (cRelPathStr == L"db.sqlite3"))
                 return std::make_tuple(sol::nil, "Argument path is invalid!");
 
-            const auto cResult = cOS["remove"](cAbsPath.string());
+            const auto cResult = cOS["remove"](UTF16ToUTF8(cAbsPath.native()));
             if (cResult.valid())
                 return std::make_tuple(cResult.get<sol::object>(), "");
             return std::make_tuple(cResult.get<sol::object>(0), cResult.get<std::string>(1));

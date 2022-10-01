@@ -7,16 +7,12 @@
 
 void ltrim(std::string& s)
 {
-    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
-        return !std::isspace(ch);
-        }));
+    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) { return !std::isspace(ch); }));
 }
 
 void rtrim(std::string& s)
 {
-    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
-        return !std::isspace(ch);
-        }).base(), s.end());
+    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) { return !std::isspace(ch); }).base(), s.end());
 }
 
 void trim(std::string& s)
@@ -25,7 +21,35 @@ void trim(std::string& s)
     rtrim(s);
 }
 
-template <typename Mutex>
+std::string UTF16ToUTF8(std::wstring_view utf16)
+{
+    const auto utf16Length = static_cast<int>(utf16.length());
+    const auto utf8Length = WideCharToMultiByte(CP_UTF8, 0, utf16.data(), utf16Length, nullptr, 0, nullptr, nullptr);
+    if (!utf8Length)
+        return {};
+
+    std::string utf8;
+    utf8.resize(utf8Length);
+    WideCharToMultiByte(CP_UTF8, 0, utf16.data(), utf16Length, utf8.data(), utf8Length, nullptr, nullptr);
+
+    return utf8;
+}
+
+std::wstring UTF8ToUTF16(std::string_view utf8)
+{
+    const auto utf8Length = static_cast<int>(utf8.length());
+    const auto utf16Length = MultiByteToWideChar(CP_UTF8, 0, utf8.data(), utf8Length, nullptr, 0);
+    if (!utf16Length)
+        return {};
+
+    std::wstring utf16;
+    utf16.resize(utf16Length);
+    MultiByteToWideChar(CP_UTF8, 0, utf8.data(), utf8Length, utf16.data(), utf16Length);
+
+    return utf16;
+}
+
+template<typename Mutex>
 class CustomSink : public spdlog::sinks::base_sink<Mutex>
 {
 public:
@@ -33,14 +57,15 @@ public:
         : spdlog::sinks::base_sink<Mutex>()
         , m_sinkItHandler(aSinkItHandler)
         , m_flushHandler(aFlushHandler)
-    {}
+    {
+    }
 
 protected:
     void sink_it_(const spdlog::details::log_msg& msg) override
     {
         if (!m_sinkItHandler)
             return;
-            
+
         spdlog::memory_buf_t formatted;
         spdlog::sinks::base_sink<Mutex>::formatter_->format(msg, formatted);
         m_sinkItHandler(fmt::to_string(formatted));
@@ -53,36 +78,39 @@ protected:
     }
 
 private:
-
-    std::function<void(const std::string&)> m_sinkItHandler{ nullptr };
-    std::function<void()> m_flushHandler{ nullptr };
+    std::function<void(const std::string&)> m_sinkItHandler{nullptr};
+    std::function<void()> m_flushHandler{nullptr};
 };
 
-template <typename Mutex>
-spdlog::sink_ptr CreateCustomSink(std::function<void(const std::string&)> aSinkItHandler, std::function<void()> aFlushHandler)
+template<typename Mutex>
+spdlog::sink_ptr CreateCustomSink(std::function<void(const std::string&)> aSinkItHandler,
+                                  std::function<void()> aFlushHandler)
 {
     return std::make_shared<CustomSink<Mutex>>(aSinkItHandler, aFlushHandler);
 }
 
-spdlog::sink_ptr CreateCustomSinkST(std::function<void(const std::string&)> aSinkItHandler, std::function<void()> aFlushHandler)
+spdlog::sink_ptr CreateCustomSinkST(std::function<void(const std::string&)> aSinkItHandler,
+                                    std::function<void()> aFlushHandler)
 {
     return CreateCustomSink<spdlog::details::null_mutex>(aSinkItHandler, aFlushHandler);
 }
 
-spdlog::sink_ptr CreateCustomSinkMT(std::function<void(const std::string&)> aSinkItHandler, std::function<void()> aFlushHandler)
+spdlog::sink_ptr CreateCustomSinkMT(std::function<void(const std::string&)> aSinkItHandler,
+                                    std::function<void()> aFlushHandler)
 {
     return CreateCustomSink<std::mutex>(aSinkItHandler, aFlushHandler);
 }
 
-std::shared_ptr<spdlog::logger> CreateLogger(const std::filesystem::path& aPath, const std::string& aID, spdlog::sink_ptr aExtraSink, const std::string& aPattern)
+std::shared_ptr<spdlog::logger> CreateLogger(const std::filesystem::path& aPath, const std::string& aID,
+                                             spdlog::sink_ptr aExtraSink, const std::string& aPattern)
 {
     auto existingLogger = spdlog::get(aID);
     if (existingLogger)
         return existingLogger;
 
-    const auto rotSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(aPath.string(), 1048576 * 5, 3);
+    const auto rotSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(aPath.native(), 1048576 * 5, 3);
     rotSink->set_pattern(aPattern);
-    auto logger = std::make_shared<spdlog::logger>(aID, spdlog::sinks_init_list{ rotSink });
+    auto logger = std::make_shared<spdlog::logger>(aID, spdlog::sinks_init_list{rotSink});
 
     if (aExtraSink)
         logger->sinks().emplace_back(aExtraSink);

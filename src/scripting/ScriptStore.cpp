@@ -1,6 +1,7 @@
 #include <stdafx.h>
 
 #include "ScriptStore.h"
+#include "Utils.h"
 
 ScriptStore::ScriptStore(LuaSandbox& aLuaSandbox, const Paths& aPaths, VKBindings& aBindings)
     : m_sandbox(aLuaSandbox)
@@ -11,6 +12,9 @@ ScriptStore::ScriptStore(LuaSandbox& aLuaSandbox, const Paths& aPaths, VKBinding
 
 void ScriptStore::LoadAll()
 {
+    // set current path for following scripts to our ModsPath
+    current_path(m_paths.ModsRoot());
+
     m_vkBindInfos.clear();
     m_contexts.clear();
     m_sandbox.ResetState();
@@ -37,7 +41,7 @@ void ScriptStore::LoadAll()
         }
 
         fPath = absolute(fPath);
-        auto fPathStr = fPath.string();
+        auto fPathStr = UTF16ToUTF8(fPath.native());
 
         if (!exists(fPath / "init.lua"))
         {
@@ -45,7 +49,7 @@ void ScriptStore::LoadAll()
             continue;
         }
 
-        auto name = file.path().filename().string();
+        auto name = UTF16ToUTF8(file.path().filename().native());
         if (name.find('.') != std::string::npos)
         {
             consoleLogger->info("Ignoring directory containing '.', as this is reserved character! ('{}')", fPathStr);

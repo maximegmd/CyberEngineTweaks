@@ -97,9 +97,9 @@ void Scripting::Initialize()
     luaGlobal["ModArchiveExists"] = [this](const std::string& acArchiveName) -> bool
     {
         const auto cAbsPath = absolute(m_paths.ArchiveModsRoot() / acArchiveName);
-        const auto cRelPathStr = relative(cAbsPath, m_paths.ArchiveModsRoot()).string();
+        const auto cRelPathStr = relative(cAbsPath, m_paths.ArchiveModsRoot()).native();
 
-        if (cRelPathStr.find("..") != std::string::npos)
+        if (cRelPathStr.find(L"..") != std::wstring::npos)
             return false;
 
         return exists(cAbsPath);
@@ -123,9 +123,6 @@ void Scripting::Initialize()
     auto& consoleSB = m_sandbox[0];
     auto& consoleSBEnv = consoleSB.GetEnvironment();
     consoleSBEnv["__logger"] = spdlog::get("scripting");
-
-    // set current path for following scripts to our ModsPath
-    current_path(m_paths.ModsRoot());
 
     // load mods
     m_store.LoadAll();
@@ -646,7 +643,6 @@ void Scripting::ReloadAllMods()
 {
     m_override.Clear();
     RegisterOverrides();
-    current_path(m_paths.ModsRoot());
     m_store.LoadAll();
 }
 

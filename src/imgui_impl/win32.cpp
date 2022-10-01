@@ -16,6 +16,7 @@
 #include "win32.h"
 
 #include "CET.h"
+#include "Utils.h"
 
 // CHANGELOG
 // (minor and older changes stripped away, please see git history for details)
@@ -68,7 +69,7 @@ bool ImGui_ImplWin32_Init(HWND ahWnd)
     io.ImeWindowHandle = ahWnd;
 
     // Setup ini path
-    g_LayoutPath = (CET::Get().GetPaths().CETRoot() / "layout.ini").string();
+    g_LayoutPath = UTF16ToUTF8((CET::Get().GetPaths().CETRoot() / "layout.ini").native());
     io.IniFilename = g_LayoutPath.c_str();
 
     // Keyboard mapping. ImGui will use those indices to peek into the io.KeysDown[] array that we will update during the application lifetime.
