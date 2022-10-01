@@ -8,11 +8,11 @@ struct Options
 {
     Options(Paths& aPaths);
     ~Options() = default;
-   
+
     void Load();
     void Save();
-    void ResetToDefaults(); 
-    
+    void ResetToDefaults();
+
     Image GameImage;
     bool PatchEnableDebug{ false };
     bool PatchRemovePedestrians{ false };

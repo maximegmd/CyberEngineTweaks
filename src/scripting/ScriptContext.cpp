@@ -1,6 +1,7 @@
 #include <stdafx.h>
 
 #include "ScriptContext.h"
+#include "Utils.h"
 
 #include <CET.h>
 
@@ -84,7 +85,7 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
 
         m_vkBindInfos.emplace_back(VKBindInfo{vkBind});
     };
-    
+
     env["registerInput"] = [this, &aLuaSandbox](const std::string& acID, const std::string& acDescription, sol::function aCallback) {
         if (acID.empty() ||
             (std::ranges::find_if(acID, [](char c) { return !(isalpha(c) || isdigit(c) || c == '_'); }) != acID.cend()))
@@ -117,7 +118,7 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
     try
     {
         const auto path = acPath / "init.lua";
-        const auto result = sb.ExecuteFile(path.string());
+        const auto result = sb.ExecuteFile(UTF16ToUTF8(path.native()));
 
         if (result.valid())
         {
@@ -186,7 +187,7 @@ void ScriptContext::TriggerOnDraw() const
 
     TryLuaFunction(m_logger, m_onDraw);
 }
-    
+
 void ScriptContext::TriggerOnOverlayOpen() const
 {
     auto state = m_sandbox.GetState();

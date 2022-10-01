@@ -138,7 +138,6 @@ Options::Options(Paths& aPaths)
 
     set_default_logger(CreateLogger(m_paths.CETRoot() / "cyber_engine_tweaks.log", "main"));
 
-
     Log::Info("Cyber Engine Tweaks is starting...");
 
     GameImage.Initialize();
@@ -148,9 +147,9 @@ Options::Options(Paths& aPaths)
         Log::Info("CET version {} [{}]", CET_BUILD_COMMIT, CET_BUILD_BRANCH);
         auto [major, minor] = GameImage.GetVersion();
         Log::Info("Game version {}.{:02d}", major, minor);
-        Log::Info("Root path: \"{}\"", aPaths.GameRoot().string());
-        Log::Info("Cyber Engine Tweaks path: \"{}\"", aPaths.CETRoot().string());
-        Log::Info("Lua scripts search path: \"{}\"", aPaths.ModsRoot().string());
+        Log::Info("Root path: \"{}\"", UTF16ToUTF8(aPaths.GameRoot().native()));
+        Log::Info("Cyber Engine Tweaks path: \"{}\"", UTF16ToUTF8(aPaths.CETRoot().native()));
+        Log::Info("Lua scripts search path: \"{}\"", UTF16ToUTF8(aPaths.ModsRoot().native()));
 
         if (GameImage.GetVersion() != GameImage.GetSupportedVersion())
         {

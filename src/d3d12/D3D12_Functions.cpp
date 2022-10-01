@@ -1,18 +1,19 @@
 #include <stdafx.h>
 
 #include "D3D12.h"
+#include "Options.h"
+#include "Utils.h"
 
 #include <kiero/kiero.h>
 #include <imgui_impl/dx12.h>
 #include <imgui_impl/win32.h>
 
-#include <window/Window.h>
-#include "Options.h"
+#include <window/window.h>
 
 bool D3D12::ResetState(bool aClearDownlevelBackbuffers)
 {
     if (m_initialized)
-    {   
+    {
         m_initialized = false;
         ImGui_ImplDX12_Shutdown();
         ImGui_ImplWin32_Shutdown();
@@ -46,7 +47,7 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
         return false;
     }
 
-    if (m_initialized) 
+    if (m_initialized)
     {
         IDXGISwapChain3* pSwapChain3{ nullptr };
         if (FAILED(apSwapChain->QueryInterface(IID_PPV_ARGS(&pSwapChain3))))
@@ -62,9 +63,9 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
         {
             DXGI_SWAP_CHAIN_DESC sdesc;
             m_pdxgiSwapChain->GetDesc(&sdesc);
-            
+
             if (hWnd != sdesc.OutputWindow)
-                Log::Warn("D3D12::Initialize() - output window of current swap chain does not match hooked window! Currently hooked to {0} while swap chain output window is {1}.", reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(sdesc.OutputWindow));            
+                Log::Warn("D3D12::Initialize() - output window of current swap chain does not match hooked window! Currently hooked to {0} while swap chain output window is {1}.", reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(sdesc.OutputWindow));
         }
 
         return true;
@@ -84,7 +85,7 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
 
     DXGI_SWAP_CHAIN_DESC sdesc;
     m_pdxgiSwapChain->GetDesc(&sdesc);
-    
+
     if (hWnd != sdesc.OutputWindow)
         Log::Warn("D3D12::Initialize() - output window of current swap chain does not match hooked window! Currently hooked to {0} while swap chain output window is {1}.", reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(sdesc.OutputWindow));
 
@@ -123,7 +124,7 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
         Log::Error("D3D12::Initialize() - failed to create SRV descriptor heap!");
         return ResetState();
     }
-    
+
     for (auto& context : m_frameContexts)
         if (FAILED(m_pd3d12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&context.CommandAllocator))))
         {
@@ -176,7 +177,7 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
     }
 
     auto cmdQueueDesc = apCommandQueue->GetDesc();
-    if(cmdQueueDesc.Type != D3D12_COMMAND_LIST_TYPE_DIRECT) 
+    if(cmdQueueDesc.Type != D3D12_COMMAND_LIST_TYPE_DIRECT)
     {
         Log::Warn("D3D12::InitializeDownlevel() - ignoring command queue - invalid type of command list!");
         return false;
@@ -186,7 +187,7 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
 
     auto st2DDesc = apSourceTex2D->GetDesc();
     m_outSize = { static_cast<LONG>(st2DDesc.Width), static_cast<LONG>(st2DDesc.Height) };
-    
+
     if (hWnd != ahWindow)
         Log::Warn("D3D12::InitializeDownlevel() - current output window does not match hooked window! Currently hooked to {0} while current output window is {1}.", reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(ahWindow));
 
@@ -237,7 +238,7 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
         Log::Error("D3D12::InitializeDownlevel() - failed to create SRV descriptor heap!");
         return ResetState();
     }
-    
+
     for (auto& context : m_frameContexts)
     {
         if (FAILED(m_pd3d12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&context.CommandAllocator))))
@@ -295,7 +296,7 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         config.OversampleH = config.OversampleV = 1;
         config.PixelSnapH = true;
         io.Fonts->AddFontDefault(&config);
-        
+
         if (!m_options.FontPath.empty())
         {
             std::filesystem::path fontPath(m_options.FontPath);
@@ -328,7 +329,7 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
                     case MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED):
                         cpGlyphRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
                         break;
-                        
+
                     case MAKELANGID(LANG_KOREAN, SUBLANG_DEFAULT):
                         cpGlyphRanges = io.Fonts->GetGlyphRangesKorean();
                         break;
@@ -360,8 +361,9 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
                     cpGlyphRanges = io.Fonts->GetGlyphRangesThai();
                 else if (m_options.FontGlyphRanges == "Vietnamese")
                     cpGlyphRanges = io.Fonts->GetGlyphRangesVietnamese();
+
                 ImFont* pFont =
-                    io.Fonts->AddFontFromFileTTF(fontPath.string().c_str(), m_options.FontSize, nullptr, cpGlyphRanges);
+                    io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(fontPath.native()).c_str(), m_options.FontSize, nullptr, cpGlyphRanges);
 
                 if (pFont != nullptr)
                 {
@@ -370,8 +372,8 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
             }
         }
     }
-    
-    if (!ImGui_ImplWin32_Init(m_window.GetWindow())) 
+
+    if (!ImGui_ImplWin32_Init(m_window.GetWindow()))
     {
         Log::Error("D3D12::InitializeImGui() - ImGui_ImplWin32_Init call failed!");
         return false;
@@ -387,7 +389,7 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         return false;
     }
 
-    if (!ImGui_ImplDX12_CreateDeviceObjects(m_pCommandQueue)) 
+    if (!ImGui_ImplDX12_CreateDeviceObjects(m_pCommandQueue))
     {
         Log::Error("D3D12::InitializeImGui() - ImGui_ImplDX12_CreateDeviceObjects call failed!");
         ImGui_ImplDX12_Shutdown();
