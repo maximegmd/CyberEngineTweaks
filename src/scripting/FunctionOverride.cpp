@@ -126,7 +126,7 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
 
             auto pAllocator = TiltedPhoques::Allocator::Get();
             TiltedPhoques::Allocator::Set(&s_allocator);
-            TiltedPhoques::Vector<sol::object> args;
+            TiltedPhoques::Vector<sol::object> args(0);
             TiltedPhoques::Vector<RED4ext::CStackType> outArgs;
             TiltedPhoques::Allocator::Set(pAllocator);
 
@@ -142,7 +142,12 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
                         *(RED4ext::WeakHandle<RED4ext::IScriptable>*)&pContext->ref);
                     auto obj = sol::make_object(luaState, WeakReference(lockedState, weak));
 
+                    args.reserve(apFunction->params.size + 1);
                     args.push_back(obj);
+                }
+                else
+                {
+                    args.reserve(apFunction->params.size);
                 }
 
                 for (auto* p : apFunction->params)
@@ -207,7 +212,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
 
         auto pAllocator = TiltedPhoques::Allocator::Get();
         TiltedPhoques::Allocator::Set(&s_allocator);
-        TiltedPhoques::Vector<sol::object> args;
+        TiltedPhoques::Vector<sol::object> args(0);
         TiltedPhoques::Vector<RED4ext::CStackType> outArgs;
         TiltedPhoques::Allocator::Set(pAllocator);
 
@@ -234,7 +239,12 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
                 const auto weak = RED4ext::WeakHandle<RED4ext::IScriptable>(*ref);
                 auto obj = sol::make_object(luaState, WeakReference(lockedState, weak));
 
+                args.reserve(apFunction->params.size + 1);
                 args.push_back(obj);
+            }
+            else
+            {
+                args.reserve(apFunction->params.size);
             }
 
             // Nasty way of popping all args
@@ -330,7 +340,6 @@ bool FunctionOverride::ExecuteChain(const CallChain& aChain, std::shared_lock<st
     if (!aChain.Before.empty())
     {
         auto lockedState = aChain.pScripting->GetState();
-        auto& luaState = lockedState.Get();
 
         for (const auto& call : aChain.Before)
         {
@@ -399,7 +408,6 @@ bool FunctionOverride::ExecuteChain(const CallChain& aChain, std::shared_lock<st
     if (!aChain.After.empty())
     {
         auto lockedState = aChain.pScripting->GetState();
-        auto& luaState = lockedState.Get();
 
         for (const auto& call : aChain.After)
         {
@@ -411,6 +419,12 @@ bool FunctionOverride::ExecuteChain(const CallChain& aChain, std::shared_lock<st
                 logger->error(result.get<sol::error>().what());
             }
         }
+    }
+
+    if (apOrigArgs && !apOrigArgs->empty())
+    {
+        auto lockedState = aChain.pScripting->GetState();
+        apOrigArgs->resize(0);
     }
 
     if (aChain.CollectGarbage)
