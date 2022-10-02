@@ -49,16 +49,26 @@ bool Overlay::IsEnabled() const noexcept
     return m_initialized && m_enabled;
 }
 
-VKBind Overlay::GetBind() const noexcept
+const VKBind& Overlay::GetBind() const noexcept
 {
-    return m_VKBIOverlay.Bind;
+    return m_VKBindOverlay;
+}
+
+const VKBindInfo& Overlay::GetBindInfo() const noexcept
+{
+    return m_VKBIOverlay;
+}
+
+const VKModBind& Overlay::GetModBind() const noexcept
+{
+    return m_VKModBind;
 }
 
 void Overlay::Update()
 {
     if (!m_initialized)
         return;
-    
+
     if (m_toggled)
     {
         if (m_enabled)
@@ -95,10 +105,6 @@ void Overlay::Update()
     {
         if (m_showFirstTimeModal)
         {
-            assert(!m_VKBIOverlay.CodeBind);
-            assert(!m_VKBIOverlay.SavedCodeBind);
-            assert(!m_VKBIOverlay.IsBinding);
-
             ImGui::OpenPopup("CET First Time Setup");
             m_showFirstTimeModal = false;
             m_vm.BlockDraw(true);
@@ -115,15 +121,28 @@ void Overlay::Update()
             ImGui::TextUnformatted("Combo can be composed from up to 4 keys.");
             ImGui::Separator();
 
-            // TODO - do not hardcode offset! this somewhat works temporarily...
-            HelperWidgets::BindWidget(m_VKBIOverlay, false, diffTextSz * 0.75f);
-            if (m_VKBIOverlay.CodeBind)
+            auto& bindings = CET::Get().GetBindings();
+            if (m_VKBIOverlay.IsBinding && !bindings.IsRecordingBind())
             {
-                m_VKBIOverlay.Apply();
-                m_bindings.Save();
+                m_VKBIOverlay.CodeBind = bindings.GetLastRecordingResult();
+                m_VKBIOverlay.SavedCodeBind = m_VKBIOverlay.CodeBind;
+                m_VKBIOverlay.IsBinding = false;
+
+                bindings.UnBind(m_VKBIOverlay.CodeBind);
+                bindings.Bind(m_VKBIOverlay.CodeBind, m_VKModBind);
+                bindings.Save();
+
                 m_options.IsFirstLaunch = false;
                 m_vm.BlockDraw(false);
                 ImGui::CloseCurrentPopup();
+            }
+
+            // TODO - do not hardcode offset! this somewhat works temporarily...
+            const auto drawState = HelperWidgets::BindWidget(m_VKBIOverlay, diffTextSz * 0.75f);
+            if (drawState > 0)
+            {
+                bindings.StartRecordingBind(m_VKModBind);
+                m_VKBIOverlay.IsBinding = true;
             }
 
             ImGui::EndPopup();
@@ -140,9 +159,9 @@ void Overlay::Update()
     if (ImGui::Begin("Cyber Engine Tweaks"))
     {
         const ImVec2 cZeroVec = {0, 0};
-        
+
         SetActiveWidget(HelperWidgets::ToolbarWidget());
-        
+
         if (m_activeWidgetID == WidgetID::CONSOLE)
         {
             if (ImGui::BeginChild("Console", cZeroVec, true))
@@ -177,12 +196,6 @@ void Overlay::Update()
 bool Overlay::IsInitialized() const noexcept
 {
     return m_initialized;
-}
-
-LRESULT Overlay::OnWndProc(HWND, UINT auMsg, WPARAM awParam, LPARAM)
-{
-    // TODO - is this useful now?
-    return 0;
 }
 
 BOOL Overlay::ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis)

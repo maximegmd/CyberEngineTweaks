@@ -10,24 +10,25 @@ struct ScriptContext
 
     [[nodiscard]] bool IsValid() const;
 
-    const TiltedPhoques::Vector<VKBindInfo>& GetBinds() const;
-    
+    [[nodiscard]] std::optional<std::reference_wrapper<const VKBind>> GetBind(const std::string& acId) const;
+    [[nodiscard]] const TiltedPhoques::Vector<VKBind>& GetBinds() const;
+
     void TriggerOnTweak() const;
     void TriggerOnInit() const;
     void TriggerOnUpdate(float aDeltaTime) const;
     void TriggerOnDraw() const;
-    
+
     void TriggerOnOverlayOpen() const;
     void TriggerOnOverlayClose() const;
 
-    sol::object GetRootObject() const;
+    [[nodiscard]] sol::object GetRootObject() const;
 
 private:
 
     void TriggerOnShutdown() const;
 
     ScriptContext(const ScriptContext&) = default;
-    
+
     LuaSandbox& m_sandbox;
     size_t m_sandboxID;
     sol::object m_object{ };
@@ -38,7 +39,7 @@ private:
     sol::function m_onDraw{ };
     sol::function m_onOverlayOpen{ };
     sol::function m_onOverlayClose{ };
-    TiltedPhoques::Vector<VKBindInfo> m_vkBindInfos{ };
+    TiltedPhoques::Vector<VKBind> m_vkBinds{ };
     std::string m_name{ };
     std::shared_ptr<spdlog::logger> m_logger{ nullptr };
     bool m_initialized{ false };

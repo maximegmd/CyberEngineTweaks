@@ -1,6 +1,9 @@
 #include <stdafx.h>
 
 #include "ScriptStore.h"
+
+#include <CET.h>
+
 #include "Utils.h"
 
 ScriptStore::ScriptStore(LuaSandbox& aLuaSandbox, const Paths& aPaths, VKBindings& aBindings)
@@ -15,7 +18,7 @@ void ScriptStore::LoadAll()
     // set current path for following scripts to our ModsPath
     current_path(m_paths.ModsRoot());
 
-    m_vkBindInfos.clear();
+    m_vkBinds.clear();
     m_contexts.clear();
     m_sandbox.ResetState();
 
@@ -59,9 +62,8 @@ void ScriptStore::LoadAll()
         auto ctx = ScriptContext{m_sandbox, fPath, name};
         if (ctx.IsValid())
         {
-            auto& ctxBinds = ctx.GetBinds();
-            m_vkBindInfos.insert(m_vkBindInfos.cend(), ctxBinds.cbegin(), ctxBinds.cend());
-            m_contexts.emplace(name, std::move(ctx));
+            const auto ctxIt = m_contexts.emplace(name, std::move(ctx));
+            m_vkBinds.insert({name, ctxIt.first.value().GetBinds()});
             consoleLogger->info("Mod {} loaded! ('{}')", name, fPathStr);
         }
         else
@@ -70,12 +72,36 @@ void ScriptStore::LoadAll()
         }
     }
 
-    m_bindings.InitializeMods(m_vkBindInfos);
+    m_bindings.InitializeMods(m_vkBinds);
 }
 
-const TiltedPhoques::Vector<VKBindInfo>& ScriptStore::GetBinds() const
+std::optional<std::reference_wrapper<const VKBind>> ScriptStore::GetBind(const VKModBind& acModBind) const
 {
-    return m_vkBindInfos;
+    const auto& cpOverlay = CET::Get().GetOverlay();
+    if (acModBind == cpOverlay.GetModBind())
+        return cpOverlay.GetBind();
+
+    const auto it = m_contexts.find(acModBind.ModName);
+    if (it != m_contexts.cend())
+        return it->second.GetBind(acModBind.ID);
+
+    return std::nullopt;
+}
+
+std::optional<std::reference_wrapper<const TiltedPhoques::Vector<VKBind>>> ScriptStore::GetBinds(const std::string& acModName) const
+{
+    const auto it = m_contexts.find(acModName);
+    if (it != m_contexts.cend())
+    {
+        return it->second.GetBinds();
+    }
+
+    return std::nullopt;
+}
+
+const TiltedPhoques::Map<std::string, std::reference_wrapper<const TiltedPhoques::Vector<VKBind>>>& ScriptStore::GetAllBinds() const
+{
+    return m_vkBinds;
 }
 
 void ScriptStore::TriggerOnTweak() const
@@ -116,9 +142,9 @@ void ScriptStore::TriggerOnOverlayClose() const
 
 sol::object ScriptStore::GetMod(const std::string& acName) const
 {
-    const auto itor = m_contexts.find(acName);
-    if (itor != std::end(m_contexts))
-        return itor->second.GetRootObject();
+    const auto it = m_contexts.find(acName);
+    if (it != m_contexts.cend())
+        return it->second.GetRootObject();
 
     return sol::nil;
 }

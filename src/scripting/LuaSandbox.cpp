@@ -474,11 +474,11 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
     // add support functions for bindings
     sbEnv["IsBound"] = [vkb = &m_vkBindings, name = acName](const std::string& aID) -> bool
     {
-        return vkb->IsBound(name + '.' + aID);
+        return vkb->IsBound({name, aID});
     };
     sbEnv["GetBind"] = [vkb = &m_vkBindings, name = acName](const std::string& aID) -> std::string
     {
-        return vkb->GetBindString(name + '.' + aID);
+        return vkb->GetBindString({name, aID});
     };
 }
 

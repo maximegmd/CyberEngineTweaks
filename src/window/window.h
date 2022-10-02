@@ -1,12 +1,11 @@
 #pragma once
 
-struct Overlay;
 struct D3D12;
 struct VKBindings;
 
 struct Window
 {
-    Window(Overlay* apOverlay, VKBindings* apBindings, D3D12* apD3D12);
+    Window(VKBindings* apBindings, D3D12* apD3D12);
     ~Window();
 
     HWND GetWindow() const { return m_hWnd; }
@@ -25,7 +24,7 @@ protected:
 
 private:
 
-    
+
     bool m_initialized{ false };
 
     HWND m_hWnd{ nullptr };
@@ -36,7 +35,6 @@ private:
     POINT m_clientPos{ };
     SIZE m_clientSize{ };
 
-    Overlay* m_pOverlay;
     VKBindings* m_pBindings;
     D3D12* m_pD3D12;
 };
