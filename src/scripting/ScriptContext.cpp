@@ -60,7 +60,7 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
             m_logger->error("Tried to register an unknown event '{}'!", acName);
     };
 
-    env["registerHotkey"] = [this, &aLuaSandbox](const std::string& acID, const std::string& acDescription, sol::function aCallback)
+    auto registerHotkey = [this, &aLuaSandbox](const std::string& acID, const std::string& acDisplayName, const std::string& acDescription, sol::function aCallback)
     {
         if (acID.empty() ||
             (std::ranges::find_if(acID, [](char c){ return !(isalpha(c) || isdigit(c) || c == '_'); }) != acID.cend()))
@@ -69,24 +69,29 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
             return;
         }
 
-        if (acDescription.empty())
+        if (acDisplayName.empty())
         {
-            m_logger->error("Tried to register a hotkey with an empty description! (ID of hotkey handler: {})", acID);
+            m_logger->error("Tried to register a hotkey with an empty display name! (ID of hotkey handler: {})", acID);
             return;
         }
 
         auto loggerRef = m_logger;
-        std::string vkBindID = m_name + '.' + acID;
-        VKBind vkBind = {vkBindID, acDescription, [&aLuaSandbox, loggerRef, aCallback]()
+        VKBind vkBind = {acID, acDisplayName, acDescription, [&aLuaSandbox, loggerRef, aCallback]()
         {
             auto state = aLuaSandbox.GetState();
             TryLuaFunction(loggerRef, aCallback);
         }};
 
-        m_vkBindInfos.emplace_back(VKBindInfo{vkBind});
+        m_vkBinds.emplace_back(std::move(vkBind));
     };
 
-    env["registerInput"] = [this, &aLuaSandbox](const std::string& acID, const std::string& acDescription, sol::function aCallback) {
+    env["registerHotkey"] = sol::overload(
+        registerHotkey,
+        [registerHotkey](const std::string& acID, const std::string& acDescription, sol::function aCallback) {
+            registerHotkey(acID, acDescription, "", aCallback);
+        });
+
+    auto registerInput = [this, &aLuaSandbox](const std::string& acID, const std::string& acDisplayName, const std::string& acDescription, sol::function aCallback) {
         if (acID.empty() ||
             (std::ranges::find_if(acID, [](char c) { return !(isalpha(c) || isdigit(c) || c == '_'); }) != acID.cend()))
         {
@@ -97,22 +102,27 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
             return;
         }
 
-        if (acDescription.empty())
+        if (acDisplayName.empty())
         {
-            m_logger->error("Tried to register an input with an empty description! (ID of input handler: {})", acID);
+            m_logger->error("Tried to register an input with an empty display name! (ID of input handler: {})", acID);
             return;
         }
 
         auto loggerRef = m_logger;
-        std::string vkBindID = m_name + '.' + acID;
-        VKBind vkBind = {vkBindID, acDescription, [&aLuaSandbox, loggerRef, aCallback](bool isDown)
+        VKBind vkBind = {acID, acDisplayName, acDescription, [&aLuaSandbox, loggerRef, aCallback](bool isDown)
         {
             auto state = aLuaSandbox.GetState();
             TryLuaFunction(loggerRef, aCallback, isDown);
         }};
 
-        m_vkBindInfos.emplace_back(VKBindInfo{vkBind});
+        m_vkBinds.emplace_back(std::move(vkBind));
     };
+
+    env["registerInput"] = sol::overload(
+        registerInput,
+        [registerInput](const std::string& acID, const std::string& acDescription, sol::function aCallback) {
+            registerInput(acID, acDescription, "", aCallback);
+        });
 
     // TODO: proper exception handling!
     try
@@ -155,9 +165,23 @@ bool ScriptContext::IsValid() const
     return m_initialized;
 }
 
-const TiltedPhoques::Vector<VKBindInfo>& ScriptContext::GetBinds() const
+std::optional<std::reference_wrapper<const VKBind>> ScriptContext::GetBind(const std::string& acId) const
 {
-    return m_vkBindInfos;
+    const auto it = std::ranges::find_if(m_vkBinds, [&acId](const auto& vkBind) {
+        return vkBind.ID == acId;
+    });
+
+    if (it != m_vkBinds.cend())
+    {
+        return *it;
+    }
+
+    return std::nullopt;
+}
+
+const TiltedPhoques::Vector<VKBind>& ScriptContext::GetBinds() const
+{
+    return m_vkBinds;
 }
 
 void ScriptContext::TriggerOnTweak() const

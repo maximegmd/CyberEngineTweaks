@@ -9,22 +9,24 @@ struct ScriptStore
 
     void LoadAll();
 
-    const TiltedPhoques::Vector<VKBindInfo>& GetBinds() const;
-    
+    [[nodiscard]] std::optional<std::reference_wrapper<const VKBind>> GetBind(const VKModBind& acModBind) const;
+    [[nodiscard]] std::optional<std::reference_wrapper<const TiltedPhoques::Vector<VKBind>>> GetBinds(const std::string& acModName) const;
+    [[nodiscard]] const TiltedPhoques::Map<std::string, std::reference_wrapper<const TiltedPhoques::Vector<VKBind>>>& GetAllBinds() const;
+
     void TriggerOnTweak() const;
     void TriggerOnInit() const;
     void TriggerOnUpdate(float aDeltaTime) const;
     void TriggerOnDraw() const;
-    
+
     void TriggerOnOverlayOpen() const;
     void TriggerOnOverlayClose() const;
 
-    sol::object GetMod(const std::string& acName) const;
+    [[nodiscard]] sol::object GetMod(const std::string& acName) const;
 
 private:
-    
+
     TiltedPhoques::Map<std::string, ScriptContext> m_contexts{ };
-    TiltedPhoques::Vector<VKBindInfo> m_vkBindInfos{ };
+    TiltedPhoques::Map<std::string, std::reference_wrapper<const TiltedPhoques::Vector<VKBind>>> m_vkBinds{ };
     LuaSandbox& m_sandbox;
     const Paths& m_paths;
     VKBindings& m_bindings;

@@ -6,6 +6,15 @@
 struct Overlay;
 struct LuaVM;
 
+struct VKBindInfo
+{
+    std::reference_wrapper<const VKBind> Bind;
+    uint64_t CodeBind{ 0 };
+    uint64_t SavedCodeBind{ 0 };
+    bool IsBinding{ false };
+    bool IsUnbindable{ true };
+};
+
 struct Bindings : Widget
 {
     Bindings(VKBindings& aBindings, Overlay& aOverlay, LuaVM& aVm);
@@ -14,15 +23,14 @@ struct Bindings : Widget
     bool OnEnable() override;
     bool OnDisable() override;
     void Update() override;
-    
-    void Load();
+
     void Save();
     void ResetChanges();
 
 private:
-    bool DrawBindings(bool aDrawHotkeys);
+   void Initialize();
 
-    TiltedPhoques::Vector<VKBindInfo> m_vkBindInfos{ };
+    TiltedPhoques::Map<std::string, TiltedPhoques::Vector<VKBindInfo>> m_vkBindInfos{ };
     VKBindings& m_bindings;
     Overlay& m_overlay;
     LuaVM& m_vm;
@@ -36,7 +44,4 @@ private:
     bool m_enabled{ false };
     bool m_madeChanges{ false };
     bool m_openChangesModal{ true };
-
-    bool m_hotkeysChanged{ false };
-    bool m_inputsChanged{ false };
 };

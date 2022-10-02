@@ -4,9 +4,19 @@
 #include "CET.h"
 #include "overlay/Overlay.h"
 
-const TiltedPhoques::Vector<VKBindInfo>& LuaVM::GetBinds() const
+std::optional<std::reference_wrapper<const VKBind>> LuaVM::GetBind(const VKModBind& acModBind) const
 {
-    return m_scripting.GetBinds();
+    return m_scripting.GetBind(acModBind);
+}
+
+std::optional<std::reference_wrapper<const TiltedPhoques::Vector<VKBind>>> LuaVM::GetBinds(const std::string& acModName) const
+{
+    return m_scripting.GetBinds(acModName);
+}
+
+const TiltedPhoques::Map<std::string, std::reference_wrapper<const TiltedPhoques::Vector<VKBind>>>& LuaVM::GetAllBinds() const
+{
+    return m_scripting.GetAllBinds();
 }
 
 bool LuaVM::ExecuteLua(const std::string& acCommand)

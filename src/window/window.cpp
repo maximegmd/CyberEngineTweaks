@@ -44,30 +44,21 @@ LRESULT APIENTRY Window::WndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM 
         }
 
         {
-            const auto res = s_pWindow->m_pBindings->OnWndProc(ahWnd, auMsg, awParam, alParam);
-            if (res)
+            if (s_pWindow->m_pBindings->OnWndProc(ahWnd, auMsg, awParam, alParam))
                 return 0; // VKBindings wants this input ignored!
         }
 
         {
-            const auto res = s_pWindow->m_pOverlay->OnWndProc(ahWnd, auMsg, awParam, alParam);
-            if (res)
-                return 0; // Toolbar wants this input ignored!
-        }
-
-        {
-            const auto res = s_pWindow->m_pD3D12->OnWndProc(ahWnd, auMsg, awParam, alParam);
-            if (res)
+            if (s_pWindow->m_pD3D12->OnWndProc(ahWnd, auMsg, awParam, alParam))
                 return 0; // D3D12 wants this input ignored!
         }
     }
-    
+
     return CallWindowProc(s_pWindow->m_wndProc, ahWnd, auMsg, awParam, alParam);
 }
 
-Window::Window(Overlay* apOverlay, VKBindings* apBindings, D3D12* apD3D12)
-    : m_pOverlay(apOverlay)
-    , m_pBindings(apBindings)
+Window::Window(VKBindings* apBindings, D3D12* apD3D12)
+    : m_pBindings(apBindings)
     , m_pD3D12(apD3D12)
 {
     s_pWindow = this;
@@ -92,7 +83,7 @@ Window::Window(Overlay* apOverlay, VKBindings* apBindings, D3D12* apD3D12)
     t.detach();
 }
 
-Window::~Window() 
+Window::~Window()
 {
     s_pWindow = nullptr;
 

@@ -18,7 +18,9 @@ struct Scripting
     void PostInitializeScripting();
     void PostInitializeMods();
 
-    const TiltedPhoques::Vector<VKBindInfo>& GetBinds() const;
+    [[nodiscard]] std::optional<std::reference_wrapper<const VKBind>> GetBind(const VKModBind& acModBind) const;
+    [[nodiscard]] std::optional<std::reference_wrapper<const TiltedPhoques::Vector<VKBind>>> GetBinds(const std::string& acModName) const;
+    [[nodiscard]] const TiltedPhoques::Map<std::string, std::reference_wrapper<const TiltedPhoques::Vector<VKBind>>>& GetAllBinds() const;
 
     void TriggerOnTweak() const;
     void TriggerOnInit() const;

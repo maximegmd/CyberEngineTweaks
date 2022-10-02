@@ -26,10 +26,12 @@ struct LuaVM
     LuaVM(Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12, Options& aOptions);
     ~LuaVM();
 
-    const TiltedPhoques::Vector<VKBindInfo>& GetBinds() const;
-    
+    [[nodiscard]] std::optional<std::reference_wrapper<const VKBind>> GetBind(const VKModBind& acModBind) const;
+    [[nodiscard]] std::optional<std::reference_wrapper<const TiltedPhoques::Vector<VKBind>>> GetBinds(const std::string& acModName) const;
+    [[nodiscard]] const TiltedPhoques::Map<std::string, std::reference_wrapper<const TiltedPhoques::Vector<VKBind>>>& GetAllBinds() const;
+
     bool ExecuteLua(const std::string& acCommand);
-        
+
     void Update(float aDeltaTime);
     void Draw();
     void ReloadAllMods();
@@ -40,7 +42,7 @@ struct LuaVM
     void Initialize();
 
     bool IsInitialized() const;
-    
+
     void BlockDraw(bool aBlockDraw);
 
     // Used by TweakDB when you delete a custom record
@@ -58,7 +60,7 @@ struct LuaVM
     void PostInitializeMods();
 
 protected:
-    
+
     void Hook(Options& aOptions);
 
     static void HookLog(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*, void*);
@@ -71,12 +73,12 @@ protected:
     static bool HookTranslateBytecode(uintptr_t aBinder, uintptr_t aData);
 
 private:
-  
+
     std::shared_mutex m_tdbidLock{ };
     TiltedPhoques::Map<uint64_t, TDBIDLookupEntry> m_tdbidLookup{ };
     // Used by TweakDB to get the flats associated with a record
     TiltedPhoques::Map<uint64_t, std::set<uint64_t>> m_tdbidDerivedLookup{ };
-    
+
     RED4ext::OpcodeHandlers::Handler_t m_realLog{ nullptr };
     RED4ext::OpcodeHandlers::Handler_t m_realLogChannel{nullptr};
     RED4ext::OpcodeHandlers::Handler_t m_realTDBIDToStringDEBUG{nullptr};
@@ -94,7 +96,7 @@ private:
 
     bool m_initialized{ false };
     bool m_drawBlocked{ false };
-    
+
     D3D12& m_d3d12;
     size_t m_connectUpdate;
 };

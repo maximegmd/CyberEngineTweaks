@@ -27,66 +27,52 @@ namespace HelperWidgets
         return activeID;
     }
 
-    bool BindWidget(VKBindInfo& aVKBindInfo, bool aUnbindable, float aOffsetX)
+    int32_t BindWidget(const VKBindInfo& acVKBindInfo, float aOffsetX)
     {
-        VKBindings& vkb { CET::Get().GetBindings() };
-
-        if (aVKBindInfo.IsBinding && !vkb.IsRecordingBind())
-        {
-            aVKBindInfo.CodeBind = vkb.GetLastRecordingResult();
-            aVKBindInfo.IsBinding = false;
-        }
+        const bool bound = acVKBindInfo.CodeBind != 0;
+        const bool modified = acVKBindInfo.CodeBind != acVKBindInfo.SavedCodeBind;
 
         ImVec4 curTextColor { ImGui::GetStyleColorVec4(ImGuiCol_Text) };
-        if (aVKBindInfo.CodeBind == 0)
-            curTextColor = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
-        if (aVKBindInfo.CodeBind != aVKBindInfo.SavedCodeBind)
+        if (!bound)
+            curTextColor = ImVec4(1.0f, modified ? 0.5f : 0.0f, 0.0f, 1.0f);
+        else if (modified)
             curTextColor = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
 
-        std::string label { aVKBindInfo.Bind.Description + ':' };
-        
+        std::string label { acVKBindInfo.Bind.get().IsHotkey() ? "[Hotkey] " : "[Input] " };
+        label += acVKBindInfo.Bind.get().DisplayName;
+        label += ':';
+
         ImGui::AlignTextToFramePadding();
 
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + aOffsetX);
 
         ImGui::PushStyleColor(ImGuiCol_Text, curTextColor);
-        ImGui::PushID(&aVKBindInfo.Bind.Description); // ensure we have unique ID by using pointer to Description, is OK, pointer will not be used inside ImGui :P
         ImGui::TextUnformatted(label.c_str());
-        ImGui::PopID();
         ImGui::PopStyleColor();
-        
-        std::string vkStr { (aVKBindInfo.IsBinding) ? ("BINDING...") : (VKBindings::GetBindString(aVKBindInfo.CodeBind)) };
-        
+
+        const std::string vkStr { acVKBindInfo.IsBinding ? "BINDING..." : VKBindings::GetBindString(acVKBindInfo.CodeBind) };
+
+        int32_t ret = 0;
+
         ImGui::SameLine();
-        ImGui::PushID(&aVKBindInfo.Bind.ID[0]); // same as PushID before, just make it pointer to ID and make sure we point to first char (so we can make one more unique ID from this pointer)
+        ImGui::PushID(&acVKBindInfo.CodeBind);
         if (ImGui::Button(vkStr.c_str()))
         {
-            if (!aVKBindInfo.IsBinding)
-            {
-                vkb.StartRecordingBind(aVKBindInfo.Bind);
-                aVKBindInfo.IsBinding = true;
-            }
+            if (!acVKBindInfo.IsBinding && !CET::Get().GetBindings().IsRecordingBind())
+                ret = 1; // start recording
         }
         ImGui::PopID();
-        
-        if (aUnbindable && aVKBindInfo.CodeBind)
+
+        if (acVKBindInfo.IsUnbindable && acVKBindInfo.CodeBind)
         {
-            ImGui::PushID(&aVKBindInfo.Bind.ID[1]); // same as PushID before, just make pointer a bit bigger :)
             ImGui::SameLine();
+            ImGui::PushID(&acVKBindInfo.SavedCodeBind);
             if (ImGui::Button("UNBIND"))
-            {
-                if (aVKBindInfo.IsBinding)
-                {
-                    vkb.StopRecordingBind();
-                    aVKBindInfo.IsBinding = false;
-                }
-                vkb.UnBind(aVKBindInfo.CodeBind);
-                aVKBindInfo.CodeBind = 0;
-            }
+                ret = -1; // unbind and stop recording if some is in progress
             ImGui::PopID();
         }
 
-        return (aVKBindInfo.CodeBind != aVKBindInfo.SavedCodeBind);
+        return ret;
     }
 
     bool BoolWidget(const std::string& aLabel, bool& aCurrent, bool aSaved, float aOffsetX)
