@@ -18,7 +18,7 @@
 #include <reverse/WeakReference.h>
 #include <reverse/ResourceAsyncReference.h>
 #include <reverse/Enum.h>
-#include <reverse/TweakDB.h>
+#include <reverse/TweakDB/TweakDB.h>
 #include <reverse/RTTILocator.h>
 #include <reverse/RTTIHelper.h>
 #include <reverse/RTTIExtender.h>
@@ -575,12 +575,6 @@ void Scripting::PostInitializeMods()
 
     luaVm["Game"] = this;
     luaGlobal["Game"] = luaVm["Game"];
-
-    // CET has its own flat pool manager
-    // If any other mod made changes to TweakDB, local flat pools will become invalid
-    // We assume that other mods only change TweakDB before the initialization state,
-    // so we refresh the local flat pools when enter this state
-    TweakDB::RefreshFlatPools();
 
     RTTIExtender::Initialize();
     m_mapper.Register();
