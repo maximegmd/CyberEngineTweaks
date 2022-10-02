@@ -11,7 +11,7 @@
 #include <RED4ext/Scripting/Natives/Generated/Vector3.hpp>
 
 #include <CET.h>
-#include <reverse/TweakDB.h>
+#include <reverse/TweakDB/TweakDB.h>
 
 
 bool TweakDBEditor::s_recordsFilterIsRegex = false;
@@ -901,20 +901,17 @@ bool TweakDBEditor::GetTweakDBIDStringQuery(RED4ext::TweakDBID aDBID, std::strin
 
 bool TweakDBEditor::DrawFlat(RED4ext::TweakDBID aDBID)
 {
-    auto* pTDB = RED4ext::TweakDB::Get();
+    RED4ext::CStackType data = TweakDB::InternalGetFlat(aDBID);
 
-    auto* pFlatValue = pTDB->GetFlatValue(aDBID);
-    if (pFlatValue == nullptr)
+    if (!data.value)
     {
         ImGui::Text("'%s' is not found in TweakDB", GetTweakDBIDStringFlat(aDBID.value & 0xFFFFFFFFFF).c_str());
         return false;
     }
 
-    RED4ext::CStackType stackType = pFlatValue->GetValue();
-
     ImGui::PushID(aDBID.name.hash);
     ImGui::PushID(aDBID.name.length);
-    bool isModified = DrawFlat(aDBID, stackType);
+    bool isModified = DrawFlat(aDBID, data);
     ImGui::PopID();
     ImGui::PopID();
 
