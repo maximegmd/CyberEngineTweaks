@@ -1,7 +1,8 @@
 #include <stdafx.h>
 
 #include "Settings.h"
-#include <scripting/LuaVM.h>
+
+#include <CET.h>
 
 Settings::Settings(Options& aOptions, LuaVM& aVm)
     : m_options(aOptions)
@@ -24,9 +25,20 @@ bool Settings::OnDisable()
     if (m_enabled)
     {
         m_vm.BlockDraw(m_madeChanges);
-        m_madeChanges = (HelperWidgets::UnsavedChangesPopup(m_openChangesModal, m_madeChanges, m_saveCB, m_loadCB) == 0);
+        const auto ret = HelperWidgets::UnsavedChangesPopup(
+            m_openChangesModal,
+            m_madeChanges,
+            [this]{ Save(); },
+            [this]{ Load(); });
+        m_madeChanges = ret == HelperWidgets::THWUCPResult::CHANGED;
         m_vm.BlockDraw(m_madeChanges);
+
         m_enabled = m_madeChanges;
+        if (ret == HelperWidgets::THWUCPResult::CANCEL)
+        {
+            CET::Get().GetOverlay().SetActiveWidget(WidgetID::SETTINGS);
+            m_enabled = true;
+        }
     }
     if (!m_enabled)
     {

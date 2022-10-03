@@ -1,8 +1,6 @@
 #include <stdafx.h>
 
-#include "CET.h"
-
-#include <overlay/Overlay.h>
+#include <CET.h>
 
 std::function<void()> VKBind::DelayedCall(bool isDown) const
 {
@@ -40,10 +38,16 @@ bool VKBind::IsInput() const
     return std::holds_alternative<std::function<TVKBindInputCallback>>(Handler);
 }
 
+bool VKBind::operator==(const std::string& id) const
+{
+    return ID == id;
+}
+
 VKBindings::VKBindings(Paths& aPaths, const Options& acOptions)
     : m_paths(aPaths)
     , m_cOptions(acOptions)
 {
+    Load();
 }
 
 bool VKBindings::IsInitialized() const noexcept
@@ -55,6 +59,8 @@ void VKBindings::InitializeMods(const TiltedPhoques::Map<std::string, std::refer
 {
     // this may only be called when there are no bindings mapped!
     assert(m_binds.empty());
+
+    const auto& overlayToggleModBind = Bindings::GetOverlayToggleModBind();
 
     // first, check existing bindings and try to bind in case there is no binding
     for (auto& [vkModName, vkBinds] : acVKBinds)
@@ -75,13 +81,12 @@ void VKBindings::InitializeMods(const TiltedPhoques::Map<std::string, std::refer
         }
     }
 
-
     // now, find all dead bindings
     TiltedPhoques::Vector<std::string> deadMods;
     for (const auto& [modName, modIdToBinds] : m_modIdToBinds)
     {
         // always ignore internal bindings
-        if (modName == m_cpOverlay->GetModBind().ModName)
+        if (modName == overlayToggleModBind.ModName)
             continue;
 
         // check if mod is present
@@ -137,93 +142,47 @@ void VKBindings::InitializeMods(const TiltedPhoques::Map<std::string, std::refer
         m_modIdToBinds.erase(deadMod);
 
     // lastly, insert CET overlay bind info
-    assert(m_cpOverlay); // overlay must be set before first use!
-    const auto& overlayModBind{m_cpOverlay->GetModBind()};
-    const auto overlayBindCode{GetBindCodeForModBind(overlayModBind, true)};
-    if (!Bind(overlayBindCode, overlayModBind))
-        m_modIdToBinds[overlayModBind.ModName][overlayModBind.ID] = 0;
+    const auto overlayBindCode{GetBindCodeForModBind(overlayToggleModBind, true)};
+    if (!Bind(overlayBindCode, overlayToggleModBind))
+        m_modIdToBinds[overlayToggleModBind.ModName][overlayToggleModBind.ID] = 0;
 
     // finally, save our filtered bindings back to not lose them
     Save();
 }
 
-bool VKBindings::Load(const Overlay& acOverlay)
+void VKBindings::Load()
 {
     StopRecordingBind();
 
-    m_cpOverlay = &acOverlay;
-
-    auto parseConfig{[this] {
-        if (std::ifstream ifs{m_paths.VKBindings()})
-        {
-            auto config{nlohmann::json::parse(ifs)};
-            auto foundOverlayBindCode{false};
-            for (auto& mod : config.items())
-            {
-                const auto& modName{mod.key()};
-                if (modName.find('.') < modName.length())
-                    return std::make_pair(false, false);
-
-                auto& modBinds{mod.value()};
-
-                for (auto& bind : modBinds.items())
-                {
-                    if (VKModBind{modName, bind.key()} == m_cpOverlay->GetModBind())
-                        foundOverlayBindCode = bind.value() != 0;
-
-                    m_modIdToBinds[modName][bind.key()] = bind.value();
-                }
-            }
-            return std::make_pair(true, foundOverlayBindCode);
-        }
-        return std::make_pair(false, false);
-    }};
-
-    auto parseOldConfig{[this] {
-            if (std::ifstream ifs{m_paths.VKBindings()})
-            {
-                auto config{nlohmann::json::parse(ifs)};
-                auto foundOverlayBindCode{false};
-                for (auto& it : config.items())
-                {
-                    const auto& modNameAndId{it.key()};
-                    const auto concatPoint = modNameAndId.find('.');
-                    if (concatPoint >= modNameAndId.length())
-                        return std::make_pair(false, false);
-
-                    auto modName = modNameAndId.substr(0, concatPoint);
-                    auto modBindId = modNameAndId.substr(concatPoint + 1);
-
-                    if (VKModBind{modName, modBindId} == m_cpOverlay->GetModBind())
-                        foundOverlayBindCode = it.value() != 0;
-
-                    m_modIdToBinds[modName][modBindId] = it.value();
-                }
-                return std::make_pair(true, foundOverlayBindCode);
-            }
-            return std::make_pair(false, false);
-        }};
-
-    // try to load from current path new type of config
-    auto [res, key] = parseConfig();
-    if (!res)
+    // try to load config
+    if (std::ifstream ifs{m_paths.VKBindings()})
     {
-        // try to load from current path, but older type of config
-        auto [resOld, keyOld] = parseOldConfig();
-        if (resOld)
+        const auto& overlayToggleModBind = Bindings::GetOverlayToggleModBind();
+        auto config{nlohmann::json::parse(ifs)};
+        for (auto& mod : config.items())
         {
-            // old config found and parsed, re-save it
-            Save();
-
-            // replace former res and key with ones from old config
-            res = resOld;
-            key = keyOld;
+            const auto& modName{mod.key()};
+            const auto concatPoint = modName.find('.');
+            if (concatPoint < modName.length())
+            {
+                // load old config type
+                auto modBindName = modName.substr(0, concatPoint);
+                auto modBindId = modName.substr(concatPoint + 1);
+                m_modIdToBinds[modBindName][modBindId] = mod.value();
+            }
+            else
+            {
+                // load new config type
+                auto& modBinds{mod.value()};
+                for (auto& bind : modBinds.items())
+                    m_modIdToBinds[modName][bind.key()] = bind.value();
+            }
         }
     }
 
-    m_initialized = true;
+    Save();
 
-    return res && key;
+    m_initialized = true;
 }
 
 void VKBindings::Save()
@@ -282,8 +241,8 @@ bool VKBindings::Bind(uint64_t aVKCodeBind, const VKModBind& acVKModBind)
             // first char matches! lets check that both binds are hotkey in this case
 
             const auto isHotkey = [](const VKModBind& vkModBind) {
-                const auto vkBind = CET::Get().GetVM().GetBind(vkModBind);
-                return vkBind && (*vkBind).get().IsHotkey();
+                const auto bind = CET::Get().GetVM().GetBind(vkModBind);
+                return bind && bind->IsHotkey();
             };
 
             if (!isHotkey(bind->second) || !isHotkey(acVKModBind))
@@ -352,38 +311,35 @@ bool VKBindings::IsFirstKeyUsed(uint64_t aVKCodeBind) const
 
 std::string VKBindings::GetBindString(uint64_t aVKCodeBind)
 {
-    std::string bindStr{};
     if (aVKCodeBind == 0)
-        bindStr = "NOT BOUND";
-    else
-    {
-        const auto bindDec{DecodeVKCodeBind(aVKCodeBind)};
-        for (const auto vkCode : bindDec)
-        {
-            if (vkCode == 0)
-                break;
+        return "NOT BOUND";
 
-            const char* specialName{GetSpecialKeyName(vkCode)};
-            if (specialName)
-                bindStr += specialName;
+    std::string bindStr;
+    const auto bindDec{DecodeVKCodeBind(aVKCodeBind)};
+    for (const auto vkCode : bindDec)
+    {
+        if (vkCode == 0)
+            break;
+
+        const char* specialName{GetSpecialKeyName(vkCode)};
+        if (specialName)
+            bindStr += specialName;
+        else
+        {
+            const char vkChar{static_cast<char>(MapVirtualKey(vkCode, MAPVK_VK_TO_CHAR))};
+            if (vkChar != 0)
+                bindStr += vkChar;
             else
-            {
-                const char vkChar{static_cast<char>(MapVirtualKey(vkCode, MAPVK_VK_TO_CHAR))};
-                if (vkChar != 0)
-                    bindStr += vkChar;
-                else
-                    bindStr += "UNKNOWN";
-            }
-            bindStr += " + ";
+                bindStr += "UNKNOWN";
         }
-        bindStr.erase(bindStr.rfind(" + "));
+        bindStr += " + ";
     }
-    return bindStr;
+    return bindStr.erase(bindStr.rfind(" + "));
 }
 
 std::string VKBindings::GetBindString(const VKModBind& acVKModBind) const
 {
-    return GetBindString(GetBindCodeForModBind(acVKModBind, false));
+    return GetBindString(GetBindCodeForModBind(acVKModBind));
 }
 
 uint64_t VKBindings::GetBindCodeForModBind(const VKModBind& acVKModBind, bool aIncludeDead) const
@@ -405,33 +361,33 @@ uint64_t VKBindings::GetBindCodeForModBind(const VKModBind& acVKModBind, bool aI
     return aIncludeDead || IsBound(idToBind->second) ? idToBind->second : 0;
 }
 
-std::optional<std::reference_wrapper<const VKModBind>> VKBindings::GetModBindForBindCode(uint64_t aVKCodeBind) const
+const VKModBind* VKBindings::GetModBindForBindCode(uint64_t aVKCodeBind) const
 {
     assert(aVKCodeBind != 0); // we never really want aVKCodeBind == 0 here... but leave some fallback for release!
     if (aVKCodeBind == 0)
-        return std::nullopt;
+        return nullptr;
 
     const auto bind = m_binds.find(aVKCodeBind);
     if (bind == m_binds.cend())
-        return std::nullopt;
+        return nullptr;
 
-    return bind->second;
+    return &bind->second;
 }
 
-std::optional<std::reference_wrapper<const VKModBind>> VKBindings::GetModBindStartingWithBindCode(uint64_t aVKCodeBind) const
+const VKModBind* VKBindings::GetModBindStartingWithBindCode(uint64_t aVKCodeBind) const
 {
     assert(aVKCodeBind != 0); // we never really want aVKCodeBind == 0 here... but leave some fallback for release!
     if (aVKCodeBind == 0)
-        return std::nullopt;
+        return nullptr;
 
     const auto bind = m_binds.lower_bound(aVKCodeBind & 0xFFFF000000000000ull);
     if (bind == m_binds.cend())
-        return std::nullopt;
+        return nullptr;
 
     if (!FirstKeyMatches(bind->first, aVKCodeBind))
-        return std::nullopt;
+        return nullptr;
 
-    return bind->second;
+    return &bind->second;
 }
 
 VKCodeBindDecoded VKBindings::DecodeVKCodeBind(uint64_t aVKCodeBind)
@@ -762,7 +718,7 @@ void VKBindings::ExecuteRecording(bool aLastKeyDown)
     if (m_isBindRecording)
     {
         const auto bind = CET::Get().GetVM().GetBind(m_recordingModBind);
-        if (!aLastKeyDown || (bind && (*bind).get().IsInput()))
+        if (!aLastKeyDown || (bind && bind->IsInput()))
             StopRecordingBind();
 
         return;
@@ -777,8 +733,9 @@ void VKBindings::ExecuteRecording(bool aLastKeyDown)
     {
         // we dont want to handle bindings when vm is not initialized or when overlay is open and we are not in binding state!
         // only exception allowed is any CET bind
-        const auto cetBind = possibleBind.ModName == m_cpOverlay->GetModBind().ModName;
-        if ((!CET::Get().GetVM().IsInitialized() || (m_cpOverlay && m_cpOverlay->IsEnabled())) && !cetBind)
+        const auto& overlayToggleModBind = Bindings::GetOverlayToggleModBind();
+        const auto cetBind = possibleBind.ModName == overlayToggleModBind.ModName;
+        if ((!CET::Get().GetVM().IsInitialized() || CET::Get().GetOverlay().IsEnabled()) && !cetBind)
         {
             m_recordingResult = 0;
             m_recording.fill(0);
@@ -787,17 +744,17 @@ void VKBindings::ExecuteRecording(bool aLastKeyDown)
         }
 
         // check first if this is a hotkey, as those should only execute when last key was up
-        if ((*bind).get().IsHotkey() && aLastKeyDown)
+        if (bind->IsHotkey() && aLastKeyDown)
             return;
 
         // execute CET binds immediately, otherwise cursor will not show on overlay toggle
         if (cetBind)
-            (*bind).get().Call(aLastKeyDown);
+            bind->Call(aLastKeyDown);
         else
-            m_queuedCallbacks.Add((*bind).get().DelayedCall(aLastKeyDown));
+            m_queuedCallbacks.Add(bind->DelayedCall(aLastKeyDown));
 
         // reset recording for simple input and when last key was up
-        if ((*bind).get().IsInput())
+        if (bind->IsInput())
         {
             m_recordingResult = 0;
             m_recording.fill(0);
@@ -831,7 +788,7 @@ LRESULT VKBindings::HandleRAWInput(HRAWINPUT ahRAWInput)
     }
     else if (raw->header.dwType == RIM_TYPEMOUSE)
     {
-        if (m_cpOverlay && m_isBindRecording && m_recordingModBind == m_cpOverlay->GetModBind())
+        if (m_isBindRecording && m_recordingModBind == Bindings::GetOverlayToggleModBind())
             return 0; // ignore mouse keys for toolbar key binding!
 
         const auto& m = raw->data.mouse;

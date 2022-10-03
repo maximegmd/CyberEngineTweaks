@@ -613,12 +613,12 @@ void Scripting::RegisterOverrides()
     m_override.Override("QuestTrackerGameController", "OnUninitialize", sol::nil, sol::nil, false, false, true);
 }
 
-std::optional<std::reference_wrapper<const VKBind>> Scripting::GetBind(const VKModBind& acModBind) const
+const VKBind* Scripting::GetBind(const VKModBind& acModBind) const
 {
     return m_store.GetBind(acModBind);
 }
 
-std::optional<std::reference_wrapper<const TiltedPhoques::Vector<VKBind>>> Scripting::GetBinds(const std::string& acModName) const
+const TiltedPhoques::Vector<VKBind>* Scripting::GetBinds(const std::string& acModName) const
 {
     return m_store.GetBinds(acModName);
 }

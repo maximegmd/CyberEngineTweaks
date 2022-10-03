@@ -25,6 +25,8 @@ struct VKBind
 
     [[nodiscard]] bool IsHotkey() const;
     [[nodiscard]] bool IsInput() const;
+
+    bool operator==(const std::string& id) const;
 };
 
 constexpr USHORT VKBC_MWHEELUP    { RI_MOUSE_WHEEL  | 1 };
@@ -48,7 +50,7 @@ struct VKBindings
     [[nodiscard]] static uint64_t EncodeVKCodeBind(VKCodeBindDecoded aVKCodeBindDecoded);
     [[nodiscard]] static const char* GetSpecialKeyName(USHORT aVKCode);
 
-    bool Load(const Overlay& acOverlay);
+    void Load();
     void Save();
 
     void Update();
@@ -64,9 +66,9 @@ struct VKBindings
     [[nodiscard]] static std::string GetBindString(uint64_t aVKCodeBind);
     [[nodiscard]] std::string GetBindString(const VKModBind& acVKModBind) const;
 
-    [[nodiscard]] uint64_t GetBindCodeForModBind(const VKModBind& acVKModBind, bool aIncludeDead) const;
-    [[nodiscard]] std::optional<std::reference_wrapper<const VKModBind>> GetModBindForBindCode(uint64_t aVKCodeBind) const;
-    [[nodiscard]] std::optional<std::reference_wrapper<const VKModBind>> GetModBindStartingWithBindCode(uint64_t aVKCodeBind) const;
+    [[nodiscard]] uint64_t GetBindCodeForModBind(const VKModBind& acVKModBind, bool aIncludeDead = false) const;
+    [[nodiscard]] const VKModBind* GetModBindForBindCode(uint64_t aVKCodeBind) const;
+    [[nodiscard]] const VKModBind* GetModBindStartingWithBindCode(uint64_t aVKCodeBind) const;
 
     bool StartRecordingBind(const VKModBind& acVKModBind);
     bool StopRecordingBind();
@@ -106,7 +108,6 @@ private:
 
     Paths& m_paths;
     const Options& m_cOptions;
-    const Overlay* m_cpOverlay{ nullptr };
 
     size_t m_connectUpdate{ static_cast<size_t>(-1) };
 };

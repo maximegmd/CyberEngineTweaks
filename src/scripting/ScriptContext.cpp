@@ -165,18 +165,16 @@ bool ScriptContext::IsValid() const
     return m_initialized;
 }
 
-std::optional<std::reference_wrapper<const VKBind>> ScriptContext::GetBind(const std::string& acId) const
+const VKBind* ScriptContext::GetBind(const std::string& acId) const
 {
-    const auto it = std::ranges::find_if(m_vkBinds, [&acId](const auto& vkBind) {
-        return vkBind.ID == acId;
-    });
+    const auto it = std::find(m_vkBinds.begin(), m_vkBinds.end(), acId);
 
     if (it != m_vkBinds.cend())
     {
-        return *it;
+        return &(*it);
     }
 
-    return std::nullopt;
+    return nullptr;
 }
 
 const TiltedPhoques::Vector<VKBind>& ScriptContext::GetBinds() const

@@ -75,28 +75,28 @@ void ScriptStore::LoadAll()
     m_bindings.InitializeMods(m_vkBinds);
 }
 
-std::optional<std::reference_wrapper<const VKBind>> ScriptStore::GetBind(const VKModBind& acModBind) const
+const VKBind* ScriptStore::GetBind(const VKModBind& acModBind) const
 {
     const auto& cpOverlay = CET::Get().GetOverlay();
-    if (acModBind == cpOverlay.GetModBind())
-        return cpOverlay.GetBind();
+    if (acModBind == Bindings::GetOverlayToggleModBind())
+        return &Bindings::GetOverlayToggleBind();
 
     const auto it = m_contexts.find(acModBind.ModName);
     if (it != m_contexts.cend())
         return it->second.GetBind(acModBind.ID);
 
-    return std::nullopt;
+    return nullptr;
 }
 
-std::optional<std::reference_wrapper<const TiltedPhoques::Vector<VKBind>>> ScriptStore::GetBinds(const std::string& acModName) const
+const TiltedPhoques::Vector<VKBind>* ScriptStore::GetBinds(const std::string& acModName) const
 {
     const auto it = m_contexts.find(acModName);
     if (it != m_contexts.cend())
     {
-        return it->second.GetBinds();
+        return &it->second.GetBinds();
     }
 
-    return std::nullopt;
+    return nullptr;
 }
 
 const TiltedPhoques::Map<std::string, std::reference_wrapper<const TiltedPhoques::Vector<VKBind>>>& ScriptStore::GetAllBinds() const

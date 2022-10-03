@@ -17,3 +17,5 @@ struct Widget
     virtual bool OnDisable() = 0;
     virtual void Update() = 0;
 };
+
+using TWidgetCB = std::function<void()>;

@@ -10,7 +10,7 @@ struct ScriptContext
 
     [[nodiscard]] bool IsValid() const;
 
-    [[nodiscard]] std::optional<std::reference_wrapper<const VKBind>> GetBind(const std::string& acId) const;
+    [[nodiscard]] const VKBind* GetBind(const std::string& acId) const;
     [[nodiscard]] const TiltedPhoques::Vector<VKBind>& GetBinds() const;
 
     void TriggerOnTweak() const;

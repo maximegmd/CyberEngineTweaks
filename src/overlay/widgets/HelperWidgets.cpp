@@ -2,9 +2,6 @@
 
 #include "HelperWidgets.h"
 
-#include "CET.h"
-#include "overlay/Overlay.h"
-
 namespace HelperWidgets
 {
 
@@ -25,54 +22,6 @@ namespace HelperWidgets
             activeID = WidgetID::TWEAKDB;
         ImGui::Spacing();
         return activeID;
-    }
-
-    int32_t BindWidget(const VKBindInfo& acVKBindInfo, float aOffsetX)
-    {
-        const bool bound = acVKBindInfo.CodeBind != 0;
-        const bool modified = acVKBindInfo.CodeBind != acVKBindInfo.SavedCodeBind;
-
-        ImVec4 curTextColor { ImGui::GetStyleColorVec4(ImGuiCol_Text) };
-        if (!bound)
-            curTextColor = ImVec4(1.0f, modified ? 0.5f : 0.0f, 0.0f, 1.0f);
-        else if (modified)
-            curTextColor = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
-
-        std::string label { acVKBindInfo.Bind.get().IsHotkey() ? "[Hotkey] " : "[Input] " };
-        label += acVKBindInfo.Bind.get().DisplayName;
-        label += ':';
-
-        ImGui::AlignTextToFramePadding();
-
-        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + aOffsetX);
-
-        ImGui::PushStyleColor(ImGuiCol_Text, curTextColor);
-        ImGui::TextUnformatted(label.c_str());
-        ImGui::PopStyleColor();
-
-        const std::string vkStr { acVKBindInfo.IsBinding ? "BINDING..." : VKBindings::GetBindString(acVKBindInfo.CodeBind) };
-
-        int32_t ret = 0;
-
-        ImGui::SameLine();
-        ImGui::PushID(&acVKBindInfo.CodeBind);
-        if (ImGui::Button(vkStr.c_str()))
-        {
-            if (!acVKBindInfo.IsBinding && !CET::Get().GetBindings().IsRecordingBind())
-                ret = 1; // start recording
-        }
-        ImGui::PopID();
-
-        if (acVKBindInfo.IsUnbindable && acVKBindInfo.CodeBind)
-        {
-            ImGui::SameLine();
-            ImGui::PushID(&acVKBindInfo.SavedCodeBind);
-            if (ImGui::Button("UNBIND"))
-                ret = -1; // unbind and stop recording if some is in progress
-            ImGui::PopID();
-        }
-
-        return ret;
     }
 
     bool BoolWidget(const std::string& aLabel, bool& aCurrent, bool aSaved, float aOffsetX)
@@ -96,11 +45,11 @@ namespace HelperWidgets
         return (aCurrent != aSaved);
     }
 
-    int32_t UnsavedChangesPopup(bool& aFirstTime, bool aMadeChanges, TUCHPSave aSaveCB, TUCHPLoad aLoadCB)
+    THWUCPResult UnsavedChangesPopup(bool& aFirstTime, bool aMadeChanges, TWidgetCB aSaveCB, TWidgetCB aLoadCB, TWidgetCB aCancelCB)
     {
         if (aMadeChanges)
         {
-            int32_t res = 0;
+            auto res = THWUCPResult::CHANGED;
             if (aFirstTime)
             {
                 ImGui::OpenPopup("Unsaved changes");
@@ -118,20 +67,31 @@ namespace HelperWidgets
                 ImGui::TextUnformatted("Do you wish to apply them or discard them?");
                 ImGui::Separator();
 
-                const auto buttonWidth { (longerTextSz - ImGui::GetStyle().ItemSpacing.x) / 2 };
+                const auto buttonWidth { (longerTextSz - (2.0f * ImGui::GetStyle().ItemSpacing.x)) / 3.0f };
 
                 if (ImGui::Button("Apply", ImVec2(buttonWidth, 0)))
                 {
-                    aSaveCB();
-                    res = 1;
+                    if (aSaveCB)
+                        aSaveCB();
+                    res = THWUCPResult::APPLY;
                     aFirstTime = true;
                     ImGui::CloseCurrentPopup();
                 }
                 ImGui::SameLine();
                 if (ImGui::Button("Discard", ImVec2(buttonWidth, 0)))
                 {
-                    aLoadCB();
-                    res = -1;
+                    if (aLoadCB)
+                        aLoadCB();
+                    res = THWUCPResult::DISCARD;
+                    aFirstTime = true;
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Cancel", ImVec2(buttonWidth, 0)))
+                {
+                    if (aCancelCB)
+                        aCancelCB();
+                    res = THWUCPResult::CANCEL;
                     aFirstTime = true;
                     ImGui::CloseCurrentPopup();
                 }
@@ -141,6 +101,6 @@ namespace HelperWidgets
             }
             return res;
         }
-        return 1; // no changes, same as if we were to Apply
+        return THWUCPResult::APPLY; // no changes, same as if we were to Apply
     }
 }

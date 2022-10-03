@@ -20,17 +20,16 @@ struct Overlay
 
     [[nodiscard]] bool IsInitialized() const noexcept;
 
-    Console& GetConsole();
-    Bindings& GetBindings();
-    Settings& GetSettings();
+    [[nodiscard]] Console& GetConsole();
+    [[nodiscard]] Bindings& GetBindings();
+    [[nodiscard]] Settings& GetSettings();
 
     void Toggle();
     [[nodiscard]] bool IsEnabled() const noexcept;
-    [[nodiscard]] const VKBind& GetBind() const noexcept;
-    [[nodiscard]] const VKBindInfo& GetBindInfo() const noexcept;
-    [[nodiscard]] const VKModBind& GetModBind() const noexcept;
 
     void Update();
+
+    void SetActiveWidget(WidgetID aNewActive);
 
 protected:
 
@@ -39,12 +38,6 @@ protected:
     static BOOL ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis);
 
 private:
-
-    void SetActiveWidget(WidgetID aNewActive);
-
-    VKBind m_VKBindOverlay{ "overlay_key", "Overlay Key", "Use this hotkey to toggle overlay on and off.", [this](){ Toggle(); }};
-    VKBindInfo m_VKBIOverlay{m_VKBindOverlay, 0, 0, false, false};
-    VKModBind m_VKModBind{"cet", m_VKBindOverlay.ID};
 
     Console m_console;
     Bindings m_bindings;
@@ -60,8 +53,6 @@ private:
     std::atomic_bool m_enabled{ false };
     std::atomic_bool m_toggled{ false };
     bool m_initialized{ false };
-
-    std::atomic_bool m_showFirstTimeModal{ false };
 
     D3D12& m_d3d12;
     Options& m_options;

@@ -9,8 +9,8 @@ struct ScriptStore
 
     void LoadAll();
 
-    [[nodiscard]] std::optional<std::reference_wrapper<const VKBind>> GetBind(const VKModBind& acModBind) const;
-    [[nodiscard]] std::optional<std::reference_wrapper<const TiltedPhoques::Vector<VKBind>>> GetBinds(const std::string& acModName) const;
+    [[nodiscard]] const VKBind* GetBind(const VKModBind& acModBind) const;
+    [[nodiscard]] const TiltedPhoques::Vector<VKBind>* GetBinds(const std::string& acModName) const;
     [[nodiscard]] const TiltedPhoques::Map<std::string, std::reference_wrapper<const TiltedPhoques::Vector<VKBind>>>& GetAllBinds() const;
 
     void TriggerOnTweak() const;

@@ -14,11 +14,9 @@ void Overlay::PostInitialize()
 {
     if (!m_initialized)
     {
-        if (m_options.IsFirstLaunch)
-        {
-            m_showFirstTimeModal = true;
+        if (Bindings::IsFirstTimeSetup())
             Toggle();
-        }
+
         m_initialized = true;
     }
 }
@@ -40,28 +38,12 @@ Settings& Overlay::GetSettings()
 
 void Overlay::Toggle()
 {
-    if (!m_toggled)
-        m_toggled = true;
+    m_toggled = !m_toggled;
 }
 
 bool Overlay::IsEnabled() const noexcept
 {
     return m_initialized && m_enabled;
-}
-
-const VKBind& Overlay::GetBind() const noexcept
-{
-    return m_VKBindOverlay;
-}
-
-const VKBindInfo& Overlay::GetBindInfo() const noexcept
-{
-    return m_VKBIOverlay;
-}
-
-const VKModBind& Overlay::GetModBind() const noexcept
-{
-    return m_VKModBind;
 }
 
 void Overlay::Update()
@@ -71,13 +53,19 @@ void Overlay::Update()
 
     if (m_toggled)
     {
+        if (Bindings::IsFirstTimeSetup())
+        {
+            ImGui::OpenPopup("CET First Time Setup");
+            m_vm.BlockDraw(true);
+        }
+
         if (m_enabled)
         {
             if (m_widgets[static_cast<size_t>(m_activeWidgetID)]->OnDisable())
             {
                 m_vm.OnOverlayClose();
+                m_enabled = !m_toggled;
                 m_toggled = false;
-                m_enabled = false;
             }
         }
         else
@@ -85,8 +73,8 @@ void Overlay::Update()
             if (m_widgets[static_cast<size_t>(m_activeWidgetID)]->OnEnable())
             {
                 m_vm.OnOverlayOpen();
-                m_toggled = false;
                 m_enabled = true;
+                m_toggled = false;
             }
         }
 
@@ -101,54 +89,8 @@ void Overlay::Update()
     if (!m_enabled)
         return;
 
-    if (m_options.IsFirstLaunch)
-    {
-        if (m_showFirstTimeModal)
-        {
-            ImGui::OpenPopup("CET First Time Setup");
-            m_showFirstTimeModal = false;
-            m_vm.BlockDraw(true);
-        }
-
-        if (ImGui::BeginPopupModal("CET First Time Setup", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-        {
-            const auto shorterTextSz { ImGui::CalcTextSize("Combo can be composed from up to 4 keys.").x };
-            const auto longerTextSz { ImGui::CalcTextSize("Please, bind some key combination for toggling overlay!").x };
-            const auto diffTextSz { longerTextSz - shorterTextSz };
-
-            ImGui::TextUnformatted("Please, bind some key combination for toggling overlay!");
-            ImGui::SetCursorPosX(diffTextSz / 2);
-            ImGui::TextUnformatted("Combo can be composed from up to 4 keys.");
-            ImGui::Separator();
-
-            auto& bindings = CET::Get().GetBindings();
-            if (m_VKBIOverlay.IsBinding && !bindings.IsRecordingBind())
-            {
-                m_VKBIOverlay.CodeBind = bindings.GetLastRecordingResult();
-                m_VKBIOverlay.SavedCodeBind = m_VKBIOverlay.CodeBind;
-                m_VKBIOverlay.IsBinding = false;
-
-                bindings.UnBind(m_VKBIOverlay.CodeBind);
-                bindings.Bind(m_VKBIOverlay.CodeBind, m_VKModBind);
-                bindings.Save();
-
-                m_options.IsFirstLaunch = false;
-                m_vm.BlockDraw(false);
-                ImGui::CloseCurrentPopup();
-            }
-
-            // TODO - do not hardcode offset! this somewhat works temporarily...
-            const auto drawState = HelperWidgets::BindWidget(m_VKBIOverlay, diffTextSz * 0.75f);
-            if (drawState > 0)
-            {
-                bindings.StartRecordingBind(m_VKModBind);
-                m_VKBIOverlay.IsBinding = true;
-            }
-
-            ImGui::EndPopup();
-        }
+    if (m_bindings.FirstTimeSetup())
         return;
-    }
 
     auto& d3d12 = CET::Get().GetD3D12();
     const SIZE resolution = d3d12.GetResolution();
@@ -246,7 +188,7 @@ void Overlay::Hook()
 
 Overlay::Overlay(D3D12& aD3D12, VKBindings& aBindings, Options& aOptions, LuaVM& aVm)
     : m_console(aVm)
-    , m_bindings(aBindings, *this, aVm)
+    , m_bindings(aBindings, aVm)
     , m_settings(aOptions, aVm)
     , m_tweakDBEditor(aVm)
     , m_d3d12(aD3D12)
@@ -259,8 +201,6 @@ Overlay::Overlay(D3D12& aD3D12, VKBindings& aBindings, Options& aOptions, LuaVM&
     m_widgets[static_cast<size_t>(WidgetID::TWEAKDB)] = &m_tweakDBEditor;
 
     Hook();
-
-    m_options.IsFirstLaunch = !aBindings.Load(*this);
 
     m_connectInitialized = aD3D12.OnInitialized.Connect([this]() { PostInitialize(); });
     m_connectUpdate = aD3D12.OnUpdate.Connect([this]() { Update(); });
