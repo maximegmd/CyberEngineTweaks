@@ -41,7 +41,6 @@ private:
     VKBindings& m_bindings;
     LuaVM& m_vm;
 
-    bool m_luaVMReady{ false };
     bool m_enabled{ false };
     bool m_madeChanges{ false };
     bool m_openChangesModal{ true };
