@@ -3,6 +3,7 @@
 #include "Bindings.h"
 
 #include <CET.h>
+#include <Utils.h>
 
 namespace
 {
@@ -43,16 +44,16 @@ WidgetResult Bindings::OnDisable()
     if (m_enabled)
     {
         m_vm.BlockDraw(m_madeChanges);
-        const auto ret = HelperWidgets::UnsavedChangesPopup(
+        const auto ret = UnsavedChangesPopup(
             m_openChangesModal,
             m_madeChanges,
             [this]{ Save(); },
             [this]{ ResetChanges(); });
-        m_madeChanges = ret == HelperWidgets::THWUCPResult::CHANGED;
+        m_madeChanges = ret == THWUCPResult::CHANGED;
         m_vm.BlockDraw(m_madeChanges);
 
         m_enabled = m_madeChanges;
-        if (ret == HelperWidgets::THWUCPResult::CANCEL)
+        if (ret == THWUCPResult::CANCEL)
         {
             CET::Get().GetOverlay().SetActiveWidget(WidgetID::BINDINGS);
             m_enabled = true;
@@ -71,7 +72,7 @@ WidgetResult Bindings::OnDisable()
 
 void Bindings::Update()
 {
-    const auto itemWidth = HelperWidgets::GetAlignedItemWidth(2);
+    const auto itemWidth = GetAlignedItemWidth(2);
 
     if (ImGui::Button("Save", ImVec2(itemWidth, 0)))
         Save();

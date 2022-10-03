@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Widget.h"
-#include "HelperWidgets.h"
 
 struct VKBindings;
 struct Overlay;
@@ -22,6 +21,8 @@ struct Settings : Widget
     void ResetToDefaults();
 
 private:
+    void UpdateAndDrawSetting(const std::string& aLabel, bool& aCurrent, const bool& acSaved, float aOffsetX = 0.0f);
+
     bool m_patchEnableDebug{ false };
     bool m_patchRemovePedestrians{ false };
     bool m_patchAsyncCompute{ false };
@@ -43,7 +44,4 @@ private:
     bool m_enabled{ false };
     bool m_madeChanges{ false };
     bool m_openChangesModal{ true };
-
-    bool m_patchesChanged{ false };
-    bool m_devChanged{ false };
 };

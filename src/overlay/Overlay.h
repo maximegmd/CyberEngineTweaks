@@ -39,6 +39,8 @@ protected:
 
 private:
 
+    WidgetID ToolbarWidget() const;
+
     Console m_console;
     Bindings m_bindings;
     Settings m_settings;

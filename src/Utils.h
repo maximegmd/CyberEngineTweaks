@@ -1,5 +1,7 @@
 #pragma once
 
+#include <overlay/widgets/Widget.h>
+
 void ltrim(std::string& s);
 void rtrim(std::string& s);
 void trim(std::string& s);
@@ -37,3 +39,14 @@ sol::function MakeSolFunction(sol::state& aState, F aFunc)
 
 // Check if Lua object is of cdata type
 bool IsLuaCData(sol::object aObject);
+
+float GetAlignedItemWidth(int64_t aItemsCount);
+
+enum class THWUCPResult
+{
+    CHANGED,
+    APPLY,
+    DISCARD,
+    CANCEL
+};
+THWUCPResult UnsavedChangesPopup(bool& aFirstTime, bool aMadeChanges, TWidgetCB aSaveCB, TWidgetCB aLoadCB, TWidgetCB aCancelCB = nullptr);

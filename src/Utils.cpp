@@ -174,3 +174,67 @@ bool IsLuaCData(sol::object aObject)
     // Since we're not using other types, this should be enough to check for int64/uint64 value.
     return (static_cast<int>(aObject.get_type()) == 10);
 }
+
+float GetAlignedItemWidth(int64_t aItemsCount)
+{
+    return (ImGui::GetWindowContentRegionWidth() - static_cast<float>(aItemsCount - 1) * ImGui::GetStyle().ItemSpacing.x) / static_cast<float>(aItemsCount);
+}
+
+THWUCPResult UnsavedChangesPopup(bool& aFirstTime, bool aMadeChanges, TWidgetCB aSaveCB, TWidgetCB aLoadCB, TWidgetCB aCancelCB)
+{
+    if (aMadeChanges)
+    {
+        auto res = THWUCPResult::CHANGED;
+        if (aFirstTime)
+        {
+            ImGui::OpenPopup("Unsaved changes");
+            aFirstTime = false;
+        }
+
+        if (ImGui::BeginPopupModal("Unsaved changes", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+        {
+            const auto shorterTextSz { ImGui::CalcTextSize("You have some unsaved changes.").x };
+            const auto longerTextSz { ImGui::CalcTextSize("Do you wish to apply them or discard them?").x };
+            const auto diffTextSz { longerTextSz - shorterTextSz };
+
+            ImGui::SetCursorPosX(diffTextSz / 2);
+            ImGui::TextUnformatted("You have some unsaved changes.");
+            ImGui::TextUnformatted("Do you wish to apply them or discard them?");
+            ImGui::Separator();
+
+            const auto itemWidth = GetAlignedItemWidth(3);
+
+            if (ImGui::Button("Apply", ImVec2(itemWidth, 0)))
+            {
+                if (aSaveCB)
+                    aSaveCB();
+                res = THWUCPResult::APPLY;
+                aFirstTime = true;
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Discard", ImVec2(itemWidth, 0)))
+            {
+                if (aLoadCB)
+                    aLoadCB();
+                res = THWUCPResult::DISCARD;
+                aFirstTime = true;
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel", ImVec2(itemWidth, 0)))
+            {
+                if (aCancelCB)
+                    aCancelCB();
+                res = THWUCPResult::CANCEL;
+                aFirstTime = true;
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SetItemDefaultFocus();
+
+            ImGui::EndPopup();
+        }
+        return res;
+    }
+    return THWUCPResult::APPLY; // no changes, same as if we were to Apply
+}
