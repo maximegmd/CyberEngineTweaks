@@ -2,10 +2,8 @@
 
 #include "Console.h"
 
-#include "HelperWidgets.h"
-#include "Utils.h"
-
 #include <scripting/LuaVM.h>
+#include <Utils.h>
 
 Console::Console(LuaVM& aVm)
     : m_vm(aVm)
@@ -68,7 +66,7 @@ int Console::HandleConsoleHistory(ImGuiInputTextCallbackData* apData)
 
 void Console::Update()
 {
-    const auto itemWidth = HelperWidgets::GetAlignedItemWidth(5);
+    const auto itemWidth = GetAlignedItemWidth(5);
 
     ImGui::Checkbox("Clear input", &m_inputClear);
     ImGui::SameLine(itemWidth, ImGui::GetStyle().ItemSpacing.x);
@@ -235,7 +233,7 @@ void Console::DrawGameLog()
     {
         ImGui::Begin("Game Log", &m_showGameLog);
 
-        const auto itemWidth = HelperWidgets::GetAlignedItemWidth(2);
+        const auto itemWidth = GetAlignedItemWidth(2);
 
         if (ImGui::Button("Clear output", ImVec2(itemWidth, 0)))
         {

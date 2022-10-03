@@ -1,17 +1,17 @@
 #include <stdafx.h>
 
 #include "TweakDBEditor.h"
-#include "HelperWidgets.h"
-#include "Utils.h"
+
+#include <CET.h>
+
+#include <reverse/TweakDB/TweakDB.h>
+#include <Utils.h>
 
 #include <RED4ext/Scripting/Natives/Generated/Color.hpp>
 #include <RED4ext/Scripting/Natives/Generated/EulerAngles.hpp>
 #include <RED4ext/Scripting/Natives/Generated/Quaternion.hpp>
 #include <RED4ext/Scripting/Natives/Generated/Vector2.hpp>
 #include <RED4ext/Scripting/Natives/Generated/Vector3.hpp>
-
-#include <CET.h>
-#include <reverse/TweakDB/TweakDB.h>
 
 
 bool TweakDBEditor::s_recordsFilterIsRegex = false;

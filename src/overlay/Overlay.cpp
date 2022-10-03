@@ -2,13 +2,11 @@
 
 #include "Overlay.h"
 
-#include "CET.h"
-#include "widgets/HelperWidgets.h"
-
-#include <Options.h>
+#include <CET.h>
 
 #include <d3d12/D3D12.h>
 #include <scripting/LuaVM.h>
+#include <Utils.h>
 
 void Overlay::PostInitialize()
 {
@@ -113,7 +111,7 @@ void Overlay::Update()
     {
         const ImVec2 cZeroVec = {0, 0};
 
-        SetActiveWidget(HelperWidgets::ToolbarWidget());
+        SetActiveWidget(ToolbarWidget());
 
         if (m_activeWidgetID == WidgetID::CONSOLE)
         {
@@ -239,4 +237,25 @@ void Overlay::SetActiveWidget(WidgetID aNewActive)
                 m_activeWidgetID = m_nextActiveWidgetID;
         }
     }
+}
+
+WidgetID Overlay::ToolbarWidget() const
+{
+    const auto itemWidth = GetAlignedItemWidth(static_cast<int64_t>(WidgetID::COUNT));
+
+    WidgetID activeID = WidgetID::COUNT;
+    if (ImGui::Button("Console", ImVec2(itemWidth, 0)))
+        activeID = WidgetID::CONSOLE;
+    ImGui::SameLine();
+    if (ImGui::Button("Bindings", ImVec2(itemWidth, 0)))
+        activeID = WidgetID::BINDINGS;
+    ImGui::SameLine();
+    if (ImGui::Button("Settings", ImVec2(itemWidth, 0)))
+        activeID = WidgetID::SETTINGS;
+    ImGui::SameLine();
+    if (ImGui::Button("TweakDB Editor", ImVec2(itemWidth, 0)))
+        activeID = WidgetID::TWEAKDB;
+    ImGui::Spacing();
+
+    return activeID;
 }
