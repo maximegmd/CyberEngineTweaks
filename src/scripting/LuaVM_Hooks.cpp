@@ -71,17 +71,17 @@ void LuaVM::HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack,
         else
             consoleLogger->info("[{}] {}", channelSV, textSV);
     }
-    
+
     CET::Get().GetVM().m_logCount.fetch_add(1);
 }
 
 LuaVM::LuaVM(Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12, Options& aOptions)
     : m_scripting(aPaths, aBindings, aD3D12, aOptions)
     , m_d3d12(aD3D12)
-    , m_lastframe(std::chrono::high_resolution_clock::now())
 {
     Hook(aOptions);
 
+    aBindings.SetVM(this);
     m_connectUpdate = aD3D12.OnUpdate.Connect([this]() { Draw(); });
 }
 
@@ -238,7 +238,7 @@ void LuaVM::Hook(Options& aOptions)
             }
         }
     }
-    
+
     {
         RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_TweakDBLoad);
         uint8_t* pLocation = func.GetAddr();
@@ -274,5 +274,5 @@ void LuaVM::Hook(Options& aOptions)
     //    }
     //}
 
-    
+
 }

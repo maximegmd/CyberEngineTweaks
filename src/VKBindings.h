@@ -37,6 +37,7 @@ constexpr USHORT VKBC_MWHEELLEFT  { RI_MOUSE_HWHEEL | 0 };
 struct Options;
 struct Overlay;
 struct D3D12;
+struct LuaVM;
 struct VKBindings
 {
     VKBindings(Paths& aPaths, const Options& acOptions);
@@ -55,7 +56,6 @@ struct VKBindings
 
     void Update();
 
-    void Clear();
     bool Bind(uint64_t aVKCodeBind, const VKModBind& acVKModBind);
     bool UnBind(uint64_t aVKCodeBind);
     bool UnBind(const VKModBind& acVKModBind);
@@ -80,6 +80,8 @@ struct VKBindings
 
     void ConnectUpdate(D3D12& aD3D12);
     void DisconnectUpdate(D3D12& aD3D12);
+
+    void SetVM(const LuaVM* acpVM);
 
 private:
 
@@ -106,6 +108,7 @@ private:
     bool m_isBindRecording{ false };
     bool m_initialized{ false };
 
+    const LuaVM* m_cpVm;
     Paths& m_paths;
     const Options& m_cOptions;
 

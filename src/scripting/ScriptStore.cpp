@@ -45,6 +45,11 @@ void ScriptStore::LoadAll()
 
         fPath = absolute(fPath);
         auto fPathStr = UTF16ToUTF8(fPath.native());
+        if (fPathStr.find("\\" + Bindings::GetOverlayToggleModBind().ModName) < fPathStr.length())
+        {
+            consoleLogger->warn("Ignoring directory which uses reserved name '{}' does not contain init.lua! ('{}')", Bindings::GetOverlayToggleModBind().ModName, fPathStr);
+            continue;
+        }
 
         if (!exists(fPath / "init.lua"))
         {
@@ -62,7 +67,7 @@ void ScriptStore::LoadAll()
         auto ctx = ScriptContext{m_sandbox, fPath, name};
         if (ctx.IsValid())
         {
-            const auto ctxIt = m_contexts.emplace(name, std::move(ctx));
+            m_contexts.emplace(name, std::move(ctx));
             consoleLogger->info("Mod {} loaded! ('{}')", name, fPathStr);
         }
         else
@@ -79,7 +84,6 @@ void ScriptStore::LoadAll()
 
 const VKBind* ScriptStore::GetBind(const VKModBind& acModBind) const
 {
-    const auto& cpOverlay = CET::Get().GetOverlay();
     if (acModBind == Bindings::GetOverlayToggleModBind())
         return &Bindings::GetOverlayToggleBind();
 

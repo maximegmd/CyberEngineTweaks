@@ -84,8 +84,6 @@ private:
     TSetLoadingState* m_realSetLoadingState{ nullptr };
     TTweakDBLoad* m_realTweakDBLoad{ nullptr };
 
-    std::chrono::time_point<std::chrono::high_resolution_clock> m_lastframe;
-
     std::atomic<uint64_t> m_logCount{ 0 };
 
     Scripting m_scripting;
@@ -95,4 +93,5 @@ private:
 
     D3D12& m_d3d12;
     size_t m_connectUpdate;
+    std::chrono::time_point<std::chrono::high_resolution_clock> m_lastframe{ std::chrono::high_resolution_clock::now() };
 };
