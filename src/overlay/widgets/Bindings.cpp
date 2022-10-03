@@ -80,112 +80,98 @@ void Bindings::Update()
 
     ImGui::Spacing();
 
-    if (!m_luaVMReady && m_vm.IsInitialized())
-        Initialize();
-
-    if (!m_luaVMReady)
-        ImGui::TextUnformatted("LuaVM is not yet initialized!");
-    else
+    m_madeChanges = false;
+    for (auto modBindingsIt = m_vkBindInfos.begin(); modBindingsIt != m_vkBindInfos.end(); ++modBindingsIt)
     {
-        m_madeChanges = false;
-        for (auto modBindingsIt = m_vkBindInfos.begin(); modBindingsIt != m_vkBindInfos.end(); ++modBindingsIt)
-        {
-            // transform mod name to nicer format until modinfo is in
-            std::string activeModName = modBindingsIt.key() == "cet" ? "Cyber Engine Tweaks" : modBindingsIt.key();
-            bool capitalize = true;
-            std::ranges::transform(std::as_const(activeModName), activeModName.begin(), [&capitalize](char c) {
-                if (!std::isalnum(c))
-                {
-                    capitalize = true;
-                    return ' ';
-                }
-                if (capitalize)
-                {
-                    capitalize = false;
-                    return static_cast<char>(std::toupper(c));
-                }
-                return c;
-            });
-
-            ImGui::TextUnformatted(activeModName.c_str());
-            ImGui::Spacing();
-
-            for (auto& binding : modBindingsIt.value())
+        // transform mod name to nicer format until modinfo is in
+        std::string activeModName = modBindingsIt.key() == "cet" ? "Cyber Engine Tweaks" : modBindingsIt.key();
+        bool capitalize = true;
+        std::ranges::transform(std::as_const(activeModName), activeModName.begin(), [&capitalize](char c) {
+            if (!std::isalnum(c))
             {
-                const VKModBind modBind{modBindingsIt.key(), binding.Bind.ID};
+                capitalize = true;
+                return ' ';
+            }
+            if (capitalize)
+            {
+                capitalize = false;
+                return static_cast<char>(std::toupper(c));
+            }
+            return c;
+        });
 
-                const auto onFinaizeBind = [this, &binding]{
-                    auto codeBind = m_bindings.GetLastRecordingResult();
-                    if (codeBind != binding.CodeBind)
+        ImGui::TextUnformatted(activeModName.c_str());
+        ImGui::Spacing();
+
+        for (auto& binding : modBindingsIt.value())
+        {
+            const VKModBind modBind{modBindingsIt.key(), binding.Bind.ID};
+
+            const auto onFinaizeBind = [this, &binding]{
+                auto codeBind = m_bindings.GetLastRecordingResult();
+                if (codeBind != binding.CodeBind)
+                {
+                    if (m_bindings.IsFirstKeyUsed(codeBind))
                     {
-                        if (m_bindings.IsFirstKeyUsed(codeBind))
-                        {
-                            // note - creating copy so we are not destroying reference to modBind when we unbind
-                            const auto checkModBind = [this, &binding, codeBind](const VKModBind modBind) {
-                                const auto cetBind = modBind == s_overlayToggleModBind;
-                                if (!cetBind || binding.Bind.IsHotkey())
+                        // note - creating copy so we are not destroying reference to modBind when we unbind
+                        const auto checkModBind = [this, &binding, codeBind](const VKModBind modBind) {
+                            const auto cetBind = modBind == s_overlayToggleModBind;
+                            if (!cetBind || binding.Bind.IsHotkey())
+                            {
+                                const auto& modName = modBind.ModName;
+                                auto& bindInfos = m_vkBindInfos[modName];
+                                const auto bindIt = std::find(bindInfos.begin(), bindInfos.end(), modBind.ID);
+                                if (bindIt != bindInfos.cend())
                                 {
-                                    const auto& modName = modBind.ModName;
-                                    auto& bindInfos = m_vkBindInfos[modName];
-                                    const auto bindIt = std::find(bindInfos.begin(), bindInfos.end(), modBind.ID);
-                                    if (bindIt != bindInfos.cend())
+                                    const auto bindItCodeBindIsSame = bindIt->CodeBind == codeBind;
+                                    if (!cetBind || !bindItCodeBindIsSame)
                                     {
-                                        const auto bindItCodeBindIsSame = bindIt->CodeBind == codeBind;
-                                        if (!cetBind || !bindItCodeBindIsSame)
+                                        const auto bindItCodeBind = bindIt->CodeBind;
+                                        if ((!cetBind && bindItCodeBindIsSame) || binding.Bind.IsInput() || bindIt->Bind.IsInput())
                                         {
-                                            const auto bindItCodeBind = bindIt->CodeBind;
-                                            if ((!cetBind && bindItCodeBindIsSame) || binding.Bind.IsInput() || bindIt->Bind.IsInput())
-                                            {
-                                                m_bindings.UnBind(modBind);
-                                                bindIt->CodeBind = 0;
-                                            }
-
-                                            if (binding.Bind.IsInput() && bindIt->Bind.IsHotkey() && m_bindings.IsFirstKeyUsed(codeBind))
-                                            {
-                                                bindIt->CodeBind = bindItCodeBind;
-                                                m_bindings.Bind(bindIt->CodeBind, modBind);
-                                            }
-                                            else
-                                                binding.CodeBind = codeBind;
+                                            m_bindings.UnBind(modBind);
+                                            bindIt->CodeBind = 0;
                                         }
+
+                                        if (binding.Bind.IsInput() && bindIt->Bind.IsHotkey() && m_bindings.IsFirstKeyUsed(codeBind))
+                                        {
+                                            bindIt->CodeBind = bindItCodeBind;
+                                            m_bindings.Bind(bindIt->CodeBind, modBind);
+                                        }
+                                        else
+                                            binding.CodeBind = codeBind;
                                     }
                                 }
-                            };
+                            }
+                        };
 
-                            if (const auto* directModBind = m_bindings.GetModBindForBindCode(codeBind))
-                                checkModBind(*directModBind);
-                            else if (const auto* indirectModBind = m_bindings.GetModBindStartingWithBindCode(codeBind))
-                                checkModBind(*indirectModBind);
-                        }
-                        else
-                            binding.CodeBind = codeBind;
+                        if (const auto* directModBind = m_bindings.GetModBindForBindCode(codeBind))
+                            checkModBind(*directModBind);
+                        else if (const auto* indirectModBind = m_bindings.GetModBindStartingWithBindCode(codeBind))
+                            checkModBind(*indirectModBind);
                     }
-                };
+                    else
+                        binding.CodeBind = codeBind;
+                }
+            };
 
-                const auto onUnBind = [this, &binding, &modBind] {
-                    if (binding.IsBinding)
-                    {
-                        m_bindings.StopRecordingBind();
-                        binding.IsBinding = false;
-                    }
-                    m_bindings.UnBind(modBind);
-                    binding.CodeBind = 0;
-                };
+            const auto onUnBind = [this, &binding, &modBind] {
+                if (binding.IsBinding)
+                {
+                    m_bindings.StopRecordingBind();
+                    binding.IsBinding = false;
+                }
+                m_bindings.UnBind(modBind);
+                binding.CodeBind = 0;
+            };
 
-                UpdateAndDrawBinding(modBind, binding, onFinaizeBind, onUnBind, 10.0f);
-            }
+            UpdateAndDrawBinding(modBind, binding, onFinaizeBind, onUnBind, 10.0f);
         }
     }
 }
 
 void Bindings::Save()
 {
-    if (!m_vm.IsInitialized())
-    {
-        m_luaVMReady = false;
-        return;
-    }
-
     for (auto modBindingsIt = m_vkBindInfos.begin(); modBindingsIt != m_vkBindInfos.end(); ++modBindingsIt)
     {
         for (auto& binding : modBindingsIt.value())
@@ -196,8 +182,6 @@ void Bindings::Save()
     }
 
     m_bindings.Save();
-
-    m_luaVMReady = true;
 }
 
 void Bindings::ResetChanges()
@@ -298,9 +282,6 @@ const VKBind& Bindings::GetOverlayToggleBind() noexcept
 
 void Bindings::Initialize()
 {
-    if (!m_vm.IsInitialized())
-        return;
-
     const auto& allModsBinds = m_vm.GetAllBinds();
 
     if (!m_vkBindInfos.empty())
@@ -328,8 +309,6 @@ void Bindings::Initialize()
 
     // we have only one binding! if there are more for some reason, something didnt work as expected...
     assert(m_vkBindInfos[s_overlayToggleModBind.ModName].size() == 1);
-
-    m_luaVMReady = true;
 }
 
 void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKBindInfo, TWidgetCB aFinalizeBindCB, TWidgetCB aUnBindCB, float aOffsetX)
