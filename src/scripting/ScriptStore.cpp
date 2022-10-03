@@ -63,7 +63,6 @@ void ScriptStore::LoadAll()
         if (ctx.IsValid())
         {
             const auto ctxIt = m_contexts.emplace(name, std::move(ctx));
-            m_vkBinds.insert({name, ctxIt.first.value().GetBinds()});
             consoleLogger->info("Mod {} loaded! ('{}')", name, fPathStr);
         }
         else
@@ -71,6 +70,9 @@ void ScriptStore::LoadAll()
             consoleLogger->error("Mod {} failed to load! ('{}')", name, fPathStr);
         }
     }
+
+    for (auto& contextIt : m_contexts)
+        m_vkBinds.insert({contextIt.first, contextIt.second.GetBinds()});
 
     m_bindings.InitializeMods(m_vkBinds);
 }
