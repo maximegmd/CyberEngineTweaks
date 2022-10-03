@@ -10,18 +10,20 @@ Settings::Settings(Options& aOptions, LuaVM& aVm)
 {
 }
 
-bool Settings::OnEnable()
+WidgetResult Settings::OnEnable()
 {
     if (!m_enabled)
     {
         Load();
         m_enabled = true;
     }
-    return m_enabled;
+    return m_enabled ? WidgetResult::ENABLED : WidgetResult::DISABLED;
 }
 
-bool Settings::OnDisable()
+WidgetResult Settings::OnDisable()
 {
+    WidgetResult result = WidgetResult::ENABLED;
+
     if (m_enabled)
     {
         m_vm.BlockDraw(m_madeChanges);
@@ -38,6 +40,7 @@ bool Settings::OnDisable()
         {
             CET::Get().GetOverlay().SetActiveWidget(WidgetID::SETTINGS);
             m_enabled = true;
+            result = WidgetResult::CANCEL;
         }
     }
     if (!m_enabled)
@@ -46,7 +49,11 @@ bool Settings::OnDisable()
         m_patchesChanged = false;
         m_devChanged = false;
     }
-    return !m_enabled;
+
+    if (result != WidgetResult::CANCEL)
+        result = m_enabled ? WidgetResult::ENABLED : WidgetResult::DISABLED;
+
+    return result;
 }
 
 void Settings::Update()

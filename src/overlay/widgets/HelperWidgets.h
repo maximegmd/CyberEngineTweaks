@@ -8,7 +8,7 @@ WidgetID ToolbarWidget();
 
 bool BoolWidget(const std::string& aLabel, bool& aCurrent, bool aSaved, float aOffsetX = 0.0f);
 
-enum class THWUCPResult : uint32_t
+enum class THWUCPResult
 {
     CHANGED,
     APPLY,

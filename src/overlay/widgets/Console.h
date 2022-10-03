@@ -8,11 +8,11 @@ struct Console : Widget
 {
     Console(LuaVM& aVm);
     ~Console() override = default;
-    
-    bool OnEnable() override;
-    bool OnDisable() override;
+
+    WidgetResult OnEnable() override;
+    WidgetResult OnDisable() override;
     void Update() override;
-    
+
     void Log(const std::string& acpText);
     bool GameLogEnabled() const;
 

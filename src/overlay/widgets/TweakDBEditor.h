@@ -9,8 +9,8 @@ struct TweakDBEditor : Widget
     TweakDBEditor(LuaVM& aVm);
     ~TweakDBEditor() override = default;
 
-    bool OnEnable() override;
-    bool OnDisable() override;
+    WidgetResult OnEnable() override;
+    WidgetResult OnDisable() override;
     void Update() override;
 
 protected:
@@ -65,7 +65,7 @@ private:
         ImVec2 m_itemSize;
         float m_beginCursorY;
     };
-    
+
     struct CachedFlat
     {
         bool m_isFiltered = false;

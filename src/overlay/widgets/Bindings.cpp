@@ -22,7 +22,7 @@ Bindings::Bindings(VKBindings& aBindings, LuaVM& aVm)
 {
 }
 
-bool Bindings::OnEnable()
+WidgetResult Bindings::OnEnable()
 {
     if (!m_enabled)
     {
@@ -30,11 +30,13 @@ bool Bindings::OnEnable()
         ResetChanges();
         m_enabled = true;
     }
-    return m_enabled;
+    return m_enabled ? WidgetResult::ENABLED : WidgetResult::DISABLED;
 }
 
-bool Bindings::OnDisable()
+WidgetResult Bindings::OnDisable()
 {
+    WidgetResult result = WidgetResult::ENABLED;
+
     if (m_enabled)
     {
         m_vm.BlockDraw(m_madeChanges);
@@ -51,13 +53,17 @@ bool Bindings::OnDisable()
         {
             CET::Get().GetOverlay().SetActiveWidget(WidgetID::BINDINGS);
             m_enabled = true;
+            result = WidgetResult::CANCEL;
         }
     }
 
     if (!m_enabled)
         m_bindings.StopRecordingBind();
 
-    return !m_enabled;
+    if (result != WidgetResult::CANCEL)
+        result = m_enabled ? WidgetResult::ENABLED : WidgetResult::DISABLED;
+
+    return result;
 }
 
 void Bindings::Update()

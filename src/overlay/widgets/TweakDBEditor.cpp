@@ -440,14 +440,14 @@ TweakDBEditor::TweakDBEditor(LuaVM& aVm)
 {
 }
 
-bool TweakDBEditor::OnEnable()
+WidgetResult TweakDBEditor::OnEnable()
 {
-    return true;
+    return WidgetResult::ENABLED;
 }
 
-bool TweakDBEditor::OnDisable()
+WidgetResult TweakDBEditor::OnDisable()
 {
-    return true;
+    return WidgetResult::DISABLED;
 }
 
 void TweakDBEditor::Update()
