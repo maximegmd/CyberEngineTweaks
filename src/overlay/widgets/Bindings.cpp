@@ -101,76 +101,86 @@ void Bindings::Update()
             return c;
         });
 
-        ImGui::TextUnformatted(activeModName.c_str());
-        ImGui::Spacing();
 
-        for (auto& binding : modBindingsIt.value())
+        if (ImGui::CollapsingHeader(activeModName.c_str()))
         {
-            const VKModBind modBind{modBindingsIt.key(), binding.Bind.ID};
+            if (ImGui::BeginTable(("##" + activeModName).c_str(), 3, ImGuiTableFlags_Sortable | ImGuiTableFlags_SortMulti | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders))
+            {
 
-            const auto onFinaizeBind = [this, &binding]{
-                auto codeBind = m_bindings.GetLastRecordingResult();
-                if (codeBind != binding.CodeBind)
+                for (auto& binding : modBindingsIt.value())
                 {
-                    if (m_bindings.IsFirstKeyUsed(codeBind))
-                    {
-                        // note - creating copy so we are not destroying reference to modBind when we unbind
-                        const auto checkModBind = [this, &binding, codeBind](const VKModBind modBind) {
-                            const auto cetBind = modBind == s_overlayToggleModBind;
-                            if (!cetBind || binding.Bind.IsHotkey())
-                            {
-                                const auto& modName = modBind.ModName;
-                                auto& bindInfos = m_vkBindInfos[modName];
-                                const auto bindIt = std::find(bindInfos.begin(), bindInfos.end(), modBind.ID);
-                                if (bindIt != bindInfos.cend())
-                                {
-                                    const auto bindItCodeBindIsSame = bindIt->CodeBind == codeBind;
-                                    if (!cetBind || !bindItCodeBindIsSame)
-                                    {
-                                        const auto bindItCodeBind = bindIt->CodeBind;
-                                        if ((!cetBind && bindItCodeBindIsSame) || binding.Bind.IsInput() || bindIt->Bind.IsInput())
-                                        {
-                                            m_bindings.UnBind(modBind);
-                                            bindIt->CodeBind = 0;
-                                        }
+                    ImGui::TableNextRow();
+                    ImGui::TableNextColumn();
 
-                                        if (binding.Bind.IsInput() && bindIt->Bind.IsHotkey() && m_bindings.IsFirstKeyUsed(codeBind))
+                    const VKModBind modBind{modBindingsIt.key(), binding.Bind.ID};
+
+                    const auto onFinaizeBind = [this, &binding]{
+                        auto codeBind = m_bindings.GetLastRecordingResult();
+                        if (codeBind != binding.CodeBind)
+                        {
+                            if (m_bindings.IsFirstKeyUsed(codeBind))
+                            {
+                                // note - creating copy so we are not destroying reference to modBind when we unbind
+                                const auto checkModBind = [this, &binding, codeBind](const VKModBind modBind) {
+                                    const auto cetBind = modBind == s_overlayToggleModBind;
+                                    if (!cetBind || binding.Bind.IsHotkey())
+                                    {
+                                        const auto& modName = modBind.ModName;
+                                        auto& bindInfos = m_vkBindInfos[modName];
+                                        const auto bindIt = std::find(bindInfos.begin(), bindInfos.end(), modBind.ID);
+                                        if (bindIt != bindInfos.cend())
                                         {
-                                            bindIt->CodeBind = bindItCodeBind;
-                                            m_bindings.Bind(bindIt->CodeBind, modBind);
+                                            const auto bindItCodeBindIsSame = bindIt->CodeBind == codeBind;
+                                            if (!cetBind || !bindItCodeBindIsSame)
+                                            {
+                                                const auto bindItCodeBind = bindIt->CodeBind;
+                                                if ((!cetBind && bindItCodeBindIsSame) || binding.Bind.IsInput() || bindIt->Bind.IsInput())
+                                                {
+                                                    m_bindings.UnBind(modBind);
+                                                    bindIt->CodeBind = 0;
+                                                }
+
+                                                if (binding.Bind.IsInput() && bindIt->Bind.IsHotkey() && m_bindings.IsFirstKeyUsed(codeBind))
+                                                {
+                                                    bindIt->CodeBind = bindItCodeBind;
+                                                    m_bindings.Bind(bindIt->CodeBind, modBind);
+                                                }
+                                                else
+                                                    binding.CodeBind = codeBind;
+                                            }
                                         }
-                                        else
-                                            binding.CodeBind = codeBind;
                                     }
-                                }
+                                };
+
+                                if (const auto* directModBind = m_bindings.GetModBindForBindCode(codeBind))
+                                    checkModBind(*directModBind);
+                                else if (const auto* indirectModBind = m_bindings.GetModBindStartingWithBindCode(codeBind))
+                                    checkModBind(*indirectModBind);
                             }
+                            else
+                                binding.CodeBind = codeBind;
+                        }
+                    };
+
+                    if (modBind == s_overlayToggleModBind)
+                        UpdateAndDrawBinding(modBind, binding, onFinaizeBind, nullptr, 10.0f);
+                    else
+                    {
+                        auto onUnBind = [this, &binding, &modBind] {
+                            if (binding.IsBinding)
+                            {
+                                m_bindings.StopRecordingBind();
+                                binding.IsBinding = false;
+                            }
+                            m_bindings.UnBind(modBind);
+                            binding.CodeBind = 0;
                         };
 
-                        if (const auto* directModBind = m_bindings.GetModBindForBindCode(codeBind))
-                            checkModBind(*directModBind);
-                        else if (const auto* indirectModBind = m_bindings.GetModBindStartingWithBindCode(codeBind))
-                            checkModBind(*indirectModBind);
+                        UpdateAndDrawBinding(modBind, binding, onFinaizeBind, onUnBind, 10.0f);
                     }
-                    else
-                        binding.CodeBind = codeBind;
                 }
-            };
 
-            if (modBind == s_overlayToggleModBind)
-                UpdateAndDrawBinding(modBind, binding, onFinaizeBind, nullptr, 10.0f);
-            else
-            {
-                auto onUnBind = [this, &binding, &modBind] {
-                    if (binding.IsBinding)
-                    {
-                        m_bindings.StopRecordingBind();
-                        binding.IsBinding = false;
-                    }
-                    m_bindings.UnBind(modBind);
-                    binding.CodeBind = 0;
-                };
-
-                UpdateAndDrawBinding(modBind, binding, onFinaizeBind, onUnBind, 10.0f);
+                ImGui::EndTable();
             }
         }
     }
@@ -341,25 +351,23 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
         curTextColor = ImVec4(1.0f, modified ? 0.5f : 0.0f, 0.0f, 1.0f);
     else if (modified)
         curTextColor = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
+    ImGui::PushStyleColor(ImGuiCol_Text, curTextColor);
 
     const auto& bind = aVKBindInfo.Bind;
-    std::string label { bind.IsHotkey() ? "[Hotkey] " : "[Input] " };
-    label += bind.DisplayName;
-    label += ':';
 
     ImGui::AlignTextToFramePadding();
-
     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + aOffsetX);
 
-    ImGui::PushStyleColor(ImGuiCol_Text, curTextColor);
-    ImGui::TextUnformatted(label.c_str());
-    ImGui::PopStyleColor();
+    ImGui::Button(bind.DisplayName.c_str(), ImVec2(-FLT_MIN, 0));
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled) && !bind.Description.empty())
+        ImGui::SetTooltip("%s", bind.Description.c_str());
+
+    ImGui::TableNextColumn();
 
     const std::string vkStr { aVKBindInfo.IsBinding ? "BINDING..." : VKBindings::GetBindString(aVKBindInfo.CodeBind) };
 
-    ImGui::SameLine();
     ImGui::PushID(&aVKBindInfo.CodeBind);
-    if (ImGui::Button(vkStr.c_str()))
+    if (ImGui::Button(vkStr.c_str(), ImVec2(-FLT_MIN, 0)))
     {
         if (!aVKBindInfo.IsBinding && !isRecording)
         {
@@ -367,21 +375,30 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
             aVKBindInfo.IsBinding = true;
         }
     }
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+        ImGui::SetTooltip("%s", bind.IsHotkey() ? "Bind up to 4 key combination to this binding." : "Bind single input to this binding.");
     ImGui::PopID();
 
-    if (aUnBindCB && aVKBindInfo.CodeBind)
-    {
-        ImGui::SameLine();
-        ImGui::PushID(&aVKBindInfo.SavedCodeBind);
-        if (ImGui::Button("UNBIND"))
-        {
-            m_bindings.StopRecordingBind();
-            aVKBindInfo.IsBinding = false;
+    ImGui::TableNextColumn();
 
-            aUnBindCB();
-        }
-        ImGui::PopID();
+    ImGui::PushID(&aVKBindInfo.CodeBind);
+    const bool unbindDisabled = !aUnBindCB || !aVKBindInfo.CodeBind;
+    if (unbindDisabled)
+        ImGui::BeginDisabled();
+    if (ImGui::Button("UNBIND", ImVec2(-FLT_MIN, 0)))
+    {
+        m_bindings.StopRecordingBind();
+        aVKBindInfo.IsBinding = false;
+
+        aUnBindCB();
     }
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+        ImGui::SetTooltip("Unbind this binding.");
+    if (unbindDisabled)
+        ImGui::EndDisabled();
+    ImGui::PopID();
+
+    ImGui::PopStyleColor();
 
     m_madeChanges |= aVKBindInfo.IsBinding || aVKBindInfo.CodeBind != aVKBindInfo.SavedCodeBind;
 }
