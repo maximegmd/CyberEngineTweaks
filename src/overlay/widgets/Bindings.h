@@ -21,8 +21,8 @@ struct Bindings : Widget
     Bindings(VKBindings& aBindings, LuaVM& aVm);
     ~Bindings() override = default;
 
-    bool OnEnable() override;
-    bool OnDisable() override;
+    WidgetResult OnEnable() override;
+    WidgetResult OnDisable() override;
     void Update() override;
 
     void Save();

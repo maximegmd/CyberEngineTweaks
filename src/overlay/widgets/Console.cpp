@@ -14,15 +14,15 @@ Console::Console(LuaVM& aVm)
     spdlog::get("scripting")->sinks().push_back(consoleSink);
 }
 
-bool Console::OnEnable()
+WidgetResult Console::OnEnable()
 {
     m_focusConsoleInput = true;
-    return true;
+    return WidgetResult::ENABLED;
 }
 
-bool Console::OnDisable()
+WidgetResult Console::OnDisable()
 {
-    return true;
+    return WidgetResult::DISABLED;
 }
 
 int Console::HandleConsoleHistory(ImGuiInputTextCallbackData* apData)
@@ -77,10 +77,10 @@ void Console::Update()
     ImGui::SameLine();
     if (ImGui::Button("Reload All Mods"))
         m_vm.ReloadAllMods();
-        
+
     auto& style = ImGui::GetStyle();
     auto inputLineHeight = ImGui::GetTextLineHeight() + style.ItemInnerSpacing.y * 2;
-    
+
     if (ImGui::ListBoxHeader("##ConsoleHeader", ImVec2(-1, -(inputLineHeight + style.ItemSpacing.y))))
     {
         std::lock_guard<std::recursive_mutex> _{ m_outputLock };
@@ -88,7 +88,7 @@ void Console::Update()
         ImGuiListClipper clipper;
         clipper.Begin(m_outputLines.size());
         while (clipper.Step())
-            for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i) 
+            for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i)
             {
                 auto& item = m_outputLines[i];
                 ImGui::PushID(i);
@@ -110,10 +110,10 @@ void Console::Update()
                 ImGui::SetScrollHereY();
             m_outputScroll = false;
         }
-        
+
         ImGui::ListBoxFooter();
     }
-    
+
     if (m_focusConsoleInput)
     {
         ImGui::SetKeyboardFocusHere();
@@ -131,7 +131,7 @@ void Console::Update()
         m_consoleHistoryIndex = m_consoleHistory.size();
         m_consoleHistory.push_back(m_Command);
         m_newConsoleHistory = true;
-        
+
         if (!m_vm.ExecuteLua(m_Command))
             consoleLogger->info("Command failed to execute!");
 

@@ -13,8 +13,8 @@ struct Settings : Widget
     Settings(Options& aOptions, LuaVM& aVm);
     ~Settings() override = default;
 
-    bool OnEnable() override;
-    bool OnDisable() override;
+    WidgetResult OnEnable() override;
+    WidgetResult OnDisable() override;
     void Update() override;
 
     void Load();

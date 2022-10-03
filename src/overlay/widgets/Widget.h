@@ -9,12 +9,19 @@ enum class WidgetID
     COUNT
 };
 
+enum class WidgetResult
+{
+    DISABLED,
+    ENABLED,
+    CANCEL
+};
+
 struct Widget
 {
     virtual ~Widget() = default;
 
-    virtual bool OnEnable() = 0;
-    virtual bool OnDisable() = 0;
+    virtual WidgetResult OnEnable() = 0;
+    virtual WidgetResult OnDisable() = 0;
     virtual void Update() = 0;
 };
 

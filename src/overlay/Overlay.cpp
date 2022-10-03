@@ -38,7 +38,8 @@ Settings& Overlay::GetSettings()
 
 void Overlay::Toggle()
 {
-    m_toggled = !m_toggled;
+    if (!m_toggled)
+        m_toggled = true;
 }
 
 bool Overlay::IsEnabled() const noexcept
@@ -61,16 +62,26 @@ void Overlay::Update()
 
         if (m_enabled)
         {
-            if (m_widgets[static_cast<size_t>(m_activeWidgetID)]->OnDisable())
+            const auto ret = m_widgets[static_cast<size_t>(m_activeWidgetID)]->OnDisable();
+            if (ret == WidgetResult::CANCEL)
+            {
+                m_toggled = false;
+            }
+            if (ret == WidgetResult::DISABLED)
             {
                 m_vm.OnOverlayClose();
-                m_enabled = !m_toggled;
+                m_enabled = false;
                 m_toggled = false;
             }
         }
         else
         {
-            if (m_widgets[static_cast<size_t>(m_activeWidgetID)]->OnEnable())
+            const auto ret = m_widgets[static_cast<size_t>(m_activeWidgetID)]->OnEnable();
+            if (ret == WidgetResult::CANCEL)
+            {
+                m_toggled = false;
+            }
+            if (ret == WidgetResult::ENABLED)
             {
                 m_vm.OnOverlayOpen();
                 m_enabled = true;
@@ -220,10 +231,11 @@ void Overlay::SetActiveWidget(WidgetID aNewActive)
     if (m_activeWidgetID != m_nextActiveWidgetID)
     {
         assert(m_activeWidgetID < WidgetID::COUNT);
-        if (m_widgets[static_cast<size_t>(m_activeWidgetID)]->OnDisable())
+
+        if (m_widgets[static_cast<size_t>(m_activeWidgetID)]->OnDisable() == WidgetResult::DISABLED)
         {
             assert(m_nextActiveWidgetID < WidgetID::COUNT);
-            if (m_widgets[static_cast<size_t>(m_nextActiveWidgetID)]->OnEnable())
+            if (m_widgets[static_cast<size_t>(m_nextActiveWidgetID)]->OnEnable() == WidgetResult::ENABLED)
                 m_activeWidgetID = m_nextActiveWidgetID;
         }
     }
