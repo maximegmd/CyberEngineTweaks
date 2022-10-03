@@ -32,7 +32,7 @@
 #include <RED4ext/Dump/Reflection.hpp>
 #endif
 
-static constexpr const bool s_cThrowLuaErrors = true;
+static constexpr bool s_cThrowLuaErrors = true;
 
 static RTTILocator s_stringType{RED4ext::FNV1a("String")};
 
@@ -45,6 +45,7 @@ Scripting::Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12, 
     , m_mapper(m_lua.AsRef(), m_global)
 {
     CreateLogger(aPaths.CETRoot() / "scripting.log", "scripting");
+    CreateLogger(aPaths.CETRoot() / "gamelog.log", "gamelog");
 }
 
 void Scripting::Initialize()

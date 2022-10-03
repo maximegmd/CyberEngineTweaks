@@ -26,9 +26,7 @@ void LuaVM::HookLog(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*,
     RED4ext::OpcodeHandlers::Run(opcode, apStack->context, apStack, &ref, &ref);
     apStack->code++; // skip ParamEnd
 
-    auto& console = CET::Get().GetOverlay().GetConsole();
-    if (console.GameLogEnabled())
-        spdlog::get("scripting")->info(ref.ref->c_str());
+    spdlog::get("gamelog")->info(ref.ref->c_str());
 }
 
 void LuaVM::HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*, void*)
@@ -59,25 +57,15 @@ void LuaVM::HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack,
 
     apStack->code++; // skip ParamEnd
 
-    auto& console = CET::Get().GetOverlay().GetConsole();
-    if (console.GameLogEnabled() || channel == s_debugChannel)
-    {
-        auto consoleLogger = spdlog::get("scripting");
+    std::string_view textSV = ref.ref->c_str();
+    if (channel == s_debugChannel)
+        spdlog::get("scripting")->info(textSV);
 
-        std::string_view textSV = ref.ref->c_str();
-        if (channel == s_debugChannel)
-        {
-            consoleLogger->info(textSV);
-        }
-        else
-        {
-            std::string_view channelSV = channel.ToString();
-            if (channelSV.empty())
-                consoleLogger->info("[?{0:x}] {}", channel.hash, textSV);
-            else
-                consoleLogger->info("[{}] {}", channelSV, textSV);
-        }
-    }
+    std::string_view channelSV = channel.ToString();
+    if (channelSV.empty())
+        spdlog::get("gamelog")->info("[?{0:x}] {}", channel.hash, textSV);
+    else
+        spdlog::get("gamelog")->info("[{}] {}", channelSV, textSV);
 
     CET::Get().GetVM().m_logCount.fetch_add(1);
 }
