@@ -1,14 +1,13 @@
 #pragma once
 
 #include "Widget.h"
-#include "HelperWidgets.h"
 
 struct Overlay;
 struct LuaVM;
 
 struct VKBindInfo
 {
-    std::reference_wrapper<const VKBind> Bind;
+    const VKBind& Bind;
     uint64_t CodeBind{ 0 };
     uint64_t SavedCodeBind{ 0 };
     bool IsBinding{ false };

@@ -20,6 +20,8 @@ void CET::Shutdown()
 
 CET& CET::Get()
 {
+    // we should always call this after initialization, never before!
+    assert(s_pInstance);
     return *s_pInstance;
 }
 
@@ -77,5 +79,4 @@ CET::~CET()
     s_isRunning = false;
 
     m_bindings.DisconnectUpdate(m_d3d12);
-    m_bindings.Clear();
 }

@@ -57,8 +57,7 @@ bool VKBindings::IsInitialized() const noexcept
 
 void VKBindings::InitializeMods(const TiltedPhoques::Map<std::string, std::reference_wrapper<const TiltedPhoques::Vector<VKBind>>>& acVKBinds)
 {
-    // this may only be called when there are no bindings mapped!
-    assert(m_binds.empty());
+    m_binds.clear();
 
     const auto& overlayToggleModBind = Bindings::GetOverlayToggleModBind();
 
@@ -157,7 +156,6 @@ void VKBindings::Load()
     // try to load config
     if (std::ifstream ifs{m_paths.VKBindings()})
     {
-        const auto& overlayToggleModBind = Bindings::GetOverlayToggleModBind();
         auto config{nlohmann::json::parse(ifs)};
         for (auto& mod : config.items())
         {
@@ -209,12 +207,6 @@ void VKBindings::Update()
     m_queuedCallbacks.Drain();
 }
 
-void VKBindings::Clear()
-{
-    m_binds.clear();
-    m_recordingModBind = {};
-}
-
 static bool FirstKeyMatches(uint64_t aFirst, uint64_t aSecond)
 {
     return (aFirst & 0xFFFF000000000000ull) == (aSecond & 0xFFFF000000000000ull);
@@ -239,9 +231,15 @@ bool VKBindings::Bind(uint64_t aVKCodeBind, const VKModBind& acVKModBind)
         if (FirstKeyMatches(bind->first, aVKCodeBind))
         {
             // first char matches! lets check that both binds are hotkey in this case
+            const auto isHotkey = [vm = m_cpVm](const VKModBind& vkModBind) {
+                if (!vm)
+                {
+                    // this should never happen!
+                    assert(false);
+                    return false;
+                }
 
-            const auto isHotkey = [](const VKModBind& vkModBind) {
-                const auto bind = CET::Get().GetVM().GetBind(vkModBind);
+                const auto bind = vm->GetBind(vkModBind);
                 return bind && bind->IsHotkey();
             };
 
@@ -715,9 +713,12 @@ int32_t VKBindings::CheckRecording()
 
 void VKBindings::ExecuteRecording(bool aLastKeyDown)
 {
+    // VM must be initialized by this point!
+    assert(m_cpVm != nullptr);
+
     if (m_isBindRecording)
     {
-        const auto bind = CET::Get().GetVM().GetBind(m_recordingModBind);
+        const auto bind = m_cpVm->GetBind(m_recordingModBind);
         if (!aLastKeyDown || (bind && bind->IsInput()))
             StopRecordingBind();
 
@@ -728,14 +729,14 @@ void VKBindings::ExecuteRecording(bool aLastKeyDown)
         return;
 
     const auto& possibleBind = m_binds.find(m_recordingResult)->second;
-    const auto bind = CET::Get().GetVM().GetBind(possibleBind);
+    const auto bind = m_cpVm->GetBind(possibleBind);
     if (bind)
     {
         // we dont want to handle bindings when vm is not initialized or when overlay is open and we are not in binding state!
         // only exception allowed is any CET bind
         const auto& overlayToggleModBind = Bindings::GetOverlayToggleModBind();
         const auto cetBind = possibleBind.ModName == overlayToggleModBind.ModName;
-        if ((!CET::Get().GetVM().IsInitialized() || CET::Get().GetOverlay().IsEnabled()) && !cetBind)
+        if (!cetBind && (!m_cpVm->IsInitialized() || CET::Get().GetOverlay().IsEnabled()))
         {
             m_recordingResult = 0;
             m_recording.fill(0);
@@ -830,4 +831,14 @@ LRESULT VKBindings::HandleRAWInput(HRAWINPUT ahRAWInput)
     }
 
     return 0;
+}
+
+void VKBindings::SetVM(const LuaVM* acpVm)
+{
+    // this should happen only once
+    assert(m_cpVm == nullptr);
+    // vm pointer shall be always valid when this is called!
+    assert(acpVm != nullptr);
+
+    m_cpVm = acpVm;
 }
