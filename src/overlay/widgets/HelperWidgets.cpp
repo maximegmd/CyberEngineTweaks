@@ -7,20 +7,22 @@ namespace HelperWidgets
 
     WidgetID ToolbarWidget()
     {
+        const auto itemWidth = GetAlignedItemWidth(static_cast<int64_t>(WidgetID::COUNT));
+
         WidgetID activeID = WidgetID::COUNT;
-        ImGui::SameLine();
-        if (ImGui::Button("Console"))
+        if (ImGui::Button("Console", ImVec2(itemWidth, 0)))
             activeID = WidgetID::CONSOLE;
         ImGui::SameLine();
-        if (ImGui::Button("Bindings"))
+        if (ImGui::Button("Bindings", ImVec2(itemWidth, 0)))
             activeID = WidgetID::BINDINGS;
         ImGui::SameLine();
-        if (ImGui::Button("Settings"))
+        if (ImGui::Button("Settings", ImVec2(itemWidth, 0)))
             activeID = WidgetID::SETTINGS;
         ImGui::SameLine();
-        if (ImGui::Button("TweakDB Editor"))
+        if (ImGui::Button("TweakDB Editor", ImVec2(itemWidth, 0)))
             activeID = WidgetID::TWEAKDB;
         ImGui::Spacing();
+
         return activeID;
     }
 
@@ -67,9 +69,9 @@ namespace HelperWidgets
                 ImGui::TextUnformatted("Do you wish to apply them or discard them?");
                 ImGui::Separator();
 
-                const auto buttonWidth { (longerTextSz - (2.0f * ImGui::GetStyle().ItemSpacing.x)) / 3.0f };
+                const auto itemWidth = HelperWidgets::GetAlignedItemWidth(3);
 
-                if (ImGui::Button("Apply", ImVec2(buttonWidth, 0)))
+                if (ImGui::Button("Apply", ImVec2(itemWidth, 0)))
                 {
                     if (aSaveCB)
                         aSaveCB();
@@ -78,7 +80,7 @@ namespace HelperWidgets
                     ImGui::CloseCurrentPopup();
                 }
                 ImGui::SameLine();
-                if (ImGui::Button("Discard", ImVec2(buttonWidth, 0)))
+                if (ImGui::Button("Discard", ImVec2(itemWidth, 0)))
                 {
                     if (aLoadCB)
                         aLoadCB();
@@ -87,7 +89,7 @@ namespace HelperWidgets
                     ImGui::CloseCurrentPopup();
                 }
                 ImGui::SameLine();
-                if (ImGui::Button("Cancel", ImVec2(buttonWidth, 0)))
+                if (ImGui::Button("Cancel", ImVec2(itemWidth, 0)))
                 {
                     if (aCancelCB)
                         aCancelCB();
@@ -103,4 +105,10 @@ namespace HelperWidgets
         }
         return THWUCPResult::APPLY; // no changes, same as if we were to Apply
     }
+
+    float GetAlignedItemWidth(int64_t aItemsCount)
+    {
+        return (ImGui::GetWindowContentRegionWidth() - static_cast<float>(aItemsCount - 1) * ImGui::GetStyle().ItemSpacing.x) / static_cast<float>(aItemsCount);
+    }
+
 }

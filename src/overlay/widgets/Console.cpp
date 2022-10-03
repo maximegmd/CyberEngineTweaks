@@ -1,6 +1,8 @@
 #include <stdafx.h>
 
 #include "Console.h"
+
+#include "HelperWidgets.h"
 #include "Utils.h"
 
 #include <scripting/LuaVM.h>
@@ -66,19 +68,21 @@ int Console::HandleConsoleHistory(ImGuiInputTextCallbackData* apData)
 
 void Console::Update()
 {
+    const auto itemWidth = HelperWidgets::GetAlignedItemWidth(5);
+
     ImGui::Checkbox("Clear input", &m_inputClear);
-    ImGui::SameLine();
-    if (ImGui::Button("Clear output"))
+    ImGui::SameLine(itemWidth, ImGui::GetStyle().ItemSpacing.x);
+    if (ImGui::Button("Clear output", ImVec2(itemWidth, 0)))
     {
         std::lock_guard _{ m_outputLock };
         m_outputLines.clear();
     }
-    ImGui::SameLine();
+    ImGui::SameLine(2 * itemWidth + 1 * ImGui::GetStyle().ItemSpacing.x, ImGui::GetStyle().ItemSpacing.x);
     ImGui::Checkbox("Auto-scroll", &m_outputShouldScroll);
-    ImGui::SameLine();
+    ImGui::SameLine(3 * itemWidth + 2 * ImGui::GetStyle().ItemSpacing.x, ImGui::GetStyle().ItemSpacing.x);
     ImGui::Checkbox("Show Game Log window", &m_showGameLog);
-    ImGui::SameLine();
-    if (ImGui::Button("Reload all mods"))
+    ImGui::SameLine(4 * itemWidth + 3 * ImGui::GetStyle().ItemSpacing.x, ImGui::GetStyle().ItemSpacing.x);
+    if (ImGui::Button("Reload all mods", ImVec2(itemWidth, 0)))
         m_vm.ReloadAllMods();
 
     auto& style = ImGui::GetStyle();
@@ -146,45 +150,7 @@ void Console::Update()
         m_focusConsoleInput = true;
     }
 
-    if (m_showGameLog)
-    {
-        ImGui::Begin("Game Log", &m_showGameLog);
-
-        if (ImGui::Button("Clear output"))
-        {
-            std::lock_guard _{ m_gamelogLock };
-            m_gamelogLines.clear();
-        }
-        ImGui::SameLine();
-        ImGui::Checkbox("Auto-scroll", &m_gamelogShouldScroll);
-
-        if (ImGui::ListBoxHeader("##GameLogHeader", ImVec2(-1, -1)))
-        {
-            std::lock_guard _{ m_gamelogLock };
-
-            ImGuiListClipper clipper;
-            clipper.Begin(m_gamelogLines.size());
-            while (clipper.Step())
-                for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i)
-                {
-                    auto& item = m_gamelogLines[i];
-                    ImGui::PushID(i);
-                    ImGui::Selectable(item.c_str());
-                    ImGui::PopID();
-                }
-
-            if (m_gamelogScroll)
-            {
-                if (m_gamelogShouldScroll)
-                    ImGui::SetScrollHereY();
-                m_gamelogScroll = false;
-            }
-
-            ImGui::ListBoxFooter();
-        }
-
-        ImGui::End();
-    }
+    DrawGameLog();
 }
 
 void Console::Log(const std::string& acpText)
@@ -261,4 +227,49 @@ void Console::GameLog(const std::string& acpText)
     }
 
     m_gamelogScroll = true;
+}
+
+void Console::DrawGameLog()
+{
+    if (m_showGameLog)
+    {
+        ImGui::Begin("Game Log", &m_showGameLog);
+
+        const auto itemWidth = HelperWidgets::GetAlignedItemWidth(2);
+
+        if (ImGui::Button("Clear output", ImVec2(itemWidth, 0)))
+        {
+            std::lock_guard _{ m_gamelogLock };
+            m_gamelogLines.clear();
+        }
+        ImGui::SameLine();
+        ImGui::Checkbox("Auto-scroll", &m_gamelogShouldScroll);
+
+        if (ImGui::ListBoxHeader("##GameLogHeader", ImVec2(-1, -1)))
+        {
+            std::lock_guard _{ m_gamelogLock };
+
+            ImGuiListClipper clipper;
+            clipper.Begin(m_gamelogLines.size());
+            while (clipper.Step())
+                for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i)
+                {
+                    auto& item = m_gamelogLines[i];
+                    ImGui::PushID(i);
+                    ImGui::Selectable(item.c_str());
+                    ImGui::PopID();
+                }
+
+            if (m_gamelogScroll)
+            {
+                if (m_gamelogShouldScroll)
+                    ImGui::SetScrollHereY();
+                m_gamelogScroll = false;
+            }
+
+            ImGui::ListBoxFooter();
+        }
+
+        ImGui::End();
+    }
 }

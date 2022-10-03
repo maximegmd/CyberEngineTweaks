@@ -17,4 +17,6 @@ enum class THWUCPResult
 };
 
 THWUCPResult UnsavedChangesPopup(bool& aFirstTime, bool aMadeChanges, TWidgetCB aSaveCB, TWidgetCB aLoadCB, TWidgetCB aCancelCB = nullptr);
+
+float GetAlignedItemWidth(int64_t aItemsCount);
 }

@@ -58,13 +58,15 @@ WidgetResult Settings::OnDisable()
 
 void Settings::Update()
 {
-    if (ImGui::Button("Load"))
+    const auto itemWidth = HelperWidgets::GetAlignedItemWidth(3);
+
+    if (ImGui::Button("Load", ImVec2(itemWidth, 0)))
         Load();
     ImGui::SameLine();
-    if (ImGui::Button("Save"))
+    if (ImGui::Button("Save", ImVec2(itemWidth, 0)))
         Save();
     ImGui::SameLine();
-    if (ImGui::Button("Defaults"))
+    if (ImGui::Button("Defaults", ImVec2(itemWidth, 0)))
         ResetToDefaults();
 
     ImGui::Spacing();

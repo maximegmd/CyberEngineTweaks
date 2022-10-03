@@ -17,8 +17,9 @@ struct Console : Widget
     void GameLog(const std::string& acpText);
 
 private:
-
     static int HandleConsoleHistory(ImGuiInputTextCallbackData* apData);
+
+    void DrawGameLog();
 
     std::recursive_mutex m_gamelogLock{ };
     TiltedPhoques::Vector<std::string> m_gamelogLines{ };
