@@ -105,7 +105,7 @@ void Bindings::Update()
 
         if (ImGui::CollapsingHeader(activeModName.c_str()))
         {
-            if (ImGui::BeginTable(("##" + activeModName).c_str(), 3, ImGuiTableFlags_Sortable | ImGuiTableFlags_SortMulti | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders))
+            if (ImGui::BeginTable(("##" + activeModName).c_str(), 3, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders))
             {
 
                 for (auto& binding : modBindingsIt.value())
