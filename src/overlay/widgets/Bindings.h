@@ -12,12 +12,13 @@ struct VKBindInfo
     uint64_t CodeBind{ 0 };
     uint64_t SavedCodeBind{ 0 };
     bool IsBinding{ false };
-    bool IsUnbindable{ true };
+
+    bool operator==(const std::string& id) const;
 };
 
 struct Bindings : Widget
 {
-    Bindings(VKBindings& aBindings, Overlay& aOverlay, LuaVM& aVm);
+    Bindings(VKBindings& aBindings, LuaVM& aVm);
     ~Bindings() override = default;
 
     bool OnEnable() override;
@@ -27,18 +28,19 @@ struct Bindings : Widget
     void Save();
     void ResetChanges();
 
+    [[nodiscard]] static bool IsFirstTimeSetup();
+    [[nodiscard]] bool FirstTimeSetup();
+
+    [[nodiscard]] static const VKModBind& GetOverlayToggleModBind() noexcept;
+    [[nodiscard]] static const VKBind& GetOverlayToggleBind() noexcept;
+
 private:
-   void Initialize();
+    void Initialize();
+    void UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKBindInfo, TWidgetCB aFinalizeBindCB, TWidgetCB aUnBindCB, float aOffsetX);
 
     TiltedPhoques::Map<std::string, TiltedPhoques::Vector<VKBindInfo>> m_vkBindInfos{ };
     VKBindings& m_bindings;
-    Overlay& m_overlay;
     LuaVM& m_vm;
-
-    std::string m_overlayKeyID;
-
-    HelperWidgets::TUCHPSave m_saveCB { [this](){ Save(); } };
-    HelperWidgets::TUCHPLoad m_loadCB { [this](){ ResetChanges(); } };
 
     bool m_luaVMReady{ false };
     bool m_enabled{ false };

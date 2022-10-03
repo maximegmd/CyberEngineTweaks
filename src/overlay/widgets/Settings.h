@@ -16,10 +16,10 @@ struct Settings : Widget
     bool OnEnable() override;
     bool OnDisable() override;
     void Update() override;
-    
+
     void Load();
     void Save() const;
-    void ResetToDefaults(); 
+    void ResetToDefaults();
 
 private:
     bool m_patchEnableDebug{ false };
@@ -40,13 +40,10 @@ private:
     Options& m_options;
     LuaVM& m_vm;
 
-    HelperWidgets::TUCHPSave m_saveCB { [this](){ Save(); } };
-    HelperWidgets::TUCHPLoad m_loadCB { [this](){ Load(); } };
-
     bool m_enabled{ false };
     bool m_madeChanges{ false };
     bool m_openChangesModal{ true };
-    
+
     bool m_patchesChanged{ false };
     bool m_devChanged{ false };
 };
