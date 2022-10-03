@@ -738,9 +738,12 @@ void VKBindings::ExecuteRecording(bool aLastKeyDown)
         const auto cetBind = possibleBind.ModName == overlayToggleModBind.ModName;
         if (!cetBind && (!m_cpVm->IsInitialized() || CET::Get().GetOverlay().IsEnabled()))
         {
-            m_recordingResult = 0;
-            m_recording.fill(0);
-            m_recordingLength = 0;
+            if (bind->IsInput())
+            {
+                m_recordingResult = 0;
+                m_recording.fill(0);
+                m_recordingLength = 0;
+            }
             return;
         }
 
