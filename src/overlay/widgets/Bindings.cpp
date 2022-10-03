@@ -156,17 +156,22 @@ void Bindings::Update()
                 }
             };
 
-            const auto onUnBind = [this, &binding, &modBind] {
-                if (binding.IsBinding)
-                {
-                    m_bindings.StopRecordingBind();
-                    binding.IsBinding = false;
-                }
-                m_bindings.UnBind(modBind);
-                binding.CodeBind = 0;
-            };
+            if (modBind == s_overlayToggleModBind)
+                UpdateAndDrawBinding(modBind, binding, onFinaizeBind, nullptr, 10.0f);
+            else
+            {
+                auto onUnBind = [this, &binding, &modBind] {
+                    if (binding.IsBinding)
+                    {
+                        m_bindings.StopRecordingBind();
+                        binding.IsBinding = false;
+                    }
+                    m_bindings.UnBind(modBind);
+                    binding.CodeBind = 0;
+                };
 
-            UpdateAndDrawBinding(modBind, binding, onFinaizeBind, onUnBind, 10.0f);
+                UpdateAndDrawBinding(modBind, binding, onFinaizeBind, onUnBind, 10.0f);
+            }
         }
     }
 }
@@ -326,7 +331,7 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
             m_bindings.Bind(aVKBindInfo.CodeBind, acModBind);
 
         aVKBindInfo.IsBinding = false;
-    };
+    }
 
     const bool bound = aVKBindInfo.CodeBind != 0;
     const bool modified = aVKBindInfo.CodeBind != aVKBindInfo.SavedCodeBind;
