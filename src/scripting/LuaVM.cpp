@@ -98,7 +98,7 @@ void LuaVM::BlockDraw(bool aBlockDraw)
 
 void LuaVM::RemoveTDBIDDerivedFrom(uint64_t aDBID)
 {
-    std::lock_guard<std::shared_mutex> _{ m_tdbidLock };
+    std::lock_guard _{ m_tdbidLock };
 
     const auto it = m_tdbidDerivedLookup.find(aDBID);
     if (it != m_tdbidDerivedLookup.end())
@@ -114,7 +114,7 @@ void LuaVM::RemoveTDBIDDerivedFrom(uint64_t aDBID)
 
 bool LuaVM::GetTDBIDDerivedFrom(uint64_t aDBID, TiltedPhoques::Vector<uint64_t>& aDerivedList)
 {
-    std::shared_lock<std::shared_mutex> _{ m_tdbidLock };
+    std::shared_lock _{ m_tdbidLock };
 
     const auto it = m_tdbidDerivedLookup.find(aDBID & 0xFFFFFFFFFF);
     if (it == m_tdbidDerivedLookup.end())
@@ -127,7 +127,7 @@ bool LuaVM::GetTDBIDDerivedFrom(uint64_t aDBID, TiltedPhoques::Vector<uint64_t>&
 
 uint64_t LuaVM::GetTDBIDBase(uint64_t aDBID)
 {
-    std::shared_lock<std::shared_mutex> _{ m_tdbidLock };
+    std::shared_lock _{ m_tdbidLock };
 
     const auto it = m_tdbidLookup.find(aDBID & 0xFFFFFFFFFF);
     if (it == m_tdbidLookup.end())
@@ -137,7 +137,7 @@ uint64_t LuaVM::GetTDBIDBase(uint64_t aDBID)
 
 TDBIDLookupEntry LuaVM::GetTDBIDLookupEntry(uint64_t aDBID)
 {
-    std::shared_lock<std::shared_mutex> _{ m_tdbidLock };
+    std::shared_lock _{ m_tdbidLock };
 
     const auto it = m_tdbidLookup.find(aDBID & 0xFFFFFFFFFF);
     if (it == m_tdbidLookup.end())
@@ -156,7 +156,7 @@ std::string LuaVM::GetTDBDIDDebugString(TDBID aDBID)
 
 std::string LuaVM::GetTDBIDString(uint64_t aDBID)
 {
-    std::shared_lock<std::shared_mutex> _{ m_tdbidLock };
+    std::shared_lock _{ m_tdbidLock };
 
     auto it = m_tdbidLookup.find(aDBID & 0xFFFFFFFFFF);
     if (it == m_tdbidLookup.end())
@@ -182,7 +182,7 @@ std::string LuaVM::GetTDBIDString(uint64_t aDBID)
 void LuaVM::RegisterTDBIDString(uint64_t aValue, uint64_t aBase, const std::string& aName)
 {
     if (aValue == 0) return;
-    std::lock_guard<std::shared_mutex> _{ m_tdbidLock };
+    std::lock_guard _{ m_tdbidLock };
 
     m_tdbidLookup[aValue] = { aBase, aName };
     if (aBase != 0)
