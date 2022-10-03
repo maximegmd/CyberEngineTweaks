@@ -72,44 +72,39 @@ void Settings::Update()
 
     ImGui::Spacing();
 
-    if (ImGui::BeginTabBar("##SETTINGS", ImGuiTabBarFlags_NoCloseWithMiddleMouseButton | ImGuiTabBarFlags_NoTooltip))
+    m_madeChanges = false;
+
+    if (ImGui::CollapsingHeader("Patches"))
     {
-        m_madeChanges = false;
-
-        if (ImGui::BeginTabItem("Patches"))
+        if (ImGui::BeginTable("##SETTINGS_PATCHES", 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders))
         {
-            if (ImGui::BeginChild("##SETTINGS_PATCHES"))
-            {
-                UpdateAndDrawSetting("AMD SMT Patch:", m_patchAmdSmt, m_options.PatchAmdSmt);
-                UpdateAndDrawSetting("Remove Pedestrians:", m_patchRemovePedestrians, m_options.PatchRemovePedestrians);
-                UpdateAndDrawSetting("Disable Async Compute:", m_patchAsyncCompute, m_options.PatchAsyncCompute);
-                UpdateAndDrawSetting("Disable Antialiasing:", m_patchAntialiasing, m_options.PatchAntialiasing);
-                UpdateAndDrawSetting("Skip Start Menu:", m_patchSkipStartMenu, m_options.PatchSkipStartMenu);
-                UpdateAndDrawSetting("Suppress Intro Movies:", m_patchDisableIntroMovies, m_options.PatchDisableIntroMovies);
-                UpdateAndDrawSetting("Disable Vignette:", m_patchDisableVignette, m_options.PatchDisableVignette);
-                UpdateAndDrawSetting("Disable Boundary Teleport:", m_patchDisableBoundaryTeleport, m_options.PatchDisableBoundaryTeleport);
-                UpdateAndDrawSetting("Disable V-Sync (Windows 7 only):", m_patchDisableWin7Vsync, m_options.PatchDisableWin7Vsync);
-                UpdateAndDrawSetting("Fix Minimap Flicker:", m_patchMinimapFlicker, m_options.PatchMinimapFlicker);
-            }
-            ImGui::EndChild();
-            ImGui::EndTabItem();
-        }
+            UpdateAndDrawSetting("AMD SMT Patch:", m_patchAmdSmt, m_options.PatchAmdSmt);
+            UpdateAndDrawSetting("Remove Pedestrians:", m_patchRemovePedestrians, m_options.PatchRemovePedestrians);
+            UpdateAndDrawSetting("Disable Async Compute:", m_patchAsyncCompute, m_options.PatchAsyncCompute);
+            UpdateAndDrawSetting("Disable Antialiasing:", m_patchAntialiasing, m_options.PatchAntialiasing);
+            UpdateAndDrawSetting("Skip Start Menu:", m_patchSkipStartMenu, m_options.PatchSkipStartMenu);
+            UpdateAndDrawSetting("Suppress Intro Movies:", m_patchDisableIntroMovies, m_options.PatchDisableIntroMovies);
+            UpdateAndDrawSetting("Disable Vignette:", m_patchDisableVignette, m_options.PatchDisableVignette);
+            UpdateAndDrawSetting("Disable Boundary Teleport:", m_patchDisableBoundaryTeleport, m_options.PatchDisableBoundaryTeleport);
+            UpdateAndDrawSetting("Disable V-Sync (Windows 7 only):", m_patchDisableWin7Vsync, m_options.PatchDisableWin7Vsync);
+            UpdateAndDrawSetting("Fix Minimap Flicker:", m_patchMinimapFlicker, m_options.PatchMinimapFlicker);
 
-        if (ImGui::BeginTabItem("Dev"))
+            ImGui::EndTable();
+        }
+    }
+
+    if (ImGui::CollapsingHeader("Dev"))
+    {
+        if (ImGui::BeginTable("##SETTINGS_DEV", 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders))
         {
-            if (ImGui::BeginChild("##SETTINGS_DEV"))
-            {
-                UpdateAndDrawSetting("Draw ImGui Diagnostic Window:", m_options.DrawImGuiDiagnosticWindow, m_options.DrawImGuiDiagnosticWindow);
-                UpdateAndDrawSetting("Remove Dead Bindings:", m_removeDeadBindings, m_options.RemoveDeadBindings);
-                UpdateAndDrawSetting("Enable ImGui Assertions:", m_enableImGuiAssertions, m_options.EnableImGuiAssertions);
-                UpdateAndDrawSetting("Enable Debug Menu:", m_patchEnableDebug, m_options.PatchEnableDebug);
-                UpdateAndDrawSetting("Dump Game Options:", m_dumpGameOptions, m_options.DumpGameOptions);
-            }
-            ImGui::EndChild();
-            ImGui::EndTabItem();
-        }
+            UpdateAndDrawSetting("Draw ImGui Diagnostic Window:", m_options.DrawImGuiDiagnosticWindow, m_options.DrawImGuiDiagnosticWindow);
+            UpdateAndDrawSetting("Remove Dead Bindings:", m_removeDeadBindings, m_options.RemoveDeadBindings);
+            UpdateAndDrawSetting("Enable ImGui Assertions:", m_enableImGuiAssertions, m_options.EnableImGuiAssertions);
+            UpdateAndDrawSetting("Enable Debug Menu:", m_patchEnableDebug, m_options.PatchEnableDebug);
+            UpdateAndDrawSetting("Dump Game Options:", m_dumpGameOptions, m_options.DumpGameOptions);
 
-        ImGui::EndTabBar();
+            ImGui::EndTable();
+        }
     }
 }
 
@@ -163,6 +158,9 @@ void Settings::ResetToDefaults()
 
 void Settings::UpdateAndDrawSetting(const std::string& aLabel, bool& aCurrent, const bool& acSaved, float aOffsetX)
 {
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+
     ImVec4 curTextColor = ImGui::GetStyleColorVec4(ImGuiCol_Text);
     if (aCurrent != acSaved)
         curTextColor = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
@@ -175,7 +173,7 @@ void Settings::UpdateAndDrawSetting(const std::string& aLabel, bool& aCurrent, c
     ImGui::TextUnformatted(aLabel.c_str());
     ImGui::PopStyleColor();
 
-    ImGui::SameLine();
+    ImGui::TableNextColumn();
 
     ImGui::Checkbox(("##" + aLabel).c_str(), &aCurrent);
 
