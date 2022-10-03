@@ -71,11 +71,12 @@ WidgetResult Bindings::OnDisable()
 
 void Bindings::Update()
 {
-    ImGui::SameLine();
-    if (ImGui::Button("Save"))
+    const auto itemWidth = HelperWidgets::GetAlignedItemWidth(2);
+
+    if (ImGui::Button("Save", ImVec2(itemWidth, 0)))
         Save();
     ImGui::SameLine();
-    if (ImGui::Button("Reset changes"))
+    if (ImGui::Button("Reset changes", ImVec2(itemWidth, 0)))
         ResetChanges();
 
     ImGui::Spacing();
@@ -244,7 +245,7 @@ bool Bindings::FirstTimeSetup()
         ImGui::TextUnformatted("Combo can be composed from up to 4 keys.");
         ImGui::Separator();
 
-        const auto onFinaizeBind = [this]{
+        const auto onFinalizeBind = [this]{
             auto& bindings = CET::Get().GetBindings();
 
             s_overlayToggleBindInfo.CodeBind = bindings.GetLastRecordingResult();
@@ -255,7 +256,7 @@ bool Bindings::FirstTimeSetup()
         };
 
         // TODO - do not hardcode offset! this somewhat works temporarily...
-        UpdateAndDrawBinding(s_overlayToggleModBind, s_overlayToggleBindInfo, onFinaizeBind,nullptr, diffTextSz * 0.75f);
+        UpdateAndDrawBinding(s_overlayToggleModBind, s_overlayToggleBindInfo, onFinalizeBind,nullptr, diffTextSz * 0.75f);
 
         ImGui::EndPopup();
 
