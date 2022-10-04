@@ -310,7 +310,7 @@ bool VKBindings::IsFirstKeyUsed(uint64_t aVKCodeBind) const
 std::string VKBindings::GetBindString(uint64_t aVKCodeBind)
 {
     if (aVKCodeBind == 0)
-        return CET::Get().GetBindings().IsRecordingBind() ? "BINDING..." : "NOT BOUND";
+        return "Unbound";
 
     std::string bindStr;
     const auto bindDec{DecodeVKCodeBind(aVKCodeBind)};
@@ -328,7 +328,7 @@ std::string VKBindings::GetBindString(uint64_t aVKCodeBind)
             if (vkChar != 0)
                 bindStr += vkChar;
             else
-                bindStr += "UNKNOWN";
+                bindStr += "Unknown";
         }
         bindStr += " + ";
     }
