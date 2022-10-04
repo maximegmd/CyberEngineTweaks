@@ -60,68 +60,79 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
             m_logger->error("Tried to register an unknown event '{}'!", acName);
     };
 
-    auto registerHotkey = [this, &aLuaSandbox](const std::string& acID, const std::string& acDisplayName, const std::string& acDescription, sol::function aCallback)
-    {
-        if (acID.empty() ||
-            (std::ranges::find_if(acID, [](char c){ return !(isalpha(c) || isdigit(c) || c == '_'); }) != acID.cend()))
+    auto wrapHandler = [&aLuaSandbox, loggerRef = m_logger](sol::function aCallback, const bool acIsHotkey) -> std::variant<std::function<TVKBindHotkeyCallback>, std::function<TVKBindInputCallback>> {
+        if (acIsHotkey)
         {
-            m_logger->error("Tried to register a hotkey with an incorrect ID format '{}'! ID needs to be alphanumeric without any whitespace or special characters (exception being '_' which is allowed in ID)!", acID);
-            return;
+            return [&aLuaSandbox, loggerRef, aCallback]{
+                    auto state = aLuaSandbox.GetState();
+                    TryLuaFunction(loggerRef, aCallback);
+                };
         }
 
-        if (acDisplayName.empty())
-        {
-            m_logger->error("Tried to register a hotkey with an empty display name! (ID of hotkey handler: {})", acID);
-            return;
-        }
-
-        auto loggerRef = m_logger;
-        VKBind vkBind = {acID, acDisplayName, acDescription, [&aLuaSandbox, loggerRef, aCallback]()
-        {
-            auto state = aLuaSandbox.GetState();
-            TryLuaFunction(loggerRef, aCallback);
-        }};
-
-        m_vkBinds.emplace_back(std::move(vkBind));
+        return [&aLuaSandbox, loggerRef, aCallback](bool isDown){
+                auto state = aLuaSandbox.GetState();
+                TryLuaFunction(loggerRef, aCallback, isDown);
+            };
     };
 
-    env["registerHotkey"] = sol::overload(
-        registerHotkey,
-        [registerHotkey](const std::string& acID, const std::string& acDescription, sol::function aCallback) {
-            registerHotkey(acID, acDescription, "", aCallback);
-        });
-
-    auto registerInput = [this, &aLuaSandbox](const std::string& acID, const std::string& acDisplayName, const std::string& acDescription, sol::function aCallback) {
+    auto registerBinding = [this, &wrapHandler](const std::string& acID, const std::string& acDisplayName, const std::string& acDescription, sol::function aCallback, const bool acIsHotkey){
         if (acID.empty() ||
-            (std::ranges::find_if(acID, [](char c) { return !(isalpha(c) || isdigit(c) || c == '_'); }) != acID.cend()))
+            std::ranges::find_if(acID, [](char c){ return !(isalnum(c) || c == '_' || c == '.'); }) != acID.cend())
         {
-            m_logger->error(
-                "Tried to register input with an incorrect ID format '{}'! ID needs to be alphanumeric without any "
-                "whitespace or special characters (exception being '_' which is allowed in ID)!",
+            m_logger->error("Tried to register a {} with an incorrect ID format '{}'! ID needs to be alphanumeric without any "
+                "whitespace or special characters (exceptions being '_' and '.' which are allowed in ID)!",
+                acIsHotkey ? "hotkey" : "input",
                 acID);
             return;
         }
 
         if (acDisplayName.empty())
         {
-            m_logger->error("Tried to register an input with an empty display name! (ID of input handler: {})", acID);
+            m_logger->error("Tried to register a {} with an empty display name! [ID of handler: {}]",
+                acIsHotkey ? "hotkey" : "input",
+                acID);
             return;
         }
 
-        auto loggerRef = m_logger;
-        VKBind vkBind = {acID, acDisplayName, acDescription, [&aLuaSandbox, loggerRef, aCallback](bool isDown)
+        for (auto& bind : m_vkBinds)
         {
-            auto state = aLuaSandbox.GetState();
-            TryLuaFunction(loggerRef, aCallback, isDown);
-        }};
+            if (bind.ID == acID)
+            {
+                m_logger->error("Tried to register a {} with same ID as some other! [ID of handler: {}][Display name of handler: {}]",
+                    acIsHotkey ? "hotkey" : "input",
+                    acID,
+                    acDisplayName);
+                return;
+            }
 
-        m_vkBinds.emplace_back(std::move(vkBind));
+            if (bind.DisplayName == acDisplayName)
+            {
+                m_logger->error("Tried to register a {} with same display name as some other! [ID of handler: {}][Display name of handler: {}]",
+                    acIsHotkey ? "hotkey" : "input",
+                    acID,
+                    acDisplayName);
+                return;
+            }
+        }
+
+        m_vkBinds.emplace_back(acID, acDisplayName, acDescription, wrapHandler(aCallback, acIsHotkey));
     };
 
+    env["registerHotkey"] = sol::overload(
+        [&registerBinding](const std::string& acID, const std::string& acDisplayName, const std::string& acDescription, sol::function aCallback)
+        {
+            registerBinding(acID, acDisplayName, acDescription, aCallback, true);
+        },
+        [&registerBinding](const std::string& acID, const std::string& acDescription, sol::function aCallback) {
+            registerBinding(acID, acDescription, "", aCallback, true);
+        });
+
     env["registerInput"] = sol::overload(
-        registerInput,
-        [registerInput](const std::string& acID, const std::string& acDescription, sol::function aCallback) {
-            registerInput(acID, acDescription, "", aCallback);
+        [&registerBinding](const std::string& acID, const std::string& acDisplayName, const std::string& acDescription, sol::function aCallback) {
+            registerBinding(acID, acDisplayName, acDescription, aCallback, false);
+        },
+        [registerBinding](const std::string& acID, const std::string& acDescription, sol::function aCallback) {
+            registerBinding(acID, acDescription, "", aCallback, false);
         });
 
     // TODO: proper exception handling!
