@@ -299,6 +299,7 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
     }
 
     bool bound = aVKBindInfo.CodeBind != 0;
+    const bool unbindable = bound && acModBind != s_overlayToggleModBind;
     const bool modified = aVKBindInfo.CodeBind != aVKBindInfo.SavedCodeBind;
 
     ImVec4 curTextColor { ImGui::GetStyleColorVec4(ImGuiCol_Text) };
@@ -318,7 +319,7 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
 
     const auto currentBindState = aVKBindInfo.IsBinding ? m_bindings.GetLastRecordingResult() : aVKBindInfo.CodeBind;
     ImGui::PushID(&aVKBindInfo.CodeBind);
-    if (ImGui::Button(VKBindings::GetBindString(currentBindState).c_str(), ImVec2(bound ? -(ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.x) : -FLT_MIN, 0)))
+    if (ImGui::Button(VKBindings::GetBindString(currentBindState).c_str(), ImVec2(unbindable ? -(ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.x) : -FLT_MIN, 0)))
     {
         if (!aVKBindInfo.IsBinding && !isRecording)
         {
@@ -330,27 +331,24 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
         ImGui::SetTooltip("%s", bind.IsHotkey() ? "Bind up to 4 key combination to this binding." : "Bind single input to this binding.");
     ImGui::PopID();
 
-    if (bound)
+    if (unbindable)
     {
         ImGui::SameLine();
 
         ImGui::PushID(&aVKBindInfo.SavedCodeBind);
-        if (bound && acModBind != s_overlayToggleModBind)
+        if (ImGui::Checkbox("##IsBound", &bound))
         {
-            if (ImGui::Checkbox("##IsBound", &bound))
+            if (aVKBindInfo.CodeBind != 0)
             {
-                if (aVKBindInfo.CodeBind != 0)
-                {
-                    m_bindings.StopRecordingBind();
-                    aVKBindInfo.IsBinding = false;
+                m_bindings.StopRecordingBind();
+                aVKBindInfo.IsBinding = false;
 
-                    m_bindings.UnBind(acModBind);
-                    aVKBindInfo.CodeBind = 0;
-                }
+                m_bindings.UnBind(acModBind);
+                aVKBindInfo.CodeBind = 0;
             }
-            if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-                ImGui::SetTooltip("Uncheck this checkbox to unbind this binding.");
         }
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+            ImGui::SetTooltip("Uncheck this checkbox to unbind this binding.");
         ImGui::PopID();
     }
 
