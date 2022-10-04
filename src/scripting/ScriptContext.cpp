@@ -76,12 +76,14 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
     };
 
     auto registerBinding = [this, &wrapHandler](const std::string& acID, const std::string& acDisplayName, const std::string& acDescription, sol::function aCallback, const bool acIsHotkey){
+        const auto inputTypeStr = acIsHotkey ? "hotkey" : "input";
+
         if (acID.empty() ||
             std::ranges::find_if(acID, [](char c){ return !(isalnum(c) || c == '_' || c == '.'); }) != acID.cend())
         {
             m_logger->error("Tried to register a {} with an incorrect ID format '{}'! ID needs to be alphanumeric without any "
                 "whitespace or special characters (exceptions being '_' and '.' which are allowed in ID)!",
-                acIsHotkey ? "hotkey" : "input",
+                inputTypeStr,
                 acID);
             return;
         }
@@ -89,7 +91,7 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
         if (acDisplayName.empty())
         {
             m_logger->error("Tried to register a {} with an empty display name! [ID of handler: {}]",
-                acIsHotkey ? "hotkey" : "input",
+                inputTypeStr,
                 acID);
             return;
         }
@@ -98,8 +100,8 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
         {
             if (bind.ID == acID)
             {
-                m_logger->error("Tried to register a {} with same ID as some other! [ID of handler: {}][Display name of handler: {}]",
-                    acIsHotkey ? "hotkey" : "input",
+                m_logger->error("Tried to register a {} with same ID as some other! [ID of handler: {}, Display name of handler: '{}']",
+                    inputTypeStr,
                     acID,
                     acDisplayName);
                 return;
@@ -107,8 +109,8 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
 
             if (bind.DisplayName == acDisplayName)
             {
-                m_logger->error("Tried to register a {} with same display name as some other! [ID of handler: {}][Display name of handler: {}]",
-                    acIsHotkey ? "hotkey" : "input",
+                m_logger->error("Tried to register a {} with same display name as some other! [ID of handler: {}, Display name of handler: '{}']",
+                    inputTypeStr,
                     acID,
                     acDisplayName);
                 return;
