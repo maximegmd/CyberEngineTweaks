@@ -13,7 +13,10 @@ void Overlay::PostInitialize()
     if (!m_initialized)
     {
         if (Bindings::IsFirstTimeSetup())
+        {
+            SetActiveWidget(WidgetID::BINDINGS);
             Toggle();
+        }
 
         m_initialized = true;
     }
