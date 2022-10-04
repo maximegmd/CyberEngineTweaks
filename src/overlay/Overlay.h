@@ -32,13 +32,11 @@ struct Overlay
     void SetActiveWidget(WidgetID aNewActive);
 
 protected:
-
     void Hook();
 
     static BOOL ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis);
 
 private:
-
     WidgetID ToolbarWidget() const;
 
     Console m_console;

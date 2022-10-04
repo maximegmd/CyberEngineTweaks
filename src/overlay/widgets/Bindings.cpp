@@ -84,36 +84,7 @@ void Bindings::Update()
 
     m_madeChanges = false;
     for (auto modBindingsIt = m_vkBindInfos.begin(); modBindingsIt != m_vkBindInfos.end(); ++modBindingsIt)
-    {
-        // transform mod name to nicer format until modinfo is in
-        std::string activeModName = modBindingsIt.key() == "cet" ? "Cyber Engine Tweaks" : modBindingsIt.key();
-        bool capitalize = true;
-        std::ranges::transform(std::as_const(activeModName), activeModName.begin(), [&capitalize](char c) {
-            if (!std::isalnum(c))
-            {
-                capitalize = true;
-                return ' ';
-            }
-            if (capitalize)
-            {
-                capitalize = false;
-                return static_cast<char>(std::toupper(c));
-            }
-            return c;
-        });
-
-
-        if (ImGui::CollapsingHeader(activeModName.c_str()))
-        {
-            if (ImGui::BeginTable(("##" + activeModName).c_str(), 3, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders))
-            {
-                for (auto& binding : modBindingsIt.value())
-                    UpdateAndDrawBinding({modBindingsIt.key(), binding.Bind.ID}, binding);
-
-                ImGui::EndTable();
-            }
-        }
-    }
+        UpdateAndDrawModBindings(modBindingsIt.key(), modBindingsIt.value());
 }
 
 void Bindings::Save()
@@ -190,30 +161,26 @@ bool Bindings::FirstTimeSetup()
         ImGui::TextUnformatted("Combo can be composed from up to 4 keys.");
         ImGui::Separator();
 
-        if (ImGui::BeginTable("##cet", 3, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders))
-        {
-            UpdateAndDrawBinding(s_overlayToggleModBind, s_overlayToggleBindInfo);
+        auto& cetBinds = m_vkBindInfos.at(s_overlayToggleModBind.ModName);
+        UpdateAndDrawModBindings(s_overlayToggleModBind.ModName, cetBinds, true);
 
-            ImGui::EndTable();
-        }
-
-        if (s_overlayToggleBindInfo.CodeBind != 0)
+        auto& cetOverlayToggle = cetBinds[0];
+        if (cetOverlayToggle.CodeBind != 0)
         {
+            cetOverlayToggle.SavedCodeBind = cetOverlayToggle.CodeBind;
+
             m_vm.BlockDraw(false);
+            m_bindings.Save();
+
             ImGui::CloseCurrentPopup();
+            ImGui::EndPopup();
+            return false;
         }
 
         ImGui::EndPopup();
-
-        if (!IsFirstTimeSetup())
-        {
-            m_bindings.Save();
-            return false;
-        }
-        return true;
     }
 
-    return false;
+    return true;
 }
 
 const VKModBind& Bindings::GetOverlayToggleModBind() noexcept
@@ -232,10 +199,18 @@ void Bindings::Initialize()
 
     if (!m_vkBindInfos.empty())
     {
-        assert(m_vkBindInfos[s_overlayToggleModBind.ModName].size() == 1);
-        const auto& overlayToggleBindInfo = m_vkBindInfos[s_overlayToggleModBind.ModName][0];
+        assert(m_vkBindInfos.at(s_overlayToggleModBind.ModName).size() == 1);
+        const auto& overlayToggleBindInfo = m_vkBindInfos.at(s_overlayToggleModBind.ModName)[0];
+
         s_overlayToggleBindInfo.CodeBind = overlayToggleBindInfo.CodeBind;
         s_overlayToggleBindInfo.SavedCodeBind = overlayToggleBindInfo.SavedCodeBind;
+
+        if (s_overlayToggleBindInfo.SavedCodeBind == 0)
+        {
+            assert(s_overlayToggleBindInfo.CodeBind);
+            s_overlayToggleBindInfo.SavedCodeBind = s_overlayToggleBindInfo.CodeBind;
+        }
+
         m_vkBindInfos.clear();
     }
 
@@ -262,7 +237,7 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
     ImGui::TableNextRow();
     ImGui::TableNextColumn();
 
-    const auto isRecording = CET::Get().GetBindings().IsRecordingBind();
+    const auto isRecording = m_bindings.IsRecordingBind();
     if (aVKBindInfo.IsBinding && !isRecording)
     {
         const auto previousCodeBind = aVKBindInfo.CodeBind;
@@ -319,7 +294,7 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
         aVKBindInfo.IsBinding = false;
     }
 
-    const bool bound = aVKBindInfo.CodeBind != 0;
+    bool bound = aVKBindInfo.CodeBind != 0;
     const bool modified = aVKBindInfo.CodeBind != aVKBindInfo.SavedCodeBind;
 
     ImVec4 curTextColor { ImGui::GetStyleColorVec4(ImGuiCol_Text) };
@@ -337,10 +312,9 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
 
     ImGui::TableNextColumn();
 
-    const std::string vkStr { aVKBindInfo.IsBinding ? "BINDING..." : VKBindings::GetBindString(aVKBindInfo.CodeBind) };
-
+    const auto currentBindState = aVKBindInfo.IsBinding ? m_bindings.GetLastRecordingResult() : aVKBindInfo.CodeBind;
     ImGui::PushID(&aVKBindInfo.CodeBind);
-    if (ImGui::Button(vkStr.c_str(), ImVec2(-FLT_MIN, 0)))
+    if (ImGui::Button(VKBindings::GetBindString(currentBindState).c_str(), ImVec2(bound ? -(ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.x) : -FLT_MIN, 0)))
     {
         if (!aVKBindInfo.IsBinding && !isRecording)
         {
@@ -352,27 +326,68 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
         ImGui::SetTooltip("%s", bind.IsHotkey() ? "Bind up to 4 key combination to this binding." : "Bind single input to this binding.");
     ImGui::PopID();
 
-    ImGui::TableNextColumn();
-
-    ImGui::PushID(&aVKBindInfo.CodeBind);
-    const bool unbindDisabled = acModBind == s_overlayToggleModBind || !aVKBindInfo.CodeBind;
-    if (unbindDisabled)
-        ImGui::BeginDisabled();
-    if (ImGui::Button("UNBIND", ImVec2(-FLT_MIN, 0)))
+    if (bound)
     {
-        m_bindings.StopRecordingBind();
-        aVKBindInfo.IsBinding = false;
+        ImGui::SameLine();
 
-        m_bindings.UnBind(acModBind);
-        aVKBindInfo.CodeBind = 0;
+        ImGui::PushID(&aVKBindInfo.SavedCodeBind);
+        const bool unbindDisabled = acModBind == s_overlayToggleModBind || !aVKBindInfo.CodeBind;
+        if (unbindDisabled)
+            ImGui::BeginDisabled();
+        if (ImGui::Checkbox("##IsBound", &bound))
+        {
+            if (aVKBindInfo.CodeBind != 0)
+            {
+                m_bindings.StopRecordingBind();
+                aVKBindInfo.IsBinding = false;
+
+                m_bindings.UnBind(acModBind);
+                aVKBindInfo.CodeBind = 0;
+            }
+        }
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+            ImGui::SetTooltip("Uncheck this checkbox to unbind this binding.");
+        if (unbindDisabled)
+            ImGui::EndDisabled();
+        ImGui::PopID();
     }
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-        ImGui::SetTooltip("Unbind this binding.");
-    if (unbindDisabled)
-        ImGui::EndDisabled();
-    ImGui::PopID();
 
     ImGui::PopStyleColor();
 
     m_madeChanges |= aVKBindInfo.IsBinding || aVKBindInfo.CodeBind != aVKBindInfo.SavedCodeBind;
+}
+
+void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoques::Vector<VKBindInfo>& acVKBindInfos, bool aSimplified)
+{
+    // transform mod name to nicer format until modinfo is in
+    std::string activeModName = acModName == s_overlayToggleModBind.ModName ? "Cyber Engine Tweaks" : acModName;
+    bool capitalize = true;
+    std::ranges::transform(std::as_const(activeModName), activeModName.begin(), [&capitalize](char c) {
+        if (!std::isalnum(c))
+        {
+            capitalize = true;
+            return ' ';
+        }
+        if (capitalize)
+        {
+            capitalize = false;
+            return static_cast<char>(std::toupper(c));
+        }
+        return c;
+    });
+
+    auto renderedHeader = aSimplified;
+    if (!renderedHeader)
+        renderedHeader = ImGui::CollapsingHeader(activeModName.c_str(), ImGuiTreeNodeFlags_CollapsingHeader | ImGuiTreeNodeFlags_DefaultOpen);
+
+    if (renderedHeader)
+    {
+        if (ImGui::BeginTable(("##" + activeModName).c_str(), 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders))
+        {
+            for (auto& binding : acVKBindInfos)
+                UpdateAndDrawBinding({acModName, binding.Bind.ID}, binding);
+
+            ImGui::EndTable();
+        }
+    }
 }
