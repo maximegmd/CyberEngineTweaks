@@ -378,7 +378,7 @@ void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoq
 
     auto renderedHeader = aSimplified;
     if (!renderedHeader)
-        renderedHeader = ImGui::CollapsingHeader(activeModName.c_str(), ImGuiTreeNodeFlags_CollapsingHeader | ImGuiTreeNodeFlags_DefaultOpen);
+        renderedHeader = ImGui::CollapsingHeader(activeModName.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
 
     if (renderedHeader)
     {
