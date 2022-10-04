@@ -108,77 +108,7 @@ void Bindings::Update()
             if (ImGui::BeginTable(("##" + activeModName).c_str(), 3, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders))
             {
                 for (auto& binding : modBindingsIt.value())
-                {
-                    ImGui::TableNextRow();
-                    ImGui::TableNextColumn();
-
-                    const VKModBind modBind{modBindingsIt.key(), binding.Bind.ID};
-
-                    const auto onFinaizeBind = [this, &binding]{
-                        auto codeBind = m_bindings.GetLastRecordingResult();
-                        if (codeBind != binding.CodeBind)
-                        {
-                            if (m_bindings.IsFirstKeyUsed(codeBind))
-                            {
-                                // note - creating copy so we are not destroying reference to modBind when we unbind
-                                const auto checkModBind = [this, &binding, codeBind](const VKModBind modBind) {
-                                    const auto cetBind = modBind == s_overlayToggleModBind;
-                                    if (!cetBind || binding.Bind.IsHotkey())
-                                    {
-                                        const auto& modName = modBind.ModName;
-                                        auto& bindInfos = m_vkBindInfos[modName];
-                                        const auto bindIt = std::find(bindInfos.begin(), bindInfos.end(), modBind.ID);
-                                        if (bindIt != bindInfos.cend())
-                                        {
-                                            const auto bindItCodeBindIsSame = bindIt->CodeBind == codeBind;
-                                            if (!cetBind || !bindItCodeBindIsSame)
-                                            {
-                                                const auto bindItCodeBind = bindIt->CodeBind;
-                                                if ((!cetBind && bindItCodeBindIsSame) || binding.Bind.IsInput() || bindIt->Bind.IsInput())
-                                                {
-                                                    m_bindings.UnBind(modBind);
-                                                    bindIt->CodeBind = 0;
-                                                }
-
-                                                if (binding.Bind.IsInput() && bindIt->Bind.IsHotkey() && m_bindings.IsFirstKeyUsed(codeBind))
-                                                {
-                                                    bindIt->CodeBind = bindItCodeBind;
-                                                    m_bindings.Bind(bindIt->CodeBind, modBind);
-                                                }
-                                                else
-                                                    binding.CodeBind = codeBind;
-                                            }
-                                        }
-                                    }
-                                };
-
-                                if (const auto* directModBind = m_bindings.GetModBindForBindCode(codeBind))
-                                    checkModBind(*directModBind);
-                                else if (const auto* indirectModBind = m_bindings.GetModBindStartingWithBindCode(codeBind))
-                                    checkModBind(*indirectModBind);
-                            }
-                            else
-                                binding.CodeBind = codeBind;
-                        }
-                    };
-
-                    if (modBind == s_overlayToggleModBind)
-                        UpdateAndDrawBinding(modBind, binding, onFinaizeBind, nullptr, 10.0f);
-                    else
-                    {
-                        auto onUnBind = [this, &binding, &modBind] {
-                            if (binding.IsBinding)
-                            {
-                                m_bindings.StopRecordingBind();
-                                binding.IsBinding = false;
-                            }
-                            m_bindings.UnBind(modBind);
-                            binding.CodeBind = 0;
-                        };
-
-                        UpdateAndDrawBinding(modBind, binding, onFinaizeBind, onUnBind, 10.0f);
-                    }
-                }
+                    UpdateAndDrawBinding({modBindingsIt.key(), binding.Bind.ID}, binding);
 
                 ImGui::EndTable();
             }
@@ -260,18 +190,18 @@ bool Bindings::FirstTimeSetup()
         ImGui::TextUnformatted("Combo can be composed from up to 4 keys.");
         ImGui::Separator();
 
-        const auto onFinalizeBind = [this]{
-            auto& bindings = CET::Get().GetBindings();
+        if (ImGui::BeginTable("##cet", 3, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders))
+        {
+            UpdateAndDrawBinding(s_overlayToggleModBind, s_overlayToggleBindInfo);
 
-            s_overlayToggleBindInfo.CodeBind = bindings.GetLastRecordingResult();
-            bindings.UnBind(s_overlayToggleBindInfo.CodeBind);
+            ImGui::EndTable();
+        }
 
+        if (s_overlayToggleBindInfo.CodeBind != 0)
+        {
             m_vm.BlockDraw(false);
             ImGui::CloseCurrentPopup();
-        };
-
-        // TODO - do not hardcode offset! this somewhat works temporarily...
-        UpdateAndDrawBinding(s_overlayToggleModBind, s_overlayToggleBindInfo, onFinalizeBind,nullptr, diffTextSz * 0.75f);
+        }
 
         ImGui::EndPopup();
 
@@ -327,15 +257,61 @@ void Bindings::Initialize()
     assert(m_vkBindInfos[s_overlayToggleModBind.ModName].size() == 1);
 }
 
-void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKBindInfo, TWidgetCB aFinalizeBindCB, TWidgetCB aUnBindCB, float aOffsetX)
+void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKBindInfo)
 {
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+
     const auto isRecording = CET::Get().GetBindings().IsRecordingBind();
     if (aVKBindInfo.IsBinding && !isRecording)
     {
         const auto previousCodeBind = aVKBindInfo.CodeBind;
 
-        if (aFinalizeBindCB)
-            aFinalizeBindCB();
+        auto codeBind = m_bindings.GetLastRecordingResult();
+        if (codeBind != aVKBindInfo.CodeBind)
+        {
+            if (m_bindings.IsFirstKeyUsed(codeBind))
+            {
+                // note - creating copy so we are not destroying reference to modBind when we unbind
+                const auto checkModBind = [this, &aVKBindInfo, codeBind](const VKModBind modBind) {
+                    const auto cetBind = modBind == s_overlayToggleModBind;
+                    if (!cetBind || aVKBindInfo.Bind.IsHotkey())
+                    {
+                        const auto& modName = modBind.ModName;
+                        auto& bindInfos = m_vkBindInfos[modName];
+                        const auto bindIt = std::find(bindInfos.begin(), bindInfos.end(), modBind.ID);
+                        if (bindIt != bindInfos.cend())
+                        {
+                            const auto bindItCodeBindIsSame = bindIt->CodeBind == codeBind;
+                            if (!cetBind || !bindItCodeBindIsSame)
+                            {
+                                const auto bindItCodeBind = bindIt->CodeBind;
+                                if ((!cetBind && bindItCodeBindIsSame) || aVKBindInfo.Bind.IsInput() || bindIt->Bind.IsInput())
+                                {
+                                    m_bindings.UnBind(modBind);
+                                    bindIt->CodeBind = 0;
+                                }
+
+                                if (aVKBindInfo.Bind.IsInput() && bindIt->Bind.IsHotkey() && m_bindings.IsFirstKeyUsed(codeBind))
+                                {
+                                    bindIt->CodeBind = bindItCodeBind;
+                                    m_bindings.Bind(bindIt->CodeBind, modBind);
+                                }
+                                else
+                                    aVKBindInfo.CodeBind = codeBind;
+                            }
+                        }
+                    }
+                };
+
+                if (const auto* directModBind = m_bindings.GetModBindForBindCode(codeBind))
+                    checkModBind(*directModBind);
+                else if (const auto* indirectModBind = m_bindings.GetModBindStartingWithBindCode(codeBind))
+                    checkModBind(*indirectModBind);
+            }
+            else
+                aVKBindInfo.CodeBind = codeBind;
+        }
 
         if (previousCodeBind != aVKBindInfo.CodeBind)
             m_bindings.Bind(aVKBindInfo.CodeBind, acModBind);
@@ -354,9 +330,6 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
     ImGui::PushStyleColor(ImGuiCol_Text, curTextColor);
 
     const auto& bind = aVKBindInfo.Bind;
-
-    ImGui::AlignTextToFramePadding();
-    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + aOffsetX);
 
     ImGui::Button(bind.DisplayName.c_str(), ImVec2(-FLT_MIN, 0));
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled) && !bind.Description.empty())
@@ -382,7 +355,7 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
     ImGui::TableNextColumn();
 
     ImGui::PushID(&aVKBindInfo.CodeBind);
-    const bool unbindDisabled = !aUnBindCB || !aVKBindInfo.CodeBind;
+    const bool unbindDisabled = acModBind == s_overlayToggleModBind || !aVKBindInfo.CodeBind;
     if (unbindDisabled)
         ImGui::BeginDisabled();
     if (ImGui::Button("UNBIND", ImVec2(-FLT_MIN, 0)))
@@ -390,7 +363,8 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
         m_bindings.StopRecordingBind();
         aVKBindInfo.IsBinding = false;
 
-        aUnBindCB();
+        m_bindings.UnBind(acModBind);
+        aVKBindInfo.CodeBind = 0;
     }
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
         ImGui::SetTooltip("Unbind this binding.");
