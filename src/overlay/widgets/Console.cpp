@@ -130,7 +130,7 @@ void Console::Update()
     ImGui::SetItemDefaultFocus();
     if (execute)
     {
-        auto consoleLogger = spdlog::get("scripting");
+        const auto consoleLogger = spdlog::get("scripting");
         consoleLogger->info("> {}", m_Command);
 
         m_consoleHistoryIndex = m_consoleHistory.size();
@@ -156,7 +156,7 @@ void Console::Log(const std::string& acpText)
     std::lock_guard _{ m_outputLock };
 
     size_t first = 0;
-    size_t size = acpText.size();
+    const size_t size = acpText.size();
     while (first < size)
     {
         // find_first_of \r or \n
@@ -229,45 +229,51 @@ void Console::GameLog(const std::string& acpText)
 
 void Console::DrawGameLog()
 {
-    if (m_showGameLog)
+    if (!m_showGameLog)
+        return;
+
+    if (ImGui::Begin("Game Log", &m_showGameLog))
     {
-        ImGui::Begin("Game Log", &m_showGameLog);
-
-        const auto itemWidth = GetAlignedItemWidth(2);
-
-        if (ImGui::Button("Clear output", ImVec2(itemWidth, 0)))
+        if (ImGui::BeginChildFrame(ImGui::GetID("Game Log Frame"), ImGui::GetContentRegionAvail()))
         {
-            std::lock_guard _{ m_gamelogLock };
-            m_gamelogLines.clear();
-        }
-        ImGui::SameLine();
-        ImGui::Checkbox("Auto-scroll", &m_gamelogShouldScroll);
+            const auto itemWidth = GetAlignedItemWidth(2);
 
-        if (ImGui::ListBoxHeader("##GameLogHeader", ImVec2(-1, -1)))
-        {
-            std::lock_guard _{ m_gamelogLock };
+            if (ImGui::Button("Clear output", ImVec2(itemWidth, 0)))
+            {
+                std::lock_guard _{ m_gamelogLock };
+                m_gamelogLines.clear();
+            }
+            ImGui::SameLine();
+            ImGui::Checkbox("Auto-scroll", &m_gamelogShouldScroll);
 
-            ImGuiListClipper clipper;
-            clipper.Begin(m_gamelogLines.size());
-            while (clipper.Step())
-                for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i)
+            if (ImGui::ListBoxHeader("##GameLogHeader", ImVec2(-1, -1)))
+            {
+                std::lock_guard _{ m_gamelogLock };
+
+                ImGuiListClipper clipper;
+                clipper.Begin(m_gamelogLines.size());
+                while (clipper.Step())
+                    for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i)
+                    {
+                        auto& item = m_gamelogLines[i];
+                        ImGui::PushID(i);
+                        ImGui::Selectable(item.c_str());
+                        ImGui::PopID();
+                    }
+
+                if (m_gamelogScroll)
                 {
-                    auto& item = m_gamelogLines[i];
-                    ImGui::PushID(i);
-                    ImGui::Selectable(item.c_str());
-                    ImGui::PopID();
+                    if (m_gamelogShouldScroll)
+                        ImGui::SetScrollHereY();
+                    m_gamelogScroll = false;
                 }
 
-            if (m_gamelogScroll)
-            {
-                if (m_gamelogShouldScroll)
-                    ImGui::SetScrollHereY();
-                m_gamelogScroll = false;
+                ImGui::ListBoxFooter();
             }
-
-            ImGui::ListBoxFooter();
         }
 
-        ImGui::End();
+        ImGui::EndChildFrame();
     }
+
+    ImGui::End();
 }

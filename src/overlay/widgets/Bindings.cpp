@@ -72,19 +72,23 @@ WidgetResult Bindings::OnDisable()
 
 void Bindings::Update()
 {
-    const auto itemWidth = GetAlignedItemWidth(2);
+    const auto frameSize = ImVec2(ImGui::GetContentRegionAvailWidth(), -(ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.y + ImGui::GetStyle().FramePadding.y + 2.0f));
+    if (ImGui::BeginChildFrame(ImGui::GetID("Bindings"), frameSize))
+    {
+        m_madeChanges = false;
+        for (auto modBindingsIt = m_vkBindInfos.begin(); modBindingsIt != m_vkBindInfos.end(); ++modBindingsIt)
+            UpdateAndDrawModBindings(modBindingsIt.key(), modBindingsIt.value());
+    }
+    ImGui::EndChildFrame();
 
+    ImGui::Spacing();
+
+    const auto itemWidth = GetAlignedItemWidth(2);
     if (ImGui::Button("Save", ImVec2(itemWidth, 0)))
         Save();
     ImGui::SameLine();
     if (ImGui::Button("Reset changes", ImVec2(itemWidth, 0)))
         ResetChanges();
-
-    ImGui::Spacing();
-
-    m_madeChanges = false;
-    for (auto modBindingsIt = m_vkBindInfos.begin(); modBindingsIt != m_vkBindInfos.end(); ++modBindingsIt)
-        UpdateAndDrawModBindings(modBindingsIt.key(), modBindingsIt.value());
 }
 
 void Bindings::Save()
@@ -331,24 +335,22 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
         ImGui::SameLine();
 
         ImGui::PushID(&aVKBindInfo.SavedCodeBind);
-        const bool unbindDisabled = acModBind == s_overlayToggleModBind || !aVKBindInfo.CodeBind;
-        if (unbindDisabled)
-            ImGui::BeginDisabled();
-        if (ImGui::Checkbox("##IsBound", &bound))
+        if (bound && acModBind != s_overlayToggleModBind)
         {
-            if (aVKBindInfo.CodeBind != 0)
+            if (ImGui::Checkbox("##IsBound", &bound))
             {
-                m_bindings.StopRecordingBind();
-                aVKBindInfo.IsBinding = false;
+                if (aVKBindInfo.CodeBind != 0)
+                {
+                    m_bindings.StopRecordingBind();
+                    aVKBindInfo.IsBinding = false;
 
-                m_bindings.UnBind(acModBind);
-                aVKBindInfo.CodeBind = 0;
+                    m_bindings.UnBind(acModBind);
+                    aVKBindInfo.CodeBind = 0;
+                }
             }
+            if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+                ImGui::SetTooltip("Uncheck this checkbox to unbind this binding.");
         }
-        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-            ImGui::SetTooltip("Uncheck this checkbox to unbind this binding.");
-        if (unbindDisabled)
-            ImGui::EndDisabled();
         ImGui::PopID();
     }
 

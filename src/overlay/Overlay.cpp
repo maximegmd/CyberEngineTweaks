@@ -112,33 +112,31 @@ void Overlay::Update()
     ImGui::SetNextWindowSizeConstraints(ImVec2(420, 315), ImVec2(FLT_MAX, FLT_MAX));
     if (ImGui::Begin("Cyber Engine Tweaks"))
     {
-        const ImVec2 cZeroVec = {0, 0};
-
         SetActiveWidget(ToolbarWidget());
 
         if (m_activeWidgetID == WidgetID::CONSOLE)
         {
-            if (ImGui::BeginChild("Console", cZeroVec, true))
+            if (ImGui::BeginChildFrame(ImGui::GetID("ConsoleWidget"), ImGui::GetContentRegionAvail()))
                 m_console.Update();
-            ImGui::EndChild();
+            ImGui::EndChildFrame();
         }
         if (m_activeWidgetID == WidgetID::BINDINGS)
         {
-            if (ImGui::BeginChild("Bindings", cZeroVec, true))
+            if (ImGui::BeginChildFrame(ImGui::GetID("BindingsWidget"), ImGui::GetContentRegionAvail()))
                 m_bindings.Update();
-            ImGui::EndChild();
+            ImGui::EndChildFrame();
         }
         if (m_activeWidgetID == WidgetID::TWEAKDB)
         {
-            if (ImGui::BeginChild("TweakDB Editor", cZeroVec, true))
+            if (ImGui::BeginChildFrame(ImGui::GetID("TweakDBWidget"), ImGui::GetContentRegionAvail()))
                 m_tweakDBEditor.Update();
-            ImGui::EndChild();
+            ImGui::EndChildFrame();
         }
         if (m_activeWidgetID == WidgetID::SETTINGS)
         {
-            if (ImGui::BeginChild("Settings", cZeroVec, true))
+            if (ImGui::BeginChildFrame(ImGui::GetID("SettingsWidget"), ImGui::GetContentRegionAvail()))
                 m_settings.Update();
-            ImGui::EndChild();
+            ImGui::EndChildFrame();
         }
     }
     ImGui::End();

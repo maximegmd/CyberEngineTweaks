@@ -59,8 +59,47 @@ WidgetResult Settings::OnDisable()
 
 void Settings::Update()
 {
-    const auto itemWidth = GetAlignedItemWidth(3);
+    const auto frameSize = ImVec2(ImGui::GetContentRegionAvailWidth(), -(ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.y + ImGui::GetStyle().FramePadding.y + 2.0f));
+    if (ImGui::BeginChildFrame(ImGui::GetID("Settings"), frameSize))
+    {
+        m_madeChanges = false;
+        if (ImGui::CollapsingHeader("Patches", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            if (ImGui::BeginTable("##SETTINGS_PATCHES", 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders))
+            {
+                UpdateAndDrawSetting("AMD SMT Patch", "For AMD CPUs that did not get a performance boost after CDPR's patch (requires restart to take effect).", m_patchAmdSmt, m_options.PatchAmdSmt);
+                UpdateAndDrawSetting("Remove Pedestrians", "Removes most of the pedestrians and traffic (requires restart to take effect).", m_patchRemovePedestrians, m_options.PatchRemovePedestrians);
+                UpdateAndDrawSetting("Disable Async Compute", "Disables async compute, this can give a boost on older GPUs like Nvidia 10xx series for example (requires restart to take effect).", m_patchAsyncCompute, m_options.PatchAsyncCompute);
+                UpdateAndDrawSetting("Disable Anti-aliasing", "Completely disables anti-aliasing (requires restart to take effect).", m_patchAntialiasing, m_options.PatchAntialiasing);
+                UpdateAndDrawSetting("Skip Start Menu", "Skips the 'Breaching...' menu asking you to press space bar to continue (requires restart to take effect).", m_patchSkipStartMenu, m_options.PatchSkipStartMenu);
+                UpdateAndDrawSetting("Suppress Intro Movies", "Disables logos played at the beginning (requires restart to take effect).", m_patchDisableIntroMovies, m_options.PatchDisableIntroMovies);
+                UpdateAndDrawSetting("Disable Vignette", "Disables vignetting along screen borders (requires restart to take effect).", m_patchDisableVignette, m_options.PatchDisableVignette);
+                UpdateAndDrawSetting("Disable Boundary Teleport", "Allows players to access out-of-bounds locations (requires restart to take effect).", m_patchDisableBoundaryTeleport, m_options.PatchDisableBoundaryTeleport);
+                UpdateAndDrawSetting("Disable V-Sync (Windows 7 only)", " (requires restart to take effect).", m_patchDisableWin7Vsync, m_options.PatchDisableWin7Vsync);
+                UpdateAndDrawSetting("Fix Minimap Flicker", "Disables VSync on Windows 7 to bypass the 60 FPS limit (requires restart to take effect).", m_patchMinimapFlicker, m_options.PatchMinimapFlicker);
 
+                ImGui::EndTable();
+            }
+        }
+        if (ImGui::CollapsingHeader("Dev", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            if (ImGui::BeginTable("##SETTINGS_DEV", 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders))
+            {
+                UpdateAndDrawSetting("Draw ImGui Diagnostic Window", "Toggles drawing of internal ImGui diagnostics window to show what is going on behind the scenes (useful when debugging ImGui issues).", m_options.DrawImGuiDiagnosticWindow, m_options.DrawImGuiDiagnosticWindow);
+                UpdateAndDrawSetting("Remove Dead Bindings", "Removes all bindings which are no longer valid (disabling this could be useful when debugging mod issues).", m_removeDeadBindings, m_options.RemoveDeadBindings);
+                UpdateAndDrawSetting("Enable ImGui Assertions", "Enables all ImGui assertions (useful when debugging ImGui issues, should also be used to check mods before shipping!).", m_enableImGuiAssertions, m_options.EnableImGuiAssertions);
+                UpdateAndDrawSetting("Enable Debug Build", "Sets internal flags to disguise as debug build (requires restart to take effect).", m_patchEnableDebug, m_options.PatchEnableDebug);
+                UpdateAndDrawSetting("Dump Game Options", "Dumps all game options into main log file (requires restart to take effect).", m_dumpGameOptions, m_options.DumpGameOptions);
+
+                ImGui::EndTable();
+            }
+        }
+    }
+    ImGui::EndChildFrame();
+
+    ImGui::Spacing();
+
+    const auto itemWidth = GetAlignedItemWidth(3);
     if (ImGui::Button("Load", ImVec2(itemWidth, 0)))
         Load();
     ImGui::SameLine();
@@ -69,43 +108,6 @@ void Settings::Update()
     ImGui::SameLine();
     if (ImGui::Button("Defaults", ImVec2(itemWidth, 0)))
         ResetToDefaults();
-
-    ImGui::Spacing();
-
-    m_madeChanges = false;
-
-    if (ImGui::CollapsingHeader("Patches", ImGuiTreeNodeFlags_DefaultOpen))
-    {
-        if (ImGui::BeginTable("##SETTINGS_PATCHES", 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders))
-        {
-            UpdateAndDrawSetting("AMD SMT Patch", "For AMD CPUs that did not get a performance boost after CDPR's patch (requires restart to take effect).", m_patchAmdSmt, m_options.PatchAmdSmt);
-            UpdateAndDrawSetting("Remove Pedestrians", "Removes most of the pedestrians and traffic (requires restart to take effect).", m_patchRemovePedestrians, m_options.PatchRemovePedestrians);
-            UpdateAndDrawSetting("Disable Async Compute", "Disables async compute, this can give a boost on older GPUs like Nvidia 10xx series for example (requires restart to take effect).", m_patchAsyncCompute, m_options.PatchAsyncCompute);
-            UpdateAndDrawSetting("Disable Anti-aliasing", "Completely disables anti-aliasing (requires restart to take effect).", m_patchAntialiasing, m_options.PatchAntialiasing);
-            UpdateAndDrawSetting("Skip Start Menu", "Skips the 'Breaching...' menu asking you to press space bar to continue (requires restart to take effect).", m_patchSkipStartMenu, m_options.PatchSkipStartMenu);
-            UpdateAndDrawSetting("Suppress Intro Movies", "Disables logos played at the beginning (requires restart to take effect).", m_patchDisableIntroMovies, m_options.PatchDisableIntroMovies);
-            UpdateAndDrawSetting("Disable Vignette", "Disables vignetting along screen borders (requires restart to take effect).", m_patchDisableVignette, m_options.PatchDisableVignette);
-            UpdateAndDrawSetting("Disable Boundary Teleport", "Allows players to access out-of-bounds locations (requires restart to take effect).", m_patchDisableBoundaryTeleport, m_options.PatchDisableBoundaryTeleport);
-            UpdateAndDrawSetting("Disable V-Sync (Windows 7 only)", " (requires restart to take effect).", m_patchDisableWin7Vsync, m_options.PatchDisableWin7Vsync);
-            UpdateAndDrawSetting("Fix Minimap Flicker", "Disables VSync on Windows 7 to bypass the 60 FPS limit (requires restart to take effect).", m_patchMinimapFlicker, m_options.PatchMinimapFlicker);
-
-            ImGui::EndTable();
-        }
-    }
-
-    if (ImGui::CollapsingHeader("Dev", ImGuiTreeNodeFlags_DefaultOpen))
-    {
-        if (ImGui::BeginTable("##SETTINGS_DEV", 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders))
-        {
-            UpdateAndDrawSetting("Draw ImGui Diagnostic Window", "Toggles drawing of internal ImGui diagnostics window to show what is going on behind the scenes (useful when debugging ImGui issues).", m_options.DrawImGuiDiagnosticWindow, m_options.DrawImGuiDiagnosticWindow);
-            UpdateAndDrawSetting("Remove Dead Bindings", "Removes all bindings which are no longer valid (disabling this could be useful when debugging mod issues).", m_removeDeadBindings, m_options.RemoveDeadBindings);
-            UpdateAndDrawSetting("Enable ImGui Assertions", "Enables all ImGui assertions (useful when debugging ImGui issues, should also be used to check mods before shipping!).", m_enableImGuiAssertions, m_options.EnableImGuiAssertions);
-            UpdateAndDrawSetting("Enable Debug Build", "Sets internal flags to disguise as debug build (requires restart to take effect).", m_patchEnableDebug, m_options.PatchEnableDebug);
-            UpdateAndDrawSetting("Dump Game Options", "Dumps all game options into main log file (requires restart to take effect).", m_dumpGameOptions, m_options.DumpGameOptions);
-
-            ImGui::EndTable();
-        }
-    }
 }
 
 void Settings::Load()
