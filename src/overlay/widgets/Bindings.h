@@ -35,7 +35,7 @@ struct Bindings : Widget
 
 private:
     void Initialize();
-    void UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKBindInfo, TWidgetCB aFinalizeBindCB, TWidgetCB aUnBindCB, float aOffsetX);
+    void UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKBindInfo);
 
     TiltedPhoques::Map<std::string, TiltedPhoques::Vector<VKBindInfo>> m_vkBindInfos{ };
     VKBindings& m_bindings;
