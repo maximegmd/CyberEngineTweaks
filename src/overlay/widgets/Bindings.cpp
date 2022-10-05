@@ -72,12 +72,12 @@ WidgetResult Bindings::OnDisable()
 
 void Bindings::Update()
 {
-    const auto frameSize = ImVec2(ImGui::GetContentRegionAvailWidth(), -(ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.y + ImGui::GetStyle().FramePadding.y + 2.0f));
+    const auto frameSize = ImVec2(ImGui::GetContentRegionAvail().x, -(ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.y + ImGui::GetStyle().FramePadding.y + 2.0f));
     if (ImGui::BeginChildFrame(ImGui::GetID("Bindings"), frameSize))
     {
         m_madeChanges = false;
         for (auto modBindingsIt = m_vkBindInfos.begin(); modBindingsIt != m_vkBindInfos.end(); ++modBindingsIt)
-            UpdateAndDrawModBindings(modBindingsIt.key(), modBindingsIt.value());
+            UpdateAndDrawModBindings(modBindingsIt.key(), modBindingsIt.value().first, modBindingsIt.value().second);
     }
     ImGui::EndChildFrame();
 
@@ -95,7 +95,7 @@ void Bindings::Save()
 {
     for (auto modBindingsIt = m_vkBindInfos.begin(); modBindingsIt != m_vkBindInfos.end(); ++modBindingsIt)
     {
-        for (auto& binding : modBindingsIt.value())
+        for (auto& binding : modBindingsIt.value().first)
         {
             if (binding.SavedCodeBind != binding.CodeBind)
                 binding.SavedCodeBind = binding.CodeBind;
@@ -114,7 +114,7 @@ void Bindings::ResetChanges()
 
     for (auto modBindingsIt = m_vkBindInfos.begin(); modBindingsIt != m_vkBindInfos.end(); ++modBindingsIt)
     {
-        for (const auto& binding : modBindingsIt.value())
+        for (const auto& binding : modBindingsIt.value().first)
         {
             if (binding.CodeBind != 0 && binding.SavedCodeBind != binding.CodeBind)
                 m_bindings.UnBind(binding.CodeBind);
@@ -129,7 +129,7 @@ void Bindings::ResetChanges()
 
     for (auto modBindingsIt = m_vkBindInfos.begin(); modBindingsIt != m_vkBindInfos.end(); ++modBindingsIt)
     {
-        for (auto& binding : modBindingsIt.value())
+        for (auto& binding : modBindingsIt.value().first)
         {
             if (binding.SavedCodeBind != 0 && binding.SavedCodeBind != binding.CodeBind)
                 m_bindings.Bind(binding.SavedCodeBind, {modBindingsIt.key(), binding.Bind.ID});
@@ -165,8 +165,8 @@ bool Bindings::FirstTimeSetup()
         ImGui::TextUnformatted("Combo can be composed from up to 4 keys.");
         ImGui::Separator();
 
-        auto& cetBinds = m_vkBindInfos.at(s_overlayToggleModBind.ModName);
-        UpdateAndDrawModBindings(s_overlayToggleModBind.ModName, cetBinds, true);
+        auto& [cetBinds, cetHotkeys] = m_vkBindInfos.at(s_overlayToggleModBind.ModName);
+        UpdateAndDrawModBindings(s_overlayToggleModBind.ModName, cetBinds, cetHotkeys, true);
 
         auto& cetOverlayToggle = cetBinds[0];
         if (cetOverlayToggle.CodeBind != 0)
@@ -203,8 +203,8 @@ void Bindings::Initialize()
 
     if (!m_vkBindInfos.empty())
     {
-        assert(m_vkBindInfos.at(s_overlayToggleModBind.ModName).size() == 1);
-        const auto& overlayToggleBindInfo = m_vkBindInfos.at(s_overlayToggleModBind.ModName)[0];
+        assert(m_vkBindInfos.at(s_overlayToggleModBind.ModName).first.size() == 1);
+        const auto& overlayToggleBindInfo = m_vkBindInfos.at(s_overlayToggleModBind.ModName).first[0];
 
         s_overlayToggleBindInfo.CodeBind = overlayToggleBindInfo.CodeBind;
         s_overlayToggleBindInfo.SavedCodeBind = overlayToggleBindInfo.SavedCodeBind;
@@ -219,21 +219,30 @@ void Bindings::Initialize()
     }
 
     // emplace CET internal settings
-    m_vkBindInfos[s_overlayToggleModBind.ModName].emplace_back(s_overlayToggleBindInfo);
+    {
+        auto& [vkBindInfos, hotkeyCount] = m_vkBindInfos[s_overlayToggleModBind.ModName];
+        vkBindInfos.emplace_back(s_overlayToggleBindInfo);
+        hotkeyCount = 1;
+    }
 
     // emplace mod bindings
     for (const auto& modBindsIt : allModsBinds)
     {
+        auto& [vkBindInfos, hotkeyCount] = m_vkBindInfos[modBindsIt.first];
+        hotkeyCount = 0;
         for (const auto& vkBind : modBindsIt.second.get())
         {
-            auto& vkBindInfo = m_vkBindInfos[modBindsIt.first].emplace_back(vkBind);
+            auto& vkBindInfo = vkBindInfos.emplace_back(vkBind);
             vkBindInfo.SavedCodeBind = m_bindings.GetBindCodeForModBind({modBindsIt.first, vkBind.ID});
             vkBindInfo.CodeBind = vkBindInfo.SavedCodeBind;
+
+            if (vkBind.IsHotkey())
+                ++hotkeyCount;
         }
     }
 
     // we have only one binding! if there are more for some reason, something didnt work as expected...
-    assert(m_vkBindInfos[s_overlayToggleModBind.ModName].size() == 1);
+    assert(m_vkBindInfos[s_overlayToggleModBind.ModName].first.size() == 1);
 }
 
 void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKBindInfo)
@@ -257,7 +266,7 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
                     if (!cetBind || aVKBindInfo.Bind.IsHotkey())
                     {
                         const auto& modName = modBind.ModName;
-                        auto& bindInfos = m_vkBindInfos[modName];
+                        auto& [bindInfos, _] = m_vkBindInfos[modName];
                         const auto bindIt = std::find(bindInfos.begin(), bindInfos.end(), modBind.ID);
                         if (bindIt != bindInfos.cend())
                         {
@@ -312,8 +321,26 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
     const auto& bind = aVKBindInfo.Bind;
 
     ImGui::Button(bind.DisplayName.c_str(), ImVec2(-FLT_MIN, 0));
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled) && !bind.Description.empty())
-        ImGui::SetTooltip("%s", bind.Description.c_str());
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+    {
+        if (bind.HasComplexDescription())
+        {
+            if (m_vm.IsInitialized())
+            {
+                ImGui::BeginTooltip();
+                std::get<std::function<void()>>(bind.Description)();
+                ImGui::EndTooltip();
+            }
+            else
+                ImGui::SetTooltip("Currently unable to draw this tooltip. Wait for a bit please...");
+        }
+        if (bind.HasSimpleDescription())
+        {
+            const auto& description = std::get<std::string>(bind.Description);
+            if (!description.empty())
+                ImGui::SetTooltip("%s", description.c_str());
+        }
+    }
 
     ImGui::TableNextColumn();
 
@@ -359,8 +386,11 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
     m_madeChanges |= aVKBindInfo.IsBinding || aVKBindInfo.CodeBind != aVKBindInfo.SavedCodeBind;
 }
 
-void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoques::Vector<VKBindInfo>& acVKBindInfos, bool aSimplified)
+void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoques::Vector<VKBindInfo>& aVKBindInfos, size_t aHotkeyCount, bool aSimplified)
 {
+    if (aVKBindInfos.empty())
+        return;
+
     // transform mod name to nicer format until modinfo is in
     std::string activeModName = acModName == s_overlayToggleModBind.ModName ? "Cyber Engine Tweaks" : acModName;
     bool capitalize = true;
@@ -378,16 +408,54 @@ void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoq
         return c;
     });
 
-    auto renderedHeader = aSimplified;
-    if (!renderedHeader)
-        renderedHeader = ImGui::CollapsingHeader(activeModName.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
+    auto headerOpen =  aSimplified;
+    if (!headerOpen)
+        headerOpen = ImGui::CollapsingHeader(activeModName.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
 
-    if (renderedHeader)
+    if (!headerOpen)
+        return;
+
+    if (aHotkeyCount > 0)
     {
-        if (ImGui::BeginTable(("##" + activeModName).c_str(), 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders))
+        headerOpen = aSimplified;
+        if (!headerOpen)
+            headerOpen = ImGui::CollapsingHeader("Hotkeys", ImGuiTreeNodeFlags_DefaultOpen);
+    }
+    else
+        headerOpen = false;
+
+    if (headerOpen)
+    {
+        if (ImGui::BeginTable(("##HOTKEYS_" + activeModName).c_str(), 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders))
         {
-            for (auto& binding : acVKBindInfos)
-                UpdateAndDrawBinding({acModName, binding.Bind.ID}, binding);
+            for (auto& binding : aVKBindInfos)
+            {
+                if (binding.Bind.IsHotkey())
+                    UpdateAndDrawBinding({acModName, binding.Bind.ID}, binding);
+            }
+
+            ImGui::EndTable();
+        }
+    }
+
+    if (aHotkeyCount < aVKBindInfos.size())
+    {
+        headerOpen = aSimplified;
+        if (!headerOpen)
+            headerOpen = ImGui::CollapsingHeader("Inputs", ImGuiTreeNodeFlags_DefaultOpen);
+    }
+    else
+        headerOpen = false;
+
+    if (headerOpen)
+    {
+        if (ImGui::BeginTable(("##INPUTS_" + activeModName).c_str(), 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders))
+        {
+            for (auto& binding : aVKBindInfos)
+            {
+                if (binding.Bind.IsInput())
+                    UpdateAndDrawBinding({acModName, binding.Bind.ID}, binding);
+            }
 
             ImGui::EndTable();
         }
