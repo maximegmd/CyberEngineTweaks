@@ -60,12 +60,13 @@ WidgetResult Settings::OnDisable()
 void Settings::Update()
 {
     const auto frameSize = ImVec2(ImGui::GetContentRegionAvail().x, -(ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.y + ImGui::GetStyle().FramePadding.y + 2.0f));
-    if (ImGui::BeginChildFrame(ImGui::GetID("Settings"), frameSize))
+    if (ImGui::BeginChild(ImGui::GetID("Settings"), frameSize))
     {
         m_madeChanges = false;
         if (ImGui::CollapsingHeader("Patches", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            if (ImGui::BeginTable("##SETTINGS_PATCHES", 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders))
+            ImGui::TreePush();
+            if (ImGui::BeginTable("##SETTINGS_PATCHES", 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
             {
                 UpdateAndDrawSetting("AMD SMT Patch", "For AMD CPUs that did not get a performance boost after CDPR's patch (requires restart to take effect).", m_patchAmdSmt, m_options.PatchAmdSmt);
                 UpdateAndDrawSetting("Remove Pedestrians", "Removes most of the pedestrians and traffic (requires restart to take effect).", m_patchRemovePedestrians, m_options.PatchRemovePedestrians);
@@ -80,10 +81,12 @@ void Settings::Update()
 
                 ImGui::EndTable();
             }
+            ImGui::TreePop();
         }
         if (ImGui::CollapsingHeader("Dev", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            if (ImGui::BeginTable("##SETTINGS_DEV", 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders))
+            ImGui::TreePush();
+            if (ImGui::BeginTable("##SETTINGS_DEV", 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
             {
                 UpdateAndDrawSetting("Draw ImGui Diagnostic Window", "Toggles drawing of internal ImGui diagnostics window to show what is going on behind the scenes (useful when debugging ImGui issues).", m_options.DrawImGuiDiagnosticWindow, m_options.DrawImGuiDiagnosticWindow);
                 UpdateAndDrawSetting("Remove Dead Bindings", "Removes all bindings which are no longer valid (disabling this could be useful when debugging mod issues).", m_removeDeadBindings, m_options.RemoveDeadBindings);
@@ -93,11 +96,12 @@ void Settings::Update()
 
                 ImGui::EndTable();
             }
+            ImGui::TreePop();
         }
     }
-    ImGui::EndChildFrame();
+    ImGui::EndChild();
 
-    ImGui::Spacing();
+    ImGui::Separator();
 
     const auto itemWidth = GetAlignedItemWidth(3);
     if (ImGui::Button("Load", ImVec2(itemWidth, 0)))
@@ -158,7 +162,7 @@ void Settings::ResetToDefaults()
     Load();
 }
 
-void Settings::UpdateAndDrawSetting(const std::string& acLabel, const std::string& acTooltip, bool& aCurrent, const bool& acSaved, float aOffsetX)
+void Settings::UpdateAndDrawSetting(const std::string& acLabel, const std::string& acTooltip, bool& aCurrent, const bool& acSaved)
 {
     ImGui::TableNextRow();
     ImGui::TableNextColumn();
@@ -169,19 +173,22 @@ void Settings::UpdateAndDrawSetting(const std::string& acLabel, const std::strin
 
     ImGui::AlignTextToFramePadding();
 
-    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + aOffsetX);
-
     ImGui::PushStyleColor(ImGuiCol_Text, curTextColor);
-    ImGui::Button(acLabel.c_str(), ImVec2(-FLT_MIN, 0));
+
+    ImGui::PushID(&acLabel);
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + GetCenteredOffsetForText(acLabel.c_str()));
+    ImGui::TextUnformatted(acLabel.c_str());
+    ImGui::PopID();
+
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled) && !acTooltip.empty())
         ImGui::SetTooltip("%s", acTooltip.c_str());
 
     ImGui::TableNextColumn();
 
-    ImGui::SameLine((ImGui::GetContentRegionAvail().x - ImGui::GetFrameHeight()) / 2, 0);
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (ImGui::GetContentRegionAvail().x - ImGui::GetFrameHeight()) / 2);
     ImGui::Checkbox(("##" + acLabel).c_str(), &aCurrent);
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-        ImGui::SetTooltip("%s", aCurrent ? "Click to disable this option." : "Click to enable this option.");
+        ImGui::SetTooltip("%s", acTooltip.c_str());
 
     ImGui::PopStyleColor();
 

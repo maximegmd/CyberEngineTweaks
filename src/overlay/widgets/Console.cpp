@@ -68,18 +68,23 @@ void Console::Update()
 {
     const auto itemWidth = GetAlignedItemWidth(5);
 
+    const float begin = ImGui::GetCursorPosX();
     ImGui::Checkbox("Clear input", &m_inputClear);
-    ImGui::SameLine(itemWidth, ImGui::GetStyle().ItemSpacing.x);
+    ImGui::SameLine();
+    ImGui::SetCursorPosX(begin + itemWidth + ImGui::GetStyle().ItemSpacing.x);
     if (ImGui::Button("Clear output", ImVec2(itemWidth, 0)))
     {
         std::lock_guard _{ m_outputLock };
         m_outputLines.clear();
     }
-    ImGui::SameLine(2 * itemWidth + 1 * ImGui::GetStyle().ItemSpacing.x, ImGui::GetStyle().ItemSpacing.x);
+    ImGui::SameLine();
+    ImGui::SetCursorPosX(begin + 2 * itemWidth + 2 * ImGui::GetStyle().ItemSpacing.x);
     ImGui::Checkbox("Auto-scroll", &m_outputShouldScroll);
-    ImGui::SameLine(3 * itemWidth + 2 * ImGui::GetStyle().ItemSpacing.x, ImGui::GetStyle().ItemSpacing.x);
-    ImGui::Checkbox("Show Game Log window", &m_showGameLog);
-    ImGui::SameLine(4 * itemWidth + 3 * ImGui::GetStyle().ItemSpacing.x, ImGui::GetStyle().ItemSpacing.x);
+    ImGui::SameLine();
+    ImGui::SetCursorPosX(begin + 3 * itemWidth + 3 * ImGui::GetStyle().ItemSpacing.x);
+    ImGui::Checkbox("Draw Game Log", &m_drawGameLog);
+    ImGui::SameLine();
+    ImGui::SetCursorPosX(begin + 4 * itemWidth + 4 * ImGui::GetStyle().ItemSpacing.x);
     if (ImGui::Button("Reload all mods", ImVec2(itemWidth, 0)))
         m_vm.ReloadAllMods();
 
@@ -229,10 +234,10 @@ void Console::GameLog(const std::string& acpText)
 
 void Console::DrawGameLog()
 {
-    if (!m_showGameLog)
+    if (!m_drawGameLog)
         return;
 
-    if (ImGui::Begin("Game Log", &m_showGameLog))
+    if (ImGui::Begin("Game Log", &m_drawGameLog))
     {
         if (ImGui::BeginChildFrame(ImGui::GetID("Game Log Frame"), ImGui::GetContentRegionAvail()))
         {
