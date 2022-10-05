@@ -288,96 +288,101 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         // do this once, do not repeat context creation!
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
-        ImGuiIO& io = ImGui::GetIO();
-        ImGui::StyleColorsDark();
 
-        // TODO - scale by DPI
-        const auto [resx, resy] = GetResolution();
-        const auto baseScale = (static_cast<float>(resx) / 1920.0f) * (static_cast<float>(resy) / 1080.0f);
+    }
 
-        ImGui::GetStyle().ScaleAllSizes(baseScale);
+    ImGuiIO& io = ImGui::GetIO();
+    ImGui::StyleColorsDark();
 
-        ImFontConfig config;
-        config.SizePixels = static_cast<int32_t>(m_options.FontSize * baseScale);
-        config.OversampleH = config.OversampleV = 2;
-        config.PixelSnapH = true;
-        io.Fonts->AddFontDefault(&config);
+    // TODO - scale by DPI
+    const auto [resx, resy] = GetResolution();
+    const auto baseScale = std::min(static_cast<float>(resx) / 1920.0f, static_cast<float>(resy) / 1080.0f);
 
-        if (!m_options.FontPath.empty())
+    ImGui::GetStyle().ScaleAllSizes(baseScale);
+
+    ImFontConfig config;
+    config.SizePixels = static_cast<int32_t>(m_options.FontSize * baseScale);
+    config.OversampleH = config.OversampleV = 2;
+    config.PixelSnapH = true;
+
+    io.Fonts->Clear();
+    io.Fonts->AddFontDefault(&config);
+
+    if (!m_options.FontPath.empty())
+    {
+        std::filesystem::path fontPath(m_options.FontPath);
+        if (!fontPath.is_absolute())
         {
-            std::filesystem::path fontPath(m_options.FontPath);
-            if (!fontPath.is_absolute())
+            fontPath = m_paths.CETRoot() / fontPath;
+        }
+        if (exists(fontPath))
+        {
+            const ImWchar* cpGlyphRanges = io.Fonts->GetGlyphRangesDefault();
+            if (m_options.FontGlyphRanges == "System")
             {
-                fontPath = m_paths.CETRoot() / fontPath;
-            }
-            if (exists(fontPath))
-            {
-                const ImWchar* cpGlyphRanges = io.Fonts->GetGlyphRangesDefault();
-                if (m_options.FontGlyphRanges == "System")
+                int langID = GetSystemDefaultLangID();
+
+                switch (langID)
                 {
-                    int langID = GetSystemDefaultLangID();
-
-                    switch (langID)
-                    {
-                    case MAKELANGID(LANG_BELARUSIAN, SUBLANG_DEFAULT):
-                    case MAKELANGID(LANG_RUSSIAN, SUBLANG_DEFAULT):
-                        cpGlyphRanges = io.Fonts->GetGlyphRangesCyrillic();
-                        break;
-
-                    case MAKELANGID(LANG_JAPANESE, SUBLANG_DEFAULT):
-                        cpGlyphRanges = io.Fonts->GetGlyphRangesJapanese();
-                        break;
-
-                    case MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_TRADITIONAL):
-                        cpGlyphRanges = io.Fonts->GetGlyphRangesChineseFull();
-                        break;
-
-                    case MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED):
-                        cpGlyphRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
-                        break;
-
-                    case MAKELANGID(LANG_KOREAN, SUBLANG_DEFAULT):
-                        cpGlyphRanges = io.Fonts->GetGlyphRangesKorean();
-                        break;
-
-                    case MAKELANGID(LANG_THAI, SUBLANG_DEFAULT):
-                        cpGlyphRanges = io.Fonts->GetGlyphRangesThai();
-                        break;
-
-                    case MAKELANGID(LANG_VIETNAMESE, SUBLANG_DEFAULT):
-                        cpGlyphRanges = io.Fonts->GetGlyphRangesVietnamese();
-                        break;
-
-                    default:
-                        cpGlyphRanges = io.Fonts->GetGlyphRangesDefault();
-                        break;
-                    }
-                }
-                else if (m_options.FontGlyphRanges == "ChineseFull")
-                    cpGlyphRanges = io.Fonts->GetGlyphRangesChineseFull();
-                else if (m_options.FontGlyphRanges == "ChineseSimplifiedCommon")
-                    cpGlyphRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
-                else if (m_options.FontGlyphRanges == "Japanese")
-                    cpGlyphRanges = io.Fonts->GetGlyphRangesJapanese();
-                else if (m_options.FontGlyphRanges == "Korean")
-                    cpGlyphRanges = io.Fonts->GetGlyphRangesKorean();
-                else if (m_options.FontGlyphRanges == "Cyrillic")
+                case MAKELANGID(LANG_BELARUSIAN, SUBLANG_DEFAULT):
+                case MAKELANGID(LANG_RUSSIAN, SUBLANG_DEFAULT):
                     cpGlyphRanges = io.Fonts->GetGlyphRangesCyrillic();
-                else if (m_options.FontGlyphRanges == "Thai")
+                    break;
+
+                case MAKELANGID(LANG_JAPANESE, SUBLANG_DEFAULT):
+                    cpGlyphRanges = io.Fonts->GetGlyphRangesJapanese();
+                    break;
+
+                case MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_TRADITIONAL):
+                    cpGlyphRanges = io.Fonts->GetGlyphRangesChineseFull();
+                    break;
+
+                case MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED):
+                    cpGlyphRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
+                    break;
+
+                case MAKELANGID(LANG_KOREAN, SUBLANG_DEFAULT):
+                    cpGlyphRanges = io.Fonts->GetGlyphRangesKorean();
+                    break;
+
+                case MAKELANGID(LANG_THAI, SUBLANG_DEFAULT):
                     cpGlyphRanges = io.Fonts->GetGlyphRangesThai();
-                else if (m_options.FontGlyphRanges == "Vietnamese")
+                    break;
+
+                case MAKELANGID(LANG_VIETNAMESE, SUBLANG_DEFAULT):
                     cpGlyphRanges = io.Fonts->GetGlyphRangesVietnamese();
+                    break;
 
-                ImFont* pFont =
-                    io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(fontPath.native()).c_str(), m_options.FontSize, nullptr, cpGlyphRanges);
-
-                if (pFont != nullptr)
-                {
-                    io.FontDefault = pFont;
+                default:
+                    cpGlyphRanges = io.Fonts->GetGlyphRangesDefault();
+                    break;
                 }
+            }
+            else if (m_options.FontGlyphRanges == "ChineseFull")
+                cpGlyphRanges = io.Fonts->GetGlyphRangesChineseFull();
+            else if (m_options.FontGlyphRanges == "ChineseSimplifiedCommon")
+                cpGlyphRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
+            else if (m_options.FontGlyphRanges == "Japanese")
+                cpGlyphRanges = io.Fonts->GetGlyphRangesJapanese();
+            else if (m_options.FontGlyphRanges == "Korean")
+                cpGlyphRanges = io.Fonts->GetGlyphRangesKorean();
+            else if (m_options.FontGlyphRanges == "Cyrillic")
+                cpGlyphRanges = io.Fonts->GetGlyphRangesCyrillic();
+            else if (m_options.FontGlyphRanges == "Thai")
+                cpGlyphRanges = io.Fonts->GetGlyphRangesThai();
+            else if (m_options.FontGlyphRanges == "Vietnamese")
+                cpGlyphRanges = io.Fonts->GetGlyphRangesVietnamese();
+
+            ImFont* pFont =
+                io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(fontPath.native()).c_str(), m_options.FontSize, nullptr, cpGlyphRanges);
+
+            if (pFont != nullptr)
+            {
+                io.FontDefault = pFont;
             }
         }
     }
+
 
     if (!ImGui_ImplWin32_Init(m_window.GetWindow()))
     {
