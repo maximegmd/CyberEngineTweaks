@@ -42,6 +42,8 @@ bool IsLuaCData(sol::object aObject);
 
 float GetAlignedItemWidth(int64_t aItemsCount);
 
+float GetCenteredOffsetForText(const char* acpText);
+
 enum class THWUCPResult
 {
     CHANGED,

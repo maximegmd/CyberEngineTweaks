@@ -180,6 +180,11 @@ float GetAlignedItemWidth(int64_t aItemsCount)
     return (ImGui::GetWindowContentRegionWidth() - static_cast<float>(aItemsCount - 1) * ImGui::GetStyle().ItemSpacing.x) / static_cast<float>(aItemsCount);
 }
 
+float GetCenteredOffsetForText(const char* acpText)
+{
+    return (ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(acpText).x) / 2.0f;
+}
+
 THWUCPResult UnsavedChangesPopup(bool& aFirstTime, bool aMadeChanges, TWidgetCB aSaveCB, TWidgetCB aLoadCB, TWidgetCB aCancelCB)
 {
     if (aMadeChanges)

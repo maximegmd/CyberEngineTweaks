@@ -21,7 +21,7 @@ struct Settings : Widget
     void ResetToDefaults();
 
 private:
-    void UpdateAndDrawSetting(const std::string& acLabel, const std::string& acTooltip, bool& aCurrent, const bool& acSaved, float aOffsetX = 0.0f);
+    void UpdateAndDrawSetting(const std::string& acLabel, const std::string& acTooltip, bool& aCurrent, const bool& acSaved);
 
     bool m_patchEnableDebug{ false };
     bool m_patchRemovePedestrians{ false };

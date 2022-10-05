@@ -34,7 +34,7 @@ private:
     bool m_outputShouldScroll{ true };
     bool m_outputScroll{ false };
     bool m_inputClear{ true };
-    bool m_showGameLog{ false };
+    bool m_drawGameLog{ false };
     bool m_focusConsoleInput{ false };
     LuaVM& m_vm;
 

@@ -73,15 +73,15 @@ WidgetResult Bindings::OnDisable()
 void Bindings::Update()
 {
     const auto frameSize = ImVec2(ImGui::GetContentRegionAvail().x, -(ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.y + ImGui::GetStyle().FramePadding.y + 2.0f));
-    if (ImGui::BeginChildFrame(ImGui::GetID("Bindings"), frameSize))
+    if (ImGui::BeginChild(ImGui::GetID("Bindings"), frameSize))
     {
         m_madeChanges = false;
         for (auto modBindingsIt = m_vkBindInfos.begin(); modBindingsIt != m_vkBindInfos.end(); ++modBindingsIt)
             UpdateAndDrawModBindings(modBindingsIt.key(), modBindingsIt.value().first, modBindingsIt.value().second);
     }
-    ImGui::EndChildFrame();
+    ImGui::EndChild();
 
-    ImGui::Spacing();
+    ImGui::Separator();
 
     const auto itemWidth = GetAlignedItemWidth(2);
     if (ImGui::Button("Save", ImVec2(itemWidth, 0)))
@@ -316,11 +316,16 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
         curTextColor = ImVec4(1.0f, modified ? 0.5f : 0.0f, 0.0f, 1.0f);
     else if (modified)
         curTextColor = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
+
     ImGui::PushStyleColor(ImGuiCol_Text, curTextColor);
 
     const auto& bind = aVKBindInfo.Bind;
 
-    ImGui::Button(bind.DisplayName.c_str(), ImVec2(-FLT_MIN, 0));
+    ImGui::PushID(&aVKBindInfo.Bind.ID);
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + GetCenteredOffsetForText(bind.DisplayName.c_str()));
+    ImGui::TextUnformatted(bind.DisplayName.c_str());
+    ImGui::PopID();
+
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
     {
         if (bind.HasComplexDescription())
@@ -356,9 +361,28 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
             aVKBindInfo.IsBinding = true;
         }
     }
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-        ImGui::SetTooltip("%s", bind.IsHotkey() ? "Bind up to 4 key combination to this binding." : "Bind single input to this binding.");
     ImGui::PopID();
+
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+    {
+        if (bind.HasComplexDescription())
+        {
+            if (m_vm.IsInitialized())
+            {
+                ImGui::BeginTooltip();
+                std::get<std::function<void()>>(bind.Description)();
+                ImGui::EndTooltip();
+            }
+            else
+                ImGui::SetTooltip("Currently unable to draw this tooltip. Wait for a bit please...");
+        }
+        if (bind.HasSimpleDescription())
+        {
+            const auto& description = std::get<std::string>(bind.Description);
+            if (!description.empty())
+                ImGui::SetTooltip("%s", description.c_str());
+        }
+    }
 
     if (unbindable)
     {
@@ -376,9 +400,10 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
                 aVKBindInfo.CodeBind = 0;
             }
         }
+        ImGui::PopID();
+
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
             ImGui::SetTooltip("Uncheck this checkbox to unbind this binding.");
-        ImGui::PopID();
     }
 
     ImGui::PopStyleColor();
@@ -408,25 +433,28 @@ void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoq
         return c;
     });
 
+    bool pushed = false;
     auto headerOpen =  aSimplified;
     if (!headerOpen)
+    {
         headerOpen = ImGui::CollapsingHeader(activeModName.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
+        if (headerOpen)
+        {
+            ImGui::TreePush();
+            pushed = true;
+        }
+    }
 
     if (!headerOpen)
         return;
 
     if (aHotkeyCount > 0)
     {
-        headerOpen = aSimplified;
-        if (!headerOpen)
-            headerOpen = ImGui::CollapsingHeader("Hotkeys", ImGuiTreeNodeFlags_DefaultOpen);
-    }
-    else
-        headerOpen = false;
+        ImGui::SetCursorPosX(GetCenteredOffsetForText("Hotkeys"));
+        ImGui::TextUnformatted("Hotkeys");
 
-    if (headerOpen)
-    {
-        if (ImGui::BeginTable(("##HOTKEYS_" + activeModName).c_str(), 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders))
+        ImGui::TreePush();
+        if (ImGui::BeginTable(("##HOTKEYS_" + activeModName).c_str(), 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
         {
             for (auto& binding : aVKBindInfos)
             {
@@ -436,20 +464,16 @@ void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoq
 
             ImGui::EndTable();
         }
+        ImGui::TreePop();
     }
 
     if (aHotkeyCount < aVKBindInfos.size())
     {
-        headerOpen = aSimplified;
-        if (!headerOpen)
-            headerOpen = ImGui::CollapsingHeader("Inputs", ImGuiTreeNodeFlags_DefaultOpen);
-    }
-    else
-        headerOpen = false;
+        ImGui::SetCursorPosX(GetCenteredOffsetForText("Inputs"));
+        ImGui::TextUnformatted("Inputs");
 
-    if (headerOpen)
-    {
-        if (ImGui::BeginTable(("##INPUTS_" + activeModName).c_str(), 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders))
+        ImGui::TreePush();
+        if (ImGui::BeginTable(("##INPUTS_" + activeModName).c_str(), 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
         {
             for (auto& binding : aVKBindInfos)
             {
@@ -459,5 +483,9 @@ void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoq
 
             ImGui::EndTable();
         }
+        ImGui::TreePop();
     }
+
+    if (pushed)
+        ImGui::TreePop();
 }
