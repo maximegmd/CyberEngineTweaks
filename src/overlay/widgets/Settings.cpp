@@ -59,7 +59,7 @@ WidgetResult Settings::OnDisable()
 
 void Settings::Update()
 {
-    const auto frameSize = ImVec2(ImGui::GetContentRegionAvailWidth(), -(ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.y + ImGui::GetStyle().FramePadding.y + 2.0f));
+    const auto frameSize = ImVec2(ImGui::GetContentRegionAvail().x, -(ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.y + ImGui::GetStyle().FramePadding.y + 2.0f));
     if (ImGui::BeginChildFrame(ImGui::GetID("Settings"), frameSize))
     {
         m_madeChanges = false;
@@ -178,7 +178,7 @@ void Settings::UpdateAndDrawSetting(const std::string& acLabel, const std::strin
 
     ImGui::TableNextColumn();
 
-    ImGui::SameLine((ImGui::GetContentRegionAvailWidth() - ImGui::GetFrameHeight()) / 2, 0);
+    ImGui::SameLine((ImGui::GetContentRegionAvail().x - ImGui::GetFrameHeight()) / 2, 0);
     ImGui::Checkbox(("##" + acLabel).c_str(), &aCurrent);
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
         ImGui::SetTooltip("%s", aCurrent ? "Click to disable this option." : "Click to enable this option.");

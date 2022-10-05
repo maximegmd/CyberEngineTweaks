@@ -10,14 +10,14 @@ struct VKModBind
     std::string ModName;
     std::string ID;
 
-    auto operator<=>(const VKModBind&) const = default;
+    [[nodiscard]] auto operator<=>(const VKModBind&) const = default;
 };
 
 struct VKBind
 {
     std::string ID{};
     std::string DisplayName{};
-    std::string Description{};
+    std::variant<std::string, std::function<void()>> Description{};
     std::variant<std::function<TVKBindHotkeyCallback>, std::function<TVKBindInputCallback>> Handler{};
 
     [[nodiscard]] std::function<void()> DelayedCall(bool isDown) const;
@@ -26,7 +26,10 @@ struct VKBind
     [[nodiscard]] bool IsHotkey() const;
     [[nodiscard]] bool IsInput() const;
 
-    bool operator==(const std::string& id) const;
+    [[nodiscard]] bool HasSimpleDescription() const;
+    [[nodiscard]] bool HasComplexDescription() const;
+
+    [[nodiscard]] bool operator==(const std::string& id) const;
 };
 
 constexpr USHORT VKBC_MWHEELUP    { RI_MOUSE_WHEEL  | 1 };
@@ -108,7 +111,7 @@ private:
     bool m_isBindRecording{ false };
     bool m_initialized{ false };
 
-    const LuaVM* m_cpVm;
+    const LuaVM* m_cpVm{ nullptr };
     Paths& m_paths;
     const Options& m_cOptions;
 

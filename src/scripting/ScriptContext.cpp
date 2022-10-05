@@ -75,14 +75,30 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
             };
     };
 
-    auto registerBinding = [this, &wrapHandler](const std::string& acID, const std::string& acDisplayName, const std::string& acDescription, sol::function aCallback, const bool acIsHotkey){
+    auto wrapDescription = [&aLuaSandbox, loggerRef = m_logger](const std::variant<std::string, sol::function>& acDescription) -> std::variant<std::string, std::function<void()>> {
+        if (std::holds_alternative<sol::function>(acDescription))
+        {
+            auto callback = std::get<sol::function>(acDescription);
+            if (callback != sol::nil)
+            {
+                return [&aLuaSandbox, loggerRef, callback]{
+                    auto state = aLuaSandbox.GetState();
+                    TryLuaFunction(loggerRef, callback);
+                };
+            }
+            loggerRef->warn("Tried to register empty tooltip for handler!]");
+            return "";
+        }
+        return std::get<std::string>(acDescription);
+    };
+
+    auto registerBinding = [this, &wrapHandler, &wrapDescription](const std::string& acID, const std::string& acDisplayName, const std::variant<std::string, sol::function>& acDescription, sol::function aCallback, const bool acIsHotkey){
         const auto inputTypeStr = acIsHotkey ? "hotkey" : "input";
 
         if (acID.empty() ||
             std::ranges::find_if(acID, [](char c){ return !(isalnum(c) || c == '_' || c == '.'); }) != acID.cend())
         {
-            m_logger->error("Tried to register a {} with an incorrect ID format '{}'! ID needs to be alphanumeric without any "
-                "whitespace or special characters (exceptions being '_' and '.' which are allowed in ID)!",
+            m_logger->error("Tried to register a {} with an incorrect ID format '{}'! ID needs to be alphanumeric without any whitespace or special characters (exceptions being '_' and '.' which are allowed in ID)!",
                 inputTypeStr,
                 acID);
             return;
@@ -90,37 +106,31 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
 
         if (acDisplayName.empty())
         {
-            m_logger->error("Tried to register a {} with an empty display name! [ID of handler: {}]",
+            m_logger->error("Tried to register a {} with an empty display name! [ID of this handler: {}]",
                 inputTypeStr,
                 acID);
             return;
         }
 
-        for (auto& bind : m_vkBinds)
+        const auto bindIt = std::find(m_vkBinds.cbegin(), m_vkBinds.cend(), acID);
+        if (bindIt != m_vkBinds.cend())
         {
-            if (bind.ID == acID)
-            {
-                m_logger->error("Tried to register a {} with same ID as some other! [ID of handler: {}, Display name of handler: '{}']",
-                    inputTypeStr,
-                    acID,
-                    acDisplayName);
-                return;
-            }
-
-            if (bind.DisplayName == acDisplayName)
-            {
-                m_logger->error("Tried to register a {} with same display name as some other! [ID of handler: {}, Display name of handler: '{}']",
-                    inputTypeStr,
-                    acID,
-                    acDisplayName);
-                return;
-            }
+            m_logger->error("Tried to register a {} with same ID as some other! [ID of this handler: {}, Display name of this handler: '{}', Display name of other handler: {}]",
+                inputTypeStr,
+                acID,
+                acDisplayName,
+                bindIt->DisplayName);
+            return;
         }
 
-        m_vkBinds.emplace_back(acID, acDisplayName, acDescription, wrapHandler(aCallback, acIsHotkey));
+        m_vkBinds.emplace_back(acID, acDisplayName, wrapDescription(acDescription), wrapHandler(aCallback, acIsHotkey));
     };
 
     env["registerHotkey"] = sol::overload(
+        [&registerBinding](const std::string& acID, const std::string& acDisplayName, sol::function acDescriptionCallback, sol::function aCallback)
+        {
+            registerBinding(acID, acDisplayName, acDescriptionCallback, aCallback, true);
+        },
         [&registerBinding](const std::string& acID, const std::string& acDisplayName, const std::string& acDescription, sol::function aCallback)
         {
             registerBinding(acID, acDisplayName, acDescription, aCallback, true);
@@ -130,6 +140,10 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
         });
 
     env["registerInput"] = sol::overload(
+        [&registerBinding](const std::string& acID, const std::string& acDisplayName, sol::function acDescriptionCallback, sol::function aCallback)
+        {
+            registerBinding(acID, acDisplayName, acDescriptionCallback, aCallback, false);
+        },
         [&registerBinding](const std::string& acID, const std::string& acDisplayName, const std::string& acDescription, sol::function aCallback) {
             registerBinding(acID, acDisplayName, acDescription, aCallback, false);
         },

@@ -38,6 +38,16 @@ bool VKBind::IsInput() const
     return std::holds_alternative<std::function<TVKBindInputCallback>>(Handler);
 }
 
+bool VKBind::HasSimpleDescription() const
+{
+    return std::holds_alternative<std::string>(Description);
+}
+
+bool VKBind::HasComplexDescription() const
+{
+    return std::holds_alternative<std::function<void()>>(Description);
+}
+
 bool VKBind::operator==(const std::string& id) const
 {
     return ID == id;

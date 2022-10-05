@@ -36,9 +36,9 @@ struct Bindings : Widget
 private:
     void Initialize();
     void UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKBindInfo);
-    void UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoques::Vector<VKBindInfo>& acVKBindInfos, bool aSimplified = false);
+    void UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoques::Vector<VKBindInfo>& aVKBindInfos, size_t aHotkeyCount, bool aSimplified = false);
 
-    TiltedPhoques::Map<std::string, TiltedPhoques::Vector<VKBindInfo>> m_vkBindInfos{ };
+    TiltedPhoques::Map<std::string, std::pair<TiltedPhoques::Vector<VKBindInfo>, size_t>> m_vkBindInfos{ };
     VKBindings& m_bindings;
     LuaVM& m_vm;
 
