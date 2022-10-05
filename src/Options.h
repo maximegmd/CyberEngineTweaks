@@ -28,7 +28,7 @@ struct Options
     bool DumpGameOptions{ false };
     std::string FontPath;
     std::string FontGlyphRanges{""};
-    float FontSize{ 13.0f };
+    float FontSize{ 18.0f };
     bool ExeValid{ false };
     bool RemoveDeadBindings { true };
     bool DrawImGuiDiagnosticWindow { false };

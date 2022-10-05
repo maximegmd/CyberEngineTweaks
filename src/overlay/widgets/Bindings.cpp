@@ -450,10 +450,8 @@ void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoq
 
     if (aHotkeyCount > 0)
     {
-        ImGui::SetCursorPosX(GetCenteredOffsetForText("Hotkeys"));
         ImGui::TextUnformatted("Hotkeys");
 
-        ImGui::TreePush();
         if (ImGui::BeginTable(("##HOTKEYS_" + activeModName).c_str(), 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
         {
             for (auto& binding : aVKBindInfos)
@@ -464,15 +462,12 @@ void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoq
 
             ImGui::EndTable();
         }
-        ImGui::TreePop();
     }
 
     if (aHotkeyCount < aVKBindInfos.size())
     {
-        ImGui::SetCursorPosX(GetCenteredOffsetForText("Inputs"));
         ImGui::TextUnformatted("Inputs");
 
-        ImGui::TreePush();
         if (ImGui::BeginTable(("##INPUTS_" + activeModName).c_str(), 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
         {
             for (auto& binding : aVKBindInfos)
@@ -483,7 +478,6 @@ void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoq
 
             ImGui::EndTable();
         }
-        ImGui::TreePop();
     }
 
     if (pushed)
