@@ -291,9 +291,15 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         ImGuiIO& io = ImGui::GetIO();
         ImGui::StyleColorsDark();
 
+        // TODO - scale by DPI
+        const auto [resx, resy] = GetResolution();
+        const auto baseScale = (static_cast<float>(resx) / 1920.0f) * (static_cast<float>(resy) / 1080.0f);
+
+        ImGui::GetStyle().ScaleAllSizes(baseScale);
+
         ImFontConfig config;
-        config.SizePixels = m_options.FontSize;
-        config.OversampleH = config.OversampleV = 1;
+        config.SizePixels = static_cast<int32_t>(m_options.FontSize * baseScale);
+        config.OversampleH = config.OversampleV = 2;
         config.PixelSnapH = true;
         io.Fonts->AddFontDefault(&config);
 
