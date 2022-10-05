@@ -283,28 +283,26 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
 
 bool D3D12::InitializeImGui(size_t aBuffersCounts)
 {
+    // TODO - scale also by DPI
+    // TODO - different resolutions seem to have different spacings between items, ImGui::GetStyle().ScaleAllSizes() doesnt seem to work correctly or wrong usage?
+    const auto [resx, resy] = GetResolution();
+    const auto fontScale = std::min(static_cast<float>(resx) / 1920.0f, static_cast<float>(resy) / 1080.0f);
+
     if (ImGui::GetCurrentContext() == nullptr)
     {
         // do this once, do not repeat context creation!
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
 
+        ImGui::StyleColorsDark();
     }
 
-    ImGuiIO& io = ImGui::GetIO();
-    ImGui::StyleColorsDark();
-
-    // TODO - scale by DPI
-    const auto [resx, resy] = GetResolution();
-    const auto baseScale = std::min(static_cast<float>(resx) / 1920.0f, static_cast<float>(resy) / 1080.0f);
-
-    ImGui::GetStyle().ScaleAllSizes(baseScale);
-
     ImFontConfig config;
-    config.SizePixels = static_cast<int32_t>(m_options.FontSize * baseScale);
+    config.SizePixels = static_cast<int32_t>(m_options.FontSize * fontScale);
     config.OversampleH = config.OversampleV = 2;
     config.PixelSnapH = true;
 
+    ImGuiIO& io = ImGui::GetIO();
     io.Fonts->Clear();
     io.Fonts->AddFontDefault(&config);
 
