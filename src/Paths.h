@@ -10,6 +10,7 @@ struct Paths
     const std::filesystem::path& Config() const;
     const std::filesystem::path& VKBindings() const;
     const std::filesystem::path& ModsRoot() const;
+    const std::filesystem::path& REDmodsRoot() const;
     const std::filesystem::path& ArchiveModsRoot() const;
     const std::filesystem::path& R6CacheModdedRoot() const;
 
@@ -25,6 +26,7 @@ private:
     std::filesystem::path m_config{ };
     std::filesystem::path m_vkBindings{ };
     std::filesystem::path m_modsRoot{ };
+    std::filesystem::path m_REDmodsRoot{ };
     std::filesystem::path m_archiveModsRoot{ };
     std::filesystem::path m_r6CacheModdedRoot{};
 };

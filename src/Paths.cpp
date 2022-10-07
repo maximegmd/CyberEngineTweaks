@@ -30,6 +30,11 @@ const std::filesystem::path& Paths::ModsRoot() const
     return m_modsRoot; 
 }
 
+const std::filesystem::path& Paths::REDmodsRoot() const
+{
+    return m_REDmodsRoot;
+}
+
 const std::filesystem::path& Paths::ArchiveModsRoot() const 
 { 
     return m_archiveModsRoot; 
@@ -65,6 +70,11 @@ Paths::Paths()
 
     m_modsRoot = m_cetRoot / "mods";
     create_directories(m_modsRoot);
+
+    m_REDmodsRoot = m_gameRoot;
+    m_REDmodsRoot /= "..";
+    m_REDmodsRoot /= "..";
+    m_REDmodsRoot /= "mods";
 
     m_archiveModsRoot = m_gameRoot;
     m_archiveModsRoot /= "..";

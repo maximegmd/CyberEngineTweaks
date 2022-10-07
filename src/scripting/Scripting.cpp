@@ -97,13 +97,44 @@ void Scripting::Initialize()
 
     luaGlobal["ModArchiveExists"] = [this](const std::string& acArchiveName) -> bool
     {
+        bool archiveExists = false;
+
         const auto cAbsPath = absolute(m_paths.ArchiveModsRoot() / acArchiveName);
         const auto cRelPathStr = relative(cAbsPath, m_paths.ArchiveModsRoot()).native();
 
-        if (cRelPathStr.find(L"..") != std::wstring::npos)
-            return false;
+        if (cRelPathStr.find(L"..") != std::string::npos)
+            archiveExists = false;
+        else
+            archiveExists = exists(cAbsPath);
 
-        return exists(cAbsPath);
+        // only need to check if it wasn't already found
+        if (!archiveExists)
+        {
+            // check to see if a REDmod archive exists
+            const auto cREDModAbsPathRoot = absolute(m_paths.REDmodsRoot());
+
+            // parse recursively to find the archive
+            for (auto dir_iter = std::filesystem::recursive_directory_iterator{cREDModAbsPathRoot};
+                 dir_iter != std::filesystem::recursive_directory_iterator{};
+                ++dir_iter)
+            {
+                // only check if we're in a subdirectory that is two folders deep (e.g. mod1/tweaks or mod2/archives)
+                // the 0th depth is 1 folder deep
+                if (dir_iter.depth() == 1)
+                {
+                    auto const& dir_entry = *dir_iter;
+                    if (dir_entry.is_directory() && dir_entry.path().filename() == "archives")
+                    {
+                        // or is in case we parsed another "archives" directory and it wasn't found
+                        archiveExists |= exists(dir_entry.path() / acArchiveName);
+                        if (archiveExists)
+                            break;
+                    }
+                }
+            }
+        }
+
+        return archiveExists;
     };
 
     // fake game object to prevent errors from older autoexec.lua
