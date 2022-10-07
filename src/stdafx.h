@@ -14,6 +14,7 @@
 #include <RED4ext/RTTISystem.hpp>
 #include <RED4ext/RTTITypes.hpp>
 #include <RED4ext/GameEngine.hpp>
+#include <RED4ext/ResourceDepot.hpp>
 #include <RED4ext/Scripting/Stack.hpp>
 #include <RED4ext/Scripting/CProperty.hpp>
 #include <RED4ext/Scripting/Functions.hpp>
