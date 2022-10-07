@@ -102,7 +102,7 @@ void Scripting::Initialize()
         const auto cAbsPath = absolute(m_paths.ArchiveModsRoot() / acArchiveName);
         const auto cRelPathStr = relative(cAbsPath, m_paths.ArchiveModsRoot()).native();
 
-        if (cRelPathStr.find(L"..") != std::string::npos)
+        if (cRelPathStr.find(L"..") != std::wstring::npos)
             archiveExists = false;
         else
             archiveExists = exists(cAbsPath);
