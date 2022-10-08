@@ -154,7 +154,7 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
     // TODO: proper exception handling!
     try
     {
-        const auto path = acPath / "init.lua";
+        const auto path = GetLuaPath(L"init.lua", acPath, false);
         const auto result = sb.ExecuteFile(UTF16ToUTF8(path.native()));
 
         if (result.valid())

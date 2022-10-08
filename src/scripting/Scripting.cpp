@@ -44,8 +44,8 @@ Scripting::Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12, 
     , m_d3d12(aD3D12)
     , m_mapper(m_lua.AsRef(), m_global)
 {
-    CreateLogger(aPaths.CETRoot() / "scripting.log", "scripting");
-    CreateLogger(aPaths.CETRoot() / "gamelog.log", "gamelog");
+    CreateLogger(GetAbsolutePath(L"scripting.log", aPaths.CETRoot(), true), "scripting");
+    CreateLogger(GetAbsolutePath(L"gamelog.log", aPaths.CETRoot(), true), "gamelog");
 }
 
 void Scripting::Initialize()
@@ -59,7 +59,7 @@ void Scripting::Initialize()
 
     // make sure to set package path to current directory scope
     // as this could get overriden by LUA_PATH environment variable
-    luaVm["package"]["path"] = "./?.lua";
+    luaVm["package"]["path"] = ".\\?.lua";
 
     sol_ImGui::InitBindings(luaVm);
 
@@ -142,11 +142,20 @@ void Scripting::Initialize()
     luaGlobal["Game"] = luaVm["Game"];
 
     // execute autoexec.lua inside our default script directory
-    current_path(m_paths.CETRoot() / "scripts");
-    if (std::filesystem::exists("autoexec.lua"))
-        luaVm.do_file("autoexec.lua");
+    const auto previous_current_path = std::filesystem::current_path();
+    current_path(m_paths.CETRoot() / L"scripts");
+    if (std::filesystem::exists(L"autoexec.lua"))
+    {
+        const auto result = luaVm.do_file("autoexec.lua");
+        if (!result.valid())
+        {
+            const sol::error cError = result;
+            spdlog::get("scripting")->error(cError.what());
+        }
+    }
     else
         spdlog::get("scripting")->warn("WARNING: missing CET autoexec.lua!");
+    current_path(previous_current_path);
 
     // initialize sandbox
     m_sandbox.Initialize();
@@ -874,7 +883,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
             if (hasData)
             {
                 sol::state_view v(aObject.lua_state());
-                str = v["tostring"](aObject);
+                str = v["tostring"](aObject).get<std::string>();
             }
             result.value = apAllocator->New<RED4ext::CString>(str.c_str());
         }
@@ -1014,7 +1023,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
                 else if (IsLuaCData(aObject))
                 {
                     sol::state_view v(aObject.lua_state());
-                    std::string str = v["tostring"](aObject);
+                    std::string str = v["tostring"](aObject).get<std::string>();
                     hash = std::stoull(str);
                 }
 

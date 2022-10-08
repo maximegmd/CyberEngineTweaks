@@ -295,7 +295,11 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         ImGui::CreateContext();
 
         ImGui::StyleColorsDark();
+        m_styleReference = ImGui::GetStyle();
     }
+
+    ImGui::GetStyle() = m_styleReference;
+    ImGui::GetStyle().ScaleAllSizes(fontScale);
 
     ImFontConfig config;
     config.SizePixels = static_cast<int32_t>(m_options.FontSize * fontScale);
@@ -308,12 +312,8 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
 
     if (!m_options.FontPath.empty())
     {
-        std::filesystem::path fontPath(m_options.FontPath);
-        if (!fontPath.is_absolute())
-        {
-            fontPath = m_paths.CETRoot() / fontPath;
-        }
-        if (exists(fontPath))
+        const auto fontPath = GetAbsolutePath(UTF8ToUTF16(m_options.FontPath), m_paths.CETRoot(), false);
+        if (!fontPath.empty())
         {
             const ImWchar* cpGlyphRanges = io.Fonts->GetGlyphRangesDefault();
             if (m_options.FontGlyphRanges == "System")
@@ -375,9 +375,7 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
                 io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(fontPath.native()).c_str(), m_options.FontSize, nullptr, cpGlyphRanges);
 
             if (pFont != nullptr)
-            {
                 io.FontDefault = pFont;
-            }
         }
     }
 
