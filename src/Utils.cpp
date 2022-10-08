@@ -172,7 +172,7 @@ bool IsLuaCData(sol::object aObject)
     // But it's possible to check the type using numeric code (10).
     // LuaJIT packs int64/uint64 into cdata and some other types.
     // Since we're not using other types, this should be enough to check for int64/uint64 value.
-    return (static_cast<int>(aObject.get_type()) == 10);
+    return static_cast<int>(aObject.get_type()) == 10;
 }
 
 float GetAlignedItemWidth(int64_t aItemsCount)
@@ -242,4 +242,63 @@ THWUCPResult UnsavedChangesPopup(bool& aFirstTime, bool aMadeChanges, TWidgetCB 
         return res;
     }
     return THWUCPResult::APPLY; // no changes, same as if we were to Apply
+}
+
+std::filesystem::path GetAbsolutePath(const std::string& acFilePath, const std::filesystem::path& acRootPath)
+{
+    return GetAbsolutePath(UTF8ToUTF16(acFilePath), acRootPath);
+}
+
+std::filesystem::path GetAbsolutePath(std::filesystem::path aFilePath, const std::filesystem::path& acRootPath)
+{
+    assert(!aFilePath.empty());
+    if (aFilePath.empty())
+        return {};
+
+    aFilePath.make_preferred();
+
+    if (aFilePath.is_relative())
+    {
+        if (!acRootPath.empty())
+            aFilePath = acRootPath / aFilePath;
+
+        aFilePath = absolute(aFilePath);
+    }
+
+    if (!exists(aFilePath))
+        return {};
+
+    if (is_symlink(aFilePath))
+        return absolute(read_symlink(aFilePath));
+
+    return aFilePath;
+}
+
+std::filesystem::path GetLuaPath(const std::string& acFilePath, const std::filesystem::path& acRootPath)
+{
+    return GetLuaPath(UTF8ToUTF16(acFilePath), acRootPath);
+}
+
+std::filesystem::path GetLuaPath(std::filesystem::path aFilePath, const std::filesystem::path& acRootPath)
+{
+    assert(!aFilePath.empty());
+    assert(!aFilePath.is_absolute());
+
+    if (aFilePath.empty() || aFilePath.is_absolute())
+        return {};
+
+    aFilePath.make_preferred();
+
+    if (aFilePath.native().starts_with(L"..\\"))
+        return {};
+
+    aFilePath = GetAbsolutePath(aFilePath, acRootPath);
+    if (aFilePath.empty())
+        return {};
+
+    const auto relativeFilePathToRoot = relative(aFilePath, acRootPath);
+    if (relativeFilePathToRoot.native().starts_with(L"..\\") || relativeFilePathToRoot.native().find(L"\\..\\") != std::wstring::npos)
+        return {};
+
+    return relative(aFilePath, std::filesystem::current_path());
 }

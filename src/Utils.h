@@ -52,3 +52,9 @@ enum class THWUCPResult
     CANCEL
 };
 THWUCPResult UnsavedChangesPopup(bool& aFirstTime, bool aMadeChanges, TWidgetCB aSaveCB, TWidgetCB aLoadCB, TWidgetCB aCancelCB = nullptr);
+
+[[nodiscard]] std::filesystem::path GetAbsolutePath(const std::string& acFilePath, const std::filesystem::path& acRootPath = {});
+[[nodiscard]] std::filesystem::path GetAbsolutePath(std::filesystem::path aFilePath, const std::filesystem::path& acRootPath = {});
+
+[[nodiscard]] std::filesystem::path GetLuaPath(const std::string& acFilePath, const std::filesystem::path& acRootPath = {});
+[[nodiscard]] std::filesystem::path GetLuaPath(std::filesystem::path aFilePath, const std::filesystem::path& acRootPath = {});

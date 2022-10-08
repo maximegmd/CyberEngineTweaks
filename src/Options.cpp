@@ -99,10 +99,10 @@ Options::Options(Paths& aPaths)
     : m_paths(aPaths)
 {
     const auto* exePathStr = aPaths.Executable().native().c_str();
-    int verInfoSz = GetFileVersionInfoSize(exePathStr, nullptr);
+    const auto verInfoSz = GetFileVersionInfoSize(exePathStr, nullptr);
     if(verInfoSz)
     {
-        auto verInfo = std::make_unique<BYTE[]>(verInfoSz);
+        const auto verInfo = std::make_unique<BYTE[]>(verInfoSz);
         if(GetFileVersionInfo(exePathStr, 0, verInfoSz, verInfo.get()))
         {
             struct

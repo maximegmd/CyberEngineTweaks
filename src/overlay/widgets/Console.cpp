@@ -25,6 +25,7 @@ WidgetResult Console::OnEnable()
 
 WidgetResult Console::OnDisable()
 {
+    std::fill_n(m_Command, sizeof(m_Command), 0);
     return WidgetResult::DISABLED;
 }
 

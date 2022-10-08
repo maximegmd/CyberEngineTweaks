@@ -15,14 +15,11 @@ ScriptStore::ScriptStore(LuaSandbox& aLuaSandbox, const Paths& aPaths, VKBinding
 
 void ScriptStore::LoadAll()
 {
-    // set current path for following scripts to our ModsPath
-    current_path(m_paths.ModsRoot());
-
     m_vkBinds.clear();
     m_contexts.clear();
     m_sandbox.ResetState();
 
-    auto consoleLogger = spdlog::get("scripting");
+    const auto consoleLogger = spdlog::get("scripting");
 
     const auto& cModsRoot = m_paths.ModsRoot();
     for (const auto& file : std::filesystem::directory_iterator(cModsRoot))
@@ -30,50 +27,36 @@ void ScriptStore::LoadAll()
         if (!file.is_directory())
             continue;
 
-        auto fPath = file.path();
+        const auto name = UTF16ToUTF8(file.path().filename().native());
+        const auto pathStr = UTF16ToUTF8((cModsRoot / file.path()).native());
 
-        try
+        if (file.path().native().starts_with(L"cet\\"))
         {
-            if (is_symlink(fPath))
-                fPath = read_symlink(fPath);
-            else if (is_symlink(fPath / "init.lua"))
-                fPath = read_symlink(fPath / "init.lua").parent_path();
-        }
-        catch (std::exception& e)
-        {
-        }
-
-        fPath = absolute(fPath);
-        auto fPathStr = UTF16ToUTF8(fPath.native());
-        if (fPathStr.find("\\" + Bindings::GetOverlayToggleModBind().ModName) < fPathStr.length())
-        {
-            consoleLogger->warn("Ignoring directory which uses reserved name '{}' does not contain init.lua! ('{}')", Bindings::GetOverlayToggleModBind().ModName, fPathStr);
+            consoleLogger->warn("Ignoring mod using reserved name! ('{}')", pathStr);
             continue;
         }
 
-        if (!exists(fPath / "init.lua"))
+        const auto path = GetAbsolutePath(file.path(), cModsRoot);
+        if (path.empty())
         {
-            consoleLogger->warn("Ignoring directory that does not contain init.lua! ('{}')", fPathStr);
+            consoleLogger->error("Tried to access invalid directory! ('{}')", pathStr);
             continue;
         }
 
-        auto name = UTF16ToUTF8(file.path().filename().native());
-        if (name.find('.') != std::string::npos)
+        if (!exists(path / L"init.lua"))
         {
-            consoleLogger->info("Ignoring directory containing '.', as this is reserved character! ('{}')", fPathStr);
+            consoleLogger->warn("Ignoring mod which does not contain init.lua! ('{}')", pathStr);
             continue;
         }
 
-        auto ctx = ScriptContext{m_sandbox, fPath, name};
+        auto ctx = ScriptContext{m_sandbox, path, name};
         if (ctx.IsValid())
         {
             m_contexts.emplace(name, std::move(ctx));
-            consoleLogger->info("Mod {} loaded! ('{}')", name, fPathStr);
+            consoleLogger->info("Mod {} loaded! ('{}')", name, pathStr);
         }
         else
-        {
-            consoleLogger->error("Mod {} failed to load! ('{}')", name, fPathStr);
-        }
+            consoleLogger->error("Mod {} failed to load! ('{}')", name, pathStr);
     }
 
     for (auto& contextIt : m_contexts)

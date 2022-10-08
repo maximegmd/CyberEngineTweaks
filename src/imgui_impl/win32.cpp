@@ -69,7 +69,7 @@ bool ImGui_ImplWin32_Init(HWND ahWnd)
     io.ImeWindowHandle = ahWnd;
 
     // Setup ini path
-    g_LayoutPath = UTF16ToUTF8((CET::Get().GetPaths().CETRoot() / "layout.ini").native());
+    g_LayoutPath = UTF16ToUTF8(GetAbsolutePath(L"layout.ini", CET::Get().GetPaths().CETRoot()).native());
     io.IniFilename = g_LayoutPath.c_str();
 
     // Keyboard mapping. ImGui will use those indices to peek into the io.KeysDown[] array that we will update during the application lifetime.

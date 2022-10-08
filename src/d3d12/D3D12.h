@@ -32,7 +32,7 @@ struct D3D12
     std::tuple<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> CreateTextureDescriptor();
 
 protected:
-    
+
     void Hook();
     void HookGame();
 
@@ -56,7 +56,7 @@ protected:
     static void ExecuteCommandLists(ID3D12CommandQueue* apCommandQueue, UINT aNumCommandLists, ID3D12CommandList* const* apcpCommandLists);
     static void* CRenderNode_Present_InternalPresent(int32_t* apSomeInt, uint8_t aSomeSync, UINT aSyncInterval);
     static void* CRenderGlobal_Resize(uint32_t a1, uint32_t a2, uint32_t a3, uint8_t a4, int* a5);
-    
+
 private:
 
     TResizeBuffersD3D12* m_realResizeBuffersD3D12{ nullptr };
@@ -65,7 +65,7 @@ private:
     TExecuteCommandLists* m_realExecuteCommandLists{ nullptr };
     TCRenderNode_Present_InternalPresent* m_realInternalPresent{ nullptr };
     TCRenderGlobal_Resize* m_realInternalResize{nullptr};
-    
+
     bool m_initialized{ false };
 
     TiltedPhoques::Vector<FrameContext> m_frameContexts{ };
@@ -77,15 +77,16 @@ private:
     CComPtr<ID3D12GraphicsCommandList> m_pd3dCommandList{ nullptr };
     ID3D12CommandQueue* m_pCommandQueue{ nullptr };
     uint32_t m_downlevelBufferIndex{ 0 };
-    
+
     SIZE m_outSize{ };
-    
+
     std::atomic_bool m_trapInputInImGui{ false };
+    ImGuiStyle m_styleReference{ };
 
     Paths& m_paths;
     Window& m_window;
     Options& m_options;
-    
+
     std::atomic_bool m_delayedTrapInput{ false };
     std::atomic_bool m_delayedTrapInputState{ false };
 };
