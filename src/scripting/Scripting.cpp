@@ -23,8 +23,7 @@
 #include <reverse/RTTIHelper.h>
 #include <reverse/RTTIExtender.h>
 #include <reverse/Converter.h>
-
-#include <reverse/RED4ext/ResourceDepot.hpp>
+#include <reverse/ResourceDepot.h>
 
 #include "Utils.h"
 
