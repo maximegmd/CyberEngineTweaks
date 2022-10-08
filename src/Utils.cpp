@@ -244,12 +244,12 @@ THWUCPResult UnsavedChangesPopup(bool& aFirstTime, bool aMadeChanges, TWidgetCB 
     return THWUCPResult::APPLY; // no changes, same as if we were to Apply
 }
 
-std::filesystem::path GetAbsolutePath(const std::string& acFilePath, const std::filesystem::path& acRootPath)
+std::filesystem::path GetAbsolutePath(const std::string& acFilePath, const std::filesystem::path& acRootPath, const bool acAllowNonExisting, const bool acAllowSymlink)
 {
-    return GetAbsolutePath(UTF8ToUTF16(acFilePath), acRootPath);
+    return GetAbsolutePath(UTF8ToUTF16(acFilePath), acRootPath, acAllowNonExisting, acAllowSymlink);
 }
 
-std::filesystem::path GetAbsolutePath(std::filesystem::path aFilePath, const std::filesystem::path& acRootPath)
+std::filesystem::path GetAbsolutePath(std::filesystem::path aFilePath, const std::filesystem::path& acRootPath, const bool acAllowNonExisting, const bool acAllowSymlink)
 {
     assert(!aFilePath.empty());
     if (aFilePath.empty())
@@ -266,20 +266,25 @@ std::filesystem::path GetAbsolutePath(std::filesystem::path aFilePath, const std
     }
 
     if (!exists(aFilePath))
-        return {};
-
-    if (is_symlink(aFilePath))
-        return absolute(read_symlink(aFilePath));
+    {
+        if (!acAllowNonExisting)
+            return {};
+    }
+    else if (acAllowSymlink)
+    {
+        if (is_symlink(aFilePath))
+            return absolute(read_symlink(aFilePath));
+    }
 
     return aFilePath;
 }
 
-std::filesystem::path GetLuaPath(const std::string& acFilePath, const std::filesystem::path& acRootPath)
+std::filesystem::path GetLuaPath(const std::string& acFilePath, const std::filesystem::path& acRootPath, const bool acAllowNonExisting)
 {
-    return GetLuaPath(UTF8ToUTF16(acFilePath), acRootPath);
+    return GetLuaPath(UTF8ToUTF16(acFilePath), acRootPath, acAllowNonExisting);
 }
 
-std::filesystem::path GetLuaPath(std::filesystem::path aFilePath, const std::filesystem::path& acRootPath)
+std::filesystem::path GetLuaPath(std::filesystem::path aFilePath, const std::filesystem::path& acRootPath, const bool acAllowNonExisting)
 {
     assert(!aFilePath.empty());
     assert(!aFilePath.is_absolute());
@@ -292,7 +297,7 @@ std::filesystem::path GetLuaPath(std::filesystem::path aFilePath, const std::fil
     if (aFilePath.native().starts_with(L"..\\"))
         return {};
 
-    aFilePath = GetAbsolutePath(aFilePath, acRootPath);
+    aFilePath = GetAbsolutePath(aFilePath, acRootPath, acAllowNonExisting, false);
     if (aFilePath.empty())
         return {};
 
