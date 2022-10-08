@@ -1,6 +1,7 @@
 #include <stdafx.h>
 
-#include <CET.h>
+#include "CET.h"
+#include "Utils.h"
 
 std::function<void()> VKBind::DelayedCall(bool isDown) const
 {
@@ -164,7 +165,8 @@ void VKBindings::Load()
     StopRecordingBind();
 
     // try to load config
-    if (std::ifstream ifs{m_paths.VKBindings()})
+    const auto path = GetAbsolutePath(m_paths.VKBindings(), "", false);
+    if (std::ifstream ifs{path})
     {
         auto config{nlohmann::json::parse(ifs)};
         for (auto& mod : config.items())
@@ -208,7 +210,8 @@ void VKBindings::Save()
         }
     }
 
-    std::ofstream ofs{m_paths.VKBindings()};
+    const auto path = GetAbsolutePath(m_paths.VKBindings(), "", true);
+    std::ofstream ofs{path};
     ofs << config.dump(4) << std::endl;
 }
 

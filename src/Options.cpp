@@ -5,9 +5,10 @@
 
 void Options::Load()
 {
-    if (exists(m_paths.Config()))
+    const auto path = GetAbsolutePath(m_paths.Config(), "", false);
+    if (!path.empty())
     {
-        std::ifstream configFile(m_paths.Config());
+        std::ifstream configFile(path);
         if(configFile)
         {
             auto config = nlohmann::json::parse(configFile);
@@ -67,7 +68,8 @@ void Options::Save()
     config["font_glyph_ranges"] = FontGlyphRanges;
     config["font_size"] = FontSize;
 
-    std::ofstream o(m_paths.Config());
+    const auto path = GetAbsolutePath(m_paths.Config(), "", true);
+    std::ofstream o(path);
     o << config.dump(4) << std::endl;
 
     // set global "Enable ImGui Assertions"
