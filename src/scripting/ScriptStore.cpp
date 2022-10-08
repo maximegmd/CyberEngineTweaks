@@ -36,7 +36,7 @@ void ScriptStore::LoadAll()
             continue;
         }
 
-        const auto path = GetAbsolutePath(file.path(), cModsRoot);
+        const auto path = GetAbsolutePath(file.path(), cModsRoot, false);
         if (path.empty())
         {
             consoleLogger->error("Tried to access invalid directory! ('{}')", pathStr);

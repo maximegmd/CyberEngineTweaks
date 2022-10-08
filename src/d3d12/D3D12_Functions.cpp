@@ -312,7 +312,7 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
 
     if (!m_options.FontPath.empty())
     {
-        const auto fontPath = GetAbsolutePath(UTF8ToUTF16(m_options.FontPath), m_paths.CETRoot());
+        const auto fontPath = GetAbsolutePath(UTF8ToUTF16(m_options.FontPath), m_paths.CETRoot(), false);
         if (!fontPath.empty())
         {
             const ImWchar* cpGlyphRanges = io.Fonts->GetGlyphRangesDefault();

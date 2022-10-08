@@ -44,8 +44,8 @@ Scripting::Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12, 
     , m_d3d12(aD3D12)
     , m_mapper(m_lua.AsRef(), m_global)
 {
-    CreateLogger(aPaths.CETRoot() / L"scripting.log", "scripting");
-    CreateLogger(aPaths.CETRoot() / L"gamelog.log", "gamelog");
+    CreateLogger(GetAbsolutePath(L"scripting.log", aPaths.CETRoot(), true), "scripting");
+    CreateLogger(GetAbsolutePath(L"gamelog.log", aPaths.CETRoot(), true), "gamelog");
 }
 
 void Scripting::Initialize()
@@ -97,7 +97,7 @@ void Scripting::Initialize()
 
     luaGlobal["ModArchiveExists"] = [this](const std::string& acArchiveName) -> bool
     {
-        const auto path = GetLuaPath(acArchiveName, m_paths.ArchiveModsRoot());
+        const auto path = GetLuaPath(acArchiveName, m_paths.ArchiveModsRoot(), false);
         return path.empty();
     };
 
