@@ -270,10 +270,12 @@ std::filesystem::path GetAbsolutePath(std::filesystem::path aFilePath, const std
         if (!acAllowNonExisting)
             return {};
     }
-    else if (acAllowSymlink)
+    else if (is_symlink(aFilePath))
     {
-        if (is_symlink(aFilePath))
+        if (acAllowSymlink)
             return absolute(read_symlink(aFilePath));
+
+        return {};
     }
 
     return aFilePath;
