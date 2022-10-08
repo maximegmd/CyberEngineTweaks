@@ -591,14 +591,19 @@ LRESULT VKBindings::OnWndProc(HWND, UINT auMsg, WPARAM, LPARAM alParam)
     case WM_INPUT:
         return HandleRAWInput(reinterpret_cast<HRAWINPUT>(alParam));
     case WM_KILLFOCUS:
+        // reset key states on focus loss, as otherwise, we end up with broken recording state
         m_keyStates.reset();
+        m_isBindRecording = false;
+        m_recordingResult = 0;
+        m_recordingLength = 0;
+        m_recording.fill(0);
     }
     return 0;
 }
 
 void VKBindings::ConnectUpdate(D3D12& aD3D12)
 {
-    m_connectUpdate = aD3D12.OnUpdate.Connect([this]() { this->Update(); });
+    m_connectUpdate = aD3D12.OnUpdate.Connect([this] { this->Update(); });
 }
 
 void VKBindings::DisconnectUpdate(D3D12& aD3D12)
@@ -673,6 +678,9 @@ LRESULT VKBindings::RecordKeyUp(USHORT aVKCode)
 
             if (!wasRecording)
             {
+                // TODO - bug where you can bind HK to Ctrl, Ctrl+C and Ctrl+V.
+                //        in mentioned case below, you will execute all 3 bindings, while wanted are only the last ones!
+
                 // fix recording for future use, so user can use HKs like Ctrl+C, Ctrl+V without the need of pressing
                 // again Ctrl for example
                 m_recordingLength = i;
@@ -723,14 +731,19 @@ int32_t VKBindings::CheckRecording()
 
 void VKBindings::ExecuteRecording(bool aLastKeyDown)
 {
-    // VM must be initialized by this point!
+    // VM must be running by this point! (doesn't have to be initialized fully)
     assert(m_cpVm != nullptr);
 
     if (m_isBindRecording)
     {
         const auto bind = m_cpVm->GetBind(m_recordingModBind);
         if (!aLastKeyDown || (bind && bind->IsInput()))
+        {
+            // this should never happen!
+            assert(false);
             StopRecordingBind();
+            m_recordingResult = 0;
+        }
 
         return;
     }
@@ -784,7 +797,7 @@ LRESULT VKBindings::HandleRAWInput(HRAWINPUT ahRAWInput)
 
     const auto lpb = std::make_unique<BYTE[]>(dwSize);
     if (GetRawInputData(ahRAWInput, RID_INPUT, lpb.get(), &dwSize, sizeof(RAWINPUTHEADER)) != dwSize)
-        Log::Warn("VKBindings::HandleRAWInput() - GetRawInputData() does not return correct size !");
+        Log::Warn("VKBindings::HandleRAWInput() - GetRawInputData() does not return correct size!");
 
     const auto* raw = reinterpret_cast<const RAWINPUT*>(lpb.get());
     if (raw->header.dwType == RIM_TYPEKEYBOARD)
