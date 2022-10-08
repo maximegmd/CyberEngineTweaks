@@ -284,7 +284,6 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
 bool D3D12::InitializeImGui(size_t aBuffersCounts)
 {
     // TODO - scale also by DPI
-    // TODO - different resolutions seem to have different spacings between items, ImGui::GetStyle().ScaleAllSizes() doesnt seem to work correctly or wrong usage?
     const auto [resx, resy] = GetResolution();
     const auto fontScale = std::min(static_cast<float>(resx) / 1920.0f, static_cast<float>(resy) / 1080.0f);
 
@@ -298,6 +297,8 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         m_styleReference = ImGui::GetStyle();
     }
 
+    // NOTE - mods may break scaling, if you see issues with scaling of something, first disable them!
+    //        hopefully, this issue will get resolved somewhat with more proper sandboxing for ImGui via #720
     ImGui::GetStyle() = m_styleReference;
     ImGui::GetStyle().ScaleAllSizes(fontScale);
 
