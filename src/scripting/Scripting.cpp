@@ -24,6 +24,8 @@
 #include <reverse/RTTIExtender.h>
 #include <reverse/Converter.h>
 
+#include <reverse/RED4ext/ResourceDepot.hpp>
+
 #include "Utils.h"
 
 #ifndef NDEBUG
