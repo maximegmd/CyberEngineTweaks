@@ -24,6 +24,8 @@
 #include <reverse/RTTIExtender.h>
 #include <reverse/Converter.h>
 
+#include <reverse/RED4ext/ResourceDepot.hpp>
+
 #include "Utils.h"
 
 #ifndef NDEBUG
@@ -97,44 +99,22 @@ void Scripting::Initialize()
 
     luaGlobal["ModArchiveExists"] = [this](const std::string& acArchiveName) -> bool
     {
-        bool archiveExists = false;
+        auto resourceDepot = RED4ext::ResourceDepot::Get();
 
-        const auto cAbsPath = absolute(m_paths.ArchiveModsRoot() / acArchiveName);
-        const auto cRelPathStr = relative(cAbsPath, m_paths.ArchiveModsRoot()).native();
-
-        if (cRelPathStr.find(L"..") != std::wstring::npos)
-            archiveExists = false;
-        else
-            archiveExists = exists(cAbsPath);
-
-        // only need to check if it wasn't already found
-        if (!archiveExists)
+        for (const auto& archiveGroup : resourceDepot->groups)
         {
-            // check to see if a REDmod archive exists
-            const auto cREDModAbsPathRoot = absolute(m_paths.REDmodsRoot());
-
-            // parse recursively to find the archive
-            for (auto dir_iter = std::filesystem::recursive_directory_iterator{cREDModAbsPathRoot};
-                 dir_iter != std::filesystem::recursive_directory_iterator{};
-                ++dir_iter)
+            if (archiveGroup.scope == RED4ext::ArchiveScope::Mod)
             {
-                // only check if we're in a subdirectory that is two folders deep (e.g. mod1/tweaks or mod2/archives)
-                // the 0th depth is 1 folder deep
-                if (dir_iter.depth() == 1)
+                for (const auto& archive : archiveGroup.archives)
                 {
-                    auto const& dir_entry = *dir_iter;
-                    if (dir_entry.is_directory() && dir_entry.path().filename() == "archives")
-                    {
-                        // or is in case we parsed another "archives" directory and it wasn't found
-                        archiveExists |= exists(dir_entry.path() / acArchiveName);
-                        if (archiveExists)
-                            break;
-                    }
+                    auto archivePath = std::filesystem::path(archive.path.c_str());
+                    if (archivePath.filename() == acArchiveName)
+                        return true;
                 }
             }
         }
 
-        return archiveExists;
+        return false;
     };
 
     // fake game object to prevent errors from older autoexec.lua
