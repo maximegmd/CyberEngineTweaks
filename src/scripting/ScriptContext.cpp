@@ -264,12 +264,16 @@ void ScriptContext::TriggerOnDraw() const
 
 void ScriptContext::TriggerOnOverlayOpen() const
 {
-    TryLuaFunctionWithImGui(m_sandbox, m_sandboxID, m_logger, m_onOverlayOpen);
+    auto state = m_sandbox.GetState();
+
+    TryLuaFunction(m_logger, m_onOverlayOpen);
 }
 
 void ScriptContext::TriggerOnOverlayClose() const
 {
-    TryLuaFunctionWithImGui(m_sandbox, m_sandboxID, m_logger, m_onOverlayClose);
+    auto state = m_sandbox.GetState();
+
+    TryLuaFunction(m_logger, m_onOverlayClose);
 }
 
 sol::object ScriptContext::GetRootObject() const
