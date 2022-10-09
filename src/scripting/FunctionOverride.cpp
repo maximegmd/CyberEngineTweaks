@@ -133,14 +133,13 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
             auto pContext = apStack->GetContext();
 
             {
-                auto lockedState = chain.pScripting->GetState();
+                auto lockedState = chain.pScripting->GetLockedState();
                 auto& luaState = lockedState.Get();
 
                 if (!apFunction->flags.isStatic && pContext)
                 {
-                    const auto weak = RED4ext::WeakHandle<RED4ext::IScriptable>(
-                        *(RED4ext::WeakHandle<RED4ext::IScriptable>*)&pContext->ref);
-                    auto obj = sol::make_object(luaState, WeakReference(lockedState, weak));
+                    const auto weak = RED4ext::WeakHandle(*reinterpret_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(&pContext->ref));
+                    auto obj = make_object(luaState, WeakReference(lockedState, weak));
 
                     args.reserve(apFunction->params.size + 1);
                     args.push_back(obj);
@@ -217,7 +216,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
         TiltedPhoques::Allocator::Set(pAllocator);
 
         {
-            auto lockedState = chain.pScripting->GetState();
+            auto lockedState = chain.pScripting->GetLockedState();
             auto& luaState = lockedState.Get();
 
             if (!apFunction->flags.isStatic)
@@ -235,9 +234,9 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
                     self.value = apFrame->context;
                 }
 
-                const auto ref = (RED4ext::WeakHandle<RED4ext::IScriptable>*)&((RED4ext::IScriptable*)self.value)->ref;
-                const auto weak = RED4ext::WeakHandle<RED4ext::IScriptable>(*ref);
-                auto obj = sol::make_object(luaState, WeakReference(lockedState, weak));
+                const auto ref = reinterpret_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(&((RED4ext::IScriptable*)self.value)->ref);
+                const auto weak = RED4ext::WeakHandle(*ref);
+                auto obj = make_object(luaState, WeakReference(lockedState, weak));
 
                 args.reserve(apFunction->params.size + 1);
                 args.push_back(obj);
@@ -277,7 +276,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
                 apFrame->data = nullptr;
                 apFrame->dataType = nullptr;
                 const auto opcode = *(apFrame->code++);
-                RED4ext::OpcodeHandlers::Run(opcode, (RED4ext::IScriptable*)apFrame->context, apFrame, pInstance, isScriptRef ? pInstance : nullptr);
+                RED4ext::OpcodeHandlers::Run(opcode, reinterpret_cast<RED4ext::IScriptable*>(apFrame->context), apFrame, pInstance, isScriptRef ? pInstance : nullptr);
 
                 args.push_back(Scripting::ToLua(lockedState, arg));
 
@@ -293,7 +292,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
                 // Release inner values
                 if (isScriptRef)
                 {
-                    auto* pScriptRef = (RED4ext::ScriptRef<void>*)pInstance;
+                    auto* pScriptRef = reinterpret_cast<RED4ext::ScriptRef<void>*>(pInstance);
                     pScriptRef->innerType->Destroy(pScriptRef->ref);
                     pScriptRef->innerType->GetAllocator()->Free(pScriptRef->ref);
                     pScriptRef->ref = nullptr;
@@ -339,7 +338,7 @@ bool FunctionOverride::ExecuteChain(const CallChain& aChain, std::shared_lock<st
 {
     if (!aChain.Before.empty())
     {
-        auto lockedState = aChain.pScripting->GetState();
+        auto lockedState = aChain.pScripting->GetLockedState();
 
         for (const auto& call : aChain.Before)
         {
@@ -358,7 +357,7 @@ bool FunctionOverride::ExecuteChain(const CallChain& aChain, std::shared_lock<st
 
     if (!aChain.Overrides.empty())
     {
-        auto lockedState = aChain.pScripting->GetState();
+        auto lockedState = aChain.pScripting->GetLockedState();
         auto& luaState = lockedState.Get();
 
         sol::object luaContext = pRealFunction->flags.isStatic ? sol::nil : apOrigArgs->at(0);
@@ -407,7 +406,7 @@ bool FunctionOverride::ExecuteChain(const CallChain& aChain, std::shared_lock<st
 
     if (!aChain.After.empty())
     {
-        auto lockedState = aChain.pScripting->GetState();
+        auto lockedState = aChain.pScripting->GetLockedState();
 
         for (const auto& call : aChain.After)
         {
@@ -423,7 +422,7 @@ bool FunctionOverride::ExecuteChain(const CallChain& aChain, std::shared_lock<st
 
     if (apOrigArgs && !apOrigArgs->empty())
     {
-        auto lockedState = aChain.pScripting->GetState();
+        auto lockedState = aChain.pScripting->GetLockedState();
         apOrigArgs->resize(0);
     }
 

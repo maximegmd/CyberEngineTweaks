@@ -19,15 +19,15 @@ struct LuaSandbox
     Sandbox& operator[](uint64_t aID);
     const Sandbox& operator[](uint64_t aID) const;
 
-    [[nodiscard]] TiltedPhoques::Locked<sol::state, std::recursive_mutex> GetState() const;
+    [[nodiscard]] TiltedPhoques::Locked<sol::state, std::recursive_mutex> GetLockedState() const;
 
 private:
 
-    void InitializeImGuiForSandbox(Sandbox& aSandbox) const;
-    void InitializeExtraLibsForSandbox(Sandbox& aSandbox) const;
-    void InitializeDBForSandbox(Sandbox& aSandbox);
-    void InitializeIOForSandbox(Sandbox& aSandbox, const std::string& acName);
-    void InitializeLoggerForSandbox(Sandbox& aSandbox, const std::string& acName) const;
+    void InitializeImGuiForSandbox(Sandbox& aSandbox, sol::state_view aStateView) const;
+    void InitializeExtraLibsForSandbox(Sandbox& aSandbox, sol::state_view aStateView) const;
+    void InitializeDBForSandbox(Sandbox& aSandbox, sol::state_view aStateView);
+    void InitializeIOForSandbox(Sandbox& aSandbox, sol::state_view aStateView, const std::string& acName);
+    void InitializeLoggerForSandbox(Sandbox& aSandbox, sol::state_view aStateView, const std::string& acName) const;
 
     void CloseDBForSandbox(const Sandbox& aSandbox) const;
 

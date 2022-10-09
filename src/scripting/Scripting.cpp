@@ -703,7 +703,7 @@ void Scripting::CollectGarbage()
     luaState.collect_garbage();
 }
 
-Scripting::LockedState Scripting::GetState() const noexcept
+Scripting::LockedState Scripting::GetLockedState() const noexcept
 {
     return m_lua.Lock();
 }

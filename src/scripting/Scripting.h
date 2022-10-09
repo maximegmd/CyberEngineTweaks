@@ -34,7 +34,7 @@ struct Scripting
     bool ExecuteLua(const std::string& acCommand);
     void CollectGarbage();
 
-    LockedState GetState() const noexcept;
+    LockedState GetLockedState() const noexcept;
     std::string GetGlobalName() const noexcept;
 
     static size_t Size(RED4ext::CBaseRTTIType* apRttiType);

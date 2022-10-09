@@ -50,6 +50,8 @@ void LuaVM::Update(float aDeltaTime)
             m_scripting.TriggerOnOverlayOpen();
 
         spdlog::get("scripting")->info("LuaVM: Reloaded all mods!");
+
+        m_reload = false;
     }
 
     m_scripting.TriggerOnUpdate(aDeltaTime);
