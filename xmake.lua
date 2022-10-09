@@ -3,7 +3,7 @@ set_xmakever("2.6.0")
 set_languages("c++20")
 set_arch("x64")
 
-add_requires("spdlog 1.9", "nlohmann_json", "hopscotch-map", "minhook", "mem", "imgui 1.84.2", "sol2", "tiltedcore 0.2.7", "sqlite3", "xbyak", "stb", "openrestry-luajit")
+add_requires("spdlog 1.9", "nlohmann_json", "hopscotch-map", "minhook", "mem", "imgui v1.88-docking", "sol2", "tiltedcore 0.2.7", "sqlite3", "xbyak", "stb", "openrestry-luajit")
 add_requireconfs("sol2", { configs = { includes_lua = false } })
 add_requireconfs("openrestry-luajit", { configs = { gc64 = true } })
 
