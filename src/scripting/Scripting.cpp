@@ -121,11 +121,13 @@ void Scripting::Initialize()
     luaGlobal["Game"] = luaVm["Game"];
 
     // execute autoexec.lua inside our default script directory
+    const auto previousCurrentPath = std::filesystem::current_path();
     current_path(m_paths.CETRoot() / "scripts");
     if (std::filesystem::exists("autoexec.lua"))
         luaVm.do_file("autoexec.lua");
     else
         spdlog::get("scripting")->warn("WARNING: missing CET autoexec.lua!");
+    current_path(previousCurrentPath);
 
     // initialize sandbox
     m_sandbox.Initialize();

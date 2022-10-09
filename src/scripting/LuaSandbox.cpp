@@ -229,10 +229,15 @@ void LuaSandbox::InitializeImGuiForSandbox(Sandbox& aSandbox) const
     Texture::BindTexture(imgui);
 
     const auto cLoadTexture = [cSBRootPath, sbStateView](const std::string& acPath) -> std::tuple<std::shared_ptr<Texture>, sol::object> {
+        const auto previousCurrentPath = std::filesystem::current_path();
+        current_path(cSBRootPath);
+
         const auto path = GetLuaPath(acPath, cSBRootPath, false);
         auto texture = Texture::Load(UTF16ToUTF8(path.native()));
         if (!texture)
             return std::make_tuple(nullptr, make_object(sbStateView, "Failed to load '" + acPath + "'"));
+
+        current_path(previousCurrentPath);
 
         return std::make_tuple(texture, sol::nil);
     };
@@ -278,13 +283,24 @@ void LuaSandbox::InitializeDBForSandbox(Sandbox& aSandbox)
     const auto dbPath = UTF16ToUTF8(GetLuaPath(L"db.sqlite3", cSBRootPath, false).native());
     sqlite3Copy["reopen"] = [this, sbId, dbPath, dbOpen]{
         auto& sandbox = m_sandboxes[sbId];
+
+        const auto previousCurrentPath = std::filesystem::current_path();
+        current_path(sandbox.GetRootPath());
+
         CloseDBForSandbox(sandbox);
         sandbox.GetEnvironment()["db"] = dbOpen(dbPath);
+
+        current_path(previousCurrentPath);
     };
 
     sbEnv["sqlite3"] = sqlite3Copy;
 
+    const auto previousCurrentPath = std::filesystem::current_path();
+    current_path(cSBRootPath);
+
     sbEnv["db"] = dbOpen(dbPath);
+
+    current_path(previousCurrentPath);
 }
 
 void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& acName)
@@ -319,17 +335,28 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
 
     const auto cLoadFile = [cSBRootPath, cLoadString, sbStateView](const std::string& acPath) -> std::tuple<sol::object, sol::object>
     {
+        const auto previousCurrentPath = std::filesystem::current_path();
+        current_path(cSBRootPath);
+
         auto path = GetLuaPath(acPath, cSBRootPath, false);
 
         if (path.empty() || !is_regular_file(path))
             path = GetLuaPath(acPath + ".lua", cSBRootPath, false);
 
         if (path.empty() || !is_regular_file(path))
+        {
+            current_path(previousCurrentPath);
+
             return std::make_tuple(sol::nil, make_object(sbStateView, "Tried to access invalid path '" + acPath + "'!"));
+        }
 
         std::ifstream ifs(path);
         const std::string cScriptString((std::istreambuf_iterator(ifs)), std::istreambuf_iterator<char>());
-        return cLoadString(cScriptString, "@" + UTF16ToUTF8(path.native()));
+        auto result = cLoadString(cScriptString, "@" + UTF16ToUTF8(path.native()));
+
+        current_path(previousCurrentPath);
+
+        return result;
     };
     sbEnv["loadfile"] = cLoadFile;
 
@@ -345,6 +372,9 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
 
     sbEnv["require"] = [this, cLoadString, cSBRootPath, sbStateView, sbEnv](const std::string& acPath) -> std::tuple<sol::object, sol::object>
     {
+        const auto previousCurrentPath = std::filesystem::current_path();
+        current_path(cSBRootPath);
+
         auto path = GetLuaPath(acPath, cSBRootPath, false);
 
         if (path.empty() || !is_regular_file(path))
@@ -354,19 +384,31 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
             path = GetLuaPath(acPath + "\\init.lua", cSBRootPath, false);
 
         if (path.empty() || !is_regular_file(path))
+        {
+            current_path(previousCurrentPath);
+
             return std::make_tuple(sol::nil, make_object(sbStateView, "Tried to access invalid path '" + acPath + "'!"));
+        }
 
         const auto cKey = UTF16ToUTF8(path.native());
         const auto cExistingModule = m_modules.find(cKey);
         if (cExistingModule != m_modules.end())
+        {
+            current_path(previousCurrentPath);
+
             return std::make_tuple(cExistingModule->second, sol::nil);
+        }
 
         std::ifstream ifs(path);
         const std::string cScriptString((std::istreambuf_iterator(ifs)), std::istreambuf_iterator<char>());
         auto res = cLoadString(cScriptString, "@" + cKey);
         auto obj = std::get<0>(res);
         if (obj == sol::nil)
+        {
+            current_path(previousCurrentPath);
+
             return res;
+        }
 
         sol::function func = std::get<0>(res);
         if (func != sol::nil)
@@ -379,6 +421,8 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
             }
             catch(std::exception& e)
             {
+                current_path(previousCurrentPath);
+
                 return std::make_tuple(sol::nil, make_object(sbStateView, e.what()));
             }
 
@@ -386,6 +430,9 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
             {
                 auto resultObj = result.get<sol::object>();
                 m_modules[cKey] = resultObj;
+
+                current_path(previousCurrentPath);
+
                 return std::make_tuple(resultObj, sol::nil);
             }
 
@@ -393,28 +440,42 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
             std::shared_ptr<spdlog::logger> logger = sbEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
             logger->error("Error: Cannot load module '{}': {}", acPath, err.what());
 
+            current_path(previousCurrentPath);
+
             return std::make_tuple(sol::nil, make_object(sbStateView, err.what()));
         }
+
+        current_path(previousCurrentPath);
+
         return res;
     };
 
     sbEnv["dir"] = [cSBRootPath, sbStateView](const std::string& acPath) -> sol::table
     {
-        const auto sv = sbStateView;
+        const auto previousCurrentPath = std::filesystem::current_path();
+        current_path(cSBRootPath);
+
         const auto path = GetLuaPath(acPath, cSBRootPath, false);
 
         if (path.empty() || !is_directory(path))
-            return sol::nil;
+        {
+            current_path(previousCurrentPath);
 
-        sol::table res(sv, sol::create);
+            return sol::nil;
+        }
+
+        sol::table res(sbStateView, sol::create);
         int index = 1;
         for (const auto& entry : std::filesystem::directory_iterator(path))
         {
-            sol::table item(sv, sol::create);
+            sol::table item(sbStateView, sol::create);
             item["name"] = UTF16ToUTF8(relative(entry.path(), path).native());
             item["type"] = entry.is_directory() ? ("directory") : ("file");
             res[index++] = item;
         }
+
+        current_path(previousCurrentPath);
+
         return res;
     };
 
@@ -431,21 +492,30 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
         ioSB["close"] = DeepCopySolObject(cIO["close"], luaView);
         ioSB["lines"] = [cIO, cSBRootPath](const std::string& acPath)
         {
+            const auto previousCurrentPath = std::filesystem::current_path();
+            current_path(cSBRootPath);
+
             const auto path = GetLuaPath(acPath, cSBRootPath, false);
 
-            if (path.empty() || acPath == "db.sqlite3")
-                return cIO["lines"]("");
+            auto result = cIO["lines"](path.empty() || acPath == "db.sqlite3" ? "" : UTF16ToUTF8(path.native()));
 
-            return cIO["lines"](UTF16ToUTF8(path.native()));
+            current_path(previousCurrentPath);
+
+            return result;
+
         };
         const auto cOpenWithMode = [cIO, cSBRootPath](const std::string& acPath, const std::string& acMode)
         {
+            const auto previousCurrentPath = std::filesystem::current_path();
+            current_path(cSBRootPath);
+
             const auto path = GetLuaPath(acPath, cSBRootPath, true);
 
-            if (path.empty() || acPath == "db.sqlite3")
-                return cIO["open"]("", acMode);
+            auto result = cIO["open"](path.empty() || acPath == "db.sqlite3" ? "" : UTF16ToUTF8(path.native()), acMode);
 
-            return cIO["open"](UTF16ToUTF8(path.native()), acMode);
+            current_path(previousCurrentPath);
+
+            return result;
         };
         auto cOpenDefault = [cOpenWithMode](const std::string& acPath)
         {
@@ -461,29 +531,43 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
         sol::table osSB = sbEnv["os"].get<sol::table>();
         osSB["rename"] = [cOS, cSBRootPath](const std::string& acOldPath, const std::string& acNewPath) -> std::tuple<sol::object, std::string>
         {
+            const auto previousCurrentPath = std::filesystem::current_path();
+            current_path(cSBRootPath);
+
             const auto oldPath = GetLuaPath(acOldPath, cSBRootPath, false);
             if (oldPath.empty() || acOldPath == "db.sqlite3")
+            {
+                current_path(previousCurrentPath);
+
                 return std::make_tuple(sol::nil, "Argument oldPath is invalid! ('" + acOldPath + "')");
+            }
 
             const auto newPath = GetLuaPath(acOldPath, cSBRootPath, true);
             if (newPath.empty() || acNewPath == "db.sqlite3")
+            {
+                current_path(previousCurrentPath);
+
                 return std::make_tuple(sol::nil, "Argument newPath is invalid! ('" + acNewPath + "')");
+            }
 
             const auto cResult = cOS["rename"](UTF16ToUTF8(oldPath.native()), UTF16ToUTF8(newPath.native()));
-            if (cResult.valid())
-                return std::make_tuple(cResult.get<sol::object>(), "");
 
-            return std::make_tuple(cResult.get<sol::object>(0), cResult.get<std::string>(1));
+            current_path(previousCurrentPath);
+
+            return cResult.valid() ? std::make_tuple(cResult.get<sol::object>(), "") : std::make_tuple(cResult.get<sol::object>(0), cResult.get<std::string>(1));
         };
         osSB["remove"] = [cOS, cSBRootPath](const std::string& acPath) -> std::tuple<sol::object, std::string>
         {
+            const auto previousCurrentPath = std::filesystem::current_path();
+            current_path(cSBRootPath);
+
             const auto path = GetLuaPath(acPath, cSBRootPath, false);
 
             const auto cResult = cOS["remove"](UTF16ToUTF8(path.native()));
-            if (cResult.valid())
-                return std::make_tuple(cResult.get<sol::object>(), "");
 
-            return std::make_tuple(cResult.get<sol::object>(0), cResult.get<std::string>(1));
+            current_path(previousCurrentPath);
+
+            return cResult.valid() ? std::make_tuple(cResult.get<sol::object>(), "") : std::make_tuple(cResult.get<sol::object>(0), cResult.get<std::string>(1));
         };
     }
 
