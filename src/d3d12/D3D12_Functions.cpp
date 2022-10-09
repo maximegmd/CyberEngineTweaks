@@ -329,7 +329,42 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
     else
         io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(customFontPath.native()).c_str(), config.SizePixels, &config, cpGlyphRanges);
 
-    if (m_options.FontGlyphRanges == "Default")
+    if (m_options.FontGlyphRanges == "ChineseFull")
+    {
+        cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansTC-Regular.otf", m_paths.Fonts(), false);
+        cpGlyphRanges = io.Fonts->GetGlyphRangesChineseFull();
+    }
+    else if (m_options.FontGlyphRanges == "ChineseSimplifiedCommon")
+    {
+        cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansSC-Regular.otf", m_paths.Fonts(), false);
+        cpGlyphRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
+    }
+    else if (m_options.FontGlyphRanges == "Japanese")
+    {
+        cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansJP-Regular.otf", m_paths.Fonts(), false);
+        cpGlyphRanges = io.Fonts->GetGlyphRangesJapanese();
+    }
+    else if (m_options.FontGlyphRanges == "Korean")
+    {
+        cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansKR-Regular.otf", m_paths.Fonts(), false);
+        cpGlyphRanges = io.Fonts->GetGlyphRangesKorean();
+    }
+    else if (m_options.FontGlyphRanges == "Cyrillic")
+    {
+        cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSans-Regular.ttf", m_paths.Fonts(), false);
+        cpGlyphRanges = io.Fonts->GetGlyphRangesCyrillic();
+    }
+    else if (m_options.FontGlyphRanges == "Thai")
+    {
+        cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansThai-Regular.ttf", m_paths.Fonts(), false);
+        cpGlyphRanges = io.Fonts->GetGlyphRangesThai();
+    }
+    else if (m_options.FontGlyphRanges == "Vietnamese")
+    {
+        cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSans-Regular.ttf", m_paths.Fonts(), false);
+        cpGlyphRanges = io.Fonts->GetGlyphRangesVietnamese();
+    }
+    else
     {
         switch (GetSystemDefaultLangID())
         {
@@ -369,41 +404,6 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
             cpGlyphRanges = io.Fonts->GetGlyphRangesVietnamese();
             break;
         }
-    }
-    else if (m_options.FontGlyphRanges == "ChineseFull")
-    {
-        cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansTC-Regular.otf", m_paths.Fonts(), false);
-        cpGlyphRanges = io.Fonts->GetGlyphRangesChineseFull();
-    }
-    else if (m_options.FontGlyphRanges == "ChineseSimplifiedCommon")
-    {
-        cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansSC-Regular.otf", m_paths.Fonts(), false);
-        cpGlyphRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
-    }
-    else if (m_options.FontGlyphRanges == "Japanese")
-    {
-        cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansJP-Regular.otf", m_paths.Fonts(), false);
-        cpGlyphRanges = io.Fonts->GetGlyphRangesJapanese();
-    }
-    else if (m_options.FontGlyphRanges == "Korean")
-    {
-        cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansKR-Regular.otf", m_paths.Fonts(), false);
-        cpGlyphRanges = io.Fonts->GetGlyphRangesKorean();
-    }
-    else if (m_options.FontGlyphRanges == "Cyrillic")
-    {
-        cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSans-Regular.ttf", m_paths.Fonts(), false);
-        cpGlyphRanges = io.Fonts->GetGlyphRangesCyrillic();
-    }
-    else if (m_options.FontGlyphRanges == "Thai")
-    {
-        cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansThai-Regular.ttf", m_paths.Fonts(), false);
-        cpGlyphRanges = io.Fonts->GetGlyphRangesThai();
-    }
-    else if (m_options.FontGlyphRanges == "Vietnamese")
-    {
-        cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSans-Regular.ttf", m_paths.Fonts(), false);
-        cpGlyphRanges = io.Fonts->GetGlyphRangesVietnamese();
     }
 
     // add extra glyphs from language font
