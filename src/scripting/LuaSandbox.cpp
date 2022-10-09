@@ -66,7 +66,7 @@ static constexpr const char* s_cGlobalImmutablesList[] =
     "WeakReference"
 };
 
-static constexpr const char* s_cGlobalExtraLibsWhitelist[] =
+static constexpr const char* s_cGlobalImGuiList[] =
 {
     "ImGui",
     "ImGuiCond",
@@ -93,7 +93,11 @@ static constexpr const char* s_cGlobalExtraLibsWhitelist[] =
     "ImGuiCol",
     "ImGuiDir",
     "ImVec2",
-    "ImVec4",
+    "ImVec4"
+};
+
+static constexpr const char* s_cGlobalExtraLibsWhitelist[] =
+{
     "json"
 };
 
@@ -159,13 +163,15 @@ void LuaSandbox::ResetState()
     luaView.collect_garbage();
 }
 
-size_t LuaSandbox::CreateSandbox(const std::filesystem::path& acPath, const std::string& acName, bool aEnableExtraLibs, bool aEnableDB, bool aEnableIO, bool aEnableLogger)
+uint64_t LuaSandbox::CreateSandbox(const std::filesystem::path& acPath, const std::string& acName, bool aEnableImGui, bool aEnableExtraLibs, bool aEnableDB, bool aEnableIO, bool aEnableLogger)
 {
-    const size_t cResID = m_sandboxes.size();
+    const uint64_t cResID = m_sandboxes.size();
     assert(!cResID || (!acPath.empty() && !acName.empty()));
     auto& res = m_sandboxes.emplace_back(m_pScripting, m_env, acPath);
     if (!acPath.empty() && !acName.empty())
     {
+        if (aEnableImGui)
+            InitializeImGuiForSandbox(res);
         if (aEnableExtraLibs)
             InitializeExtraLibsForSandbox(res);
         if (aEnableDB)
@@ -188,13 +194,13 @@ sol::protected_function_result LuaSandbox::ExecuteString(const std::string& acSt
     return m_sandboxes[0].ExecuteString(acString);
 }
 
-Sandbox& LuaSandbox::operator[](size_t aID)
+Sandbox& LuaSandbox::operator[](uint64_t aID)
 {
     assert(aID < m_sandboxes.size());
     return m_sandboxes[aID];
 }
 
-const Sandbox& LuaSandbox::operator[](size_t aID) const
+const Sandbox& LuaSandbox::operator[](uint64_t aID) const
 {
     assert(aID < m_sandboxes.size());
     return m_sandboxes[aID];
@@ -205,22 +211,22 @@ TiltedPhoques::Locked<sol::state, std::recursive_mutex> LuaSandbox::GetState() c
     return m_pScripting->GetState();
 }
 
-void LuaSandbox::InitializeExtraLibsForSandbox(Sandbox& aSandbox) const
+void LuaSandbox::InitializeImGuiForSandbox(Sandbox& aSandbox) const
 {
-    auto& sbEnv = aSandbox.GetEnvironment();
-    sol::state_view sbStateView = GetState();
-    const auto cSBRootPath = aSandbox.GetRootPath();
-
     auto lock = m_pScripting->GetState();
     auto& luaView = lock.Get();
 
-    // copy extra whitelisted libs from global table
-    const auto cGlobals = luaView.globals();
-    for (const auto* cKey : s_cGlobalExtraLibsWhitelist)
-        sbEnv[cKey] = DeepCopySolObject(cGlobals[cKey].get<sol::object>(), luaView);
+    sol::state_view sbStateView = GetState();
+    const auto cSBRootPath = aSandbox.GetRootPath();
 
-    auto ImGui = sbEnv.get<sol::table>("ImGui");
-    Texture::BindTexture(ImGui);
+    sol::table imgui{luaView, sol::create};
+
+    // copy ImGui from global table
+    const auto cGlobals = luaView.globals();
+    for (const auto* cKey : s_cGlobalImGuiList)
+        imgui[cKey] = DeepCopySolObject(cGlobals[cKey].get<sol::object>(), luaView);
+
+    Texture::BindTexture(imgui);
 
     const auto cLoadTexture = [cSBRootPath, sbStateView](const std::string& acPath) -> std::tuple<std::shared_ptr<Texture>, sol::object> {
         const auto path = GetLuaPath(acPath, cSBRootPath, false);
@@ -230,16 +236,33 @@ void LuaSandbox::InitializeExtraLibsForSandbox(Sandbox& aSandbox) const
 
         return std::make_tuple(texture, sol::nil);
     };
-    ImGui.set_function("LoadTexture", cLoadTexture);
+    imgui.set_function("LoadTexture", cLoadTexture);
+
+    aSandbox.GetImGui() = imgui;
+}
+
+void LuaSandbox::InitializeExtraLibsForSandbox(Sandbox& aSandbox) const
+{
+    auto lock = m_pScripting->GetState();
+    auto& luaView = lock.Get();
+
+    auto& sbEnv = aSandbox.GetEnvironment();
+    sol::state_view sbStateView = GetState();
+    const auto cSBRootPath = aSandbox.GetRootPath();
+
+    // copy extra whitelisted libs from global table
+    const auto cGlobals = luaView.globals();
+    for (const auto* cKey : s_cGlobalExtraLibsWhitelist)
+        sbEnv[cKey] = DeepCopySolObject(cGlobals[cKey].get<sol::object>(), luaView);
 }
 
 void LuaSandbox::InitializeDBForSandbox(Sandbox& aSandbox) const
 {
-    auto& sbEnv = aSandbox.GetEnvironment();
-    const auto cSBRootPath = aSandbox.GetRootPath();
-
     auto lock = m_pScripting->GetState();
     auto& luaView = lock.Get();
+
+    auto& sbEnv = aSandbox.GetEnvironment();
+    const auto cSBRootPath = aSandbox.GetRootPath();
 
     const auto cGlobals = luaView.globals();
     const auto cSQLite3 = cGlobals["sqlite3"].get<sol::table>();
@@ -257,6 +280,9 @@ void LuaSandbox::InitializeDBForSandbox(Sandbox& aSandbox) const
 
 void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& acName)
 {
+    auto lock = m_pScripting->GetState();
+    auto& luaView = lock.Get();
+
     sol::state_view sbStateView = GetState();
     auto sbEnv = aSandbox.GetEnvironment();
     const auto cSBRootPath = aSandbox.GetRootPath();
@@ -383,9 +409,6 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
         return res;
     };
 
-    auto lock = m_pScripting->GetState();
-    auto& luaView = lock.Get();
-
     const auto cGlobals = luaView.globals();
     // define replacements for io lib
     {
@@ -468,6 +491,9 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
 
 void LuaSandbox::InitializeLoggerForSandbox(Sandbox& aSandbox, const std::string& acName) const
 {
+    auto lock = m_pScripting->GetState();
+    auto& luaView = lock.Get();
+
     auto& sbEnv = aSandbox.GetEnvironment();
     const auto cSBRootPath = aSandbox.GetRootPath();
 

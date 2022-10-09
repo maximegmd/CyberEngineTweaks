@@ -18,7 +18,7 @@ void LuaVM::HookLog(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*,
     RED4ext::ScriptRef<RED4ext::CString> ref;
     ref.innerType = s_stringLocator;
     ref.ref = &text;
-    ref.innerType->GetName(ref.hash);
+    ref.hash = ref.innerType->GetName();
 
     apStack->currentParam++;
     const auto opcode = *(apStack->code++);
@@ -77,7 +77,7 @@ LuaVM::LuaVM(Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12, Options& aOpti
     Hook(aOptions);
 
     aBindings.SetVM(this);
-    m_connectUpdate = aD3D12.OnUpdate.Connect([this]() { Draw(); });
+    m_connectUpdate = aD3D12.OnUpdate.Connect([this]{ Draw(); });
 }
 
 LuaVM::~LuaVM()

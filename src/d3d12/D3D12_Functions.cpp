@@ -285,7 +285,7 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
 {
     // TODO - scale also by DPI
     const auto [resx, resy] = GetResolution();
-    const auto fontScale = std::min(static_cast<float>(resx) / 1920.0f, static_cast<float>(resy) / 1080.0f);
+    const auto scaleFromReference = std::min(static_cast<float>(resx) / 1920.0f, static_cast<float>(resy) / 1080.0f);
 
     if (ImGui::GetCurrentContext() == nullptr)
     {
@@ -297,13 +297,11 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         m_styleReference = ImGui::GetStyle();
     }
 
-    // NOTE - mods may break scaling, if you see issues with scaling of something, first disable them!
-    //        hopefully, this issue will get resolved somewhat with more proper sandboxing for ImGui via #720
     ImGui::GetStyle() = m_styleReference;
-    ImGui::GetStyle().ScaleAllSizes(fontScale);
+    ImGui::GetStyle().ScaleAllSizes(scaleFromReference);
 
     ImFontConfig config;
-    config.SizePixels = static_cast<int32_t>(m_options.FontSize * fontScale);
+    config.SizePixels = static_cast<int32_t>(m_options.FontSize * scaleFromReference);
     config.OversampleH = config.OversampleV = 2;
     config.PixelSnapH = true;
 
