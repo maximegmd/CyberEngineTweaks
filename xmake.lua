@@ -51,6 +51,7 @@ target("cyber_engine_tweaks")
 
 	on_package(function(target)
 		os.mkdir("package/bin/x64/plugins/cyber_engine_tweaks/scripts")
+		os.mkdir("package/bin/x64/plugins/cyber_engine_tweaks/fonts")
 		os.cp("vendor/asiloader/*", "package/bin/x64/")
 		os.cp("LICENSE", "package/bin/x64/")
 		os.cp("ThirdParty_LICENSES", "package/bin/x64/plugins/cyber_engine_tweaks/ThirdParty_LICENSES")
