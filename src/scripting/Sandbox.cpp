@@ -23,17 +23,24 @@ Sandbox::Sandbox(Scripting* apScripting, sol::environment aBaseEnvironment, cons
 
 sol::protected_function_result Sandbox::ExecuteFile(const std::string& acPath) const
 {
+    auto lock = m_pScripting->GetState();
     return m_pScripting->GetState().Get().script_file(acPath, m_env, sol::load_mode::text);
 }
 
 sol::protected_function_result Sandbox::ExecuteString(const std::string& acString) const
 {
+    auto lock = m_pScripting->GetState();
     return m_pScripting->GetState().Get().script(acString, m_env, sol:: detail::default_chunk_name(), sol::load_mode::text);
 }
 
 sol::environment& Sandbox::GetEnvironment()
 {
     return m_env;
+}
+
+sol::table& Sandbox::GetImGui()
+{
+    return m_imgui;
 }
 
 const std::filesystem::path& Sandbox::GetRootPath() const

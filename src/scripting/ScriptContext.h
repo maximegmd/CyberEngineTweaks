@@ -30,7 +30,7 @@ private:
     ScriptContext(const ScriptContext&) = default;
 
     LuaSandbox& m_sandbox;
-    size_t m_sandboxID;
+    uint64_t m_sandboxID;
     sol::object m_object{ };
     sol::function m_onTweak{ };
     sol::function m_onInit{ };

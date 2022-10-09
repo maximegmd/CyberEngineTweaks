@@ -11,18 +11,19 @@ struct LuaSandbox
     void PostInitialize();
     void ResetState();
 
-    size_t CreateSandbox(const std::filesystem::path& acPath = "", const std::string& acName = "", bool aEnableExtraLibs = true, bool aEnableDB = true, bool aEnableIO = true, bool aEnableLogger = true);
+    uint64_t CreateSandbox(const std::filesystem::path& acPath = "", const std::string& acName = "", bool aEnableImGui = true, bool aEnableExtraLibs = true, bool aEnableDB = true, bool aEnableIO = true, bool aEnableLogger = true);
 
     sol::protected_function_result ExecuteFile(const std::string& acPath);
     sol::protected_function_result ExecuteString(const std::string& acString);
 
-    Sandbox& operator[](size_t aID);
-    const Sandbox& operator[](size_t aID) const;
+    Sandbox& operator[](uint64_t aID);
+    const Sandbox& operator[](uint64_t aID) const;
 
     [[nodiscard]] TiltedPhoques::Locked<sol::state, std::recursive_mutex> GetState() const;
 
 private:
 
+    void InitializeImGuiForSandbox(Sandbox& aSandbox) const;
     void InitializeExtraLibsForSandbox(Sandbox& aSandbox) const;
     void InitializeDBForSandbox(Sandbox& aSandbox) const;
     void InitializeIOForSandbox(Sandbox& aSandbox, const std::string& acName);
