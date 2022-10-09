@@ -97,6 +97,8 @@ private:
 
     [[nodiscard]] LRESULT HandleRAWInput(HRAWINPUT ahRAWInput);
 
+    void ClearRecording(bool aClearBind = true);
+
     std::bitset<1 << 16> m_keyStates{ };
 
     std::map<uint64_t, VKModBind> m_binds{ }; // this map needs to be ordered!
@@ -106,8 +108,10 @@ private:
 
     VKCodeBindDecoded m_recording{ };
     size_t m_recordingLength{ 0 };
+    bool m_recordingHKWasKeyPressed{ false };
     VKModBind m_recordingModBind{ };
     uint64_t m_recordingResult{ 0 };
+
     bool m_isBindRecording{ false };
     bool m_initialized{ false };
 
