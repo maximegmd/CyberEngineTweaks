@@ -5,10 +5,11 @@
 
 #include <Utils.h>
 
-Sandbox::Sandbox(Scripting* apScripting, sol::environment aBaseEnvironment, const std::filesystem::path& acRootPath)
+Sandbox::Sandbox(uint64_t aId, Scripting* apScripting, sol::environment aBaseEnvironment, const std::filesystem::path& acRootPath)
     : m_pScripting(apScripting)
     , m_env(apScripting->GetState().Get(), sol::create)
     , m_path(acRootPath)
+    , m_id(aId)
 {
     // copy base environment, do not set it as fallback, as it may cause globals to bleed into other things!
     sol::state_view sv = apScripting->GetState().Get();
@@ -31,6 +32,11 @@ sol::protected_function_result Sandbox::ExecuteString(const std::string& acStrin
 {
     auto lock = m_pScripting->GetState();
     return m_pScripting->GetState().Get().script(acString, m_env, sol:: detail::default_chunk_name(), sol::load_mode::text);
+}
+
+uint64_t Sandbox::GetId() const
+{
+    return m_id;
 }
 
 sol::environment& Sandbox::GetEnvironment()

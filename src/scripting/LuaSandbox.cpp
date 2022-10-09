@@ -167,7 +167,7 @@ uint64_t LuaSandbox::CreateSandbox(const std::filesystem::path& acPath, const st
 {
     const uint64_t cResID = m_sandboxes.size();
     assert(!cResID || (!acPath.empty() && !acName.empty()));
-    auto& res = m_sandboxes.emplace_back(m_pScripting, m_env, acPath);
+    auto& res = m_sandboxes.emplace_back(cResID, m_pScripting, m_env, acPath);
     if (!acPath.empty() && !acName.empty())
     {
         if (aEnableImGui)
@@ -256,13 +256,14 @@ void LuaSandbox::InitializeExtraLibsForSandbox(Sandbox& aSandbox) const
         sbEnv[cKey] = DeepCopySolObject(cGlobals[cKey].get<sol::object>(), luaView);
 }
 
-void LuaSandbox::InitializeDBForSandbox(Sandbox& aSandbox) const
+void LuaSandbox::InitializeDBForSandbox(Sandbox& aSandbox)
 {
     auto lock = m_pScripting->GetState();
     auto& luaView = lock.Get();
 
     auto& sbEnv = aSandbox.GetEnvironment();
     const auto cSBRootPath = aSandbox.GetRootPath();
+    const auto sbId = aSandbox.GetId();
 
     const auto cGlobals = luaView.globals();
     const auto cSQLite3 = cGlobals["sqlite3"].get<sol::table>();
@@ -273,9 +274,17 @@ void LuaSandbox::InitializeDBForSandbox(Sandbox& aSandbox) const
         if (cKeyStr.compare(0, 4, "open"))
             sqlite3Copy[cKV.first] = DeepCopySolObject(cKV.second, luaView);
     }
+    const auto dbOpen = luaView["sqlite3"]["open"].get<sol::function>();
+    const auto dbPath = UTF16ToUTF8(GetLuaPath(L"db.sqlite3", cSBRootPath, false).native());
+    sqlite3Copy["reopen"] = [this, sbId, dbPath, dbOpen]{
+        auto& sandbox = m_sandboxes[sbId];
+        CloseDBForSandbox(sandbox);
+        sandbox.GetEnvironment()["db"] = dbOpen(dbPath);
+    };
+
     sbEnv["sqlite3"] = sqlite3Copy;
 
-    sbEnv["db"] = luaView["sqlite3"]["open"](UTF16ToUTF8(GetLuaPath(L"db.sqlite3", cSBRootPath, false).native()));
+    sbEnv["db"] = dbOpen(dbPath);
 }
 
 void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& acName)
@@ -492,7 +501,6 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
 void LuaSandbox::InitializeLoggerForSandbox(Sandbox& aSandbox, const std::string& acName) const
 {
     auto lock = m_pScripting->GetState();
-    auto& luaView = lock.Get();
 
     auto& sbEnv = aSandbox.GetEnvironment();
     const auto cSBRootPath = aSandbox.GetRootPath();
@@ -516,7 +524,7 @@ void LuaSandbox::InitializeLoggerForSandbox(Sandbox& aSandbox, const std::string
     sbEnv["__logger"] = logger;
 }
 
-void LuaSandbox::CloseDBForSandbox(Sandbox& aSandbox) const
+void LuaSandbox::CloseDBForSandbox(const Sandbox& aSandbox) const
 {
     aSandbox.ExecuteString(R"(
         if type(db) == 'userdata' and tostring(db):find('^sqlite database') then
