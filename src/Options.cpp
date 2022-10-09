@@ -94,6 +94,10 @@ void Options::ResetToDefaults()
     PatchEnableDebug = false;
     DumpGameOptions = false;
 
+    FontPath = "";
+    FontGlyphRanges = "Default";
+    FontSize = 18.0f;
+
     Save();
 }
 
