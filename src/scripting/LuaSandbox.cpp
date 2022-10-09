@@ -68,7 +68,11 @@ static constexpr const char* s_cGlobalImmutablesList[] =
 
 static constexpr const char* s_cGlobalImGuiList[] =
 {
-    "ImGui",
+    "ImGui"
+};
+
+static constexpr const char* s_cGlobalExtraLibsWhitelist[] =
+{
     "ImGuiCond",
     "ImGuiTreeNodeFlags",
     "ImGuiSelectableFlags",
@@ -93,11 +97,7 @@ static constexpr const char* s_cGlobalImGuiList[] =
     "ImGuiCol",
     "ImGuiDir",
     "ImVec2",
-    "ImVec4"
-};
-
-static constexpr const char* s_cGlobalExtraLibsWhitelist[] =
-{
+    "ImVec4",
     "json"
 };
 
