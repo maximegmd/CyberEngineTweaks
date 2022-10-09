@@ -5,9 +5,11 @@
 
 #include <CET.h>
 
+namespace
+{
 // TODO: proper exception handling for Lua funcs!
 template <typename ...Args>
-static sol::protected_function_result TryLuaFunction(std::shared_ptr<spdlog::logger> aLogger, sol::function aFunc, Args... aArgs)
+sol::protected_function_result TryLuaFunction(std::shared_ptr<spdlog::logger> aLogger, sol::function aFunc, Args... aArgs)
 {
     sol::protected_function_result result{ };
     if (aFunc)
@@ -27,6 +29,32 @@ static sol::protected_function_result TryLuaFunction(std::shared_ptr<spdlog::log
         }
     }
     return result;
+}
+
+template <typename ...Args>
+sol::protected_function_result TryLuaFunctionWithImGui(LuaSandbox& aLuaSandbox, uint64_t aSandboxId, std::shared_ptr<spdlog::logger> aLogger, sol::function aFunc, Args... aArgs)
+{
+    auto state = aLuaSandbox.GetState();
+
+    auto& sb = aLuaSandbox[aSandboxId];
+    auto& env = sb.GetEnvironment();
+    const auto& imgui = sb.GetImGui();
+
+    for (auto kv : imgui)
+        env[DeepCopySolObject(kv.first, state)] = DeepCopySolObject(kv.second, state);
+
+    const auto previousStyle = ImGui::GetStyle();
+
+    auto result = TryLuaFunction(aLogger, aFunc, aArgs...);
+
+    for (auto kv : imgui)
+        env[kv.first] = sol::nil;
+
+    ImGui::GetStyle() = previousStyle;
+
+    return result;
+}
+
 }
 
 ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::path& acPath, const std::string& acName)
@@ -75,15 +103,14 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
             };
     };
 
-    auto wrapDescription = [&aLuaSandbox, loggerRef = m_logger](const std::variant<std::string, sol::function>& acDescription) -> std::variant<std::string, std::function<void()>> {
+    auto wrapDescription = [&aLuaSandbox, loggerRef = m_logger, sandboxId = m_sandboxID](const std::variant<std::string, sol::function>& acDescription) -> std::variant<std::string, std::function<void()>> {
         if (std::holds_alternative<sol::function>(acDescription))
         {
             auto callback = std::get<sol::function>(acDescription);
             if (callback != sol::nil)
             {
-                return [&aLuaSandbox, loggerRef, callback]{
-                    auto state = aLuaSandbox.GetState();
-                    TryLuaFunction(loggerRef, callback);
+                return [&aLuaSandbox, loggerRef, sandboxId, callback]{
+                    TryLuaFunctionWithImGui(aLuaSandbox, sandboxId, loggerRef, callback);
                 };
             }
             loggerRef->warn("Tried to register empty tooltip for handler!]");
@@ -232,9 +259,7 @@ void ScriptContext::TriggerOnUpdate(float aDeltaTime) const
 
 void ScriptContext::TriggerOnDraw() const
 {
-    auto state = m_sandbox.GetState();
-
-    TryLuaFunction(m_logger, m_onDraw);
+    TryLuaFunctionWithImGui(m_sandbox, m_sandboxID, m_logger, m_onDraw);
 }
 
 void ScriptContext::TriggerOnOverlayOpen() const

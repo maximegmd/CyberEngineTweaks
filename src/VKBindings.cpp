@@ -1,6 +1,7 @@
 #include <stdafx.h>
 
-#include <CET.h>
+#include "CET.h"
+#include "Utils.h"
 
 std::function<void()> VKBind::DelayedCall(bool isDown) const
 {
@@ -164,7 +165,8 @@ void VKBindings::Load()
     StopRecordingBind();
 
     // try to load config
-    if (std::ifstream ifs{m_paths.VKBindings()})
+    const auto path = GetAbsolutePath(m_paths.VKBindings(), "", false);
+    if (std::ifstream ifs{path})
     {
         auto config{nlohmann::json::parse(ifs)};
         for (auto& mod : config.items())
@@ -208,7 +210,8 @@ void VKBindings::Save()
         }
     }
 
-    std::ofstream ofs{m_paths.VKBindings()};
+    const auto path = GetAbsolutePath(m_paths.VKBindings(), "", true);
+    std::ofstream ofs{path};
     ofs << config.dump(4) << std::endl;
 }
 
@@ -425,10 +428,9 @@ bool VKBindings::StartRecordingBind(const VKModBind& acVKModBind)
     if (m_isBindRecording)
         return false;
 
-    m_recording.fill(0);
-    m_recordingLength = 0;
+    ClearRecording();
+
     m_recordingModBind = acVKModBind;
-    m_recordingResult = 0;
     m_isBindRecording = true;
 
     return true;
@@ -439,9 +441,9 @@ bool VKBindings::StopRecordingBind()
     if (!m_isBindRecording)
         return false;
 
+    ClearRecording(false);
+
     m_isBindRecording = false;
-    m_recordingLength = 0;
-    m_recording.fill(0);
 
     return true;
 }
@@ -593,10 +595,7 @@ LRESULT VKBindings::OnWndProc(HWND, UINT auMsg, WPARAM, LPARAM alParam)
     case WM_KILLFOCUS:
         // reset key states on focus loss, as otherwise, we end up with broken recording state
         m_keyStates.reset();
-        m_isBindRecording = false;
-        m_recordingResult = 0;
-        m_recordingLength = 0;
-        m_recording.fill(0);
+        ClearRecording();
     }
     return 0;
 }
@@ -631,15 +630,18 @@ LRESULT VKBindings::RecordKeyDown(USHORT aVKCode)
     if (m_recordingLength >= m_recording.size())
     {
         assert(m_recordingLength == m_recording.size());
-        for (size_t i = 1; i < m_recordingLength; ++i)
-            m_recording[i - 1] = m_recording[i];
-        --m_recordingLength;
+        return 0;
     }
 
     m_recording[m_recordingLength++] = aVKCode;
 
+    const auto previousRecordingLength = m_recordingLength;
+
     if (CheckRecording() >= 0)
         ExecuteRecording(true);
+
+    if (previousRecordingLength == m_recordingLength)
+        m_recordingHKWasKeyPressed = true;
 
     return 0;
 }
@@ -667,35 +669,38 @@ LRESULT VKBindings::RecordKeyUp(USHORT aVKCode)
     // handle hotkeys
     for (size_t i = 0; i < m_recordingLength; ++i)
     {
-        if (m_recording[i] == aVKCode)
-        {
-            m_recordingResult = EncodeVKCodeBind(m_recording);
+        if (m_recording[i] != aVKCode)
+            continue;
 
-            const auto wasRecording = m_isBindRecording;
+        auto wasRecording = false;
+
+        if (m_recordingHKWasKeyPressed)
+        {
+            wasRecording = m_isBindRecording;
 
             if (CheckRecording() >= 0)
                 ExecuteRecording(false);
-
-            if (!wasRecording)
-            {
-                // TODO - bug where you can bind HK to Ctrl, Ctrl+C and Ctrl+V.
-                //        in mentioned case below, you will execute all 3 bindings, while wanted are only the last ones!
-
-                // fix recording for future use, so user can use HKs like Ctrl+C, Ctrl+V without the need of pressing
-                // again Ctrl for example
-                m_recordingLength = i;
-
-                for (; i < m_recording.size(); ++i)
-                    m_recording[i] = 0;
-
-                while (CheckRecording() < 0) {}
-            }
-
-            return 0;
         }
+
+        if (!wasRecording)
+        {
+            m_recordingHKWasKeyPressed = false;
+
+            // fix recording for future use, so user can use HKs like Ctrl+C, Ctrl+V without the need of pressing
+            // again Ctrl for example
+            m_recordingLength = i;
+            for (; i < m_recording.size(); ++i)
+                m_recording[i] = 0;
+
+            while (CheckRecording() < 0) {}
+        }
+
+        return 0;
     }
 
-    // if we got here, aVKCode is not recorded key or there is no bind, so we ignore this event
+    // if we got here, aVKCode is not recorded key or there is no bind
+    ClearRecording();
+
     return 0;
 }
 
@@ -738,12 +743,7 @@ void VKBindings::ExecuteRecording(bool aLastKeyDown)
     {
         const auto bind = m_cpVm->GetBind(m_recordingModBind);
         if (!aLastKeyDown || (bind && bind->IsInput()))
-        {
-            // this should never happen!
-            assert(false);
             StopRecordingBind();
-            m_recordingResult = 0;
-        }
 
         return;
     }
@@ -762,11 +762,8 @@ void VKBindings::ExecuteRecording(bool aLastKeyDown)
         if (!cetBind && (!m_cpVm->IsInitialized() || CET::Get().GetOverlay().IsEnabled()))
         {
             if (bind->IsInput())
-            {
-                m_recordingResult = 0;
-                m_recording.fill(0);
-                m_recordingLength = 0;
-            }
+                ClearRecording();
+
             return;
         }
 
@@ -780,13 +777,9 @@ void VKBindings::ExecuteRecording(bool aLastKeyDown)
         else
             m_queuedCallbacks.Add(bind->DelayedCall(aLastKeyDown));
 
-        // reset recording for simple input and when last key was up
+        // reset recording for simple input
         if (bind->IsInput())
-        {
-            m_recordingResult = 0;
-            m_recording.fill(0);
-            m_recordingLength = 0;
-        }
+            ClearRecording();
     }
 }
 
@@ -857,6 +850,20 @@ LRESULT VKBindings::HandleRAWInput(HRAWINPUT ahRAWInput)
     }
 
     return 0;
+}
+
+void VKBindings::ClearRecording(bool aClearBind)
+{
+    m_recordingHKWasKeyPressed = false;
+    m_recording.fill(0);
+    m_recordingLength = 0;
+    if (aClearBind)
+    {
+        m_isBindRecording = false;
+        m_recordingResult = 0;
+        m_recordingModBind.ID.clear();
+        m_recordingModBind.ModName.clear();
+    }
 }
 
 void VKBindings::SetVM(const LuaVM* acpVm)

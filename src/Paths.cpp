@@ -35,6 +35,11 @@ const std::filesystem::path& Paths::R6CacheModdedRoot() const
     return m_r6CacheModdedRoot;
 }
 
+const std::filesystem::path& Paths::Fonts() const
+{
+    return m_fonts;
+}
+
 Paths::Paths()
 {
     TCHAR exePathBuf[MAX_PATH] = { 0 };
@@ -67,4 +72,6 @@ Paths::Paths()
     m_r6CacheModdedRoot /= L"r6";
     m_r6CacheModdedRoot /= L"cache";
     m_r6CacheModdedRoot /= L"modded";
+
+    m_fonts = m_cetRoot / L"fonts";
 }

@@ -26,8 +26,8 @@ struct Options
     bool PatchDisableWin7Vsync{ false };
     bool PatchMinimapFlicker{ false };
     bool DumpGameOptions{ false };
-    std::string FontPath;
-    std::string FontGlyphRanges{""};
+    std::string FontPath{ };
+    std::string FontGlyphRanges{"Default"};
     float FontSize{ 18.0f };
     bool ExeValid{ false };
     bool RemoveDeadBindings { true };

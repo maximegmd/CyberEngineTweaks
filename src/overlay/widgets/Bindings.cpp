@@ -450,7 +450,12 @@ void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoq
 
     if (aHotkeyCount > 0)
     {
-        ImGui::TextUnformatted("Hotkeys");
+        if (!aSimplified)
+        {
+            ImGui::TextUnformatted("Hotkeys");
+            if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+                ImGui::SetTooltip("Hotkeys react after assigned key combination has been pressed and subsequently released. You can bind up to 4 key combination to them.");
+        }
 
         if (ImGui::BeginTable(("##HOTKEYS_" + activeModName).c_str(), 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
         {
@@ -466,7 +471,12 @@ void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoq
 
     if (aHotkeyCount < aVKBindInfos.size())
     {
-        ImGui::TextUnformatted("Inputs");
+        if (!aSimplified)
+        {
+            ImGui::TextUnformatted("Inputs");
+            if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+                ImGui::SetTooltip("Inputs react when key is pressed and released. You can bind single key to them.");
+        }
 
         if (ImGui::BeginTable(("##INPUTS_" + activeModName).c_str(), 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
         {
