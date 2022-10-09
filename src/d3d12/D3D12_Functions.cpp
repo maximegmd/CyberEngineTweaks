@@ -300,84 +300,129 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
     ImGui::GetStyle() = m_styleReference;
     ImGui::GetStyle().ScaleAllSizes(scaleFromReference);
 
+    auto& io = ImGui::GetIO();
+    io.Fonts->Clear();
+
     ImFontConfig config;
     config.SizePixels = static_cast<int32_t>(m_options.FontSize * scaleFromReference);
     config.OversampleH = config.OversampleV = 2;
     config.PixelSnapH = true;
+    config.MergeMode = false;
 
-    ImGuiIO& io = ImGui::GetIO();
-    io.Fonts->Clear();
-    io.Fonts->AddFontDefault(&config);
-
-    if (!m_options.FontPath.empty())
+    // add default font
+    const auto customFontPath = m_options.FontPath.empty() ? std::filesystem::path{} : GetAbsolutePath(UTF8ToUTF16(m_options.FontPath), m_paths.Fonts(), false);
+    auto cetFontPath = GetAbsolutePath(L"NotoSans-Regular.ttf", m_paths.Fonts(), false);
+    const auto* cpGlyphRanges = io.Fonts->GetGlyphRangesDefault();
+    if (customFontPath.empty())
     {
-        const auto fontPath = GetAbsolutePath(UTF8ToUTF16(m_options.FontPath), m_paths.CETRoot(), false);
-        if (!fontPath.empty())
+        if (!m_options.FontPath.empty())
+            Log::Warn("D3D12::InitializeImGui() - Custom font path is invalid! Using default CET font.");
+
+        if (cetFontPath.empty())
         {
-            const ImWchar* cpGlyphRanges = io.Fonts->GetGlyphRangesDefault();
-            if (m_options.FontGlyphRanges == "System")
-            {
-                int langID = GetSystemDefaultLangID();
+            Log::Warn("D3D12::InitializeImGui() - Missing default fonts!");
+            io.Fonts->AddFontDefault(&config);
+        }
+        else
+            io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(cetFontPath.native()).c_str(), config.SizePixels, &config, cpGlyphRanges);
+    }
+    else
+        io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(customFontPath.native()).c_str(), config.SizePixels, &config, cpGlyphRanges);
 
-                switch (langID)
-                {
-                case MAKELANGID(LANG_BELARUSIAN, SUBLANG_DEFAULT):
-                case MAKELANGID(LANG_RUSSIAN, SUBLANG_DEFAULT):
-                    cpGlyphRanges = io.Fonts->GetGlyphRangesCyrillic();
-                    break;
+    if (m_options.FontGlyphRanges == "Default")
+    {
+        switch (GetSystemDefaultLangID())
+        {
+        case MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_TRADITIONAL):
+            cetFontPath = GetAbsolutePath(L"NotoSansTC-Regular.otf", m_paths.Fonts(), false);
+            cpGlyphRanges = io.Fonts->GetGlyphRangesChineseFull();
+            break;
 
-                case MAKELANGID(LANG_JAPANESE, SUBLANG_DEFAULT):
-                    cpGlyphRanges = io.Fonts->GetGlyphRangesJapanese();
-                    break;
+        case MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED):
+            cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansSC-Regular.otf", m_paths.Fonts(), false);
+            cpGlyphRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
+            break;
 
-                case MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_TRADITIONAL):
-                    cpGlyphRanges = io.Fonts->GetGlyphRangesChineseFull();
-                    break;
+        case MAKELANGID(LANG_JAPANESE, SUBLANG_DEFAULT):
+            cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansJP-Regular.otf", m_paths.Fonts(), false);
+            cpGlyphRanges = io.Fonts->GetGlyphRangesJapanese();
+            break;
 
-                case MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED):
-                    cpGlyphRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
-                    break;
+        case MAKELANGID(LANG_KOREAN, SUBLANG_DEFAULT):
+            cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansKR-Regular.otf", m_paths.Fonts(), false);
+            cpGlyphRanges = io.Fonts->GetGlyphRangesKorean();
+            break;
 
-                case MAKELANGID(LANG_KOREAN, SUBLANG_DEFAULT):
-                    cpGlyphRanges = io.Fonts->GetGlyphRangesKorean();
-                    break;
+        case MAKELANGID(LANG_BELARUSIAN, SUBLANG_DEFAULT):
+        case MAKELANGID(LANG_RUSSIAN, SUBLANG_DEFAULT):
+            cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSans-Regular.ttf", m_paths.Fonts(), false);
+            cpGlyphRanges = io.Fonts->GetGlyphRangesCyrillic();
+            break;
 
-                case MAKELANGID(LANG_THAI, SUBLANG_DEFAULT):
-                    cpGlyphRanges = io.Fonts->GetGlyphRangesThai();
-                    break;
+        case MAKELANGID(LANG_THAI, SUBLANG_DEFAULT):
+            cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansThai-Regular.ttf", m_paths.Fonts(), false);
+            cpGlyphRanges = io.Fonts->GetGlyphRangesThai();
+            break;
 
-                case MAKELANGID(LANG_VIETNAMESE, SUBLANG_DEFAULT):
-                    cpGlyphRanges = io.Fonts->GetGlyphRangesVietnamese();
-                    break;
-
-                default:
-                    cpGlyphRanges = io.Fonts->GetGlyphRangesDefault();
-                    break;
-                }
-            }
-            else if (m_options.FontGlyphRanges == "ChineseFull")
-                cpGlyphRanges = io.Fonts->GetGlyphRangesChineseFull();
-            else if (m_options.FontGlyphRanges == "ChineseSimplifiedCommon")
-                cpGlyphRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
-            else if (m_options.FontGlyphRanges == "Japanese")
-                cpGlyphRanges = io.Fonts->GetGlyphRangesJapanese();
-            else if (m_options.FontGlyphRanges == "Korean")
-                cpGlyphRanges = io.Fonts->GetGlyphRangesKorean();
-            else if (m_options.FontGlyphRanges == "Cyrillic")
-                cpGlyphRanges = io.Fonts->GetGlyphRangesCyrillic();
-            else if (m_options.FontGlyphRanges == "Thai")
-                cpGlyphRanges = io.Fonts->GetGlyphRangesThai();
-            else if (m_options.FontGlyphRanges == "Vietnamese")
-                cpGlyphRanges = io.Fonts->GetGlyphRangesVietnamese();
-
-            ImFont* pFont =
-                io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(fontPath.native()).c_str(), m_options.FontSize, nullptr, cpGlyphRanges);
-
-            if (pFont != nullptr)
-                io.FontDefault = pFont;
+        case MAKELANGID(LANG_VIETNAMESE, SUBLANG_DEFAULT):
+            cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSans-Regular.ttf", m_paths.Fonts(), false);
+            cpGlyphRanges = io.Fonts->GetGlyphRangesVietnamese();
+            break;
         }
     }
+    else if (m_options.FontGlyphRanges == "ChineseFull")
+    {
+        cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansTC-Regular.otf", m_paths.Fonts(), false);
+        cpGlyphRanges = io.Fonts->GetGlyphRangesChineseFull();
+    }
+    else if (m_options.FontGlyphRanges == "ChineseSimplifiedCommon")
+    {
+        cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansSC-Regular.otf", m_paths.Fonts(), false);
+        cpGlyphRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
+    }
+    else if (m_options.FontGlyphRanges == "Japanese")
+    {
+        cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansJP-Regular.otf", m_paths.Fonts(), false);
+        cpGlyphRanges = io.Fonts->GetGlyphRangesJapanese();
+    }
+    else if (m_options.FontGlyphRanges == "Korean")
+    {
+        cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansKR-Regular.otf", m_paths.Fonts(), false);
+        cpGlyphRanges = io.Fonts->GetGlyphRangesKorean();
+    }
+    else if (m_options.FontGlyphRanges == "Cyrillic")
+    {
+        cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSans-Regular.ttf", m_paths.Fonts(), false);
+        cpGlyphRanges = io.Fonts->GetGlyphRangesCyrillic();
+    }
+    else if (m_options.FontGlyphRanges == "Thai")
+    {
+        cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansThai-Regular.ttf", m_paths.Fonts(), false);
+        cpGlyphRanges = io.Fonts->GetGlyphRangesThai();
+    }
+    else if (m_options.FontGlyphRanges == "Vietnamese")
+    {
+        cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSans-Regular.ttf", m_paths.Fonts(), false);
+        cpGlyphRanges = io.Fonts->GetGlyphRangesVietnamese();
+    }
 
+    // add extra glyphs from language font
+    config.MergeMode = true;
+    if (customFontPath.empty())
+    {
+        if (!m_options.FontPath.empty())
+            Log::Warn("D3D12::InitializeImGui() - Custom font path is invalid! Using default CET font.");
+
+        if (cetFontPath.empty())
+        {
+            Log::Warn("D3D12::InitializeImGui() - Missing fonts for extra language glyphs!");
+            io.Fonts->AddFontDefault(&config);
+        }
+        else
+            io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(cetFontPath.native()).c_str(), config.SizePixels, &config, cpGlyphRanges);
+    }
+    else
+        io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(customFontPath.native()).c_str(), config.SizePixels, &config, cpGlyphRanges);
 
     if (!ImGui_ImplWin32_Init(m_window.GetWindow()))
     {
