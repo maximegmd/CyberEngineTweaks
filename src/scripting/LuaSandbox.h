@@ -25,15 +25,15 @@ private:
 
     void InitializeImGuiForSandbox(Sandbox& aSandbox) const;
     void InitializeExtraLibsForSandbox(Sandbox& aSandbox) const;
-    void InitializeDBForSandbox(Sandbox& aSandbox) const;
+    void InitializeDBForSandbox(Sandbox& aSandbox);
     void InitializeIOForSandbox(Sandbox& aSandbox, const std::string& acName);
     void InitializeLoggerForSandbox(Sandbox& aSandbox, const std::string& acName) const;
 
-	void CloseDBForSandbox(Sandbox& aSandbox) const;
+    void CloseDBForSandbox(const Sandbox& aSandbox) const;
 
     Scripting* m_pScripting;
     const VKBindings& m_vkBindings;
-    sol::environment m_env{ };
+    sol::environment m_env{};
     TiltedPhoques::Vector<Sandbox> m_sandboxes{};
-    TiltedPhoques::Map<std::string, sol::object> m_modules{ };
+    TiltedPhoques::Map<std::string, sol::object> m_modules{};
 };
