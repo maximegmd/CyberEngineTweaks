@@ -216,8 +216,8 @@ void LuaSandbox::InitializeImGuiForSandbox(Sandbox& aSandbox) const
     auto lock = m_pScripting->GetState();
     auto& luaView = lock.Get();
 
-    sol::state_view sbStateView = GetState();
-    const auto cSBRootPath = aSandbox.GetRootPath();
+    sol::state_view sbStateView = luaView;
+    const auto& cSBRootPath = aSandbox.GetRootPath();
 
     sol::table imgui{luaView, sol::create};
 
@@ -252,8 +252,6 @@ void LuaSandbox::InitializeExtraLibsForSandbox(Sandbox& aSandbox) const
     auto& luaView = lock.Get();
 
     auto& sbEnv = aSandbox.GetEnvironment();
-    sol::state_view sbStateView = GetState();
-    const auto cSBRootPath = aSandbox.GetRootPath();
 
     // copy extra whitelisted libs from global table
     const auto cGlobals = luaView.globals();
@@ -267,7 +265,7 @@ void LuaSandbox::InitializeDBForSandbox(Sandbox& aSandbox)
     auto& luaView = lock.Get();
 
     auto& sbEnv = aSandbox.GetEnvironment();
-    const auto cSBRootPath = aSandbox.GetRootPath();
+    const auto& cSBRootPath = aSandbox.GetRootPath();
     const auto sbId = aSandbox.GetId();
 
     const auto cGlobals = luaView.globals();
@@ -308,28 +306,26 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
     auto lock = m_pScripting->GetState();
     auto& luaView = lock.Get();
 
-    sol::state_view sbStateView = GetState();
-    auto sbEnv = aSandbox.GetEnvironment();
-    const auto cSBRootPath = aSandbox.GetRootPath();
+    sol::state_view sbStateView = luaView;
+    auto& sbEnv = aSandbox.GetEnvironment();
+    const auto& cSBRootPath = aSandbox.GetRootPath();
 
     const auto cLoadString = [sbStateView, sbEnv](const std::string& acStr, const std::string &acChunkName) -> std::tuple<sol::object, sol::object>
     {
-        sol::state_view sv = sbStateView;
-        const sol::environment cEnv = sbEnv;
-
         if (!acStr.empty() && (acStr[0] == LUA_SIGNATURE[0]))
             return std::make_tuple(sol::nil, make_object(sbStateView, "Bytecode prohibited!"));
 
+        sol::state_view sv = sbStateView;
         const auto& acKey = (acChunkName.empty()) ? (acStr) : (acChunkName);
         const auto cResult = sv.load(acStr, acKey, sol::load_mode::text);
         if (cResult.valid())
         {
             const auto cFunc = cResult.get<sol::function>();
-            cEnv.set_on(cFunc);
+            sbEnv.set_on(cFunc);
             return std::make_tuple(cFunc, sol::nil);
         }
 
-        return std::make_tuple(sol::nil, make_object(sv, cResult.get<sol::error>().what()));
+        return std::make_tuple(sol::nil, make_object(sbStateView, cResult.get<sol::error>().what()));
     };
     sbEnv["loadstring"] = cLoadString;
 
@@ -370,6 +366,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
         return func().get<sol::object>(); // is OK, dofile should throw if there is an error, we try to copy it...
     };
 
+    // TODO - add _LOADED table and fill in when module loads some value, react in these functions when the key is sol::nil
     sbEnv["require"] = [this, cLoadString, cSBRootPath, sbStateView, sbEnv](const std::string& acPath) -> std::tuple<sol::object, sol::object>
     {
         const auto previousCurrentPath = std::filesystem::current_path();
@@ -390,7 +387,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
             return std::make_tuple(sol::nil, make_object(sbStateView, "Tried to access invalid path '" + acPath + "'!"));
         }
 
-        const auto cKey = UTF16ToUTF8(path.native());
+        const auto cKey = UTF16ToUTF8((cSBRootPath / path).native());
         const auto cExistingModule = m_modules.find(cKey);
         if (cExistingModule != m_modules.end())
         {
@@ -585,17 +582,16 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
 void LuaSandbox::InitializeLoggerForSandbox(Sandbox& aSandbox, const std::string& acName) const
 {
     auto lock = m_pScripting->GetState();
+    auto& luaView = lock.Get();
 
     auto& sbEnv = aSandbox.GetEnvironment();
-    const auto cSBRootPath = aSandbox.GetRootPath();
+    const auto& cSBRootPath = aSandbox.GetRootPath();
 
     // initialize logger for this mod
     auto logger = CreateLogger(GetAbsolutePath((acName + ".log"), cSBRootPath, true), acName);
 
-    auto state = m_pScripting->GetState();
-
     // assign logger to mod so it can be used from within it too
-    sol::table spdlog(state.Get(), sol::create);
+    sol::table spdlog(luaView, sol::create);
     spdlog["trace"]    = [logger](const std::string& message) { logger->trace(message);    };
     spdlog["debug"]    = [logger](const std::string& message) { logger->debug(message);    };
     spdlog["info"]     = [logger](const std::string& message) { logger->info(message);     };
