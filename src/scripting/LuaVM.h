@@ -94,6 +94,7 @@ private:
 
     bool m_initialized{ false };
     bool m_drawBlocked{ false };
+    bool m_reload{ false };
 
     D3D12& m_d3d12;
     size_t m_connectUpdate;

@@ -40,6 +40,18 @@ void LuaVM::Update(float aDeltaTime)
         return;
     }
 
+    if (m_reload)
+    {
+        m_scripting.ReloadAllMods();
+        m_scripting.TriggerOnTweak();
+        m_scripting.TriggerOnInit();
+
+        if (CET::Get().GetOverlay().IsEnabled())
+            m_scripting.TriggerOnOverlayOpen();
+
+        spdlog::get("scripting")->info("LuaVM: Reloaded all mods!");
+    }
+
     m_scripting.TriggerOnUpdate(aDeltaTime);
 }
 
@@ -54,16 +66,7 @@ void LuaVM::Draw()
 void LuaVM::ReloadAllMods()
 {
     if (m_initialized)
-    {
-        m_scripting.ReloadAllMods();
-        m_scripting.TriggerOnTweak();
-        m_scripting.TriggerOnInit();
-
-        if (CET::Get().GetOverlay().IsEnabled())
-            m_scripting.TriggerOnOverlayOpen();
-
-        spdlog::get("scripting")->info("LuaVM: Reloaded all mods!");
-    }
+        m_reload = true;
 }
 
 void LuaVM::OnOverlayOpen() const
