@@ -203,6 +203,10 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
     {
         m_logger->error(e.what());
     }
+
+    env["registerForEvent"] = sol::nil;
+    env["registerHotkey"] = sol::nil;
+    env["registerInput"] = sol::nil;
 }
 
 ScriptContext::ScriptContext(ScriptContext&& other) noexcept : ScriptContext(other)

@@ -301,7 +301,9 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, sol::state_view aStat
     auto& sbEnv = aSandbox.GetEnvironment();
     const auto& cSBRootPath = aSandbox.GetRootPath();
 
-    const auto cLoadString = [aStateView, sbEnv](const std::string& acStr, const std::string &acChunkName) -> std::tuple<sol::object, sol::object>
+    const auto cSBEnv = sbEnv;
+
+    const auto cLoadString = [aStateView, cSBEnv](const std::string& acStr, const std::string &acChunkName) -> std::tuple<sol::object, sol::object>
     {
         if (!acStr.empty() && (acStr[0] == LUA_SIGNATURE[0]))
             return std::make_tuple(sol::nil, make_object(aStateView, "Bytecode prohibited!"));
@@ -312,7 +314,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, sol::state_view aStat
         if (cResult.valid())
         {
             const auto cFunc = cResult.get<sol::function>();
-            sbEnv.set_on(cFunc);
+            cSBEnv.set_on(cFunc);
             return std::make_tuple(cFunc, sol::nil);
         }
 
@@ -358,7 +360,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, sol::state_view aStat
     };
 
     // TODO - add _LOADED table and fill in when module loads some value, react in these functions when the key is sol::nil
-    sbEnv["require"] = [this, cLoadString, cSBRootPath, aStateView, sbEnv](const std::string& acPath) -> std::tuple<sol::object, sol::object>
+    sbEnv["require"] = [this, cLoadString, cSBRootPath, aStateView, cSBEnv](const std::string& acPath) -> std::tuple<sol::object, sol::object>
     {
         const auto previousCurrentPath = std::filesystem::current_path();
         current_path(cSBRootPath);
@@ -425,7 +427,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, sol::state_view aStat
             }
 
             sol::error err = result;
-            std::shared_ptr<spdlog::logger> logger = sbEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+            std::shared_ptr<spdlog::logger> logger = cSBEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
             logger->error("Error: Cannot load module '{}': {}", acPath, err.what());
 
             current_path(previousCurrentPath);
