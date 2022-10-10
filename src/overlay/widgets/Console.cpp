@@ -9,12 +9,8 @@ Console::Console(LuaVM& aVm)
     : m_vm(aVm)
 {
     const auto consoleSink = CreateCustomSinkST([this](const std::string& msg) { Log(msg); });
-    consoleSink->set_pattern("%v");
+    consoleSink->set_pattern("%L;%v");
     spdlog::get("scripting")->sinks().push_back(consoleSink);
-
-    const auto gamelogSink = CreateCustomSinkST([this](const std::string& msg) { GameLog(msg); });
-    gamelogSink->set_pattern("%v");
-    spdlog::get("gamelog")->sinks().push_back(gamelogSink);
 }
 
 WidgetResult Console::OnEnable()
@@ -67,27 +63,15 @@ int Console::HandleConsoleHistory(ImGuiInputTextCallbackData* apData)
 
 void Console::Update()
 {
-    const auto itemWidth = GetAlignedItemWidth(5);
+    const auto itemWidth = GetAlignedItemWidth(2);
 
-    const float begin = ImGui::GetCursorPosX();
-    ImGui::Checkbox("Clear input", &m_inputClear);
-    ImGui::SameLine();
-    ImGui::SetCursorPosX(begin + itemWidth + ImGui::GetStyle().ItemSpacing.x);
     if (ImGui::Button("Clear output", ImVec2(itemWidth, 0)))
     {
         std::lock_guard _{ m_outputLock };
         m_outputLines.clear();
     }
     ImGui::SameLine();
-    ImGui::SetCursorPosX(begin + 2 * itemWidth + 2 * ImGui::GetStyle().ItemSpacing.x);
     ImGui::Checkbox("Auto-scroll", &m_outputShouldScroll);
-    ImGui::SameLine();
-    ImGui::SetCursorPosX(begin + 3 * itemWidth + 3 * ImGui::GetStyle().ItemSpacing.x);
-    ImGui::Checkbox("Draw Game Log", &m_drawGameLog);
-    ImGui::SameLine();
-    ImGui::SetCursorPosX(begin + 4 * itemWidth + 4 * ImGui::GetStyle().ItemSpacing.x);
-    if (ImGui::Button("Reload all mods", ImVec2(itemWidth, 0)))
-        m_vm.ReloadAllMods();
 
     auto& style = ImGui::GetStyle();
     auto inputLineHeight = ImGui::GetTextLineHeight() + style.ItemInnerSpacing.y * 2;
@@ -99,9 +83,11 @@ void Console::Update()
         ImGuiListClipper clipper;
         clipper.Begin(m_outputLines.size());
         while (clipper.Step())
+        {
             for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i)
             {
-                auto& item = m_outputLines[i];
+                // TODO - use level to color output
+                auto [level, item] = m_outputLines[i];
                 ImGui::PushID(i);
                 if (ImGui::Selectable(item.c_str()))
                 {
@@ -114,6 +100,7 @@ void Console::Update()
                 }
                 ImGui::PopID();
             }
+        }
 
         if (m_outputScroll)
         {
@@ -131,8 +118,7 @@ void Console::Update()
         m_focusConsoleInput = false;
     }
     ImGui::SetNextItemWidth(-FLT_MIN);
-    const auto execute = ImGui::InputText("##InputCommand", m_Command, std::size(m_Command),
-                                          ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory,  &HandleConsoleHistory, this);
+    const auto execute = ImGui::InputText("##InputCommand", m_Command, std::size(m_Command), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory,  &HandleConsoleHistory, this);
     ImGui::SetItemDefaultFocus();
     if (execute)
     {
@@ -146,22 +132,21 @@ void Console::Update()
         if (!m_vm.ExecuteLua(m_Command))
             consoleLogger->info("Command failed to execute!");
 
-        if (m_inputClear)
-        {
-            std::memset(m_Command, 0, sizeof(m_Command));
-        }
+        std::fill_n(m_Command, sizeof(m_Command), 0);
 
         m_focusConsoleInput = true;
     }
-
-    DrawGameLog();
 }
 
 void Console::Log(const std::string& acpText)
 {
+    assert(!acpText.empty());
+    assert(acpText.size() >= 2);
+    assert(acpText[1] == ';');
+
     std::lock_guard _{ m_outputLock };
 
-    size_t first = 0;
+    size_t first = 2;
     const size_t size = acpText.size();
     while (first < size)
     {
@@ -169,7 +154,7 @@ void Console::Log(const std::string& acpText)
         size_t second = std::string::npos;
         for (size_t i = first; i != size; ++i)
         {
-            char ch = acpText[i];
+            const auto ch = acpText[i];
             if (ch == '\r' || ch == '\n')
             {
                 second = i;
@@ -179,12 +164,12 @@ void Console::Log(const std::string& acpText)
 
         if (second == std::string_view::npos)
         {
-            m_outputLines.emplace_back(acpText.substr(first));
+            m_outputLines.emplace_back(acpText[0], acpText.substr(first));
             break;
         }
 
         if (first != second)
-            m_outputLines.emplace_back(acpText.substr(first, second-first));
+            m_outputLines.emplace_back(acpText[0], acpText.substr(first, second-first));
 
         first = second + 1;
         char ch = acpText[first];
@@ -193,93 +178,4 @@ void Console::Log(const std::string& acpText)
     }
 
     m_outputScroll = true;
-}
-
-void Console::GameLog(const std::string& acpText)
-{
-    std::lock_guard _{ m_gamelogLock };
-
-    size_t first = 0;
-    size_t size = acpText.size();
-    while (first < size)
-    {
-        // find_first_of \r or \n
-        size_t second = std::string::npos;
-        for (size_t i = first; i != size; ++i)
-        {
-            char ch = acpText[i];
-            if (ch == '\r' || ch == '\n')
-            {
-                second = i;
-                break;
-            }
-        }
-
-        if (second == std::string_view::npos)
-        {
-            m_gamelogLines.emplace_back(acpText.substr(first));
-            break;
-        }
-
-        if (first != second)
-            m_gamelogLines.emplace_back(acpText.substr(first, second-first));
-
-        first = second + 1;
-        char ch = acpText[first];
-        while (ch == '\r' || ch == '\n')
-            ch = acpText[++first];
-    }
-
-    m_gamelogScroll = true;
-}
-
-void Console::DrawGameLog()
-{
-    if (!m_drawGameLog)
-        return;
-
-    if (ImGui::Begin("Game Log", &m_drawGameLog))
-    {
-        if (ImGui::BeginChildFrame(ImGui::GetID("Game Log Frame"), ImGui::GetContentRegionAvail()))
-        {
-            const auto itemWidth = GetAlignedItemWidth(2);
-
-            if (ImGui::Button("Clear output", ImVec2(itemWidth, 0)))
-            {
-                std::lock_guard _{ m_gamelogLock };
-                m_gamelogLines.clear();
-            }
-            ImGui::SameLine();
-            ImGui::Checkbox("Auto-scroll", &m_gamelogShouldScroll);
-
-            if (ImGui::ListBoxHeader("##GameLogHeader", ImVec2(-1, -1)))
-            {
-                std::lock_guard _{ m_gamelogLock };
-
-                ImGuiListClipper clipper;
-                clipper.Begin(m_gamelogLines.size());
-                while (clipper.Step())
-                    for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i)
-                    {
-                        auto& item = m_gamelogLines[i];
-                        ImGui::PushID(i);
-                        ImGui::Selectable(item.c_str());
-                        ImGui::PopID();
-                    }
-
-                if (m_gamelogScroll)
-                {
-                    if (m_gamelogShouldScroll)
-                        ImGui::SetScrollHereY();
-                    m_gamelogScroll = false;
-                }
-
-                ImGui::ListBoxFooter();
-            }
-        }
-
-        ImGui::EndChildFrame();
-    }
-
-    ImGui::End();
 }

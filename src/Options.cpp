@@ -142,7 +142,7 @@ Options::Options(Paths& aPaths)
     if (!ExeValid)
         throw std::runtime_error("Not Cyberpunk2077.exe");
 
-    set_default_logger(CreateLogger(GetAbsolutePath(L"cyber_engine_tweaks.log", m_paths.CETRoot(), true), "main"));
+    set_default_logger(CreateLogger(GetAbsolutePath(L"cyber_engine_tweaks.log", m_paths.CETRoot(), true), "main", nullptr, "[%Y-%m-%d %H:%M:%S UTC%z] [%l] [%!] [%t] %v"));
 
     Log::Info("Cyber Engine Tweaks is starting...");
 

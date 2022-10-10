@@ -6,6 +6,7 @@ enum class WidgetID
     BINDINGS,
     SETTINGS,
     TWEAKDB,
+    GAMELOG,
     COUNT
 };
 

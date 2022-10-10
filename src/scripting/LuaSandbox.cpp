@@ -273,7 +273,7 @@ void LuaSandbox::InitializeDBForSandbox(Sandbox& aSandbox, sol::state_view aStat
             sqlite3Copy[cKV.first] = DeepCopySolObject(cKV.second, aStateView);
     }
     const auto dbOpen = aStateView["sqlite3"]["open"].get<sol::function>();
-    const auto dbPath = UTF16ToUTF8(GetLuaPath(L"db.sqlite3", cSBRootPath, false).native());
+    const auto dbPath = UTF16ToUTF8(GetLuaPath(L"db.sqlite3", cSBRootPath, true).native());
     sqlite3Copy["reopen"] = [this, sbId, dbPath, dbOpen]{
         auto& sandbox = m_sandboxes[sbId];
 
@@ -533,7 +533,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, sol::state_view aStat
             }
 
             const auto newPath = GetLuaPath(acOldPath, cSBRootPath, true);
-            if (newPath.empty() || acNewPath == "db.sqlite3")
+            if (newPath.empty() || exists(newPath)|| acNewPath == "db.sqlite3")
             {
                 current_path(previousCurrentPath);
 

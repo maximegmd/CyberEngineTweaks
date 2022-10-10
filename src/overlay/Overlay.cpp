@@ -126,16 +126,22 @@ void Overlay::Update()
                 m_bindings.Update();
             ImGui::EndChildFrame();
         }
+        if (m_activeWidgetID == WidgetID::SETTINGS)
+        {
+            if (ImGui::BeginChildFrame(ImGui::GetID("SettingsWidget"), ImGui::GetContentRegionAvail()))
+                m_settings.Update();
+            ImGui::EndChildFrame();
+        }
         if (m_activeWidgetID == WidgetID::TWEAKDB)
         {
             if (ImGui::BeginChildFrame(ImGui::GetID("TweakDBWidget"), ImGui::GetContentRegionAvail()))
                 m_tweakDBEditor.Update();
             ImGui::EndChildFrame();
         }
-        if (m_activeWidgetID == WidgetID::SETTINGS)
+        if (m_activeWidgetID == WidgetID::GAMELOG)
         {
-            if (ImGui::BeginChildFrame(ImGui::GetID("SettingsWidget"), ImGui::GetContentRegionAvail()))
-                m_settings.Update();
+            if (ImGui::BeginChildFrame(ImGui::GetID("GameLogWidget"), ImGui::GetContentRegionAvail()))
+                m_gameLog.Update();
             ImGui::EndChildFrame();
         }
     }
@@ -209,6 +215,7 @@ Overlay::Overlay(D3D12& aD3D12, VKBindings& aBindings, Options& aOptions, LuaVM&
     m_widgets[static_cast<size_t>(WidgetID::BINDINGS)] = &m_bindings;
     m_widgets[static_cast<size_t>(WidgetID::SETTINGS)] = &m_settings;
     m_widgets[static_cast<size_t>(WidgetID::TWEAKDB)] = &m_tweakDBEditor;
+    m_widgets[static_cast<size_t>(WidgetID::GAMELOG)] = &m_gameLog;
 
     Hook();
 
@@ -242,7 +249,7 @@ void Overlay::SetActiveWidget(WidgetID aNewActive)
 
 WidgetID Overlay::ToolbarWidget() const
 {
-    const auto itemWidth = GetAlignedItemWidth(static_cast<int64_t>(WidgetID::COUNT));
+    const auto itemWidth = GetAlignedItemWidth(static_cast<int64_t>(WidgetID::COUNT) + 1);
 
     WidgetID activeID = WidgetID::COUNT;
     if (ImGui::Button("Console", ImVec2(itemWidth, 0)))
@@ -256,7 +263,13 @@ WidgetID Overlay::ToolbarWidget() const
     ImGui::SameLine();
     if (ImGui::Button("TweakDB Editor", ImVec2(itemWidth, 0)))
         activeID = WidgetID::TWEAKDB;
-    ImGui::Spacing();
+    ImGui::SameLine();
+    if (ImGui::Button("Game Log", ImVec2(itemWidth, 0)))
+        activeID = WidgetID::GAMELOG;
+    ImGui::SameLine();
+    if (ImGui::Button("Reload all mods", ImVec2(itemWidth, 0)))
+        m_vm.ReloadAllMods();
+    ImGui::Separator();
 
     return activeID;
 }
