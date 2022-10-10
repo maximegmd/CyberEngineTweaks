@@ -149,7 +149,7 @@ void FlatPool::Initialize()
         return;
     }
 
-    std::shared_lock<RED4ext::SharedMutex> flatLockR(m_tweakDb->mutex00);
+    std::shared_lock flatLockR(m_tweakDb->mutex00);
 
     constexpr auto FlatVFTSize = 8u;
     constexpr auto FlatAlignment = 8u;
@@ -232,7 +232,7 @@ uint64_t FlatPool::Hash(const RED4ext::CBaseRTTIType* aType, RED4ext::ScriptInst
 
         if (innerType->GetName() == "String")
         {
-            const auto* array = reinterpret_cast<RED4ext::DynArray<RED4ext::CString>*>(aValue);
+            const auto* array = static_cast<RED4ext::DynArray<RED4ext::CString>*>(aValue);
             hash = RED4ext::FNV1a64(reinterpret_cast<uint8_t*>(0), 0); // Initial seed
             for (uint32_t i = 0; i != array->size; ++i)
             {
@@ -244,19 +244,19 @@ uint64_t FlatPool::Hash(const RED4ext::CBaseRTTIType* aType, RED4ext::ScriptInst
         }
         else
         {
-            const auto* array = reinterpret_cast<RED4ext::DynArray<uint8_t>*>(aValue);
+            const auto* array = static_cast<RED4ext::DynArray<uint8_t>*>(aValue);
             hash = RED4ext::FNV1a64(array->entries, array->size * innerType->GetSize());
         }
     }
     else if (aType->GetName() == "String")
     {
-        const auto* str = reinterpret_cast<RED4ext::CString*>(aValue);
+        const auto* str = static_cast<RED4ext::CString*>(aValue);
         const auto* data = reinterpret_cast<const uint8_t*>(str->c_str());
         hash = RED4ext::FNV1a64(data, str->Length());
     }
     else
     {
-        const auto* data = reinterpret_cast<const uint8_t*>(aValue);
+        const auto* data = static_cast<const uint8_t*>(aValue);
         hash = RED4ext::FNV1a64(data, aType->GetSize());
     }
 

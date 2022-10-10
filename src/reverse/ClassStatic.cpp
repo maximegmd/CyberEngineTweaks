@@ -4,11 +4,9 @@
 
 #include "RTTIHelper.h"
 #include "StrongReference.h"
-#include "scripting/Scripting.h"
 #include "Utils.h"
 
-ClassStatic::ClassStatic(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView,
-                         RED4ext::CBaseRTTIType* apClass)
+ClassStatic::ClassStatic(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::CBaseRTTIType* apClass)
     : ClassType(aView, apClass)
 {
 }

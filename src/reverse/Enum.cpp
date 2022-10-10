@@ -9,7 +9,7 @@ Enum::Enum(const RED4ext::CStackType& aStackType)
 
 Enum::Enum(const std::string& acTypeName, const std::string& acValue)
 {
-    auto* pType = static_cast<RED4ext::CEnum*>(RED4ext::CRTTISystem::Get()->GetEnum(RED4ext::FNV1a(acTypeName.c_str())));
+    auto* pType = static_cast<RED4ext::CEnum*>(RED4ext::CRTTISystem::Get()->GetEnum(RED4ext::FNV1a64(acTypeName.c_str())));
     if (pType)
     {
         m_cpType = pType;
@@ -19,7 +19,7 @@ Enum::Enum(const std::string& acTypeName, const std::string& acValue)
 
 Enum::Enum(const std::string& acTypeName, uint32_t aValue)
 {
-    auto* pType = static_cast<RED4ext::CEnum*>(RED4ext::CRTTISystem::Get()->GetEnum(RED4ext::FNV1a(acTypeName.c_str())));
+    auto* pType = static_cast<RED4ext::CEnum*>(RED4ext::CRTTISystem::Get()->GetEnum(RED4ext::FNV1a64(acTypeName.c_str())));
     if (pType)
     {
         m_cpType = pType;
@@ -117,7 +117,7 @@ std::string Enum::GetValueName() const
 {
     if (!m_cpType)
         return "";
-    
+
     for (auto i = 0; i < m_cpType->valueList.size; ++i)
     {
         if (m_cpType->valueList[i] == m_value)
@@ -134,7 +134,7 @@ void Enum::SetValueByName(const std::string& acValue)
 {
     if (!m_cpType)
         return;
-    
+
     const RED4ext::CName cValueName(acValue.c_str());
 
     for (auto i = 0; i < m_cpType->hashList.size; ++i)

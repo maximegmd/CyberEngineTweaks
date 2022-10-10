@@ -15,12 +15,12 @@ void* HookInitScriptMemberVariable(void* a1, void* a2, uint64_t a3, uint64_t nam
     // Ideally I think the real solution is to change GameFramework/InitialState INI variable from "Initialization" to "PreGameSession" or "MainMenu" instead
     // Unfortunately that causes a black screen on launch though, likely only works properly on non-shipping builds
 
-    if (nameHash == RED4ext::FNV1a("logoTrainWBBink") ||
-        nameHash == RED4ext::FNV1a("logoTrainNamcoBink") ||
-        nameHash == RED4ext::FNV1a("logoTrainStadiaBink") ||
-        nameHash == RED4ext::FNV1a("logoTrainNoRTXBink") ||
-        nameHash == RED4ext::FNV1a("logoTrainRTXBink") ||
-        nameHash == RED4ext::FNV1a("introMessageBink"))
+    if (nameHash == RED4ext::FNV1a64("logoTrainWBBink") ||
+        nameHash == RED4ext::FNV1a64("logoTrainNamcoBink") ||
+        nameHash == RED4ext::FNV1a64("logoTrainStadiaBink") ||
+        nameHash == RED4ext::FNV1a64("logoTrainNoRTXBink") ||
+        nameHash == RED4ext::FNV1a64("logoTrainRTXBink") ||
+        nameHash == RED4ext::FNV1a64("introMessageBink"))
     {
         nameHash = ~nameHash;
     }

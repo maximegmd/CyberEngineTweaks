@@ -20,7 +20,7 @@ uint64_t ResourceAsyncReference::Hash(const std::string& aPath)
     // 2) / becomes \
     // 3) /\/\\ becomes \
 
-    return RED4ext::FNV1a(aPath.c_str());
+    return RED4ext::FNV1a64(aPath.c_str());
 }
 
 RED4ext::ScriptInstance ResourceAsyncReference::GetHandle() const
@@ -41,7 +41,7 @@ uint64_t ResourceAsyncReference::GetHash() const
 // Manual uint64 to Lua conversion because sol + LuaJIT can't do it
 sol::object ResourceAsyncReference::GetLuaHash()
 {
-    static RTTILocator s_uint64Type{RED4ext::FNV1a("Uint64")};
+    static RTTILocator s_uint64Type{RED4ext::FNV1a64("Uint64")};
 
     auto lockedState = m_lua.Lock();
 

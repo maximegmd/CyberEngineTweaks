@@ -211,7 +211,7 @@ struct ResourcesList
         Resource(std::string aName) noexcept
             : m_isFiltered(false)
             , m_name(std::move(aName))
-            , m_hash(RED4ext::FNV1a(m_name.c_str()))
+            , m_hash(RED4ext::FNV1a64(m_name.c_str()))
         {
         }
 
@@ -564,8 +564,8 @@ void TweakDBEditor::RefreshRecords()
 void TweakDBEditor::RefreshFlats()
 {
     auto* pTDB = RED4ext::TweakDB::Get();
-    constexpr uint64_t unknownGroupHash = RED4ext::FNV1a("!Unknown!");
-    constexpr uint64_t badGroupHash = RED4ext::FNV1a("!BadName!");
+    constexpr uint64_t unknownGroupHash = RED4ext::FNV1a64("!Unknown!");
+    constexpr uint64_t badGroupHash = RED4ext::FNV1a64("!BadName!");
 
     std::shared_lock<RED4ext::SharedMutex> _1(pTDB->mutex00);
     std::shared_lock<RED4ext::SharedMutex> _2(pTDB->mutex01);
@@ -617,7 +617,7 @@ void TweakDBEditor::RefreshFlats()
                 }
 
                 std::string groupName = name.substr(0, idx);
-                uint64_t groupHash = RED4ext::FNV1a(groupName.c_str());
+                uint64_t groupHash = RED4ext::FNV1a64(groupName.c_str());
                 const auto it = map.find(groupHash);
                 if (it == map.end())
                     flatGroup = &map.emplace(groupHash, std::move(groupName)).first.value();

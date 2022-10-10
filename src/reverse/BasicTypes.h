@@ -20,7 +20,7 @@ struct Vector4
     Vector4(float aX = 0.f, float aY = 0.f, float aZ = 0.f, float aW = 0.f)
         : x(aX), y(aY), z(aZ), w(aW)
     {}
-    
+
     float x;
     float y;
     float z;
@@ -36,11 +36,11 @@ struct EulerAngles
     EulerAngles(float aRoll = 0.f, float aPitch = 0.f, float aYaw = 0.f)
         : roll(aRoll), pitch(aPitch), yaw(aYaw)
     {}
-    
+
     float roll;
     float pitch;
     float yaw;
-    
+
     std::string ToString() const noexcept;
 
 	bool operator==(const EulerAngles& acRhs) const noexcept;
@@ -51,7 +51,7 @@ struct Quaternion
     Quaternion(float aI = 0.f, float aJ = 0.f, float aK = 0.f, float aR = 0.f)
         : i(aI), j(aJ), k(aK), r(aR)
     {}
-    
+
     float i;
     float j;
     float k;
@@ -73,7 +73,7 @@ struct CName
     CName(const std::string& aName)
     {
         if (aName != "None")
-            hash = RED4ext::FNV1a(aName.c_str());
+            hash = RED4ext::FNV1a64(aName.c_str());
         else
             hash = 0;
     }
@@ -132,7 +132,7 @@ struct TweakDBID
 
 	bool operator==(const TweakDBID& acRhs) const noexcept;
 	TweakDBID operator+(const std::string_view acName) const noexcept;
-    
+
     union
     {
         uint64_t value{0};
@@ -157,7 +157,7 @@ struct ItemID
     std::string ToString() const noexcept;
 
 	bool operator==(const ItemID& acRhs) const noexcept;
-    
+
     TweakDBID id;
     uint32_t rng_seed{ 2 };
     uint16_t unknown{ 0 };
@@ -179,10 +179,10 @@ struct Variant
 
     bool IsEmpty() const noexcept;
     bool IsInlined() const noexcept;
-    
+
     RED4ext::CBaseRTTIType* GetType() const noexcept;
     RED4ext::ScriptInstance GetDataPtr() const noexcept;
-    
+
     bool Init(const RED4ext::CBaseRTTIType* aType);
     bool Fill(const RED4ext::CBaseRTTIType* aType, const RED4ext::ScriptInstance aData);
     bool Extract(RED4ext::ScriptInstance aBuffer);

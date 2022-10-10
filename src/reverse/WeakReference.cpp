@@ -5,7 +5,7 @@
 
 #include "CET.h"
 
-static RTTILocator s_sIScriptableType{RED4ext::FNV1a("IScriptable")};
+static RTTILocator s_sIScriptableType{RED4ext::FNV1a64("IScriptable")};
 
 WeakReference::WeakReference(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView,
                              RED4ext::WeakHandle<RED4ext::IScriptable> aWeakHandle)
@@ -21,7 +21,7 @@ WeakReference::WeakReference(const TiltedPhoques::Lockable<sol::state, std::recu
 
 WeakReference::WeakReference(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView,
                              RED4ext::WeakHandle<RED4ext::IScriptable> aWeakHandle,
-                             RED4ext::CWeakHandle* apWeakHandleType)
+                             RED4ext::CRTTIWeakHandleType* apWeakHandleType)
     : ClassType(aView, nullptr)
     , m_weakHandle(std::move(aWeakHandle))
 {

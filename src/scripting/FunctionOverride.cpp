@@ -7,22 +7,24 @@
 #include <reverse/RTTIHelper.h>
 #include <xbyak/xbyak.h>
 
+namespace
+{
 
-static FunctionOverride* s_pOverride = nullptr;
+FunctionOverride* s_pOverride = nullptr;
 
 using TRunPureScriptFunction = bool (*)(RED4ext::CBaseFunction* apFunction, RED4ext::CScriptStack*, void*);
 using TCreateFunction = void* (*)(void* apMemoryPool, size_t aSize);
 using TCallScriptFunction = bool (*)(RED4ext::IFunction* apFunction, RED4ext::IScriptable* apContext,
                                      RED4ext::CStackFrame* apFrame, void* apOut, void* a4);
 
-static TRunPureScriptFunction RealRunPureScriptFunction = nullptr;
-static TCreateFunction RealCreateFunction = nullptr;
-static RED4ext::REDfunc<TCallScriptFunction> CallScriptFunction(RED4ext::Addresses::CBaseFunction_InternalExecute);
+TRunPureScriptFunction RealRunPureScriptFunction = nullptr;
+TCreateFunction RealCreateFunction = nullptr;
+RED4ext::REDfunc<TCallScriptFunction> CallScriptFunction(RED4ext::Addresses::CBaseFunction_InternalExecute);
 
-static constexpr size_t s_cMaxFunctionSize =
+constexpr size_t s_cMaxFunctionSize =
     std::max({sizeof(RED4ext::CClassFunction), sizeof(RED4ext::CClassStaticFunction), sizeof(RED4ext::CGlobalFunction)});
 
-inline static size_t GetFunctionSize(RED4ext::CBaseFunction* apFunction)
+size_t GetFunctionSize(RED4ext::CBaseFunction* apFunction)
 {
     if (apFunction->flags.isStatic)
     {
@@ -32,6 +34,22 @@ inline static size_t GetFunctionSize(RED4ext::CBaseFunction* apFunction)
     }
 
     return sizeof(RED4ext::CClassFunction);
+}
+
+struct OverrideCodegen : Xbyak::CodeGenerator
+{
+    OverrideCodegen(uintptr_t apRealFunc, uintptr_t apTrampoline)
+    {
+        sub(rsp, 56);
+        mov(rax, apRealFunc);
+        mov(ptr[rsp + 32], rax);
+        mov(rax, apTrampoline);
+        call(rax);
+        add(rsp, 56);
+        ret();
+    }
+};
+
 }
 
 FunctionOverride::FunctionOverride(Scripting* apScripting, Options& aOptions)
@@ -260,12 +278,12 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
                 // Exception here we need to allocate the inner object as well
                 if (isScriptRef)
                 {
-                    auto* pInnerType = ((RED4ext::CRTTIScriptReferenceType*)pType)->innerType;
-                    auto* pScriptRef = (RED4ext::ScriptRef<void>*)pInstance;
+                    auto* pInnerType = static_cast<RED4ext::CRTTIScriptReferenceType*>(pType)->innerType;
+                    auto* pScriptRef = static_cast<RED4ext::ScriptRef<void>*>(pInstance);
                     pScriptRef->innerType = pInnerType;
                     pScriptRef->hash = pInnerType->GetName();
                     pScriptRef->ref = pInnerType->GetAllocator()->AllocAligned(pInnerType->GetSize(), pInnerType->GetAlignment()).memory;
-                    pInnerType->Init(pScriptRef->ref);
+                    pInnerType->Construct(pScriptRef->ref);
                 }
 
                 RED4ext::CStackType arg;
@@ -276,7 +294,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
                 apFrame->data = nullptr;
                 apFrame->dataType = nullptr;
                 const auto opcode = *(apFrame->code++);
-                RED4ext::OpcodeHandlers::Run(opcode, reinterpret_cast<RED4ext::IScriptable*>(apFrame->context), apFrame, pInstance, isScriptRef ? pInstance : nullptr);
+                RED4ext::OpcodeHandlers::Run(opcode, apFrame->context, apFrame, pInstance, isScriptRef ? pInstance : nullptr);
 
                 args.push_back(Scripting::ToLua(lockedState, arg));
 
@@ -284,7 +302,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
                 {
                     // This is an original arg, pInstance contains copy
                     if (apFrame->data)
-                        arg.value = reinterpret_cast<RED4ext::ScriptInstance>(apFrame->data);
+                        arg.value = apFrame->data;
 
                     outArgs.push_back(arg);
                 }
@@ -292,15 +310,15 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
                 // Release inner values
                 if (isScriptRef)
                 {
-                    auto* pScriptRef = reinterpret_cast<RED4ext::ScriptRef<void>*>(pInstance);
-                    pScriptRef->innerType->Destroy(pScriptRef->ref);
+                    auto* pScriptRef = static_cast<RED4ext::ScriptRef<void>*>(pInstance);
+                    pScriptRef->innerType->Destruct(pScriptRef->ref);
                     pScriptRef->innerType->GetAllocator()->Free(pScriptRef->ref);
                     pScriptRef->ref = nullptr;
                 }
 
                 if (!pArg->flags.isOut || apFrame->data)
                 {
-                    pType->Destroy(pInstance);
+                    pType->Destruct(pInstance);
                     pAllocator->Free(pInstance);
                 }
             }
@@ -503,15 +521,15 @@ void FunctionOverride::Hook(Options& aOptions) const
 
     {
         RED4ext::RelocPtr<void> func(CyberEngineTweaks::Addresses::CScript_RunPureScript);
-        RealRunPureScriptFunction = static_cast<TRunPureScriptFunction>(func.GetAddr());
+        RealRunPureScriptFunction = reinterpret_cast<TRunPureScriptFunction>(func.GetAddr());
         if (!RealRunPureScriptFunction)
             Log::Error("Could not find pure run script function!");
         else
         {
             auto* pLocation = RealRunPureScriptFunction;
-            if (MH_CreateHook(pLocation, &FunctionOverride::HookRunPureScriptFunction,
+            if (MH_CreateHook(reinterpret_cast<LPVOID>(pLocation), reinterpret_cast<LPVOID>(HookRunPureScriptFunction),
                               reinterpret_cast<void**>(&RealRunPureScriptFunction)) != MH_OK ||
-                MH_EnableHook(pLocation) != MH_OK)
+                MH_EnableHook(reinterpret_cast<LPVOID>(pLocation)) != MH_OK)
                 Log::Error("Could not hook RealRunScriptFunction function!");
             else
                 Log::Info("RealRunScriptFunction function hook complete!");
@@ -520,35 +538,21 @@ void FunctionOverride::Hook(Options& aOptions) const
 
     {
         RED4ext::RelocPtr<void> func(CyberEngineTweaks::Addresses::CScript_AllocateFunction);
-        RealCreateFunction = static_cast<TCreateFunction>(func.GetAddr());
+        RealCreateFunction = reinterpret_cast<TCreateFunction>(func.GetAddr());
         if (!RealCreateFunction)
              Log::Error("Could not find create function!");
         else
         {
             auto* pLocation = RealCreateFunction;
-             if (MH_CreateHook(pLocation, &FunctionOverride::HookCreateFunction,
+             if (MH_CreateHook(reinterpret_cast<LPVOID>(pLocation), reinterpret_cast<LPVOID>(HookCreateFunction),
                               reinterpret_cast<void**>(&RealCreateFunction)) != MH_OK ||
-                 MH_EnableHook(pLocation) != MH_OK)
+                 MH_EnableHook(reinterpret_cast<LPVOID>(pLocation)) != MH_OK)
                  Log::Error("Could not hook RealCreateFunction function!");
              else
                  Log::Info("RealCreateFunction function hook complete!");
         }
     }
 }
-
-struct OverrideCodegen : Xbyak::CodeGenerator
-{
-    OverrideCodegen(uintptr_t apRealFunc, uintptr_t apTrampoline)
-    {
-        sub(rsp, 56);
-        mov(rax, apRealFunc);
-        mov(ptr[rsp + 32], rax);
-        mov(rax, apTrampoline);
-        call(rax);
-        add(rsp, 56);
-        ret();
-    }
-};
 
 void FunctionOverride::Override(const std::string& acTypeName, const std::string& acFullName,
                                 sol::protected_function aFunction, sol::environment aEnvironment,
@@ -641,7 +645,7 @@ void FunctionOverride::Override(const std::string& acTypeName, const std::string
         pEntry->IsEmpty = true;
 
         // Swap the content of the real function with the one we just created
-        std::array<char, s_cMaxFunctionSize> tmpBuffer;
+        std::array<char, s_cMaxFunctionSize> tmpBuffer{};
         size_t funcSize = GetFunctionSize(pRealFunction);
 
         std::memcpy(&tmpBuffer, pRealFunction, funcSize);
@@ -672,8 +676,7 @@ void FunctionOverride::Override(const std::string& acTypeName, const std::string
     }
 }
 
-void FunctionOverride::CopyFunctionDescription(RED4ext::CBaseFunction* aFunc, RED4ext::CBaseFunction* aRealFunc,
-                                               bool aForceNative)
+void FunctionOverride::CopyFunctionDescription(RED4ext::CBaseFunction* aFunc, RED4ext::CBaseFunction* aRealFunc, bool aForceNative)
 {
     aFunc->fullName = aRealFunc->fullName;
     aFunc->shortName = aRealFunc->shortName;

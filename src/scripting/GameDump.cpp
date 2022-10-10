@@ -2,8 +2,6 @@
 
 #include "GameDump.h"
 
-#include <unordered_map>
-
 namespace GameDump
 {
 void DumpVTablesTask::Run()
@@ -22,8 +20,7 @@ void DumpVTablesTask::Run()
     auto dumpClass = [begin, end](auto& aVtableMap, RED4ext::CBaseRTTIType* apType)
     {
         uintptr_t vtable = *reinterpret_cast<uintptr_t*>(apType);
-        RED4ext::CName typeName;
-        apType->GetName(typeName);
+        RED4ext::CName typeName = apType->GetName();
         const std::string name = typeName.ToString();
         if (vtable >= begin && vtable <= end)
         {
@@ -41,7 +38,7 @@ void DumpVTablesTask::Run()
 
             memset(pMemory.get(), 0, size);
 
-            apType->Init(pMemory.get());
+            apType->Construct(pMemory.get());
 
             if (size >= sizeof(uintptr_t))
             {

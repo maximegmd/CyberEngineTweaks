@@ -30,12 +30,12 @@ void HookRegisterScriptFunction(void* a, uint64_t hash, uint64_t hash2, void* fu
 {
     // IsFinal (global)
     // if false shows debug menu option on main menu & pause menu
-    if (hash == RED4ext::FNV1a("IsFinal"))
+    if (hash == RED4ext::FNV1a64("IsFinal"))
         func = &HookIsFinal;
 
     // AreDebugContextsEnabled (global)
     // unknown effect
-    else if (hash == RED4ext::FNV1a("AreDebugContextsEnabled"))
+    else if (hash == RED4ext::FNV1a64("AreDebugContextsEnabled"))
         func = &HookIsDebug;
 
     RealRegisterScriptFunction(a, hash, hash2, func);
@@ -46,12 +46,12 @@ void HookRegisterScriptMemberFunction(void* a, void* parentClass, uint64_t hash,
     // WorldMapMenuGameController::CanDebugTeleport
     // allows using world_map_menu_debug_teleport binding on map screen to teleport
     // (must be set inside r6\config\inputUserMappings.xml first)
-    if (hash == RED4ext::FNV1a("CanDebugTeleport"))
+    if (hash == RED4ext::FNV1a64("CanDebugTeleport"))
         func = &HookIsDebug;
 
     // TargetShootComponent::IsDebugEnabled
     // unknown effect
-    else if (hash == RED4ext::FNV1a("IsDebugEnabled"))
+    else if (hash == RED4ext::FNV1a64("IsDebugEnabled"))
         func = &HookIsDebug;
 
     RealRegisterScriptMemberFunction(a, parentClass, hash, hash2, func, flag);

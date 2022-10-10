@@ -44,13 +44,13 @@ RTTIHelper::RTTIHelper(const LockableState& acLua)
 void RTTIHelper::InitializeRTTI()
 {
     m_pRtti = RED4ext::CRTTISystem::Get();
-    m_pGameInstanceType = m_pRtti->GetClass(RED4ext::FNV1a("ScriptGameInstance"));
+    m_pGameInstanceType = m_pRtti->GetClass(RED4ext::FNV1a64("ScriptGameInstance"));
 
     const auto cpEngine = RED4ext::CGameEngine::Get();
     const auto cpGameInstance = cpEngine->framework->gameInstance;
-    const auto cpPlayerSystemType = m_pRtti->GetType(RED4ext::FNV1a("cpPlayerSystem"));
+    const auto cpPlayerSystemType = m_pRtti->GetType(RED4ext::FNV1a64("cpPlayerSystem"));
 
-    m_pGameInstance = reinterpret_cast<ScriptGameInstance*>(m_pGameInstanceType->AllocInstance());
+    m_pGameInstance = static_cast<ScriptGameInstance*>(m_pGameInstanceType->AllocInstance());
     m_pGameInstance->gameInstance = cpGameInstance;
 
     m_pPlayerSystem = reinterpret_cast<RED4ext::ScriptInstance>(cpGameInstance->GetInstance(cpPlayerSystemType));
@@ -67,8 +67,8 @@ void RTTIHelper::ParseGlobalStatics()
             const auto cClassName = cOrigName.substr(0, cClassSep);
             const auto cFullName = cOrigName.substr(cClassSep + 2);
 
-            const auto cClassHash = RED4ext::FNV1a(cClassName.c_str());
-            const auto cFullHash = RED4ext::FNV1a(cFullName.c_str());
+            const auto cClassHash = RED4ext::FNV1a64(cClassName.c_str());
+            const auto cFullHash = RED4ext::FNV1a64(cFullName.c_str());
 
             if (!m_extendedFunctions.contains(cClassHash))
                 m_extendedFunctions.emplace(cClassHash, 0);
@@ -80,10 +80,10 @@ void RTTIHelper::ParseGlobalStatics()
 
 void RTTIHelper::AddFunctionAlias(const std::string& acAliasFuncName, const std::string& acOrigClassName, const std::string& acOrigFuncName)
 {
-    auto* pClass = m_pRtti->GetClass(RED4ext::FNV1a(acOrigClassName.c_str()));
+    auto* pClass = m_pRtti->GetClass(RED4ext::FNV1a64(acOrigClassName.c_str()));
     if (pClass)
     {
-        auto* pFunc = FindFunction(pClass, RED4ext::FNV1a(acOrigFuncName.c_str()));
+        auto* pFunc = FindFunction(pClass, RED4ext::FNV1a64(acOrigFuncName.c_str()));
 
         if (pFunc)
         {
@@ -98,14 +98,14 @@ void RTTIHelper::AddFunctionAlias(const std::string& acAliasFuncName, const std:
 void RTTIHelper::AddFunctionAlias(const std::string& acAliasClassName, const std::string& acAliasFuncName,
                                   const std::string& acOrigClassName, const std::string& acOrigFuncName)
 {
-    auto* pClass = m_pRtti->GetClass(RED4ext::FNV1a(acOrigClassName.c_str()));
+    auto* pClass = m_pRtti->GetClass(RED4ext::FNV1a64(acOrigClassName.c_str()));
     if (pClass)
     {
-        auto* pFunc = FindFunction(pClass, RED4ext::FNV1a(acOrigFuncName.c_str()));
+        auto* pFunc = FindFunction(pClass, RED4ext::FNV1a64(acOrigFuncName.c_str()));
 
         if (pFunc)
         {
-            const auto cClassHash = RED4ext::FNV1a(acAliasClassName.c_str());
+            const auto cClassHash = RED4ext::FNV1a64(acAliasClassName.c_str());
 
             if (!m_extendedFunctions.contains(cClassHash))
                 m_extendedFunctions.emplace(cClassHash, 0);
@@ -117,8 +117,8 @@ void RTTIHelper::AddFunctionAlias(const std::string& acAliasClassName, const std
 
 bool RTTIHelper::IsFunctionAlias(RED4ext::CBaseFunction* apFunc)
 {
-    static const auto s_cTweakDBInterfaceHash = RED4ext::FNV1a("gamedataTweakDBInterface");
-    static const auto s_cTDBIDHelperHash = RED4ext::FNV1a("gamedataTDBIDHelper");
+    static const auto s_cTweakDBInterfaceHash = RED4ext::FNV1a64("gamedataTweakDBInterface");
+    static const auto s_cTDBIDHelperHash = RED4ext::FNV1a64("gamedataTDBIDHelper");
 
     if (m_extendedFunctions.contains(kGlobalHash))
     {
@@ -304,12 +304,12 @@ sol::function RTTIHelper::ResolveFunction(const std::string& acFuncName)
     if (!m_pRtti)
         return sol::nil;
 
-    const auto cFuncHash = RED4ext::FNV1a(acFuncName.c_str());
-    
+    const auto cFuncHash = RED4ext::FNV1a64(acFuncName.c_str());
+
     auto invokable = GetResolvedFunction(cFuncHash);
     if (invokable != sol::nil)
         return invokable;
-    
+
     const auto cIsFullName = acFuncName.find(';') != std::string::npos;
 
     if (cIsFullName)
@@ -359,8 +359,8 @@ sol::function RTTIHelper::ResolveFunction(RED4ext::CClass* apClass, const std::s
     if (apClass == nullptr)
         return ResolveFunction(acFuncName);
 
-    const auto cClassHash = RED4ext::FNV1a(apClass->name.ToString());
-    const auto cFuncHash = RED4ext::FNV1a(acFuncName.c_str());
+    const auto cClassHash = RED4ext::FNV1a64(apClass->name.ToString());
+    const auto cFuncHash = RED4ext::FNV1a64(acFuncName.c_str());
 
     auto invokable = GetResolvedFunction(cClassHash, cFuncHash, aIsMember);
     if (invokable != sol::nil)
@@ -817,7 +817,7 @@ sol::object RTTIHelper::NewInstance(RED4ext::CBaseRTTIType* apType, sol::optiona
     auto instance = Scripting::ToLua(lockedState, result);
 
     FreeInstance(result, true, true, &allocator);
-    
+
     if (aProps.has_value())
     {
         const auto pInstance = instance.as<ClassType*>();
@@ -846,8 +846,8 @@ sol::object RTTIHelper::NewHandle(RED4ext::CBaseRTTIType* apType, sol::optional<
     // Wrap ISerializable descendants in Handle
     if (result.value && apType->GetType() == RED4ext::ERTTIType::Class)
     {
-        static auto* s_pHandleType = m_pRtti->GetType(RED4ext::FNV1a("handle:Activator"));
-        static auto* s_pISerializableType = m_pRtti->GetType(RED4ext::FNV1a("ISerializable"));
+        static auto* s_pHandleType = m_pRtti->GetType(RED4ext::FNV1a64("handle:Activator"));
+        static auto* s_pISerializableType = m_pRtti->GetType(RED4ext::FNV1a64("ISerializable"));
 
         auto* pClass = reinterpret_cast<RED4ext::CClass*>(apType);
 
@@ -938,11 +938,11 @@ void RTTIHelper::SetProperties(RED4ext::CClass* apClass, RED4ext::ScriptInstance
 // Check if type is implemented using ClassReference
 bool RTTIHelper::IsClassReferenceType(RED4ext::CClass* apClass) const
 {
-    static const auto s_cHashVector3 = RED4ext::FNV1a("Vector3");
-    static const auto s_cHashVector4 = RED4ext::FNV1a("Vector4");
-    static const auto s_cHashEulerAngles = RED4ext::FNV1a("EulerAngles");
-    static const auto s_cHashQuaternion = RED4ext::FNV1a("Quaternion");
-    static const auto s_cHashItemID = RED4ext::FNV1a("gameItemID");
+    static const auto s_cHashVector3 = RED4ext::FNV1a64("Vector3");
+    static const auto s_cHashVector4 = RED4ext::FNV1a64("Vector4");
+    static const auto s_cHashEulerAngles = RED4ext::FNV1a64("EulerAngles");
+    static const auto s_cHashQuaternion = RED4ext::FNV1a64("Quaternion");
+    static const auto s_cHashItemID = RED4ext::FNV1a64("gameItemID");
 
     return apClass->name.hash != s_cHashVector3 && apClass->name.hash != s_cHashVector4 &&
            apClass->name.hash != s_cHashEulerAngles && apClass->name.hash != s_cHashQuaternion &&

@@ -7,7 +7,7 @@ template<class T, FixedString REDName>
 struct LuaRED
 {
     static constexpr char const* Name = REDName;
-    
+
     sol::object ToLua(RED4ext::CStackType& aResult, TiltedPhoques::Locked<sol::state, std::recursive_mutex>& aLua)
     {
         if constexpr (std::is_integral_v<T> && (sizeof(T) == sizeof(uint64_t)))
@@ -133,7 +133,7 @@ struct LuaRED
     {
         if (!Resolve())
             return false;
-        
+
         return apRtti == m_pRtti;
     }
 
@@ -145,7 +145,7 @@ protected:
             return true;
 
         auto* pRtti = RED4ext::CRTTISystem::Get();
-        m_pRtti = pRtti->GetType(RED4ext::FNV1a(Name));
+        m_pRtti = pRtti->GetType(RED4ext::FNV1a64(Name));
 
         return m_pRtti != nullptr;
     }

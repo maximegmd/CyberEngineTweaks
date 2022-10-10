@@ -69,13 +69,11 @@ std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
     desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
     desc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-    ID3D12Resource* pTexture = NULL;
-    d3d_device->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_COPY_DEST, NULL,
-                                        IID_PPV_ARGS(&pTexture));
+    ID3D12Resource* pTexture = nullptr;
+    d3d_device->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&pTexture));
 
     // Create a temporary upload resource to move the data in
-    UINT uploadPitch =
-        (image_width * 4 + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u) & ~(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u);
+    UINT uploadPitch = (image_width * 4 + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u) & ~(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u);
     UINT uploadSize = image_height * uploadPitch;
     desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
     desc.Alignment = 0;
@@ -93,13 +91,13 @@ std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
     props.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
     props.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
 
-    ID3D12Resource* uploadBuffer = NULL;
+    ID3D12Resource* uploadBuffer = nullptr;
     HRESULT hr = d3d_device->CreateCommittedResource(
-        &props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, IID_PPV_ARGS(&uploadBuffer));
+        &props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadBuffer));
     IM_ASSERT(SUCCEEDED(hr));
 
     // Write pixels into the upload resource
-    void* mapped = NULL;
+    void* mapped = nullptr;
     D3D12_RANGE range = {0, uploadSize};
     hr = uploadBuffer->Map(0, &range, &mapped);
     IM_ASSERT(SUCCEEDED(hr));
@@ -131,31 +129,31 @@ std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
     barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 
     // Create a temporary command queue to do the copy with
-    ID3D12Fence* fence = NULL;
+    ID3D12Fence* fence = nullptr;
     hr = d3d_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
     IM_ASSERT(SUCCEEDED(hr));
 
     HANDLE event = CreateEvent(0, 0, 0, 0);
-    IM_ASSERT(event != NULL);
+    IM_ASSERT(event != nullptr);
 
     D3D12_COMMAND_QUEUE_DESC queueDesc = {};
     queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
     queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
     queueDesc.NodeMask = 1;
 
-    ID3D12CommandQueue* cmdQueue = NULL;
+    ID3D12CommandQueue* cmdQueue = nullptr;
     hr = d3d_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&cmdQueue));
     IM_ASSERT(SUCCEEDED(hr));
 
-    ID3D12CommandAllocator* cmdAlloc = NULL;
+    ID3D12CommandAllocator* cmdAlloc = nullptr;
     hr = d3d_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&cmdAlloc));
     IM_ASSERT(SUCCEEDED(hr));
 
-    ID3D12GraphicsCommandList* cmdList = NULL;
-    hr = d3d_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, cmdAlloc, NULL, IID_PPV_ARGS(&cmdList));
+    ID3D12GraphicsCommandList* cmdList = nullptr;
+    hr = d3d_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, cmdAlloc, nullptr, IID_PPV_ARGS(&cmdList));
     IM_ASSERT(SUCCEEDED(hr));
 
-    cmdList->CopyTextureRegion(&dstLocation, 0, 0, 0, &srcLocation, NULL);
+    cmdList->CopyTextureRegion(&dstLocation, 0, 0, 0, &srcLocation, nullptr);
     cmdList->ResourceBarrier(1, &barrier);
 
     hr = cmdList->Close();

@@ -5,7 +5,7 @@
 template<>
 struct std::hash<RED4ext::CName>
 {
-    std::size_t operator()(RED4ext::CName aKey) const
+    std::size_t operator()(RED4ext::CName aKey) const noexcept
     {
         return static_cast<size_t>(aKey.hash);
     }
