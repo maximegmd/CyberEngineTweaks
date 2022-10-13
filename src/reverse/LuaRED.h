@@ -23,8 +23,7 @@ struct LuaRED
         }
     }
 
-    RED4ext::CStackType ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRtti,
-                              TiltedPhoques::Allocator* apAllocator)
+    RED4ext::CStackType ToRED(sol::object aObject, RED4ext::CBaseRTTIType*, TiltedPhoques::Allocator* apAllocator)
     {
         RED4ext::CStackType result;
         result.type = m_pRtti;

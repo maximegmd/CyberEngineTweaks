@@ -218,9 +218,9 @@ struct ClassConverter : LuaRED<ClassReference, "ClassReference">
         //{
         //    // The implicit table to instance conversion `Game.FindEntityByID({ hash = 1 })` has potential issue:
         //    // When the overloaded function takes an array and an object for the same arg the implicit conversion
-        //    // can produce an empty instance making the unwanted overload callable. So for better experience it's 
+        //    // can produce an empty instance making the unwanted overload callable. So for better experience it's
         //    // important to distinguish between linear array and array of props.
-        //    
+        //
         //    // Size check excludes non-empty linear arrays since only the table with sequential and integral keys
         //    // has size (length). And iterator check excludes empty tables `{}`.
         //    sol::table props = aObject.as<sol::table>();
@@ -274,8 +274,7 @@ struct RawConverter : LuaRED<UnknownType, "UnknownType">
 		return make_object(aLua.Get(), UnknownType(aLua, aResult.type, aResult.value));
 	}
 
-	RED4ext::CStackType ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRtti,
-                              TiltedPhoques::Allocator* apAllocator)
+	RED4ext::CStackType ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRtti, TiltedPhoques::Allocator*)
     {
         RED4ext::CStackType result;
         result.type = apRtti;
