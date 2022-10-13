@@ -73,11 +73,19 @@ target("cyber_engine_tweaks")
     add_configfiles("src/CETVersion.h.in")
 
     on_package(function(target)
+        os.mkdir("package/bin/x64/plugins/cyber_engine_tweaks/tweakdb")
+        os.cp("tweakdb/*", "package/bin/x64/plugins/cyber_engine_tweaks/tweakdb")
+
         import("utils.archive")
-        os.mkdir("package/bin/x64/plugins/cyber_engine_tweaks")
-        archive.extract("resources.zip", "package/bin/x64/plugins/cyber_engine_tweaks")
+        archive.extract("package/bin/x64/plugins/cyber_engine_tweaks/tweakdb/*.zip", "package/bin/x64/plugins/cyber_engine_tweaks/tweakdb")
+        os.rm("package/bin/x64/plugins/cyber_engine_tweaks/tweakdb/*.zip")
+
         os.mkdir("package/bin/x64/plugins/cyber_engine_tweaks/scripts")
         os.cp("scripts/*", "package/bin/x64/plugins/cyber_engine_tweaks/scripts")
+
+        os.mkdir("package/bin/x64/plugins/cyber_engine_tweaks/fonts")
+        os.cp("fonts/*", "package/bin/x64/plugins/cyber_engine_tweaks/fonts")
+
         os.cp("vendor/asiloader/*", "package/bin/x64/")
         os.cp("LICENSE", "package/bin/x64/")
         os.cp("ThirdParty_LICENSES", "package/bin/x64/plugins/cyber_engine_tweaks/ThirdParty_LICENSES")
