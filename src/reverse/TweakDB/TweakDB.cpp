@@ -614,7 +614,7 @@ bool TweakDB::InternalCloneFlats(RED4ext::TweakDBID aDBID, const RED4ext::gameda
     size_t lastCreatedFlatIdx;
 
     RED4ext::SortedUniqueArray<RED4ext::TweakDBID> recordFlats;
-    recordFlats.Reserve(recordFlatIDs.size());
+    recordFlats.Reserve(static_cast<uint32_t>(recordFlatIDs.size()));
 
     for (lastCreatedFlatIdx = 0; lastCreatedFlatIdx != recordFlatIDs.size(); ++lastCreatedFlatIdx)
     {

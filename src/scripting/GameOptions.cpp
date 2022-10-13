@@ -72,7 +72,7 @@ bool GameOption::Set(const std::string& value)
 {
     if (GetType() == kBoolean)
     {
-        return SetBool(stricmp(value.c_str(), "true") == 0 || stricmp(value.c_str(), "1") == 0);
+        return SetBool(_stricmp(value.c_str(), "true") == 0 || _stricmp(value.c_str(), "1") == 0);
     }
     if (GetType() == kInteger)
     {
@@ -136,7 +136,7 @@ GameOption* GameOptions::Find(const std::string& category, const std::string& na
         s_gameOptions.begin(), s_gameOptions.end(),
         [&category, &name](GameOption* x)
         {
-            return stricmp(x->pCategory, category.c_str()) == 0 && stricmp(x->pName, name.c_str()) == 0;
+            return _stricmp(x->pCategory, category.c_str()) == 0 && _stricmp(x->pName, name.c_str()) == 0;
         });
 
     if (option == s_gameOptions.end())
@@ -153,7 +153,7 @@ void GameOptions::Print(const std::string& category, const std::string& name)
     auto* option = Find(category, name);
     if (!option)
         return;
-    
+
     spdlog::get("scripting")->info(option->GetInfo());
 }
 
@@ -222,7 +222,7 @@ void GameOptions::Set(const std::string& category, const std::string& name, cons
     auto* option = Find(category, name);
     if (!option)
         return;
-    
+
     auto consoleLogger = spdlog::get("scripting");
     if (option->Set(value))
         consoleLogger->info(option->GetInfo());
@@ -240,7 +240,7 @@ void GameOptions::SetBool(const std::string& category, const std::string& name, 
     auto* option = Find(category, name);
     if (!option)
         return;
-    
+
     auto consoleLogger = spdlog::get("scripting");
     if (option->SetBool(value))
         consoleLogger->info(option->GetInfo());
@@ -258,7 +258,7 @@ void GameOptions::SetInt(const std::string& category, const std::string& name, i
     auto* option = Find(category, name);
     if (!option)
         return;
-    
+
     auto consoleLogger = spdlog::get("scripting");
     if (option->SetInt(value))
         consoleLogger->info(option->GetInfo());
@@ -276,7 +276,7 @@ void GameOptions::SetFloat(const std::string& category, const std::string& name,
     auto* option = Find(category, name);
     if (!option)
         return;
-    
+
     auto consoleLogger = spdlog::get("scripting");
     if (option->SetFloat(value))
         consoleLogger->info(option->GetInfo());
@@ -311,7 +311,7 @@ void GameOptions::Dump()
 {
     for (auto option : s_gameOptions)
         Log::Info(option->GetInfo());
-    
+
     spdlog::get("scripting")->info("Dumped {} options to cyber_engine_tweaks.log", s_gameOptions.size());
 }
 
@@ -330,7 +330,7 @@ void GameOptions::List(const std::string& category)
                 if (!category.length() || category.at(0) == '*')
                     return true;
 
-                return stricmp(x->pCategory, category.c_str()) == 0;
+                return _stricmp(x->pCategory, category.c_str()) == 0;
             });
 
         if (iter != s_gameOptions.end())

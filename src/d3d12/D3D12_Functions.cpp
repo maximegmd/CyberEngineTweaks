@@ -304,7 +304,7 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
     io.Fonts->Clear();
 
     ImFontConfig config;
-    config.SizePixels = static_cast<int32_t>(m_options.FontSize * scaleFromReference);
+    config.SizePixels = std::floorf(m_options.FontSize * scaleFromReference);
     config.OversampleH = config.OversampleV = 2;
     config.PixelSnapH = true;
     config.MergeMode = false;

@@ -188,7 +188,7 @@ std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
 
     // Return results
     auto texture = std::make_shared<Texture>();
-    texture->m_size = ImVec2(image_width, image_height);
+    texture->m_size = ImVec2(static_cast<float>(image_width), static_cast<float>(image_height));
     texture->m_texture = pTexture;
     texture->m_handle = srvGpuHandle;
 

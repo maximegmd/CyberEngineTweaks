@@ -7,7 +7,7 @@
 ResourceAsyncReference::ResourceAsyncReference(const TiltedPhoques::Locked<sol::state, std::recursive_mutex>& aView,
                                                RED4ext::CBaseRTTIType* apType,
                                                RED4ext::ResourceAsyncReference<void>* apReference)
-    : ClassType(aView, reinterpret_cast<RED4ext::CResourceAsyncReference*>(apType)->innerType)
+    : ClassType(aView, reinterpret_cast<RED4ext::CRTTIResourceAsyncReferenceType*>(apType)->innerType)
     , m_reference(*apReference)
 {
 }

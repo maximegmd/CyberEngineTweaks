@@ -88,7 +88,7 @@ struct LuaRED
             {
                 sol::state_view v(aObject.lua_state());
                 double value = v["tonumber"](aObject);
-                *reinterpret_cast<T*>(apType->value) = value;
+                *reinterpret_cast<T*>(apType->value) = static_cast<T>(value);
             }
             else if (IsLuaCData(aObject))
             {
@@ -115,7 +115,7 @@ struct LuaRED
             {
                 sol::state_view v(aObject.lua_state());
                 double value = v["tonumber"](aObject);
-                *reinterpret_cast<T*>(apType->value) = value;
+                *reinterpret_cast<T*>(apType->value) = static_cast<T>(value);
             }
         }
         else if (aObject.is<T>())

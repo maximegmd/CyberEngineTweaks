@@ -43,7 +43,7 @@ const std::filesystem::path& Paths::Fonts() const
 Paths::Paths()
 {
     TCHAR exePathBuf[MAX_PATH] = { 0 };
-    GetModuleFileName(GetModuleHandle(nullptr), exePathBuf, std::size(exePathBuf));
+    GetModuleFileName(GetModuleHandle(nullptr), exePathBuf, static_cast<DWORD>(std::size(exePathBuf)));
     m_exe = exePathBuf;
 
     m_gameRoot = m_exe.parent_path();

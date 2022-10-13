@@ -794,13 +794,13 @@ sol::object Scripting::ToLua(LockedState& aState, RED4ext::CStackType& aResult)
     {
         const auto handle = *static_cast<RED4ext::Handle<RED4ext::IScriptable>*>(aResult.value);
         if (handle)
-            return make_object(state, StrongReference(aState, handle, static_cast<RED4ext::CHandle*>(pType)));
+            return make_object(state, StrongReference(aState, handle, static_cast<RED4ext::CRTTIHandleType*>(pType)));
     }
     else if (pType->GetType() == RED4ext::ERTTIType::WeakHandle)
     {
         const auto handle = *static_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(aResult.value);
         if (!handle.Expired())
-            return make_object(state, WeakReference(aState, handle, static_cast<RED4ext::CWeakHandle*>(pType)));
+            return make_object(state, WeakReference(aState, handle, static_cast<RED4ext::CRTTIWeakHandleType*>(pType)));
     }
     else if (pType->GetType() == RED4ext::ERTTIType::Array)
     {
@@ -934,7 +934,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
                         const auto shouldDestroy = pArrayInnerType->GetType() != RED4ext::ERTTIType::Class;
 
                         // Copy elements from the table into the array
-                        pArrayType->Resize(pMemory, tbl.size());
+                        pArrayType->Resize(pMemory, static_cast<uint32_t>(tbl.size()));
                         for (uint32_t i = 1; i <= tbl.size(); ++i)
                         {
                             RED4ext::CStackType type = ToRED(tbl.get<sol::object>(i), pArrayInnerType, apAllocator);

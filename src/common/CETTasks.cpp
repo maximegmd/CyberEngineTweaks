@@ -2,7 +2,7 @@
 
 #include "CETTasks.h"
 
-CETTasks::CETTasks(Options& aOptions)
+CETTasks::CETTasks()
     : m_running(true)
 {
 }

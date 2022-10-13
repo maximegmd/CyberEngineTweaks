@@ -43,7 +43,7 @@ Enum::Enum(const RED4ext::CEnum* acpType, uint32_t aValue)
 
 void Enum::SetValueSafe(uint64_t aValue)
 {
-    for (auto i = 0; i < m_cpType->valueList.size; ++i)
+    for (uint32_t i = 0; i < m_cpType->valueList.size; ++i)
     {
         if (m_cpType->valueList[i] == aValue)
         {
@@ -118,7 +118,7 @@ std::string Enum::GetValueName() const
     if (!m_cpType)
         return "";
 
-    for (auto i = 0; i < m_cpType->valueList.size; ++i)
+    for (uint32_t i = 0; i < m_cpType->valueList.size; ++i)
     {
         if (m_cpType->valueList[i] == m_value)
         {
@@ -137,7 +137,7 @@ void Enum::SetValueByName(const std::string& acValue)
 
     const RED4ext::CName cValueName(acValue.c_str());
 
-    for (auto i = 0; i < m_cpType->hashList.size; ++i)
+    for (uint32_t i = 0; i < m_cpType->hashList.size; ++i)
     {
         if (m_cpType->hashList[i] == cValueName)
         {

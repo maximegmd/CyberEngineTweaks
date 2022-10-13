@@ -46,7 +46,7 @@ void LuaVM::HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack,
     RED4ext::ScriptRef<RED4ext::CString> ref;
     ref.innerType = s_stringLocator;
     ref.ref = &text;
-    ref.innerType->GetName(ref.hash);
+    ref.hash = ref.innerType->GetName();
 
     apStack->currentParam++;
 

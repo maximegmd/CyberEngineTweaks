@@ -38,7 +38,7 @@ void GameLog::Update()
         std::lock_guard _{ m_gamelogLock };
 
         ImGuiListClipper clipper;
-        clipper.Begin(m_gamelogLines.size());
+        clipper.Begin(static_cast<int>(m_gamelogLines.size()));
         while (clipper.Step())
         {
             for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i)

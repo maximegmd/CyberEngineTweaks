@@ -19,7 +19,7 @@ using TCallScriptFunction = bool (*)(RED4ext::IFunction* apFunction, RED4ext::IS
 
 TRunPureScriptFunction RealRunPureScriptFunction = nullptr;
 TCreateFunction RealCreateFunction = nullptr;
-RED4ext::REDfunc<TCallScriptFunction> CallScriptFunction(RED4ext::Addresses::CBaseFunction_InternalExecute);
+RED4ext::RelocFunc<TCallScriptFunction> CallScriptFunction(RED4ext::Addresses::CBaseFunction_InternalExecute);
 
 constexpr size_t s_cMaxFunctionSize =
     std::max({sizeof(RED4ext::CClassFunction), sizeof(RED4ext::CClassStaticFunction), sizeof(RED4ext::CGlobalFunction)});
@@ -271,7 +271,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
                 auto* pAllocator = pType->GetAllocator();
 
                 auto* pInstance = pAllocator->AllocAligned(pType->GetSize(), pType->GetAlignment()).memory;
-                pType->Init(pInstance);
+                pType->Construct(pInstance);
 
                 bool isScriptRef = pArg->type->GetType() == RED4ext::ERTTIType::ScriptReference;
 
@@ -482,9 +482,9 @@ sol::function FunctionOverride::WrapNextOverride(const CallChain& aChain, int aS
         [&, aStep](sol::variadic_args aWrapArgs, sol::this_state aState, sol::this_environment aEnv) -> sol::variadic_results {
             auto call = (aChain.Overrides.rbegin() + aStep)->get();
 
-            for (auto i = 0; i < apRealFunction->params.size; ++i)
+            for (uint32_t i = 0; i < apRealFunction->params.size; ++i)
             {
-                if (i < aWrapArgs.leftover_count())
+                if (static_cast<int>(i) < aWrapArgs.leftover_count())
                     aLuaArgs[i] = aWrapArgs[i];
                 else
                     aLuaArgs[i] = (sol::object)sol::nil;

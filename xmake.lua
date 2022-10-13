@@ -8,21 +8,21 @@ add_rules("plugin.vsxmake.autoupdate")
 add_rules("c.unity_build")
 
 add_cxflags("/bigobj", "/MP")
-add_defines("RED4EXT_STATIC_LIB", "UNICODE", "_UNICODE")
+add_defines("RED4EXT_STATIC_LIB", "UNICODE", "_UNICODE", "_CRT_SECURE_NO_WARNINGS")
 
 if is_mode("debug") then
-    add_defines("CET_DEBUG", "DEBUG")
+    add_defines("CET_DEBUG")
     set_symbols("debug")
     set_optimize("none")
     set_runtimes("MDd")
-    set_warnings("all", "error")
+    set_warnings("allextra")
     set_policy("build.optimization.lto", false)
 elseif is_mode("releasedbg") then
-    add_defines("CET_DEBUG", "DEBUG")
+    add_defines("CET_DEBUG")
     set_symbols("debug")
     set_optimize("fastest")
     set_runtimes("MD")
-    set_warnings("all", "error")
+    set_warnings("allextra")
     set_policy("build.optimization.lto", true)
 elseif is_mode("release") then
     add_defines("NDEBUG")
@@ -30,7 +30,7 @@ elseif is_mode("release") then
     set_strip("all")
     set_optimize("fastest")
     set_runtimes("MD")
-    set_warnings("more")
+    set_warnings("all", "error")
     set_policy("build.optimization.lto", true)
 end
 

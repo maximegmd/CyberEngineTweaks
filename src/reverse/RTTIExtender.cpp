@@ -1,10 +1,10 @@
 #include "RTTIExtender.h"
+
 #include <RED4ext/SharedMutex.hpp>
 #include <RED4ext/Scripting/Natives/Generated/Transform.hpp>
 #include <RED4ext/Scripting/Natives/Generated/WorldTransform.hpp>
 #include <RED4ext/Scripting/Natives/Generated/ent/Entity.hpp>
 #include <RED4ext/Scripting/Natives/Generated/ent/EntityID.hpp>
-
 
 template<typename T>
 struct GameCall
@@ -205,7 +205,7 @@ struct TEMP_SpawnSettings
         constexpr auto FixedToFloat = [](const int32_t acValue)
         {
             return acValue * (1.f / (2 << 16));
-        };  
+        };
 
         transform.position.X = FixedToFloat(acWorldTransform.Position.x.Bits);
         transform.position.Y = FixedToFloat(acWorldTransform.Position.y.Bits);
@@ -256,7 +256,7 @@ struct TEMP_Spawner
     uintptr_t unk58 = 0;
     uintptr_t unk60 = 0;
 
-    TEMP_Spawner(RED4ext::IMemoryAllocator* apAllocator = nullptr)
+    TEMP_Spawner(RED4ext::Memory::IAllocator* apAllocator = nullptr)
         : unk00(apAllocator)
         , spawnedEntities(apAllocator)
         , pendingEntities(apAllocator)

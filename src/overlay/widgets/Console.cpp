@@ -41,7 +41,7 @@ int Console::HandleConsoleHistory(ImGuiInputTextCallbackData* apData)
 
         pStr = &pConsole->m_consoleHistory[pConsole->m_consoleHistoryIndex];
     }
-    else if (apData->EventKey == ImGuiKey_DownArrow && pConsole->m_consoleHistoryIndex + 1 < pConsole->m_consoleHistory.size())
+    else if (apData->EventKey == ImGuiKey_DownArrow && pConsole->m_consoleHistoryIndex + 1 < static_cast<int64_t>(pConsole->m_consoleHistory.size()))
     {
         pConsole->m_consoleHistoryIndex++;
 
@@ -54,7 +54,7 @@ int Console::HandleConsoleHistory(ImGuiInputTextCallbackData* apData)
     {
         std::memcpy(apData->Buf, pStr->c_str(), pStr->length() + 1);
         apData->BufDirty = true;
-        apData->BufTextLen = pStr->length();
+        apData->BufTextLen = static_cast<int>(pStr->length());
         apData->CursorPos = apData->BufTextLen;
     }
 
@@ -81,7 +81,7 @@ void Console::Update()
         std::lock_guard _{ m_outputLock };
 
         ImGuiListClipper clipper;
-        clipper.Begin(m_outputLines.size());
+        clipper.Begin(static_cast<int>(m_outputLines.size()));
         while (clipper.Step())
         {
             for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i)

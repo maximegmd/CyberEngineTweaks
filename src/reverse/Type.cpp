@@ -4,7 +4,6 @@
 #include "Type.h"
 
 #include "RTTIHelper.h"
-#include "scripting/Scripting.h"
 
 
 std::string Type::Descriptor::ToString() const
@@ -67,11 +66,10 @@ std::string Type::GetName() const
 {
     if (m_pType)
     {
-        RED4ext::CName name;
-        m_pType->GetName(name);
-        if (!name.IsEmpty())
+        const auto cName = m_pType->GetName();
+        if (!cName.IsNone())
         {
-            return name.ToString();
+            return cName.ToString();
         }
     }
 
@@ -102,7 +100,7 @@ std::string Type::FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithH
             hasOutParams = true;
             continue;
         }
-        param->type->GetName(typeName);
+        typeName = param->type->GetName();
         params.push_back(fmt::format("{}{}: {}", param->flags.isOptional ? "[opt] " : "",
                                     param->name.ToString(), typeName.ToString()));
     }
@@ -124,7 +122,7 @@ std::string Type::FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithH
 
     if (hasReturnType)
     {
-        apFunc->returnType->type->GetName(typeName);
+        typeName = apFunc->returnType->type->GetName();
         params.push_back(typeName.ToString());
     }
 
@@ -140,7 +138,7 @@ std::string Type::FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithH
                 continue;
             }
 
-            param->type->GetName(typeName);
+            typeName = param->type->GetName();
             params.push_back(param->name.ToString() + std::string(": ") + typeName.ToString());
         }
 
@@ -178,9 +176,8 @@ Type::Descriptor Type::Dump(bool aWithHashes) const
 
     if (m_pType)
     {
-        RED4ext::CName name;
-        m_pType->GetName(name);
-        if (!name.IsEmpty())
+        const auto name = m_pType->GetName();
+        if (!name.IsNone())
         {
             descriptor.name = name.ToString();
         }
@@ -235,11 +232,10 @@ Type::Descriptor ClassType::Dump(bool aWithHashes) const
 
         for (auto i = 0u; i < type->props.size; ++i)
         {
-            auto* pProperty = type->props[i];
-            RED4ext::CName name;
-            pProperty->type->GetName(name);
+            const auto* cpProperty = type->props[i];
+            const auto cName = cpProperty->type->GetName();
 
-            descriptor.properties.push_back(pProperty->name.ToString() + std::string(": ") + name.ToString());
+            descriptor.properties.push_back(cpProperty->name.ToString() + std::string(": ") + cName.ToString());
         }
 
         type = type->parent && type->parent->GetType() == RED4ext::ERTTIType::Class ? type->parent : nullptr;

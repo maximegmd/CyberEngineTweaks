@@ -117,14 +117,14 @@ struct TweakDBID
     TweakDBID(const std::string_view aName)
     {
         name_hash = crc32(aName.data(), aName.size(), 0);
-        name_length = aName.size();
+        name_length = static_cast<uint8_t>(aName.size());
         unk5 = unk7 = 0;
     }
 
     TweakDBID(const TweakDBID& aBase, const std::string_view aName)
     {
         name_hash = crc32(aName.data(), aName.size(), aBase.name_hash);
-        name_length = aName.size() + aBase.name_length;
+        name_length = static_cast<uint8_t>(aName.size() + aBase.name_length);
         unk5 = unk7 = 0;
     }
 

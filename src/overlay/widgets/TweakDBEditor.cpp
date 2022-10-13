@@ -26,7 +26,7 @@ bool SortString(const std::string& acLeft, const std::string& acRight);
 
 struct CDPRTweakDBMetadata
 {
-    static constexpr char c_defaultFilename[] = "tweakdb.str";
+    inline static const std::string c_defaultFilename = "tweakdb.str";
 
     static CDPRTweakDBMetadata* Get()
     {
@@ -38,7 +38,7 @@ struct CDPRTweakDBMetadata
     {
         Reset();
 
-        auto filepath = CET::Get().GetPaths().CETRoot() / c_defaultFilename;
+        auto filepath = GetAbsolutePath(c_defaultFilename, CET::Get().GetPaths().CETRoot() / "resources", false, true);
         if (!std::filesystem::exists(filepath))
             return false;
 
@@ -64,7 +64,7 @@ struct CDPRTweakDBMetadata
         {
             try
             {
-                auto moddedTweakDbFilePath = CET::Get().GetPaths().R6CacheModdedRoot() / c_defaultFilename;
+                auto moddedTweakDbFilePath = GetAbsolutePath(c_defaultFilename, CET::Get().GetPaths().R6CacheModdedRoot(), false, true);
                 std::ifstream file(moddedTweakDbFilePath, std::ios::binary);
                 file.exceptions(std::ios::badbit | std::ios::failbit | std::ios::eofbit);
                 file.read(reinterpret_cast<char*>(&m_header), sizeof(Header));
@@ -200,7 +200,7 @@ using TOodleLZ_Decompress = size_t(*)(char *in, int insz, char *out, int outsz, 
 
 struct ResourcesList
 {
-    static constexpr char c_defaultFilename[] = "usedhashes.kark";
+    inline static const std::string c_defaultFilename = "usedhashes.kark";
 
     struct Resource
     {
@@ -243,7 +243,7 @@ struct ResourcesList
             return false;
         }
 
-        auto filepath = CET::Get().GetPaths().CETRoot() / c_defaultFilename;
+        auto filepath = GetAbsolutePath(c_defaultFilename, CET::Get().GetPaths().CETRoot() / "resources", false, true);
         if (!exists(filepath))
             return false;
 
@@ -262,8 +262,8 @@ struct ResourcesList
 
             char workingMemory[0x80000];
 
-            auto size = OodleLZ_Decompress(content.data() + headerSize, content.size() - headerSize, buffer.data(),
-                                           buffer.size(), 1, 1, 0, 0, 0, 0, 0, workingMemory, std::size(workingMemory), 3);
+            auto size = OodleLZ_Decompress(content.data() + headerSize, static_cast<int>(content.size() - headerSize), buffer.data(),
+                                           static_cast<int>(buffer.size()), 1, 1, 0, nullptr, nullptr, nullptr, nullptr, workingMemory, std::size(workingMemory), 3);
 
             if (size > 0)
             {
@@ -461,6 +461,7 @@ void TweakDBEditor::Update()
 
     if (!m_initialized)
     {
+        ResourcesList::Get()->Initialize();
         CDPRTweakDBMetadata::Get()->Initialize();
         RefreshAll();
         m_initialized = true;
@@ -523,14 +524,13 @@ void TweakDBEditor::RefreshRecords()
                                     RED4ext::DynArray<RED4ext::Handle<RED4ext::IScriptable>> aRecords)
         {
             recordsCount += aRecords.size;
-            RED4ext::CName typeName;
-            aRTTIType->GetName(typeName);
+            const auto typeName = aRTTIType->GetName();
 
             TiltedPhoques::Vector<CachedRecord>& recordsVec = map[typeName];
             recordsVec.reserve(aRecords.size);
             for (RED4ext::Handle<RED4ext::IScriptable> handle : aRecords)
             {
-                auto* record = reinterpret_cast<RED4ext::gamedataTweakDBRecord*>(handle.GetPtr());
+                const auto* record = reinterpret_cast<RED4ext::gamedataTweakDBRecord*>(handle.GetPtr());
                 std::string recordName = GetTweakDBIDStringRecord(record->recordID);
                 if (TweakDB::IsACreatedRecord(record->recordID))
                     recordName.insert(0, "* ");
@@ -964,8 +964,7 @@ bool TweakDBEditor::DrawFlat(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aSta
     else if (aStackType.type == pInt32Type)
         return DrawFlatInt32(aDBID, aStackType, aReadOnly);
 
-    RED4ext::CName typeName;
-    aStackType.type->GetName(typeName);
+    const auto typeName = aStackType.type->GetName();
     ImGui::Text("unsupported type: %s", typeName.ToString());
     return false;
 }
@@ -976,10 +975,9 @@ bool TweakDBEditor::DrawFlatArray(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
 {
     static TiltedPhoques::Map<uint64_t, RED4ext::ScriptInstance> editedArrays;
 
-    auto* pArrayType = reinterpret_cast<RED4ext::CArray*>(aStackType.type);
+    auto* pArrayType = reinterpret_cast<RED4ext::CRTTIArrayType*>(aStackType.type);
     auto* pArrayInnerType = pArrayType->GetInnerType();
-    RED4ext::CName arrayTypeName;
-    pArrayType->GetName(arrayTypeName);
+    const auto arrayTypeName = pArrayType->GetName();
 
     bool isModified = false;
     bool isCachable = !aReadOnly && aDBID.IsValid();
@@ -1018,7 +1016,7 @@ bool TweakDBEditor::DrawFlatArray(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
                 {
                     auto* allocator = pArrayType->GetAllocator();
                     auto result = allocator->AllocAligned(pArrayType->GetSize(), pArrayType->GetAlignment());
-                    pArrayType->Init(result.memory);
+                    pArrayType->Construct(result.memory);
                     pArrayType->Assign(result.memory, arrayInstance);
                     editedArrays.emplace(arrayKey, result.memory);
                 }
@@ -1028,7 +1026,7 @@ bool TweakDBEditor::DrawFlatArray(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
                 ImGui::SameLine();
                 if (ImGui::Button("cancel"))
                 {
-                    pArrayType->Destroy(arrayInstance);
+                    pArrayType->Destruct(arrayInstance);
                     pArrayType->GetAllocator()->Free(arrayInstance);
                     editedArrays.erase(arrayKey);
                     // arraySize = 0;
@@ -1044,7 +1042,7 @@ bool TweakDBEditor::DrawFlatArray(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
                     RED4ext::CStackType newStackType(aStackType.type, arrayInstance);
                     isModified = TweakDB::InternalSetFlat(aDBID, newStackType);
 
-                    pArrayType->Destroy(arrayInstance);
+                    pArrayType->Destruct(arrayInstance);
                     pArrayType->GetAllocator()->Free(arrayInstance);
                     editedArrays.erase(arrayKey);
                     // arraySize = 0;
@@ -1107,7 +1105,7 @@ bool TweakDBEditor::DrawFlatArray(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
             if (!aReadOnly && ImGui::Button("add new"))
             {
                 pArrayType->InsertAt(arrayInstance, arraySize);
-                pArrayInnerType->Init(pArrayType->GetElement(arrayInstance, arraySize));
+                pArrayInnerType->Construct(pArrayType->GetElement(arrayInstance, arraySize));
             }
 
             ImGui::EndTable();
@@ -1398,10 +1396,10 @@ bool TweakDBEditor::DrawFlatColor(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
     if (!aReadOnly && valueChanged)
     {
         RED4ext::Color newColor;
-        newColor.Red = std::clamp(rgba[0], 0.0f, 1.0f) * 255;
-        newColor.Green = std::clamp(rgba[1], 0.0f, 1.0f) * 255;
-        newColor.Blue = std::clamp(rgba[2], 0.0f, 1.0f) * 255;
-        newColor.Alpha = std::clamp(rgba[3], 0.0f, 1.0f) * 255;
+        newColor.Red = static_cast<uint8_t>(std::clamp(rgba[0], 0.0f, 1.0f) * 255);
+        newColor.Green = static_cast<uint8_t>(std::clamp(rgba[1], 0.0f, 1.0f) * 255);
+        newColor.Blue = static_cast<uint8_t>(std::clamp(rgba[2], 0.0f, 1.0f) * 255);
+        newColor.Alpha = static_cast<uint8_t>(std::clamp(rgba[3], 0.0f, 1.0f) * 255);
 
         if (aDBID.IsValid())
         {
@@ -1491,7 +1489,7 @@ bool TweakDBEditor::DrawFlatResourceAsyncRef(RED4ext::TweakDBID aDBID, RED4ext::
                 if (searchTimer <= 0.0f)
                 {
                     auto& resources = ResourcesList::Get()->GetResources();
-                    resourcesCount = std::count_if(std::execution::par_unseq, resources.begin(), resources.end(),
+                    resourcesCount = static_cast<int>(std::count_if(std::execution::par_unseq, resources.begin(), resources.end(),
                        [](ResourcesList::Resource& resource)
                        {
                            if (comboSearchStr[0] == '\0' ||
@@ -1505,7 +1503,7 @@ bool TweakDBEditor::DrawFlatResourceAsyncRef(RED4ext::TweakDBID aDBID, RED4ext::
                            }
 
                            return !resource.m_isFiltered;
-                       });
+                       }));
 
                     searchTimer = 0.0f;
                 }
@@ -1598,14 +1596,14 @@ bool TweakDBEditor::DrawFlatCName(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
     auto [strChanged, pModifiedStr] = ImGui::InputTextCStr("", pStr, strlen(pStr), flags);
     if (strChanged)
     {
-        if (stricmp(pModifiedStr->c_str(), "none") == 0)
+        if (_stricmp(pModifiedStr->c_str(), "none") == 0)
             newCName.hash = 0;
         else
             newCName = RED4ext::CName(pModifiedStr->c_str());
         valueChanged = newCName.hash != pCName->hash;
     }
 
-    if (ImGui::IsItemHovered() && strnicmp(pStr, "LocKey#", 7) == 0)
+    if (ImGui::IsItemHovered() && _strnicmp(pStr, "LocKey#", 7) == 0)
     {
         RED4ext::CString localizedText;
         ExecuteGlobalFunction("GetLocalizedTextByKey", &localizedText, atoll(pStr + 7));
@@ -1669,7 +1667,7 @@ bool TweakDBEditor::DrawFlatString(RED4ext::TweakDBID aDBID, RED4ext::CStackType
     int32_t flags = aReadOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_EnterReturnsTrue;
     ImGui::SetNextItemWidth(-FLT_MIN);
     auto [valueChanged, pModifiedStr] = ImGui::InputTextCStr("", pCString->c_str(), pCString->Length(), flags);
-    if (ImGui::IsItemHovered() && strnicmp(pCString->c_str(), "LocKey#", 7) == 0)
+    if (ImGui::IsItemHovered() && _strnicmp(pCString->c_str(), "LocKey#", 7) == 0)
     {
         RED4ext::CString localizedText;
         RED4ext::ExecuteGlobalFunction("GetLocalizedTextByKey", &localizedText, atoll(pCString->c_str() + 7));
@@ -1963,60 +1961,27 @@ void TweakDBEditor::DrawAdvancedTab()
     if (CDPRTweakDBMetadata::Get()->IsInitialized())
     {
         ImGui::PushStyleColor(ImGuiCol_Text, 0xFF00FF00);
-        ImGui::TextUnformatted("'tweakdb.str' is loaded!");
+        ImGui::Text("'%s' is loaded!", CDPRTweakDBMetadata::c_defaultFilename);
         ImGui::PopStyleColor();
     }
     else
     {
         ImGui::PushStyleColor(ImGuiCol_Text, 0xFF0000FF);
-        ImGui::TextUnformatted("'tweakdb.str' is not loaded.");
+        ImGui::Text("'%s' is not loaded.", CDPRTweakDBMetadata::c_defaultFilename);
         ImGui::PopStyleColor();
-        ImGui::TreePush();
-        ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32_BLACK_TRANS);
-        ImGui::PushStyleColor(ImGuiCol_Text, 0xFFF66409);
-        char pLink[] = "https://www.cyberpunk.net/en/modding-support";
-        ImGui::InputText("##cdprLink", pLink, sizeof(pLink) - 1, ImGuiInputTextFlags_ReadOnly);
-        ImGui::PopStyleColor(2);
-        ImGui::TextUnformatted("1) Download and unpack 'Metadata'");
-        ImGui::TextUnformatted("2) Copy 'tweakdb.str' to 'plugins\\cyber_engine_tweaks\\tweakdb.str'");
-        const auto cetDir = UTF16ToUTF8(CET::Get().GetPaths().CETRoot().native());
-        ImGui::Text("Full path: %s", cetDir.c_str());
-        if (ImGui::Button("3) Load tweakdb.str"))
-        {
-            if (CDPRTweakDBMetadata::Get()->Initialize())
-            {
-                RefreshAll();
-                FilterAll();
-            }
-        }
-        ImGui::TreePop();
     }
 
     if (ResourcesList::Get()->IsInitialized())
     {
         ImGui::PushStyleColor(ImGuiCol_Text, 0xFF00FF00);
-        ImGui::TextUnformatted("'usedhashes.kark' is loaded!");
+        ImGui::Text("'%s' is loaded!", ResourcesList::c_defaultFilename);
         ImGui::PopStyleColor();
     }
     else
     {
         ImGui::PushStyleColor(ImGuiCol_Text, 0xFF0000FF);
-        ImGui::TextUnformatted("'usedhashes.kark' is not loaded.");
+        ImGui::Text("'%s' is not loaded!", ResourcesList::c_defaultFilename);
         ImGui::PopStyleColor();
-        ImGui::TreePush();
-        ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32_BLACK_TRANS);
-        ImGui::PushStyleColor(ImGuiCol_Text, 0xFFF66409);
-        char pLink[] = "https://github.com/WolvenKit/WolvenKit/blob/main/WolvenKit.Common/Resources/usedhashes.kark";
-        ImGui::InputText("##wkitLink", pLink, sizeof(pLink) - 1, ImGuiInputTextFlags_ReadOnly);
-        ImGui::PopStyleColor(2);
-        ImGui::TextUnformatted("1) Download and put 'usedhashes.kark' in 'plugins\\cyber_engine_tweaks\\'");
-        const auto cetDir = UTF16ToUTF8(CET::Get().GetPaths().CETRoot().native());
-        ImGui::Text("Full path: %s", cetDir.c_str());
-        if (ImGui::Button("3) Load usedhashes.kark"))
-        {
-            ResourcesList::Get()->Initialize();
-        }
-        ImGui::TreePop();
     }
 
     ImGui::SetNextItemWidth(50);

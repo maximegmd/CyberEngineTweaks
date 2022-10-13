@@ -692,8 +692,7 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
 
         if (!callArgs[callArgOffset].value)
         {
-            RED4ext::CName typeName;
-            cpParam->type->GetName(typeName);
+            const auto typeName = cpParam->type->GetName();
             aErrorMessage = fmt::format("Function '{}' parameter {} must be {}.", apFunc->shortName.ToString(), i + 1, typeName.ToString());
 
             return {};
@@ -761,7 +760,7 @@ RED4ext::ScriptInstance RTTIHelper::NewPlaceholder(RED4ext::CBaseRTTIType* apTyp
 {
     auto* pMemory = apAllocator->Allocate(apType->GetSize());
     memset(pMemory, 0, apType->GetSize());
-    apType->Init(pMemory);
+    apType->Construct(pMemory);
 
     return pMemory;
 }
@@ -780,7 +779,7 @@ RED4ext::ScriptInstance RTTIHelper::NewInstance(RED4ext::CBaseRTTIType* apType, 
     }
     else if (apType->GetType() == RED4ext::ERTTIType::Handle)
     {
-        auto* pInnerType = reinterpret_cast<RED4ext::CHandle*>(apType)->GetInnerType();
+        auto* pInnerType = reinterpret_cast<RED4ext::CRTTIHandleType*>(apType)->GetInnerType();
 
         if (pInnerType->GetType() == RED4ext::ERTTIType::Class)
             pClass = reinterpret_cast<RED4ext::CClass*>(pInnerType);
@@ -972,20 +971,20 @@ void RTTIHelper::FreeInstance(RED4ext::CBaseRTTIType* apType, void* apValue, boo
                 // Skip basic types
                 if (IsClassReferenceType(pClass))
                 {
-                    pClass->DestroyCls(reinterpret_cast<RED4ext::IScriptable*>(apValue));
+                    pClass->DestructCls(reinterpret_cast<RED4ext::IScriptable*>(apValue));
                     pClass->GetAllocator()->Free(apValue);
                 }
             }
         }
         else
         {
-            apType->Destroy(apValue);
+            apType->Destruct(apValue);
         }
     }
     else
     {
         if (aNew || apType->GetType() != RED4ext::ERTTIType::Class)
-            apType->Destroy(apValue);
+            apType->Destruct(apValue);
     }
 
     // Right now it's a workaround that doesn't cover all cases but most.
