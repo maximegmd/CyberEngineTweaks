@@ -64,3 +64,5 @@
 #include "CETVersion.h"
 #include "common/Logging.h"
 #include "reverse/Addresses.h"
+
+#include <wrl.h>

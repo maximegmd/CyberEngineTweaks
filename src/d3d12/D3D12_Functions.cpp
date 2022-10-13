@@ -132,7 +132,7 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
             return ResetState();
         }
 
-    if (FAILED(m_pd3d12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_frameContexts[0].CommandAllocator, nullptr, IID_PPV_ARGS(&m_pd3dCommandList))) ||
+    if (FAILED(m_pd3d12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_frameContexts[0].CommandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_pd3dCommandList))) ||
         FAILED(m_pd3dCommandList->Close()))
     {
         Log::Error("D3D12::Initialize() - failed to create command list!");
@@ -140,7 +140,7 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
     }
 
     for (auto& context : m_frameContexts)
-        m_pd3d12Device->CreateRenderTargetView(context.BackBuffer, nullptr, context.MainRenderTargetDescriptor);
+        m_pd3d12Device->CreateRenderTargetView(context.BackBuffer.Get(), nullptr, context.MainRenderTargetDescriptor);
 
     if (!InitializeImGui(buffersCounts))
     {
@@ -248,7 +248,7 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
         }
     }
 
-    if (FAILED(m_pd3d12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_frameContexts[0].CommandAllocator, nullptr, IID_PPV_ARGS(&m_pd3dCommandList))))
+    if (FAILED(m_pd3d12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_frameContexts[0].CommandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_pd3dCommandList))))
     {
         Log::Error("D3D12::InitializeDownlevel() - failed to create command list!");
         return ResetState();
@@ -264,7 +264,7 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
     {
         auto& context = m_frameContexts[i];
         context.BackBuffer = m_downlevelBackbuffers[i];
-        m_pd3d12Device->CreateRenderTargetView(context.BackBuffer, nullptr, context.MainRenderTargetDescriptor);
+        m_pd3d12Device->CreateRenderTargetView(context.BackBuffer.Get(), nullptr, context.MainRenderTargetDescriptor);
     }
 
     if (!InitializeImGui(buffersCounts))
@@ -430,8 +430,8 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         return false;
     }
 
-    if (!ImGui_ImplDX12_Init(m_pd3d12Device, static_cast<int>(aBuffersCounts),
-        DXGI_FORMAT_R8G8B8A8_UNORM, m_pd3dSrvDescHeap,
+    if (!ImGui_ImplDX12_Init(m_pd3d12Device.Get(), static_cast<int>(aBuffersCounts),
+        DXGI_FORMAT_R8G8B8A8_UNORM, m_pd3dSrvDescHeap.Get(),
         m_pd3dSrvDescHeap->GetCPUDescriptorHandleForHeapStart(),
         m_pd3dSrvDescHeap->GetGPUDescriptorHandleForHeapStart()))
     {
@@ -463,28 +463,32 @@ void D3D12::Update()
     auto& frameContext = m_frameContexts[bufferIndex];
     frameContext.CommandAllocator->Reset();
 
+    m_pd3dCommandList->Reset(frameContext.CommandAllocator.Get(), nullptr);
+
     D3D12_RESOURCE_BARRIER barrier;
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    barrier.Transition.pResource = frameContext.BackBuffer;
+    barrier.Transition.pResource = frameContext.BackBuffer.Get();
     barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
     barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-
-    m_pd3dCommandList->Reset(frameContext.CommandAllocator, nullptr);
     m_pd3dCommandList->ResourceBarrier(1, &barrier);
+
+    ID3D12DescriptorHeap* heaps[] = { m_pd3dSrvDescHeap.Get() };
+    m_pd3dCommandList->SetDescriptorHeaps(1, heaps);
+
     m_pd3dCommandList->OMSetRenderTargets(1, &frameContext.MainRenderTargetDescriptor, FALSE, nullptr);
-    m_pd3dCommandList->SetDescriptorHeaps(1, &m_pd3dSrvDescHeap);
 
     ImGui::Render();
-    ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), m_pd3dCommandList);
+    ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), m_pd3dCommandList.Get());
 
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
     barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-
     m_pd3dCommandList->ResourceBarrier(1, &barrier);
+
     m_pd3dCommandList->Close();
 
-    m_pCommandQueue->ExecuteCommandLists(1, reinterpret_cast<ID3D12CommandList**>(&m_pd3dCommandList));
+    ID3D12CommandList* commandLists[] = { m_pd3dCommandList.Get() };
+    m_pCommandQueue->ExecuteCommandLists(1, commandLists);
 }
 

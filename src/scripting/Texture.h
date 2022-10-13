@@ -17,7 +17,7 @@ struct Texture
 
 private:
 
-    CComPtr<ID3D12Resource> m_texture;
+    Microsoft::WRL::ComPtr<ID3D12Resource> m_texture;
     D3D12_GPU_DESCRIPTOR_HANDLE m_handle;
     ImVec2 m_size{};
 };

@@ -213,5 +213,5 @@ ImVec2 Texture::GetSize() const
 
 void Texture::Release()
 {
-    m_texture.Release();
+    m_texture = nullptr;
 }

@@ -20,20 +20,20 @@ kiero::Status::Enum kiero::init()
 {
     if (g_kieroInitialized)
         return Status::AlreadyInitializedError;
-    
+
     WNDCLASSEX windowClass;
     windowClass.cbSize = sizeof(WNDCLASSEX);
     windowClass.style = CS_HREDRAW | CS_VREDRAW;
     windowClass.lpfnWndProc = DefWindowProc;
     windowClass.cbClsExtra = 0;
     windowClass.cbWndExtra = 0;
-    windowClass.hInstance = GetModuleHandle(NULL);
-    windowClass.hIcon = NULL;
-    windowClass.hCursor = NULL;
-    windowClass.hbrBackground = NULL;
-    windowClass.lpszMenuName = NULL;
+    windowClass.hInstance = GetModuleHandle(nullptr);
+    windowClass.hIcon = nullptr;
+    windowClass.hCursor = nullptr;
+    windowClass.hbrBackground = nullptr;
+    windowClass.lpszMenuName = nullptr;
     windowClass.lpszClassName = _T("Kiero");
-    windowClass.hIconSm = NULL;
+    windowClass.hIconSm = nullptr;
 
     ::RegisterClassEx(&windowClass);
 
@@ -41,14 +41,14 @@ kiero::Status::Enum kiero::init()
 
     HMODULE libDXGI;
     HMODULE libD3D12;
-    if ((libDXGI = ::GetModuleHandle(_T("dxgi.dll"))) == NULL)
+    if ((libDXGI = ::GetModuleHandle(_T("dxgi.dll"))) == nullptr)
     {
         ::DestroyWindow(window);
         ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
         return Status::ModuleNotFoundError;
     }
 
-    if ((libD3D12 = ::GetModuleHandle(_T("d3d12.dll"))) == NULL)
+    if ((libD3D12 = ::GetModuleHandle(_T("d3d12.dll"))) == nullptr)
     {
         const TCHAR* localD3d12on7Paths[] =
         {
@@ -65,7 +65,7 @@ kiero::Status::Enum kiero::init()
 
         if (libD3D12 == NULL)
         {
-            if ((libD3D12 = ::LoadLibrary(_T("d3d12.dll"))) == NULL)
+            if ((libD3D12 = ::LoadLibrary(_T("d3d12.dll"))) == nullptr)
             {
                 ::DestroyWindow(window);
                 ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
@@ -75,14 +75,14 @@ kiero::Status::Enum kiero::init()
     }
 
     void* CreateDXGIFactory;
-    if ((CreateDXGIFactory = reinterpret_cast<void*>(GetProcAddress(libDXGI, "CreateDXGIFactory"))) == NULL)
+    if ((CreateDXGIFactory = reinterpret_cast<void*>(GetProcAddress(libDXGI, "CreateDXGIFactory"))) == nullptr)
     {
         ::DestroyWindow(window);
         ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
         return Status::UnknownError;
     }
 
-    CComPtr<IDXGIFactory> factory;
+    Microsoft::WRL::ComPtr<IDXGIFactory> factory;
     if (reinterpret_cast<long(*)(const IID&, void**)>(CreateDXGIFactory)(IID_PPV_ARGS(&factory)) < 0)
     {
         ::DestroyWindow(window);
@@ -90,7 +90,7 @@ kiero::Status::Enum kiero::init()
         return Status::UnknownError;
     }
 
-    CComPtr<IDXGIAdapter> adapter;
+    Microsoft::WRL::ComPtr<IDXGIAdapter> adapter;
     if (factory->EnumAdapters(0, &adapter) == DXGI_ERROR_NOT_FOUND)
     {
         ::DestroyWindow(window);
@@ -99,15 +99,15 @@ kiero::Status::Enum kiero::init()
     }
 
     void* D3D12CreateDevice;
-    if ((D3D12CreateDevice = reinterpret_cast<void*>(GetProcAddress(libD3D12, "D3D12CreateDevice"))) == NULL)
+    if ((D3D12CreateDevice = reinterpret_cast<void*>(GetProcAddress(libD3D12, "D3D12CreateDevice"))) == nullptr)
     {
         ::DestroyWindow(window);
         ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
         return Status::UnknownError;
     }
 
-    CComPtr<ID3D12Device> device;
-    if (reinterpret_cast<long(*)(IUnknown*, D3D_FEATURE_LEVEL, const IID&, void**)>(D3D12CreateDevice)(adapter, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&device)) < 0)
+    Microsoft::WRL::ComPtr<ID3D12Device> device;
+    if (reinterpret_cast<long(*)(IUnknown*, D3D_FEATURE_LEVEL, const IID&, void**)>(D3D12CreateDevice)(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(device.GetAddressOf())) < 0)
     {
         ::DestroyWindow(window);
         ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
@@ -120,7 +120,7 @@ kiero::Status::Enum kiero::init()
     queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
     queueDesc.NodeMask = 0;
 
-    CComPtr<ID3D12CommandQueue> commandQueue;
+    Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue;
     if (device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&commandQueue)) < 0)
     {
         ::DestroyWindow(window);
@@ -128,26 +128,26 @@ kiero::Status::Enum kiero::init()
         return Status::UnknownError;
     }
 
-    CComPtr<ID3D12CommandAllocator> commandAllocator;
-    if (device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocator)) < 0)
+    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator;
+    if (device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(commandAllocator.GetAddressOf())) < 0)
     {
         ::DestroyWindow(window);
         ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
         return Status::UnknownError;
     }
 
-    CComPtr<ID3D12GraphicsCommandList> commandList;
-    if (device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator, NULL, IID_PPV_ARGS(&commandList)) < 0)
+    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList;
+    if (device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator.Get(), nullptr, IID_PPV_ARGS(commandList.GetAddressOf())) < 0)
     {
         ::DestroyWindow(window);
         ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
         return Status::UnknownError;
     }
 
-    CComPtr<ID3D12DeviceDownlevel> downlevelDevice;
-    g_isDownLevelDevice = device->QueryInterface(IID_PPV_ARGS(&downlevelDevice)) >= 0;
-    CComPtr<IDXGISwapChain3> swapChain;
-    CComPtr<ID3D12CommandQueueDownlevel> commandQueueDownlevel;
+    Microsoft::WRL::ComPtr<ID3D12DeviceDownlevel> downlevelDevice;
+    g_isDownLevelDevice = device->QueryInterface(IID_PPV_ARGS(downlevelDevice.GetAddressOf())) >= 0;
+    Microsoft::WRL::ComPtr<IDXGISwapChain3> swapChain;
+    Microsoft::WRL::ComPtr<ID3D12CommandQueueDownlevel> commandQueueDownlevel;
 
     if (!g_isDownLevelDevice)
     {
@@ -177,23 +177,23 @@ kiero::Status::Enum kiero::init()
         swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
         swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
-        CComPtr<IDXGISwapChain> swapChain1;
-        if (factory->CreateSwapChain(commandQueue, &swapChainDesc, &swapChain1) < 0)
+        Microsoft::WRL::ComPtr<IDXGISwapChain> swapChain1;
+        if (factory->CreateSwapChain(commandQueue.Get(), &swapChainDesc, swapChain1.GetAddressOf()) < 0)
         {
             ::DestroyWindow(window);
             ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
             return Status::UnknownError;
         }
 
-        if (FAILED(swapChain1->QueryInterface(IID_PPV_ARGS(&swapChain))))
+        if (FAILED(swapChain1->QueryInterface(IID_PPV_ARGS(swapChain.GetAddressOf()))))
         {
             ::DestroyWindow(window);
             ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
             return Status::UnknownError;
         }
 
-        auto valueToFind = reinterpret_cast<uintptr_t>(static_cast<void*>(commandQueue));
-        auto* swapChainPtr = static_cast<uintptr_t*>(static_cast<void*>(swapChain));
+        auto valueToFind = reinterpret_cast<uintptr_t>(static_cast<void*>(commandQueue.Get()));
+        auto* swapChainPtr = static_cast<uintptr_t*>(static_cast<void*>(swapChain.Get()));
         auto* addr = std::find(swapChainPtr, swapChainPtr + 512, valueToFind);
 
         g_commandQueueOffset = reinterpret_cast<uintptr_t>(addr) - reinterpret_cast<uintptr_t>(swapChainPtr);
@@ -206,9 +206,9 @@ kiero::Status::Enum kiero::init()
             ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
             return Status::UnknownError;
         }
-        
-        auto* commandQueueDownlevelPtr = static_cast<uintptr_t*>(static_cast<void*>(commandQueueDownlevel));
-        auto* addr = std::find(commandQueueDownlevelPtr, commandQueueDownlevelPtr + 512, reinterpret_cast<uintptr_t>(static_cast<void*>(commandQueue)));
+
+        auto* commandQueueDownlevelPtr = static_cast<uintptr_t*>(static_cast<void*>(commandQueueDownlevel.Get()));
+        auto* addr = std::find(commandQueueDownlevelPtr, commandQueueDownlevelPtr + 512, reinterpret_cast<uintptr_t>(static_cast<void*>(commandQueue.Get())));
 
         g_commandQueueOffset = reinterpret_cast<uintptr_t>(addr) - reinterpret_cast<uintptr_t>(commandQueueDownlevelPtr);
     }
@@ -216,19 +216,19 @@ kiero::Status::Enum kiero::init()
     g_methodsTable = (uint150_t*)::calloc(176, sizeof(uint150_t));
 
     if (!g_isDownLevelDevice)
-        g_swapChainVtable = *(void***)swapChain.operator IDXGISwapChain3 *();
+        g_swapChainVtable = *(void***)swapChain.Get();
 
-    g_commandListVtable = *(void***)commandList.operator ID3D12GraphicsCommandList *();
-    g_commandQueueVtable = *(void***)commandQueue.operator ID3D12CommandQueue*();
+    g_commandListVtable = *(void***)commandList.Get();
+    g_commandQueueVtable = *(void***)commandQueue.Get();
 
-    ::memcpy(g_methodsTable, *(uint150_t**)(void*)device, 44 * sizeof(uint150_t));
-    ::memcpy(g_methodsTable + 44, *(uint150_t**)(void*)commandQueue, 19 * sizeof(uint150_t));
-    ::memcpy(g_methodsTable + 44 + 19, *(uint150_t**)(void*)commandAllocator, 9 * sizeof(uint150_t));
-    ::memcpy(g_methodsTable + 44 + 19 + 9, *(uint150_t**)(void*)commandList, 60 * sizeof(uint150_t));
+    ::memcpy(g_methodsTable, *(uint150_t**)(void*)device.Get(), 44 * sizeof(uint150_t));
+    ::memcpy(g_methodsTable + 44, *(uint150_t**)(void*)commandQueue.Get(), 19 * sizeof(uint150_t));
+    ::memcpy(g_methodsTable + 44 + 19, *(uint150_t**)(void*)commandAllocator.Get(), 9 * sizeof(uint150_t));
+    ::memcpy(g_methodsTable + 44 + 19 + 9, *(uint150_t**)(void*)commandList.Get(), 60 * sizeof(uint150_t));
     if (!g_isDownLevelDevice)
-        ::memcpy(g_methodsTable + 44 + 19 + 9 + 60, *(uint150_t**)(void*)swapChain, 40 * sizeof(uint150_t));
+        ::memcpy(g_methodsTable + 44 + 19 + 9 + 60, *(uint150_t**)(void*)swapChain.Get(), 40 * sizeof(uint150_t));
     else
-        ::memcpy(g_methodsTable + 44 + 19 + 9 + 60 + 40, *(uint150_t**)(void*)commandQueueDownlevel, 4 * sizeof(uint150_t));
+        ::memcpy(g_methodsTable + 44 + 19 + 9 + 60 + 40, *(uint150_t**)(void*)commandQueueDownlevel.Get(), 4 * sizeof(uint150_t));
 
     ::DestroyWindow(window);
     ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);

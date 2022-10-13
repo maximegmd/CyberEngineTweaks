@@ -11,7 +11,7 @@
 HRESULT D3D12::ResizeBuffers(IDXGISwapChain* apSwapChain, UINT aBufferCount, UINT aWidth, UINT aHeight, DXGI_FORMAT aNewFormat, UINT aSwapChainFlags)
 {
     auto& d3d12 = CET::Get().GetD3D12();
-    
+
     if (d3d12.m_initialized)
     {
         // NOTE: right now, done in case of any swap chain ResizeBuffers call, which may not be ideal. We have yet to encounter multiple swap chains in use though, so should be safe
@@ -160,7 +160,7 @@ void* D3D12::CRenderGlobal_Resize(uint32_t a1, uint32_t a2, uint32_t a3, uint8_t
 
 ID3D12Device* D3D12::GetDevice() const
 {
-    return m_pd3d12Device;
+    return m_pd3d12Device.Get();
 }
 
 std::tuple<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> D3D12::CreateTextureDescriptor()

@@ -1958,40 +1958,13 @@ void TweakDBEditor::DrawFlatsTab()
 
 void TweakDBEditor::DrawAdvancedTab()
 {
-    if (CDPRTweakDBMetadata::Get()->IsInitialized())
-    {
-        ImGui::PushStyleColor(ImGuiCol_Text, 0xFF00FF00);
-        ImGui::Text("'%s' is loaded!", CDPRTweakDBMetadata::c_defaultFilename);
-        ImGui::PopStyleColor();
-    }
-    else
-    {
-        ImGui::PushStyleColor(ImGuiCol_Text, 0xFF0000FF);
-        ImGui::Text("'%s' is not loaded.", CDPRTweakDBMetadata::c_defaultFilename);
-        ImGui::PopStyleColor();
-    }
-
-    if (ResourcesList::Get()->IsInitialized())
-    {
-        ImGui::PushStyleColor(ImGuiCol_Text, 0xFF00FF00);
-        ImGui::Text("'%s' is loaded!", ResourcesList::c_defaultFilename);
-        ImGui::PopStyleColor();
-    }
-    else
-    {
-        ImGui::PushStyleColor(ImGuiCol_Text, 0xFF0000FF);
-        ImGui::Text("'%s' is not loaded!", ResourcesList::c_defaultFilename);
-        ImGui::PopStyleColor();
-    }
-
-    ImGui::SetNextItemWidth(50);
     if (ImGui::InputScalar("'Flats' Grouping depth", ImGuiDataType_S8, &m_flatGroupNameDepth, nullptr, nullptr, nullptr,
                            ImGuiInputTextFlags_EnterReturnsTrue))
     {
         RefreshFlats();
         FilterFlats();
     }
-    ImGui::SetNextItemWidth(100);
+
     ImGui::InputFloat("ComboBox dropdown height", &g_comboDropdownHeight, 0, 0);
 
     if (ImGui::Button("Refresh all"))
