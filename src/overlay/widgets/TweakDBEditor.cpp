@@ -38,8 +38,8 @@ struct CDPRTweakDBMetadata
     {
         Reset();
 
-        auto filepath = GetAbsolutePath(c_defaultFilename, CET::Get().GetPaths().CETRoot() / "resources", false, true);
-        if (!std::filesystem::exists(filepath))
+        auto filepath = GetAbsolutePath(c_defaultFilename, CET::Get().GetPaths().CETRoot() / "tweakdb", false, true);
+        if (filepath.empty())
             return false;
 
         try
@@ -243,7 +243,7 @@ struct ResourcesList
             return false;
         }
 
-        auto filepath = GetAbsolutePath(c_defaultFilename, CET::Get().GetPaths().CETRoot() / "resources", false, true);
+        auto filepath = GetAbsolutePath(c_defaultFilename, CET::Get().GetPaths().CETRoot() / "tweakdb", false, true);
         if (!exists(filepath))
             return false;
 
