@@ -15,14 +15,14 @@ if is_mode("debug") then
     set_symbols("debug")
     set_optimize("none")
     set_runtimes("MDd")
-    set_warnings("allextra")
+    set_warnings("all")
     set_policy("build.optimization.lto", false)
 elseif is_mode("releasedbg") then
     add_defines("CET_DEBUG")
     set_symbols("debug")
     set_optimize("fastest")
     set_runtimes("MD")
-    set_warnings("allextra")
+    set_warnings("all")
     set_policy("build.optimization.lto", true)
 elseif is_mode("release") then
     add_defines("NDEBUG")

@@ -273,15 +273,14 @@ void LuaSandbox::InitializeDBForSandbox(Sandbox& aSandbox, sol::state_view aStat
             sqlite3Copy[cKV.first] = DeepCopySolObject(cKV.second, aStateView);
     }
     const auto dbOpen = aStateView["sqlite3"]["open"].get<sol::function>();
-    const auto dbPath = UTF16ToUTF8(GetLuaPath(L"db.sqlite3", cSBRootPath, true).native());
-    sqlite3Copy["reopen"] = [this, sbId, dbPath, dbOpen]{
+    sqlite3Copy["reopen"] = [this, sbId, dbOpen]{
         auto& sandbox = m_sandboxes[sbId];
 
         const auto previousCurrentPath = std::filesystem::current_path();
         current_path(sandbox.GetRootPath());
 
         CloseDBForSandbox(sandbox);
-        sandbox.GetEnvironment()["db"] = dbOpen(dbPath);
+        sandbox.GetEnvironment()["db"] = dbOpen(UTF16ToUTF8(GetLuaPath(L"db.sqlite3", sandbox.GetRootPath(), true).native()));
 
         current_path(previousCurrentPath);
     };
@@ -291,7 +290,7 @@ void LuaSandbox::InitializeDBForSandbox(Sandbox& aSandbox, sol::state_view aStat
     const auto previousCurrentPath = std::filesystem::current_path();
     current_path(cSBRootPath);
 
-    sbEnv["db"] = dbOpen(dbPath);
+    sbEnv["db"] = dbOpen(UTF16ToUTF8(GetLuaPath(L"db.sqlite3", cSBRootPath, true).native()));
 
     current_path(previousCurrentPath);
 }
