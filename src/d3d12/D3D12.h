@@ -70,7 +70,7 @@ private:
 
     TiltedPhoques::Vector<FrameContext> m_frameContexts{ };
     TiltedPhoques::Vector<ID3D12Resource*> m_downlevelBackbuffers{ };
-    IDXGISwapChain3* m_pdxgiSwapChain{ nullptr };
+    Microsoft::WRL::ComPtr<IDXGISwapChain3> m_pdxgiSwapChain{ nullptr };
     Microsoft::WRL::ComPtr<ID3D12Device> m_pd3d12Device{ nullptr };
     Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_pd3dRtvDescHeap{ nullptr };
     Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_pd3dSrvDescHeap{ nullptr };

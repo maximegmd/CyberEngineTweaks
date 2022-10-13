@@ -69,8 +69,8 @@ std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
     desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
     desc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-    ID3D12Resource* pTexture = nullptr;
-    d3d_device->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&pTexture));
+    Microsoft::WRL::ComPtr<ID3D12Resource> pTexture = nullptr;
+    d3d_device->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(pTexture.GetAddressOf()));
 
     // Create a temporary upload resource to move the data in
     UINT uploadPitch = (image_width * 4 + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u) & ~(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u);
@@ -91,9 +91,9 @@ std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
     props.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
     props.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
 
-    ID3D12Resource* uploadBuffer = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> uploadBuffer = nullptr;
     HRESULT hr = d3d_device->CreateCommittedResource(
-        &props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadBuffer));
+        &props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(uploadBuffer.GetAddressOf()));
     IM_ASSERT(SUCCEEDED(hr));
 
     // Write pixels into the upload resource
@@ -107,7 +107,7 @@ std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
 
     // Copy the upload resource content into the real resource
     D3D12_TEXTURE_COPY_LOCATION srcLocation = {};
-    srcLocation.pResource = uploadBuffer;
+    srcLocation.pResource = uploadBuffer.Get();
     srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
     srcLocation.PlacedFootprint.Footprint.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     srcLocation.PlacedFootprint.Footprint.Width = image_width;
@@ -116,21 +116,21 @@ std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
     srcLocation.PlacedFootprint.Footprint.RowPitch = uploadPitch;
 
     D3D12_TEXTURE_COPY_LOCATION dstLocation = {};
-    dstLocation.pResource = pTexture;
+    dstLocation.pResource = pTexture.Get();
     dstLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
     dstLocation.SubresourceIndex = 0;
 
     D3D12_RESOURCE_BARRIER barrier = {};
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    barrier.Transition.pResource = pTexture;
+    barrier.Transition.pResource = pTexture.Get();
     barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
     barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 
     // Create a temporary command queue to do the copy with
-    ID3D12Fence* fence = nullptr;
-    hr = d3d_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
+    Microsoft::WRL::ComPtr<ID3D12Fence> fence = nullptr;
+    hr = d3d_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.GetAddressOf()));
     IM_ASSERT(SUCCEEDED(hr));
 
     HANDLE event = CreateEvent(0, 0, 0, 0);
@@ -141,16 +141,16 @@ std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
     queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
     queueDesc.NodeMask = 1;
 
-    ID3D12CommandQueue* cmdQueue = nullptr;
-    hr = d3d_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&cmdQueue));
+    Microsoft::WRL::ComPtr<ID3D12CommandQueue> cmdQueue = nullptr;
+    hr = d3d_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(cmdQueue.GetAddressOf()));
     IM_ASSERT(SUCCEEDED(hr));
 
-    ID3D12CommandAllocator* cmdAlloc = nullptr;
-    hr = d3d_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&cmdAlloc));
+    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> cmdAlloc = nullptr;
+    hr = d3d_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(cmdAlloc.GetAddressOf()));
     IM_ASSERT(SUCCEEDED(hr));
 
-    ID3D12GraphicsCommandList* cmdList = nullptr;
-    hr = d3d_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, cmdAlloc, nullptr, IID_PPV_ARGS(&cmdList));
+    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList = nullptr;
+    hr = d3d_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, cmdAlloc.Get(), nullptr, IID_PPV_ARGS(cmdList.GetAddressOf()));
     IM_ASSERT(SUCCEEDED(hr));
 
     cmdList->CopyTextureRegion(&dstLocation, 0, 0, 0, &srcLocation, nullptr);
@@ -160,8 +160,9 @@ std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
     IM_ASSERT(SUCCEEDED(hr));
 
     // Execute the copy
-    cmdQueue->ExecuteCommandLists(1, (ID3D12CommandList* const*)&cmdList);
-    hr = cmdQueue->Signal(fence, 1);
+    ID3D12CommandList* commandLists[] = { cmdList.Get() };
+    cmdQueue->ExecuteCommandLists(1, commandLists);
+    hr = cmdQueue->Signal(fence.Get(), 1);
     IM_ASSERT(SUCCEEDED(hr));
 
     // Wait for everything to complete
@@ -184,7 +185,7 @@ std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
     srvDesc.Texture2D.MipLevels = desc.MipLevels;
     srvDesc.Texture2D.MostDetailedMip = 0;
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    d3d_device->CreateShaderResourceView(pTexture, &srvDesc, srvCpuHandle);
+    d3d_device->CreateShaderResourceView(pTexture.Get(), &srvDesc, srvCpuHandle);
 
     // Return results
     auto texture = std::make_shared<Texture>();

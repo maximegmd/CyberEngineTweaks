@@ -83,7 +83,7 @@ kiero::Status::Enum kiero::init()
     }
 
     Microsoft::WRL::ComPtr<IDXGIFactory> factory;
-    if (reinterpret_cast<long(*)(const IID&, void**)>(CreateDXGIFactory)(IID_PPV_ARGS(&factory)) < 0)
+    if (reinterpret_cast<long(*)(const IID&, void**)>(CreateDXGIFactory)(IID_PPV_ARGS(factory.GetAddressOf())) < 0)
     {
         ::DestroyWindow(window);
         ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
@@ -121,7 +121,7 @@ kiero::Status::Enum kiero::init()
     queueDesc.NodeMask = 0;
 
     Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue;
-    if (device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&commandQueue)) < 0)
+    if (device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(commandQueue.GetAddressOf())) < 0)
     {
         ::DestroyWindow(window);
         ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
@@ -200,7 +200,7 @@ kiero::Status::Enum kiero::init()
     }
     else
     {
-        if (commandQueue->QueryInterface(IID_PPV_ARGS(&commandQueueDownlevel)) < 0)
+        if (commandQueue->QueryInterface(IID_PPV_ARGS(commandQueueDownlevel.GetAddressOf())) < 0)
         {
             ::DestroyWindow(window);
             ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
