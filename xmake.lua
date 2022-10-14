@@ -91,10 +91,10 @@ target("cyber_engine_tweaks")
 
         os.cp("LICENSE", "package/bin/x64/")
         os.cp("ThirdParty_LICENSES", "package/bin/x64/plugins/cyber_engine_tweaks/ThirdParty_LICENSES")
-        
+
         os.cp(target:targetfile(), "package/bin/x64/plugins/")
     end)
-    on_install(function (target)
+    on_install(function(target)
         cprint("${green bright}Installing Cyber Engine Tweaks ..")
         assert(os.isdir("$(installpath)"), format("The path in your configuration doesn't exist or isn't a directory.\n\tUse the follow command to set install path:\n\txmake f --installpath=%s", [["C:\Program Files (x86)\Steam\steamapps\common\Cyberpunk 2077\bin\x64\plugins"]]))
         os.cp(target:targetfile(), "$(installpath)")
@@ -107,21 +107,9 @@ option("installpath")
     set_description("Set the path to install cyber_engine_tweaks.asi to.", "e.g.", format("\t-xmake f --installpath=%s", [["C:\Program Files (x86)\Steam\steamapps\common\Cyberpunk 2077\bin\x64\plugins"]]))
 
 task("dephash")
-    on_run(function ()
-        import("core.project.project")
-        import("private.action.require.impl.package")
-  
-        local requires, requires_extra = project.requires_str()
-  
-        local key = {}
-        for _, instance in irpairs(package.load_packages(requires, {requires_extra = requires_extra})) do
-            table.insert(key, instance:name() .. "-" .. instance:version_str() .. "-" .. instance:buildhash())
-        end
-  
-        table.sort(key)
-  
-        key = table.concat(key, ",")
-        print(hash.uuid4(key):gsub('-', ''):lower())
+    on_run(function()
+        import("utils.ci")
+        ci.packageskey()
     end)
   
     set_menu {
