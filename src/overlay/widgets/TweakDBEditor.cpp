@@ -1651,39 +1651,64 @@ void TweakDBEditor::DrawFlatsTab()
 
 void TweakDBEditor::DrawAdvancedTab()
 {
+    const auto cConversionsDisabled = m_conversionsAvailable.load();
+    if (!cConversionsDisabled)
+        ImGui::BeginDisabled();
+
     if (ImGui::Button("Convert 'tweakdb.str' to 'tweakdb.str.lz'"))
     {
-        const auto tdbstrFilePath = GetAbsolutePath(TweakDBMetadata::c_defaultFilename, CET::Get().GetPaths().CETRoot() / "tweakdb", false, true);
-        if (!tdbstrFilePath.empty())
-        {
-            std::ifstream tdbstrDecodedFile(tdbstrFilePath, std::ios::binary);
-            const std::vector<uint8_t> tdbstrDecodedBytes(std::istreambuf_iterator{tdbstrDecodedFile}, {});
-            tdbstrDecodedFile.close();
+        m_conversionsAvailable = false;
 
-            const auto tdbstrEncodedBytes = EncodeToLzma(tdbstrDecodedBytes);
-            std::ofstream tdbstrEncodedFile(tdbstrFilePath.native() + L".lz", std::ios::binary);
-            tdbstrEncodedFile.write(reinterpret_cast<const char*>(tdbstrEncodedBytes.data()), tdbstrEncodedBytes.size());
-            tdbstrEncodedFile.close();
-        }
+        std::thread conversionThread([this] {
+            const auto tdbstrFilePath = GetAbsolutePath(TweakDBMetadata::c_defaultFilename, CET::Get().GetPaths().CETRoot() / "tweakdb", false, true);
+
+            if (!tdbstrFilePath.empty())
+            {
+                std::ifstream tdbstrDecodedFile(tdbstrFilePath, std::ios::binary);
+                const std::vector<uint8_t> tdbstrDecodedBytes(std::istreambuf_iterator{tdbstrDecodedFile}, {});
+                tdbstrDecodedFile.close();
+
+                const auto tdbstrEncodedBytes = EncodeToLzma(tdbstrDecodedBytes);
+                std::ofstream tdbstrEncodedFile(tdbstrFilePath.native() + L".lz", std::ios::binary);
+                tdbstrEncodedFile.write(reinterpret_cast<const char*>(tdbstrEncodedBytes.data()), tdbstrEncodedBytes.size());
+                tdbstrEncodedFile.close();
+            }
+
+            m_conversionsAvailable = true;
+        });
+
+        conversionThread.detach();
     }
 
     if (ImGui::Button("Convert 'tweakdb.str.lz' to 'tweakdb.str'"))
     {
-        const auto tdbstrFilePath = GetAbsolutePath(TweakDBMetadata::c_defaultFilename, CET::Get().GetPaths().CETRoot() / "tweakdb", true, true);
+        m_conversionsAvailable = false;
 
-        const auto tdbstrEncodedFilePath = GetAbsolutePath(TweakDBMetadata::c_defaultFilename + ".lz", CET::Get().GetPaths().CETRoot() / "tweakdb", false, true);
-        if (!tdbstrEncodedFilePath.empty())
-        {
-            std::ifstream tdbstrEncodedFile(tdbstrEncodedFilePath, std::ios::binary);
-            const std::vector<uint8_t> tdbstrEncodedBytes(std::istreambuf_iterator{tdbstrEncodedFile}, {});
-            tdbstrEncodedFile.close();
+        std::thread conversionThread([this] {
+            const auto tdbstrFilePath = GetAbsolutePath(TweakDBMetadata::c_defaultFilename, CET::Get().GetPaths().CETRoot() / "tweakdb", true, true);
+            const auto tdbstrEncodedFilePath = GetAbsolutePath(TweakDBMetadata::c_defaultFilename + ".lz", CET::Get().GetPaths().CETRoot() / "tweakdb", false, true);
 
-            const auto tdbstrDecodedBytes = DecodeFromLzma(tdbstrEncodedBytes);
-            std::ofstream tdbstrDecodedFile(tdbstrFilePath, std::ios::binary);
-            tdbstrDecodedFile.write(reinterpret_cast<const char*>(tdbstrDecodedBytes.data()), tdbstrDecodedBytes.size());
-            tdbstrDecodedFile.close();
-        }
+            if (!tdbstrEncodedFilePath.empty())
+            {
+                std::ifstream tdbstrEncodedFile(tdbstrEncodedFilePath, std::ios::binary);
+                const std::vector<uint8_t> tdbstrEncodedBytes(std::istreambuf_iterator{tdbstrEncodedFile}, {});
+                tdbstrEncodedFile.close();
+
+                const auto tdbstrDecodedBytes = DecodeFromLzma(tdbstrEncodedBytes);
+                std::ofstream tdbstrDecodedFile(tdbstrFilePath, std::ios::binary);
+                tdbstrDecodedFile.write(reinterpret_cast<const char*>(tdbstrDecodedBytes.data()), tdbstrDecodedBytes.size());
+                tdbstrDecodedFile.close();
+            }
+
+            m_conversionsAvailable = true;
+        });
+
+
+        conversionThread.detach();
     }
+
+    if (!cConversionsDisabled)
+        ImGui::EndDisabled();
 
     if (ImGui::InputScalar("'Flats' Grouping depth", ImGuiDataType_S8, &m_flatGroupNameDepth, nullptr, nullptr, nullptr,
                            ImGuiInputTextFlags_EnterReturnsTrue))

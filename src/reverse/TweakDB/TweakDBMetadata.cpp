@@ -15,8 +15,6 @@ bool TweakDBMetadata::Initialize()
 {
     Reset();
 
-    const auto tdbstrFilePath = GetAbsolutePath(c_defaultFilename, CET::Get().GetPaths().CETRoot() / "tweakdb", true, true);
-
     const auto tdbstrEncodedFilePath = GetAbsolutePath(c_defaultFilename + ".lz", CET::Get().GetPaths().CETRoot() / "tweakdb", true, true);
     if (tdbstrEncodedFilePath.empty())
         return false;
