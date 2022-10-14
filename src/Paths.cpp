@@ -40,6 +40,11 @@ const std::filesystem::path& Paths::Fonts() const
     return m_fonts;
 }
 
+const std::filesystem::path& Paths::TweakDB() const
+{
+    return m_tweakdb;
+}
+
 Paths::Paths()
 {
     TCHAR exePathBuf[MAX_PATH] = { 0 };
@@ -74,4 +79,6 @@ Paths::Paths()
     m_r6CacheModdedRoot /= L"modded";
 
     m_fonts = m_cetRoot / L"fonts";
+
+    m_tweakdb = m_cetRoot / L"tweakdb";
 }

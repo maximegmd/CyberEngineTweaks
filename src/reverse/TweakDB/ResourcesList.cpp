@@ -38,7 +38,7 @@ bool ResourcesList::Initialize()
         return false;
     }
 
-    auto filepath = GetAbsolutePath(c_defaultFilename, CET::Get().GetPaths().CETRoot() / "tweakdb", false, true);
+    auto filepath = GetAbsolutePath(c_defaultFilename, CET::Get().GetPaths().TweakDB(), false, true);
     if (!exists(filepath))
         return false;
 

@@ -15,15 +15,10 @@ bool TweakDBMetadata::Initialize()
 {
     Reset();
 
-    const auto tdbstrEncodedFilePath = GetAbsolutePath(c_defaultFilename + ".lz", CET::Get().GetPaths().CETRoot() / "tweakdb", true, true);
-    if (tdbstrEncodedFilePath.empty())
+    const auto tdbstrEncodedFilePath = GetAbsolutePath(c_defaultFilename + ".lz", CET::Get().GetPaths().TweakDB(), true, true);
+    auto tdbstrDecodedBytes = DecodeFromLzma(tdbstrEncodedFilePath);
+    if (tdbstrDecodedBytes.empty())
         return false;
-
-    std::ifstream tdbstrEncodedFile(tdbstrEncodedFilePath, std::ios::binary);
-    const std::vector<uint8_t> tdbstrEncodedBytes(std::istreambuf_iterator{tdbstrEncodedFile}, {});
-    tdbstrEncodedFile.close();
-
-    auto tdbstrDecodedBytes = DecodeFromLzma(tdbstrEncodedBytes);
 
     struct TDBStrDecodedBuffer: std::streambuf {
         TDBStrDecodedBuffer(char* base, std::ptrdiff_t n) {
@@ -51,7 +46,7 @@ bool TweakDBMetadata::Initialize()
     // check if we have a tweakdb that was changed by REDmod
     if (HasREDModTweakDB())
     {
-        auto moddedTweakDbFilePath = GetAbsolutePath(c_defaultFilename, CET::Get().GetPaths().R6CacheModdedRoot(), false, true);
+        const auto moddedTweakDbFilePath = GetAbsolutePath(c_defaultFilename, CET::Get().GetPaths().R6CacheModdedRoot(), false, true);
         if (moddedTweakDbFilePath.empty())
             return true;
 

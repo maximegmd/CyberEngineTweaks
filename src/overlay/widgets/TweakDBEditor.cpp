@@ -104,7 +104,7 @@ bool SortTweakDBIDString(const std::string& acLeft, const std::string& acRight)
 
 bool StringContains(const std::string_view& acString, const std::string_view& acSearch, bool aRegex = false)
 {
-    if (acSearch.size() == 0)
+    if (acSearch.empty())
         return false;
 
     if (aRegex)
@@ -1660,18 +1660,17 @@ void TweakDBEditor::DrawAdvancedTab()
         m_conversionsAvailable = false;
 
         std::thread conversionThread([this] {
-            const auto tdbstrFilePath = GetAbsolutePath(TweakDBMetadata::c_defaultFilename, CET::Get().GetPaths().CETRoot() / "tweakdb", false, true);
+            const auto tdbstrFilePath = GetAbsolutePath(TweakDBMetadata::c_defaultFilename, CET::Get().GetPaths().TweakDB(), false, true);
 
             if (!tdbstrFilePath.empty())
             {
-                std::ifstream tdbstrDecodedFile(tdbstrFilePath, std::ios::binary);
-                const std::vector<uint8_t> tdbstrDecodedBytes(std::istreambuf_iterator{tdbstrDecodedFile}, {});
-                tdbstrDecodedFile.close();
-
-                const auto tdbstrEncodedBytes = EncodeToLzma(tdbstrDecodedBytes);
-                std::ofstream tdbstrEncodedFile(tdbstrFilePath.native() + L".lz", std::ios::binary);
-                tdbstrEncodedFile.write(reinterpret_cast<const char*>(tdbstrEncodedBytes.data()), tdbstrEncodedBytes.size());
-                tdbstrEncodedFile.close();
+                const auto tdbstrEncodedBytes = EncodeToLzma(tdbstrFilePath);
+                if (!tdbstrEncodedBytes.empty())
+                {
+                    std::ofstream tdbstrEncodedFile(tdbstrFilePath.native() + L".lz", std::ios::binary);
+                    tdbstrEncodedFile.write(reinterpret_cast<const char*>(tdbstrEncodedBytes.data()), tdbstrEncodedBytes.size());
+                    tdbstrEncodedFile.close();
+                }
             }
 
             m_conversionsAvailable = true;
@@ -1685,19 +1684,18 @@ void TweakDBEditor::DrawAdvancedTab()
         m_conversionsAvailable = false;
 
         std::thread conversionThread([this] {
-            const auto tdbstrFilePath = GetAbsolutePath(TweakDBMetadata::c_defaultFilename, CET::Get().GetPaths().CETRoot() / "tweakdb", true, true);
-            const auto tdbstrEncodedFilePath = GetAbsolutePath(TweakDBMetadata::c_defaultFilename + ".lz", CET::Get().GetPaths().CETRoot() / "tweakdb", false, true);
+            const auto tdbstrEncodedFilePath = GetAbsolutePath(TweakDBMetadata::c_defaultFilename + ".lz", CET::Get().GetPaths().TweakDB(), false, true);
 
             if (!tdbstrEncodedFilePath.empty())
             {
-                std::ifstream tdbstrEncodedFile(tdbstrEncodedFilePath, std::ios::binary);
-                const std::vector<uint8_t> tdbstrEncodedBytes(std::istreambuf_iterator{tdbstrEncodedFile}, {});
-                tdbstrEncodedFile.close();
-
-                const auto tdbstrDecodedBytes = DecodeFromLzma(tdbstrEncodedBytes);
-                std::ofstream tdbstrDecodedFile(tdbstrFilePath, std::ios::binary);
-                tdbstrDecodedFile.write(reinterpret_cast<const char*>(tdbstrDecodedBytes.data()), tdbstrDecodedBytes.size());
-                tdbstrDecodedFile.close();
+                const auto tdbstrDecodedBytes = DecodeFromLzma(tdbstrEncodedFilePath);
+                if (!tdbstrDecodedBytes.empty())
+                {
+                    const auto tdbstrFilePath = GetAbsolutePath(TweakDBMetadata::c_defaultFilename, CET::Get().GetPaths().TweakDB(), true, true);
+                    std::ofstream tdbstrDecodedFile(tdbstrFilePath, std::ios::binary);
+                    tdbstrDecodedFile.write(reinterpret_cast<const char*>(tdbstrDecodedBytes.data()), tdbstrDecodedBytes.size());
+                    tdbstrDecodedFile.close();
+                }
             }
 
             m_conversionsAvailable = true;

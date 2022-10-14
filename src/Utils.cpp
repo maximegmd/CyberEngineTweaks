@@ -311,6 +311,35 @@ std::filesystem::path GetLuaPath(std::filesystem::path aFilePath, const std::fil
     return relative(aFilePath, std::filesystem::current_path());
 }
 
+std::vector<uint8_t> ReadWholeBinaryFile(const std::filesystem::path& acpPath)
+{
+    if (acpPath.empty() || !exists(acpPath))
+        return {};
+
+    std::ifstream file(acpPath, std::ios::binary);
+    std::vector<uint8_t> bytes(std::istreambuf_iterator{file}, {});
+    file.close();
+
+    return bytes;
+}
+
+std::string ReadWholeTextFile(const std::filesystem::path& acpPath)
+{
+    if (acpPath.empty() || !exists(acpPath))
+        return {};
+
+    std::ifstream file(acpPath, std::ios::binary);
+    std::string lines(std::istreambuf_iterator{file}, {});
+    file.close();
+
+    return lines;
+}
+
+std::vector<uint8_t> EncodeToLzma(const std::filesystem::path& acpPath)
+{
+    return EncodeToLzma(ReadWholeBinaryFile(acpPath));
+}
+
 std::vector<uint8_t> EncodeToLzma(const std::vector<uint8_t>& acpIn)
 {
     size_t propsSize = LZMA_PROPS_SIZE;
@@ -333,6 +362,11 @@ std::vector<uint8_t> EncodeToLzma(const std::vector<uint8_t>& acpIn)
     outBuf.resize(propsSize + destLen + sizeof(uint64_t));
 
     return outBuf;
+}
+
+std::vector<uint8_t> DecodeFromLzma(const std::filesystem::path& acpPath)
+{
+    return DecodeFromLzma(ReadWholeBinaryFile(acpPath));
 }
 
 std::vector<uint8_t> DecodeFromLzma(const std::vector<uint8_t>& acpIn)

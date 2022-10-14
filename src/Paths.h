@@ -12,6 +12,7 @@ struct Paths
     const std::filesystem::path& ModsRoot() const;
     const std::filesystem::path& R6CacheModdedRoot() const;
     const std::filesystem::path& Fonts() const;
+    const std::filesystem::path& TweakDB() const;
 
 private:
 
@@ -27,4 +28,5 @@ private:
     std::filesystem::path m_modsRoot{};
     std::filesystem::path m_r6CacheModdedRoot{};
     std::filesystem::path m_fonts{};
+    std::filesystem::path m_tweakdb{};
 };
