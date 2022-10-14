@@ -50,7 +50,7 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
     if (m_initialized)
     {
         Microsoft::WRL::ComPtr<IDXGISwapChain3> pSwapChain3{ nullptr };
-        if (FAILED(apSwapChain->QueryInterface(IID_PPV_ARGS(pSwapChain3.GetAddressOf()))))
+        if (FAILED(apSwapChain->QueryInterface(IID_PPV_ARGS(&pSwapChain3))))
         {
             Log::Error("D3D12::Initialize() - unable to query pSwapChain interface for IDXGISwapChain3! (pSwapChain = {:X})", reinterpret_cast<void*>(apSwapChain));
             return false;
@@ -71,13 +71,13 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
         return true;
     }
 
-    if (FAILED(apSwapChain->QueryInterface(IID_PPV_ARGS(m_pdxgiSwapChain.GetAddressOf()))))
+    if (FAILED(apSwapChain->QueryInterface(IID_PPV_ARGS(&m_pdxgiSwapChain))))
     {
         Log::Error("D3D12::Initialize() - unable to query pSwapChain interface for IDXGISwapChain3! (pSwapChain = {0})", reinterpret_cast<void*>(apSwapChain));
         return ResetState();
     }
 
-    if (FAILED(m_pdxgiSwapChain->GetDevice(IID_PPV_ARGS(m_pd3d12Device.GetAddressOf()))))
+    if (FAILED(m_pdxgiSwapChain->GetDevice(IID_PPV_ARGS(&m_pd3d12Device))))
     {
         Log::Error("D3D12::Initialize() - failed to get device!");
         return ResetState();
@@ -94,14 +94,14 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
     const auto buffersCounts = sdesc.BufferCount;
     m_frameContexts.resize(buffersCounts);
     for (UINT i = 0; i < buffersCounts; i++)
-        m_pdxgiSwapChain->GetBuffer(i, IID_PPV_ARGS(m_frameContexts[i].BackBuffer.GetAddressOf()));
+        m_pdxgiSwapChain->GetBuffer(i, IID_PPV_ARGS(&m_frameContexts[i].BackBuffer));
 
     D3D12_DESCRIPTOR_HEAP_DESC rtvdesc = {};
     rtvdesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
     rtvdesc.NumDescriptors = buffersCounts;
     rtvdesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
     rtvdesc.NodeMask = 1;
-    if (FAILED(m_pd3d12Device->CreateDescriptorHeap(&rtvdesc, IID_PPV_ARGS(m_pd3dRtvDescHeap.GetAddressOf()))))
+    if (FAILED(m_pd3d12Device->CreateDescriptorHeap(&rtvdesc, IID_PPV_ARGS(&m_pd3dRtvDescHeap))))
     {
         Log::Error("D3D12::Initialize() - failed to create RTV descriptor heap!");
         return ResetState();
@@ -119,20 +119,20 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
     srvdesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     srvdesc.NumDescriptors = 200;
     srvdesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-    if (FAILED(m_pd3d12Device->CreateDescriptorHeap(&srvdesc, IID_PPV_ARGS(m_pd3dSrvDescHeap.GetAddressOf()))))
+    if (FAILED(m_pd3d12Device->CreateDescriptorHeap(&srvdesc, IID_PPV_ARGS(&m_pd3dSrvDescHeap))))
     {
         Log::Error("D3D12::Initialize() - failed to create SRV descriptor heap!");
         return ResetState();
     }
 
     for (auto& context : m_frameContexts)
-        if (FAILED(m_pd3d12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(context.CommandAllocator.GetAddressOf()))))
+        if (FAILED(m_pd3d12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&context.CommandAllocator))))
         {
             Log::Error("D3D12::Initialize() - failed to create command allocator!");
             return ResetState();
         }
 
-    if (FAILED(m_pd3d12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_frameContexts[0].CommandAllocator.Get(), nullptr, IID_PPV_ARGS(m_pd3dCommandList.GetAddressOf()))) ||
+    if (FAILED(m_pd3d12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_frameContexts[0].CommandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_pd3dCommandList))) ||
         FAILED(m_pd3dCommandList->Close()))
     {
         Log::Error("D3D12::Initialize() - failed to create command list!");
@@ -191,7 +191,7 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
     if (hWnd != ahWindow)
         Log::Warn("D3D12::InitializeDownlevel() - current output window does not match hooked window! Currently hooked to {0} while current output window is {1}.", reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(ahWindow));
 
-    if (FAILED(apSourceTex2D->GetDevice(IID_PPV_ARGS(m_pd3d12Device.GetAddressOf()))))
+    if (FAILED(apSourceTex2D->GetDevice(IID_PPV_ARGS(&m_pd3d12Device))))
     {
         Log::Error("D3D12::InitializeDownlevel() - failed to get device!");
         return ResetState();
@@ -215,7 +215,7 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
     rtvdesc.NumDescriptors = static_cast<UINT>(buffersCounts);
     rtvdesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
     rtvdesc.NodeMask = 1;
-    if (FAILED(m_pd3d12Device->CreateDescriptorHeap(&rtvdesc, IID_PPV_ARGS(m_pd3dRtvDescHeap.GetAddressOf()))))
+    if (FAILED(m_pd3d12Device->CreateDescriptorHeap(&rtvdesc, IID_PPV_ARGS(&m_pd3dRtvDescHeap))))
     {
         Log::Error("D3D12::InitializeDownlevel() - failed to create RTV descriptor heap!");
         return ResetState();
@@ -233,7 +233,7 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
     srvdesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     srvdesc.NumDescriptors = 2;
     srvdesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-    if (FAILED(m_pd3d12Device->CreateDescriptorHeap(&srvdesc, IID_PPV_ARGS(m_pd3dSrvDescHeap.GetAddressOf()))))
+    if (FAILED(m_pd3d12Device->CreateDescriptorHeap(&srvdesc, IID_PPV_ARGS(&m_pd3dSrvDescHeap))))
     {
         Log::Error("D3D12::InitializeDownlevel() - failed to create SRV descriptor heap!");
         return ResetState();
@@ -241,14 +241,14 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
 
     for (auto& context : m_frameContexts)
     {
-        if (FAILED(m_pd3d12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(context.CommandAllocator.GetAddressOf()))))
+        if (FAILED(m_pd3d12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&context.CommandAllocator))))
         {
             Log::Error("D3D12::InitializeDownlevel() - failed to create command allocator!");
             return ResetState();
         }
     }
 
-    if (FAILED(m_pd3d12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_frameContexts[0].CommandAllocator.Get(), nullptr, IID_PPV_ARGS(m_pd3dCommandList.GetAddressOf()))))
+    if (FAILED(m_pd3d12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_frameContexts[0].CommandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_pd3dCommandList))))
     {
         Log::Error("D3D12::InitializeDownlevel() - failed to create command list!");
         return ResetState();

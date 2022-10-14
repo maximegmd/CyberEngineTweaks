@@ -83,7 +83,7 @@ kiero::Status::Enum kiero::init()
     }
 
     Microsoft::WRL::ComPtr<IDXGIFactory> factory;
-    if (reinterpret_cast<long(*)(const IID&, void**)>(CreateDXGIFactory)(IID_PPV_ARGS(factory.GetAddressOf())) < 0)
+    if (reinterpret_cast<long(*)(const IID&, void**)>(CreateDXGIFactory)(IID_PPV_ARGS(&factory)) < 0)
     {
         ::DestroyWindow(window);
         ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
@@ -107,7 +107,7 @@ kiero::Status::Enum kiero::init()
     }
 
     Microsoft::WRL::ComPtr<ID3D12Device> device;
-    if (reinterpret_cast<long(*)(IUnknown*, D3D_FEATURE_LEVEL, const IID&, void**)>(D3D12CreateDevice)(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(device.GetAddressOf())) < 0)
+    if (reinterpret_cast<long(*)(IUnknown*, D3D_FEATURE_LEVEL, const IID&, void**)>(D3D12CreateDevice)(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&device)) < 0)
     {
         ::DestroyWindow(window);
         ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
@@ -121,7 +121,7 @@ kiero::Status::Enum kiero::init()
     queueDesc.NodeMask = 0;
 
     Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue;
-    if (device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(commandQueue.GetAddressOf())) < 0)
+    if (device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&commandQueue)) < 0)
     {
         ::DestroyWindow(window);
         ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
@@ -129,7 +129,7 @@ kiero::Status::Enum kiero::init()
     }
 
     Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator;
-    if (device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(commandAllocator.GetAddressOf())) < 0)
+    if (device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocator)) < 0)
     {
         ::DestroyWindow(window);
         ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
@@ -137,7 +137,7 @@ kiero::Status::Enum kiero::init()
     }
 
     Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList;
-    if (device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator.Get(), nullptr, IID_PPV_ARGS(commandList.GetAddressOf())) < 0)
+    if (device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator.Get(), nullptr, IID_PPV_ARGS(&commandList)) < 0)
     {
         ::DestroyWindow(window);
         ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
@@ -145,7 +145,7 @@ kiero::Status::Enum kiero::init()
     }
 
     Microsoft::WRL::ComPtr<ID3D12DeviceDownlevel> downlevelDevice;
-    g_isDownLevelDevice = device->QueryInterface(IID_PPV_ARGS(downlevelDevice.GetAddressOf())) >= 0;
+    g_isDownLevelDevice = device->QueryInterface(IID_PPV_ARGS(&downlevelDevice)) >= 0;
     Microsoft::WRL::ComPtr<IDXGISwapChain3> swapChain;
     Microsoft::WRL::ComPtr<ID3D12CommandQueueDownlevel> commandQueueDownlevel;
 
@@ -178,14 +178,14 @@ kiero::Status::Enum kiero::init()
         swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
         Microsoft::WRL::ComPtr<IDXGISwapChain> swapChain1;
-        if (factory->CreateSwapChain(commandQueue.Get(), &swapChainDesc, swapChain1.GetAddressOf()) < 0)
+        if (factory->CreateSwapChain(commandQueue.Get(), &swapChainDesc, &swapChain1) < 0)
         {
             ::DestroyWindow(window);
             ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
             return Status::UnknownError;
         }
 
-        if (FAILED(swapChain1->QueryInterface(IID_PPV_ARGS(swapChain.GetAddressOf()))))
+        if (FAILED(swapChain1->QueryInterface(IID_PPV_ARGS(&swapChain))))
         {
             ::DestroyWindow(window);
             ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
@@ -200,7 +200,7 @@ kiero::Status::Enum kiero::init()
     }
     else
     {
-        if (commandQueue->QueryInterface(IID_PPV_ARGS(commandQueueDownlevel.GetAddressOf())) < 0)
+        if (commandQueue->QueryInterface(IID_PPV_ARGS(&commandQueueDownlevel)) < 0)
         {
             ::DestroyWindow(window);
             ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);

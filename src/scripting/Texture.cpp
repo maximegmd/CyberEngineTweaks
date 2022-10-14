@@ -70,7 +70,7 @@ std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
     desc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
     Microsoft::WRL::ComPtr<ID3D12Resource> pTexture = nullptr;
-    d3d_device->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(pTexture.GetAddressOf()));
+    d3d_device->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&pTexture));
 
     // Create a temporary upload resource to move the data in
     UINT uploadPitch = (image_width * 4 + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u) & ~(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u);
@@ -93,7 +93,7 @@ std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
 
     Microsoft::WRL::ComPtr<ID3D12Resource> uploadBuffer = nullptr;
     HRESULT hr = d3d_device->CreateCommittedResource(
-        &props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(uploadBuffer.GetAddressOf()));
+        &props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadBuffer));
     IM_ASSERT(SUCCEEDED(hr));
 
     // Write pixels into the upload resource
@@ -130,7 +130,7 @@ std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
 
     // Create a temporary command queue to do the copy with
     Microsoft::WRL::ComPtr<ID3D12Fence> fence = nullptr;
-    hr = d3d_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.GetAddressOf()));
+    hr = d3d_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
     IM_ASSERT(SUCCEEDED(hr));
 
     HANDLE event = CreateEvent(0, 0, 0, 0);
@@ -142,15 +142,15 @@ std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
     queueDesc.NodeMask = 1;
 
     Microsoft::WRL::ComPtr<ID3D12CommandQueue> cmdQueue = nullptr;
-    hr = d3d_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(cmdQueue.GetAddressOf()));
+    hr = d3d_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&cmdQueue));
     IM_ASSERT(SUCCEEDED(hr));
 
     Microsoft::WRL::ComPtr<ID3D12CommandAllocator> cmdAlloc = nullptr;
-    hr = d3d_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(cmdAlloc.GetAddressOf()));
+    hr = d3d_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&cmdAlloc));
     IM_ASSERT(SUCCEEDED(hr));
 
     Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList = nullptr;
-    hr = d3d_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, cmdAlloc.Get(), nullptr, IID_PPV_ARGS(cmdList.GetAddressOf()));
+    hr = d3d_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, cmdAlloc.Get(), nullptr, IID_PPV_ARGS(&cmdList));
     IM_ASSERT(SUCCEEDED(hr));
 
     cmdList->CopyTextureRegion(&dstLocation, 0, 0, 0, &srcLocation, nullptr);
