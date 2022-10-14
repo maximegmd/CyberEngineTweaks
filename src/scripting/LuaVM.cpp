@@ -1,8 +1,11 @@
 #include <stdafx.h>
 
 #include "LuaVM.h"
-#include "CET.h"
-#include "overlay/Overlay.h"
+
+#include <CET.h>
+
+#include <reverse/TweakDB/ResourcesList.h>
+#include <reverse/TweakDB/TweakDBMetadata.h>
 
 const VKBind* LuaVM::GetBind(const VKModBind& acModBind) const
 {
@@ -44,7 +47,7 @@ void LuaVM::Update(float aDeltaTime)
     {
         m_scripting.ReloadAllMods();
 
-        if (ResourcesList::Get()->IsInitialized() && CDPRTweakDBMetadata::Get()->IsInitialized())
+        if (ResourcesList::Get()->IsInitialized() && TweakDBMetadata::Get()->IsInitialized())
             m_scripting.TriggerOnTweak();
 
         m_scripting.TriggerOnInit();
@@ -204,7 +207,7 @@ void LuaVM::PostInitializeScripting()
 
 void LuaVM::PostInitializeTweakDB()
 {
-    if (!ResourcesList::Get()->Initialize() || !CDPRTweakDBMetadata::Get()->Initialize())
+    if (!ResourcesList::Get()->Initialize() || !TweakDBMetadata::Get()->Initialize())
         return;
 
     m_scripting.TriggerOnTweak();

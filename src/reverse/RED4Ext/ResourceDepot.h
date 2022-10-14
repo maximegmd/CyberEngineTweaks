@@ -1,10 +1,11 @@
 #pragma once
 
-#include <cstdint>
 #include <RED4ext/Common.hpp>
 #include <RED4ext/CString.hpp>
 #include <RED4ext/DynArray.hpp>
 #include <RED4ext/ResourcePath.hpp>
+
+#include <cstdint>
 
 namespace RED4ext::Addresses
 {

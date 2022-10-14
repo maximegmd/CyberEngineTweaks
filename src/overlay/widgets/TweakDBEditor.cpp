@@ -3,16 +3,17 @@
 #include "TweakDBEditor.h"
 
 #include <CET.h>
-
-#include <reverse/TweakDB/TweakDB.h>
 #include <Utils.h>
+
+#include <reverse/TweakDB/ResourcesList.h>
+#include <reverse/TweakDB/TweakDBMetadata.h>
+#include <reverse/TweakDB/TweakDB.h>
 
 #include <RED4ext/Scripting/Natives/Generated/Color.hpp>
 #include <RED4ext/Scripting/Natives/Generated/EulerAngles.hpp>
 #include <RED4ext/Scripting/Natives/Generated/Quaternion.hpp>
 #include <RED4ext/Scripting/Natives/Generated/Vector2.hpp>
 #include <RED4ext/Scripting/Natives/Generated/Vector3.hpp>
-
 
 bool TweakDBEditor::s_recordsFilterIsRegex = false;
 bool TweakDBEditor::s_flatsFilterIsRegex = false;
@@ -23,287 +24,6 @@ float g_comboDropdownHeight = 300.0f;
 constexpr float c_searchDelay = 0.25f;
 
 bool SortString(const std::string& acLeft, const std::string& acRight);
-
-CDPRTweakDBMetadata* CDPRTweakDBMetadata::Get()
-{
-    static CDPRTweakDBMetadata instance;
-    return &instance;
-}
-
-bool CDPRTweakDBMetadata::Initialize()
-{
-    Reset();
-
-    const auto tdbstrFilePath = GetAbsolutePath(c_defaultFilename, CET::Get().GetPaths().CETRoot() / "tweakdb", true, true);
-
-    const auto tdbstrEncodedFilePath = GetAbsolutePath(c_defaultFilename + ".lz", CET::Get().GetPaths().CETRoot() / "tweakdb", true, true);
-    if (tdbstrEncodedFilePath.empty())
-        return false;
-
-    std::ifstream tdbstrEncodedFile(tdbstrEncodedFilePath, std::ios::binary);
-    const std::vector<uint8_t> tdbstrEncodedBytes(std::istreambuf_iterator{tdbstrEncodedFile}, {});
-    tdbstrEncodedFile.close();
-
-    auto tdbstrDecodedBytes = DecodeFromLzma(tdbstrEncodedBytes);
-
-    struct TDBStrDecodedBuffer: std::streambuf {
-        TDBStrDecodedBuffer(char* base, std::ptrdiff_t n) {
-            this->setg(base, base, base + n);
-        }
-    } tdbstrDecodedBuffer(reinterpret_cast<char*>(tdbstrDecodedBytes.data()), tdbstrDecodedBytes.size());
-    std::istream tdbstrDecodedFile(&tdbstrDecodedBuffer);
-
-    try
-    {
-        tdbstrDecodedFile.exceptions(std::ios::badbit | std::ios::failbit | std::ios::eofbit);
-        tdbstrDecodedFile.read(reinterpret_cast<char*>(&m_header), sizeof(Header));
-        assert(m_header.m_version == 1);
-        ReadTDBIDNameArray(tdbstrDecodedFile, m_header.m_recordsCount, m_records);
-        ReadTDBIDNameArray(tdbstrDecodedFile, m_header.m_flatsCount, m_flats);
-        ReadTDBIDNameArray(tdbstrDecodedFile, m_header.m_queriesCount, m_queries);
-        m_isInitialized = true;
-    }
-    // this is easier for now
-    catch (std::exception&)
-    {
-        return false;
-    }
-
-    // check if we have a tweakdb that was changed by REDmod
-    if (HasREDModTweakDB())
-    {
-        auto moddedTweakDbFilePath = GetAbsolutePath(c_defaultFilename, CET::Get().GetPaths().R6CacheModdedRoot(), false, true);
-        if (moddedTweakDbFilePath.empty())
-            return true;
-
-        try
-        {
-            std::ifstream file(moddedTweakDbFilePath, std::ios::binary);
-            file.exceptions(std::ios::badbit | std::ios::failbit | std::ios::eofbit);
-            file.read(reinterpret_cast<char*>(&m_header), sizeof(Header));
-            assert(m_header.m_version == 1);
-            ReadTDBIDNameArray(file, m_header.m_recordsCount, m_records);
-            ReadTDBIDNameArray(file, m_header.m_flatsCount, m_flats);
-            ReadTDBIDNameArray(file, m_header.m_queriesCount, m_queries);
-            Log::Info("CDPRTweakDBMetadata::Initalize() - REDMod TweakDB initialization successful!");
-        }
-        // this is easier for now
-        // do not modify the return state since this isn't the main TweakDB
-        catch (std::exception&)
-        {
-            Log::Warn("CDPRTweakDBMetadata::Initalize() - Failed to load REDMod TweakDB. Modded entries may not "
-                      "be shown in the TweakDB Editor.");
-        }
-    }
-
-    return true;
-}
-
-bool CDPRTweakDBMetadata::IsInitialized()
-{
-    return m_isInitialized;
-}
-
-bool CDPRTweakDBMetadata::GetRecordName(RED4ext::TweakDBID aDBID, std::string& aName)
-{
-    const auto it = m_records.find(aDBID.value & 0xFFFFFFFFFF);
-    if (it == m_records.end())
-        return false;
-
-    aName = it->second;
-    return true;
-}
-
-bool CDPRTweakDBMetadata::GetFlatName(RED4ext::TweakDBID aDBID, std::string& aName)
-{
-    const auto it = m_flats.find(aDBID.value & 0xFFFFFFFFFF);
-    if (it == m_flats.end())
-        return false;
-
-    aName = it->second;
-    return true;
-}
-
-bool CDPRTweakDBMetadata::GetQueryName(RED4ext::TweakDBID aDBID, std::string& aName)
-{
-    const auto it = m_queries.find(aDBID.value & 0xFFFFFFFFFF);
-    if (it == m_queries.end())
-        return false;
-
-    aName = it->second;
-    return true;
-}
-
-bool CDPRTweakDBMetadata::HasREDModTweakDB()
-{
-    auto filepath = CET::Get().GetPaths().R6CacheModdedRoot() / c_defaultFilename;
-    return std::filesystem::exists(filepath);
-}
-
-int32_t CDPRTweakDBMetadata::ReadCompressedInt(std::istream& aFile)
-{
-    int32_t uncompressed = 0;
-
-    int8_t byte;
-    aFile.read(reinterpret_cast<char*>(&byte), 1);
-    uncompressed |= byte & 0x3F;
-    if (byte & 0x40)
-    {
-        aFile.read(reinterpret_cast<char*>(&byte), 1);
-        uncompressed |= (byte & 0x7F) << 6;
-        if (byte & 0x80)
-        {
-            aFile.read(reinterpret_cast<char*>(&byte), 1);
-            uncompressed |= (byte & 0x7F) << 13;
-            if (byte & 0x80)
-            {
-                aFile.read(reinterpret_cast<char*>(&byte), 1);
-                uncompressed |= (byte & 0x7F) << 20;
-                if (byte & 0x80)
-                {
-                    aFile.read(reinterpret_cast<char*>(&byte), 1);
-                    uncompressed |= byte << 27;
-                }
-            }
-        }
-    }
-
-    return uncompressed;
-}
-
-void CDPRTweakDBMetadata::ReadTDBIDNameArray(std::istream& aFile, uint32_t aCount, TiltedPhoques::Map<uint64_t, std::string>& aOutMap)
-{
-    for (int32_t i = 0; i != aCount; ++i)
-    {
-        int32_t length = ReadCompressedInt(aFile);
-        std::string str;
-        str.resize(length);
-        aFile.read(str.data(), length);
-        aOutMap.try_emplace(TweakDBID(str).value, std::move(str));
-    }
-}
-
-void CDPRTweakDBMetadata::Reset()
-{
-    m_isInitialized = false;
-    m_records.clear();
-    m_flats.clear();
-    m_queries.clear();
-}
-
-ResourcesList::Resource::Resource(std::string aName) noexcept
-    : m_isFiltered(false)
-    , m_name(std::move(aName))
-    , m_hash(RED4ext::FNV1a64(m_name.c_str()))
-{
-}
-
-ResourcesList* ResourcesList::Get()
-{
-    static ResourcesList instance;
-    return &instance;
-}
-
-bool ResourcesList::Initialize()
-{
-    Reset();
-
-    auto hOodleHandle = GetModuleHandle(TEXT("oo2ext_7_win64.dll"));
-    if (hOodleHandle == nullptr)
-    {
-        spdlog::error("Could not get Oodle access");
-        return false;
-    }
-
-    auto OodleLZ_Decompress = reinterpret_cast<TOodleLZ_Decompress>(GetProcAddress(hOodleHandle, "OodleLZ_Decompress"));
-    if (OodleLZ_Decompress == nullptr)
-    {
-        spdlog::error("Could not get OodleLZ_Decompress");
-        return false;
-    }
-
-    auto filepath = GetAbsolutePath(c_defaultFilename, CET::Get().GetPaths().CETRoot() / "tweakdb", false, true);
-    if (!exists(filepath))
-        return false;
-
-    m_resources.reserve(1485150);
-
-    try
-    {
-        std::ifstream file(filepath, std::ios::binary);
-        file.exceptions(std::ios::badbit);
-
-        size_t headerSize = 8;
-
-        std::string content((std::istreambuf_iterator(file)), std::istreambuf_iterator<char>());
-        std::string buffer;
-        buffer.resize(*reinterpret_cast<uint32_t*>(content.data() + 4));
-
-        char workingMemory[0x80000];
-
-        auto size = OodleLZ_Decompress(content.data() + headerSize, static_cast<int>(content.size() - headerSize), buffer.data(),
-                                       static_cast<int>(buffer.size()), 1, 1, 0, nullptr, nullptr, nullptr, nullptr, workingMemory, std::size(workingMemory), 3);
-
-        if (size > 0)
-        {
-            buffer.resize(size);
-        }
-        else
-        {
-            spdlog::error("Decompress failed!");
-            return false;
-        }
-
-        std::istringstream iss(buffer);
-
-        std::string filename;
-        while (std::getline(iss, filename))
-        {
-            filename.resize(filename.size() - 1);
-            m_resources.emplace_back(filename);
-        }
-
-        for (auto& resource : m_resources)
-        {
-            m_resourcesByHash.emplace(resource.m_hash, &resource);
-        }
-
-        return m_isInitialized = true;
-    }
-    // this is easier for now
-    catch (std::exception&)
-    {
-        return m_isInitialized = false;
-    }
-}
-
-bool ResourcesList::IsInitialized()
-{
-    return m_isInitialized;
-}
-
-const std::string& ResourcesList::Resolve(uint64_t aHash)
-{
-    static std::string defaultName = "ERROR_UNKNOWN_RESOURCE";
-
-    const auto it = m_resourcesByHash.find(aHash);
-    if (it == m_resourcesByHash.end())
-        return defaultName;
-    else
-        return it->second->m_name;
-}
-
-TiltedPhoques::Vector<ResourcesList::Resource>& ResourcesList::GetResources()
-{
-    return m_resources;
-}
-
-void ResourcesList::Reset()
-{
-    m_isInitialized = false;
-    m_resources.clear();
-    m_resourcesByHash.clear();
-}
 
 namespace ImGui
 {
@@ -433,7 +153,7 @@ void TweakDBEditor::Update()
 
     if (!m_initialized)
     {
-        if (!ResourcesList::Get()->IsInitialized() || !CDPRTweakDBMetadata::Get()->IsInitialized())
+        if (!ResourcesList::Get()->IsInitialized() || !TweakDBMetadata::Get()->IsInitialized())
             return;
 
         RefreshAll();
@@ -829,7 +549,7 @@ std::string TweakDBEditor::GetTweakDBIDStringRecord(RED4ext::TweakDBID aDBID)
 
 bool TweakDBEditor::GetTweakDBIDStringRecord(RED4ext::TweakDBID aDBID, std::string& aString)
 {
-    if (CDPRTweakDBMetadata::Get()->GetRecordName(aDBID, aString))
+    if (TweakDBMetadata::Get()->GetRecordName(aDBID, aString))
         return true;
 
     aString = CET::Get().GetVM().GetTDBIDString(aDBID);
@@ -845,7 +565,7 @@ std::string TweakDBEditor::GetTweakDBIDStringFlat(RED4ext::TweakDBID aDBID)
 
 bool TweakDBEditor::GetTweakDBIDStringFlat(RED4ext::TweakDBID aDBID, std::string& aString)
 {
-    if (CDPRTweakDBMetadata::Get()->GetFlatName(aDBID, aString))
+    if (TweakDBMetadata::Get()->GetFlatName(aDBID, aString))
         return true;
 
     aString = CET::Get().GetVM().GetTDBIDString(aDBID);
@@ -861,7 +581,7 @@ std::string TweakDBEditor::GetTweakDBIDStringQuery(RED4ext::TweakDBID aDBID)
 
 bool TweakDBEditor::GetTweakDBIDStringQuery(RED4ext::TweakDBID aDBID, std::string& aString)
 {
-    if (CDPRTweakDBMetadata::Get()->GetQueryName(aDBID, aString))
+    if (TweakDBMetadata::Get()->GetQueryName(aDBID, aString))
         return true;
 
     aString = CET::Get().GetVM().GetTDBIDString(aDBID);
@@ -1933,7 +1653,7 @@ void TweakDBEditor::DrawAdvancedTab()
 {
     if (ImGui::Button("Convert 'tweakdb.str' to 'tweakdb.str.lz'"))
     {
-        const auto tdbstrFilePath = GetAbsolutePath(CDPRTweakDBMetadata::c_defaultFilename, CET::Get().GetPaths().CETRoot() / "tweakdb", false, true);
+        const auto tdbstrFilePath = GetAbsolutePath(TweakDBMetadata::c_defaultFilename, CET::Get().GetPaths().CETRoot() / "tweakdb", false, true);
         if (!tdbstrFilePath.empty())
         {
             std::ifstream tdbstrDecodedFile(tdbstrFilePath, std::ios::binary);
@@ -1949,9 +1669,9 @@ void TweakDBEditor::DrawAdvancedTab()
 
     if (ImGui::Button("Convert 'tweakdb.str.lz' to 'tweakdb.str'"))
     {
-        const auto tdbstrFilePath = GetAbsolutePath(CDPRTweakDBMetadata::c_defaultFilename, CET::Get().GetPaths().CETRoot() / "tweakdb", true, true);
+        const auto tdbstrFilePath = GetAbsolutePath(TweakDBMetadata::c_defaultFilename, CET::Get().GetPaths().CETRoot() / "tweakdb", true, true);
 
-        const auto tdbstrEncodedFilePath = GetAbsolutePath(CDPRTweakDBMetadata::c_defaultFilename + ".lz", CET::Get().GetPaths().CETRoot() / "tweakdb", false, true);
+        const auto tdbstrEncodedFilePath = GetAbsolutePath(TweakDBMetadata::c_defaultFilename + ".lz", CET::Get().GetPaths().CETRoot() / "tweakdb", false, true);
         if (!tdbstrEncodedFilePath.empty())
         {
             std::ifstream tdbstrEncodedFile(tdbstrEncodedFilePath, std::ios::binary);
