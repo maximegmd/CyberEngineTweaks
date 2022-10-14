@@ -27,6 +27,7 @@ void Options::Load()
             EnableImGuiAssertions = config.value("cetdev_enable_imgui_assertions", EnableImGuiAssertions);
             DumpGameOptions = config.value("dump_game_options", DumpGameOptions);
             PatchEnableDebug = config.value("enable_debug", PatchEnableDebug);
+            PackageTweakDBStr = config.value("cetdev_package_tweakdbstr", PackageTweakDBStr);
 
             // font config
             FontPath = config.value("font_path", FontPath);
@@ -63,6 +64,7 @@ void Options::Save()
     config["cetdev_enable_imgui_assertions"] = EnableImGuiAssertions;
     config["enable_debug"] = PatchEnableDebug;
     config["dump_game_options"] = DumpGameOptions;
+    config["cetdev_package_tweakdbstr"] = PackageTweakDBStr;
 
     config["font_path"] = FontPath;
     config["font_glyph_ranges"] = FontGlyphRanges;

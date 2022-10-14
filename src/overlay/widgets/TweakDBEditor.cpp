@@ -38,13 +38,43 @@ struct CDPRTweakDBMetadata
     {
         Reset();
 
-        auto filepath = GetAbsolutePath(c_defaultFilename, CET::Get().GetPaths().CETRoot() / "tweakdb", false, true);
-        if (filepath.empty())
-            return false;
+        auto tdbstrFilePath = GetAbsolutePath(c_defaultFilename, CET::Get().GetPaths().CETRoot() / "tweakdb", false, true);
+
+        if (CET::Get().GetOptions().PackageTweakDBStr)
+        {
+            if (tdbstrFilePath.empty())
+                return false;
+
+            std::ifstream tdbstrDecodedFile(tdbstrFilePath, std::ios::binary);
+            const std::vector<uint8_t> tdbstrDecodedBytes(std::istreambuf_iterator{tdbstrDecodedFile}, {});
+            tdbstrDecodedFile.close();
+
+            const auto tdbstrEncodedBytes = EncodeToLzma(tdbstrDecodedBytes);
+            std::ofstream tdbstrEncodedFile(tdbstrFilePath.native() + L".lz", std::ios::binary);
+            tdbstrEncodedFile.write(reinterpret_cast<const char*>(tdbstrEncodedBytes.data()), tdbstrEncodedBytes.size());
+            tdbstrEncodedFile.close();
+        }
+        else if (tdbstrFilePath.empty())
+        {
+            tdbstrFilePath = GetAbsolutePath(c_defaultFilename, CET::Get().GetPaths().CETRoot() / "tweakdb", true, true);
+
+            const auto tdbstrEncodedFilePath = GetAbsolutePath(c_defaultFilename + ".lz", CET::Get().GetPaths().CETRoot() / "tweakdb", true, true);
+            if (tdbstrEncodedFilePath.empty())
+                return false;
+
+            std::ifstream tdbstrEncodedFile(tdbstrEncodedFilePath, std::ios::binary);
+            const std::vector<uint8_t> tdbstrEncodedBytes(std::istreambuf_iterator{tdbstrEncodedFile}, {});
+            tdbstrEncodedFile.close();
+
+            const auto tdbstrDecodedBytes = DecodeFromLzma(tdbstrEncodedBytes);
+            std::ofstream tdbstrDecodedFile(tdbstrFilePath, std::ios::binary);
+            tdbstrDecodedFile.write(reinterpret_cast<const char*>(tdbstrDecodedBytes.data()), tdbstrDecodedBytes.size());
+            tdbstrDecodedFile.close();
+        }
 
         try
         {
-            std::ifstream file(filepath, std::ios::binary);
+            std::ifstream file(tdbstrFilePath, std::ios::binary);
             file.exceptions(std::ios::badbit | std::ios::failbit | std::ios::eofbit);
             file.read(reinterpret_cast<char*>(&m_header), sizeof(Header));
             assert(m_header.m_version == 1);

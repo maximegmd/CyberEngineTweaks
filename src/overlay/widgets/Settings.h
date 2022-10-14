@@ -37,6 +37,7 @@ private:
     bool m_dumpGameOptions{ false };
     bool m_removeDeadBindings{ true };
     bool m_enableImGuiAssertions{ true };
+    bool m_packageTweakDBStr{ false };
 
     Options& m_options;
     LuaVM& m_vm;

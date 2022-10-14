@@ -2,6 +2,7 @@
 
 #include "Utils.h"
 
+#include <LzmaLib.h>
 #include <spdlog/sinks/base_sink.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 
@@ -309,3 +310,46 @@ std::filesystem::path GetLuaPath(std::filesystem::path aFilePath, const std::fil
 
     return relative(aFilePath, std::filesystem::current_path());
 }
+
+std::vector<uint8_t> EncodeToLzma(const std::vector<uint8_t>& acpIn)
+{
+    size_t propsSize = LZMA_PROPS_SIZE;
+    size_t destLen = acpIn.size() + acpIn.size() / 3 + 128;
+    std::vector<uint8_t> outBuf;
+    outBuf.resize(propsSize + destLen + sizeof(uint64_t));
+
+    const auto res = LzmaCompress(
+        &outBuf[LZMA_PROPS_SIZE + sizeof(uint64_t)], &destLen,
+        &acpIn[0], acpIn.size(),
+        &outBuf[sizeof(uint64_t)], &propsSize,
+        -1, 0, -1, -1, -1, -1, -1);
+
+    assert(propsSize == LZMA_PROPS_SIZE);
+    assert(res == SZ_OK);
+
+    const uint64_t finalSize = acpIn.size();
+    std::memcpy(outBuf.data(), &finalSize, sizeof(uint64_t));
+
+    outBuf.resize(propsSize + destLen + sizeof(uint64_t));
+
+    return outBuf;
+}
+
+std::vector<uint8_t> DecodeFromLzma(const std::vector<uint8_t>& acpIn)
+{
+    uint64_t decodedSize = 0;
+    std::memcpy(&decodedSize, acpIn.data(), sizeof(uint64_t));
+
+    std::vector<uint8_t> outBuf;
+    outBuf.resize(decodedSize);
+
+    size_t srcLen = acpIn.size() - LZMA_PROPS_SIZE;
+    SRes res = LzmaUncompress(
+        &outBuf[0], &decodedSize,
+        &acpIn[LZMA_PROPS_SIZE + sizeof(uint64_t)], &srcLen,
+        &acpIn[sizeof(uint64_t)], LZMA_PROPS_SIZE);
+        assert(res == SZ_OK);
+
+    return outBuf;
+}
+

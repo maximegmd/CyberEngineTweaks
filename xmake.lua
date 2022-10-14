@@ -68,18 +68,19 @@ target("cyber_engine_tweaks")
     add_headerfiles("src/**.h", "build/CETVersion.h")
     add_includedirs("src/", "build/")
     add_syslinks("User32", "Version", "d3d11")
-    add_packages("spdlog", "nlohmann_json", "minhook", "hopscotch-map", "imgui", "mem", "sol2", "tiltedcore", "sqlite3", "openrestry-luajit", "xbyak", "stb")
+    add_packages("spdlog", "nlohmann_json", "minhook", "hopscotch-map", "imgui", "mem", "sol2", "tiltedcore", "sqlite3", "openrestry-luajit", "xbyak", "stb", "lzma")
     add_deps("RED4ext.SDK")
     add_configfiles("src/CETVersion.h.in")
 
     on_package(function(target)
+        import("net.http")
+        
+        os.rm("package/*")
+
         os.mkdir("package/bin/x64/plugins/cyber_engine_tweaks/tweakdb")
         os.cp("tweakdb/*", "package/bin/x64/plugins/cyber_engine_tweaks/tweakdb")
-
-        import("utils.archive")
-        archive.extract("package/bin/x64/plugins/cyber_engine_tweaks/tweakdb/*.zip", "package/bin/x64/plugins/cyber_engine_tweaks/tweakdb")
-        os.rm("package/bin/x64/plugins/cyber_engine_tweaks/tweakdb/*.zip")
-
+        http.download("https://github.com/WolvenKit/WolvenKit/raw/main/WolvenKit.Common/Resources/usedhashes.kark", "package/bin/x64/plugins/cyber_engine_tweaks/tweakdb/usedhashes.kark")
+        
         os.mkdir("package/bin/x64/plugins/cyber_engine_tweaks/scripts")
         os.cp("scripts/*", "package/bin/x64/plugins/cyber_engine_tweaks/scripts")
 
@@ -87,10 +88,11 @@ target("cyber_engine_tweaks")
         os.cp("fonts/*", "package/bin/x64/plugins/cyber_engine_tweaks/fonts")
 
         os.cp("vendor/asiloader/*", "package/bin/x64/")
+
         os.cp("LICENSE", "package/bin/x64/")
         os.cp("ThirdParty_LICENSES", "package/bin/x64/plugins/cyber_engine_tweaks/ThirdParty_LICENSES")
+        
         os.cp(target:targetfile(), "package/bin/x64/plugins/")
-        os.rm("package/*.zip")
     end)
     on_install(function (target)
         cprint("${green bright}Installing Cyber Engine Tweaks ..")

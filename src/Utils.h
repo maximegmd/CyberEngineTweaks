@@ -58,3 +58,6 @@ THWUCPResult UnsavedChangesPopup(bool& aFirstTime, bool aMadeChanges, TWidgetCB 
 
 [[nodiscard]] std::filesystem::path GetLuaPath(const std::string& acFilePath, const std::filesystem::path& acRootPath, const bool acAllowNonExisting);
 [[nodiscard]] std::filesystem::path GetLuaPath(std::filesystem::path aFilePath, const std::filesystem::path& acRootPath, const bool acAllowNonExisting);
+
+[[nodiscard]] std::vector<uint8_t> EncodeToLzma(const std::vector<uint8_t>& acpIn);
+[[nodiscard]] std::vector<uint8_t> DecodeFromLzma(const std::vector<uint8_t>& acpIn);
