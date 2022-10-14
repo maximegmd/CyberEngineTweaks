@@ -105,14 +105,3 @@ option("installpath")
     set_default("installpath")
     set_showmenu(true)
     set_description("Set the path to install cyber_engine_tweaks.asi to.", "e.g.", format("\t-xmake f --installpath=%s", [["C:\Program Files (x86)\Steam\steamapps\common\Cyberpunk 2077\bin\x64\plugins"]]))
-
-task("dephash")
-    on_run(function()
-        import("utils.ci")
-        ci.packageskey()
-    end)
-  
-    set_menu {
-        usage = "xmake dephash",
-        description = "Outputs a hash key of current dependencies version/configuration"
-    }
