@@ -43,7 +43,10 @@ void LuaVM::Update(float aDeltaTime)
     if (m_reload)
     {
         m_scripting.ReloadAllMods();
-        m_scripting.TriggerOnTweak();
+
+        if (ResourcesList::Get()->IsInitialized() && CDPRTweakDBMetadata::Get()->IsInitialized())
+            m_scripting.TriggerOnTweak();
+
         m_scripting.TriggerOnInit();
 
         if (CET::Get().GetOverlay().IsEnabled())
@@ -126,7 +129,7 @@ bool LuaVM::GetTDBIDDerivedFrom(uint64_t aDBID, TiltedPhoques::Vector<uint64_t>&
         return false;
 
     aDerivedList.reserve(it->second.size());
-    std::copy(it->second.begin(), it->second.end(), std::back_inserter(aDerivedList));
+    std::ranges::copy(it->second, std::back_inserter(aDerivedList));
     return true;
 }
 
@@ -201,6 +204,9 @@ void LuaVM::PostInitializeScripting()
 
 void LuaVM::PostInitializeTweakDB()
 {
+    if (!ResourcesList::Get()->Initialize() || !CDPRTweakDBMetadata::Get()->Initialize())
+        return;
+
     m_scripting.TriggerOnTweak();
 }
 

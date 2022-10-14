@@ -93,7 +93,6 @@ void Settings::Update()
                 UpdateAndDrawSetting("Enable ImGui Assertions", "Enables all ImGui assertions (useful when debugging ImGui issues, should also be used to check mods before shipping!).", m_enableImGuiAssertions, m_options.EnableImGuiAssertions);
                 UpdateAndDrawSetting("Enable Debug Build", "Sets internal flags to disguise as debug build (requires restart to take effect).", m_patchEnableDebug, m_options.PatchEnableDebug);
                 UpdateAndDrawSetting("Dump Game Options", "Dumps all game options into main log file (requires restart to take effect).", m_dumpGameOptions, m_options.DumpGameOptions);
-                UpdateAndDrawSetting("Package tweakdb.str", "Packages tweakdb.str file on next start of the game to distribution format.", m_packageTweakDBStr, m_options.PackageTweakDBStr);
 
                 ImGui::EndTable();
             }
@@ -134,7 +133,6 @@ void Settings::Load()
     m_enableImGuiAssertions = m_options.EnableImGuiAssertions;
     m_patchEnableDebug = m_options.PatchEnableDebug;
     m_dumpGameOptions = m_options.DumpGameOptions;
-    m_packageTweakDBStr = m_options.PackageTweakDBStr;
 }
 
 void Settings::Save() const
@@ -154,7 +152,6 @@ void Settings::Save() const
     m_options.EnableImGuiAssertions = m_enableImGuiAssertions;
     m_options.PatchEnableDebug = m_patchEnableDebug;
     m_options.DumpGameOptions = m_dumpGameOptions;
-    m_options.PackageTweakDBStr = m_packageTweakDBStr;
 
     m_options.Save();
 }

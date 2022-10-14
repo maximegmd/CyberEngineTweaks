@@ -2,6 +2,85 @@
 
 #include "Widget.h"
 
+struct CDPRTweakDBMetadata
+{
+    inline static const std::string c_defaultFilename = "tweakdb.str";
+
+    static CDPRTweakDBMetadata* Get();
+
+    bool Initialize();
+
+    bool IsInitialized();
+
+    bool GetRecordName(RED4ext::TweakDBID aDBID, std::string& aName);
+
+    bool GetFlatName(RED4ext::TweakDBID aDBID, std::string& aName);
+
+    bool GetQueryName(RED4ext::TweakDBID aDBID, std::string& aName);
+
+    bool HasREDModTweakDB();
+
+protected:
+    int32_t ReadCompressedInt(std::istream& aFile);
+
+    void ReadTDBIDNameArray(std::istream& aFile, uint32_t aCount, TiltedPhoques::Map<uint64_t, std::string>& aOutMap);
+
+    void Reset();
+
+private:
+    struct Header
+    {
+        uint32_t m_magic = 0;   // a hash of all types currently supported
+        uint32_t m_version = 0; // 1
+        uint32_t m_recordsCount = 0;
+        uint32_t m_flatsCount = 0;
+        uint32_t m_queriesCount = 0;
+    };
+
+    bool m_isInitialized = false;
+    Header m_header;
+    TiltedPhoques::Map<uint64_t, std::string> m_records;
+    TiltedPhoques::Map<uint64_t, std::string> m_flats;
+    TiltedPhoques::Map<uint64_t, std::string> m_queries;
+};
+
+using TOodleLZ_Decompress = size_t(*)(char *in, int insz, char *out, int outsz, int wantsFuzzSafety, int b, int c, void *d, void *e, void *f, void *g, void *workBuffer, size_t workBufferSize, int j);
+
+struct ResourcesList
+{
+    inline static const std::string c_defaultFilename = "usedhashes.kark";
+
+    struct Resource
+    {
+        bool m_isFiltered;
+        std::string m_name;
+        uint64_t m_hash;
+
+        Resource(std::string aName) noexcept;
+
+        Resource(Resource&&) noexcept = default;
+        Resource& operator=(Resource&&) noexcept = default;
+    };
+
+    static ResourcesList* Get();
+
+    bool Initialize();
+
+    bool IsInitialized();
+
+    const std::string& Resolve(uint64_t aHash);
+
+    TiltedPhoques::Vector<Resource>& GetResources();
+
+protected:
+    void Reset();
+
+private:
+    bool m_isInitialized = false;
+    TiltedPhoques::Vector<Resource> m_resources;
+    TiltedPhoques::Map<uint64_t, Resource*> m_resourcesByHash;
+};
+
 struct LuaVM;
 
 struct TweakDBEditor : Widget

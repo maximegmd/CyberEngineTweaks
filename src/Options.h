@@ -33,7 +33,6 @@ struct Options
     bool RemoveDeadBindings { true };
     bool DrawImGuiDiagnosticWindow { false };
     bool EnableImGuiAssertions { false };
-    bool PackageTweakDBStr { false };
 
 private:
 
