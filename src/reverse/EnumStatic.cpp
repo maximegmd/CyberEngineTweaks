@@ -15,18 +15,18 @@ EnumStatic::~EnumStatic() = default;
 
 sol::object EnumStatic::Index_Impl(const std::string& acName, sol::this_environment aThisEnv)
 {
-    auto result = Type::Index_Impl(acName, aThisEnv);
+    auto result = ClassType::Index_Impl(acName, aThisEnv);
 
     if (result != sol::nil)
         return result;
 
-    auto* pEnum = static_cast<RED4ext::CEnum*>(m_pType);
+    const auto* cpEnum = static_cast<RED4ext::CEnum*>(m_pType);
 
-    if (!pEnum)
+    if (!cpEnum)
         return sol::nil;
 
     auto lockedState = m_lua.Lock();
-    auto& luaState = lockedState.Get();
+    const auto& cLuaState = lockedState.Get();
 
-    return Type::NewIndex_Impl(acName, std::move(sol::make_object(luaState, Enum(pEnum, acName))));
+    return ClassType::NewIndex_Impl(acName, make_object(cLuaState, Enum(cpEnum, acName)));
 }

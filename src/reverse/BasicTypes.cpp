@@ -52,7 +52,7 @@ std::string CName::AsString() const noexcept
 
 std::string CName::ToString() const noexcept
 {
-    RED4ext::CName internal(hash);
+    const RED4ext::CName internal(hash);
 
     const auto resolved = internal.ToString();
     if (!resolved)
@@ -82,7 +82,7 @@ bool TweakDBID::operator==(const TweakDBID& acRhs) const noexcept
 
 TweakDBID TweakDBID::operator+(const std::string_view acName) const noexcept
 {
-    return TweakDBID(*this, acName);
+    return {*this, acName};
 }
 
 std::string ItemID::ToString() const noexcept
@@ -161,7 +161,7 @@ bool Variant::Init(const RED4ext::CBaseRTTIType* aType)
         return false;
     }
 
-    RED4ext::CBaseRTTIType* ownType = GetType();
+    const RED4ext::CBaseRTTIType* ownType = GetType();
     RED4ext::ScriptInstance ownData = GetDataPtr();
 
     if (ownType)
@@ -182,7 +182,7 @@ bool Variant::Init(const RED4ext::CBaseRTTIType* aType)
 
     if (CanBeInlined(aType))
     {
-        reinterpret_cast<uintptr_t&>(type) |= kInlineFlag;
+        type = reinterpret_cast<const RED4ext::CBaseRTTIType*>(reinterpret_cast<uintptr_t>(&type) | kInlineFlag);
         ownData = inlined;
     }
     else
@@ -209,11 +209,11 @@ bool Variant::Fill(const RED4ext::CBaseRTTIType* aType, const RED4ext::ScriptIns
     return true;
 }
 
-bool Variant::Extract(RED4ext::ScriptInstance aBuffer)
+bool Variant::Extract(RED4ext::ScriptInstance aBuffer) const
 {
     if (IsEmpty())
         return false;
-    
+
     GetType()->Assign(aBuffer, GetDataPtr());
 
     return true;
@@ -223,9 +223,9 @@ void Variant::Free()
 {
     if (IsEmpty())
         return;
-    
-    RED4ext::CBaseRTTIType* ownType = GetType();
-    RED4ext::ScriptInstance ownData = GetDataPtr();
+
+    const RED4ext::CBaseRTTIType* ownType = GetType();
+    const RED4ext::ScriptInstance ownData = GetDataPtr();
 
     if (ownData)
     {
@@ -264,7 +264,7 @@ bool gamedataLocKeyWrapper::operator==(const gamedataLocKeyWrapper& acRhs) const
     return hash == acRhs.hash;
 }
 
-static const unsigned int crc32_table[] =
+static constexpr unsigned int crc32_table[] =
 {
     0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f,
     0xe963a535, 0x9e6495a3,	0x0edb8832, 0x79dcb8a4, 0xe0d5e91e, 0x97d2d988,
@@ -314,9 +314,9 @@ static const unsigned int crc32_table[] =
 uint32_t crc32(const char* buf, size_t len, uint32_t seed)
 {
     uint32_t crc = ~seed;
-    auto q = buf + len;
+    const auto q = buf + len;
     for (auto p = buf; p < q; p++) {
-        auto octet = *p;
+        const auto octet = *p;
         crc = (crc >> 8) ^ crc32_table[(crc & 0xff) ^ octet];
     }
     return ~crc;

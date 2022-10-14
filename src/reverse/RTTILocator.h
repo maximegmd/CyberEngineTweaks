@@ -9,5 +9,5 @@ struct RTTILocator
 private:
 
     const RED4ext::CName m_name;
-    RED4ext::CBaseRTTIType* m_pRtti;
+    RED4ext::CBaseRTTIType* m_pRtti = nullptr;
 };

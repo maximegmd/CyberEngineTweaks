@@ -68,9 +68,9 @@ HRESULT D3D12::CreateCommittedResource(ID3D12Device* apDevice, const D3D12_HEAP_
 
     // Check if this is a backbuffer resource being created
     bool isBackBuffer = false;
-    if (acpHeapProperties != NULL && acpHeapProperties->Type == D3D12_HEAP_TYPE_DEFAULT && aHeapFlags == D3D12_HEAP_FLAG_NONE &&
-        acpDesc != NULL && acpDesc->Flags == D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET && aInitialResourceState == D3D12_RESOURCE_STATE_COMMON &&
-        acpOptimizedClearValue == NULL && acpRIID != NULL && IsEqualGUID(*acpRIID, __uuidof(ID3D12Resource)))
+    if (acpHeapProperties != nullptr && acpHeapProperties->Type == D3D12_HEAP_TYPE_DEFAULT && aHeapFlags == D3D12_HEAP_FLAG_NONE &&
+        acpDesc != nullptr && acpDesc->Flags == D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET && aInitialResourceState == D3D12_RESOURCE_STATE_COMMON &&
+        acpOptimizedClearValue == nullptr && acpRIID != nullptr && IsEqualGUID(*acpRIID, __uuidof(ID3D12Resource)))
     {
         isBackBuffer = true;
     }
@@ -99,10 +99,10 @@ void D3D12::ExecuteCommandLists(ID3D12CommandQueue* apCommandQueue, UINT aNumCom
     auto& d3d12 = CET::Get().GetD3D12();
     if (d3d12.m_pCommandQueue == nullptr)
     {
-        auto desc = apCommandQueue->GetDesc();
+        const auto desc = apCommandQueue->GetDesc();
         if (desc.Type == D3D12_COMMAND_LIST_TYPE_DIRECT)
         {
-            auto ret = (uintptr_t)_ReturnAddress() - (uintptr_t)GetModuleHandleA(nullptr);
+            auto ret = reinterpret_cast<uintptr_t>(_ReturnAddress()) - reinterpret_cast<uintptr_t>(GetModuleHandleA(nullptr));
             d3d12.m_pCommandQueue = apCommandQueue;
             Log::Info("D3D12::ExecuteCommandListsD3D12() - found valid command queue. {:X}", ret);
         }
@@ -116,7 +116,7 @@ void* ApplyHook(void** vtable, size_t index, void* target)
 {
     DWORD oldProtect;
     VirtualProtect(vtable + index, 8, PAGE_EXECUTE_READWRITE, &oldProtect);
-    auto ret = vtable[index];
+    const auto ret = vtable[index];
     vtable[index] = target;
     VirtualProtect(vtable + index, 8, oldProtect, nullptr);
 
@@ -174,9 +174,9 @@ std::tuple<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> D3D12::Crea
         return {{}, {}};
 
     D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = m_pd3dSrvDescHeap->GetCPUDescriptorHandleForHeapStart();
-    cpuHandle.ptr += (handle_increment * index);
+    cpuHandle.ptr += handle_increment * index;
     D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = m_pd3dSrvDescHeap->GetGPUDescriptorHandleForHeapStart();
-    gpuHandle.ptr += (handle_increment * index);
+    gpuHandle.ptr += handle_increment * index;
 
     return {cpuHandle, gpuHandle};
 }
@@ -188,7 +188,7 @@ void D3D12::Hook()
         int d3d12FailedHooksCount = 0;
         int d3d12CompleteHooksCount = 0;
 
-        if (kiero::bind(175, reinterpret_cast<void**>(&m_realPresentD3D12Downlevel), &PresentDownlevel) !=
+        if (kiero::bind(175, reinterpret_cast<void**>(&m_realPresentD3D12Downlevel), reinterpret_cast<void*>(&PresentDownlevel)) !=
             kiero::Status::Success)
         {
             Log::Error("D3D12on7: Downlevel Present hook failed!");
@@ -200,7 +200,7 @@ void D3D12::Hook()
             ++d3d12CompleteHooksCount;
         }
 
-        if (kiero::bind(27, reinterpret_cast<void**>(&m_realCreateCommittedResource), &CreateCommittedResource) !=
+        if (kiero::bind(27, reinterpret_cast<void**>(&m_realCreateCommittedResource), reinterpret_cast<void*>(&CreateCommittedResource)) !=
             kiero::Status::Success)
         {
             Log::Error("D3D12on7: CreateCommittedResource Hook failed!");
@@ -212,7 +212,7 @@ void D3D12::Hook()
             ++d3d12CompleteHooksCount;
         }
 
-        if (kiero::bind(54, reinterpret_cast<void**>(&m_realExecuteCommandLists), &ExecuteCommandLists) !=
+        if (kiero::bind(54, reinterpret_cast<void**>(&m_realExecuteCommandLists), reinterpret_cast<void*>(&ExecuteCommandLists)) !=
             kiero::Status::Success)
         {
             Log::Error("D3D12on7: ExecuteCommandLists hook failed!");
@@ -240,14 +240,14 @@ void D3D12::HookGame()
     const RED4ext::RelocPtr<void> presentInternal(CyberEngineTweaks::Addresses::CRenderNode_Present_DoInternal);
     const RED4ext::RelocPtr<void> resizeInternal(CyberEngineTweaks::Addresses::CRenderGlobal_Resize);
 
-    if (MH_CreateHook(presentInternal.GetAddr(), &CRenderNode_Present_InternalPresent,
+    if (MH_CreateHook(presentInternal.GetAddr(), reinterpret_cast<void*>(&CRenderNode_Present_InternalPresent),
                       reinterpret_cast<void**>(&m_realInternalPresent)) != MH_OK ||
         MH_EnableHook(presentInternal.GetAddr()) != MH_OK)
         Log::Error("Could not hook CRenderNode_Present_InternalPresent function!");
     else
         Log::Info("CRenderNode_Present_InternalPresent function hook complete!");
 
-    if (MH_CreateHook(resizeInternal.GetAddr(), &CRenderGlobal_Resize,
+    if (MH_CreateHook(resizeInternal.GetAddr(), reinterpret_cast<void*>(&CRenderGlobal_Resize),
                       reinterpret_cast<void**>(&m_realInternalResize)) != MH_OK ||
         MH_EnableHook(resizeInternal.GetAddr()) != MH_OK)
         Log::Error("Could not hook CRenderGlobal_Resize function!");

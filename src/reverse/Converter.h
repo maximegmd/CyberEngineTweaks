@@ -1,6 +1,5 @@
 #pragma once
 
-#include "BasicTypes.h"
 #include "Enum.h"
 #include "ClassReference.h"
 #include "LuaRED.h"
@@ -46,7 +45,7 @@ struct CNameConverter : LuaRED<CName, "CName">
         {
             sol::state_view v(aObject.lua_state());
             std::string str = v["tostring"](aObject);
-            *(CName*)apType->value = CName(str);
+            *static_cast<CName*>(apType->value) = CName(str);
         }
         else
         {
@@ -79,7 +78,7 @@ struct TweakDBIDConverter : LuaRED<TweakDBID, "TweakDBID">
     {
         if (aObject != sol::nil && aObject.get_type() == sol::type::string)
         {
-            *(TweakDBID*)apType->value = TweakDBID(aObject.as<std::string>());
+            *static_cast<TweakDBID*>(apType->value) = TweakDBID(aObject.as<std::string>());
         }
         else
         {
@@ -155,13 +154,13 @@ struct EnumConverter : LuaRED<Enum, "Enum">
         else if (aObject == sol::nil)
         {
             auto* enumType = static_cast<RED4ext::CEnum*>(apType->type);
-            Enum en(enumType, 0);
+            const Enum en(enumType, 0);
             en.Set(*apType);
         }
         else if (aObject.get_type() == sol::type::number) // Enum from number cast
         {
             auto* enumType = static_cast<RED4ext::CEnum*>(apType->type);
-            Enum en(enumType, aObject.as<uint32_t>());
+            const Enum en(enumType, aObject.as<uint32_t>());
             en.Set(*apType);
         }
         else if (aObject.get_type() == sol::type::string) // Enum from string cast
@@ -169,7 +168,7 @@ struct EnumConverter : LuaRED<Enum, "Enum">
             auto* enumType = static_cast<RED4ext::CEnum*>(apType->type);
             sol::state_view v(aObject.lua_state());
             std::string str = v["tostring"](aObject);
-            Enum en(enumType, str);
+            const Enum en(enumType, str);
             en.Set(*apType);
         }
     }

@@ -30,8 +30,8 @@ std::string Type::Descriptor::ToString() const
 }
 
 Type::Type(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::CBaseRTTIType* apClass)
-    : m_lua(aView)
-    , m_pType(apClass)
+    : m_pType(apClass)
+    , m_lua(aView)
 {
 }
 
@@ -91,7 +91,7 @@ std::string Type::FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithH
 
     for (auto i = 0u; i < apFunc->params.size; ++i)
     {
-        auto* param = apFunc->params[i];
+        const auto* param = apFunc->params[i];
 
         if (param->flags.isOut)
         {
@@ -116,7 +116,7 @@ std::string Type::FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithH
 
     ret << ")";
 
-    const bool hasReturnType = (apFunc->returnType) != nullptr && (apFunc->returnType->type) != nullptr;
+    const bool hasReturnType = apFunc->returnType != nullptr && apFunc->returnType->type != nullptr;
 
     params.clear();
 
@@ -130,7 +130,7 @@ std::string Type::FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithH
     {
         for (auto i = 0u; i < apFunc->params.size; ++i)
         {
-            auto* param = apFunc->params[i];
+            const auto* param = apFunc->params[i];
 
             if (!param->flags.isOut)
             {
@@ -144,11 +144,11 @@ std::string Type::FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithH
 
     }
 
-    if (params.size() > 0)
+    if (!params.empty())
     {
         ret << " => (";
 
-        for (auto i = 0; i < params.size(); ++i)
+        for (size_t i = 0; i < params.size(); ++i)
         {
             ret << params[i];
             if (i < params.size() - 1)
@@ -186,12 +186,12 @@ Type::Descriptor Type::Dump(bool aWithHashes) const
     return descriptor;
 }
 
-std::string Type::GameDump()
+std::string Type::GameDump() const
 {
     RED4ext::CString str("");
     if (m_pType)
     {
-        auto handle = GetHandle();
+        const auto handle = GetHandle();
         if (handle)
         {
             m_pType->ToString(handle, str);
@@ -267,17 +267,17 @@ sol::object ClassType::Index_Impl(const std::string& acName, sol::this_environme
     if (result != sol::nil)
         return result;
 
-    auto func = RTTIHelper::Get().ResolveFunction(pClass, acName, pHandle != nullptr);
+    const auto func = RTTIHelper::Get().ResolveFunction(pClass, acName, pHandle != nullptr);
 
     if (!func)
     {
         const sol::environment cEnv = aThisEnv;
-        std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+        const auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
         logger->warn("Warning: {} not found in {}.", acName, GetName());
         return sol::nil;
     }
 
-    return Type::NewIndex(acName, std::move(func));
+    return NewIndex(acName, func);
 }
 
 sol::object ClassType::NewIndex_Impl(const std::string& acName, sol::object aParam)

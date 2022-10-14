@@ -9,7 +9,7 @@ namespace
 {
 // TODO: proper exception handling for Lua funcs!
 template <typename ...Args>
-sol::protected_function_result TryLuaFunction(std::shared_ptr<spdlog::logger> aLogger, const sol::function& aFunc, Args... aArgs)
+sol::protected_function_result TryLuaFunction(const std::shared_ptr<spdlog::logger>& acpLogger, const sol::function& aFunc, Args... aArgs)
 {
     sol::protected_function_result result{ };
     if (aFunc)
@@ -20,31 +20,31 @@ sol::protected_function_result TryLuaFunction(std::shared_ptr<spdlog::logger> aL
         }
         catch(std::exception& e)
         {
-            aLogger->error(e.what());
+            acpLogger->error(e.what());
         }
         if (!result.valid())
         {
             const sol::error cError = result;
-            aLogger->error(cError.what());
+            acpLogger->error(cError.what());
         }
     }
     return result;
 }
 
 template <typename ...Args>
-sol::protected_function_result TryLuaFunctionWithImGui(Sandbox& aSandbox, const sol::state_view& aStateView, std::shared_ptr<spdlog::logger> aLogger, const sol::function& aFunc, Args... aArgs)
+sol::protected_function_result TryLuaFunctionWithImGui(Sandbox& aSandbox, const sol::state_view& aStateView, const std::shared_ptr<spdlog::logger>& acpLogger, const sol::function& aFunc, Args... aArgs)
 {
     auto& env = aSandbox.GetEnvironment();
     const auto& imgui = aSandbox.GetImGui();
 
-    for (auto kv : imgui)
+    for (const auto& kv : imgui)
         env[DeepCopySolObject(kv.first, aStateView)] = DeepCopySolObject(kv.second, aStateView);
 
     const auto previousStyle = ImGui::GetStyle();
 
-    auto result = TryLuaFunction(aLogger, aFunc, aArgs...);
+    auto result = TryLuaFunction(acpLogger, aFunc, aArgs...);
 
-    for (auto kv : imgui)
+    for (const auto& kv : imgui)
         env[kv.first] = sol::nil;
 
     ImGui::GetStyle() = previousStyle;
@@ -209,7 +209,8 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
     env["registerInput"] = sol::nil;
 }
 
-ScriptContext::ScriptContext(ScriptContext&& other) noexcept : ScriptContext(other)
+ScriptContext::ScriptContext(ScriptContext&& other) noexcept
+: ScriptContext(other)
 {
     other.m_initialized = false;
 }

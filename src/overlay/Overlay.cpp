@@ -104,11 +104,11 @@ void Overlay::Update()
     if (m_bindings.FirstTimeSetup())
         return;
 
-    auto& d3d12 = CET::Get().GetD3D12();
-    const SIZE resolution = d3d12.GetResolution();
+    const auto& d3d12 = CET::Get().GetD3D12();
+    const auto [width, height] = d3d12.GetResolution();
 
-    ImGui::SetNextWindowPos(ImVec2(resolution.cx * 0.2f, resolution.cy * 0.2f), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(resolution.cx * 0.6f, resolution.cy * 0.6f), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(ImVec2(width * 0.2f, height * 0.2f), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(width * 0.6f, height * 0.6f), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSizeConstraints(ImVec2(420, 315), ImVec2(FLT_MAX, FLT_MAX));
     if (ImGui::Begin("Cyber Engine Tweaks"))
     {
@@ -158,12 +158,10 @@ bool Overlay::IsInitialized() const noexcept
 
 BOOL Overlay::ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis)
 {
-    HWND wnd = (HWND)apThis->hWnd;
-    HWND foreground = GetForegroundWindow();
+    const auto wnd = static_cast<HWND>(apThis->hWnd);
+    const HWND foreground = GetForegroundWindow();
 
-    auto& overlay = CET::Get().GetOverlay();
-
-    if (wnd == foreground && apThis->unk164 && !apThis->unk154 && !overlay.IsEnabled())
+    if (wnd == foreground && apThis->unk164 && !apThis->unk154 && !CET::Get().GetOverlay().IsEnabled())
     {
         RECT rect;
         GetClientRect(wnd, &rect);
@@ -189,13 +187,11 @@ BOOL Overlay::ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis)
 
 void Overlay::Hook()
 {
-    RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CWinapi_ClipToCenter);
+    const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CWinapi_ClipToCenter);
 
-    uint8_t* pLocation = func.GetAddr();
-
-    if (pLocation)
+    if (auto* pLocation = func.GetAddr())
     {
-        if (MH_CreateHook(pLocation, &ClipToCenter, reinterpret_cast<void**>(&m_realClipToCenter)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
+        if (MH_CreateHook(pLocation, reinterpret_cast<void*>(&ClipToCenter), reinterpret_cast<void**>(&m_realClipToCenter)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
             Log::Error("Could not hook mouse clip function!");
         else
             Log::Info("Hook mouse clip function!");
@@ -219,8 +215,8 @@ Overlay::Overlay(D3D12& aD3D12, VKBindings& aBindings, Options& aOptions, LuaVM&
 
     Hook();
 
-    m_connectInitialized = aD3D12.OnInitialized.Connect([this]() { PostInitialize(); });
-    m_connectUpdate = aD3D12.OnUpdate.Connect([this]() { Update(); });
+    m_connectInitialized = aD3D12.OnInitialized.Connect([this]{ PostInitialize(); });
+    m_connectUpdate = aD3D12.OnUpdate.Connect([this]{ Update(); });
 }
 
 Overlay::~Overlay()
@@ -251,7 +247,7 @@ WidgetID Overlay::ToolbarWidget() const
 {
     const auto itemWidth = GetAlignedItemWidth(static_cast<int64_t>(WidgetID::COUNT) + 1);
 
-    WidgetID activeID = WidgetID::COUNT;
+    auto activeID = WidgetID::COUNT;
     if (ImGui::Button("Console", ImVec2(itemWidth, 0)))
         activeID = WidgetID::CONSOLE;
     ImGui::SameLine();

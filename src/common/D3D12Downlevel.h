@@ -30,7 +30,7 @@
 #endif /* __RPCNDR_H_VERSION__ */
 
 #ifndef COM_NO_WINDOWS_H
-#include "windows.h"
+#include "Windows.h"
 #include "ole2.h"
 #endif /*COM_NO_WINDOWS_H*/
 
@@ -41,7 +41,7 @@
 #pragma once
 #endif
 
-/* Forward Declarations */ 
+/* Forward Declarations */
 
 #ifndef __ID3D12CommandQueueDownlevel_FWD_DEFINED__
 #define __ID3D12CommandQueueDownlevel_FWD_DEFINED__
@@ -65,20 +65,20 @@ typedef interface ID3D12DeviceDownlevel ID3D12DeviceDownlevel;
 
 #ifdef __cplusplus
 extern "C"{
-#endif 
+#endif
 
 
 /* interface __MIDL_itf_d3d12downlevel_0000_0000 */
-/* [local] */ 
+/* [local] */
 
 #include <winapifamily.h>
 #pragma region Desktop Family
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-typedef 
+typedef
 enum D3D12_DOWNLEVEL_PRESENT_FLAGS
     {
         D3D12_DOWNLEVEL_PRESENT_FLAG_NONE	= 0,
-        D3D12_DOWNLEVEL_PRESENT_FLAG_WAIT_FOR_VBLANK	= ( D3D12_DOWNLEVEL_PRESENT_FLAG_NONE + 1 ) 
+        D3D12_DOWNLEVEL_PRESENT_FLAG_WAIT_FOR_VBLANK	= D3D12_DOWNLEVEL_PRESENT_FLAG_NONE + 1
     } 	D3D12_DOWNLEVEL_PRESENT_FLAGS;
 
 DEFINE_ENUM_FLAG_OPERATORS( D3D12_DOWNLEVEL_PRESENT_FLAGS );
@@ -91,50 +91,49 @@ extern RPC_IF_HANDLE __MIDL_itf_d3d12downlevel_0000_0000_v0_0_s_ifspec;
 #define __ID3D12CommandQueueDownlevel_INTERFACE_DEFINED__
 
 /* interface ID3D12CommandQueueDownlevel */
-/* [unique][local][object][uuid] */ 
+/* [unique][local][object][uuid] */
 
 
 EXTERN_C const IID IID_ID3D12CommandQueueDownlevel;
 
 #if defined(__cplusplus) && !defined(CINTERFACE)
-    
+
     MIDL_INTERFACE("38a8c5ef-7ccb-4e81-914f-a6e9d072c494")
-    ID3D12CommandQueueDownlevel : public IUnknown
+    ID3D12CommandQueueDownlevel : IUnknown
     {
-    public:
-        virtual HRESULT STDMETHODCALLTYPE Present( 
+        virtual HRESULT STDMETHODCALLTYPE Present(
             _In_  ID3D12GraphicsCommandList *pOpenCommandList,
             _In_  ID3D12Resource *pSourceTex2D,
             _In_  HWND hWindow,
             D3D12_DOWNLEVEL_PRESENT_FLAGS Flags) = 0;
-        
+
     };
-    
-    
+
+
 #else 	/* C style interface */
 
     typedef struct ID3D12CommandQueueDownlevelVtbl
     {
         BEGIN_INTERFACE
-        
-        HRESULT ( STDMETHODCALLTYPE *QueryInterface )( 
+
+        HRESULT ( STDMETHODCALLTYPE *QueryInterface )(
             ID3D12CommandQueueDownlevel * This,
             REFIID riid,
             _COM_Outptr_  void **ppvObject);
-        
-        ULONG ( STDMETHODCALLTYPE *AddRef )( 
+
+        ULONG ( STDMETHODCALLTYPE *AddRef )(
             ID3D12CommandQueueDownlevel * This);
-        
-        ULONG ( STDMETHODCALLTYPE *Release )( 
+
+        ULONG ( STDMETHODCALLTYPE *Release )(
             ID3D12CommandQueueDownlevel * This);
-        
-        HRESULT ( STDMETHODCALLTYPE *Present )( 
+
+        HRESULT ( STDMETHODCALLTYPE *Present )(
             ID3D12CommandQueueDownlevel * This,
             _In_  ID3D12GraphicsCommandList *pOpenCommandList,
             _In_  ID3D12Resource *pSourceTex2D,
             _In_  HWND hWindow,
             D3D12_DOWNLEVEL_PRESENT_FLAGS Flags);
-        
+
         END_INTERFACE
     } ID3D12CommandQueueDownlevelVtbl;
 
@@ -143,23 +142,23 @@ EXTERN_C const IID IID_ID3D12CommandQueueDownlevel;
         CONST_VTBL struct ID3D12CommandQueueDownlevelVtbl *lpVtbl;
     };
 
-    
+
 
 #ifdef COBJMACROS
 
 
 #define ID3D12CommandQueueDownlevel_QueryInterface(This,riid,ppvObject)	\
-    ( (This)->lpVtbl -> QueryInterface(This,riid,ppvObject) ) 
+    ( (This)->lpVtbl -> QueryInterface(This,riid,ppvObject) )
 
 #define ID3D12CommandQueueDownlevel_AddRef(This)	\
-    ( (This)->lpVtbl -> AddRef(This) ) 
+    ( (This)->lpVtbl -> AddRef(This) )
 
 #define ID3D12CommandQueueDownlevel_Release(This)	\
-    ( (This)->lpVtbl -> Release(This) ) 
+    ( (This)->lpVtbl -> Release(This) )
 
 
 #define ID3D12CommandQueueDownlevel_Present(This,pOpenCommandList,pSourceTex2D,hWindow,Flags)	\
-    ( (This)->lpVtbl -> Present(This,pOpenCommandList,pSourceTex2D,hWindow,Flags) ) 
+    ( (This)->lpVtbl -> Present(This,pOpenCommandList,pSourceTex2D,hWindow,Flags) )
 
 #endif /* COBJMACROS */
 
@@ -176,48 +175,47 @@ EXTERN_C const IID IID_ID3D12CommandQueueDownlevel;
 #define __ID3D12DeviceDownlevel_INTERFACE_DEFINED__
 
 /* interface ID3D12DeviceDownlevel */
-/* [unique][local][object][uuid] */ 
+/* [unique][local][object][uuid] */
 
 
 EXTERN_C const IID IID_ID3D12DeviceDownlevel;
 
 #if defined(__cplusplus) && !defined(CINTERFACE)
-    
+
     MIDL_INTERFACE("74eaee3f-2f4b-476d-82ba-2b85cb49e310")
-    ID3D12DeviceDownlevel : public IUnknown
+    ID3D12DeviceDownlevel : IUnknown
     {
-    public:
-        virtual HRESULT STDMETHODCALLTYPE QueryVideoMemoryInfo( 
+        virtual HRESULT STDMETHODCALLTYPE QueryVideoMemoryInfo(
             UINT NodeIndex,
             DXGI_MEMORY_SEGMENT_GROUP MemorySegmentGroup,
             _Out_  DXGI_QUERY_VIDEO_MEMORY_INFO *pVideoMemoryInfo) = 0;
-        
+
     };
-    
-    
+
+
 #else 	/* C style interface */
 
     typedef struct ID3D12DeviceDownlevelVtbl
     {
         BEGIN_INTERFACE
-        
-        HRESULT ( STDMETHODCALLTYPE *QueryInterface )( 
+
+        HRESULT ( STDMETHODCALLTYPE *QueryInterface )(
             ID3D12DeviceDownlevel * This,
             REFIID riid,
             _COM_Outptr_  void **ppvObject);
-        
-        ULONG ( STDMETHODCALLTYPE *AddRef )( 
+
+        ULONG ( STDMETHODCALLTYPE *AddRef )(
             ID3D12DeviceDownlevel * This);
-        
-        ULONG ( STDMETHODCALLTYPE *Release )( 
+
+        ULONG ( STDMETHODCALLTYPE *Release )(
             ID3D12DeviceDownlevel * This);
-        
-        HRESULT ( STDMETHODCALLTYPE *QueryVideoMemoryInfo )( 
+
+        HRESULT ( STDMETHODCALLTYPE *QueryVideoMemoryInfo )(
             ID3D12DeviceDownlevel * This,
             UINT NodeIndex,
             DXGI_MEMORY_SEGMENT_GROUP MemorySegmentGroup,
             _Out_  DXGI_QUERY_VIDEO_MEMORY_INFO *pVideoMemoryInfo);
-        
+
         END_INTERFACE
     } ID3D12DeviceDownlevelVtbl;
 
@@ -226,23 +224,23 @@ EXTERN_C const IID IID_ID3D12DeviceDownlevel;
         CONST_VTBL struct ID3D12DeviceDownlevelVtbl *lpVtbl;
     };
 
-    
+
 
 #ifdef COBJMACROS
 
 
 #define ID3D12DeviceDownlevel_QueryInterface(This,riid,ppvObject)	\
-    ( (This)->lpVtbl -> QueryInterface(This,riid,ppvObject) ) 
+    ( (This)->lpVtbl -> QueryInterface(This,riid,ppvObject) )
 
 #define ID3D12DeviceDownlevel_AddRef(This)	\
-    ( (This)->lpVtbl -> AddRef(This) ) 
+    ( (This)->lpVtbl -> AddRef(This) )
 
 #define ID3D12DeviceDownlevel_Release(This)	\
-    ( (This)->lpVtbl -> Release(This) ) 
+    ( (This)->lpVtbl -> Release(This) )
 
 
 #define ID3D12DeviceDownlevel_QueryVideoMemoryInfo(This,NodeIndex,MemorySegmentGroup,pVideoMemoryInfo)	\
-    ( (This)->lpVtbl -> QueryVideoMemoryInfo(This,NodeIndex,MemorySegmentGroup,pVideoMemoryInfo) ) 
+    ( (This)->lpVtbl -> QueryVideoMemoryInfo(This,NodeIndex,MemorySegmentGroup,pVideoMemoryInfo) )
 
 #endif /* COBJMACROS */
 
@@ -256,7 +254,7 @@ EXTERN_C const IID IID_ID3D12DeviceDownlevel;
 
 
 /* interface __MIDL_itf_d3d12downlevel_0000_0002 */
-/* [local] */ 
+/* [local] */
 
 #endif /* WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP) */
 #pragma endregion

@@ -141,7 +141,7 @@ RED4ext::ScriptInstance FlatPool::GetValuePtr(int32_t aOffset)
 
 void FlatPool::Initialize()
 {
-    uintptr_t offsetEnd = m_tweakDb->flatDataBufferEnd - m_tweakDb->flatDataBuffer;
+    const uintptr_t offsetEnd = m_tweakDb->flatDataBufferEnd - m_tweakDb->flatDataBuffer;
 
     if (m_offsetEnd == offsetEnd)
     {
@@ -228,7 +228,7 @@ uint64_t FlatPool::Hash(const RED4ext::CBaseRTTIType* aType, RED4ext::ScriptInst
     if (aType->GetType() == RED4ext::ERTTIType::Array)
     {
         auto* arrayType = reinterpret_cast<const RED4ext::CRTTIArrayType*>(aType);
-        auto* innerType = arrayType->GetInnerType();
+        const auto* innerType = arrayType->GetInnerType();
 
         if (innerType->GetName() == "String")
         {

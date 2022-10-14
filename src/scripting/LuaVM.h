@@ -23,17 +23,17 @@ struct TDBIDLookupEntry
 struct Image;
 struct LuaVM
 {
-    LuaVM(Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12, Options& aOptions);
+    LuaVM(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12);
     ~LuaVM();
 
     [[nodiscard]] const VKBind* GetBind(const VKModBind& acModBind) const;
     [[nodiscard]] const TiltedPhoques::Vector<VKBind>* GetBinds(const std::string& acModName) const;
     [[nodiscard]] const TiltedPhoques::Map<std::string, std::reference_wrapper<const TiltedPhoques::Vector<VKBind>>>& GetAllBinds() const;
 
-    bool ExecuteLua(const std::string& acCommand);
+    bool ExecuteLua(const std::string& acCommand) const;
 
     void Update(float aDeltaTime);
-    void Draw();
+    void Draw() const;
     void ReloadAllMods();
 
     void OnOverlayOpen() const;
@@ -50,18 +50,18 @@ struct LuaVM
     bool GetTDBIDDerivedFrom(uint64_t aDBID, TiltedPhoques::Vector<uint64_t>& aDerivedList);
     uint64_t GetTDBIDBase(uint64_t aDBID);
     TDBIDLookupEntry GetTDBIDLookupEntry(uint64_t aDBID);
-    std::string GetTDBDIDDebugString(TDBID aDBID);
+    std::string GetTDBDIDDebugString(TDBID aDBID) const;
     std::string GetTDBIDString(uint64_t aDBID);
 
     void RegisterTDBIDString(uint64_t aValue, uint64_t aBase, const std::string& acString);
 
     void PostInitializeScripting();
-    void PostInitializeTweakDB();
+    void PostInitializeTweakDB() const;
     void PostInitializeMods();
 
 protected:
 
-    void Hook(Options& aOptions);
+    void Hook();
 
     static void HookLog(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*, void*);
     static void HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*, void*);

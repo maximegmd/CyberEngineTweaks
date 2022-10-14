@@ -4,7 +4,6 @@
 #include "Options.h"
 #include "Utils.h"
 
-#include <kiero/kiero.h>
 #include <imgui_impl/dx12.h>
 #include <imgui_impl/win32.h>
 
@@ -96,7 +95,7 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
     for (UINT i = 0; i < buffersCounts; i++)
         m_pdxgiSwapChain->GetBuffer(i, IID_PPV_ARGS(&m_frameContexts[i].BackBuffer));
 
-    D3D12_DESCRIPTOR_HEAP_DESC rtvdesc = {};
+    D3D12_DESCRIPTOR_HEAP_DESC rtvdesc;
     rtvdesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
     rtvdesc.NumDescriptors = buffersCounts;
     rtvdesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
@@ -161,7 +160,7 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
     if (!apCommandQueue || !apSourceTex2D)
         return false;
 
-    HWND hWnd = m_window.GetWindow();
+    const HWND hWnd = m_window.GetWindow();
     if (!hWnd)
     {
         Log::Warn("D3D12::InitializeDownlevel() - window not yet hooked!");
@@ -176,7 +175,7 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
         return true;
     }
 
-    auto cmdQueueDesc = apCommandQueue->GetDesc();
+    const auto cmdQueueDesc = apCommandQueue->GetDesc();
     if(cmdQueueDesc.Type != D3D12_COMMAND_LIST_TYPE_DIRECT)
     {
         Log::Warn("D3D12::InitializeDownlevel() - ignoring command queue - invalid type of command list!");
@@ -185,7 +184,7 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
 
     m_pCommandQueue = apCommandQueue;
 
-    auto st2DDesc = apSourceTex2D->GetDesc();
+    const auto st2DDesc = apSourceTex2D->GetDesc();
     m_outSize = { static_cast<LONG>(st2DDesc.Width), static_cast<LONG>(st2DDesc.Height) };
 
     if (hWnd != ahWindow)
@@ -451,7 +450,7 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
     return true;
 }
 
-void D3D12::Update()
+void D3D12::Update() const
 {
     ImGui_ImplDX12_NewFrame(m_pCommandQueue);
     ImGui_ImplWin32_NewFrame(m_outSize);
@@ -459,8 +458,8 @@ void D3D12::Update()
 
     OnUpdate.Emit();
 
-    const auto bufferIndex = (m_pdxgiSwapChain != nullptr) ? (m_pdxgiSwapChain->GetCurrentBackBufferIndex()) : (m_downlevelBufferIndex);
-    auto& frameContext = m_frameContexts[bufferIndex];
+    const auto bufferIndex = m_pdxgiSwapChain != nullptr ? m_pdxgiSwapChain->GetCurrentBackBufferIndex() : m_downlevelBufferIndex;
+    const auto& frameContext = m_frameContexts[bufferIndex];
     frameContext.CommandAllocator->Reset();
 
     m_pd3dCommandList->Reset(frameContext.CommandAllocator.Get(), nullptr);

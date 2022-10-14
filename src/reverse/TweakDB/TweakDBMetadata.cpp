@@ -73,7 +73,7 @@ bool TweakDBMetadata::Initialize()
     return true;
 }
 
-bool TweakDBMetadata::IsInitialized()
+bool TweakDBMetadata::IsInitialized() const
 {
     return m_isInitialized;
 }
@@ -108,10 +108,10 @@ bool TweakDBMetadata::GetQueryName(RED4ext::TweakDBID aDBID, std::string& aName)
     return true;
 }
 
-bool TweakDBMetadata::HasREDModTweakDB()
+bool TweakDBMetadata::HasREDModTweakDB() const
 {
-    auto filepath = CET::Get().GetPaths().R6CacheModdedRoot() / c_defaultFilename;
-    return std::filesystem::exists(filepath);
+    const auto filepath = CET::Get().GetPaths().R6CacheModdedRoot() / c_defaultFilename;
+    return exists(filepath);
 }
 
 int32_t TweakDBMetadata::ReadCompressedInt(std::istream& aFile)
@@ -147,9 +147,9 @@ int32_t TweakDBMetadata::ReadCompressedInt(std::istream& aFile)
 
 void TweakDBMetadata::ReadTDBIDNameArray(std::istream& aFile, uint32_t aCount, TiltedPhoques::Map<uint64_t, std::string>& aOutMap)
 {
-    for (int32_t i = 0; i != aCount; ++i)
+    for (uint32_t i = 0; i < aCount; ++i)
     {
-        int32_t length = ReadCompressedInt(aFile);
+        const int32_t length = ReadCompressedInt(aFile);
         std::string str;
         str.resize(length);
         aFile.read(str.data(), length);

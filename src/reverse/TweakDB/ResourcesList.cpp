@@ -93,7 +93,7 @@ bool ResourcesList::Initialize()
     }
 }
 
-bool ResourcesList::IsInitialized()
+bool ResourcesList::IsInitialized() const
 {
     return m_isInitialized;
 }
@@ -103,10 +103,8 @@ const std::string& ResourcesList::Resolve(uint64_t aHash)
     static std::string defaultName = "ERROR_UNKNOWN_RESOURCE";
 
     const auto it = m_resourcesByHash.find(aHash);
-    if (it == m_resourcesByHash.end())
-        return defaultName;
-    else
-        return it->second->m_name;
+
+    return it == m_resourcesByHash.end() ? defaultName : it->second->m_name;
 }
 
 TiltedPhoques::Vector<ResourcesList::Resource>& ResourcesList::GetResources()

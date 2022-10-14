@@ -8,10 +8,10 @@ struct ClassReference : ClassType
                    RED4ext::CBaseRTTIType* apClass,
                    RED4ext::ScriptInstance apInstance);
     ClassReference(ClassReference&& aOther) noexcept;
-    virtual ~ClassReference();
+    ~ClassReference() override;
 
-    virtual RED4ext::ScriptInstance GetHandle() const override;
-    virtual RED4ext::ScriptInstance GetValuePtr() const override;
+    RED4ext::ScriptInstance GetHandle() const override;
+    RED4ext::ScriptInstance GetValuePtr() const override;
 
 private:
     RED4ext::ScriptInstance m_pInstance;

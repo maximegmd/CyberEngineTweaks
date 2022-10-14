@@ -9,21 +9,21 @@ Enum::Enum(const RED4ext::CStackType& aStackType)
 
 Enum::Enum(const std::string& acTypeName, const std::string& acValue)
 {
-    auto* pType = static_cast<RED4ext::CEnum*>(RED4ext::CRTTISystem::Get()->GetEnum(RED4ext::FNV1a64(acTypeName.c_str())));
-    if (pType)
+    const auto* cpType = RED4ext::CRTTISystem::Get()->GetEnum(RED4ext::FNV1a64(acTypeName.c_str()));
+    if (cpType)
     {
-        m_cpType = pType;
+        m_cpType = cpType;
         SetValueByName(acValue);
     }
 }
 
 Enum::Enum(const std::string& acTypeName, uint32_t aValue)
 {
-    auto* pType = static_cast<RED4ext::CEnum*>(RED4ext::CRTTISystem::Get()->GetEnum(RED4ext::FNV1a64(acTypeName.c_str())));
-    if (pType)
+    const auto* cpType = RED4ext::CRTTISystem::Get()->GetEnum(RED4ext::FNV1a64(acTypeName.c_str()));
+    if (cpType)
     {
-        m_cpType = pType;
-        SetValueSafe(static_cast<uint32_t>(aValue));
+        m_cpType = cpType;
+        SetValueSafe(aValue);
     }
 }
 
@@ -38,14 +38,14 @@ Enum::Enum(const RED4ext::CEnum* acpType, const std::string& acValue)
 Enum::Enum(const RED4ext::CEnum* acpType, uint32_t aValue)
     : m_cpType(acpType)
 {
-    SetValueSafe(static_cast<uint32_t>(aValue));
+    SetValueSafe(aValue);
 }
 
 void Enum::SetValueSafe(uint64_t aValue)
 {
     for (uint32_t i = 0; i < m_cpType->valueList.size; ++i)
     {
-        if (m_cpType->valueList[i] == aValue)
+        if (m_cpType->valueList[i] == static_cast<int64_t>(aValue))
         {
             m_value = aValue;
             break;
@@ -120,7 +120,7 @@ std::string Enum::GetValueName() const
 
     for (uint32_t i = 0; i < m_cpType->valueList.size; ++i)
     {
-        if (m_cpType->valueList[i] == m_value)
+        if (m_cpType->valueList[i] == static_cast<int64_t>(m_value))
         {
             return m_cpType->hashList[i].ToString();
         }
@@ -151,7 +151,7 @@ std::string Enum::ToString() const
 {
     if (m_cpType)
     {
-        RED4ext::CName name = m_cpType->GetName();
+        const RED4ext::CName name = m_cpType->GetName();
         return name.ToString() + std::string(" : ") + GetValueName() + std::string(" (") + std::to_string(m_value) + std::string(")");
     }
 
@@ -163,8 +163,8 @@ bool Enum::operator==(const Enum& acRhs) const noexcept
     if (!m_cpType || !acRhs.m_cpType)
         return false;
 
-    RED4ext::CName name = m_cpType->GetName();
-    RED4ext::CName nameRhs = acRhs.m_cpType->GetName();
+    const RED4ext::CName name = m_cpType->GetName();
+    const RED4ext::CName nameRhs = acRhs.m_cpType->GetName();
 
     return name == nameRhs && m_value == acRhs.m_value;
 }

@@ -29,7 +29,7 @@ int Console::HandleConsoleHistory(ImGuiInputTextCallbackData* apData)
 {
     auto* pConsole = static_cast<Console*>(apData->UserData);
 
-    std::string* pStr = nullptr;
+    const std::string* pStr = nullptr;
 
     if (pConsole->m_newConsoleHistory)
     {
@@ -73,8 +73,8 @@ void Console::Update()
     ImGui::SameLine();
     ImGui::Checkbox("Auto-scroll", &m_outputShouldScroll);
 
-    auto& style = ImGui::GetStyle();
-    auto inputLineHeight = ImGui::GetTextLineHeight() + style.ItemInnerSpacing.y * 2;
+    const auto& style = ImGui::GetStyle();
+    const auto inputLineHeight = ImGui::GetTextLineHeight() + style.ItemInnerSpacing.y * 2;
 
     if (ImGui::ListBoxHeader("##ConsoleHeader", ImVec2(-1, -(inputLineHeight + style.ItemSpacing.y))))
     {

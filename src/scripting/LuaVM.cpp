@@ -22,7 +22,7 @@ const TiltedPhoques::Map<std::string, std::reference_wrapper<const TiltedPhoques
     return m_scripting.GetAllBinds();
 }
 
-bool LuaVM::ExecuteLua(const std::string& acCommand)
+bool LuaVM::ExecuteLua(const std::string& acCommand) const
 {
     if (!m_initialized)
     {
@@ -63,7 +63,7 @@ void LuaVM::Update(float aDeltaTime)
     m_scripting.TriggerOnUpdate(aDeltaTime);
 }
 
-void LuaVM::Draw()
+void LuaVM::Draw() const
 {
     if (!m_initialized || m_drawBlocked)
         return;
@@ -157,7 +157,7 @@ TDBIDLookupEntry LuaVM::GetTDBIDLookupEntry(uint64_t aDBID)
     return it->second;
 }
 
-std::string LuaVM::GetTDBDIDDebugString(TDBID aDBID)
+std::string LuaVM::GetTDBDIDDebugString(TDBID aDBID) const
 {
     RED4ext::TweakDBID internal(aDBID.value);
     return internal.HasTDBOffset()
@@ -190,12 +190,12 @@ std::string LuaVM::GetTDBIDString(uint64_t aDBID)
     return string;
 }
 
-void LuaVM::RegisterTDBIDString(uint64_t aValue, uint64_t aBase, const std::string& aName)
+void LuaVM::RegisterTDBIDString(uint64_t aValue, uint64_t aBase, const std::string& acString)
 {
     if (aValue == 0) return;
     std::lock_guard _{ m_tdbidLock };
 
-    m_tdbidLookup[aValue] = { aBase, aName };
+    m_tdbidLookup[aValue] = { aBase, acString };
     if (aBase != 0)
         m_tdbidDerivedLookup[aBase].insert(aValue);
 }
@@ -205,7 +205,7 @@ void LuaVM::PostInitializeScripting()
     m_scripting.PostInitializeScripting();
 }
 
-void LuaVM::PostInitializeTweakDB()
+void LuaVM::PostInitializeTweakDB() const
 {
     if (!ResourcesList::Get()->Initialize() || !TweakDBMetadata::Get()->Initialize())
         return;

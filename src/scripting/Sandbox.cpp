@@ -12,7 +12,7 @@ Sandbox::Sandbox(uint64_t aId, Scripting* apScripting, sol::environment aBaseEnv
     , m_path(acRootPath)
 {
     // copy base environment, do not set it as fallback, as it may cause globals to bleed into other things!
-    auto& luaState = apScripting->GetLockedState().Get();
+    const auto& luaState = apScripting->GetLockedState().Get();
     for (const auto& cKV : aBaseEnvironment)
         m_env[cKV.first] = DeepCopySolObject(cKV.second, luaState);
 

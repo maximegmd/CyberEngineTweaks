@@ -1,7 +1,7 @@
 #include <stdafx.h>
 
 #include "kiero.h"
-#include <assert.h>
+#include <cassert>
 
 #include <d3d12.h>
 #include "common/D3D12Downlevel.h"
@@ -9,7 +9,7 @@
 #include <MinHook.h>
 
 static bool g_kieroInitialized = false;
-static uint150_t* g_methodsTable = NULL;
+static uint150_t* g_methodsTable = nullptr;
 static void** g_swapChainVtable = nullptr;
 static void** g_commandListVtable = nullptr;
 static void** g_commandQueueVtable = nullptr;
@@ -43,8 +43,8 @@ kiero::Status::Enum kiero::init()
     HMODULE libD3D12;
     if ((libDXGI = ::GetModuleHandle(_T("dxgi.dll"))) == nullptr)
     {
-        ::DestroyWindow(window);
-        ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
+        DestroyWindow(window);
+        UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
         return Status::ModuleNotFoundError;
     }
 
@@ -59,16 +59,16 @@ kiero::Status::Enum kiero::init()
         for (uint32_t i = 0; i < std::size(localD3d12on7Paths); i++)
         {
             libD3D12 = LoadLibrary(localD3d12on7Paths[i]);
-            if (libD3D12 != NULL)
+            if (libD3D12 != nullptr)
                 break;
         }
 
-        if (libD3D12 == NULL)
+        if (libD3D12 == nullptr)
         {
             if ((libD3D12 = ::LoadLibrary(_T("d3d12.dll"))) == nullptr)
             {
-                ::DestroyWindow(window);
-                ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
+                DestroyWindow(window);
+                UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
                 return Status::ModuleNotFoundError;
             }
         }
@@ -77,40 +77,40 @@ kiero::Status::Enum kiero::init()
     void* CreateDXGIFactory;
     if ((CreateDXGIFactory = reinterpret_cast<void*>(GetProcAddress(libDXGI, "CreateDXGIFactory"))) == nullptr)
     {
-        ::DestroyWindow(window);
-        ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
+        DestroyWindow(window);
+        UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
         return Status::UnknownError;
     }
 
     Microsoft::WRL::ComPtr<IDXGIFactory> factory;
     if (reinterpret_cast<long(*)(const IID&, void**)>(CreateDXGIFactory)(IID_PPV_ARGS(&factory)) < 0)
     {
-        ::DestroyWindow(window);
-        ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
+        DestroyWindow(window);
+        UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
         return Status::UnknownError;
     }
 
     Microsoft::WRL::ComPtr<IDXGIAdapter> adapter;
     if (factory->EnumAdapters(0, &adapter) == DXGI_ERROR_NOT_FOUND)
     {
-        ::DestroyWindow(window);
-        ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
+        DestroyWindow(window);
+        UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
         return Status::UnknownError;
     }
 
     void* D3D12CreateDevice;
     if ((D3D12CreateDevice = reinterpret_cast<void*>(GetProcAddress(libD3D12, "D3D12CreateDevice"))) == nullptr)
     {
-        ::DestroyWindow(window);
-        ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
+        DestroyWindow(window);
+        UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
         return Status::UnknownError;
     }
 
     Microsoft::WRL::ComPtr<ID3D12Device> device;
     if (reinterpret_cast<long(*)(IUnknown*, D3D_FEATURE_LEVEL, const IID&, void**)>(D3D12CreateDevice)(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&device)) < 0)
     {
-        ::DestroyWindow(window);
-        ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
+        DestroyWindow(window);
+        UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
         return Status::UnknownError;
     }
 
@@ -123,24 +123,24 @@ kiero::Status::Enum kiero::init()
     Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue;
     if (device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&commandQueue)) < 0)
     {
-        ::DestroyWindow(window);
-        ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
+        DestroyWindow(window);
+        UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
         return Status::UnknownError;
     }
 
     Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator;
     if (device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocator)) < 0)
     {
-        ::DestroyWindow(window);
-        ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
+        DestroyWindow(window);
+        UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
         return Status::UnknownError;
     }
 
     Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList;
     if (device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator.Get(), nullptr, IID_PPV_ARGS(&commandList)) < 0)
     {
-        ::DestroyWindow(window);
-        ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
+        DestroyWindow(window);
+        UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
         return Status::UnknownError;
     }
 
@@ -180,15 +180,15 @@ kiero::Status::Enum kiero::init()
         Microsoft::WRL::ComPtr<IDXGISwapChain> swapChain1;
         if (factory->CreateSwapChain(commandQueue.Get(), &swapChainDesc, &swapChain1) < 0)
         {
-            ::DestroyWindow(window);
-            ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
+            DestroyWindow(window);
+            UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
             return Status::UnknownError;
         }
 
         if (FAILED(swapChain1->QueryInterface(IID_PPV_ARGS(&swapChain))))
         {
-            ::DestroyWindow(window);
-            ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
+            DestroyWindow(window);
+            UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
             return Status::UnknownError;
         }
 
@@ -202,8 +202,8 @@ kiero::Status::Enum kiero::init()
     {
         if (commandQueue->QueryInterface(IID_PPV_ARGS(&commandQueueDownlevel)) < 0)
         {
-            ::DestroyWindow(window);
-            ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
+            DestroyWindow(window);
+            UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
             return Status::UnknownError;
         }
 
@@ -213,25 +213,25 @@ kiero::Status::Enum kiero::init()
         g_commandQueueOffset = reinterpret_cast<uintptr_t>(addr) - reinterpret_cast<uintptr_t>(commandQueueDownlevelPtr);
     }
 
-    g_methodsTable = (uint150_t*)::calloc(176, sizeof(uint150_t));
+    g_methodsTable = static_cast<uint150_t*>(std::calloc(176, sizeof(uint150_t)));
 
     if (!g_isDownLevelDevice)
-        g_swapChainVtable = *(void***)swapChain.Get();
+        g_swapChainVtable = *reinterpret_cast<void***>(swapChain.Get());
 
-    g_commandListVtable = *(void***)commandList.Get();
-    g_commandQueueVtable = *(void***)commandQueue.Get();
+    g_commandListVtable = *reinterpret_cast<void***>(commandList.Get());
+    g_commandQueueVtable = *reinterpret_cast<void***>(commandQueue.Get());
 
-    ::memcpy(g_methodsTable, *(uint150_t**)(void*)device.Get(), 44 * sizeof(uint150_t));
-    ::memcpy(g_methodsTable + 44, *(uint150_t**)(void*)commandQueue.Get(), 19 * sizeof(uint150_t));
-    ::memcpy(g_methodsTable + 44 + 19, *(uint150_t**)(void*)commandAllocator.Get(), 9 * sizeof(uint150_t));
-    ::memcpy(g_methodsTable + 44 + 19 + 9, *(uint150_t**)(void*)commandList.Get(), 60 * sizeof(uint150_t));
+    std::memcpy(g_methodsTable, *static_cast<uint150_t**>(static_cast<void*>(device.Get())), 44 * sizeof(uint150_t));
+    std::memcpy(g_methodsTable + 44, *static_cast<uint150_t**>(static_cast<void*>(commandQueue.Get())), 19 * sizeof(uint150_t));
+    std::memcpy(g_methodsTable + 44 + 19, *static_cast<uint150_t**>(static_cast<void*>(commandAllocator.Get())), 9 * sizeof(uint150_t));
+    std::memcpy(g_methodsTable + 44 + 19 + 9, *static_cast<uint150_t**>(static_cast<void*>(commandList.Get())), 60 * sizeof(uint150_t));
     if (!g_isDownLevelDevice)
-        ::memcpy(g_methodsTable + 44 + 19 + 9 + 60, *(uint150_t**)(void*)swapChain.Get(), 40 * sizeof(uint150_t));
+        std::memcpy(g_methodsTable + 44 + 19 + 9 + 60, *static_cast<uint150_t**>(static_cast<void*>(swapChain.Get())), 40 * sizeof(uint150_t));
     else
-        ::memcpy(g_methodsTable + 44 + 19 + 9 + 60 + 40, *(uint150_t**)(void*)commandQueueDownlevel.Get(), 4 * sizeof(uint150_t));
+        std::memcpy(g_methodsTable + 44 + 19 + 9 + 60 + 40, *static_cast<uint150_t**>(static_cast<void*>(commandQueueDownlevel.Get())), 4 * sizeof(uint150_t));
 
-    ::DestroyWindow(window);
-    ::UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
+    DestroyWindow(window);
+    UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
 
     g_kieroInitialized = true;
     return Status::Success;
@@ -241,10 +241,10 @@ void kiero::shutdown()
 {
     if (g_kieroInitialized)
     {
-        MH_DisableHook(MH_ALL_HOOKS);
+        MH_DisableHook(nullptr);
 
-        ::free(g_methodsTable);
-        g_methodsTable = NULL;
+        std::free(g_methodsTable);
+        g_methodsTable = nullptr;
         g_kieroInitialized = false;
     }
 }
@@ -257,7 +257,7 @@ kiero::Status::Enum kiero::bind(uint16_t _index, void** _original, void* _functi
 
     if (g_kieroInitialized)
     {
-        void* target = (void*)g_methodsTable[_index];
+        auto* target = reinterpret_cast<void*>(g_methodsTable[_index]);
         if (MH_CreateHook(target, _function, _original) != MH_OK || MH_EnableHook(target) != MH_OK)
             return Status::UnknownError;
 
@@ -271,11 +271,9 @@ void kiero::unbind(uint16_t _index)
 {
     if (g_kieroInitialized)
     {
-#if KIERO_USE_MINHOOK
-        void* target = (void*)g_methodsTable[_index];
+        auto* target = (void*)g_methodsTable[_index];
         MH_DisableHook(target);
         MH_RemoveHook(target);
-#endif
     }
 }
 

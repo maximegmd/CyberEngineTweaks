@@ -8,7 +8,7 @@ struct TweakDBMetadata
 
     bool Initialize();
 
-    bool IsInitialized();
+    bool IsInitialized() const;
 
     bool GetRecordName(RED4ext::TweakDBID aDBID, std::string& aName);
 
@@ -16,7 +16,7 @@ struct TweakDBMetadata
 
     bool GetQueryName(RED4ext::TweakDBID aDBID, std::string& aName);
 
-    bool HasREDModTweakDB();
+    bool HasREDModTweakDB() const;
 
 protected:
     int32_t ReadCompressedInt(std::istream& aFile);

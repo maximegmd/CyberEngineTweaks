@@ -3,7 +3,6 @@
 #include "Utils.h"
 
 #include <LzmaLib.h>
-#include <spdlog/sinks/base_sink.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 
 void ltrim(std::string& s)
@@ -51,13 +50,13 @@ std::wstring UTF8ToUTF16(std::string_view utf8)
 }
 
 template<typename Mutex>
-class CustomSink : public spdlog::sinks::base_sink<Mutex>
+class CustomSink final : public spdlog::sinks::base_sink<Mutex>
 {
 public:
-    CustomSink(std::function<void(const std::string&)> aSinkItHandler, std::function<void()> aFlushHandler)
+    CustomSink(const std::function<void(const std::string&)>& acpSinkItHandler, const std::function<void()>& acpFlushHandler)
         : spdlog::sinks::base_sink<Mutex>()
-        , m_sinkItHandler(aSinkItHandler)
-        , m_flushHandler(aFlushHandler)
+        , m_sinkItHandler(acpSinkItHandler)
+        , m_flushHandler(acpFlushHandler)
     {
     }
 
@@ -84,37 +83,37 @@ private:
 };
 
 template<typename Mutex>
-spdlog::sink_ptr CreateCustomSink(std::function<void(const std::string&)> aSinkItHandler,
-                                  std::function<void()> aFlushHandler)
+spdlog::sink_ptr CreateCustomSink(const std::function<void(const std::string&)>& acpSinkItHandler,
+                                  const std::function<void()>& acpFlushHandler)
 {
-    return std::make_shared<CustomSink<Mutex>>(aSinkItHandler, aFlushHandler);
+    return std::make_shared<CustomSink<Mutex>>(acpSinkItHandler, acpFlushHandler);
 }
 
-spdlog::sink_ptr CreateCustomSinkST(std::function<void(const std::string&)> aSinkItHandler,
-                                    std::function<void()> aFlushHandler)
+spdlog::sink_ptr CreateCustomSinkST(const std::function<void(const std::string&)>& acpSinkItHandler,
+                                    const std::function<void()>& acpFlushHandler)
 {
-    return CreateCustomSink<spdlog::details::null_mutex>(aSinkItHandler, aFlushHandler);
+    return CreateCustomSink<spdlog::details::null_mutex>(acpSinkItHandler, acpFlushHandler);
 }
 
-spdlog::sink_ptr CreateCustomSinkMT(std::function<void(const std::string&)> aSinkItHandler,
-                                    std::function<void()> aFlushHandler)
+spdlog::sink_ptr CreateCustomSinkMT(const std::function<void(const std::string&)>& acpSinkItHandler,
+                                    const std::function<void()>& acpFlushHandler)
 {
-    return CreateCustomSink<std::mutex>(aSinkItHandler, aFlushHandler);
+    return CreateCustomSink<std::mutex>(acpSinkItHandler, acpFlushHandler);
 }
 
-std::shared_ptr<spdlog::logger> CreateLogger(const std::filesystem::path& aPath, const std::string& aID,
-                                             spdlog::sink_ptr aExtraSink, const std::string& aPattern)
+std::shared_ptr<spdlog::logger> CreateLogger(const std::filesystem::path& acpPath, const std::string& acpID,
+                                             const spdlog::sink_ptr& acpExtraSink, const std::string& acpPattern)
 {
-    auto existingLogger = spdlog::get(aID);
+    auto existingLogger = spdlog::get(acpID);
     if (existingLogger)
         return existingLogger;
 
-    const auto rotSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(aPath.native(), 1048576 * 5, 3);
-    rotSink->set_pattern(aPattern);
-    auto logger = std::make_shared<spdlog::logger>(aID, spdlog::sinks_init_list{rotSink});
+    const auto rotSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(acpPath.native(), 1048576 * 5, 3);
+    rotSink->set_pattern(acpPattern);
+    auto logger = std::make_shared<spdlog::logger>(acpID, spdlog::sinks_init_list{rotSink});
 
-    if (aExtraSink)
-        logger->sinks().emplace_back(aExtraSink);
+    if (acpExtraSink)
+        logger->sinks().emplace_back(acpExtraSink);
 
 #ifdef CET_DEBUG
     logger->flush_on(spdlog::level::trace);
@@ -127,25 +126,25 @@ std::shared_ptr<spdlog::logger> CreateLogger(const std::filesystem::path& aPath,
 }
 
 // deep copies sol object (doesnt take into account potential duplicates)
-sol::object DeepCopySolObject(sol::object aObj, const sol::state_view& aStateView)
+sol::object DeepCopySolObject(const sol::object& acpObj, const sol::state_view& acpStateView)
 {
-    if ((aObj == sol::nil) || (aObj.get_type() != sol::type::table))
-        return aObj;
-    sol::table src{aObj.as<sol::table>()};
-    sol::table copy{aStateView, sol::create};
-    for (auto kv : src)
-        copy[DeepCopySolObject(kv.first, aStateView)] = DeepCopySolObject(kv.second, aStateView);
+    if (acpObj == sol::nil || acpObj.get_type() != sol::type::table)
+        return acpObj;
+    sol::table src = acpObj;
+    sol::table copy{acpStateView, sol::create};
+    for (const auto& kv : src)
+        copy[DeepCopySolObject(kv.first, acpStateView)] = DeepCopySolObject(kv.second, acpStateView);
     copy[sol::metatable_key] = src[sol::metatable_key];
     return copy;
 }
 
 // makes sol usertype or userdata immutable when accessed from lua
-void MakeSolUsertypeImmutable(sol::object aObj, const sol::state_view& aStateView)
+void MakeSolUsertypeImmutable(const sol::object& acpObj, const sol::state_view& acpStateView)
 {
-    if (!aObj.is<sol::metatable>() && !aObj.is<sol::userdata>())
+    if (!acpObj.is<sol::metatable>() && !acpObj.is<sol::userdata>())
         return;
 
-    sol::table target = aObj;
+    sol::table target = acpObj;
     sol::table metatable;
     sol::object metaref = target[sol::metatable_key];
 
@@ -155,30 +154,30 @@ void MakeSolUsertypeImmutable(sol::object aObj, const sol::state_view& aStateVie
     }
     else
     {
-        metatable = {aStateView, sol::create};
+        metatable = {acpStateView, sol::create};
         target[sol::metatable_key] = metatable;
     }
 
     // prevent adding new properties
-    metatable[sol::meta_function::new_index] = []() {};
+    metatable[sol::meta_function::new_index] = [] {};
 
     // prevent overriding metatable
-    metatable[sol::meta_function::metatable] = []() { return sol::nil; };
+    metatable[sol::meta_function::metatable] = [] { return sol::nil; };
 }
 
 // Check if Lua object is of cdata type
-bool IsLuaCData(sol::object aObject)
+bool IsLuaCData(const sol::object& acpObject)
 {
     // Sol doesn't have enum for LuaJIT's cdata type since it's not a standard type.
     // But it's possible to check the type using numeric code (10).
     // LuaJIT packs int64/uint64 into cdata and some other types.
     // Since we're not using other types, this should be enough to check for int64/uint64 value.
-    return static_cast<int>(aObject.get_type()) == 10;
+    return static_cast<int>(acpObject.get_type()) == 10;
 }
 
-float GetAlignedItemWidth(int64_t aItemsCount)
+float GetAlignedItemWidth(const int64_t acItemsCount)
 {
-    return (ImGui::GetWindowContentRegionWidth() - static_cast<float>(aItemsCount - 1) * ImGui::GetStyle().ItemSpacing.x) / static_cast<float>(aItemsCount);
+    return (ImGui::GetWindowContentRegionWidth() - static_cast<float>(acItemsCount - 1) * ImGui::GetStyle().ItemSpacing.x) / static_cast<float>(acItemsCount);
 }
 
 float GetCenteredOffsetForText(const char* acpText)
@@ -186,9 +185,9 @@ float GetCenteredOffsetForText(const char* acpText)
     return (ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(acpText).x) / 2.0f;
 }
 
-THWUCPResult UnsavedChangesPopup(bool& aFirstTime, bool aMadeChanges, TWidgetCB aSaveCB, TWidgetCB aLoadCB, TWidgetCB aCancelCB)
+THWUCPResult UnsavedChangesPopup(bool& aFirstTime, const bool acMadeChanges, const TWidgetCB& acpSaveCB, const TWidgetCB& acpLoadCB, const TWidgetCB& acpCancelCB)
 {
-    if (aMadeChanges)
+    if (acMadeChanges)
     {
         auto res = THWUCPResult::CHANGED;
         if (aFirstTime)
@@ -212,8 +211,8 @@ THWUCPResult UnsavedChangesPopup(bool& aFirstTime, bool aMadeChanges, TWidgetCB 
 
             if (ImGui::Button("Apply", ImVec2(itemWidth, 0)))
             {
-                if (aSaveCB)
-                    aSaveCB();
+                if (acpSaveCB)
+                    acpSaveCB();
                 res = THWUCPResult::APPLY;
                 aFirstTime = true;
                 ImGui::CloseCurrentPopup();
@@ -221,8 +220,8 @@ THWUCPResult UnsavedChangesPopup(bool& aFirstTime, bool aMadeChanges, TWidgetCB 
             ImGui::SameLine();
             if (ImGui::Button("Discard", ImVec2(itemWidth, 0)))
             {
-                if (aLoadCB)
-                    aLoadCB();
+                if (acpLoadCB)
+                    acpLoadCB();
                 res = THWUCPResult::DISCARD;
                 aFirstTime = true;
                 ImGui::CloseCurrentPopup();
@@ -230,8 +229,8 @@ THWUCPResult UnsavedChangesPopup(bool& aFirstTime, bool aMadeChanges, TWidgetCB 
             ImGui::SameLine();
             if (ImGui::Button("Cancel", ImVec2(itemWidth, 0)))
             {
-                if (aCancelCB)
-                    aCancelCB();
+                if (acpCancelCB)
+                    acpCancelCB();
                 res = THWUCPResult::CANCEL;
                 aFirstTime = true;
                 ImGui::CloseCurrentPopup();
@@ -349,7 +348,7 @@ std::vector<uint8_t> EncodeToLzma(const std::vector<uint8_t>& acpIn)
 
     const auto res = LzmaCompress(
         &outBuf[LZMA_PROPS_SIZE + sizeof(uint64_t)], &destLen,
-        &acpIn[0], acpIn.size(),
+        acpIn.data(), acpIn.size(),
         &outBuf[sizeof(uint64_t)], &propsSize,
         -1, 0, -1, -1, -1, -1, -1);
 
@@ -378,8 +377,8 @@ std::vector<uint8_t> DecodeFromLzma(const std::vector<uint8_t>& acpIn)
     outBuf.resize(decodedSize);
 
     size_t srcLen = acpIn.size() - LZMA_PROPS_SIZE;
-    SRes res = LzmaUncompress(
-        &outBuf[0], &decodedSize,
+    const auto res = LzmaUncompress(
+        outBuf.data(), &decodedSize,
         &acpIn[LZMA_PROPS_SIZE + sizeof(uint64_t)], &srcLen,
         &acpIn[sizeof(uint64_t)], LZMA_PROPS_SIZE);
         assert(res == SZ_OK);

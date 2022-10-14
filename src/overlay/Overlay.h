@@ -1,6 +1,5 @@
 #pragma once
 
-#include "widgets/Widget.h"
 #include "widgets/Console.h"
 #include "widgets/Bindings.h"
 #include "widgets/Settings.h"
@@ -45,7 +44,7 @@ private:
     Settings m_settings;
     TweakDBEditor m_tweakDBEditor;
     GameLog m_gameLog;
-    std::array<Widget*, size_t(WidgetID::COUNT)> m_widgets{ };
+    std::array<Widget*, static_cast<size_t>(WidgetID::COUNT)> m_widgets{ };
 
     TClipToCenter* m_realClipToCenter{ nullptr };
 

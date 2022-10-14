@@ -71,7 +71,7 @@ void GameLog::Log(const std::string& acpText)
     std::lock_guard _{ m_gamelogLock };
 
     size_t first = 2;
-    size_t size = acpText.size();
+    const size_t size = acpText.size();
     while (first < size)
     {
         // find_first_of \r or \n

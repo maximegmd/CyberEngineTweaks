@@ -95,38 +95,38 @@ const TiltedPhoques::Map<std::string, std::reference_wrapper<const TiltedPhoques
 
 void ScriptStore::TriggerOnTweak() const
 {
-    for (const auto& kvp : m_contexts)
-        kvp.second.TriggerOnTweak();
+    for (const auto& mod : m_contexts | std::views::values)
+        mod.TriggerOnTweak();
 }
 
 void ScriptStore::TriggerOnInit() const
 {
-    for (const auto& kvp : m_contexts)
-        kvp.second.TriggerOnInit();
+    for (const auto& mod : m_contexts | std::views::values)
+        mod.TriggerOnInit();
 }
 
 void ScriptStore::TriggerOnUpdate(float aDeltaTime) const
 {
-    for (const auto& kvp : m_contexts)
-        kvp.second.TriggerOnUpdate(aDeltaTime);
+    for (const auto& mod : m_contexts | std::views::values)
+        mod.TriggerOnUpdate(aDeltaTime);
 }
 
 void ScriptStore::TriggerOnDraw() const
 {
-    for (const auto& kvp : m_contexts)
-        kvp.second.TriggerOnDraw();
+    for (const auto& mod : m_contexts | std::views::values)
+        mod.TriggerOnDraw();
 }
 
 void ScriptStore::TriggerOnOverlayOpen() const
 {
-    for (const auto& kvp : m_contexts)
-        kvp.second.TriggerOnOverlayOpen();
+    for (const auto& mod : m_contexts | std::views::values)
+        mod.TriggerOnOverlayOpen();
 }
 
 void ScriptStore::TriggerOnOverlayClose() const
 {
-    for (const auto& kvp : m_contexts)
-        kvp.second.TriggerOnOverlayClose();
+    for (const auto& mod : m_contexts | std::views::values)
+        mod.TriggerOnOverlayClose();
 }
 
 sol::object ScriptStore::GetMod(const std::string& acName) const

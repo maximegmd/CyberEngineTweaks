@@ -24,7 +24,7 @@ WidgetResult Settings::OnEnable()
 
 WidgetResult Settings::OnDisable()
 {
-    WidgetResult result = WidgetResult::ENABLED;
+    auto result = WidgetResult::ENABLED;
 
     if (m_enabled)
     {

@@ -12,18 +12,18 @@ using TCRenderGlobal_Resize = void*(uint32_t a1, uint32_t a2, uint32_t a3, uint8
 
 struct D3D12
 {
-    static const uint32_t g_numDownlevelBackbuffersRequired = 3; // Windows 7 only: number of buffers needed before we start rendering
+    inline static const uint32_t g_numDownlevelBackbuffersRequired = 3; // Windows 7 only: number of buffers needed before we start rendering
 
     D3D12(Window& aWindow, Paths& aPaths, Options& aOptions);
     ~D3D12();
 
-    void SetTrapInputInImGui(bool aEnabled);
-    void DelayedSetTrapInputInImGui(bool aEnabled);
+    void SetTrapInputInImGui(const bool acEnabled);
+    void DelayedSetTrapInputInImGui(const bool acEnabled);
     [[nodiscard]] bool IsTrapInputInImGui() const noexcept { return m_trapInputInImGui; }
     [[nodiscard]] bool IsInitialized() const noexcept { return m_initialized; }
     [[nodiscard]] SIZE GetResolution() const noexcept { return m_outSize; }
 
-    LRESULT OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam);
+    LRESULT OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam) const;
 
     TiltedPhoques::Signal<void()> OnInitialized;
     TiltedPhoques::Signal<void()> OnUpdate;
@@ -48,7 +48,7 @@ protected:
     bool InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resource* apSourceTex2D, HWND ahWindow);
     bool InitializeImGui(size_t aBuffersCounts);
 
-    void Update();
+    void Update() const;
 
     static HRESULT ResizeBuffers(IDXGISwapChain* apSwapChain, UINT aBufferCount, UINT aWidth, UINT aHeight, DXGI_FORMAT aNewFormat, UINT aSwapChainFlags);
     static HRESULT PresentDownlevel(ID3D12CommandQueueDownlevel* apCommandQueueDownlevel, ID3D12GraphicsCommandList* apOpenCommandList, ID3D12Resource* apSourceTex2D, HWND ahWindow, D3D12_DOWNLEVEL_PRESENT_FLAGS aFlags);

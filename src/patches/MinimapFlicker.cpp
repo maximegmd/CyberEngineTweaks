@@ -1,10 +1,8 @@
 #include <stdafx.h>
 
-#include "Image.h"
-
-void MinimapFlickerPatch(const Image* apImage)
+void MinimapFlickerPatch()
 {
-    RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CPatches_MinimapFlicker);
+    const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CPatches_MinimapFlicker);
     uint8_t* pLocation = func.GetAddr();
 
     if (pLocation == nullptr)

@@ -3,29 +3,24 @@
 #include "CET.h"
 #include "Utils.h"
 
-std::function<void()> VKBind::DelayedCall(bool isDown) const
+std::function<void()> VKBind::DelayedCall(const bool acIsDown) const
 {
-    if (!isDown) // hotkeys only on key up
+    if (!acIsDown) // hotkeys only on key up
     {
-        const auto* fn = std::get_if<std::function<TVKBindHotkeyCallback>>(&Handler);
-        if (fn)
+        if (const auto* fn = std::get_if<std::function<TVKBindHotkeyCallback>>(&Handler))
             return *fn;
     }
 
-    {
-        const auto* fn = std::get_if<std::function<TVKBindInputCallback>>(&Handler);
-        if (fn)
-            return std::bind(*fn, isDown);
-    }
+    if (const auto* fn = std::get_if<std::function<TVKBindInputCallback>>(&Handler))
+        return [cb = *fn, acIsDown]{ cb(acIsDown); };
 
-    assert(isDown); // nullptr should ever return only for key down events, in case binding is a hotkey
+    assert(acIsDown); // nullptr should ever return only for key down events, in case binding is a hotkey
     return nullptr;
 }
 
-void VKBind::Call(bool isDown) const
+void VKBind::Call(const bool acIsDown) const
 {
-    auto fn { DelayedCall(isDown) };
-    if (fn)
+    if (const auto fn { DelayedCall(acIsDown) })
         fn();
 }
 
@@ -49,9 +44,9 @@ bool VKBind::HasComplexDescription() const
     return std::holds_alternative<std::function<void()>>(Description);
 }
 
-bool VKBind::operator==(const std::string& id) const
+bool VKBind::operator==(const std::string& acpId) const
 {
-    return ID == id;
+    return ID == acpId;
 }
 
 VKBindings::VKBindings(Paths& aPaths, const Options& acOptions)
@@ -77,8 +72,7 @@ void VKBindings::InitializeMods(const TiltedPhoques::Map<std::string, std::refer
     {
         VKModBind vkModBind;
         vkModBind.ModName = vkModName;
-        auto& modBinds = vkBinds.get();
-        for (auto& modBind : modBinds)
+        for (auto& modBind : vkBinds.get())
         {
             // check for existing binding
             vkModBind.ID = modBind.ID;
@@ -120,12 +114,12 @@ void VKBindings::InitializeMods(const TiltedPhoques::Map<std::string, std::refer
             {
                 for (auto& vkBind : currentModBindingsIt->second.get())
                 {
-                    found = (idToBind.first == vkBind.ID);
+                    found = idToBind.first == vkBind.ID;
                     if (found)
                     {
                         // test if bind is hotkey and if not, check if bind is valid for input (which means it has
                         // simple input key, not combo)
-                        found = (vkBind.IsHotkey() || ((idToBind.second & 0xFFFF000000000000) == idToBind.second));
+                        found = vkBind.IsHotkey() || (idToBind.second & 0xFFFF000000000000) == idToBind.second;
                         break; // we just reset found flag accordingly and exit here, we found valid entry, no need to
                                // continue regardless of result
                     }
@@ -183,8 +177,7 @@ void VKBindings::Load()
             else
             {
                 // load new config type
-                auto& modBinds{mod.value()};
-                for (auto& bind : modBinds.items())
+                for (auto& bind : mod.value().items())
                     m_modIdToBinds[modName][bind.key()] = bind.value();
             }
         }
@@ -220,28 +213,28 @@ void VKBindings::Update()
     m_queuedCallbacks.Drain();
 }
 
-static bool FirstKeyMatches(uint64_t aFirst, uint64_t aSecond)
+static bool FirstKeyMatches(const uint64_t acFirst, const uint64_t acSecond)
 {
-    return (aFirst & 0xFFFF000000000000ull) == (aSecond & 0xFFFF000000000000ull);
+    return (acFirst & 0xFFFF000000000000ull) == (acSecond & 0xFFFF000000000000ull);
 }
 
-bool VKBindings::Bind(uint64_t aVKCodeBind, const VKModBind& acVKModBind)
+bool VKBindings::Bind(const uint64_t acVKCodeBind, const VKModBind& acVKModBind)
 {
-    if (aVKCodeBind == 0)
+    if (acVKCodeBind == 0)
         return false;
 
-    const auto bind = m_binds.lower_bound(aVKCodeBind);
+    const auto bind = m_binds.lower_bound(acVKCodeBind);
     if (bind != m_binds.end())
     {
         // check if code binds are equal
-        if (bind->first == aVKCodeBind)
+        if (bind->first == acVKCodeBind)
         {
             // if these do not match, code bind is already bound to other mod bind!
             return bind->second == acVKModBind;
         }
 
         // in this case, we may have found a hotkey or simple input starting with same key
-        if (FirstKeyMatches(bind->first, aVKCodeBind))
+        if (FirstKeyMatches(bind->first, acVKCodeBind))
         {
             // first char matches! lets check that both binds are hotkey in this case
             const auto isHotkey = [vm = m_cpVm](const VKModBind& vkModBind) {
@@ -252,8 +245,8 @@ bool VKBindings::Bind(uint64_t aVKCodeBind, const VKModBind& acVKModBind)
                     return false;
                 }
 
-                const auto bind = vm->GetBind(vkModBind);
-                return bind && bind->IsHotkey();
+                const auto vkBind = vm->GetBind(vkModBind);
+                return vkBind && vkBind->IsHotkey();
             };
 
             if (!isHotkey(bind->second) || !isHotkey(acVKModBind))
@@ -266,18 +259,18 @@ bool VKBindings::Bind(uint64_t aVKCodeBind, const VKModBind& acVKModBind)
     }
 
     UnBind(acVKModBind);
-    m_binds[aVKCodeBind] = acVKModBind;
-    m_modIdToBinds[acVKModBind.ModName][acVKModBind.ID] = aVKCodeBind;
+    m_binds[acVKCodeBind] = acVKModBind;
+    m_modIdToBinds[acVKModBind.ModName][acVKModBind.ID] = acVKCodeBind;
     return true;
 }
 
-bool VKBindings::UnBind(uint64_t aVKCodeBind)
+bool VKBindings::UnBind(const uint64_t acVKCodeBind)
 {
-    if (m_binds.contains(aVKCodeBind))
+    if (m_binds.contains(acVKCodeBind))
     {
-        const auto& modBind = m_binds.at(aVKCodeBind);
+        const auto& modBind = m_binds.at(acVKCodeBind);
         m_modIdToBinds.at(modBind.ModName).at(modBind.ID) = 0;
-        m_binds.erase(aVKCodeBind);
+        m_binds.erase(acVKCodeBind);
         return true;
     }
     return false;
@@ -297,9 +290,9 @@ bool VKBindings::UnBind(const VKModBind& acVKModBind)
     return UnBind(idToBind->second);
 }
 
-bool VKBindings::IsBound(uint64_t aVKCodeBind) const
+bool VKBindings::IsBound(const uint64_t acVKCodeBind) const
 {
-    const auto bind = m_binds.find(aVKCodeBind);
+    const auto bind = m_binds.find(acVKCodeBind);
     return bind != m_binds.end();
 }
 
@@ -314,19 +307,19 @@ bool VKBindings::IsBound(const VKModBind& acVKModBind) const
     return false;
 }
 
-bool VKBindings::IsFirstKeyUsed(uint64_t aVKCodeBind) const
+bool VKBindings::IsFirstKeyUsed(const uint64_t acVKCodeBind) const
 {
-    const auto bind = m_binds.lower_bound(aVKCodeBind & 0xFFFF000000000000ull);
-    return (bind != m_binds.end()) ? FirstKeyMatches(aVKCodeBind, bind->first) : false;
+    const auto bind = m_binds.lower_bound(acVKCodeBind & 0xFFFF000000000000ull);
+    return bind != m_binds.end() ? FirstKeyMatches(acVKCodeBind, bind->first) : false;
 }
 
-std::string VKBindings::GetBindString(uint64_t aVKCodeBind)
+std::string VKBindings::GetBindString(const uint64_t acVKCodeBind)
 {
-    if (aVKCodeBind == 0)
+    if (acVKCodeBind == 0)
         return "Unbound";
 
     std::string bindStr;
-    const auto bindDec{DecodeVKCodeBind(aVKCodeBind)};
+    const auto bindDec{DecodeVKCodeBind(acVKCodeBind)};
     for (const auto vkCode : bindDec)
     {
         if (vkCode == 0)
@@ -353,7 +346,7 @@ std::string VKBindings::GetBindString(const VKModBind& acVKModBind) const
     return GetBindString(GetBindCodeForModBind(acVKModBind));
 }
 
-uint64_t VKBindings::GetBindCodeForModBind(const VKModBind& acVKModBind, bool aIncludeDead) const
+uint64_t VKBindings::GetBindCodeForModBind(const VKModBind& acVKModBind, const bool acIncludeDead) const
 {
     assert(!acVKModBind.ModName.empty()); // we never really want acModName to be empty here... but leave some fallback for release!
     assert(!acVKModBind.ID.empty());   // we never really want acID to be empty here... but leave some fallback for release!
@@ -369,45 +362,45 @@ uint64_t VKBindings::GetBindCodeForModBind(const VKModBind& acVKModBind, bool aI
     if (idToBind == idToBinds.cend())
         return 0;
 
-    return aIncludeDead || IsBound(idToBind->second) ? idToBind->second : 0;
+    return acIncludeDead || IsBound(idToBind->second) ? idToBind->second : 0;
 }
 
-const VKModBind* VKBindings::GetModBindForBindCode(uint64_t aVKCodeBind) const
+const VKModBind* VKBindings::GetModBindForBindCode(const uint64_t acVKCodeBind) const
 {
-    assert(aVKCodeBind != 0); // we never really want aVKCodeBind == 0 here... but leave some fallback for release!
-    if (aVKCodeBind == 0)
+    assert(acVKCodeBind != 0); // we never really want aVKCodeBind == 0 here... but leave some fallback for release!
+    if (acVKCodeBind == 0)
         return nullptr;
 
-    const auto bind = m_binds.find(aVKCodeBind);
+    const auto bind = m_binds.find(acVKCodeBind);
     if (bind == m_binds.cend())
         return nullptr;
 
     return &bind->second;
 }
 
-const VKModBind* VKBindings::GetModBindStartingWithBindCode(uint64_t aVKCodeBind) const
+const VKModBind* VKBindings::GetModBindStartingWithBindCode(const uint64_t acVKCodeBind) const
 {
-    assert(aVKCodeBind != 0); // we never really want aVKCodeBind == 0 here... but leave some fallback for release!
-    if (aVKCodeBind == 0)
+    assert(acVKCodeBind != 0); // we never really want aVKCodeBind == 0 here... but leave some fallback for release!
+    if (acVKCodeBind == 0)
         return nullptr;
 
-    const auto bind = m_binds.lower_bound(aVKCodeBind & 0xFFFF000000000000ull);
+    const auto bind = m_binds.lower_bound(acVKCodeBind & 0xFFFF000000000000ull);
     if (bind == m_binds.cend())
         return nullptr;
 
-    if (!FirstKeyMatches(bind->first, aVKCodeBind))
+    if (!FirstKeyMatches(bind->first, acVKCodeBind))
         return nullptr;
 
     return &bind->second;
 }
 
-VKCodeBindDecoded VKBindings::DecodeVKCodeBind(uint64_t aVKCodeBind)
+VKCodeBindDecoded VKBindings::DecodeVKCodeBind(const uint64_t acVKCodeBind)
 {
-    if (aVKCodeBind == 0)
+    if (acVKCodeBind == 0)
         return {};
 
     VKCodeBindDecoded res{};
-    const auto vkCodeBind = _byteswap_uint64(aVKCodeBind);
+    const auto vkCodeBind = _byteswap_uint64(acVKCodeBind);
     std::memcpy(res.data(), &vkCodeBind, sizeof(uint64_t));
     for (auto& key : res)
         key = _byteswap_ushort(key);
@@ -458,9 +451,9 @@ uint64_t VKBindings::GetLastRecordingResult() const
     return m_recordingResult;
 }
 
-const char* VKBindings::GetSpecialKeyName(USHORT aVKCode)
+const char* VKBindings::GetSpecialKeyName(const USHORT acVKCode)
 {
-    switch (aVKCode)
+    switch (acVKCode)
     {
     case VK_LBUTTON:
         return "Mouse LB";
@@ -597,6 +590,7 @@ LRESULT VKBindings::OnWndProc(HWND, UINT auMsg, WPARAM, LPARAM alParam)
         m_keyStates.reset();
         ClearRecording();
     }
+
     return 0;
 }
 
@@ -611,21 +605,21 @@ void VKBindings::DisconnectUpdate(D3D12& aD3D12)
     m_connectUpdate = static_cast<size_t>(-1);
 }
 
-bool VKBindings::IsLastRecordingKey(USHORT aVKCode) const
+bool VKBindings::IsLastRecordingKey(const USHORT acVKCode) const
 {
     if (m_recordingLength == 0)
         return false;
 
-    return (m_recording[m_recordingLength - 1] == aVKCode);
+    return m_recording[m_recordingLength - 1] == acVKCode;
 }
 
-LRESULT VKBindings::RecordKeyDown(USHORT aVKCode)
+LRESULT VKBindings::RecordKeyDown(const USHORT acVKCode)
 {
-    if (m_keyStates[aVKCode])
+    if (m_keyStates[acVKCode])
         return 0; // ignore repeats
 
     // mark key down
-    m_keyStates[aVKCode] = true;
+    m_keyStates[acVKCode] = true;
 
     if (m_recordingLength >= m_recording.size())
     {
@@ -633,7 +627,7 @@ LRESULT VKBindings::RecordKeyDown(USHORT aVKCode)
         return 0;
     }
 
-    m_recording[m_recordingLength++] = aVKCode;
+    m_recording[m_recordingLength++] = acVKCode;
 
     const auto previousRecordingLength = m_recordingLength;
 
@@ -646,19 +640,19 @@ LRESULT VKBindings::RecordKeyDown(USHORT aVKCode)
     return 0;
 }
 
-LRESULT VKBindings::RecordKeyUp(USHORT aVKCode)
+LRESULT VKBindings::RecordKeyUp(const USHORT acVKCode)
 {
     // ignore up event when we did not register down event
-    if (!m_keyStates[aVKCode])
+    if (!m_keyStates[acVKCode])
         return 0;
 
     // mark key up
-    m_keyStates[aVKCode] = false;
+    m_keyStates[acVKCode] = false;
 
     // handle simple inputs first
     if (!m_recordingLength)
     {
-        m_recording[m_recordingLength++] = aVKCode;
+        m_recording[m_recordingLength++] = acVKCode;
 
         if (CheckRecording() > 0)
             ExecuteRecording(false);
@@ -669,7 +663,7 @@ LRESULT VKBindings::RecordKeyUp(USHORT aVKCode)
     // handle hotkeys
     for (size_t i = 0; i < m_recordingLength; ++i)
     {
-        if (m_recording[i] != aVKCode)
+        if (m_recording[i] != acVKCode)
             continue;
 
         auto wasRecording = false;
@@ -719,7 +713,7 @@ int32_t VKBindings::CheckRecording()
         return -1; // seems like there is no possible HK here
     }
 
-    VKCodeBindDecoded pbCodeDec = DecodeVKCodeBind(possibleBind->first);
+    const VKCodeBindDecoded pbCodeDec = DecodeVKCodeBind(possibleBind->first);
     for (size_t i = 0; i < m_recordingLength; ++i)
     {
         if (pbCodeDec[i] != m_recording[i])
@@ -731,10 +725,10 @@ int32_t VKBindings::CheckRecording()
     }
 
     // valid recording, return 1 when there was match found and 0 when there is possible match
-    return (m_recordingLength == 4) || !pbCodeDec[m_recordingLength];
+    return m_recordingLength == 4 || !pbCodeDec[m_recordingLength];
 }
 
-void VKBindings::ExecuteRecording(bool aLastKeyDown)
+void VKBindings::ExecuteRecording(const bool acLastKeyDown)
 {
     // VM must be running by this point! (doesn't have to be initialized fully)
     assert(m_cpVm != nullptr);
@@ -742,7 +736,7 @@ void VKBindings::ExecuteRecording(bool aLastKeyDown)
     if (m_isBindRecording)
     {
         const auto bind = m_cpVm->GetBind(m_recordingModBind);
-        if (!aLastKeyDown || (bind && bind->IsInput()))
+        if (!acLastKeyDown || (bind && bind->IsInput()))
             StopRecordingBind();
 
         return;
@@ -768,14 +762,14 @@ void VKBindings::ExecuteRecording(bool aLastKeyDown)
         }
 
         // check first if this is a hotkey, as those should only execute when last key was up
-        if (bind->IsHotkey() && aLastKeyDown)
+        if (bind->IsHotkey() && acLastKeyDown)
             return;
 
         // execute CET binds immediately, otherwise cursor will not show on overlay toggle
         if (cetBind)
-            bind->Call(aLastKeyDown);
+            bind->Call(acLastKeyDown);
         else
-            m_queuedCallbacks.Add(bind->DelayedCall(aLastKeyDown));
+            m_queuedCallbacks.Add(bind->DelayedCall(acLastKeyDown));
 
         // reset recording for simple input
         if (bind->IsInput())
@@ -783,13 +777,13 @@ void VKBindings::ExecuteRecording(bool aLastKeyDown)
     }
 }
 
-LRESULT VKBindings::HandleRAWInput(HRAWINPUT ahRAWInput)
+LRESULT VKBindings::HandleRAWInput(const HRAWINPUT achRAWInput)
 {
     UINT dwSize{0};
-    GetRawInputData(ahRAWInput, RID_INPUT, nullptr, &dwSize, sizeof(RAWINPUTHEADER));
+    GetRawInputData(achRAWInput, RID_INPUT, nullptr, &dwSize, sizeof(RAWINPUTHEADER));
 
     const auto lpb = std::make_unique<BYTE[]>(dwSize);
-    if (GetRawInputData(ahRAWInput, RID_INPUT, lpb.get(), &dwSize, sizeof(RAWINPUTHEADER)) != dwSize)
+    if (GetRawInputData(achRAWInput, RID_INPUT, lpb.get(), &dwSize, sizeof(RAWINPUTHEADER)) != dwSize)
         Log::Warn("VKBindings::HandleRAWInput() - GetRawInputData() does not return correct size!");
 
     const auto* raw = reinterpret_cast<const RAWINPUT*>(lpb.get());
@@ -852,12 +846,12 @@ LRESULT VKBindings::HandleRAWInput(HRAWINPUT ahRAWInput)
     return 0;
 }
 
-void VKBindings::ClearRecording(bool aClearBind)
+void VKBindings::ClearRecording(const bool acClearBind)
 {
     m_recordingHKWasKeyPressed = false;
     m_recording.fill(0);
     m_recordingLength = 0;
-    if (aClearBind)
+    if (acClearBind)
     {
         m_isBindRecording = false;
         m_recordingResult = 0;

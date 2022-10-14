@@ -62,8 +62,8 @@ private:
         void End();
 
     private:
-        ImVec2 m_itemSize;
-        float m_beginCursorY;
+        ImVec2 m_itemSize{ 0.0f, 0.0f };
+        float m_beginCursorY{ 0.0f };
     };
 
     struct CachedFlat

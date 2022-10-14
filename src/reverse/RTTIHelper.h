@@ -16,12 +16,12 @@ struct RTTIHelper
 
     sol::function ResolveFunction(const std::string& acFuncName);
     sol::function ResolveFunction(RED4ext::CClass* apClass, const std::string& acFuncName, bool aIsMember);
-    
+
     RED4ext::ScriptInstance ResolveHandle(RED4ext::CBaseFunction* apFunc, sol::variadic_args& aArgs, uint64_t& aArgOffset) const;
     sol::variadic_results ExecuteFunction(RED4ext::CBaseFunction* apFunc, RED4ext::ScriptInstance apHandle,
                                           sol::variadic_args aLuaArgs, uint64_t aLuaArgOffset,
                                           std::string& aErrorMessage, bool aAllowNull = false) const;
-    
+
     RED4ext::ScriptInstance NewInstance(RED4ext::CBaseRTTIType* apType, sol::optional<sol::table> aProps,
                                         TiltedPhoques::Allocator* apAllocator) const;
     sol::object NewInstance(RED4ext::CBaseRTTIType* apType, sol::optional<sol::table> aProps) const;
@@ -35,7 +35,7 @@ struct RTTIHelper
     RED4ext::CBaseFunction* FindFunction(RED4ext::CClass* apClass, const uint64_t acFullNameHash) const;
     std::map<uint64_t, RED4ext::CBaseFunction*> FindFunctions(const uint64_t acShortNameHash) const;
     std::map<uint64_t, RED4ext::CBaseFunction*> FindFunctions(RED4ext::CClass* apClass, const uint64_t acShortNameHash, bool aIsMember) const;
-    
+
     static void Initialize(const LockableState& acLua);
     static void Shutdown();
     static RTTIHelper& Get();
@@ -55,7 +55,7 @@ private:
     void AddResolvedFunction(const uint64_t acClassHash, const uint64_t acFuncHash, sol::function& acFunc, bool aIsMember);
 
     sol::function MakeInvokableFunction(RED4ext::CBaseFunction* apFunc);
-    sol::function MakeInvokableOverload(std::map<uint64_t, RED4ext::CBaseFunction*> aOverloadedFuncs);
+    sol::function MakeInvokableOverload(std::map<uint64_t, RED4ext::CBaseFunction*> aOverloadedFuncs) const;
 
     RED4ext::ScriptInstance NewPlaceholder(RED4ext::CBaseRTTIType* apType, TiltedPhoques::Allocator* apAllocator) const;
     bool IsClassReferenceType(RED4ext::CClass* apClass) const;
@@ -79,10 +79,10 @@ private:
     };
 
     LockableState m_lua;
-    RED4ext::CRTTISystem* m_pRtti;
-    RED4ext::CClass* m_pGameInstanceType;
-    ScriptGameInstance* m_pGameInstance;
-    RED4ext::ScriptInstance m_pPlayerSystem;
+    RED4ext::CRTTISystem* m_pRtti = nullptr;
+    RED4ext::CClass* m_pGameInstanceType = nullptr;
+    ScriptGameInstance* m_pGameInstance = nullptr;
+    RED4ext::ScriptInstance m_pPlayerSystem = nullptr;
     RedFunctionMap m_extendedFunctions;
     LuaFunctionMap m_resolvedFunctions[2];
 };

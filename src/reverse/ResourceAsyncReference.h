@@ -13,7 +13,7 @@ struct ResourceAsyncReference : ClassType
     RED4ext::ScriptInstance GetValuePtr() const override;
 
     uint64_t GetHash() const;
-    sol::object GetLuaHash();
+    sol::object GetLuaHash() const;
 
 private:
     RED4ext::ResourceAsyncReference<void> m_reference;

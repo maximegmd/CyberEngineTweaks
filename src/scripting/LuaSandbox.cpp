@@ -138,7 +138,7 @@ void LuaSandbox::Initialize()
     CreateSandbox();
 }
 
-void LuaSandbox::PostInitialize()
+void LuaSandbox::PostInitialize() const
 {
     auto lockedState = m_pScripting->GetLockedState();
     auto& luaState = lockedState.Get();
@@ -170,7 +170,7 @@ uint64_t LuaSandbox::CreateSandbox(const std::filesystem::path& acPath, const st
     assert(!cResID || (!acPath.empty() && !acName.empty()));
 
     auto lockedState = m_pScripting->GetLockedState();
-    auto& luaState = lockedState.Get();
+    const auto& luaState = lockedState.Get();
 
     auto& res = m_sandboxes.emplace_back(cResID, m_pScripting, m_env, acPath);
     if (!acPath.empty() && !acName.empty())
@@ -189,12 +189,12 @@ uint64_t LuaSandbox::CreateSandbox(const std::filesystem::path& acPath, const st
     return cResID;
 }
 
-sol::protected_function_result LuaSandbox::ExecuteFile(const std::string& acPath)
+sol::protected_function_result LuaSandbox::ExecuteFile(const std::string& acPath) const
 {
     return m_sandboxes[0].ExecuteFile(acPath);
 }
 
-sol::protected_function_result LuaSandbox::ExecuteString(const std::string& acString)
+sol::protected_function_result LuaSandbox::ExecuteString(const std::string& acString) const
 {
     return m_sandboxes[0].ExecuteString(acString);
 }
@@ -216,27 +216,28 @@ TiltedPhoques::Locked<sol::state, std::recursive_mutex> LuaSandbox::GetLockedSta
     return m_pScripting->GetLockedState();
 }
 
-void LuaSandbox::InitializeImGuiForSandbox(Sandbox& aSandbox, sol::state_view aStateView) const
+void LuaSandbox::InitializeImGuiForSandbox(Sandbox& aSandbox, const sol::state& acpState) const
 {
     const auto& cSBRootPath = aSandbox.GetRootPath();
+    sol::state_view stateView = acpState;
 
-    sol::table imgui{aStateView, sol::create};
+    sol::table imgui{acpState, sol::create};
 
     // copy ImGui from global table
-    const auto cGlobals = aStateView.globals();
+    const auto cGlobals = acpState.globals();
     for (const auto* cKey : s_cGlobalImGuiList)
-        imgui[cKey] = DeepCopySolObject(cGlobals[cKey].get<sol::object>(), aStateView);
+        imgui[cKey] = DeepCopySolObject(cGlobals[cKey].get<sol::object>(), acpState);
 
     Texture::BindTexture(imgui);
 
-    const auto cLoadTexture = [cSBRootPath, aStateView](const std::string& acPath) -> std::tuple<std::shared_ptr<Texture>, sol::object> {
+    const auto cLoadTexture = [cSBRootPath, stateView](const std::string& acPath) -> std::tuple<std::shared_ptr<Texture>, sol::object> {
         const auto previousCurrentPath = std::filesystem::current_path();
         current_path(cSBRootPath);
 
         const auto path = GetLuaPath(acPath, cSBRootPath, false);
         auto texture = Texture::Load(UTF16ToUTF8(path.native()));
         if (!texture)
-            return std::make_tuple(nullptr, make_object(aStateView, "Failed to load '" + acPath + "'"));
+            return std::make_tuple(nullptr, make_object(stateView, "Failed to load '" + acPath + "'"));
 
         current_path(previousCurrentPath);
 
@@ -247,32 +248,32 @@ void LuaSandbox::InitializeImGuiForSandbox(Sandbox& aSandbox, sol::state_view aS
     aSandbox.GetImGui() = imgui;
 }
 
-void LuaSandbox::InitializeExtraLibsForSandbox(Sandbox& aSandbox, sol::state_view aStateView) const
+void LuaSandbox::InitializeExtraLibsForSandbox(Sandbox& aSandbox, const sol::state& acpState) const
 {
     auto& sbEnv = aSandbox.GetEnvironment();
 
     // copy extra whitelisted libs from global table
-    const auto cGlobals = aStateView.globals();
+    const auto cGlobals = acpState.globals();
     for (const auto* cKey : s_cGlobalExtraLibsWhitelist)
-        sbEnv[cKey] = DeepCopySolObject(cGlobals[cKey].get<sol::object>(), aStateView);
+        sbEnv[cKey] = DeepCopySolObject(cGlobals[cKey].get<sol::object>(), acpState);
 }
 
-void LuaSandbox::InitializeDBForSandbox(Sandbox& aSandbox, sol::state_view aStateView)
+void LuaSandbox::InitializeDBForSandbox(Sandbox& aSandbox, const sol::state& acpState)
 {
     auto& sbEnv = aSandbox.GetEnvironment();
     const auto& cSBRootPath = aSandbox.GetRootPath();
     const auto sbId = aSandbox.GetId();
 
-    const auto cGlobals = aStateView.globals();
+    const auto cGlobals = acpState.globals();
     const auto cSQLite3 = cGlobals["sqlite3"].get<sol::table>();
-    sol::table sqlite3Copy(aStateView, sol::create);
+    sol::table sqlite3Copy(acpState, sol::create);
     for (const auto& cKV : cSQLite3)
     {
         const auto cKeyStr = cKV.first.as<std::string>();
         if (cKeyStr.compare(0, 4, "open"))
-            sqlite3Copy[cKV.first] = DeepCopySolObject(cKV.second, aStateView);
+            sqlite3Copy[cKV.first] = DeepCopySolObject(cKV.second, acpState);
     }
-    const auto dbOpen = aStateView["sqlite3"]["open"].get<sol::function>();
+    const auto dbOpen = acpState["sqlite3"]["open"].get<sol::function>();
     sqlite3Copy["reopen"] = [this, sbId, dbOpen]{
         auto& sandbox = m_sandboxes[sbId];
 
@@ -295,20 +296,20 @@ void LuaSandbox::InitializeDBForSandbox(Sandbox& aSandbox, sol::state_view aStat
     current_path(previousCurrentPath);
 }
 
-void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, sol::state_view aStateView, const std::string& acName)
+void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acpState, const std::string& acName)
 {
     auto& sbEnv = aSandbox.GetEnvironment();
     const auto& cSBRootPath = aSandbox.GetRootPath();
-
     const auto cSBEnv = sbEnv;
+    sol::state_view stateView = acpState;
 
-    const auto cLoadString = [aStateView, cSBEnv](const std::string& acStr, const std::string &acChunkName) -> std::tuple<sol::object, sol::object>
+    const auto cLoadString = [stateView, cSBEnv](const std::string& acStr, const std::string &acChunkName) -> std::tuple<sol::object, sol::object>
     {
-        if (!acStr.empty() && (acStr[0] == LUA_SIGNATURE[0]))
-            return std::make_tuple(sol::nil, make_object(aStateView, "Bytecode prohibited!"));
+        if (!acStr.empty() && acStr[0] == LUA_SIGNATURE[0])
+            return std::make_tuple(sol::nil, make_object(stateView, "Bytecode prohibited!"));
 
-        sol::state_view luaView = aStateView;
-        const auto& acKey = (acChunkName.empty()) ? (acStr) : (acChunkName);
+        sol::state_view luaView = stateView;
+        const auto& acKey = acChunkName.empty() ? acStr : acChunkName;
         const auto cResult = luaView.load(acStr, acKey, sol::load_mode::text);
         if (cResult.valid())
         {
@@ -317,11 +318,11 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, sol::state_view aStat
             return std::make_tuple(cFunc, sol::nil);
         }
 
-        return std::make_tuple(sol::nil, make_object(aStateView, cResult.get<sol::error>().what()));
+        return std::make_tuple(sol::nil, make_object(stateView, cResult.get<sol::error>().what()));
     };
     sbEnv["loadstring"] = cLoadString;
 
-    const auto cLoadFile = [cSBRootPath, cLoadString, aStateView](const std::string& acPath) -> std::tuple<sol::object, sol::object>
+    const auto cLoadFile = [cSBRootPath, cLoadString, stateView](const std::string& acPath) -> std::tuple<sol::object, sol::object>
     {
         const auto previousCurrentPath = std::filesystem::current_path();
         current_path(cSBRootPath);
@@ -335,7 +336,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, sol::state_view aStat
         {
             current_path(previousCurrentPath);
 
-            return std::make_tuple(sol::nil, make_object(aStateView, "Tried to access invalid path '" + acPath + "'!"));
+            return std::make_tuple(sol::nil, make_object(stateView, "Tried to access invalid path '" + acPath + "'!"));
         }
 
         std::ifstream ifs(path);
@@ -359,7 +360,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, sol::state_view aStat
     };
 
     // TODO - add _LOADED table and fill in when module loads some value, react in these functions when the key is sol::nil
-    sbEnv["require"] = [this, cLoadString, cSBRootPath, aStateView, cSBEnv](const std::string& acPath) -> std::tuple<sol::object, sol::object>
+    sbEnv["require"] = [this, cLoadString, cSBRootPath, stateView, cSBEnv](const std::string& acPath) -> std::tuple<sol::object, sol::object>
     {
         const auto previousCurrentPath = std::filesystem::current_path();
         current_path(cSBRootPath);
@@ -376,7 +377,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, sol::state_view aStat
         {
             current_path(previousCurrentPath);
 
-            return std::make_tuple(sol::nil, make_object(aStateView, "Tried to access invalid path '" + acPath + "'!"));
+            return std::make_tuple(sol::nil, make_object(stateView, "Tried to access invalid path '" + acPath + "'!"));
         }
 
         const auto cKey = UTF16ToUTF8((cSBRootPath / path).native());
@@ -412,7 +413,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, sol::state_view aStat
             {
                 current_path(previousCurrentPath);
 
-                return std::make_tuple(sol::nil, make_object(aStateView, e.what()));
+                return std::make_tuple(sol::nil, make_object(stateView, e.what()));
             }
 
             if (result.valid())
@@ -426,12 +427,12 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, sol::state_view aStat
             }
 
             sol::error err = result;
-            std::shared_ptr<spdlog::logger> logger = cSBEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+            auto logger = cSBEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
             logger->error("Error: Cannot load module '{}': {}", acPath, err.what());
 
             current_path(previousCurrentPath);
 
-            return std::make_tuple(sol::nil, make_object(aStateView, err.what()));
+            return std::make_tuple(sol::nil, make_object(stateView, err.what()));
         }
 
         current_path(previousCurrentPath);
@@ -439,7 +440,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, sol::state_view aStat
         return res;
     };
 
-    sbEnv["dir"] = [cSBRootPath, aStateView](const std::string& acPath) -> sol::table
+    sbEnv["dir"] = [cSBRootPath, stateView](const std::string& acPath) -> sol::table
     {
         const auto previousCurrentPath = std::filesystem::current_path();
         current_path(cSBRootPath);
@@ -453,13 +454,13 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, sol::state_view aStat
             return sol::nil;
         }
 
-        sol::table res(aStateView, sol::create);
+        sol::table res(stateView, sol::create);
         int index = 1;
         for (const auto& entry : std::filesystem::directory_iterator(path))
         {
-            sol::table item(aStateView, sol::create);
+            sol::table item(stateView, sol::create);
             item["name"] = UTF16ToUTF8(relative(entry.path(), path).native());
-            item["type"] = entry.is_directory() ? ("directory") : ("file");
+            item["type"] = entry.is_directory() ? "directory" : "file";
             res[index++] = item;
         }
 
@@ -468,17 +469,17 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, sol::state_view aStat
         return res;
     };
 
-    const auto cGlobals = aStateView.globals();
+    const auto cGlobals = acpState.globals();
     // define replacements for io lib
     {
         const auto cIO = cGlobals["io"].get<sol::table>();
-        sol::table ioSB(aStateView, sol::create);
-        ioSB["read"] = DeepCopySolObject(cIO["read"], aStateView);
-        ioSB["write"] = DeepCopySolObject(cIO["write"], aStateView);
-        ioSB["input"] = DeepCopySolObject(cIO["input"], aStateView);
-        ioSB["output"] = DeepCopySolObject(cIO["output"], aStateView);
-        ioSB["type"] = DeepCopySolObject(cIO["type"], aStateView);
-        ioSB["close"] = DeepCopySolObject(cIO["close"], aStateView);
+        sol::table ioSB(acpState, sol::create);
+        ioSB["read"] = DeepCopySolObject(cIO["read"], acpState);
+        ioSB["write"] = DeepCopySolObject(cIO["write"], acpState);
+        ioSB["input"] = DeepCopySolObject(cIO["input"], acpState);
+        ioSB["output"] = DeepCopySolObject(cIO["output"], acpState);
+        ioSB["type"] = DeepCopySolObject(cIO["type"], acpState);
+        ioSB["close"] = DeepCopySolObject(cIO["close"], acpState);
         ioSB["lines"] = [cIO, cSBRootPath](const std::string& acPath)
         {
             const auto previousCurrentPath = std::filesystem::current_path();
@@ -517,7 +518,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, sol::state_view aStat
     // add in rename and remove replacements for os lib
     {
         const auto cOS = cGlobals["os"].get<sol::table>();
-        sol::table osSB = sbEnv["os"].get<sol::table>();
+        auto osSB = sbEnv["os"].get<sol::table>();
         osSB["rename"] = [cOS, cSBRootPath](const std::string& acOldPath, const std::string& acNewPath) -> std::tuple<sol::object, std::string>
         {
             const auto previousCurrentPath = std::filesystem::current_path();
@@ -571,16 +572,16 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, sol::state_view aStat
     };
 }
 
-void LuaSandbox::InitializeLoggerForSandbox(Sandbox& aSandbox, sol::state_view aStateView, const std::string& acName) const
+void LuaSandbox::InitializeLoggerForSandbox(Sandbox& aSandbox, const sol::state& acpState, const std::string& acName) const
 {
     auto& sbEnv = aSandbox.GetEnvironment();
     const auto& cSBRootPath = aSandbox.GetRootPath();
 
     // initialize logger for this mod
-    auto logger = CreateLogger(GetAbsolutePath((acName + ".log"), cSBRootPath, true), acName);
+    auto logger = CreateLogger(GetAbsolutePath(acName + ".log", cSBRootPath, true), acName);
 
     // assign logger to mod so it can be used from within it too
-    sol::table spdlog(aStateView, sol::create);
+    sol::table spdlog(acpState, sol::create);
     spdlog["trace"]    = [logger](const std::string& message) { logger->trace(message);    };
     spdlog["debug"]    = [logger](const std::string& message) { logger->debug(message);    };
     spdlog["info"]     = [logger](const std::string& message) { logger->info(message);     };

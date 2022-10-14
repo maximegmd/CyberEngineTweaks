@@ -1,6 +1,5 @@
 #pragma once
 
-#include <RED4ext/Common.hpp>
 #include <RED4ext/CString.hpp>
 #include <RED4ext/DynArray.hpp>
 #include <RED4ext/ResourcePath.hpp>
@@ -47,9 +46,9 @@ struct ResourceDepot
 {
     virtual ~ResourceDepot() = 0;
 
-    inline static ResourceDepot* Get()
+    static ResourceDepot* Get()
     {
-        RelocPtr<ResourceDepot*> ptr(Addresses::ResourceDepot);
+        const RelocPtr<ResourceDepot*> ptr(Addresses::ResourceDepot);
         return ptr;
     }
 

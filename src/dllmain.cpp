@@ -2,22 +2,21 @@
 
 #include "CET.h"
 
-#include "Image.h"
 #include "Options.h"
 
 #ifndef NDEBUG
 #include "scripting/GameHooks.h"
 #endif
 
-void EnableDebugPatch(const Image* apImage);
-void StartScreenPatch(const Image* apImage);
-void RemovePedsPatch(const Image* apImage);
-void OptionsInitHook(const Image* apImage);
-void DisableIntroMoviesPatch(const Image* apImage);
-void DisableVignettePatch(const Image* apImage);
-void DisableBoundaryTeleportPatch(const Image* apImage);
-void SmtAmdPatch(const Image* apImage);
-void MinimapFlickerPatch(const Image* apImage);
+void EnableDebugPatch();
+void StartScreenPatch();
+void RemovePedsPatch();
+void OptionsInitHook();
+void DisableIntroMoviesPatch();
+void DisableVignettePatch();
+void DisableBoundaryTeleportPatch();
+void SmtAmdPatch();
+void MinimapFlickerPatch();
 
 static HANDLE s_modInstanceMutex = nullptr;
 
@@ -34,36 +33,36 @@ static void Initialize()
         const auto& options = CET::Get().GetOptions();
 
         // single instance check
-        s_modInstanceMutex = CreateMutex(NULL, TRUE, _T("Cyber Engine Tweaks Module Instance"));
+        s_modInstanceMutex = CreateMutex(nullptr, TRUE, _T("Cyber Engine Tweaks Module Instance"));
         if (s_modInstanceMutex == nullptr)
             return;
 
         // initialize patches
         if (options.PatchEnableDebug)
-            EnableDebugPatch(&options.GameImage);
+            EnableDebugPatch();
 
         if (options.PatchSkipStartMenu)
-            StartScreenPatch(&options.GameImage);
+            StartScreenPatch();
 
         if (options.PatchRemovePedestrians)
-            RemovePedsPatch(&options.GameImage);
+            RemovePedsPatch();
 
         if (options.PatchDisableIntroMovies)
-            DisableIntroMoviesPatch(&options.GameImage);
+            DisableIntroMoviesPatch();
 
         if (options.PatchDisableVignette)
-            DisableVignettePatch(&options.GameImage);
+            DisableVignettePatch();
 
         if (options.PatchDisableBoundaryTeleport)
-            DisableBoundaryTeleportPatch(&options.GameImage);
+            DisableBoundaryTeleportPatch();
 
         if (options.PatchAmdSmt)
-            SmtAmdPatch(&options.GameImage);
+            SmtAmdPatch();
 
         if (options.PatchMinimapFlicker)
-            MinimapFlickerPatch(&options.GameImage);
+            MinimapFlickerPatch();
 
-        OptionsInitHook(&options.GameImage);
+        OptionsInitHook();
 
 
 #ifndef NDEBUG
@@ -72,7 +71,7 @@ static void Initialize()
         GameMainThread::Initialize();
 #endif
 
-        MH_EnableHook(MH_ALL_HOOKS);
+        MH_EnableHook(nullptr);
     }
     catch(...)
     {}
@@ -86,7 +85,7 @@ static void Shutdown()
     {
         inGameProcess = CET::Get().GetOptions().ExeValid;
 
-        MH_DisableHook(MH_ALL_HOOKS);
+        MH_DisableHook(nullptr);
         MH_Uninitialize();
 
         CET::Shutdown();
@@ -102,11 +101,11 @@ static void Shutdown()
     }
 }
 
-BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID) 
+BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID)
 {
     DisableThreadLibraryCalls(mod);
 
-    switch(ul_reason_for_call) 
+    switch(ul_reason_for_call)
     {
         case DLL_PROCESS_ATTACH:
             Initialize();

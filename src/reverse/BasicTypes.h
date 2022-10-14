@@ -80,7 +80,7 @@ struct CName
 
     union
     {
-        uint64_t hash;
+        uint64_t hash{ 0 };
         struct
         {
             uint32_t hash_lo;
@@ -162,7 +162,7 @@ struct ItemID
     uint32_t rng_seed{ 2 };
     uint16_t unknown{ 0 };
     uint8_t maybe_type{ 0 };
-    uint8_t pad;
+    uint8_t pad{ 0 };
 };
 
 static_assert(sizeof(ItemID) == 0x10);
@@ -185,7 +185,7 @@ struct Variant
 
     bool Init(const RED4ext::CBaseRTTIType* aType);
     bool Fill(const RED4ext::CBaseRTTIType* aType, const RED4ext::ScriptInstance aData);
-    bool Extract(RED4ext::ScriptInstance aBuffer);
+    bool Extract(RED4ext::ScriptInstance aBuffer) const;
     void Free();
 
     inline static bool CanBeInlined(const RED4ext::CBaseRTTIType* aType) noexcept;

@@ -1,7 +1,5 @@
 #include <stdafx.h>
 
-#include "Image.h"
-
 using TInitScriptMemberVariable = void*(void* a1, void* a2, uint64_t a3, uint64_t nameHash, void* a5, void* a6, void* a7);
 TInitScriptMemberVariable* RealInitScriptMemberVariable = nullptr;
 
@@ -28,10 +26,10 @@ void* HookInitScriptMemberVariable(void* a1, void* a2, uint64_t a3, uint64_t nam
     return RealInitScriptMemberVariable(a1, a2, a3, nameHash, a5, a6, a7);
 }
 
-void DisableIntroMoviesPatch(const Image* apImage)
+void DisableIntroMoviesPatch()
 {
-    RED4ext::RelocPtr<void> func(CyberEngineTweaks::Addresses::CPatches_IntroMovie);
-    RealInitScriptMemberVariable = static_cast<TInitScriptMemberVariable*>(func.GetAddr());
+    const RED4ext::RelocPtr<void> func(CyberEngineTweaks::Addresses::CPatches_IntroMovie);
+    RealInitScriptMemberVariable = reinterpret_cast<TInitScriptMemberVariable*>(func.GetAddr());
 
     if (RealInitScriptMemberVariable == nullptr)
     {
@@ -39,6 +37,8 @@ void DisableIntroMoviesPatch(const Image* apImage)
         return;
     }
 
-    MH_CreateHook(RealInitScriptMemberVariable, &HookInitScriptMemberVariable, reinterpret_cast<void**>(&RealInitScriptMemberVariable));
+    MH_CreateHook(reinterpret_cast<void*>(RealInitScriptMemberVariable),
+                  reinterpret_cast<void*>(&HookInitScriptMemberVariable),
+                  reinterpret_cast<void**>(&RealInitScriptMemberVariable));
     Log::Info("Disable intro movies patch: success");
 }

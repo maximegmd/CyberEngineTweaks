@@ -39,7 +39,7 @@ WidgetResult Bindings::OnEnable()
 
 WidgetResult Bindings::OnDisable()
 {
-    WidgetResult result = WidgetResult::ENABLED;
+    auto result = WidgetResult::ENABLED;
 
     if (m_enabled)
     {
@@ -261,7 +261,7 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
             if (m_bindings.IsFirstKeyUsed(codeBind))
             {
                 // note - creating copy so we are not destroying reference to modBind when we unbind
-                const auto checkModBind = [this, &aVKBindInfo, codeBind](const VKModBind modBind) {
+                const auto checkModBind = [this, &aVKBindInfo, codeBind](const VKModBind& modBind) {
                     const auto cetBind = modBind == s_overlayToggleModBind;
                     if (!cetBind || aVKBindInfo.Bind.IsHotkey())
                     {

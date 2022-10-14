@@ -9,15 +9,15 @@ void trim(std::string& s);
 std::string UTF16ToUTF8(std::wstring_view utf16);
 std::wstring UTF8ToUTF16(std::string_view utf8);
 
-spdlog::sink_ptr CreateCustomSinkST(std::function<void(const std::string&)> aSinkItHandler, std::function<void()> aFlushHandler = nullptr);
-spdlog::sink_ptr CreateCustomSinkMT(std::function<void(const std::string&)> aSinkItHandler, std::function<void()> aFlushHandler = nullptr);
-std::shared_ptr<spdlog::logger> CreateLogger(const std::filesystem::path& aPath, const std::string& aID, spdlog::sink_ptr aExtraSink = nullptr, const std::string& aPattern = "[%Y-%m-%d %H:%M:%S UTC%z] [%t] %v");
+spdlog::sink_ptr CreateCustomSinkST(const std::function<void(const std::string&)>& acpSinkItHandler, const std::function<void()>& acpFlushHandler = nullptr);
+spdlog::sink_ptr CreateCustomSinkMT(const std::function<void(const std::string&)>& acpSinkItHandler, const std::function<void()>& acpFlushHandler = nullptr);
+std::shared_ptr<spdlog::logger> CreateLogger(const std::filesystem::path& acpPath, const std::string& acpID, const spdlog::sink_ptr& acpExtraSink = nullptr, const std::string& acpPattern = "[%Y-%m-%d %H:%M:%S UTC%z] [%t] %v");
 
 // deep copies sol object (doesnt take into account potential duplicates)
-sol::object DeepCopySolObject(sol::object aObj, const sol::state_view& aStateView);
+sol::object DeepCopySolObject(const sol::object& acpObj, const sol::state_view& acpStateView);
 
 // makes sol usertype or userdata immutable when accessed from lua
-void MakeSolUsertypeImmutable(sol::object aObj, const sol::state_view& aStateView);
+void MakeSolUsertypeImmutable(const sol::object& acpObj, const sol::state_view& acpStateView);
 
 // Add unnamed function to the Lua registry
 template<typename F>
@@ -28,7 +28,7 @@ sol::function MakeSolFunction(sol::state& aState, F aFunc)
     // 2. Calling a lambda as an object has a tiny overhead of dealing with metatables.
     // 3. In Lua `type(f)` for a lambda as an object will return "userdata" instead of the expected "function".
 
-    static constexpr const char* s_cTempFuncName = "___func_temp_holder_";
+    static constexpr auto s_cTempFuncName = "___func_temp_holder_";
 
     aState[s_cTempFuncName] = aFunc;
     sol::function luaFunc = aState[s_cTempFuncName];
@@ -38,9 +38,9 @@ sol::function MakeSolFunction(sol::state& aState, F aFunc)
 }
 
 // Check if Lua object is of cdata type
-bool IsLuaCData(sol::object aObject);
+bool IsLuaCData(const sol::object& acpObject);
 
-float GetAlignedItemWidth(int64_t aItemsCount);
+float GetAlignedItemWidth(const int64_t acItemsCount);
 
 float GetCenteredOffsetForText(const char* acpText);
 
@@ -51,7 +51,7 @@ enum class THWUCPResult
     DISCARD,
     CANCEL
 };
-THWUCPResult UnsavedChangesPopup(bool& aFirstTime, bool aMadeChanges, TWidgetCB aSaveCB, TWidgetCB aLoadCB, TWidgetCB aCancelCB = nullptr);
+THWUCPResult UnsavedChangesPopup(bool& aFirstTime, const bool acMadeChanges, const TWidgetCB& acpSaveCB, const TWidgetCB& acpLoadCB, const TWidgetCB& acpCancelCB = nullptr);
 
 [[nodiscard]] std::filesystem::path GetAbsolutePath(const std::string& acFilePath, const std::filesystem::path& acRootPath, const bool acAllowNonExisting, const bool acAllowSymlink = true);
 [[nodiscard]] std::filesystem::path GetAbsolutePath(std::filesystem::path aFilePath, const std::filesystem::path& acRootPath, const bool acAllowNonExisting, const bool acAllowSymlink = true);

@@ -1,10 +1,8 @@
 #include <stdafx.h>
 
-#include "Image.h"
-
-void DisableVignettePatch(const Image* apImage)
+void DisableVignettePatch()
 {
-    RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CPatches_Vignette);
+    const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CPatches_Vignette);
     const auto pLocation = func.GetAddr();
 
     if (pLocation == nullptr)

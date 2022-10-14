@@ -13,7 +13,7 @@ struct Type
     };
 
     Type(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::CBaseRTTIType* apClass);
-    virtual ~Type(){};
+    virtual ~Type() = default;
 
     RED4ext::CBaseRTTIType* GetType() const { return m_pType; }
     virtual RED4ext::ScriptInstance GetHandle() const { return nullptr; }
@@ -27,7 +27,7 @@ struct Type
 
     std::string GetName() const;
     virtual Descriptor Dump(bool aWithHashes) const;
-    std::string GameDump();
+    std::string GameDump() const;
 
     std::string FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithHashes) const;
 
@@ -45,13 +45,13 @@ struct ClassType : Type
 {
     ClassType(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView,
               RED4ext::CBaseRTTIType* apClass);
-    virtual ~ClassType(){};
+    ~ClassType() override = default;
 
     Descriptor Dump(bool aWithHashes) const override;
     sol::object Index_Impl(const std::string& acName, sol::this_environment aThisEnv) override;
     sol::object NewIndex_Impl(const std::string& acName, sol::object aParam) override;
 
-    RED4ext::CClass* GetClass() const { return reinterpret_cast<RED4ext::CClass*>(m_pType); };
+    RED4ext::CClass* GetClass() const { return reinterpret_cast<RED4ext::CClass*>(m_pType); }
 };
 
 struct UnknownType : Type

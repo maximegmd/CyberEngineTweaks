@@ -49,8 +49,7 @@ std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
         return {};
 
     // Create texture resource
-    D3D12_HEAP_PROPERTIES props;
-    memset(&props, 0, sizeof(D3D12_HEAP_PROPERTIES));
+    D3D12_HEAP_PROPERTIES props = {};
     props.Type = D3D12_HEAP_TYPE_DEFAULT;
     props.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
     props.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
@@ -102,7 +101,7 @@ std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
     hr = uploadBuffer->Map(0, &range, &mapped);
     IM_ASSERT(SUCCEEDED(hr));
     for (int y = 0; y < image_height; y++)
-        memcpy((void*)((uintptr_t)mapped + y * uploadPitch), image_data + y * image_width * 4, image_width * 4);
+        memcpy(static_cast<char*>(mapped) + y * uploadPitch, image_data + y * image_width * 4, image_width * 4);
     uploadBuffer->Unmap(0, &range);
 
     // Copy the upload resource content into the real resource
@@ -133,7 +132,7 @@ std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
     hr = d3d_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
     IM_ASSERT(SUCCEEDED(hr));
 
-    HANDLE event = CreateEvent(0, 0, 0, 0);
+    HANDLE event = CreateEvent(nullptr, 0, 0, nullptr);
     IM_ASSERT(event != nullptr);
 
     D3D12_COMMAND_QUEUE_DESC queueDesc = {};

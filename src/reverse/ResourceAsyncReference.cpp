@@ -39,7 +39,7 @@ uint64_t ResourceAsyncReference::GetHash() const
 }
 
 // Manual uint64 to Lua conversion because sol + LuaJIT can't do it
-sol::object ResourceAsyncReference::GetLuaHash()
+sol::object ResourceAsyncReference::GetLuaHash() const
 {
     static RTTILocator s_uint64Type{RED4ext::FNV1a64("Uint64")};
 

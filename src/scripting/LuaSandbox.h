@@ -8,13 +8,13 @@ struct LuaSandbox
     ~LuaSandbox() = default;
 
     void Initialize();
-    void PostInitialize();
+    void PostInitialize() const;
     void ResetState();
 
     uint64_t CreateSandbox(const std::filesystem::path& acPath = "", const std::string& acName = "", bool aEnableImGui = true, bool aEnableExtraLibs = true, bool aEnableDB = true, bool aEnableIO = true, bool aEnableLogger = true);
 
-    sol::protected_function_result ExecuteFile(const std::string& acPath);
-    sol::protected_function_result ExecuteString(const std::string& acString);
+    sol::protected_function_result ExecuteFile(const std::string& acPath) const;
+    sol::protected_function_result ExecuteString(const std::string& acString) const;
 
     Sandbox& operator[](uint64_t aID);
     const Sandbox& operator[](uint64_t aID) const;
@@ -23,11 +23,11 @@ struct LuaSandbox
 
 private:
 
-    void InitializeImGuiForSandbox(Sandbox& aSandbox, sol::state_view aStateView) const;
-    void InitializeExtraLibsForSandbox(Sandbox& aSandbox, sol::state_view aStateView) const;
-    void InitializeDBForSandbox(Sandbox& aSandbox, sol::state_view aStateView);
-    void InitializeIOForSandbox(Sandbox& aSandbox, sol::state_view aStateView, const std::string& acName);
-    void InitializeLoggerForSandbox(Sandbox& aSandbox, sol::state_view aStateView, const std::string& acName) const;
+    void InitializeImGuiForSandbox(Sandbox& aSandbox, const sol::state& acpState) const;
+    void InitializeExtraLibsForSandbox(Sandbox& aSandbox, const sol::state& acpState) const;
+    void InitializeDBForSandbox(Sandbox& aSandbox, const sol::state& acpState);
+    void InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acpState, const std::string& acName);
+    void InitializeLoggerForSandbox(Sandbox& aSandbox, const sol::state& acpState, const std::string& acName) const;
 
     void CloseDBForSandbox(const Sandbox& aSandbox) const;
 

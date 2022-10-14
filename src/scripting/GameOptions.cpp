@@ -132,17 +132,16 @@ bool GameOption::Toggle()
 
 GameOption* GameOptions::Find(const std::string& category, const std::string& name)
 {
-    auto option = std::find_if(
-        s_gameOptions.begin(), s_gameOptions.end(),
-        [&category, &name](GameOption* x)
-        {
-            return _stricmp(x->pCategory, category.c_str()) == 0 && _stricmp(x->pName, name.c_str()) == 0;
-        });
+    const auto option = std::ranges::find_if(s_gameOptions,
+                                             [&category, &name](const GameOption* x)
+                                             {
+                                                 return _stricmp(x->pCategory, category.c_str()) == 0 && _stricmp(x->pName, name.c_str()) == 0;
+                                             });
 
     if (option == s_gameOptions.end())
     {
         spdlog::get("scripting")->info("Failed to find game option '{}/{}'!", category, name);
-        return nullptr;;
+        return nullptr;
     }
 
     return *option;
@@ -173,7 +172,7 @@ bool GameOptions::GetBool(const std::string& category, const std::string& name)
         return false;
 
     bool value = false;
-    bool result = option->GetBool(value);
+    const bool result = option->GetBool(value);
     if (!result)
     {
         spdlog::get("scripting")->info("Failed to read game option '{}/{}', not a boolean?", category, name);
@@ -190,7 +189,7 @@ int GameOptions::GetInt(const std::string& category, const std::string& name)
         return false;
 
     int value = false;
-    bool result = option->GetInt(value);
+    const bool result = option->GetInt(value);
     if (!result)
     {
         spdlog::get("scripting")->info("Failed to read game option '{}/{}', not an integer/color?", category, name);
@@ -207,7 +206,7 @@ float GameOptions::GetFloat(const std::string& category, const std::string& name
         return false;
 
     float value = false;
-    bool result = option->GetFloat(value);
+    const bool result = option->GetFloat(value);
     if (!result)
     {
         spdlog::get("scripting")->info("Failed to read game option '{}/{}', not a float?", category, name);
@@ -223,7 +222,7 @@ void GameOptions::Set(const std::string& category, const std::string& name, cons
     if (!option)
         return;
 
-    auto consoleLogger = spdlog::get("scripting");
+    const auto consoleLogger = spdlog::get("scripting");
     if (option->Set(value))
         consoleLogger->info(option->GetInfo());
     else
@@ -241,7 +240,7 @@ void GameOptions::SetBool(const std::string& category, const std::string& name, 
     if (!option)
         return;
 
-    auto consoleLogger = spdlog::get("scripting");
+    const auto consoleLogger = spdlog::get("scripting");
     if (option->SetBool(value))
         consoleLogger->info(option->GetInfo());
     else
@@ -259,7 +258,7 @@ void GameOptions::SetInt(const std::string& category, const std::string& name, i
     if (!option)
         return;
 
-    auto consoleLogger = spdlog::get("scripting");
+    const auto consoleLogger = spdlog::get("scripting");
     if (option->SetInt(value))
         consoleLogger->info(option->GetInfo());
     else
@@ -277,7 +276,7 @@ void GameOptions::SetFloat(const std::string& category, const std::string& name,
     if (!option)
         return;
 
-    auto consoleLogger = spdlog::get("scripting");
+    const auto consoleLogger = spdlog::get("scripting");
     if (option->SetFloat(value))
         consoleLogger->info(option->GetInfo());
     else
@@ -295,7 +294,7 @@ void GameOptions::Toggle(const std::string& category, const std::string& name)
     if (!option)
         return;
 
-    auto consoleLogger = spdlog::get("scripting");
+    const auto consoleLogger = spdlog::get("scripting");
     if (option->Toggle())
         consoleLogger->info(option->GetInfo());
     else
@@ -309,7 +308,7 @@ void GameOptions::Toggle(const std::string& category, const std::string& name)
 
 void GameOptions::Dump()
 {
-    for (auto option : s_gameOptions)
+    for (const auto option : s_gameOptions)
         Log::Info(option->GetInfo());
 
     spdlog::get("scripting")->info("Dumped {} options to cyber_engine_tweaks.log", s_gameOptions.size());
@@ -317,7 +316,7 @@ void GameOptions::Dump()
 
 void GameOptions::List(const std::string& category)
 {
-    auto consoleLogger = spdlog::get("scripting");
+    const auto consoleLogger = spdlog::get("scripting");
 
     int count = 0;
     auto iter = s_gameOptions.begin();
@@ -325,7 +324,7 @@ void GameOptions::List(const std::string& category)
     {
         iter = std::find_if(
             iter, s_gameOptions.end(),
-            [&category](GameOption* x)
+            [&category](const GameOption* x)
             {
                 if (!category.length() || category.at(0) == '*')
                     return true;

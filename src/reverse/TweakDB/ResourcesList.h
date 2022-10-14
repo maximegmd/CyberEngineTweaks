@@ -20,7 +20,7 @@ struct ResourcesList
 
     bool Initialize();
 
-    bool IsInitialized();
+    bool IsInitialized() const;
 
     const std::string& Resolve(uint64_t aHash);
 

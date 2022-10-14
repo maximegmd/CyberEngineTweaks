@@ -8,19 +8,19 @@ void DumpVTablesTask::Run()
 {
     TiltedPhoques::Map<uintptr_t, std::string> vtableMap;
 
-    HMODULE ModuleBase = GetModuleHandle(nullptr);
-    uintptr_t begin = reinterpret_cast<uintptr_t>(ModuleBase);
-    const IMAGE_DOS_HEADER* dosHeader = reinterpret_cast<const IMAGE_DOS_HEADER*>(ModuleBase);
-    const IMAGE_NT_HEADERS* ntHeader = reinterpret_cast<const IMAGE_NT_HEADERS*>(
+    auto ModuleBase = GetModuleHandle(nullptr);
+    auto begin = reinterpret_cast<uintptr_t>(ModuleBase);
+    const auto* dosHeader = reinterpret_cast<const IMAGE_DOS_HEADER*>(ModuleBase);
+    const auto* ntHeader = reinterpret_cast<const IMAGE_NT_HEADERS*>(
         reinterpret_cast<const std::uint8_t*>(dosHeader) + dosHeader->e_lfanew);
     uintptr_t end = begin + ntHeader->OptionalHeader.SizeOfCode + ntHeader->OptionalHeader.SizeOfInitializedData;
 
-    auto* pRttiSystem = RED4ext::CRTTISystem::Get();
+    const auto* pRttiSystem = RED4ext::CRTTISystem::Get();
 
     auto dumpClass = [begin, end](auto& aVtableMap, RED4ext::CBaseRTTIType* apType)
     {
         uintptr_t vtable = *reinterpret_cast<uintptr_t*>(apType);
-        RED4ext::CName typeName = apType->GetName();
+        const RED4ext::CName typeName = apType->GetName();
         const std::string name = typeName.ToString();
         if (vtable >= begin && vtable <= end)
         {
@@ -34,7 +34,7 @@ void DumpVTablesTask::Run()
 
             // We aren't borrowing the game's allocator on purpose because some classes have Abstract
             // allocators and they assert
-            const std::unique_ptr<char[]> pMemory = std::make_unique<char[]>(size);
+            const auto pMemory = std::make_unique<char[]>(size);
 
             memset(pMemory.get(), 0, size);
 

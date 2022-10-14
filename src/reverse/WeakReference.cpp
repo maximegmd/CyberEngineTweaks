@@ -12,7 +12,7 @@ WeakReference::WeakReference(const TiltedPhoques::Lockable<sol::state, std::recu
     : ClassType(aView, nullptr)
     , m_weakHandle(std::move(aWeakHandle))
 {
-    auto ref = m_weakHandle.Lock();
+    const auto ref = m_weakHandle.Lock();
     if (ref)
     {
         m_pType = ref->GetType();
@@ -25,7 +25,7 @@ WeakReference::WeakReference(const TiltedPhoques::Lockable<sol::state, std::recu
     : ClassType(aView, nullptr)
     , m_weakHandle(std::move(aWeakHandle))
 {
-    auto ref = m_weakHandle.Lock();
+    const auto ref = m_weakHandle.Lock();
     if (ref)
     {
         auto const cpClass = reinterpret_cast<RED4ext::CClass*>(apWeakHandleType->GetInnerType());

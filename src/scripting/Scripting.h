@@ -11,7 +11,7 @@ struct Scripting
 {
     using LockedState = TiltedPhoques::Locked<sol::state, std::recursive_mutex>;
 
-    Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12, Options& aOptions);
+    Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12);
     ~Scripting() = default;
 
     void Initialize();
@@ -31,8 +31,8 @@ struct Scripting
 
     sol::object GetMod(const std::string& acName) const;
     void ReloadAllMods();
-    bool ExecuteLua(const std::string& acCommand);
-    void CollectGarbage();
+    bool ExecuteLua(const std::string& acCommand) const;
+    void CollectGarbage() const;
 
     LockedState GetLockedState() const noexcept;
     std::string GetGlobalName() const noexcept;

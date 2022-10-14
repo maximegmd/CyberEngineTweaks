@@ -11,7 +11,7 @@ void Options::Load()
         std::ifstream configFile(path);
         if(configFile)
         {
-            auto config = nlohmann::json::parse(configFile);
+            const auto config = nlohmann::json::parse(configFile);
             PatchRemovePedestrians = config.value("remove_pedestrians", PatchRemovePedestrians);
             PatchSkipStartMenu = config.value("skip_start_menu", PatchSkipStartMenu);
             PatchAmdSmt = config.value("amd_smt", PatchAmdSmt);
@@ -137,7 +137,7 @@ Options::Options(Paths& aPaths)
         }
     }
     // check if exe name matches in case previous check fails
-    ExeValid = ExeValid || (aPaths.Executable().filename() == "Cyberpunk2077.exe");
+    ExeValid = ExeValid || aPaths.Executable().filename() == "Cyberpunk2077.exe";
 
     if (!ExeValid)
         throw std::runtime_error("Not Cyberpunk2077.exe");
@@ -159,7 +159,7 @@ Options::Options(Paths& aPaths)
 
         if (GameImage.GetVersion() != Image::GetSupportedVersion())
         {
-            auto [smajor, sminor] = Image::GetSupportedVersion();
+            const auto [smajor, sminor] = Image::GetSupportedVersion();
             Log::Error("Unsupported game version! Only {}.{:02d} is supported.", smajor, sminor);
             throw std::runtime_error("Unsupported version");
         }

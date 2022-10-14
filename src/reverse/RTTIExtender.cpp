@@ -11,7 +11,7 @@ struct GameCall
 {
     GameCall(uintptr_t aAddress, const int32_t acOffset = 0)
     {
-        RED4ext::RelocPtr<uint8_t> addr(aAddress);
+        const RED4ext::RelocPtr<uint8_t> addr(aAddress);
         const auto* pLocation = addr.GetAddr();
         m_address = pLocation ? reinterpret_cast<T>(pLocation + acOffset) : nullptr;
     }
@@ -45,7 +45,7 @@ struct REDSmartPtr
         AddRef();
     }
 
-    REDSmartPtr(REDSmartPtr&& aOther)
+    REDSmartPtr(REDSmartPtr&& aOther) noexcept
         : data(aOther.data)
     {
         aOther.data = nullptr;
@@ -67,6 +67,9 @@ struct REDSmartPtr
 
     REDSmartPtr& operator=(const REDSmartPtr& acOther)
     {
+        if (this == &acOther)
+            return *this;
+
         Reset();
         data = acOther.data;
         AddRef();
@@ -74,8 +77,11 @@ struct REDSmartPtr
         return *this;
     }
 
-    REDSmartPtr& operator=(REDSmartPtr&& aOther)
+    REDSmartPtr& operator=(REDSmartPtr&& aOther) noexcept
     {
+        if (this == &aOther)
+            return *this;
+
         Reset();
         data = aOther.data;
         aOther.data = nullptr;
@@ -118,7 +124,7 @@ struct IUpdatableSystem : RED4ext::IScriptable
 
 struct gameIGameSystem : IUpdatableSystem
 {
-    RED4ext::GameInstance* gameInstance;
+    RED4ext::GameInstance* gameInstance = nullptr;
 
     static void CallConstructor(void* apAddress)
     {
@@ -215,10 +221,10 @@ struct TEMP_SpawnSettings
         // ------------------------------
 
         // Normalize Quats
-        float quatLength = sqrtf(acWorldTransform.Orientation.i * acWorldTransform.Orientation.i +
-                                 acWorldTransform.Orientation.j * acWorldTransform.Orientation.j +
-                                 acWorldTransform.Orientation.k * acWorldTransform.Orientation.k +
-                                 acWorldTransform.Orientation.r * acWorldTransform.Orientation.r);
+        const float quatLength = sqrtf(acWorldTransform.Orientation.i * acWorldTransform.Orientation.i +
+                                       acWorldTransform.Orientation.j * acWorldTransform.Orientation.j +
+                                       acWorldTransform.Orientation.k * acWorldTransform.Orientation.k +
+                                       acWorldTransform.Orientation.r * acWorldTransform.Orientation.r);
         if (quatLength != 0.0f)
         {
             transform.orientation.i = acWorldTransform.Orientation.i / quatLength;
@@ -287,7 +293,7 @@ struct TEMP_Spawner
         REDSmartPtr<TEMP_PendingEntity::Unk00> pendingEntity;
         func(this, &pendingEntity, aSettings, acEntityPath);
 
-        RED4ext::ent::EntityID entityID;
+        RED4ext::ent::EntityID entityID{};
         entityID.hash = pendingEntity ? pendingEntity->entityID.hash : 0;
         return entityID;
     }
@@ -299,7 +305,7 @@ struct TEMP_Spawner
         RED4ext::CName entityPath;
         if (!pTDB->TryGetValue(RED4ext::TweakDBID(acRecordDBID, ".entityTemplatePath"), entityPath))
         {
-            RED4ext::ent::EntityID entityID;
+            RED4ext::ent::EntityID entityID{};
             entityID.hash = 0;
             return entityID;
         }
@@ -320,7 +326,7 @@ struct TEMP_Spawner
         return Spawn(entityPath, aSettings);
     }
 
-    void Despawn(RED4ext::Handle<RED4ext::IScriptable> aEntity)
+    void Despawn(const RED4ext::Handle<RED4ext::IScriptable>& aEntity)
     {
         using TFunc = void(*)(TEMP_Spawner*, RED4ext::IScriptable*);
         static GameCall<TFunc> func(CyberEngineTweaks::Addresses::gameIGameSystem_Despawn);
@@ -332,10 +338,10 @@ RED4EXT_ASSERT_SIZE(TEMP_Spawner, 0x68);
 
 #pragma endregion
 
-void CreateSingleton(RED4ext::Handle<RED4ext::IScriptable> apClassInstance)
+void CreateSingleton(const RED4ext::Handle<RED4ext::IScriptable>& apClassInstance)
 {
     auto* pRTTI = RED4ext::CRTTISystem::Get();
-    auto* pType = reinterpret_cast<RED4ext::CClass*>(apClassInstance->GetNativeType());
+    auto* pType = apClassInstance->GetNativeType();
     auto* pGameInstance = RED4ext::CGameEngine::Get()->framework->gameInstance;
     if (pGameInstance->GetInstance(pType) != nullptr)
         return; // already init
@@ -402,8 +408,8 @@ void CreateSingleton(const RED4ext::CName acTypeName)
     if (pGameInstance->GetInstance(pType) != nullptr)
         return; // already init
 
-    auto* pClassInstance = (RED4ext::IScriptable*)pType->AllocInstance();
-    RED4ext::Handle<RED4ext::IScriptable> handle(pClassInstance);
+    auto* pClassInstance = static_cast<RED4ext::IScriptable*>(pType->AllocInstance());
+    RED4ext::Handle handle(pClassInstance);
 
     CreateSingleton(handle);
 }
@@ -413,8 +419,8 @@ void CreateSingleton(const RED4ext::CName acTypeName)
 // This is kept for backward compatibility.
 // Use exEntitySpawner
 
-void WorldFunctionalTests_SpawnEntity(RED4ext::IScriptable* apContext, RED4ext::CStackFrame* apFrame,
-                                      RED4ext::ent::EntityID* apOut, int64_t a4)
+void WorldFunctionalTests_SpawnEntity(RED4ext::IScriptable*, RED4ext::CStackFrame* apFrame,
+                                      RED4ext::ent::EntityID* apOut, int64_t)
 {
     struct FunctionalTestsGameSystem
     {
@@ -423,12 +429,12 @@ void WorldFunctionalTests_SpawnEntity(RED4ext::IScriptable* apContext, RED4ext::
     };
 
     RED4ext::CString entityPath;
-    RED4ext::WorldTransform worldTransform;
+    RED4ext::WorldTransform worldTransform{};
     RED4ext::CString unknown;
 
-    RED4ext::GetParameter(apFrame, &entityPath);
-    RED4ext::GetParameter(apFrame, &worldTransform);
-    RED4ext::GetParameter(apFrame, &unknown);
+    GetParameter(apFrame, &entityPath);
+    GetParameter(apFrame, &worldTransform);
+    GetParameter(apFrame, &unknown);
     apFrame->code++; // skip ParamEnd
 
     auto* pRTTI = RED4ext::CRTTISystem::Get();
@@ -437,7 +443,7 @@ void WorldFunctionalTests_SpawnEntity(RED4ext::IScriptable* apContext, RED4ext::
     auto* pFunctionalSystem = reinterpret_cast<FunctionalTestsGameSystem*>(pGameInstance->GetInstance(pFunctionalType));
     uint32_t oldSize = pFunctionalSystem->spawner.pendingEntities.size;
 
-    RED4ext::ExecuteFunction("WorldFunctionalTests", "Internal_SpawnEntity", nullptr, entityPath, worldTransform,
+    ExecuteFunction("WorldFunctionalTests", "Internal_SpawnEntity", nullptr, entityPath, worldTransform,
         unknown);
 
     // if any entity was spawned
@@ -449,15 +455,14 @@ void WorldFunctionalTests_SpawnEntity(RED4ext::IScriptable* apContext, RED4ext::
     }
 }
 
-void WorldFunctionalTests_DespawnEntity(RED4ext::IScriptable* apContext, RED4ext::CStackFrame* apFrame, void* apOut,
-                                        int64_t a4)
+void WorldFunctionalTests_DespawnEntity(RED4ext::IScriptable*, RED4ext::CStackFrame* apFrame, void*, int64_t)
 {
     RED4ext::Handle<RED4ext::IScriptable> entity;
 
-    RED4ext::GetParameter(apFrame, &entity);
+    GetParameter(apFrame, &entity);
     apFrame->code++; // skip ParamEnd
 
-    RED4ext::ExecuteFunction("WorldFunctionalTests", "Internal_DespawnEntity", nullptr, entity);
+    ExecuteFunction("WorldFunctionalTests", "Internal_DespawnEntity", nullptr, entity);
 }
 
 #pragma endregion
@@ -480,25 +485,25 @@ private:
         constexpr int32_t VftableSize = 0x1A8;
         static uintptr_t* ClonedVftable = nullptr;
 
-        gameIGameSystem::CallConstructor(apAddress);
+        CallConstructor(apAddress);
 
         if (ClonedVftable == nullptr)
         {
-            ClonedVftable = reinterpret_cast<uintptr_t*>(malloc(VftableSize));
-            memcpy(ClonedVftable, *reinterpret_cast<uintptr_t**>(apAddress), VftableSize);
+            ClonedVftable = static_cast<uintptr_t*>(malloc(VftableSize));
+            memcpy(ClonedVftable, *static_cast<uintptr_t**>(apAddress), VftableSize);
 
-            ClonedVftable[0] = (uintptr_t)&HOOK_GetNativeType;
-            ClonedVftable[0x118 / 8] = (uintptr_t)&HOOK_OnInitialize;
-            ClonedVftable[0x120 / 8] = (uintptr_t)&HOOK_OnShutdown;
+            ClonedVftable[0] = reinterpret_cast<uintptr_t>(&HOOK_GetNativeType);
+            ClonedVftable[0x118 / 8] = reinterpret_cast<uintptr_t>(&HOOK_OnInitialize);
+            ClonedVftable[0x120 / 8] = reinterpret_cast<uintptr_t>(&HOOK_OnShutdown);
         }
 
         // overwrite vftable with our clone
-        *(uintptr_t**)apAddress = ClonedVftable;
+        *static_cast<uintptr_t**>(apAddress) = ClonedVftable;
 
-        return reinterpret_cast<exEntitySpawnerSystem*>(apAddress);
+        return static_cast<exEntitySpawnerSystem*>(apAddress);
     }
 
-    static RED4ext::CBaseRTTIType* HOOK_GetNativeType(exEntitySpawnerSystem* apThis)
+    static RED4ext::CBaseRTTIType* HOOK_GetNativeType(exEntitySpawnerSystem*)
     {
         auto* pRTTI = RED4ext::CRTTISystem::Get();
         return pRTTI->GetClass(NATIVE_TYPE_STR);
@@ -509,14 +514,14 @@ private:
         exEntitySpawner_Spawner.Initialize(apThis->gameInstance);
     }
 
-    static void HOOK_OnShutdown(exEntitySpawnerSystem* apThis)
+    static void HOOK_OnShutdown(exEntitySpawnerSystem*)
     {
         exEntitySpawner_Spawner.UnInitialize();
     }
 
     static void SpawnCallback(TEMP_PendingEntity::Unk00& aUnk)
     {
-        using TFunc = void(*)(RED4ext::IScriptable*, RED4ext::ent::Entity*);
+        using TFunc = void(*)(IScriptable*, RED4ext::ent::Entity*);
         static GameCall<TFunc> func(CyberEngineTweaks::Addresses::gameIGameSystem_SpawnCallback);
 
         struct GameInstance_78_Unk
@@ -550,21 +555,20 @@ public:
 
         auto* pAllocator = pRTTI->GetClass(PARENT_TYPE)->GetAllocator();
         Singleton = CreateNew(pAllocator->AllocAligned(sizeof(exEntitySpawnerSystem), alignof(exEntitySpawnerSystem)).memory);
-        CreateSingleton(RED4ext::Handle<RED4ext::IScriptable>(Singleton));
+        CreateSingleton(RED4ext::Handle<IScriptable>(Singleton));
     }
 
-    static void Spawn(RED4ext::IScriptable* apContext, RED4ext::CStackFrame* apFrame, RED4ext::ent::EntityID* apOut,
-                      int64_t a4)
+    static void Spawn(IScriptable*, RED4ext::CStackFrame* apFrame, RED4ext::ent::EntityID* apOut, int64_t)
     {
         RED4ext::CName entityPath; // <- raRef
-        RED4ext::WorldTransform worldTransform;
+        RED4ext::WorldTransform worldTransform{};
         RED4ext::CName appearance = "default";
         RED4ext::TweakDBID recordDBID = 0;
 
-        RED4ext::GetParameter(apFrame, &entityPath);
-        RED4ext::GetParameter(apFrame, &worldTransform);
-        RED4ext::GetParameter(apFrame, &appearance);
-        RED4ext::GetParameter(apFrame, &recordDBID);
+        GetParameter(apFrame, &entityPath);
+        GetParameter(apFrame, &worldTransform);
+        GetParameter(apFrame, &appearance);
+        GetParameter(apFrame, &recordDBID);
         apFrame->code++; // skip ParamEnd
 
         if (appearance == RED4ext::CName(""))
@@ -579,7 +583,7 @@ public:
         settings.SetRecordID(recordDBID);
         settings.SetTransform(worldTransform);
 
-        auto entityID = exEntitySpawner_Spawner.Spawn(entityPath, settings);
+        const auto entityID = exEntitySpawner_Spawner.Spawn(entityPath, settings);
 
         if (apOut != nullptr)
         {
@@ -587,15 +591,14 @@ public:
         }
     }
 
-    static void SpawnRecord(RED4ext::IScriptable* apContext, RED4ext::CStackFrame* apFrame,
-                            RED4ext::ent::EntityID* apOut, int64_t a4)
+    static void SpawnRecord(IScriptable*, RED4ext::CStackFrame* apFrame, RED4ext::ent::EntityID* apOut, int64_t)
     {
         RED4ext::TweakDBID recordDBID = 0;
-        RED4ext::WorldTransform worldTransform;
+        RED4ext::WorldTransform worldTransform{};
         RED4ext::CName appearance = "default";
-        RED4ext::GetParameter(apFrame, &recordDBID);
-        RED4ext::GetParameter(apFrame, &worldTransform);
-        RED4ext::GetParameter(apFrame, &appearance);
+        GetParameter(apFrame, &recordDBID);
+        GetParameter(apFrame, &worldTransform);
+        GetParameter(apFrame, &appearance);
         apFrame->code++; // skip ParamEnd
 
         if (appearance == RED4ext::CName(""))
@@ -609,7 +612,7 @@ public:
         settings.callback = SpawnCallback;
         settings.SetTransform(worldTransform);
 
-        auto entityID = exEntitySpawner_Spawner.SpawnRecord(recordDBID, settings);
+        const auto entityID = exEntitySpawner_Spawner.SpawnRecord(recordDBID, settings);
 
         if (apOut != nullptr)
         {
@@ -617,11 +620,11 @@ public:
         }
     }
 
-    static void Despawn(RED4ext::IScriptable* apContext, RED4ext::CStackFrame* apFrame, void* apOut, int64_t a4)
+    static void Despawn(IScriptable*, RED4ext::CStackFrame* apFrame, void*, int64_t)
     {
-        RED4ext::Handle<RED4ext::IScriptable> entity;
+        RED4ext::Handle<IScriptable> entity;
 
-        RED4ext::GetParameter(apFrame, &entity);
+        GetParameter(apFrame, &entity);
         apFrame->code++; // skip ParamEnd
 
         exEntitySpawner_Spawner.Despawn(entity);

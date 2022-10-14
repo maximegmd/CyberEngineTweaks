@@ -7,24 +7,24 @@
 #include <imgui_impl/dx12.h>
 #include <imgui_impl/win32.h>
 
-void D3D12::SetTrapInputInImGui(bool aEnabled)
+void D3D12::SetTrapInputInImGui(const bool acEnabled)
 {
     int showCursorState;
-    if (aEnabled)
+    if (acEnabled)
         do { showCursorState = ShowCursor(TRUE); } while (showCursorState < 0);
     else
         do { showCursorState = ShowCursor(FALSE); } while (showCursorState >= 0);
 
-    m_trapInputInImGui = aEnabled;
+    m_trapInputInImGui = acEnabled;
 }
 
-void D3D12::DelayedSetTrapInputInImGui(bool aEnabled)
+void D3D12::DelayedSetTrapInputInImGui(const bool acEnabled)
 {
-    m_delayedTrapInputState = aEnabled;
+    m_delayedTrapInputState = acEnabled;
     m_delayedTrapInput = true;
 }
 
-LRESULT D3D12::OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam)
+LRESULT D3D12::OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam) const
 {
     auto& d3d12 = CET::Get().GetD3D12();
 
@@ -47,15 +47,12 @@ LRESULT D3D12::OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam)
                 (auMsg >= WM_KEYFIRST && auMsg <= WM_KEYLAST))
                 return 1;
 
-            // ignore specific messages
-            switch (auMsg)
-            {
-                case WM_INPUT:
-                    return 1;
-            }
+            // ignore input messages
+            if (auMsg == WM_INPUT)
+                return 1;
         }
     }
-    
+
     return 0;
 }
 
@@ -66,13 +63,13 @@ D3D12::D3D12(Window& aWindow, Paths& aPaths, Options& aOptions)
 {
     HookGame();
 
-    std::thread t([this]()
+    std::thread t([this]
     {
         if (kiero::init() != kiero::Status::Success)
             Log::Error("Kiero failed!");
         else
         {
-            std::string_view d3d12type = (kiero::isDownLevelDevice()) ? ("D3D12on7") : ("D3D12");
+            std::string_view d3d12type = kiero::isDownLevelDevice() ? "D3D12on7" : "D3D12";
             Log::Info("Kiero initialized for {0}", d3d12type);
 
             Hook();
@@ -82,9 +79,9 @@ D3D12::D3D12(Window& aWindow, Paths& aPaths, Options& aOptions)
     t.detach();
 }
 
-D3D12::~D3D12() 
+D3D12::~D3D12()
 {
-    if (m_initialized) 
+    if (m_initialized)
     {
         ImGui_ImplDX12_Shutdown();
         ImGui_ImplWin32_Shutdown();

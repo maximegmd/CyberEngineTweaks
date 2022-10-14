@@ -43,7 +43,7 @@ void Image::Initialize()
 
     auto* pImage = GetModuleHandle(nullptr);
 
-    auto sectionHeaders = mainModule.section_headers();
+    const auto sectionHeaders = mainModule.section_headers();
 
     base_address = reinterpret_cast<uintptr_t>(pImage);
 
@@ -58,14 +58,14 @@ void Image::Initialize()
 
     auto& dosHeader = mainModule.dos_header();
     auto* pFileHeader = reinterpret_cast<IMAGE_FILE_HEADER*>(base_address + dosHeader.e_lfanew + 4);
-    auto* pOptionalHeader = reinterpret_cast<IMAGE_OPTIONAL_HEADER*>(((char*)pFileHeader) + sizeof(IMAGE_FILE_HEADER));
-    auto* pDataDirectory = &pOptionalHeader->DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG];
-    auto* pDebugDirectory = reinterpret_cast<IMAGE_DEBUG_DIRECTORY*>(base_address + pDataDirectory->VirtualAddress);
+    const auto* pOptionalHeader = reinterpret_cast<IMAGE_OPTIONAL_HEADER*>(reinterpret_cast<char*>(pFileHeader) + sizeof(IMAGE_FILE_HEADER));
+    const auto* pDataDirectory = &pOptionalHeader->DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG];
+    const auto* pDebugDirectory = reinterpret_cast<IMAGE_DEBUG_DIRECTORY*>(base_address + pDataDirectory->VirtualAddress);
 
     // Check to see that the data has the right type
     if (IMAGE_DEBUG_TYPE_CODEVIEW == pDebugDirectory->Type)
     {
-        PdbInfo* pdb_info = (PdbInfo*)(base_address + pDebugDirectory->AddressOfRawData);
+        auto* pdb_info = reinterpret_cast<PdbInfo*>(base_address + pDebugDirectory->AddressOfRawData);
         if (0 == memcmp(&pdb_info->Signature, "RSDS", 4))
         {
             for (const auto& v : cVersions)
@@ -79,8 +79,8 @@ void Image::Initialize()
 
             if (version == 0)
             {
-                for (auto c : pdb_info->Guid)
-                    Log::Error("{:X}", (uint32_t)c);
+                for (const auto c : pdb_info->Guid)
+                    Log::Error("{:X}", static_cast<uint32_t>(c));
 
                 throw std::runtime_error("Abort loading");
             }

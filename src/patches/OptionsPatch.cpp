@@ -1,10 +1,7 @@
-#include "CET.h"
-
 #include <stdafx.h>
 
-#include "Image.h"
-#include "Options.h"
-#include "scripting/GameOptions.h"
+#include <CET.h>
+#include <scripting/GameOptions.h>
 
 using TGameOptionInit = void*(void*);
 TGameOptionInit* RealGameOptionInit = nullptr;
@@ -14,7 +11,7 @@ void* HookGameOptionInit(GameOption* apThis)
     auto& gameOptions = GameOptions::GetList();
     auto& options = CET::Get().GetOptions();
 
-    if (std::find(gameOptions.begin(), gameOptions.end(), apThis) == gameOptions.end())
+    if (std::ranges::find(gameOptions, apThis) == gameOptions.end())
     {
         gameOptions.push_back(apThis);
     }
@@ -40,14 +37,16 @@ void* HookGameOptionInit(GameOption* apThis)
     return RealGameOptionInit(apThis);
 }
 
-void OptionsInitHook(const Image* apImage)
+void OptionsInitHook()
 {
-    RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CPatches_OptionsInit);
+    const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CPatches_OptionsInit);
     uint8_t* pLocation = func.GetAddr();
 
     if (pLocation)
     {
-        MH_CreateHook(pLocation, &HookGameOptionInit, reinterpret_cast<void**>(&RealGameOptionInit));
+        MH_CreateHook(pLocation,
+                      reinterpret_cast<void*>(&HookGameOptionInit),
+                      reinterpret_cast<void**>(&RealGameOptionInit));
         MH_EnableHook(pLocation);
 
         Log::Info("Hidden options hook: success");
