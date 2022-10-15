@@ -150,7 +150,7 @@ RED4ext::CBaseRTTIType* Variant::GetType() const noexcept
 
 RED4ext::ScriptInstance Variant::GetDataPtr() const noexcept
 {
-    return IsInlined() ? const_cast<uint8_t*>(inlined) : instance;
+    return IsInlined() ? inlined : instance;
 }
 
 bool Variant::Init(const RED4ext::CBaseRTTIType* aType)
@@ -182,7 +182,7 @@ bool Variant::Init(const RED4ext::CBaseRTTIType* aType)
 
     if (CanBeInlined(aType))
     {
-        type = reinterpret_cast<const RED4ext::CBaseRTTIType*>(reinterpret_cast<uintptr_t>(&type) | kInlineFlag);
+        type = reinterpret_cast<const RED4ext::CBaseRTTIType*>(reinterpret_cast<uintptr_t>(type) | kInlineFlag);
         ownData = inlined;
     }
     else

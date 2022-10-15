@@ -205,7 +205,7 @@ struct Variant
     const RED4ext::CBaseRTTIType* type{ nullptr };
     union
     {
-        uint8_t inlined[kInlineSize]{ 0 };
+        mutable uint8_t inlined[kInlineSize]{ 0 };
         RED4ext::ScriptInstance instance;
     };
 };

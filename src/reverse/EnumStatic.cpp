@@ -15,7 +15,8 @@ EnumStatic::~EnumStatic() = default;
 
 sol::object EnumStatic::Index_Impl(const std::string& acName, sol::this_environment aThisEnv)
 {
-    auto result = ClassType::Index_Impl(acName, aThisEnv);
+    // TODO - this should not use Type:: probably but ClassType
+    auto result = Type::Index_Impl(acName, aThisEnv);
 
     if (result != sol::nil)
         return result;
@@ -28,5 +29,6 @@ sol::object EnumStatic::Index_Impl(const std::string& acName, sol::this_environm
     auto lockedState = m_lua.Lock();
     const auto& cLuaState = lockedState.Get();
 
-    return ClassType::NewIndex_Impl(acName, make_object(cLuaState, Enum(cpEnum, acName)));
+    // TODO - this should not use Type:: probably but ClassType
+    return Type::NewIndex_Impl(acName, make_object(cLuaState, Enum(cpEnum, acName)));
 }
