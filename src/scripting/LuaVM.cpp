@@ -47,16 +47,6 @@ void LuaVM::Update(float aDeltaTime)
     {
         m_scripting.ReloadAllMods();
 
-        if (ResourcesList::Get()->IsInitialized() && TweakDBMetadata::Get()->IsInitialized())
-            m_scripting.TriggerOnTweak();
-
-        m_scripting.TriggerOnInit();
-
-        if (CET::Get().GetOverlay().IsEnabled())
-            m_scripting.TriggerOnOverlayOpen();
-
-        spdlog::get("scripting")->info("LuaVM: Reloaded all mods!");
-
         m_reload = false;
     }
 
@@ -92,11 +82,7 @@ void LuaVM::OnOverlayClose() const
 void LuaVM::Initialize()
 {
     if (!IsInitialized())
-    {
         m_scripting.Initialize();
-
-        SetGameAvailable(true);
-    }
 }
 
 bool LuaVM::IsInitialized() const
@@ -107,26 +93,6 @@ bool LuaVM::IsInitialized() const
 void LuaVM::BlockDraw(bool aBlockDraw)
 {
     m_drawBlocked = aBlockDraw;
-}
-
-void LuaVM::SetImGuiAvailable(bool aAvailable)
-{
-    m_imguiAvailable = aAvailable;
-}
-
-bool LuaVM::GetImGuiAvailable() const
-{
-    return m_imguiAvailable;
-}
-
-void LuaVM::SetGameAvailable(bool aAvailable)
-{
-    m_gameAvailable = aAvailable;
-}
-
-bool LuaVM::GetGameAvailable() const
-{
-    return m_gameAvailable;
 }
 
 void LuaVM::RemoveTDBIDDerivedFrom(uint64_t aDBID)
@@ -227,12 +193,12 @@ void LuaVM::PostInitializeScripting()
     m_scripting.PostInitializeScripting();
 }
 
-void LuaVM::PostInitializeTweakDB() const
+void LuaVM::PostInitializeTweakDB()
 {
     if (!ResourcesList::Get()->Initialize() || !TweakDBMetadata::Get()->Initialize())
         return;
 
-    m_scripting.TriggerOnTweak();
+    m_scripting.PostInitializeTweakDB();
 }
 
 void LuaVM::PostInitializeMods()
@@ -240,9 +206,6 @@ void LuaVM::PostInitializeMods()
     assert(!m_initialized);
 
     m_scripting.PostInitializeMods();
-    m_scripting.TriggerOnInit();
-    if (CET::Get().GetOverlay().IsEnabled())
-        m_scripting.TriggerOnOverlayOpen();
 
     spdlog::get("scripting")->info("LuaVM: initialization finished!");
 

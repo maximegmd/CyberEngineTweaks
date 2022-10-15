@@ -8,7 +8,10 @@ struct LuaSandbox
     ~LuaSandbox() = default;
 
     void Initialize();
-    void PostInitialize() const;
+    void PostInitializeScripting();
+    void PostInitializeTweakDB();
+    void PostInitializeMods();
+
     void ResetState();
 
     uint64_t CreateSandbox(const std::filesystem::path& acPath = "", const std::string& acName = "", bool aEnableExtraLibs = true, bool aEnableDB = true, bool aEnableIO = true, bool aEnableLogger = true);
@@ -20,6 +23,15 @@ struct LuaSandbox
     const Sandbox& operator[](uint64_t aID) const;
 
     [[nodiscard]] TiltedPhoques::Locked<sol::state, std::recursive_mutex> GetLockedState() const;
+
+    void SetImGuiAvailable(bool aAvailable);
+    bool GetImGuiAvailable() const;
+
+    void SetGameAvailable(bool aAvailable);
+    bool GetGameAvailable() const;
+
+    void WrapForGame(sol::object& apObject) const;
+    void WrapForImGui(sol::object& apObject) const;
 
 private:
 
@@ -35,4 +47,7 @@ private:
     sol::environment m_env{};
     TiltedPhoques::Vector<Sandbox> m_sandboxes{};
     TiltedPhoques::Map<std::string, sol::object> m_modules{};
+
+    std::atomic_bool m_imguiAvailable{ false };
+    std::atomic_bool m_gameAvailable{ false };
 };

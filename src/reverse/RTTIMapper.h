@@ -1,10 +1,11 @@
 #pragma once
 
+struct LuaSandbox;
 struct RTTIMapper
 {
     using LockableState = TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref;
 
-    RTTIMapper(const LockableState& acLua, const std::string& acGlobal);
+    RTTIMapper(const LockableState& acpLua, const std::string& acpGlobal, LuaSandbox& apSandbox);
     ~RTTIMapper();
 
     void Register();
@@ -48,4 +49,5 @@ private:
 
     LockableState m_lua;
     std::string m_global;
+    LuaSandbox& m_sandbox;
 };

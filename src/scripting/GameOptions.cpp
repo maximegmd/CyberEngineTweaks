@@ -2,8 +2,6 @@
 
 #include "GameOptions.h"
 
-#include <CET.h>
-
 static TiltedPhoques::Vector<GameOption*> s_gameOptions;
 
 std::string GameOption::GetInfo()
@@ -151,8 +149,6 @@ GameOption* GameOptions::Find(const std::string& category, const std::string& na
 
 void GameOptions::Print(const std::string& category, const std::string& name)
 {
-    ASSERT_CORRECT_GAME_USAGE();
-
     auto* option = Find(category, name);
     if (!option)
         return;
@@ -162,8 +158,6 @@ void GameOptions::Print(const std::string& category, const std::string& name)
 
 std::string GameOptions::Get(const std::string& category, const std::string& name)
 {
-    ASSERT_CORRECT_GAME_USAGE();
-
     auto* option = Find(category, name);
     if (!option)
         return "";
@@ -173,8 +167,6 @@ std::string GameOptions::Get(const std::string& category, const std::string& nam
 
 bool GameOptions::GetBool(const std::string& category, const std::string& name)
 {
-    ASSERT_CORRECT_GAME_USAGE();
-
     auto* option = Find(category, name);
     if (!option)
         return false;
@@ -192,8 +184,6 @@ bool GameOptions::GetBool(const std::string& category, const std::string& name)
 
 int GameOptions::GetInt(const std::string& category, const std::string& name)
 {
-    ASSERT_CORRECT_GAME_USAGE();
-
     auto* option = Find(category, name);
     if (!option)
         return false;
@@ -211,8 +201,6 @@ int GameOptions::GetInt(const std::string& category, const std::string& name)
 
 float GameOptions::GetFloat(const std::string& category, const std::string& name)
 {
-    ASSERT_CORRECT_GAME_USAGE();
-
     auto* option = Find(category, name);
     if (!option)
         return false;
@@ -230,8 +218,6 @@ float GameOptions::GetFloat(const std::string& category, const std::string& name
 
 void GameOptions::Set(const std::string& category, const std::string& name, const std::string& value)
 {
-    ASSERT_CORRECT_GAME_USAGE();
-
     auto* option = Find(category, name);
     if (!option)
         return;
@@ -250,8 +236,6 @@ void GameOptions::Set(const std::string& category, const std::string& name, cons
 
 void GameOptions::SetBool(const std::string& category, const std::string& name, bool value)
 {
-    ASSERT_CORRECT_GAME_USAGE();
-
     auto* option = Find(category, name);
     if (!option)
         return;
@@ -270,8 +254,6 @@ void GameOptions::SetBool(const std::string& category, const std::string& name, 
 
 void GameOptions::SetInt(const std::string& category, const std::string& name, int value)
 {
-    ASSERT_CORRECT_GAME_USAGE();
-
     auto* option = Find(category, name);
     if (!option)
         return;
@@ -290,8 +272,6 @@ void GameOptions::SetInt(const std::string& category, const std::string& name, i
 
 void GameOptions::SetFloat(const std::string& category, const std::string& name, float value)
 {
-    ASSERT_CORRECT_GAME_USAGE();
-
     auto* option = Find(category, name);
     if (!option)
         return;
@@ -310,8 +290,6 @@ void GameOptions::SetFloat(const std::string& category, const std::string& name,
 
 void GameOptions::Toggle(const std::string& category, const std::string& name)
 {
-    ASSERT_CORRECT_GAME_USAGE();
-
     auto* option = Find(category, name);
     if (!option)
         return;
@@ -330,8 +308,6 @@ void GameOptions::Toggle(const std::string& category, const std::string& name)
 
 void GameOptions::Dump()
 {
-    ASSERT_CORRECT_GAME_USAGE();
-
     for (const auto option : s_gameOptions)
         Log::Info(option->GetInfo());
 
@@ -340,8 +316,6 @@ void GameOptions::Dump()
 
 void GameOptions::List(const std::string& category)
 {
-    ASSERT_CORRECT_GAME_USAGE();
-
     const auto consoleLogger = spdlog::get("scripting");
 
     int count = 0;

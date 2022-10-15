@@ -9,9 +9,10 @@
 #include "scripting/Scripting.h"
 #include "Utils.h"
 
-RTTIMapper::RTTIMapper(const LockableState& acLua, const std::string& acGlobal)
-    : m_lua(acLua)
-    , m_global(acGlobal)
+RTTIMapper::RTTIMapper(const LockableState& acpLua, const std::string& acpGlobal, LuaSandbox& apSandbox)
+    : m_lua(acpLua)
+    , m_global(acpGlobal)
+    , m_sandbox(apSandbox)
 {
 }
 
@@ -22,7 +23,7 @@ RTTIMapper::~RTTIMapper()
 
 void RTTIMapper::Register()
 {
-    RTTIHelper::Initialize(m_lua);
+    RTTIHelper::Initialize(m_lua, m_sandbox);
 
     auto lockedState = m_lua.Lock();
     auto& luaState = lockedState.Get();
@@ -53,10 +54,11 @@ void RTTIMapper::RegisterSimpleTypes(sol::state& aLuaState, sol::table& aLuaGlob
 {
     aLuaState.new_usertype<Variant>("Variant",
         sol::meta_function::construct, sol::no_constructor);
+    sol::object variant = aLuaGlobal["Variant"].get<sol::object>();
+    m_sandbox.WrapForGame(variant);
+    MakeSolUsertypeImmutable(variant, aLuaState);
 
-    MakeSolUsertypeImmutable(aLuaState["Variant"], aLuaState);
-
-    aLuaGlobal["ToVariant"] = sol::overload(
+    aLuaGlobal["toVariant"] = sol::overload(
         [this](const Type& aInstance, sol::this_state aState) -> sol::object {
             const auto* pType = aInstance.GetType();
             auto* pValue = aInstance.GetValuePtr();
@@ -129,6 +131,8 @@ void RTTIMapper::RegisterSimpleTypes(sol::state& aLuaState, sol::table& aLuaGlob
             return {luaState, sol::in_place, std::move(variant)};
         }
     );
+    sol::object toVariant = aLuaGlobal["ToVariant"].get<sol::object>();
+    m_sandbox.WrapForGame(toVariant);
 
     aLuaGlobal["FromVariant"] = [this](const Variant& aVariant) -> sol::object {
         if (aVariant.IsEmpty())
@@ -142,6 +146,8 @@ void RTTIMapper::RegisterSimpleTypes(sol::state& aLuaState, sol::table& aLuaGlob
 
         return Scripting::ToLua(luaLock, data);
     };
+    sol::object fromVariant = aLuaGlobal["FromVariant"].get<sol::object>();
+    m_sandbox.WrapForGame(fromVariant);
 }
 
 void RTTIMapper::RegisterDirectTypes(sol::state& aLuaState, sol::table& aLuaGlobal, RED4ext::CRTTISystem* apRtti)
@@ -155,6 +161,9 @@ void RTTIMapper::RegisterDirectTypes(sol::state& aLuaState, sol::table& aLuaGlob
             sol::base_classes, sol::bases<Type>(),
             sol::meta_function::index, &EnumStatic::Index,
             sol::meta_function::new_index, &EnumStatic::NewIndex);
+        sol::object enumStatic = aLuaGlobal["EnumStatic"].get<sol::object>();
+        m_sandbox.WrapForGame(enumStatic);
+        MakeSolUsertypeImmutable(enumStatic, aLuaState);
 
         aLuaState.new_usertype<ClassStatic>("ClassStatic",
             sol::meta_function::construct, sol::no_constructor,
@@ -162,9 +171,9 @@ void RTTIMapper::RegisterDirectTypes(sol::state& aLuaState, sol::table& aLuaGlob
             sol::meta_function::index, &ClassStatic::Index,
             sol::meta_function::new_index, &ClassStatic::NewIndex,
             "new", property(&ClassStatic::GetFactory));
-
-        MakeSolUsertypeImmutable(aLuaState["EnumStatic"], aLuaState);
-        MakeSolUsertypeImmutable(aLuaState["ClassStatic"], aLuaState);
+        sol::object classStatic = aLuaGlobal["ClassStatic"].get<sol::object>();
+        m_sandbox.WrapForGame(classStatic);
+        MakeSolUsertypeImmutable(classStatic, aLuaState);
     }
 
     apRtti->types.for_each([&](RED4ext::CName aTypeName, RED4ext::CBaseRTTIType* apType) {
@@ -180,6 +189,7 @@ void RTTIMapper::RegisterDirectTypes(sol::state& aLuaState, sol::table& aLuaGlob
         {
             auto luaEnum = make_object(aLuaState, EnumStatic(m_lua, apType));
 
+            m_sandbox.WrapForGame(luaEnum);
             MakeSolUsertypeImmutable(luaEnum, aLuaState);
 
             aLuaGlobal[typeName] = luaEnum;
@@ -189,6 +199,7 @@ void RTTIMapper::RegisterDirectTypes(sol::state& aLuaState, sol::table& aLuaGlob
         {
             auto luaClass = make_object(aLuaState, ClassStatic(m_lua, apType));
 
+            m_sandbox.WrapForGame(luaClass);
             MakeSolUsertypeImmutable(luaClass, aLuaState);
 
             aLuaGlobal[typeName] = luaClass;

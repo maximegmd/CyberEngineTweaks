@@ -2,8 +2,6 @@
 
 #include "Enum.h"
 
-#include <CET.h>
-
 Enum::Enum(const RED4ext::CStackType& aStackType)
 {
     Get(aStackType);
@@ -117,8 +115,6 @@ void Enum::Set(RED4ext::CStackType& acStackType) const noexcept
 
 std::string Enum::GetValueName() const
 {
-    ASSERT_CORRECT_GAME_USAGE();
-
     if (!m_cpType)
         return "";
 
@@ -136,8 +132,6 @@ std::string Enum::GetValueName() const
 
 void Enum::SetValueByName(const std::string& acValue)
 {
-    ASSERT_CORRECT_GAME_USAGE();
-
     if (!m_cpType)
         return;
 
@@ -155,8 +149,6 @@ void Enum::SetValueByName(const std::string& acValue)
 
 std::string Enum::ToString() const
 {
-    ASSERT_CORRECT_GAME_USAGE();
-
     if (m_cpType)
     {
         const RED4ext::CName name = m_cpType->GetName();

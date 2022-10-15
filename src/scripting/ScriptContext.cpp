@@ -31,26 +31,6 @@ sol::protected_function_result TryLuaFunction(const std::shared_ptr<spdlog::logg
     return result;
 }
 
-template <typename ...Args>
-sol::protected_function_result TryLuaFunctionWithImGui(const std::shared_ptr<spdlog::logger>& acpLogger, const sol::function& aFunc, Args... aArgs)
-{
-    auto& luaVM = CET::Get().GetVM();
-
-    luaVM.SetGameAvailable(false);
-    luaVM.SetImGuiAvailable(true);
-
-    const auto previousStyle = ImGui::GetStyle();
-
-    auto result = TryLuaFunction(acpLogger, aFunc, aArgs...);
-
-    ImGui::GetStyle() = previousStyle;
-
-    luaVM.SetImGuiAvailable(false);
-    luaVM.SetGameAvailable(true);
-
-    return result;
-}
-
 }
 
 ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::path& acPath, const std::string& acName)
@@ -110,7 +90,18 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
                 return [&aLuaSandbox, loggerRef, callback]{
                     auto lockedState = aLuaSandbox.GetLockedState();
 
-                    TryLuaFunctionWithImGui(loggerRef, callback);
+                    const auto previousGameAvailable = aLuaSandbox.GetGameAvailable();
+                    aLuaSandbox.SetGameAvailable(false);
+                    aLuaSandbox.SetImGuiAvailable(true);
+
+                    const auto previousStyle = ImGui::GetStyle();
+
+                    TryLuaFunction(loggerRef, callback);
+
+                    ImGui::GetStyle() = previousStyle;
+
+                    aLuaSandbox.SetImGuiAvailable(false);
+                    aLuaSandbox.SetGameAvailable(previousGameAvailable);
                 };
             }
             loggerRef->warn("Tried to register empty tooltip for handler!]");
@@ -272,7 +263,18 @@ void ScriptContext::TriggerOnDraw() const
 {
     auto lockedState = m_sandbox.GetLockedState();
 
-    TryLuaFunctionWithImGui(m_logger, m_onDraw);
+    const auto previousGameAvailable = m_sandbox.GetGameAvailable();
+    m_sandbox.SetGameAvailable(false);
+    m_sandbox.SetImGuiAvailable(true);
+
+    const auto previousStyle = ImGui::GetStyle();
+
+    TryLuaFunction(m_logger, m_onDraw);
+
+    ImGui::GetStyle() = previousStyle;
+
+    m_sandbox.SetImGuiAvailable(false);
+    m_sandbox.SetGameAvailable(previousGameAvailable);
 }
 
 void ScriptContext::TriggerOnOverlayOpen() const

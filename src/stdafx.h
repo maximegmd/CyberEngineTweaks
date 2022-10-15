@@ -67,6 +67,3 @@
 #include "reverse/Addresses.h"
 
 #include <wrl.h>
-
-#define ASSERT_CORRECT_GAME_USAGE() if (&CET::Get() == nullptr || !CET::Get().GetVM().GetGameAvailable()) throw std::exception("Tried to call Game or similar from invalid event!")
-#define ASSERT_CORRECT_IMGUI_USAGE() if (&CET::Get() == nullptr || !CET::Get().GetVM().GetImGuiAvailable()) throw std::exception("Tried to call ImGui from invalid event!")

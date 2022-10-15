@@ -16,9 +16,9 @@ static constexpr bool s_cThrowLuaErrors = true;
 
 static std::unique_ptr<RTTIHelper> s_pInstance{ nullptr };
 
-void RTTIHelper::Initialize(const LockableState& acLua)
+void RTTIHelper::Initialize(const LockableState& acLua, LuaSandbox& apSandbox)
 {
-    s_pInstance.reset(new RTTIHelper(acLua));
+    s_pInstance.reset(new RTTIHelper(acLua, apSandbox));
 }
 
 void RTTIHelper::Shutdown()
@@ -34,8 +34,9 @@ RTTIHelper& RTTIHelper::Get()
     return *s_pInstance;
 }
 
-RTTIHelper::RTTIHelper(const LockableState& acLua)
-    : m_lua(acLua)
+RTTIHelper::RTTIHelper(const LockableState& acpLua, LuaSandbox& apSandbox)
+    : m_lua(acpLua)
+    , m_sandbox(apSandbox)
 {
     InitializeRTTI();
     ParseGlobalStatics();
@@ -410,7 +411,7 @@ sol::function RTTIHelper::MakeInvokableFunction(RED4ext::CBaseFunction* apFunc)
 
     const bool cAllowNull = IsFunctionAlias(apFunc);
 
-    return MakeSolFunction(luaState, [this, apFunc, cAllowNull](sol::variadic_args aArgs, sol::this_state aState, sol::this_environment aEnv) -> sol::variadic_results {
+    auto result = MakeSolFunction(luaState, [this, apFunc, cAllowNull](sol::variadic_args aArgs, sol::this_state aState, sol::this_environment aEnv) -> sol::variadic_results {
         uint64_t argOffset = 0;
         const RED4ext::ScriptInstance pHandle = ResolveHandle(apFunc, aArgs, argOffset);
 
@@ -433,6 +434,8 @@ sol::function RTTIHelper::MakeInvokableFunction(RED4ext::CBaseFunction* apFunc)
 
         return result;
     });
+    m_sandbox.WrapForGame(result);
+    return result;
 }
 
 sol::function RTTIHelper::MakeInvokableOverload(std::map<uint64_t, RED4ext::CBaseFunction*> aOverloadedFuncs) const
@@ -445,7 +448,7 @@ sol::function RTTIHelper::MakeInvokableOverload(std::map<uint64_t, RED4ext::CBas
     for (const auto& func : aOverloadedFuncs | std::views::values)
         variants.emplace_back(func);
 
-    return MakeSolFunction(luaState, [this, variants](sol::variadic_args aArgs, sol::this_state aState, sol::this_environment aEnv) mutable -> sol::variadic_results {
+    auto result = MakeSolFunction(luaState, [this, variants](sol::variadic_args aArgs, sol::this_state aState, sol::this_environment aEnv) mutable -> sol::variadic_results {
         for (auto variant = variants.begin(); variant != variants.end(); ++variant)
         {
             variant->lastError.clear();
@@ -500,6 +503,8 @@ sol::function RTTIHelper::MakeInvokableOverload(std::map<uint64_t, RED4ext::CBas
 
         return {};
     });
+    m_sandbox.WrapForGame(result);
+    return result;
 }
 
 RED4ext::ScriptInstance RTTIHelper::ResolveHandle(RED4ext::CBaseFunction* apFunc, sol::variadic_args& aArgs,

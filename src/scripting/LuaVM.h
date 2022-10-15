@@ -45,12 +45,6 @@ struct LuaVM
 
     void BlockDraw(bool aBlockDraw);
 
-    void SetImGuiAvailable(bool aAvailable);
-    bool GetImGuiAvailable() const;
-
-    void SetGameAvailable(bool aAvailable);
-    bool GetGameAvailable() const;
-
     // Used by TweakDB when you delete a custom record
     void RemoveTDBIDDerivedFrom(uint64_t aDBID);
     bool GetTDBIDDerivedFrom(uint64_t aDBID, TiltedPhoques::Vector<uint64_t>& aDerivedList);
@@ -62,7 +56,7 @@ struct LuaVM
     void RegisterTDBIDString(uint64_t aValue, uint64_t aBase, const std::string& acString);
 
     void PostInitializeScripting();
-    void PostInitializeTweakDB() const;
+    void PostInitializeTweakDB();
     void PostInitializeMods();
 
 protected:
@@ -101,9 +95,6 @@ private:
     bool m_initialized{ false };
     bool m_drawBlocked{ false };
     bool m_reload{ false };
-
-    std::atomic_bool m_imguiAvailable{ false };
-    std::atomic_bool m_gameAvailable{ false };
 
     D3D12& m_d3d12;
     size_t m_connectUpdate;

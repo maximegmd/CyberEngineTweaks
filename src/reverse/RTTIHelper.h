@@ -2,6 +2,7 @@
 
 #include "BasicTypes.h"
 
+struct LuaSandbox;
 struct RTTIHelper
 {
     using LockableState = TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref;
@@ -36,13 +37,13 @@ struct RTTIHelper
     std::map<uint64_t, RED4ext::CBaseFunction*> FindFunctions(const uint64_t acShortNameHash) const;
     std::map<uint64_t, RED4ext::CBaseFunction*> FindFunctions(RED4ext::CClass* apClass, const uint64_t acShortNameHash, bool aIsMember) const;
 
-    static void Initialize(const LockableState& acLua);
+    static void Initialize(const LockableState& acpLua, LuaSandbox& apSandbox);
     static void Shutdown();
     static RTTIHelper& Get();
 
 private:
 
-    RTTIHelper(const LockableState& acLua);
+    RTTIHelper(const LockableState& acLua, LuaSandbox& apSandbox);
 
     void InitializeRTTI();
     void ParseGlobalStatics();
@@ -79,10 +80,11 @@ private:
     };
 
     LockableState m_lua;
-    RED4ext::CRTTISystem* m_pRtti = nullptr;
-    RED4ext::CClass* m_pGameInstanceType = nullptr;
-    ScriptGameInstance* m_pGameInstance = nullptr;
-    RED4ext::ScriptInstance m_pPlayerSystem = nullptr;
+    RED4ext::CRTTISystem* m_pRtti{ nullptr };
+    RED4ext::CClass* m_pGameInstanceType{ nullptr };
+    ScriptGameInstance* m_pGameInstance{ nullptr };
+    RED4ext::ScriptInstance m_pPlayerSystem{ nullptr };
     RedFunctionMap m_extendedFunctions;
     LuaFunctionMap m_resolvedFunctions[2];
+    LuaSandbox& m_sandbox;
 };

@@ -16,6 +16,7 @@ struct Scripting
 
     void Initialize();
     void PostInitializeScripting();
+    void PostInitializeTweakDB();
     void PostInitializeMods();
 
     [[nodiscard]] const VKBind* GetBind(const VKModBind& acModBind) const;
@@ -34,6 +35,7 @@ struct Scripting
     bool ExecuteLua(const std::string& acCommand) const;
     void CollectGarbage() const;
 
+    LuaSandbox& GetSandbox();
     LockedState GetLockedState() const noexcept;
     std::string GetGlobalName() const noexcept;
 
@@ -54,8 +56,8 @@ private:
     TiltedPhoques::Map<std::string, sol::object> m_properties{ };
     TiltedPhoques::Map<std::string, SingletonReference> m_singletons{ };
     std::string m_global{ "Global" };
-    RTTIMapper m_mapper;
     LuaSandbox m_sandbox;
+    RTTIMapper m_mapper;
     ScriptStore m_store;
     FunctionOverride m_override;
     const Paths& m_paths;
