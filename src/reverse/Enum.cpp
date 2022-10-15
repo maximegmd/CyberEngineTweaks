@@ -168,8 +168,6 @@ std::string Enum::ToString() const
 
 bool Enum::operator==(const Enum& acRhs) const noexcept
 {
-    ASSERT_CORRECT_GAME_USAGE();
-
     if (!m_cpType || !acRhs.m_cpType)
         return false;
 

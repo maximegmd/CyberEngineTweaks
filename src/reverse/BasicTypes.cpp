@@ -2,8 +2,6 @@
 
 #include "BasicTypes.h"
 
-#include <CET.h>
-
 #include <spdlog/fmt/fmt.h>
 
 std::string Vector3::ToString() const noexcept
@@ -48,15 +46,11 @@ bool Quaternion::operator==(const Quaternion& acRhs) const noexcept
 
 std::string CName::AsString() const noexcept
 {
-    ASSERT_CORRECT_GAME_USAGE();
-
     return RED4ext::CName(hash).ToString();
 }
 
 std::string CName::ToString() const noexcept
 {
-    ASSERT_CORRECT_GAME_USAGE();
-
     const RED4ext::CName internal(hash);
 
     const auto resolved = internal.ToString();
@@ -72,8 +66,6 @@ bool CName::operator==(const CName& acRhs) const noexcept
 
 void CName::Add(const std::string& aName)
 {
-    ASSERT_CORRECT_GAME_USAGE();
-
     RED4ext::CNamePool::Add(aName.c_str());
 }
 

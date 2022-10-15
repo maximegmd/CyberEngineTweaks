@@ -5,6 +5,7 @@
 #include "Scripting.h"
 #include "Texture.h"
 
+#include <CET.h>
 #include <Utils.h>
 
 static constexpr const char* s_cGlobalObjectsWhitelist[] =
@@ -226,6 +227,8 @@ void LuaSandbox::InitializeExtraLibsForSandbox(Sandbox& aSandbox, const sol::sta
     Texture::BindTexture(imgui);
 
     const auto cLoadTexture = [cSBRootPath, stateView](const std::string& acPath) -> std::tuple<std::shared_ptr<Texture>, sol::object> {
+        ASSERT_CORRECT_IMGUI_USAGE();
+
         const auto previousCurrentPath = std::filesystem::current_path();
         current_path(cSBRootPath);
 
