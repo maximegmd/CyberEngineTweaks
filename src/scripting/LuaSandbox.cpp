@@ -66,13 +66,9 @@ static constexpr const char* s_cGlobalImmutablesList[] =
     "WeakReference"
 };
 
-static constexpr const char* s_cGlobalImGuiList[] =
-{
-    "ImGui"
-};
-
 static constexpr const char* s_cGlobalExtraLibsWhitelist[] =
 {
+    "ImGui",
     "ImGuiCond",
     "ImGuiTreeNodeFlags",
     "ImGuiSelectableFlags",
@@ -164,7 +160,7 @@ void LuaSandbox::ResetState()
     luaState.collect_garbage();
 }
 
-uint64_t LuaSandbox::CreateSandbox(const std::filesystem::path& acPath, const std::string& acName, bool aEnableImGui, bool aEnableExtraLibs, bool aEnableDB, bool aEnableIO, bool aEnableLogger)
+uint64_t LuaSandbox::CreateSandbox(const std::filesystem::path& acPath, const std::string& acName, bool aEnableExtraLibs, bool aEnableDB, bool aEnableIO, bool aEnableLogger)
 {
     const uint64_t cResID = m_sandboxes.size();
     assert(!cResID || (!acPath.empty() && !acName.empty()));
@@ -175,8 +171,6 @@ uint64_t LuaSandbox::CreateSandbox(const std::filesystem::path& acPath, const st
     auto& res = m_sandboxes.emplace_back(cResID, m_pScripting, m_env, acPath);
     if (!acPath.empty() && !acName.empty())
     {
-        if (aEnableImGui)
-            InitializeImGuiForSandbox(res, luaState);
         if (aEnableExtraLibs)
             InitializeExtraLibsForSandbox(res, luaState);
         if (aEnableDB)
@@ -216,17 +210,18 @@ TiltedPhoques::Locked<sol::state, std::recursive_mutex> LuaSandbox::GetLockedSta
     return m_pScripting->GetLockedState();
 }
 
-void LuaSandbox::InitializeImGuiForSandbox(Sandbox& aSandbox, const sol::state& acpState) const
+void LuaSandbox::InitializeExtraLibsForSandbox(Sandbox& aSandbox, const sol::state& acpState) const
 {
+    auto& sbEnv = aSandbox.GetEnvironment();
     const auto& cSBRootPath = aSandbox.GetRootPath();
     sol::state_view stateView = acpState;
 
-    sol::table imgui{acpState, sol::create};
-
-    // copy ImGui from global table
+    // copy extra whitelisted libs from global table
     const auto cGlobals = acpState.globals();
-    for (const auto* cKey : s_cGlobalImGuiList)
-        imgui[cKey] = DeepCopySolObject(cGlobals[cKey].get<sol::object>(), acpState);
+    for (const auto* cKey : s_cGlobalExtraLibsWhitelist)
+        sbEnv[cKey] = DeepCopySolObject(cGlobals[cKey].get<sol::object>(), acpState);
+
+    sol::table imgui = sbEnv["ImGui"];
 
     Texture::BindTexture(imgui);
 
@@ -244,18 +239,6 @@ void LuaSandbox::InitializeImGuiForSandbox(Sandbox& aSandbox, const sol::state& 
         return std::make_tuple(texture, sol::nil);
     };
     imgui.set_function("LoadTexture", cLoadTexture);
-
-    aSandbox.GetImGui() = imgui;
-}
-
-void LuaSandbox::InitializeExtraLibsForSandbox(Sandbox& aSandbox, const sol::state& acpState) const
-{
-    auto& sbEnv = aSandbox.GetEnvironment();
-
-    // copy extra whitelisted libs from global table
-    const auto cGlobals = acpState.globals();
-    for (const auto* cKey : s_cGlobalExtraLibsWhitelist)
-        sbEnv[cKey] = DeepCopySolObject(cGlobals[cKey].get<sol::object>(), acpState);
 }
 
 void LuaSandbox::InitializeDBForSandbox(Sandbox& aSandbox, const sol::state& acpState)

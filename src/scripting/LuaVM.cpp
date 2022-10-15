@@ -94,6 +94,8 @@ void LuaVM::Initialize()
     if (!IsInitialized())
     {
         m_scripting.Initialize();
+
+        SetGameAvailable(true);
     }
 }
 
@@ -105,6 +107,26 @@ bool LuaVM::IsInitialized() const
 void LuaVM::BlockDraw(bool aBlockDraw)
 {
     m_drawBlocked = aBlockDraw;
+}
+
+void LuaVM::SetImGuiAvailable(bool aAvailable)
+{
+    m_imguiAvailable = aAvailable;
+}
+
+bool LuaVM::GetImGuiAvailable() const
+{
+    return m_imguiAvailable;
+}
+
+void LuaVM::SetGameAvailable(bool aAvailable)
+{
+    m_gameAvailable = aAvailable;
+}
+
+bool LuaVM::GetGameAvailable() const
+{
+    return m_gameAvailable;
 }
 
 void LuaVM::RemoveTDBIDDerivedFrom(uint64_t aDBID)

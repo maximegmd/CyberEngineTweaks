@@ -42,11 +42,6 @@ sol::environment& Sandbox::GetEnvironment()
     return m_env;
 }
 
-sol::table& Sandbox::GetImGui()
-{
-    return m_imgui;
-}
-
 const std::filesystem::path& Sandbox::GetRootPath() const
 {
     return m_path;

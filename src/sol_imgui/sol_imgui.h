@@ -1,18 +1,22 @@
 #pragma once
 
+#include <CET.h>
+
 namespace sol_ImGui
 {
     // Windows
-    inline bool Begin(const std::string& name)                              { return ImGui::Begin(name.c_str()); }
-    inline bool Begin(const std::string& name, int flags)                   { return ImGui::Begin(name.c_str(), nullptr, flags); }
+    inline bool Begin(const std::string& name)                              { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::Begin(name.c_str()); }
+    inline bool Begin(const std::string& name, int flags)                   { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::Begin(name.c_str(), nullptr, flags); }
     inline std::tuple<bool, bool> Begin(const std::string& name, bool open)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         if (!open) return std::make_tuple(false, false);
         const bool shouldDraw = ImGui::Begin(name.c_str(), &open);
         return std::make_tuple(open, open && shouldDraw);
     }
     inline std::tuple<bool, bool> Begin(const std::string& name, bool open, int flags)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         if (!open) return std::make_tuple(false, false);
         const bool shouldDraw = ImGui::Begin(name.c_str(), &open, flags);
         return std::make_tuple(open, open && shouldDraw);
@@ -20,186 +24,189 @@ namespace sol_ImGui
     inline void End()                                               { ImGui::End(); }
 
     // Child Windows
-    inline bool BeginChild(const std::string& name)                                                       { return ImGui::BeginChild(name.c_str()); }
-    inline bool BeginChild(const std::string& name, float sizeX)                                          { return ImGui::BeginChild(name.c_str(), { sizeX, 0 }); }
-    inline bool BeginChild(const std::string& name, float sizeX, float sizeY)                             { return ImGui::BeginChild(name.c_str(), { sizeX, sizeY }); }
-    inline bool BeginChild(const std::string& name, float sizeX, float sizeY, bool border)                { return ImGui::BeginChild(name.c_str(), { sizeX, sizeY }, border); }
-    inline bool BeginChild(const std::string& name, float sizeX, float sizeY, bool border, int flags)     { return ImGui::BeginChild(name.c_str(), { sizeX, sizeY }, border, flags); }
-    inline void EndChild()                                                                                { ImGui::EndChild(); }
+    inline bool BeginChild(const std::string& name)                                                       { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginChild(name.c_str()); }
+    inline bool BeginChild(const std::string& name, float sizeX)                                          { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginChild(name.c_str(), { sizeX, 0 }); }
+    inline bool BeginChild(const std::string& name, float sizeX, float sizeY)                             { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginChild(name.c_str(), { sizeX, sizeY }); }
+    inline bool BeginChild(const std::string& name, float sizeX, float sizeY, bool border)                { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginChild(name.c_str(), { sizeX, sizeY }, border); }
+    inline bool BeginChild(const std::string& name, float sizeX, float sizeY, bool border, int flags)     { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginChild(name.c_str(), { sizeX, sizeY }, border, flags); }
+    inline void EndChild()                                                                                { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::EndChild(); }
 
     // Windows Utilities
-    inline bool IsWindowAppearing()                                  { return ImGui::IsWindowAppearing(); }
-    inline bool IsWindowCollapsed()                                  { return ImGui::IsWindowCollapsed(); }
-    inline bool IsWindowFocused()                                    { return ImGui::IsWindowFocused(); }
-    inline bool IsWindowFocused(int flags)                           { return ImGui::IsWindowFocused(flags); }
-    inline bool IsWindowHovered()                                    { return ImGui::IsWindowHovered(); }
-    inline bool IsWindowHovered(int flags)                           { return ImGui::IsWindowHovered(flags); }
-    inline ImDrawList* GetWindowDrawList()                           { return ImGui::GetWindowDrawList(); }
-    inline std::tuple<float, float> GetWindowPos()                   { const auto vec2{ ImGui::GetWindowPos() };  return std::make_tuple(vec2.x, vec2.y); }
-    inline std::tuple<float, float> GetWindowSize()                  { const auto vec2{ ImGui::GetWindowSize() };  return std::make_tuple(vec2.x, vec2.y); }
-    inline float GetWindowWidth()                                    { return ImGui::GetWindowWidth(); }
-    inline float GetWindowHeight()                                   { return ImGui::GetWindowHeight(); }
+    inline bool IsWindowAppearing()                                  { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::IsWindowAppearing(); }
+    inline bool IsWindowCollapsed()                                  { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::IsWindowCollapsed(); }
+    inline bool IsWindowFocused()                                    { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::IsWindowFocused(); }
+    inline bool IsWindowFocused(int flags)                           { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::IsWindowFocused(flags); }
+    inline bool IsWindowHovered()                                    { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::IsWindowHovered(); }
+    inline bool IsWindowHovered(int flags)                           { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::IsWindowHovered(flags); }
+    inline ImDrawList* GetWindowDrawList()                           { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::GetWindowDrawList(); }
+    inline std::tuple<float, float> GetWindowPos()                   { ASSERT_CORRECT_IMGUI_USAGE(); const auto vec2{ ImGui::GetWindowPos() };  return std::make_tuple(vec2.x, vec2.y); }
+    inline std::tuple<float, float> GetWindowSize()                  { ASSERT_CORRECT_IMGUI_USAGE(); const auto vec2{ ImGui::GetWindowSize() };  return std::make_tuple(vec2.x, vec2.y); }
+    inline float GetWindowWidth()                                    { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::GetWindowWidth(); }
+    inline float GetWindowHeight()                                   { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::GetWindowHeight(); }
 
     // Prefer using SetNext...
-    inline void SetNextWindowPos(float posX, float posY)                                              { ImGui::SetNextWindowPos({ posX, posY }); }
-    inline void SetNextWindowPos(float posX, float posY, int cond)                                    { ImGui::SetNextWindowPos({ posX, posY }, cond); }
-    inline void SetNextWindowPos(float posX, float posY, int cond, float pivotX, float pivotY)        { ImGui::SetNextWindowPos({ posX, posY }, cond, { pivotX, pivotY }); }
-    inline void SetNextWindowSize(float sizeX, float sizeY)                                           { ImGui::SetNextWindowSize({ sizeX, sizeY }); }
-    inline void SetNextWindowSize(float sizeX, float sizeY, int cond)                                 { ImGui::SetNextWindowSize({ sizeX, sizeY }, cond); }
-    inline void SetNextWindowSizeConstraints(float minX, float minY, float maxX, float maxY)          { ImGui::SetNextWindowSizeConstraints({ minX, minY }, { maxX, maxY }); }
-    inline void SetNextWindowContentSize(float sizeX, float sizeY)                                    { ImGui::SetNextWindowContentSize({ sizeX, sizeY }); }
-    inline void SetNextWindowCollapsed(bool collapsed)                                                { ImGui::SetNextWindowCollapsed(collapsed); }
-    inline void SetNextWindowCollapsed(bool collapsed, int cond)                                      { ImGui::SetNextWindowCollapsed(collapsed, cond); }
-    inline void SetNextWindowFocus()                                                                  { ImGui::SetNextWindowFocus(); }
-    inline void SetNextWindowBgAlpha(float alpha)                                                     { ImGui::SetNextWindowBgAlpha(alpha); }
-    inline void SetWindowPos(float posX, float posY)                                                  { ImGui::SetWindowPos({ posX, posY }); }
-    inline void SetWindowPos(float posX, float posY, int cond)                                        { ImGui::SetWindowPos({ posX, posY }, cond); }
-    inline void SetWindowSize(float sizeX, float sizeY)                                               { ImGui::SetWindowSize({ sizeX, sizeY }); }
-    inline void SetWindowSize(float sizeX, float sizeY, int cond)                                     { ImGui::SetWindowSize({ sizeX, sizeY }, cond); }
-    inline void SetWindowCollapsed(bool collapsed)                                                    { ImGui::SetWindowCollapsed(collapsed); }
-    inline void SetWindowCollapsed(bool collapsed, int cond)                                          { ImGui::SetWindowCollapsed(collapsed, cond); }
-    inline void SetWindowFocus()                                                                      { ImGui::SetWindowFocus(); }
-    inline void SetWindowFontScale(float scale)                                                       { ImGui::SetWindowFontScale(scale); }
-    inline void SetWindowPos(const std::string& name, float posX, float posY)                         { ImGui::SetWindowPos(name.c_str(), { posX, posY }); }
-    inline void SetWindowPos(const std::string& name, float posX, float posY, int cond)               { ImGui::SetWindowPos(name.c_str(), { posX, posY }, cond); }
-    inline void SetWindowSize(const std::string& name, float sizeX, float sizeY)                      { ImGui::SetWindowSize(name.c_str(), { sizeX, sizeY }); }
-    inline void SetWindowSize(const std::string& name, float sizeX, float sizeY, int cond)            { ImGui::SetWindowSize(name.c_str(), { sizeX, sizeY }, cond); }
-    inline void SetWindowCollapsed(const std::string& name, bool collapsed)                           { ImGui::SetWindowCollapsed(name.c_str(), collapsed); }
-    inline void SetWindowCollapsed(const std::string& name, bool collapsed, int cond)                 { ImGui::SetWindowCollapsed(name.c_str(), collapsed, cond); }
-    inline void SetWindowFocus(const std::string& name)                                               { ImGui::SetWindowFocus(name.c_str()); }
+    inline void SetNextWindowPos(float posX, float posY)                                              { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetNextWindowPos({ posX, posY }); }
+    inline void SetNextWindowPos(float posX, float posY, int cond)                                    { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetNextWindowPos({ posX, posY }, cond); }
+    inline void SetNextWindowPos(float posX, float posY, int cond, float pivotX, float pivotY)        { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetNextWindowPos({ posX, posY }, cond, { pivotX, pivotY }); }
+    inline void SetNextWindowSize(float sizeX, float sizeY)                                           { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetNextWindowSize({ sizeX, sizeY }); }
+    inline void SetNextWindowSize(float sizeX, float sizeY, int cond)                                 { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetNextWindowSize({ sizeX, sizeY }, cond); }
+    inline void SetNextWindowSizeConstraints(float minX, float minY, float maxX, float maxY)          { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetNextWindowSizeConstraints({ minX, minY }, { maxX, maxY }); }
+    inline void SetNextWindowContentSize(float sizeX, float sizeY)                                    { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetNextWindowContentSize({ sizeX, sizeY }); }
+    inline void SetNextWindowCollapsed(bool collapsed)                                                { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetNextWindowCollapsed(collapsed); }
+    inline void SetNextWindowCollapsed(bool collapsed, int cond)                                      { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetNextWindowCollapsed(collapsed, cond); }
+    inline void SetNextWindowFocus()                                                                  { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetNextWindowFocus(); }
+    inline void SetNextWindowBgAlpha(float alpha)                                                     { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetNextWindowBgAlpha(alpha); }
+    inline void SetWindowPos(float posX, float posY)                                                  { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetWindowPos({ posX, posY }); }
+    inline void SetWindowPos(float posX, float posY, int cond)                                        { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetWindowPos({ posX, posY }, cond); }
+    inline void SetWindowSize(float sizeX, float sizeY)                                               { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetWindowSize({ sizeX, sizeY }); }
+    inline void SetWindowSize(float sizeX, float sizeY, int cond)                                     { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetWindowSize({ sizeX, sizeY }, cond); }
+    inline void SetWindowCollapsed(bool collapsed)                                                    { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetWindowCollapsed(collapsed); }
+    inline void SetWindowCollapsed(bool collapsed, int cond)                                          { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetWindowCollapsed(collapsed, cond); }
+    inline void SetWindowFocus()                                                                      { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetWindowFocus(); }
+    inline void SetWindowFontScale(float scale)                                                       { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetWindowFontScale(scale); }
+    inline void SetWindowPos(const std::string& name, float posX, float posY)                         { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetWindowPos(name.c_str(), { posX, posY }); }
+    inline void SetWindowPos(const std::string& name, float posX, float posY, int cond)               { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetWindowPos(name.c_str(), { posX, posY }, cond); }
+    inline void SetWindowSize(const std::string& name, float sizeX, float sizeY)                      { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetWindowSize(name.c_str(), { sizeX, sizeY }); }
+    inline void SetWindowSize(const std::string& name, float sizeX, float sizeY, int cond)            { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetWindowSize(name.c_str(), { sizeX, sizeY }, cond); }
+    inline void SetWindowCollapsed(const std::string& name, bool collapsed)                           { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetWindowCollapsed(name.c_str(), collapsed); }
+    inline void SetWindowCollapsed(const std::string& name, bool collapsed, int cond)                 { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetWindowCollapsed(name.c_str(), collapsed, cond); }
+    inline void SetWindowFocus(const std::string& name)                                               { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetWindowFocus(name.c_str()); }
 
     // Content Region
-    inline std::tuple<float, float> GetContentRegionMax()                            { const auto vec2{ ImGui::GetContentRegionMax() };  return std::make_tuple(vec2.x, vec2.y); }
-    inline std::tuple<float, float> GetContentRegionAvail()                          { const auto vec2{ ImGui::GetContentRegionAvail() };  return std::make_tuple(vec2.x, vec2.y); }
-    inline std::tuple<float, float> GetWindowContentRegionMin()                      { const auto vec2{ ImGui::GetWindowContentRegionMin() };  return std::make_tuple(vec2.x, vec2.y); }
-    inline std::tuple<float, float> GetWindowContentRegionMax()                      { const auto vec2{ ImGui::GetWindowContentRegionMax() };  return std::make_tuple(vec2.x, vec2.y); }
-    inline float GetWindowContentRegionWidth()                                       { return ImGui::GetWindowContentRegionWidth(); }
+    inline std::tuple<float, float> GetContentRegionMax()                            { ASSERT_CORRECT_IMGUI_USAGE(); const auto vec2{ ImGui::GetContentRegionMax() };  return std::make_tuple(vec2.x, vec2.y); }
+    inline std::tuple<float, float> GetContentRegionAvail()                          { ASSERT_CORRECT_IMGUI_USAGE(); const auto vec2{ ImGui::GetContentRegionAvail() };  return std::make_tuple(vec2.x, vec2.y); }
+    inline std::tuple<float, float> GetWindowContentRegionMin()                      { ASSERT_CORRECT_IMGUI_USAGE(); const auto vec2{ ImGui::GetWindowContentRegionMin() };  return std::make_tuple(vec2.x, vec2.y); }
+    inline std::tuple<float, float> GetWindowContentRegionMax()                      { ASSERT_CORRECT_IMGUI_USAGE(); const auto vec2{ ImGui::GetWindowContentRegionMax() };  return std::make_tuple(vec2.x, vec2.y); }
+    inline float GetWindowContentRegionWidth()                                       { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::GetWindowContentRegionWidth(); }
 
     // Windows Scrolling
-    inline float GetScrollX()                                          { return ImGui::GetScrollX(); }
-    inline float GetScrollY()                                          { return ImGui::GetScrollY(); }
-    inline float GetScrollMaxX()                                       { return ImGui::GetScrollMaxX(); }
-    inline float GetScrollMaxY()                                       { return ImGui::GetScrollMaxY(); }
-    inline void SetScrollX(float scrollX)                              { ImGui::SetScrollX(scrollX); }
-    inline void SetScrollY(float scrollY)                              { ImGui::SetScrollY(scrollY); }
-    inline void SetScrollHereX()                                       { ImGui::SetScrollHereX(); }
-    inline void SetScrollHereX(float centerXRatio)                     { ImGui::SetScrollHereX(centerXRatio); }
-    inline void SetScrollHereY()                                       { ImGui::SetScrollHereY(); }
-    inline void SetScrollHereY(float centerYRatio)                     { ImGui::SetScrollHereY(centerYRatio); }
-    inline void SetScrollFromPosX(float localX)                        { ImGui::SetScrollFromPosX(localX); }
-    inline void SetScrollFromPosX(float localX, float centerXRatio)    { ImGui::SetScrollFromPosX(localX, centerXRatio); }
-    inline void SetScrollFromPosY(float localY)                        { ImGui::SetScrollFromPosY(localY); }
-    inline void SetScrollFromPosY(float localY, float centerYRatio)    { ImGui::SetScrollFromPosY(localY, centerYRatio); }
+    inline float GetScrollX()                                          { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::GetScrollX(); }
+    inline float GetScrollY()                                          { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::GetScrollY(); }
+    inline float GetScrollMaxX()                                       { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::GetScrollMaxX(); }
+    inline float GetScrollMaxY()                                       { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::GetScrollMaxY(); }
+    inline void SetScrollX(float scrollX)                              { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetScrollX(scrollX); }
+    inline void SetScrollY(float scrollY)                              { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetScrollY(scrollY); }
+    inline void SetScrollHereX()                                       { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetScrollHereX(); }
+    inline void SetScrollHereX(float centerXRatio)                     { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetScrollHereX(centerXRatio); }
+    inline void SetScrollHereY()                                       { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetScrollHereY(); }
+    inline void SetScrollHereY(float centerYRatio)                     { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetScrollHereY(centerYRatio); }
+    inline void SetScrollFromPosX(float localX)                        { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetScrollFromPosX(localX); }
+    inline void SetScrollFromPosX(float localX, float centerXRatio)    { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetScrollFromPosX(localX, centerXRatio); }
+    inline void SetScrollFromPosY(float localY)                        { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetScrollFromPosY(localY); }
+    inline void SetScrollFromPosY(float localY, float centerYRatio)    { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetScrollFromPosY(localY, centerYRatio); }
 
     // Parameters stacks (shared)
 #ifdef SOL_IMGUI_ENABLE_FONT_MANIPULATORS
     inline void PushFont(ImFont* pFont)                                  { ImGui::PushFont(pFont); }
     inline void PopFont()                                                { ImGui::PopFont(); }
 #endif // SOL_IMGUI_ENABLE_FONT_MANIPULATORS
-    inline void PushStyleColor(int idx, int col)                                                 { ImGui::PushStyleColor(idx, static_cast<ImU32>(col)); }
-    inline void PushStyleColor(int idx, float colR, float colG, float colB, float colA)          { ImGui::PushStyleColor(idx, { colR, colG, colB, colA }); }
-    inline void PopStyleColor()                                                                  { ImGui::PopStyleColor(); }
-    inline void PopStyleColor(int count)                                                         { ImGui::PopStyleColor(count); }
-    inline void PushStyleVar(int idx, float val)                                                 { ImGui::PushStyleVar(idx, val); }
-    inline void PushStyleVar(int idx, float valX, float valY)                                    { ImGui::PushStyleVar(idx, { valX, valY }); }
-    inline void PopStyleVar()                                                                    { ImGui::PopStyleVar(); }
-    inline void PopStyleVar(int count)                                                           { ImGui::PopStyleVar(count); }
-    inline std::tuple<float, float, float, float> GetStyleColorVec4(int idx)                     { const auto col{ ImGui::GetStyleColorVec4(idx) };  return std::make_tuple(col.x, col.y, col.z, col.w); }
+    inline void PushStyleColor(int idx, int col)                                                 { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::PushStyleColor(idx, static_cast<ImU32>(col)); }
+    inline void PushStyleColor(int idx, float colR, float colG, float colB, float colA)          { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::PushStyleColor(idx, { colR, colG, colB, colA }); }
+    inline void PopStyleColor()                                                                  { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::PopStyleColor(); }
+    inline void PopStyleColor(int count)                                                         { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::PopStyleColor(count); }
+    inline void PushStyleVar(int idx, float val)                                                 { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::PushStyleVar(idx, val); }
+    inline void PushStyleVar(int idx, float valX, float valY)                                    { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::PushStyleVar(idx, { valX, valY }); }
+    inline void PopStyleVar()                                                                    { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::PopStyleVar(); }
+    inline void PopStyleVar(int count)                                                           { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::PopStyleVar(count); }
+    inline std::tuple<float, float, float, float> GetStyleColorVec4(int idx)                     { ASSERT_CORRECT_IMGUI_USAGE(); const auto col{ ImGui::GetStyleColorVec4(idx) };  return std::make_tuple(col.x, col.y, col.z, col.w); }
 #ifdef SOL_IMGUI_ENABLE_FONT_MANIPULATORS
-    inline ImFont* GetFont()                                                                     { return ImGui::GetFont(); }
+    inline ImFont* GetFont()                                                                     { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::GetFont(); }
 #endif // SOL_IMGUI_ENABLE_FONT_MANIPULATORS
-    inline float GetFontSize()                                                                   { return ImGui::GetFontSize(); }
-    inline std::tuple<float, float> GetFontTexUvWhitePixel()                                     { const auto vec2{ ImGui::GetFontTexUvWhitePixel() }; return std::make_tuple(vec2.x, vec2.y); }
-    inline int GetColorU32(int idx, float alphaMul)                                              { return ImGui::GetColorU32(idx, alphaMul); }
-    inline int GetColorU32(float colR, float colG, float colB, float colA)                       { return ImGui::GetColorU32({ colR, colG, colB, colA }); }
-    inline int GetColorU32(int col)                                                              { return ImGui::GetColorU32(static_cast<ImU32>(col)); }
+    inline float GetFontSize()                                                                   { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::GetFontSize(); }
+    inline std::tuple<float, float> GetFontTexUvWhitePixel()                                     { ASSERT_CORRECT_IMGUI_USAGE(); const auto vec2{ ImGui::GetFontTexUvWhitePixel() }; return std::make_tuple(vec2.x, vec2.y); }
+    inline int GetColorU32(int idx, float alphaMul)                                              { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::GetColorU32(idx, alphaMul); }
+    inline int GetColorU32(float colR, float colG, float colB, float colA)                       { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::GetColorU32({ colR, colG, colB, colA }); }
+    inline int GetColorU32(int col)                                                              { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::GetColorU32(static_cast<ImU32>(col)); }
 
     // Parameters stacks (current window)
-    inline void PushItemWidth(float itemWidth)                                 { ImGui::PushItemWidth(itemWidth); }
-    inline void PopItemWidth()                                                 { ImGui::PopItemWidth(); }
-    inline void SetNextItemWidth(float itemWidth)                              { ImGui::SetNextItemWidth(itemWidth); }
-    inline float CalcItemWidth()                                               { return ImGui::CalcItemWidth(); }
-    inline void PushTextWrapPos()                                              { ImGui::PushTextWrapPos(); }
-    inline void PushTextWrapPos(float wrapLocalPosX)                           { ImGui::PushTextWrapPos(wrapLocalPosX); }
-    inline void PopTextWrapPos()                                               { ImGui::PopTextWrapPos(); }
-    inline void PushAllowKeyboardFocus(bool allowKeyboardFocus)                { ImGui::PushAllowKeyboardFocus(allowKeyboardFocus); }
-    inline void PopAllowKeyboardFocus()                                        { ImGui::PopAllowKeyboardFocus(); }
-    inline void PushButtonRepeat(bool repeat)                                  { ImGui::PushButtonRepeat(repeat); }
-    inline void PopButtonRepeat()                                              { ImGui::PopButtonRepeat(); }
+    inline void PushItemWidth(float itemWidth)                                 { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::PushItemWidth(itemWidth); }
+    inline void PopItemWidth()                                                 { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::PopItemWidth(); }
+    inline void SetNextItemWidth(float itemWidth)                              { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetNextItemWidth(itemWidth); }
+    inline float CalcItemWidth()                                               { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::CalcItemWidth(); }
+    inline void PushTextWrapPos()                                              { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::PushTextWrapPos(); }
+    inline void PushTextWrapPos(float wrapLocalPosX)                           { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::PushTextWrapPos(wrapLocalPosX); }
+    inline void PopTextWrapPos()                                               { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::PopTextWrapPos(); }
+    inline void PushAllowKeyboardFocus(bool allowKeyboardFocus)                { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::PushAllowKeyboardFocus(allowKeyboardFocus); }
+    inline void PopAllowKeyboardFocus()                                        { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::PopAllowKeyboardFocus(); }
+    inline void PushButtonRepeat(bool repeat)                                  { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::PushButtonRepeat(repeat); }
+    inline void PopButtonRepeat()                                              { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::PopButtonRepeat(); }
 
     // Cursor / Layout
-    inline void Separator()                                                    { ImGui::Separator(); }
-    inline void SameLine()                                                     { ImGui::SameLine(); }
-    inline void SameLine(float offsetFromStartX)                               { ImGui::SameLine(offsetFromStartX); }
-    inline void SameLine(float offsetFromStartX, float spacing)                { ImGui::SameLine(offsetFromStartX, spacing); }
-    inline void NewLine()                                                      { ImGui::NewLine(); }
-    inline void Spacing()                                                      { ImGui::Spacing(); }
-    inline void Dummy(float sizeX, float sizeY)                                { ImGui::Dummy({ sizeX, sizeY }); }
-    inline void Indent()                                                       { ImGui::Indent(); }
-    inline void Indent(float indentW)                                          { ImGui::Indent(indentW); }
-    inline void Unindent()                                                     { ImGui::Unindent(); }
-    inline void Unindent(float indentW)                                        { ImGui::Unindent(indentW); }
-    inline void BeginGroup()                                                   { ImGui::BeginGroup(); }
-    inline void EndGroup()                                                     { ImGui::EndGroup(); }
-    inline std::tuple<float, float> GetCursorPos()                             { const auto vec2{ ImGui::GetCursorPos() };  return std::make_tuple(vec2.x, vec2.y); }
-    inline float GetCursorPosX()                                               { return ImGui::GetCursorPosX(); }
-    inline float GetCursorPosY()                                               { return ImGui::GetCursorPosY(); }
-    inline void SetCursorPos(float localX, float localY)                       { ImGui::SetCursorPos({ localX, localY }); }
-    inline void SetCursorPosX(float localX)                                    { ImGui::SetCursorPosX(localX); }
-    inline void SetCursorPosY(float localY)                                    { ImGui::SetCursorPosY(localY); }
-    inline std::tuple<float, float> GetCursorStartPos()                        { const auto vec2{ ImGui::GetCursorStartPos() };  return std::make_tuple(vec2.x, vec2.y); }
-    inline std::tuple<float, float> GetCursorScreenPos()                       { const auto vec2{ ImGui::GetCursorScreenPos() };  return std::make_tuple(vec2.x, vec2.y); }
-    inline void SetCursorScreenPos(float posX, float posY)                     { ImGui::SetCursorScreenPos({ posX, posY }); }
-    inline void AlignTextToFramePadding()                                      { ImGui::AlignTextToFramePadding(); }
-    inline float GetTextLineHeight()                                           { return ImGui::GetTextLineHeight(); }
-    inline float GetTextLineHeightWithSpacing()                                { return ImGui::GetTextLineHeightWithSpacing(); }
-    inline float GetFrameHeight()                                              { return ImGui::GetFrameHeight(); }
-    inline float GetFrameHeightWithSpacing()                                   { return ImGui::GetFrameHeightWithSpacing(); }
+    inline void Separator()                                                    { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::Separator(); }
+    inline void SameLine()                                                     { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SameLine(); }
+    inline void SameLine(float offsetFromStartX)                               { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SameLine(offsetFromStartX); }
+    inline void SameLine(float offsetFromStartX, float spacing)                { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SameLine(offsetFromStartX, spacing); }
+    inline void NewLine()                                                      { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::NewLine(); }
+    inline void Spacing()                                                      { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::Spacing(); }
+    inline void Dummy(float sizeX, float sizeY)                                { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::Dummy({ sizeX, sizeY }); }
+    inline void Indent()                                                       { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::Indent(); }
+    inline void Indent(float indentW)                                          { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::Indent(indentW); }
+    inline void Unindent()                                                     { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::Unindent(); }
+    inline void Unindent(float indentW)                                        { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::Unindent(indentW); }
+    inline void BeginGroup()                                                   { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::BeginGroup(); }
+    inline void EndGroup()                                                     { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::EndGroup(); }
+    inline std::tuple<float, float> GetCursorPos()                             { ASSERT_CORRECT_IMGUI_USAGE(); const auto vec2{ ImGui::GetCursorPos() };  return std::make_tuple(vec2.x, vec2.y); }
+    inline float GetCursorPosX()                                               { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::GetCursorPosX(); }
+    inline float GetCursorPosY()                                               { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::GetCursorPosY(); }
+    inline void SetCursorPos(float localX, float localY)                       { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetCursorPos({ localX, localY }); }
+    inline void SetCursorPosX(float localX)                                    { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetCursorPosX(localX); }
+    inline void SetCursorPosY(float localY)                                    { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetCursorPosY(localY); }
+    inline std::tuple<float, float> GetCursorStartPos()                        { ASSERT_CORRECT_IMGUI_USAGE(); const auto vec2{ ImGui::GetCursorStartPos() };  return std::make_tuple(vec2.x, vec2.y); }
+    inline std::tuple<float, float> GetCursorScreenPos()                       { ASSERT_CORRECT_IMGUI_USAGE(); const auto vec2{ ImGui::GetCursorScreenPos() };  return std::make_tuple(vec2.x, vec2.y); }
+    inline void SetCursorScreenPos(float posX, float posY)                     { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetCursorScreenPos({ posX, posY }); }
+    inline void AlignTextToFramePadding()                                      { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::AlignTextToFramePadding(); }
+    inline float GetTextLineHeight()                                           { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::GetTextLineHeight(); }
+    inline float GetTextLineHeightWithSpacing()                                { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::GetTextLineHeightWithSpacing(); }
+    inline float GetFrameHeight()                                              { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::GetFrameHeight(); }
+    inline float GetFrameHeightWithSpacing()                                   { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::GetFrameHeightWithSpacing(); }
 
     // ID stack / scopes
-    inline void PushID(const std::string& stringID)                                             { ImGui::PushID(stringID.c_str()); }
-    inline void PushID(int intID)                                                               { ImGui::PushID(intID); }
-    inline void PopID()                                                                         { ImGui::PopID(); }
-    inline int GetID(const std::string& stringID)                                               { return ImGui::GetID(stringID.c_str()); }
+    inline void PushID(const std::string& stringID)                                             { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::PushID(stringID.c_str()); }
+    inline void PushID(int intID)                                                               { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::PushID(intID); }
+    inline void PopID()                                                                         { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::PopID(); }
+    inline int GetID(const std::string& stringID)                                               { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::GetID(stringID.c_str()); }
 
     // Widgets: Text
-    inline void TextUnformatted(const std::string& text)                                               { ImGui::TextUnformatted(text.c_str()); }
-    inline void Text(const std::string& text)                                                          { ImGui::TextUnformatted(text.c_str()); } // TODO - make this proper call to ImGui::Text, allowing real formatting!
-    inline void TextColored(float colR, float colG, float colB, float colA, const std::string& text)   { ImGui::TextColored({ colR, colG, colB, colA }, "%s", text.c_str()); }
-    inline void TextDisabled(const std::string& text)                                                  { ImGui::TextDisabled("%s", text.c_str()); }
-    inline void TextWrapped(const std::string& text)                                                    { ImGui::TextWrapped("%s", text.c_str()); }
-    inline void LabelText(const std::string& label, const std::string& text)                           { ImGui::LabelText(label.c_str(), "%s", text.c_str()); }
-    inline void BulletText(const std::string& text)                                                    { ImGui::BulletText("%s", text.c_str()); }
+    inline void TextUnformatted(const std::string& text)                                               { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::TextUnformatted(text.c_str()); }
+    inline void Text(const std::string& text)                                                          { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::TextUnformatted(text.c_str()); } // TODO - make this proper call to ImGui::Text, allowing real formatting!
+    inline void TextColored(float colR, float colG, float colB, float colA, const std::string& text)   { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::TextColored({ colR, colG, colB, colA }, "%s", text.c_str()); }
+    inline void TextDisabled(const std::string& text)                                                  { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::TextDisabled("%s", text.c_str()); }
+    inline void TextWrapped(const std::string& text)                                                   { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::TextWrapped("%s", text.c_str()); }
+    inline void LabelText(const std::string& label, const std::string& text)                           { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::LabelText(label.c_str(), "%s", text.c_str()); }
+    inline void BulletText(const std::string& text)                                                    { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::BulletText("%s", text.c_str()); }
 
     // Widgets: Main
-    inline bool Button(const std::string& label)                                                { return ImGui::Button(label.c_str()); }
-    inline bool Button(const std::string& label, float sizeX, float sizeY)                      { return ImGui::Button(label.c_str(), { sizeX, sizeY }); }
-    inline bool SmallButton(const std::string& label)                                           { return ImGui::SmallButton(label.c_str()); }
-    inline bool InvisibleButton(const std::string& stringID, float sizeX, float sizeY)          { return ImGui::InvisibleButton(stringID.c_str(), { sizeX, sizeY }); }
-    inline bool ArrowButton(const std::string& stringID, int dir)                               { return ImGui::ArrowButton(stringID.c_str(), static_cast<ImGuiDir>(dir)); }
-    inline void Image()                                                                         { /* TODO: Image(...) ==> UNSUPPORTED */ }
-    inline void ImageButton()                                                                   { /* TODO: ImageButton(...) ==> UNSUPPORTED */ }
+    inline bool Button(const std::string& label)                                                { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::Button(label.c_str()); }
+    inline bool Button(const std::string& label, float sizeX, float sizeY)                      { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::Button(label.c_str(), { sizeX, sizeY }); }
+    inline bool SmallButton(const std::string& label)                                           { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::SmallButton(label.c_str()); }
+    inline bool InvisibleButton(const std::string& stringID, float sizeX, float sizeY)          { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::InvisibleButton(stringID.c_str(), { sizeX, sizeY }); }
+    inline bool ArrowButton(const std::string& stringID, int dir)                               { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::ArrowButton(stringID.c_str(), static_cast<ImGuiDir>(dir)); }
+    inline void Image()                                                                         { ASSERT_CORRECT_IMGUI_USAGE(); /* TODO: Image(...) ==> UNSUPPORTED */ }
+    inline void ImageButton()                                                                   { ASSERT_CORRECT_IMGUI_USAGE(); /* TODO: ImageButton(...) ==> UNSUPPORTED */ }
     inline std::tuple<bool, bool> Checkbox(const std::string& label, bool v)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
+
         bool value{ v };
         bool pressed = ImGui::Checkbox(label.c_str(), &value);
 
         return std::make_tuple(value, pressed);
     }
-    inline bool CheckboxFlags()                                                                      { return false; /* TODO: CheckboxFlags(...) ==> UNSUPPORTED */ }
-    inline bool RadioButton(const std::string& label, bool active)                                   { return ImGui::RadioButton(label.c_str(), active); }
-    inline std::tuple<int, bool> RadioButton(const std::string& label, int v, int vButton)           { bool ret{ ImGui::RadioButton(label.c_str(), &v, vButton) }; return std::make_tuple(v, ret); }
-    inline void ProgressBar(float fraction)                                                          { ImGui::ProgressBar(fraction); }
-    inline void ProgressBar(float fraction, float sizeX, float sizeY)                                { ImGui::ProgressBar(fraction, { sizeX, sizeY }); }
-    inline void ProgressBar(float fraction, float sizeX, float sizeY, const std::string& overlay)    { ImGui::ProgressBar(fraction, { sizeX, sizeY }, overlay.c_str()); }
-    inline void Bullet()                                                                             { ImGui::Bullet(); }
+    inline bool CheckboxFlags()                                                                      { ASSERT_CORRECT_IMGUI_USAGE(); return false; /* TODO: CheckboxFlags(...) ==> UNSUPPORTED */ }
+    inline bool RadioButton(const std::string& label, bool active)                                   { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::RadioButton(label.c_str(), active); }
+    inline std::tuple<int, bool> RadioButton(const std::string& label, int v, int vButton)           { ASSERT_CORRECT_IMGUI_USAGE(); bool ret{ ImGui::RadioButton(label.c_str(), &v, vButton) }; return std::make_tuple(v, ret); }
+    inline void ProgressBar(float fraction)                                                          { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::ProgressBar(fraction); }
+    inline void ProgressBar(float fraction, float sizeX, float sizeY)                                { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::ProgressBar(fraction, { sizeX, sizeY }); }
+    inline void ProgressBar(float fraction, float sizeX, float sizeY, const std::string& overlay)    { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::ProgressBar(fraction, { sizeX, sizeY }, overlay.c_str()); }
+    inline void Bullet()                                                                             { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::Bullet(); }
 
     // Widgets: Combo Box
-    inline bool BeginCombo(const std::string& label, const std::string& previewValue)                { return ImGui::BeginCombo(label.c_str(), previewValue.c_str()); }
-    inline bool BeginCombo(const std::string& label, const std::string& previewValue, int flags)     { return ImGui::BeginCombo(label.c_str(), previewValue.c_str(), flags); }
-    inline void EndCombo()                                                                           { ImGui::EndCombo(); }
+    inline bool BeginCombo(const std::string& label, const std::string& previewValue)                { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginCombo(label.c_str(), previewValue.c_str()); }
+    inline bool BeginCombo(const std::string& label, const std::string& previewValue, int flags)     { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginCombo(label.c_str(), previewValue.c_str(), flags); }
+    inline void EndCombo()                                                                           { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::EndCombo(); }
     inline std::tuple<int, bool> Combo(const std::string& label, int currentItem, const sol::table& items, int itemsCount)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         TiltedPhoques::Vector<std::string> strings;
         strings.reserve(itemsCount);
         TiltedPhoques::Vector<const char*> cstrings;
@@ -215,6 +222,7 @@ namespace sol_ImGui
     }
     inline std::tuple<int, bool> Combo(const std::string& label, int currentItem, const sol::table& items, int itemsCount, int popupMaxHeightInItems)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         TiltedPhoques::Vector<std::string> strings;
         strings.reserve(itemsCount);
         TiltedPhoques::Vector<const char*> cstrings;
@@ -230,25 +238,28 @@ namespace sol_ImGui
     }
     inline std::tuple<int, bool> Combo(const std::string& label, int currentItem, const std::string& itemsSeparatedByZeros)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         bool clicked = ImGui::Combo(label.c_str(), &currentItem, itemsSeparatedByZeros.c_str());
         return std::make_tuple(currentItem, clicked);
     }
     inline std::tuple<int, bool> Combo(const std::string& label, int currentItem, const std::string& itemsSeparatedByZeros, int popupMaxHeightInItems)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         bool clicked = ImGui::Combo(label.c_str(), &currentItem, itemsSeparatedByZeros.c_str(), popupMaxHeightInItems);
         return std::make_tuple(currentItem, clicked);
     }
     // TODO: 3rd Combo from ImGui not Supported
 
     // Widgets: Drags
-    inline std::tuple<float, bool> DragFloat(const std::string& label, float v)                                                                                     { bool used = ImGui::DragFloat(label.c_str(), &v); return std::make_tuple(v, used); }
-    inline std::tuple<float, bool> DragFloat(const std::string& label, float v, float v_speed)                                                                      { bool used = ImGui::DragFloat(label.c_str(), &v, v_speed); return std::make_tuple(v, used); }
-    inline std::tuple<float, bool> DragFloat(const std::string& label, float v, float v_speed, float v_min)                                                         { bool used = ImGui::DragFloat(label.c_str(), &v, v_speed, v_min); return std::make_tuple(v, used); }
-    inline std::tuple<float, bool> DragFloat(const std::string& label, float v, float v_speed, float v_min, float v_max)                                            { bool used = ImGui::DragFloat(label.c_str(), &v, v_speed, v_min, v_max); return std::make_tuple(v, used); }
-    inline std::tuple<float, bool> DragFloat(const std::string& label, float v, float v_speed, float v_min, float v_max, const std::string& format)                 { bool used = ImGui::DragFloat(label.c_str(), &v, v_speed, v_min, v_max, format.c_str()); return std::make_tuple(v, used); }
-    inline std::tuple<float, bool> DragFloat(const std::string& label, float v, float v_speed, float v_min, float v_max, const std::string& format, int flags)      { bool used = ImGui::DragFloat(label.c_str(), &v, v_speed, v_min, v_max, format.c_str(), flags); return std::make_tuple(v, used); }
+    inline std::tuple<float, bool> DragFloat(const std::string& label, float v)                                                                                     { ASSERT_CORRECT_IMGUI_USAGE(); bool used = ImGui::DragFloat(label.c_str(), &v); return std::make_tuple(v, used); }
+    inline std::tuple<float, bool> DragFloat(const std::string& label, float v, float v_speed)                                                                      { ASSERT_CORRECT_IMGUI_USAGE(); bool used = ImGui::DragFloat(label.c_str(), &v, v_speed); return std::make_tuple(v, used); }
+    inline std::tuple<float, bool> DragFloat(const std::string& label, float v, float v_speed, float v_min)                                                         { ASSERT_CORRECT_IMGUI_USAGE(); bool used = ImGui::DragFloat(label.c_str(), &v, v_speed, v_min); return std::make_tuple(v, used); }
+    inline std::tuple<float, bool> DragFloat(const std::string& label, float v, float v_speed, float v_min, float v_max)                                            { ASSERT_CORRECT_IMGUI_USAGE(); bool used = ImGui::DragFloat(label.c_str(), &v, v_speed, v_min, v_max); return std::make_tuple(v, used); }
+    inline std::tuple<float, bool> DragFloat(const std::string& label, float v, float v_speed, float v_min, float v_max, const std::string& format)                 { ASSERT_CORRECT_IMGUI_USAGE(); bool used = ImGui::DragFloat(label.c_str(), &v, v_speed, v_min, v_max, format.c_str()); return std::make_tuple(v, used); }
+    inline std::tuple<float, bool> DragFloat(const std::string& label, float v, float v_speed, float v_min, float v_max, const std::string& format, int flags)      { ASSERT_CORRECT_IMGUI_USAGE(); bool used = ImGui::DragFloat(label.c_str(), &v, v_speed, v_min, v_max, format.c_str(), flags); return std::make_tuple(v, used); }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat2(const std::string& label, const sol::table& v)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         float value[2] = { static_cast<float>(v1), static_cast<float>(v2) };
@@ -262,6 +273,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat2(const std::string& label, const sol::table& v, float v_speed)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         float value[2] = { static_cast<float>(v1), static_cast<float>(v2) };
@@ -275,6 +287,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat2(const std::string& label, const sol::table& v, float v_speed, float v_min)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         float value[2] = { static_cast<float>(v1), static_cast<float>(v2) };
@@ -288,6 +301,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat2(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         float value[2] = { static_cast<float>(v1), static_cast<float>(v2) };
@@ -301,6 +315,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat2(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max, const std::string& format)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         float value[2] = { static_cast<float>(v1), static_cast<float>(v2) };
@@ -314,6 +329,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat2(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max, const std::string& format, int flags)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         float value[2] = { static_cast<float>(v1), static_cast<float>(v2) };
@@ -327,6 +343,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat3(const std::string& label, const sol::table& v)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
@@ -341,6 +358,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat3(const std::string& label, const sol::table& v, float v_speed)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
@@ -355,6 +373,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat3(const std::string& label, const sol::table& v, float v_speed, float v_min)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
@@ -369,6 +388,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat3(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
@@ -383,6 +403,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat3(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max, const std::string& format)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
@@ -397,6 +418,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat3(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max, const std::string& format, int flags)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
@@ -411,6 +433,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat4(const std::string& label, const sol::table& v)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -426,6 +449,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat4(const std::string& label, const sol::table& v, float v_speed)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -441,6 +465,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat4(const std::string& label, const sol::table& v, float v_speed, float v_min)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -456,6 +481,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat4(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -471,6 +497,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat4(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max, const std::string& format)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -486,6 +513,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat4(const std::string& label, const sol::table& v, float v_speed, float v_min, float v_max, const std::string& format, int flags)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -499,15 +527,16 @@ namespace sol_ImGui
 
         return std::make_tuple(float4, used);
     }
-    inline void DragFloatRange2()                                                                                                                     { /* TODO: DragFloatRange2(...) ==> UNSUPPORTED */ }
-    inline std::tuple<int, bool> DragInt(const std::string& label, int v)                                                                             { bool used = ImGui::DragInt(label.c_str(), &v); return std::make_tuple(v, used); }
-    inline std::tuple<int, bool> DragInt(const std::string& label, int v, float v_speed)                                                              { bool used = ImGui::DragInt(label.c_str(), &v, v_speed); return std::make_tuple(v, used); }
-    inline std::tuple<int, bool> DragInt(const std::string& label, int v, float v_speed, int v_min)                                                   { bool used = ImGui::DragInt(label.c_str(), &v, v_speed, v_min); return std::make_tuple(v, used); }
-    inline std::tuple<int, bool> DragInt(const std::string& label, int v, float v_speed, int v_min, int v_max)                                        { bool used = ImGui::DragInt(label.c_str(), &v, v_speed, v_min, v_max); return std::make_tuple(v, used); }
-    inline std::tuple<int, bool> DragInt(const std::string& label, int v, float v_speed, int v_min, int v_max, const std::string& format)             { bool used = ImGui::DragInt(label.c_str(), &v, v_speed, v_min, v_max, format.c_str()); return std::make_tuple(v, used); }
-    inline std::tuple<int, bool> DragInt(const std::string& label, int v, float v_speed, int v_min, int v_max, const std::string& format, int flags)  { bool used = ImGui::DragInt(label.c_str(), &v, v_speed, v_min, v_max, format.c_str(), flags); return std::make_tuple(v, used); }
+    inline void DragFloatRange2()                                                                                                                     { ASSERT_CORRECT_IMGUI_USAGE(); /* TODO: DragFloatRange2(...) ==> UNSUPPORTED */ }
+    inline std::tuple<int, bool> DragInt(const std::string& label, int v)                                                                             { ASSERT_CORRECT_IMGUI_USAGE(); bool used = ImGui::DragInt(label.c_str(), &v); return std::make_tuple(v, used); }
+    inline std::tuple<int, bool> DragInt(const std::string& label, int v, float v_speed)                                                              { ASSERT_CORRECT_IMGUI_USAGE(); bool used = ImGui::DragInt(label.c_str(), &v, v_speed); return std::make_tuple(v, used); }
+    inline std::tuple<int, bool> DragInt(const std::string& label, int v, float v_speed, int v_min)                                                   { ASSERT_CORRECT_IMGUI_USAGE(); bool used = ImGui::DragInt(label.c_str(), &v, v_speed, v_min); return std::make_tuple(v, used); }
+    inline std::tuple<int, bool> DragInt(const std::string& label, int v, float v_speed, int v_min, int v_max)                                        { ASSERT_CORRECT_IMGUI_USAGE(); bool used = ImGui::DragInt(label.c_str(), &v, v_speed, v_min, v_max); return std::make_tuple(v, used); }
+    inline std::tuple<int, bool> DragInt(const std::string& label, int v, float v_speed, int v_min, int v_max, const std::string& format)             { ASSERT_CORRECT_IMGUI_USAGE(); bool used = ImGui::DragInt(label.c_str(), &v, v_speed, v_min, v_max, format.c_str()); return std::make_tuple(v, used); }
+    inline std::tuple<int, bool> DragInt(const std::string& label, int v, float v_speed, int v_min, int v_max, const std::string& format, int flags)  { ASSERT_CORRECT_IMGUI_USAGE(); bool used = ImGui::DragInt(label.c_str(), &v, v_speed, v_min, v_max, format.c_str(), flags); return std::make_tuple(v, used); }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt2(const std::string& label, const sol::table& v)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         int value[2] = { static_cast<int>(v1), static_cast<int>(v2) };
@@ -521,6 +550,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt2(const std::string& label, const sol::table& v, float v_speed)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         int value[2] = { static_cast<int>(v1), static_cast<int>(v2) };
@@ -534,6 +564,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt2(const std::string& label, const sol::table& v, float v_speed, int v_min)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         int value[2] = { static_cast<int>(v1), static_cast<int>(v2) };
@@ -547,6 +578,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt2(const std::string& label, const sol::table& v, float v_speed, int v_min, int v_max)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         int value[2] = { static_cast<int>(v1), static_cast<int>(v2) };
@@ -560,6 +592,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt2(const std::string& label, const sol::table& v, float v_speed, int v_min, int v_max, const std::string& format)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         int value[2] = { static_cast<int>(v1), static_cast<int>(v2) };
@@ -573,6 +606,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt2(const std::string& label, const sol::table& v, float v_speed, int v_min, int v_max, const std::string& format, int flags)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         int value[2] = { static_cast<int>(v1), static_cast<int>(v2) };
@@ -586,6 +620,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt3(const std::string& label, const sol::table& v)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
@@ -600,6 +635,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt3(const std::string& label, const sol::table& v, float v_speed)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
@@ -614,6 +650,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt3(const std::string& label, const sol::table& v, float v_speed, int v_min)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
@@ -628,6 +665,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt3(const std::string& label, const sol::table& v, float v_speed, int v_min, int v_max)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
@@ -642,6 +680,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt3(const std::string& label, const sol::table& v, float v_speed, int v_min, int v_max, const std::string& format)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
@@ -656,6 +695,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt3(const std::string& label, const sol::table& v, float v_speed, int v_min, int v_max, const std::string& format, int flags)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
@@ -670,6 +710,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt4(const std::string& label, const sol::table& v)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -685,6 +726,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt4(const std::string& label, const sol::table& v, float v_speed)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -700,6 +742,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt4(const std::string& label, const sol::table& v, float v_speed, int v_min)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -715,6 +758,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt4(const std::string& label, const sol::table& v, float v_speed, int v_min, int v_max)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -730,6 +774,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt4(const std::string& label, const sol::table& v, float v_speed, int v_min, int v_max, const std::string& format)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -745,6 +790,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt4(const std::string& label, const sol::table& v, float v_speed, int v_min, int v_max, const std::string& format, int flags)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -758,16 +804,17 @@ namespace sol_ImGui
 
         return std::make_tuple(int4, used);
     }
-    inline void DragIntRange2()                                                                               { /* TODO: DragIntRange2(...) ==> UNSUPPORTED */ }
-    inline void DragScalar()                                                                                  { /* TODO: DragScalar(...) ==> UNSUPPORTED */ }
-    inline void DragScalarN()                                                                                 { /* TODO: DragScalarN(...) ==> UNSUPPORTED */ }
+    inline void DragIntRange2()                                                                               { ASSERT_CORRECT_IMGUI_USAGE(); /* TODO: DragIntRange2(...) ==> UNSUPPORTED */ }
+    inline void DragScalar()                                                                                  { ASSERT_CORRECT_IMGUI_USAGE(); /* TODO: DragScalar(...) ==> UNSUPPORTED */ }
+    inline void DragScalarN()                                                                                 { ASSERT_CORRECT_IMGUI_USAGE(); /* TODO: DragScalarN(...) ==> UNSUPPORTED */ }
 
     // Widgets: Sliders
-    inline std::tuple<float, bool> SliderFloat(const std::string& label, float v, float v_min, float v_max)                                              { bool used = ImGui::SliderFloat(label.c_str(), &v, v_min, v_max); return std::make_tuple(v, used); }
-    inline std::tuple<float, bool> SliderFloat(const std::string& label, float v, float v_min, float v_max, const std::string& format)                   { bool used = ImGui::SliderFloat(label.c_str(), &v, v_min, v_max, format.c_str()); return std::make_tuple(v, used); }
-    inline std::tuple<float, bool> SliderFloat(const std::string& label, float v, float v_min, float v_max, const std::string& format, int flags)        { bool used = ImGui::SliderFloat(label.c_str(), &v, v_min, v_max, format.c_str(), flags); return std::make_tuple(v, used); }
+    inline std::tuple<float, bool> SliderFloat(const std::string& label, float v, float v_min, float v_max)                                              { ASSERT_CORRECT_IMGUI_USAGE(); bool used = ImGui::SliderFloat(label.c_str(), &v, v_min, v_max); return std::make_tuple(v, used); }
+    inline std::tuple<float, bool> SliderFloat(const std::string& label, float v, float v_min, float v_max, const std::string& format)                   { ASSERT_CORRECT_IMGUI_USAGE(); bool used = ImGui::SliderFloat(label.c_str(), &v, v_min, v_max, format.c_str()); return std::make_tuple(v, used); }
+    inline std::tuple<float, bool> SliderFloat(const std::string& label, float v, float v_min, float v_max, const std::string& format, int flags)        { ASSERT_CORRECT_IMGUI_USAGE(); bool used = ImGui::SliderFloat(label.c_str(), &v, v_min, v_max, format.c_str(), flags); return std::make_tuple(v, used); }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> SliderFloat2(const std::string& label, const sol::table& v, float v_min, float v_max)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         float value[2] = { static_cast<float>(v1), static_cast<float>(v2) };
@@ -781,6 +828,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> SliderFloat2(const std::string& label, const sol::table& v, float v_min, float v_max, const std::string& format)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         float value[2] = { static_cast<float>(v1), static_cast<float>(v2) };
@@ -794,6 +842,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> SliderFloat2(const std::string& label, const sol::table& v, float v_min, float v_max, const std::string& format, int flags)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         float value[2] = { static_cast<float>(v1), static_cast<float>(v2) };
@@ -807,6 +856,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> SliderFloat3(const std::string& label, const sol::table& v, float v_min, float v_max)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
@@ -821,6 +871,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> SliderFloat3(const std::string& label, const sol::table& v, float v_min, float v_max, const std::string& format)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
@@ -835,6 +886,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> SliderFloat3(const std::string& label, const sol::table& v, float v_min, float v_max, const std::string& format, int flags)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
@@ -849,6 +901,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> SliderFloat4(const std::string& label, const sol::table& v, float v_min, float v_max)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -864,6 +917,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> SliderFloat4(const std::string& label, const sol::table& v, float v_min, float v_max, const std::string& format)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -879,6 +933,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> SliderFloat4(const std::string& label, const sol::table& v, float v_min, float v_max, const std::string& format, int flags)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -892,16 +947,17 @@ namespace sol_ImGui
 
         return std::make_tuple(float4, used);
     }
-    inline std::tuple<float, bool> SliderAngle(const std::string& label, float v_rad)                                                                                    { bool used = ImGui::SliderAngle(label.c_str(), &v_rad); return std::make_tuple(v_rad, used); }
-    inline std::tuple<float, bool> SliderAngle(const std::string& label, float v_rad, float v_degrees_min)                                                               { bool used = ImGui::SliderAngle(label.c_str(), &v_rad, v_degrees_min); return std::make_tuple(v_rad, used); }
-    inline std::tuple<float, bool> SliderAngle(const std::string& label, float v_rad, float v_degrees_min, float v_degrees_max)                                          { bool used = ImGui::SliderAngle(label.c_str(), &v_rad, v_degrees_min, v_degrees_max); return std::make_tuple(v_rad, used); }
-    inline std::tuple<float, bool> SliderAngle(const std::string& label, float v_rad, float v_degrees_min, float v_degrees_max, const std::string& format)               { bool used = ImGui::SliderAngle(label.c_str(), &v_rad, v_degrees_min, v_degrees_max, format.c_str()); return std::make_tuple(v_rad, used); }
-    inline std::tuple<float, bool> SliderAngle(const std::string& label, float v_rad, float v_degrees_min, float v_degrees_max, const std::string& format, int flags)    { bool used = ImGui::SliderAngle(label.c_str(), &v_rad, v_degrees_min, v_degrees_max, format.c_str(), flags); return std::make_tuple(v_rad, used); }
-    inline std::tuple<int, bool> SliderInt(const std::string& label, int v, int v_min, int v_max)                                                                        { bool used = ImGui::SliderInt(label.c_str(), &v, v_min, v_max); return std::make_tuple(v, used); }
-    inline std::tuple<int, bool> SliderInt(const std::string& label, int v, int v_min, int v_max, const std::string& format)                                             { bool used = ImGui::SliderInt(label.c_str(), &v, v_min, v_max, format.c_str()); return std::make_tuple(v, used); }
-    inline std::tuple<int, bool> SliderInt(const std::string& label, int v, int v_min, int v_max, const std::string& format, int flags)                                  { bool used = ImGui::SliderInt(label.c_str(), &v, v_min, v_max, format.c_str(), flags); return std::make_tuple(v, used); }
+    inline std::tuple<float, bool> SliderAngle(const std::string& label, float v_rad)                                                                                    { ASSERT_CORRECT_IMGUI_USAGE(); bool used = ImGui::SliderAngle(label.c_str(), &v_rad); return std::make_tuple(v_rad, used); }
+    inline std::tuple<float, bool> SliderAngle(const std::string& label, float v_rad, float v_degrees_min)                                                               { ASSERT_CORRECT_IMGUI_USAGE(); bool used = ImGui::SliderAngle(label.c_str(), &v_rad, v_degrees_min); return std::make_tuple(v_rad, used); }
+    inline std::tuple<float, bool> SliderAngle(const std::string& label, float v_rad, float v_degrees_min, float v_degrees_max)                                          { ASSERT_CORRECT_IMGUI_USAGE(); bool used = ImGui::SliderAngle(label.c_str(), &v_rad, v_degrees_min, v_degrees_max); return std::make_tuple(v_rad, used); }
+    inline std::tuple<float, bool> SliderAngle(const std::string& label, float v_rad, float v_degrees_min, float v_degrees_max, const std::string& format)               { ASSERT_CORRECT_IMGUI_USAGE(); bool used = ImGui::SliderAngle(label.c_str(), &v_rad, v_degrees_min, v_degrees_max, format.c_str()); return std::make_tuple(v_rad, used); }
+    inline std::tuple<float, bool> SliderAngle(const std::string& label, float v_rad, float v_degrees_min, float v_degrees_max, const std::string& format, int flags)    { ASSERT_CORRECT_IMGUI_USAGE(); bool used = ImGui::SliderAngle(label.c_str(), &v_rad, v_degrees_min, v_degrees_max, format.c_str(), flags); return std::make_tuple(v_rad, used); }
+    inline std::tuple<int, bool> SliderInt(const std::string& label, int v, int v_min, int v_max)                                                                        { ASSERT_CORRECT_IMGUI_USAGE(); bool used = ImGui::SliderInt(label.c_str(), &v, v_min, v_max); return std::make_tuple(v, used); }
+    inline std::tuple<int, bool> SliderInt(const std::string& label, int v, int v_min, int v_max, const std::string& format)                                             { ASSERT_CORRECT_IMGUI_USAGE(); bool used = ImGui::SliderInt(label.c_str(), &v, v_min, v_max, format.c_str()); return std::make_tuple(v, used); }
+    inline std::tuple<int, bool> SliderInt(const std::string& label, int v, int v_min, int v_max, const std::string& format, int flags)                                  { ASSERT_CORRECT_IMGUI_USAGE(); bool used = ImGui::SliderInt(label.c_str(), &v, v_min, v_max, format.c_str(), flags); return std::make_tuple(v, used); }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> SliderInt2(const std::string& label, const sol::table& v, int v_min, int v_max)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         int value[2] = { static_cast<int>(v1), static_cast<int>(v2) };
@@ -915,6 +971,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> SliderInt2(const std::string& label, const sol::table& v, int v_min, int v_max, const std::string& format)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         int value[2] = { static_cast<int>(v1), static_cast<int>(v2) };
@@ -928,6 +985,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> SliderInt2(const std::string& label, const sol::table& v, int v_min, int v_max, const std::string& format, int flags)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         int value[2] = { static_cast<int>(v1), static_cast<int>(v2) };
@@ -941,6 +999,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> SliderInt3(const std::string& label, const sol::table& v, int v_min, int v_max)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
@@ -955,6 +1014,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> SliderInt3(const std::string& label, const sol::table& v, int v_min, int v_max, const std::string& format)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
@@ -969,6 +1029,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> SliderInt3(const std::string& label, const sol::table& v, int v_min, int v_max, const std::string& format, int flags)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
@@ -983,6 +1044,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> SliderInt4(const std::string& label, const sol::table& v, int v_min, int v_max)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -998,6 +1060,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> SliderInt4(const std::string& label, const sol::table& v, int v_min, int v_max, const std::string& format)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1013,6 +1076,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> SliderInt4(const std::string& label, const sol::table& v, int v_min, int v_max, const std::string& format, int flags)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1026,31 +1090,32 @@ namespace sol_ImGui
 
         return std::make_tuple(int4, used);
     }
-    inline void SliderScalar()                                                                                                                                                    { /* TODO: SliderScalar(...) ==> UNSUPPORTED */ }
-    inline void SliderScalarN()                                                                                                                                                   { /* TODO: SliderScalarN(...) ==> UNSUPPORTED */ }
-    inline std::tuple<float, bool> VSliderFloat(const std::string& label, float sizeX, float sizeY, float v, float v_min, float v_max)                                            { bool used = ImGui::VSliderFloat(label.c_str(), { sizeX, sizeY }, &v, v_min, v_max); return std::make_tuple(v, used); }
-    inline std::tuple<float, bool> VSliderFloat(const std::string& label, float sizeX, float sizeY, float v, float v_min, float v_max, const std::string& format)                 { bool used = ImGui::VSliderFloat(label.c_str(), { sizeX, sizeY }, &v, v_min, v_max, format.c_str()); return std::make_tuple(v, used); }
-    inline std::tuple<float, bool> VSliderFloat(const std::string& label, float sizeX, float sizeY, float v, float v_min, float v_max, const std::string& format, int flags)      { bool used = ImGui::VSliderFloat(label.c_str(), { sizeX, sizeY }, &v, v_min, v_max, format.c_str(), flags); return std::make_tuple(v, used); }
-    inline std::tuple<int, bool> VSliderInt(const std::string& label, float sizeX, float sizeY, int v, int v_min, int v_max)                                                      { bool used = ImGui::VSliderInt(label.c_str(), { sizeX, sizeY }, &v, v_min, v_max); return std::make_tuple(v, used); }
-    inline std::tuple<int, bool> VSliderInt(const std::string& label, float sizeX, float sizeY, int v, int v_min, int v_max, const std::string& format)                           { bool used = ImGui::VSliderInt(label.c_str(), { sizeX, sizeY }, &v, v_min, v_max, format.c_str()); return std::make_tuple(v, used); }
-    inline std::tuple<int, bool> VSliderInt(const std::string& label, float sizeX, float sizeY, int v, int v_min, int v_max, const std::string& format, int flags)                { bool used = ImGui::VSliderInt(label.c_str(), { sizeX, sizeY }, &v, v_min, v_max, format.c_str(), flags); return std::make_tuple(v, used); }
-    inline void VSliderScalar()                                                                                                                                                   { /* TODO: VSliderScalar(...) ==> UNSUPPORTED */ }
+    inline void SliderScalar()                                                                                                                                                    { ASSERT_CORRECT_IMGUI_USAGE(); /* TODO: SliderScalar(...) ==> UNSUPPORTED */ }
+    inline void SliderScalarN()                                                                                                                                                   { ASSERT_CORRECT_IMGUI_USAGE(); /* TODO: SliderScalarN(...) ==> UNSUPPORTED */ }
+    inline std::tuple<float, bool> VSliderFloat(const std::string& label, float sizeX, float sizeY, float v, float v_min, float v_max)                                            { ASSERT_CORRECT_IMGUI_USAGE(); bool used = ImGui::VSliderFloat(label.c_str(), { sizeX, sizeY }, &v, v_min, v_max); return std::make_tuple(v, used); }
+    inline std::tuple<float, bool> VSliderFloat(const std::string& label, float sizeX, float sizeY, float v, float v_min, float v_max, const std::string& format)                 { ASSERT_CORRECT_IMGUI_USAGE(); bool used = ImGui::VSliderFloat(label.c_str(), { sizeX, sizeY }, &v, v_min, v_max, format.c_str()); return std::make_tuple(v, used); }
+    inline std::tuple<float, bool> VSliderFloat(const std::string& label, float sizeX, float sizeY, float v, float v_min, float v_max, const std::string& format, int flags)      { ASSERT_CORRECT_IMGUI_USAGE(); bool used = ImGui::VSliderFloat(label.c_str(), { sizeX, sizeY }, &v, v_min, v_max, format.c_str(), flags); return std::make_tuple(v, used); }
+    inline std::tuple<int, bool> VSliderInt(const std::string& label, float sizeX, float sizeY, int v, int v_min, int v_max)                                                      { ASSERT_CORRECT_IMGUI_USAGE(); bool used = ImGui::VSliderInt(label.c_str(), { sizeX, sizeY }, &v, v_min, v_max); return std::make_tuple(v, used); }
+    inline std::tuple<int, bool> VSliderInt(const std::string& label, float sizeX, float sizeY, int v, int v_min, int v_max, const std::string& format)                           { ASSERT_CORRECT_IMGUI_USAGE(); bool used = ImGui::VSliderInt(label.c_str(), { sizeX, sizeY }, &v, v_min, v_max, format.c_str()); return std::make_tuple(v, used); }
+    inline std::tuple<int, bool> VSliderInt(const std::string& label, float sizeX, float sizeY, int v, int v_min, int v_max, const std::string& format, int flags)                { ASSERT_CORRECT_IMGUI_USAGE(); bool used = ImGui::VSliderInt(label.c_str(), { sizeX, sizeY }, &v, v_min, v_max, format.c_str(), flags); return std::make_tuple(v, used); }
+    inline void VSliderScalar()                                                                                                                                                   { ASSERT_CORRECT_IMGUI_USAGE(); /* TODO: VSliderScalar(...) ==> UNSUPPORTED */ }
 
     // Widgets: Input with Keyboard
-    inline std::tuple<std::string, bool> InputText(const std::string& label, std::string text, unsigned int buf_size)                                                   { text.resize(buf_size); bool selected = ImGui::InputText(label.c_str(), text.data(), buf_size); return std::make_tuple(text.c_str(), selected); }
-    inline std::tuple<std::string, bool> InputText(const std::string& label, std::string text, unsigned int buf_size, int flags)                                        { text.resize(buf_size); bool selected = ImGui::InputText(label.c_str(), text.data(), buf_size, flags); return std::make_tuple(text.c_str(), selected); }
-    inline std::tuple<std::string, bool> InputTextMultiline(const std::string& label, std::string text, unsigned int buf_size)                                          { text.resize(buf_size); bool selected = ImGui::InputTextMultiline(label.c_str(), text.data(), buf_size); return std::make_tuple(text.c_str(), selected); }
-    inline std::tuple<std::string, bool> InputTextMultiline(const std::string& label, std::string text, unsigned int buf_size, float sizeX, float sizeY)                { text.resize(buf_size); bool selected = ImGui::InputTextMultiline(label.c_str(), text.data(), buf_size, { sizeX, sizeY }); return std::make_tuple(text.c_str(), selected); }
-    inline std::tuple<std::string, bool> InputTextMultiline(const std::string& label, std::string text, unsigned int buf_size, float sizeX, float sizeY, int flags)     { text.resize(buf_size); bool selected = ImGui::InputTextMultiline(label.c_str(), text.data(), buf_size, { sizeX, sizeY }, flags); return std::make_tuple(text.c_str(), selected); }
-    inline std::tuple<std::string, bool> InputTextWithHint(const std::string& label, const std::string& hint, std::string text, unsigned int buf_size)                  { text.resize(buf_size); bool selected = ImGui::InputTextWithHint(label.c_str(), hint.c_str(), text.data(), buf_size); return std::make_tuple(text.c_str(), selected); }
-    inline std::tuple<std::string, bool> InputTextWithHint(const std::string& label, const std::string& hint, std::string text, unsigned int buf_size, int flags)       { text.resize(buf_size); bool selected = ImGui::InputTextWithHint(label.c_str(), hint.c_str(), text.data(), buf_size, flags); return std::make_tuple(text.c_str(), selected); }
-    inline std::tuple<float, bool> InputFloat(const std::string& label, float v)                                                                                        { bool selected = ImGui::InputFloat(label.c_str(), &v); return std::make_tuple(v, selected); }
-    inline std::tuple<float, bool> InputFloat(const std::string& label, float v, float step)                                                                            { bool selected = ImGui::InputFloat(label.c_str(), &v, step); return std::make_tuple(v, selected); }
-    inline std::tuple<float, bool> InputFloat(const std::string& label, float v, float step, float step_fast)                                                           { bool selected = ImGui::InputFloat(label.c_str(), &v, step, step_fast); return std::make_tuple(v, selected); }
-    inline std::tuple<float, bool> InputFloat(const std::string& label, float v, float step, float step_fast, const std::string& format)                                { bool selected = ImGui::InputFloat(label.c_str(), &v, step, step_fast, format.c_str()); return std::make_tuple(v, selected); }
-    inline std::tuple<float, bool> InputFloat(const std::string& label, float v, float step, float step_fast, const std::string& format, int flags)                     { bool selected = ImGui::InputFloat(label.c_str(), &v, step, step_fast, format.c_str(), flags); return std::make_tuple(v, selected); }
+    inline std::tuple<std::string, bool> InputText(const std::string& label, std::string text, unsigned int buf_size)                                                   { ASSERT_CORRECT_IMGUI_USAGE(); text.resize(buf_size); bool selected = ImGui::InputText(label.c_str(), text.data(), buf_size); return std::make_tuple(text.c_str(), selected); }
+    inline std::tuple<std::string, bool> InputText(const std::string& label, std::string text, unsigned int buf_size, int flags)                                        { ASSERT_CORRECT_IMGUI_USAGE(); text.resize(buf_size); bool selected = ImGui::InputText(label.c_str(), text.data(), buf_size, flags); return std::make_tuple(text.c_str(), selected); }
+    inline std::tuple<std::string, bool> InputTextMultiline(const std::string& label, std::string text, unsigned int buf_size)                                          { ASSERT_CORRECT_IMGUI_USAGE(); text.resize(buf_size); bool selected = ImGui::InputTextMultiline(label.c_str(), text.data(), buf_size); return std::make_tuple(text.c_str(), selected); }
+    inline std::tuple<std::string, bool> InputTextMultiline(const std::string& label, std::string text, unsigned int buf_size, float sizeX, float sizeY)                { ASSERT_CORRECT_IMGUI_USAGE(); text.resize(buf_size); bool selected = ImGui::InputTextMultiline(label.c_str(), text.data(), buf_size, { sizeX, sizeY }); return std::make_tuple(text.c_str(), selected); }
+    inline std::tuple<std::string, bool> InputTextMultiline(const std::string& label, std::string text, unsigned int buf_size, float sizeX, float sizeY, int flags)     { ASSERT_CORRECT_IMGUI_USAGE(); text.resize(buf_size); bool selected = ImGui::InputTextMultiline(label.c_str(), text.data(), buf_size, { sizeX, sizeY }, flags); return std::make_tuple(text.c_str(), selected); }
+    inline std::tuple<std::string, bool> InputTextWithHint(const std::string& label, const std::string& hint, std::string text, unsigned int buf_size)                  { ASSERT_CORRECT_IMGUI_USAGE(); text.resize(buf_size); bool selected = ImGui::InputTextWithHint(label.c_str(), hint.c_str(), text.data(), buf_size); return std::make_tuple(text.c_str(), selected); }
+    inline std::tuple<std::string, bool> InputTextWithHint(const std::string& label, const std::string& hint, std::string text, unsigned int buf_size, int flags)       { ASSERT_CORRECT_IMGUI_USAGE(); text.resize(buf_size); bool selected = ImGui::InputTextWithHint(label.c_str(), hint.c_str(), text.data(), buf_size, flags); return std::make_tuple(text.c_str(), selected); }
+    inline std::tuple<float, bool> InputFloat(const std::string& label, float v)                                                                                        { ASSERT_CORRECT_IMGUI_USAGE(); bool selected = ImGui::InputFloat(label.c_str(), &v); return std::make_tuple(v, selected); }
+    inline std::tuple<float, bool> InputFloat(const std::string& label, float v, float step)                                                                            { ASSERT_CORRECT_IMGUI_USAGE(); bool selected = ImGui::InputFloat(label.c_str(), &v, step); return std::make_tuple(v, selected); }
+    inline std::tuple<float, bool> InputFloat(const std::string& label, float v, float step, float step_fast)                                                           { ASSERT_CORRECT_IMGUI_USAGE(); bool selected = ImGui::InputFloat(label.c_str(), &v, step, step_fast); return std::make_tuple(v, selected); }
+    inline std::tuple<float, bool> InputFloat(const std::string& label, float v, float step, float step_fast, const std::string& format)                                { ASSERT_CORRECT_IMGUI_USAGE(); bool selected = ImGui::InputFloat(label.c_str(), &v, step, step_fast, format.c_str()); return std::make_tuple(v, selected); }
+    inline std::tuple<float, bool> InputFloat(const std::string& label, float v, float step, float step_fast, const std::string& format, int flags)                     { ASSERT_CORRECT_IMGUI_USAGE(); bool selected = ImGui::InputFloat(label.c_str(), &v, step, step_fast, format.c_str(), flags); return std::make_tuple(v, selected); }
     inline std::tuple <sol::as_table_t<TiltedPhoques::Vector<float>>, bool> InputFloat2(const std::string& label, const sol::table& v)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         float value[2] = { static_cast<float>(v1), static_cast<float>(v2) };
@@ -1064,6 +1129,7 @@ namespace sol_ImGui
     }
     inline std::tuple <sol::as_table_t<TiltedPhoques::Vector<float>>, bool> InputFloat2(const std::string& label, const sol::table& v, const std::string& format)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         float value[2] = { static_cast<float>(v1), static_cast<float>(v2) };
@@ -1077,6 +1143,7 @@ namespace sol_ImGui
     }
     inline std::tuple <sol::as_table_t<TiltedPhoques::Vector<float>>, bool> InputFloat2(const std::string& label, const sol::table& v, const std::string& format, int flags)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         float value[2] = { static_cast<float>(v1), static_cast<float>(v2) };
@@ -1090,6 +1157,7 @@ namespace sol_ImGui
     }
     inline std::tuple <sol::as_table_t<TiltedPhoques::Vector<float>>, bool> InputFloat3(const std::string& label, const sol::table& v)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
@@ -1104,6 +1172,7 @@ namespace sol_ImGui
     }
     inline std::tuple <sol::as_table_t<TiltedPhoques::Vector<float>>, bool> InputFloat3(const std::string& label, const sol::table& v, const std::string& format)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
@@ -1118,6 +1187,7 @@ namespace sol_ImGui
     }
     inline std::tuple <sol::as_table_t<TiltedPhoques::Vector<float>>, bool> InputFloat3(const std::string& label, const sol::table& v, const std::string& format, int flags)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
@@ -1132,6 +1202,7 @@ namespace sol_ImGui
     }
     inline std::tuple <sol::as_table_t<TiltedPhoques::Vector<float>>, bool> InputFloat4(const std::string& label, const sol::table& v)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1147,6 +1218,7 @@ namespace sol_ImGui
     }
     inline std::tuple <sol::as_table_t<TiltedPhoques::Vector<float>>, bool> InputFloat4(const std::string& label, const sol::table& v, const std::string& format)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1162,6 +1234,7 @@ namespace sol_ImGui
     }
     inline std::tuple <sol::as_table_t<TiltedPhoques::Vector<float>>, bool> InputFloat4(const std::string& label, const sol::table& v, const std::string& format, int flags)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1181,6 +1254,7 @@ namespace sol_ImGui
     inline std::tuple<int, bool> InputInt(const std::string& label, int v, int step, int step_fast, int flags)                    { bool selected = ImGui::InputInt(label.c_str(), &v, step, step_fast, flags); return std::make_tuple(v, selected); }
     inline std::tuple <sol::as_table_t<TiltedPhoques::Vector<int>>, bool> InputInt2(const std::string& label, const sol::table& v)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         int value[2] = { static_cast<int>(v1), static_cast<int>(v2) };
@@ -1194,6 +1268,7 @@ namespace sol_ImGui
     }
     inline std::tuple <sol::as_table_t<TiltedPhoques::Vector<int>>, bool> InputInt2(const std::string& label, const sol::table& v, int flags)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
         int value[2] = { static_cast<int>(v1), static_cast<int>(v2) };
@@ -1207,6 +1282,7 @@ namespace sol_ImGui
     }
     inline std::tuple <sol::as_table_t<TiltedPhoques::Vector<int>>, bool> InputInt3(const std::string& label, const sol::table& v)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
@@ -1221,6 +1297,7 @@ namespace sol_ImGui
     }
     inline std::tuple <sol::as_table_t<TiltedPhoques::Vector<int>>, bool> InputInt3(const std::string& label, const sol::table& v, int flags)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
@@ -1235,6 +1312,7 @@ namespace sol_ImGui
     }
     inline std::tuple <sol::as_table_t<TiltedPhoques::Vector<int>>, bool> InputInt4(const std::string& label, const sol::table& v)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1250,6 +1328,7 @@ namespace sol_ImGui
     }
     inline std::tuple <sol::as_table_t<TiltedPhoques::Vector<int>>, bool> InputInt4(const std::string& label, const sol::table& v, int flags)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  v1{ v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v2{ v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           v3{ v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1263,17 +1342,18 @@ namespace sol_ImGui
 
         return std::make_tuple(int4, used);
     }
-    inline std::tuple<double, bool> InputDouble(const std::string& label, double v)                                                                          { bool selected = ImGui::InputDouble(label.c_str(), &v); return std::make_tuple(v, selected); }
-    inline std::tuple<double, bool> InputDouble(const std::string& label, double v, double step)                                                             { bool selected = ImGui::InputDouble(label.c_str(), &v, step); return std::make_tuple(v, selected); }
-    inline std::tuple<double, bool> InputDouble(const std::string& label, double v, double step, double step_fast)                                           { bool selected = ImGui::InputDouble(label.c_str(), &v, step, step_fast); return std::make_tuple(v, selected); }
-    inline std::tuple<double, bool> InputDouble(const std::string& label, double v, double step, double step_fast, const std::string& format)                { bool selected = ImGui::InputDouble(label.c_str(), &v, step, step_fast, format.c_str()); return std::make_tuple(v, selected); }
-    inline std::tuple<double, bool> InputDouble(const std::string& label, double v, double step, double step_fast, const std::string& format, int flags)     { bool selected = ImGui::InputDouble(label.c_str(), &v, step, step_fast, format.c_str(), flags); return std::make_tuple(v, selected); }
-    inline void InputScalar()                                                                                                                                { /* TODO: InputScalar(...) ==> UNSUPPORTED */ }
-    inline void InputScalarN()                                                                                                                               { /* TODO: InputScalarN(...) ==> UNSUPPORTED */ }
+    inline std::tuple<double, bool> InputDouble(const std::string& label, double v)                                                                          { ASSERT_CORRECT_IMGUI_USAGE(); bool selected = ImGui::InputDouble(label.c_str(), &v); return std::make_tuple(v, selected); }
+    inline std::tuple<double, bool> InputDouble(const std::string& label, double v, double step)                                                             { ASSERT_CORRECT_IMGUI_USAGE(); bool selected = ImGui::InputDouble(label.c_str(), &v, step); return std::make_tuple(v, selected); }
+    inline std::tuple<double, bool> InputDouble(const std::string& label, double v, double step, double step_fast)                                           { ASSERT_CORRECT_IMGUI_USAGE(); bool selected = ImGui::InputDouble(label.c_str(), &v, step, step_fast); return std::make_tuple(v, selected); }
+    inline std::tuple<double, bool> InputDouble(const std::string& label, double v, double step, double step_fast, const std::string& format)                { ASSERT_CORRECT_IMGUI_USAGE(); bool selected = ImGui::InputDouble(label.c_str(), &v, step, step_fast, format.c_str()); return std::make_tuple(v, selected); }
+    inline std::tuple<double, bool> InputDouble(const std::string& label, double v, double step, double step_fast, const std::string& format, int flags)     { ASSERT_CORRECT_IMGUI_USAGE(); bool selected = ImGui::InputDouble(label.c_str(), &v, step, step_fast, format.c_str(), flags); return std::make_tuple(v, selected); }
+    inline void InputScalar()                                                                                                                                { ASSERT_CORRECT_IMGUI_USAGE(); /* TODO: InputScalar(...) ==> UNSUPPORTED */ }
+    inline void InputScalarN()                                                                                                                               { ASSERT_CORRECT_IMGUI_USAGE(); /* TODO: InputScalarN(...) ==> UNSUPPORTED */ }
 
     // Widgets: Color Editor / Picker
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> ColorEdit3(const std::string& label, const sol::table& col)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  r{ col[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
             g{ col[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
             b{ col[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
@@ -1288,6 +1368,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> ColorEdit3(const std::string& label, const sol::table& col, int flags)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  r{ col[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           g{ col[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           b{ col[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
@@ -1302,6 +1383,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> ColorEdit4(const std::string& label, const sol::table& col)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  r{ col[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           g{ col[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           b{ col[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1317,6 +1399,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> ColorEdit4(const std::string& label, const sol::table& col, int flags)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  r{ col[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           g{ col[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           b{ col[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1332,6 +1415,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> ColorPicker3(const std::string& label, const sol::table& col)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  r{ col[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           g{ col[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           b{ col[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
@@ -1346,6 +1430,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> ColorPicker3(const std::string& label, const sol::table& col, int flags)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  r{ col[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           g{ col[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           b{ col[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) };
@@ -1360,6 +1445,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> ColorPicker4(const std::string& label, const sol::table& col)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  r{ col[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           g{ col[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           b{ col[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1375,6 +1461,7 @@ namespace sol_ImGui
     }
     inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> ColorPicker4(const std::string& label, const sol::table& col, int flags)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  r{ col[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           g{ col[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           b{ col[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1390,6 +1477,7 @@ namespace sol_ImGui
     }
     inline bool ColorButton(const std::string& desc_id, const sol::table& col)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  r{ col[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           g{ col[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           b{ col[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1399,6 +1487,7 @@ namespace sol_ImGui
     }
     inline bool ColorButton(const std::string& desc_id, const sol::table& col, int flags)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  r{ col[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           g{ col[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           b{ col[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1408,6 +1497,7 @@ namespace sol_ImGui
     }
     inline bool ColorButton(const std::string& desc_id, const sol::table& col, int flags, float sizeX, float sizeY)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  r{ col[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           g{ col[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           b{ col[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1415,37 +1505,38 @@ namespace sol_ImGui
         const ImVec4 color{ static_cast<float>(r), static_cast<float>(g), static_cast<float>(b), static_cast<float>(a) };
         return ImGui::ColorButton(desc_id.c_str(), color, flags, { sizeX, sizeY });
     }
-    inline void SetColorEditOptions(int flags)                                                                     { ImGui::SetColorEditOptions(flags); }
+    inline void SetColorEditOptions(int flags)                                                                     { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetColorEditOptions(flags); }
 
     // Widgets: Trees
-    inline bool TreeNode(const std::string& label)                                                                 { return ImGui::TreeNode(label.c_str()); }
-    inline bool TreeNode(const std::string& label, const std::string& fmt)                                         { return ImGui::TreeNode(label.c_str(), "%s", fmt.c_str()); }
+    inline bool TreeNode(const std::string& label)                                                                 { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::TreeNode(label.c_str()); }
+    inline bool TreeNode(const std::string& label, const std::string& fmt)                                         { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::TreeNode(label.c_str(), "%s", fmt.c_str()); }
     /* TODO: TreeNodeV(...) (2) ==> UNSUPPORTED */
-    inline bool TreeNodeEx(const std::string& label)                                                               { return ImGui::TreeNodeEx(label.c_str()); }
-    inline bool TreeNodeEx(const std::string& label, int flags)                                                    { return ImGui::TreeNodeEx(label.c_str(), flags); }
-    inline bool TreeNodeEx(const std::string& label, int flags, const std::string& fmt)                            { return ImGui::TreeNodeEx(label.c_str(), flags, "%s", fmt.c_str()); }
+    inline bool TreeNodeEx(const std::string& label)                                                               { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::TreeNodeEx(label.c_str()); }
+    inline bool TreeNodeEx(const std::string& label, int flags)                                                    { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::TreeNodeEx(label.c_str(), flags); }
+    inline bool TreeNodeEx(const std::string& label, int flags, const std::string& fmt)                            { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::TreeNodeEx(label.c_str(), flags, "%s", fmt.c_str()); }
     /* TODO: TreeNodeExV(...) (2) ==> UNSUPPORTED */
-    inline void TreePush(const std::string& str_id)                                                                { ImGui::TreePush(str_id.c_str()); }
+    inline void TreePush(const std::string& str_id)                                                                { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::TreePush(str_id.c_str()); }
     /* TODO: TreePush(const void*) ==> UNSUPPORTED */
-    inline void TreePop()                                                                                          { ImGui::TreePop(); }
-    inline float GetTreeNodeToLabelSpacing()                                                                       { return ImGui::GetTreeNodeToLabelSpacing(); }
-    inline bool CollapsingHeader(const std::string& label)                                                         { return ImGui::CollapsingHeader(label.c_str()); }
-    inline bool CollapsingHeader(const std::string& label, int flags)                                              { return ImGui::CollapsingHeader(label.c_str(), flags); }
-    inline std::tuple<bool, bool> CollapsingHeader(const std::string& label, bool open)                            { bool notCollapsed = ImGui::CollapsingHeader(label.c_str(), &open); return std::make_tuple(open, notCollapsed); }
-    inline std::tuple<bool, bool> CollapsingHeader(const std::string& label, bool open, int flags)                 { bool notCollapsed = ImGui::CollapsingHeader(label.c_str(), &open, flags); return std::make_tuple(open, notCollapsed); }
-    inline void SetNextItemOpen(bool is_open)                                                                      { ImGui::SetNextItemOpen(is_open); }
-    inline void SetNextItemOpen(bool is_open, int cond)                                                            { ImGui::SetNextItemOpen(is_open, cond); }
+    inline void TreePop()                                                                                          { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::TreePop(); }
+    inline float GetTreeNodeToLabelSpacing()                                                                       { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::GetTreeNodeToLabelSpacing(); }
+    inline bool CollapsingHeader(const std::string& label)                                                         { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::CollapsingHeader(label.c_str()); }
+    inline bool CollapsingHeader(const std::string& label, int flags)                                              { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::CollapsingHeader(label.c_str(), flags); }
+    inline std::tuple<bool, bool> CollapsingHeader(const std::string& label, bool open)                            { ASSERT_CORRECT_IMGUI_USAGE(); bool notCollapsed = ImGui::CollapsingHeader(label.c_str(), &open); return std::make_tuple(open, notCollapsed); }
+    inline std::tuple<bool, bool> CollapsingHeader(const std::string& label, bool open, int flags)                 { ASSERT_CORRECT_IMGUI_USAGE(); bool notCollapsed = ImGui::CollapsingHeader(label.c_str(), &open, flags); return std::make_tuple(open, notCollapsed); }
+    inline void SetNextItemOpen(bool is_open)                                                                      { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetNextItemOpen(is_open); }
+    inline void SetNextItemOpen(bool is_open, int cond)                                                            { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetNextItemOpen(is_open, cond); }
 
     // Widgets: Selectables
     // TODO: Only one of Selectable variations is possible due to same parameters for Lua
-    inline bool Selectable(const std::string& label)                                                               { return ImGui::Selectable(label.c_str()); }
-    inline bool Selectable(const std::string& label, bool selected)                                                { ImGui::Selectable(label.c_str(), &selected); return selected; }
-    inline bool Selectable(const std::string& label, bool selected, int flags)                                     { ImGui::Selectable(label.c_str(), &selected, flags); return selected; }
-    inline bool Selectable(const std::string& label, bool selected, int flags, float sizeX, float sizeY)           { ImGui::Selectable(label.c_str(), &selected, flags, { sizeX, sizeY }); return selected; }
+    inline bool Selectable(const std::string& label)                                                               { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::Selectable(label.c_str()); }
+    inline bool Selectable(const std::string& label, bool selected)                                                { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::Selectable(label.c_str(), &selected); return selected; }
+    inline bool Selectable(const std::string& label, bool selected, int flags)                                     { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::Selectable(label.c_str(), &selected, flags); return selected; }
+    inline bool Selectable(const std::string& label, bool selected, int flags, float sizeX, float sizeY)           { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::Selectable(label.c_str(), &selected, flags, { sizeX, sizeY }); return selected; }
 
     // Widgets: List Boxes
     inline std::tuple<int, bool> ListBox(const std::string& label, int current_item, const sol::table& items, int items_count)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         TiltedPhoques::Vector<std::string> strings;
         for (int i{ 1 }; i <= items_count; i++)
         {
@@ -1462,6 +1553,7 @@ namespace sol_ImGui
     }
     inline std::tuple<int, bool> ListBox(const std::string& label, int current_item, const sol::table& items, int items_count, int height_in_items)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         TiltedPhoques::Vector<std::string> strings;
         for (int i{ 1 }; i <= items_count; i++)
         {
@@ -1476,183 +1568,184 @@ namespace sol_ImGui
         bool clicked = ImGui::ListBox(label.c_str(), &current_item, cstrings.data(), items_count, height_in_items);
         return std::make_tuple(current_item, clicked);
     }
-    inline bool BeginListBox(const std::string& label)                                               { return ImGui::BeginListBox(label.c_str()); }
-    inline bool BeginListBox(const std::string& label, float sizeX, float sizeY)                     { return ImGui::BeginListBox(label.c_str(), { sizeX, sizeY }); }
-    inline void EndListBox()                                                                         { ImGui::EndListBox(); }
+    inline bool BeginListBox(const std::string& label)                                               { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginListBox(label.c_str()); }
+    inline bool BeginListBox(const std::string& label, float sizeX, float sizeY)                     { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginListBox(label.c_str(), { sizeX, sizeY }); }
+    inline void EndListBox()                                                                         { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::EndListBox(); }
 
     // Widgets: Data Plotting
     /* TODO: Widgets Data Plotting ==> UNSUPPORTED (barely used and quite long functions) */
 
     // Widgets: Value() helpers
-    inline void Value(const std::string& prefix, bool b)                                            { ImGui::Value(prefix.c_str(), b); }
-    inline void Value(const std::string& prefix, int v)                                             { ImGui::Value(prefix.c_str(), v); }
-    inline void Value(const std::string& prefix, unsigned int v)                                    { ImGui::Value(prefix.c_str(), v); }
-    inline void Value(const std::string& prefix, float v)                                           { ImGui::Value(prefix.c_str(), v); }
-    inline void Value(const std::string& prefix, float v, const std::string& float_format)          { ImGui::Value(prefix.c_str(), v, float_format.c_str()); }
+    inline void Value(const std::string& prefix, bool b)                                            { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::Value(prefix.c_str(), b); }
+    inline void Value(const std::string& prefix, int v)                                             { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::Value(prefix.c_str(), v); }
+    inline void Value(const std::string& prefix, unsigned int v)                                    { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::Value(prefix.c_str(), v); }
+    inline void Value(const std::string& prefix, float v)                                           { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::Value(prefix.c_str(), v); }
+    inline void Value(const std::string& prefix, float v, const std::string& float_format)          { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::Value(prefix.c_str(), v, float_format.c_str()); }
 
     // Widgets: Menus
-    inline bool BeginMenuBar()                                                                                                    { return ImGui::BeginMenuBar(); }
-    inline void EndMenuBar()                                                                                                      { ImGui::EndMenuBar(); }
-    inline bool BeginMainMenuBar()                                                                                                { return ImGui::BeginMainMenuBar(); }
-    inline void EndMainMenuBar()                                                                                                  { ImGui::EndMainMenuBar(); }
-    inline bool BeginMenu(const std::string& label)                                                                               { return ImGui::BeginMenu(label.c_str()); }
-    inline bool BeginMenu(const std::string& label, bool enabled)                                                                 { return ImGui::BeginMenu(label.c_str(), enabled); }
-    inline void EndMenu()                                                                                                         { ImGui::EndMenu(); }
-    inline bool MenuItem(const std::string& label)                                                                                { return ImGui::MenuItem(label.c_str()); }
-    inline bool MenuItem(const std::string& label, const std::string& shortcut)                                                   { return ImGui::MenuItem(label.c_str(), shortcut.c_str()); }
-    inline std::tuple<bool, bool> MenuItem(const std::string& label, const std::string& shortcut, bool selected)                  { bool activated = ImGui::MenuItem(label.c_str(), shortcut.c_str(), &selected); return std::make_tuple(selected, activated); }
-    inline std::tuple<bool, bool> MenuItem(const std::string& label, const std::string& shortcut, bool selected, bool enabled)    { bool activated = ImGui::MenuItem(label.c_str(), shortcut.c_str(), &selected, enabled); return std::make_tuple(selected, activated); }
+    inline bool BeginMenuBar()                                                                                                    { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginMenuBar(); }
+    inline void EndMenuBar()                                                                                                      { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::EndMenuBar(); }
+    inline bool BeginMainMenuBar()                                                                                                { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginMainMenuBar(); }
+    inline void EndMainMenuBar()                                                                                                  { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::EndMainMenuBar(); }
+    inline bool BeginMenu(const std::string& label)                                                                               { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginMenu(label.c_str()); }
+    inline bool BeginMenu(const std::string& label, bool enabled)                                                                 { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginMenu(label.c_str(), enabled); }
+    inline void EndMenu()                                                                                                         { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::EndMenu(); }
+    inline bool MenuItem(const std::string& label)                                                                                { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::MenuItem(label.c_str()); }
+    inline bool MenuItem(const std::string& label, const std::string& shortcut)                                                   { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::MenuItem(label.c_str(), shortcut.c_str()); }
+    inline std::tuple<bool, bool> MenuItem(const std::string& label, const std::string& shortcut, bool selected)                  { ASSERT_CORRECT_IMGUI_USAGE(); bool activated = ImGui::MenuItem(label.c_str(), shortcut.c_str(), &selected); return std::make_tuple(selected, activated); }
+    inline std::tuple<bool, bool> MenuItem(const std::string& label, const std::string& shortcut, bool selected, bool enabled)    { ASSERT_CORRECT_IMGUI_USAGE(); bool activated = ImGui::MenuItem(label.c_str(), shortcut.c_str(), &selected, enabled); return std::make_tuple(selected, activated); }
 
     // Tooltips
-    inline void BeginTooltip()                                                 { ImGui::BeginTooltip(); }
-    inline void EndTooltip()                                                   { ImGui::EndTooltip(); }
-    inline void SetTooltip(const std::string& fmt)                             { ImGui::SetTooltip("%s", fmt.c_str()); }
-    inline void SetTooltipV()                                                  { /* TODO: SetTooltipV(...) ==> UNSUPPORTED */ }
+    inline void BeginTooltip()                                                 { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::BeginTooltip(); }
+    inline void EndTooltip()                                                   { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::EndTooltip(); }
+    inline void SetTooltip(const std::string& fmt)                             { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetTooltip("%s", fmt.c_str()); }
+    inline void SetTooltipV()                                                  { ASSERT_CORRECT_IMGUI_USAGE(); /* TODO: SetTooltipV(...) ==> UNSUPPORTED */ }
 
     // Popups, Modals
-    inline bool BeginPopup(const std::string& str_id)                                   { return ImGui::BeginPopup(str_id.c_str()); }
-    inline bool BeginPopup(const std::string& str_id, int flags)                        { return ImGui::BeginPopup(str_id.c_str(), flags); }
-    inline bool BeginPopupModal(const std::string& name)                                { return ImGui::BeginPopupModal(name.c_str()); }
-    inline bool BeginPopupModal(const std::string& name, int flags)                     { return ImGui::BeginPopupModal(name.c_str(), nullptr, flags); }
-    inline bool BeginPopupModal(const std::string& name, bool open)                     { return ImGui::BeginPopupModal(name.c_str(), &open); }
-    inline bool BeginPopupModal(const std::string& name, bool open, int flags)          { return ImGui::BeginPopupModal(name.c_str(), &open, flags); }
-    inline void EndPopup()                                                              { ImGui::EndPopup(); }
-    inline void OpenPopup(const std::string& str_id)                                    { ImGui::OpenPopup(str_id.c_str()); }
-    inline void OpenPopup(const std::string& str_id, int popup_flags)                   { ImGui::OpenPopup(str_id.c_str(), popup_flags); }
-    inline void CloseCurrentPopup()                                                     { ImGui::CloseCurrentPopup(); }
-    inline bool BeginPopupContextItem()                                                 { return ImGui::BeginPopupContextItem(); }
-    inline bool BeginPopupContextItem(const std::string& str_id)                        { return ImGui::BeginPopupContextItem(str_id.c_str()); }
-    inline bool BeginPopupContextItem(const std::string& str_id, int popup_flags)       { return ImGui::BeginPopupContextItem(str_id.c_str(), popup_flags); }
-    inline bool BeginPopupContextWindow()                                               { return ImGui::BeginPopupContextWindow(); }
-    inline bool BeginPopupContextWindow(const std::string& str_id)                      { return ImGui::BeginPopupContextWindow(str_id.c_str()); }
-    inline bool BeginPopupContextWindow(const std::string& str_id, int popup_flags)     { return ImGui::BeginPopupContextWindow(str_id.c_str(), popup_flags); }
-    inline bool BeginPopupContextVoid()                                                 { return ImGui::BeginPopupContextVoid(); }
-    inline bool BeginPopupContextVoid(const std::string& str_id)                        { return ImGui::BeginPopupContextVoid(str_id.c_str()); }
-    inline bool BeginPopupContextVoid(const std::string& str_id, int popup_flags)       { return ImGui::BeginPopupContextVoid(str_id.c_str(), popup_flags); }
-    inline bool IsPopupOpen(const std::string& str_id)                                  { return ImGui::IsPopupOpen(str_id.c_str()); }
-    inline bool IsPopupOpen(const std::string& str_id, int popup_flags)                 { return ImGui::IsPopupOpen(str_id.c_str(), popup_flags); }
+    inline bool BeginPopup(const std::string& str_id)                                   { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginPopup(str_id.c_str()); }
+    inline bool BeginPopup(const std::string& str_id, int flags)                        { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginPopup(str_id.c_str(), flags); }
+    inline bool BeginPopupModal(const std::string& name)                                { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginPopupModal(name.c_str()); }
+    inline bool BeginPopupModal(const std::string& name, int flags)                     { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginPopupModal(name.c_str(), nullptr, flags); }
+    inline bool BeginPopupModal(const std::string& name, bool open)                     { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginPopupModal(name.c_str(), &open); }
+    inline bool BeginPopupModal(const std::string& name, bool open, int flags)          { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginPopupModal(name.c_str(), &open, flags); }
+    inline void EndPopup()                                                              { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::EndPopup(); }
+    inline void OpenPopup(const std::string& str_id)                                    { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::OpenPopup(str_id.c_str()); }
+    inline void OpenPopup(const std::string& str_id, int popup_flags)                   { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::OpenPopup(str_id.c_str(), popup_flags); }
+    inline void CloseCurrentPopup()                                                     { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::CloseCurrentPopup(); }
+    inline bool BeginPopupContextItem()                                                 { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginPopupContextItem(); }
+    inline bool BeginPopupContextItem(const std::string& str_id)                        { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginPopupContextItem(str_id.c_str()); }
+    inline bool BeginPopupContextItem(const std::string& str_id, int popup_flags)       { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginPopupContextItem(str_id.c_str(), popup_flags); }
+    inline bool BeginPopupContextWindow()                                               { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginPopupContextWindow(); }
+    inline bool BeginPopupContextWindow(const std::string& str_id)                      { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginPopupContextWindow(str_id.c_str()); }
+    inline bool BeginPopupContextWindow(const std::string& str_id, int popup_flags)     { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginPopupContextWindow(str_id.c_str(), popup_flags); }
+    inline bool BeginPopupContextVoid()                                                 { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginPopupContextVoid(); }
+    inline bool BeginPopupContextVoid(const std::string& str_id)                        { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginPopupContextVoid(str_id.c_str()); }
+    inline bool BeginPopupContextVoid(const std::string& str_id, int popup_flags)       { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginPopupContextVoid(str_id.c_str(), popup_flags); }
+    inline bool IsPopupOpen(const std::string& str_id)                                  { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::IsPopupOpen(str_id.c_str()); }
+    inline bool IsPopupOpen(const std::string& str_id, int popup_flags)                 { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::IsPopupOpen(str_id.c_str(), popup_flags); }
 
     //Tables
-    inline bool BeginTable(const std::string& str_id, int columns)                                                                          { return ImGui::BeginTable(str_id.c_str(), columns); }
-    inline bool BeginTable(const std::string& str_id, int columns, int flags)                                                               { return ImGui::BeginTable(str_id.c_str(), columns, flags); }
-    inline bool BeginTable(const std::string& str_id, int columns, int flags, float outer_sizeX, float outer_sizeY)                         { return ImGui::BeginTable(str_id.c_str(), columns, flags, { outer_sizeX, outer_sizeY }); }
-    inline bool BeginTable(const std::string& str_id, int columns, int flags, float outer_sizeX, float outer_sizeY, float inner_width)      { return ImGui::BeginTable(str_id.c_str(), columns, flags, { outer_sizeX, outer_sizeY }, inner_width); }
-    inline void EndTable()                                                                                                                  { ImGui::EndTable(); }
-    inline void TableNextRow()                                                                                                              { ImGui::TableNextRow(); }
-    inline void TableNextRow(int flags)                                                                                                     { ImGui::TableNextRow(flags); }
-    inline void TableNextRow(int flags, float min_row_height)                                                                               { ImGui::TableNextRow(flags, min_row_height); }
-    inline bool TableNextColumn()                                                                                                           { return ImGui::TableNextColumn(); }
-    inline bool TableSetColumnIndex(int column_n)                                                                                           { return ImGui::TableSetColumnIndex(column_n); }
-    inline void TableSetupColumn(const std::string& label)                                                                                  { ImGui::TableSetupColumn(label.c_str()); }
-    inline void TableSetupColumn(const std::string& label, int flags)                                                                       { ImGui::TableSetupColumn(label.c_str(), ImGuiTableColumnFlags(flags)); }
-    inline void TableSetupColumn(const std::string& label, int flags, float init_width_or_weight)                                           { ImGui::TableSetupColumn(label.c_str(), ImGuiTableColumnFlags(flags), init_width_or_weight); }
-    inline void TableSetupColumn(const std::string& label, int flags, float init_width_or_weight, int user_id)                              { ImGui::TableSetupColumn(label.c_str(), ImGuiTableColumnFlags(flags), init_width_or_weight, static_cast<ImU32>(user_id)); }
-    inline void TableSetupScrollFreeze(int cols, int rows)                                                                                  { ImGui::TableSetupScrollFreeze(cols, rows); }
-    inline void TableHeadersRow()                                                                                                           { ImGui::TableHeadersRow(); }
-    inline void TableHeader(const std::string& label)                                                                                       { ImGui::TableHeader(label.c_str()); }
-    inline ImGuiTableSortSpecs* TableGetSortSpecs()                                                                                         { return ImGui::TableGetSortSpecs(); }
-    inline int TableGetColumnCount()                                                                                                        { return ImGui::TableGetColumnCount(); }
-    inline int TableGetColumnIndex()                                                                                                        { return ImGui::TableGetColumnIndex(); }
-    inline int TableGetRowIndex()                                                                                                           { return ImGui::TableGetRowIndex(); }
-    inline std::string TableGetColumnName()                                                                                                 { return std::string(ImGui::TableGetColumnName()); }
-    inline std::string TableGetColumnName(int column_n)                                                                                     { return std::string(ImGui::TableGetColumnName(column_n)); }
-    inline ImGuiTableColumnFlags TableGetColumnFlags()                                                                                      { return ImGui::TableGetColumnFlags(); }
-    inline ImGuiTableColumnFlags TableGetColumnFlags(int column_n)                                                                          { return ImGui::TableGetColumnFlags(column_n); }
-    inline void TableSetBgColor(int target, int color)                                                                                      { ImGui::TableSetBgColor(target, static_cast<ImU32>(color)); }
-    inline void TableSetBgColor(int target, float colR, float colG, float colB, float colA)                                                 { ImGui::TableSetBgColor(target, ImGui::ColorConvertFloat4ToU32({ colR, colG, colB, colA })); }
-    inline void TableSetBgColor(int target, int color, int column_n)                                                                        { ImGui::TableSetBgColor(target, static_cast<ImU32>(color), column_n); }
-    inline void TableSetBgColor(int target, float colR, float colG, float colB, float colA, int column_n)                                   { ImGui::TableSetBgColor(target, ImGui::ColorConvertFloat4ToU32({ colR, colG, colB, colA }), column_n); }
+    inline bool BeginTable(const std::string& str_id, int columns)                                                                          { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginTable(str_id.c_str(), columns); }
+    inline bool BeginTable(const std::string& str_id, int columns, int flags)                                                               { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginTable(str_id.c_str(), columns, flags); }
+    inline bool BeginTable(const std::string& str_id, int columns, int flags, float outer_sizeX, float outer_sizeY)                         { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginTable(str_id.c_str(), columns, flags, { outer_sizeX, outer_sizeY }); }
+    inline bool BeginTable(const std::string& str_id, int columns, int flags, float outer_sizeX, float outer_sizeY, float inner_width)      { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginTable(str_id.c_str(), columns, flags, { outer_sizeX, outer_sizeY }, inner_width); }
+    inline void EndTable()                                                                                                                  { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::EndTable(); }
+    inline void TableNextRow()                                                                                                              { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::TableNextRow(); }
+    inline void TableNextRow(int flags)                                                                                                     { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::TableNextRow(flags); }
+    inline void TableNextRow(int flags, float min_row_height)                                                                               { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::TableNextRow(flags, min_row_height); }
+    inline bool TableNextColumn()                                                                                                           { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::TableNextColumn(); }
+    inline bool TableSetColumnIndex(int column_n)                                                                                           { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::TableSetColumnIndex(column_n); }
+    inline void TableSetupColumn(const std::string& label)                                                                                  { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::TableSetupColumn(label.c_str()); }
+    inline void TableSetupColumn(const std::string& label, int flags)                                                                       { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::TableSetupColumn(label.c_str(), ImGuiTableColumnFlags(flags)); }
+    inline void TableSetupColumn(const std::string& label, int flags, float init_width_or_weight)                                           { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::TableSetupColumn(label.c_str(), ImGuiTableColumnFlags(flags), init_width_or_weight); }
+    inline void TableSetupColumn(const std::string& label, int flags, float init_width_or_weight, int user_id)                              { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::TableSetupColumn(label.c_str(), ImGuiTableColumnFlags(flags), init_width_or_weight, static_cast<ImU32>(user_id)); }
+    inline void TableSetupScrollFreeze(int cols, int rows)                                                                                  { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::TableSetupScrollFreeze(cols, rows); }
+    inline void TableHeadersRow()                                                                                                           { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::TableHeadersRow(); }
+    inline void TableHeader(const std::string& label)                                                                                       { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::TableHeader(label.c_str()); }
+    inline ImGuiTableSortSpecs* TableGetSortSpecs()                                                                                         { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::TableGetSortSpecs(); }
+    inline int TableGetColumnCount()                                                                                                        { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::TableGetColumnCount(); }
+    inline int TableGetColumnIndex()                                                                                                        { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::TableGetColumnIndex(); }
+    inline int TableGetRowIndex()                                                                                                           { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::TableGetRowIndex(); }
+    inline std::string TableGetColumnName()                                                                                                 { ASSERT_CORRECT_IMGUI_USAGE(); return std::string(ImGui::TableGetColumnName()); }
+    inline std::string TableGetColumnName(int column_n)                                                                                     { ASSERT_CORRECT_IMGUI_USAGE(); return std::string(ImGui::TableGetColumnName(column_n)); }
+    inline ImGuiTableColumnFlags TableGetColumnFlags()                                                                                      { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::TableGetColumnFlags(); }
+    inline ImGuiTableColumnFlags TableGetColumnFlags(int column_n)                                                                          { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::TableGetColumnFlags(column_n); }
+    inline void TableSetBgColor(int target, int color)                                                                                      { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::TableSetBgColor(target, static_cast<ImU32>(color)); }
+    inline void TableSetBgColor(int target, float colR, float colG, float colB, float colA)                                                 { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::TableSetBgColor(target, ImGui::ColorConvertFloat4ToU32({ colR, colG, colB, colA })); }
+    inline void TableSetBgColor(int target, int color, int column_n)                                                                        { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::TableSetBgColor(target, static_cast<ImU32>(color), column_n); }
+    inline void TableSetBgColor(int target, float colR, float colG, float colB, float colA, int column_n)                                   { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::TableSetBgColor(target, ImGui::ColorConvertFloat4ToU32({ colR, colG, colB, colA }), column_n); }
 
     // Columns
-    inline void Columns()                                                        { ImGui::Columns(); }
-    inline void Columns(int count)                                               { ImGui::Columns(count); }
-    inline void Columns(int count, const std::string& id)                        { ImGui::Columns(count, id.c_str()); }
-    inline void Columns(int count, const std::string& id, bool border)           { ImGui::Columns(count, id.c_str(), border); }
-    inline void NextColumn()                                                     { ImGui::NextColumn(); }
-    inline int GetColumnIndex()                                                  { return ImGui::GetColumnIndex(); }
-    inline float GetColumnWidth()                                                { return ImGui::GetColumnWidth(); }
-    inline float GetColumnWidth(int column_index)                                { return ImGui::GetColumnWidth(column_index); }
-    inline void SetColumnWidth(int column_index, float width)                    { ImGui::SetColumnWidth(column_index, width); }
-    inline float GetColumnOffset()                                               { return ImGui::GetColumnOffset(); }
-    inline float GetColumnOffset(int column_index)                               { return ImGui::GetColumnOffset(column_index); }
-    inline void SetColumnOffset(int column_index, float offset_x)                { ImGui::SetColumnOffset(column_index, offset_x); }
-    inline int GetColumnsCount()                                                 { return ImGui::GetColumnsCount(); }
+    inline void Columns()                                                        { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::Columns(); }
+    inline void Columns(int count)                                               { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::Columns(count); }
+    inline void Columns(int count, const std::string& id)                        { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::Columns(count, id.c_str()); }
+    inline void Columns(int count, const std::string& id, bool border)           { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::Columns(count, id.c_str(), border); }
+    inline void NextColumn()                                                     { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::NextColumn(); }
+    inline int GetColumnIndex()                                                  { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::GetColumnIndex(); }
+    inline float GetColumnWidth()                                                { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::GetColumnWidth(); }
+    inline float GetColumnWidth(int column_index)                                { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::GetColumnWidth(column_index); }
+    inline void SetColumnWidth(int column_index, float width)                    { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetColumnWidth(column_index, width); }
+    inline float GetColumnOffset()                                               { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::GetColumnOffset(); }
+    inline float GetColumnOffset(int column_index)                               { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::GetColumnOffset(column_index); }
+    inline void SetColumnOffset(int column_index, float offset_x)                { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetColumnOffset(column_index, offset_x); }
+    inline int GetColumnsCount()                                                 { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::GetColumnsCount(); }
 
     // Tab Bars, Tabs
-    inline bool BeginTabBar(const std::string& str_id)                                              { return ImGui::BeginTabBar(str_id.c_str()); }
-    inline bool BeginTabBar(const std::string& str_id, int flags)                                   { return ImGui::BeginTabBar(str_id.c_str(), flags); }
-    inline void EndTabBar()                                                                         { ImGui::EndTabBar(); }
-    inline bool BeginTabItem(const std::string& label)                                              { return ImGui::BeginTabItem(label.c_str()); }
-    inline bool BeginTabItem(const std::string& label, int flags)                                   { return ImGui::BeginTabItem(label.c_str(), nullptr, flags); }
-    inline std::tuple<bool, bool> BeginTabItem(const std::string& label, bool open)                 { bool selected = ImGui::BeginTabItem(label.c_str(), &open); return std::make_tuple(open, selected); }
-    inline std::tuple<bool, bool> BeginTabItem(const std::string& label, bool open, int flags)      { bool selected = ImGui::BeginTabItem(label.c_str(), &open, flags); return std::make_tuple(open, selected); }
-    inline void EndTabItem()                                                                        { ImGui::EndTabItem(); }
-    inline void SetTabItemClosed(const std::string& tab_or_docked_window_label)                     { ImGui::SetTabItemClosed(tab_or_docked_window_label.c_str()); }
+    inline bool BeginTabBar(const std::string& str_id)                                              { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginTabBar(str_id.c_str()); }
+    inline bool BeginTabBar(const std::string& str_id, int flags)                                   { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginTabBar(str_id.c_str(), flags); }
+    inline void EndTabBar()                                                                         { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::EndTabBar(); }
+    inline bool BeginTabItem(const std::string& label)                                              { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginTabItem(label.c_str()); }
+    inline bool BeginTabItem(const std::string& label, int flags)                                   { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginTabItem(label.c_str(), nullptr, flags); }
+    inline std::tuple<bool, bool> BeginTabItem(const std::string& label, bool open)                 { ASSERT_CORRECT_IMGUI_USAGE(); bool selected = ImGui::BeginTabItem(label.c_str(), &open); return std::make_tuple(open, selected); }
+    inline std::tuple<bool, bool> BeginTabItem(const std::string& label, bool open, int flags)      { ASSERT_CORRECT_IMGUI_USAGE(); bool selected = ImGui::BeginTabItem(label.c_str(), &open, flags); return std::make_tuple(open, selected); }
+    inline void EndTabItem()                                                                        { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::EndTabItem(); }
+    inline void SetTabItemClosed(const std::string& tab_or_docked_window_label)                     { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetTabItemClosed(tab_or_docked_window_label.c_str()); }
 
     // Drag and Drop
     // TODO: Drag and Drop ==> UNSUPPORTED
 
     // Disabling
-    inline void BeginDisabled()                                                                     { ImGui::BeginDisabled(); }
-    inline void BeginDisabled(bool disabled)                                                        { ImGui::BeginDisabled(disabled); }
-    inline void EndDisabled()                                                                       { ImGui::EndDisabled(); }
+    inline void BeginDisabled()                                                                     { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::BeginDisabled(); }
+    inline void BeginDisabled(bool disabled)                                                        { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::BeginDisabled(disabled); }
+    inline void EndDisabled()                                                                       { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::EndDisabled(); }
 
     // Clipping
-    inline void PushClipRect(float min_x, float min_y, float max_x, float max_y, bool intersect_current)   { ImGui::PushClipRect({ min_x, min_y }, { max_x, max_y }, intersect_current); }
-    inline void PopClipRect()                                                                              { ImGui::PopClipRect(); }
+    inline void PushClipRect(float min_x, float min_y, float max_x, float max_y, bool intersect_current)   { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::PushClipRect({ min_x, min_y }, { max_x, max_y }, intersect_current); }
+    inline void PopClipRect()                                                                              { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::PopClipRect(); }
 
     // Focus, Activation
-    inline void SetItemDefaultFocus()                                          { ImGui::SetItemDefaultFocus(); }
-    inline void SetKeyboardFocusHere()                                         { ImGui::SetKeyboardFocusHere(); }
-    inline void SetKeyboardFocusHere(int offset)                               { ImGui::SetKeyboardFocusHere(offset); }
+    inline void SetItemDefaultFocus()                                          { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetItemDefaultFocus(); }
+    inline void SetKeyboardFocusHere()                                         { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetKeyboardFocusHere(); }
+    inline void SetKeyboardFocusHere(int offset)                               { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetKeyboardFocusHere(offset); }
 
     // Item/Widgets Utilities
-    inline bool IsItemHovered()                                                { return ImGui::IsItemHovered(); }
-    inline bool IsItemHovered(int flags)                                       { return ImGui::IsItemHovered(flags); }
-    inline bool IsItemActive()                                                 { return ImGui::IsItemActive(); }
-    inline bool IsItemFocused()                                                { return ImGui::IsItemFocused(); }
-    inline bool IsItemClicked()                                                { return ImGui::IsItemClicked(); }
-    inline bool IsItemClicked(int mouse_button)                                { return ImGui::IsItemClicked(mouse_button); }
-    inline bool IsItemVisible()                                                { return ImGui::IsItemVisible(); }
-    inline bool IsItemEdited()                                                 { return ImGui::IsItemEdited(); }
-    inline bool IsItemActivated()                                              { return ImGui::IsItemActivated(); }
-    inline bool IsItemDeactivated()                                            { return ImGui::IsItemDeactivated(); }
-    inline bool IsItemDeactivatedAfterEdit()                                   { return ImGui::IsItemDeactivatedAfterEdit(); }
-    inline bool IsItemToggledOpen()                                            { return ImGui::IsItemToggledOpen(); }
-    inline bool IsAnyItemHovered()                                             { return ImGui::IsAnyItemHovered(); }
-    inline bool IsAnyItemActive()                                              { return ImGui::IsAnyItemActive(); }
-    inline bool IsAnyItemFocused()                                             { return ImGui::IsAnyItemFocused(); }
-    inline std::tuple<float, float> GetItemRectMin()                           { const auto vec2{ ImGui::GetItemRectMin() }; return std::make_tuple(vec2.x, vec2.y); }
-    inline std::tuple<float, float> GetItemRectMax()                           { const auto vec2{ ImGui::GetItemRectMax() }; return std::make_tuple(vec2.x, vec2.y); }
-    inline std::tuple<float, float> GetItemRectSize()                          { const auto vec2{ ImGui::GetItemRectSize() }; return std::make_tuple(vec2.x, vec2.y); }
-    inline void SetItemAllowOverlap()                                          { ImGui::SetItemAllowOverlap(); }
+    inline bool IsItemHovered()                                                { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::IsItemHovered(); }
+    inline bool IsItemHovered(int flags)                                       { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::IsItemHovered(flags); }
+    inline bool IsItemActive()                                                 { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::IsItemActive(); }
+    inline bool IsItemFocused()                                                { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::IsItemFocused(); }
+    inline bool IsItemClicked()                                                { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::IsItemClicked(); }
+    inline bool IsItemClicked(int mouse_button)                                { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::IsItemClicked(mouse_button); }
+    inline bool IsItemVisible()                                                { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::IsItemVisible(); }
+    inline bool IsItemEdited()                                                 { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::IsItemEdited(); }
+    inline bool IsItemActivated()                                              { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::IsItemActivated(); }
+    inline bool IsItemDeactivated()                                            { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::IsItemDeactivated(); }
+    inline bool IsItemDeactivatedAfterEdit()                                   { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::IsItemDeactivatedAfterEdit(); }
+    inline bool IsItemToggledOpen()                                            { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::IsItemToggledOpen(); }
+    inline bool IsAnyItemHovered()                                             { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::IsAnyItemHovered(); }
+    inline bool IsAnyItemActive()                                              { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::IsAnyItemActive(); }
+    inline bool IsAnyItemFocused()                                             { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::IsAnyItemFocused(); }
+    inline std::tuple<float, float> GetItemRectMin()                           { ASSERT_CORRECT_IMGUI_USAGE(); const auto vec2{ ImGui::GetItemRectMin() }; return std::make_tuple(vec2.x, vec2.y); }
+    inline std::tuple<float, float> GetItemRectMax()                           { ASSERT_CORRECT_IMGUI_USAGE(); const auto vec2{ ImGui::GetItemRectMax() }; return std::make_tuple(vec2.x, vec2.y); }
+    inline std::tuple<float, float> GetItemRectSize()                          { ASSERT_CORRECT_IMGUI_USAGE(); const auto vec2{ ImGui::GetItemRectSize() }; return std::make_tuple(vec2.x, vec2.y); }
+    inline void SetItemAllowOverlap()                                          { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetItemAllowOverlap(); }
 
     // Miscellaneous Utilities
-    inline bool IsRectVisible(float sizeX, float sizeY)                                    { return ImGui::IsRectVisible({ sizeX, sizeY }); }
-    inline bool IsRectVisible(float minX, float minY, float maxX, float maxY)              { return ImGui::IsRectVisible({ minX, minY }, { maxX, maxY }); }
-    inline double GetTime()                                                                { return ImGui::GetTime(); }
-    inline int GetFrameCount()                                                             { return ImGui::GetFrameCount(); }
-    inline ImDrawList* GetBackgroundDrawList()                                             { return ImGui::GetBackgroundDrawList(); }
-    inline ImDrawList* GetForegroundDrawList()                                             { return ImGui::GetForegroundDrawList(); }
+    inline bool IsRectVisible(float sizeX, float sizeY)                                    { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::IsRectVisible({ sizeX, sizeY }); }
+    inline bool IsRectVisible(float minX, float minY, float maxX, float maxY)              { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::IsRectVisible({ minX, minY }, { maxX, maxY }); }
+    inline double GetTime()                                                                { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::GetTime(); }
+    inline int GetFrameCount()                                                             { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::GetFrameCount(); }
+    inline ImDrawList* GetBackgroundDrawList()                                             { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::GetBackgroundDrawList(); }
+    inline ImDrawList* GetForegroundDrawList()                                             { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::GetForegroundDrawList(); }
     /* TODO: GetDrawListSharedData() ==> UNSUPPORTED */
-    inline std::string GetStyleColorName(int idx)                                          { return std::string(ImGui::GetStyleColorName(idx)); }
+    inline std::string GetStyleColorName(int idx)                                          { ASSERT_CORRECT_IMGUI_USAGE(); return std::string(ImGui::GetStyleColorName(idx)); }
     /* TODO: SetStateStorage(), GetStateStorage(), CalcListClipping() ==> UNSUPPORTED */
-    inline bool BeginChildFrame(unsigned int id, float sizeX, float sizeY)                 { return ImGui::BeginChildFrame(id, { sizeX, sizeY }); }
-    inline bool BeginChildFrame(unsigned int id, float sizeX, float sizeY, int flags)      { return ImGui::BeginChildFrame(id, { sizeX, sizeY }, flags); }
-    inline void EndChildFrame()                                                            { return ImGui::EndChildFrame(); }
+    inline bool BeginChildFrame(unsigned int id, float sizeX, float sizeY)                 { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginChildFrame(id, { sizeX, sizeY }); }
+    inline bool BeginChildFrame(unsigned int id, float sizeX, float sizeY, int flags)      { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::BeginChildFrame(id, { sizeX, sizeY }, flags); }
+    inline void EndChildFrame()                                                            { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::EndChildFrame(); }
     inline ImGuiStyle& GetStyle()
     {
       return ImGui::GetStyle();
     }
 
     // Text Utilities
-    inline std::tuple<float, float> CalcTextSize(const std::string& text)                                                      { const auto vec2{ ImGui::CalcTextSize(text.c_str()) }; return std::make_tuple(vec2.x, vec2.y); }
-    inline std::tuple<float, float> CalcTextSize(const std::string& text, bool hide_text_after_double_hash)                    { const auto vec2{ ImGui::CalcTextSize(text.c_str(), nullptr, hide_text_after_double_hash) }; return std::make_tuple(vec2.x, vec2.y); }
-    inline std::tuple<float, float> CalcTextSize(const std::string& text, bool hide_text_after_double_hash, float wrap_width)  { const auto vec2{ ImGui::CalcTextSize(text.c_str(), nullptr, hide_text_after_double_hash, wrap_width) }; return std::make_tuple(vec2.x, vec2.y); }
+    inline std::tuple<float, float> CalcTextSize(const std::string& text)                                                      { ASSERT_CORRECT_IMGUI_USAGE(); const auto vec2{ ImGui::CalcTextSize(text.c_str()) }; return std::make_tuple(vec2.x, vec2.y); }
+    inline std::tuple<float, float> CalcTextSize(const std::string& text, bool hide_text_after_double_hash)                    { ASSERT_CORRECT_IMGUI_USAGE(); const auto vec2{ ImGui::CalcTextSize(text.c_str(), nullptr, hide_text_after_double_hash) }; return std::make_tuple(vec2.x, vec2.y); }
+    inline std::tuple<float, float> CalcTextSize(const std::string& text, bool hide_text_after_double_hash, float wrap_width)  { ASSERT_CORRECT_IMGUI_USAGE(); const auto vec2{ ImGui::CalcTextSize(text.c_str(), nullptr, hide_text_after_double_hash, wrap_width) }; return std::make_tuple(vec2.x, vec2.y); }
 
     // Color Utilities
     inline sol::as_table_t<TiltedPhoques::Vector<float>> ColorConvertU32ToFloat4(unsigned int in)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const auto vec4 = ImGui::ColorConvertU32ToFloat4(in);
         sol::as_table_t rgba = sol::as_table(TiltedPhoques::Vector<float>{
             vec4.x, vec4.y, vec4.z, vec4.w
@@ -1662,6 +1755,7 @@ namespace sol_ImGui
     }
     inline unsigned int ColorConvertFloat4ToU32(const sol::table& rgba)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         const lua_Number  r{ rgba[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           g{ rgba[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
                           b{ rgba[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0)) },
@@ -1671,71 +1765,73 @@ namespace sol_ImGui
     }
     inline std::tuple<float, float, float> ColorConvertRGBtoHSV(float r, float g, float b)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         float h{}, s{}, v{};
         ImGui::ColorConvertRGBtoHSV(r, g, b, h, s, v);
         return std::make_tuple(h, s, v);
     }
     inline std::tuple<float, float, float> ColorConvertHSVtoRGB(float h, float s, float v)
     {
+        ASSERT_CORRECT_IMGUI_USAGE();
         float r{}, g{}, b{};
         ImGui::ColorConvertHSVtoRGB(h, s, v, r, g, b);
         return std::make_tuple(r, g, b);
     }
 
     // Inputs Utilities: Mouse
-    inline bool IsMouseHoveringRect(float min_x, float min_y, float max_x, float max_y)               { return ImGui::IsMouseHoveringRect({ min_x, min_y }, { max_x, max_y }); }
-    inline bool IsMouseHoveringRect(float min_x, float min_y, float max_x, float max_y, bool clip)    { return ImGui::IsMouseHoveringRect({ min_x, min_y }, { max_x, max_y }, clip); }
-    inline std::tuple<float, float> GetMousePos()                                                     { const auto vec2{ ImGui::GetMousePos() }; return std::make_tuple(vec2.x, vec2.y); }
-    inline std::tuple<float, float> GetMousePosOnOpeningCurrentPopup()                                { const auto vec2{ ImGui::GetMousePosOnOpeningCurrentPopup() }; return std::make_tuple(vec2.x, vec2.y); }
-    inline bool IsMouseDragging(int button)                                                           { return ImGui::IsMouseDragging(static_cast<ImGuiMouseButton>(button)); }
-    inline bool IsMouseDragging(int button, float lock_threshold)                                     { return ImGui::IsMouseDragging(static_cast<ImGuiMouseButton>(button), lock_threshold); }
-    inline std::tuple<float, float> GetMouseDragDelta()                                               { const auto vec2{ ImGui::GetMouseDragDelta() }; return std::make_tuple(vec2.x, vec2.y); }
-    inline std::tuple<float, float> GetMouseDragDelta(int button)                                     { const auto vec2{ ImGui::GetMouseDragDelta(static_cast<ImGuiMouseButton>(button)) }; return std::make_tuple(vec2.x, vec2.y); }
-    inline std::tuple<float, float> GetMouseDragDelta(int button, float lock_threshold)               { const auto vec2{ ImGui::GetMouseDragDelta(static_cast<ImGuiMouseButton>(button), lock_threshold) }; return std::make_tuple(vec2.x, vec2.y); }
-    inline void ResetMouseDragDelta()                                                                 { ImGui::ResetMouseDragDelta(); }
-    inline void ResetMouseDragDelta(int button)                                                       { ImGui::ResetMouseDragDelta(static_cast<ImGuiMouseButton>(button)); }
+    inline bool IsMouseHoveringRect(float min_x, float min_y, float max_x, float max_y)               { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::IsMouseHoveringRect({ min_x, min_y }, { max_x, max_y }); }
+    inline bool IsMouseHoveringRect(float min_x, float min_y, float max_x, float max_y, bool clip)    { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::IsMouseHoveringRect({ min_x, min_y }, { max_x, max_y }, clip); }
+    inline std::tuple<float, float> GetMousePos()                                                     { ASSERT_CORRECT_IMGUI_USAGE(); const auto vec2{ ImGui::GetMousePos() }; return std::make_tuple(vec2.x, vec2.y); }
+    inline std::tuple<float, float> GetMousePosOnOpeningCurrentPopup()                                { ASSERT_CORRECT_IMGUI_USAGE(); const auto vec2{ ImGui::GetMousePosOnOpeningCurrentPopup() }; return std::make_tuple(vec2.x, vec2.y); }
+    inline bool IsMouseDragging(int button)                                                           { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::IsMouseDragging(static_cast<ImGuiMouseButton>(button)); }
+    inline bool IsMouseDragging(int button, float lock_threshold)                                     { ASSERT_CORRECT_IMGUI_USAGE(); return ImGui::IsMouseDragging(static_cast<ImGuiMouseButton>(button), lock_threshold); }
+    inline std::tuple<float, float> GetMouseDragDelta()                                               { ASSERT_CORRECT_IMGUI_USAGE(); const auto vec2{ ImGui::GetMouseDragDelta() }; return std::make_tuple(vec2.x, vec2.y); }
+    inline std::tuple<float, float> GetMouseDragDelta(int button)                                     { ASSERT_CORRECT_IMGUI_USAGE(); const auto vec2{ ImGui::GetMouseDragDelta(static_cast<ImGuiMouseButton>(button)) }; return std::make_tuple(vec2.x, vec2.y); }
+    inline std::tuple<float, float> GetMouseDragDelta(int button, float lock_threshold)               { ASSERT_CORRECT_IMGUI_USAGE(); const auto vec2{ ImGui::GetMouseDragDelta(static_cast<ImGuiMouseButton>(button), lock_threshold) }; return std::make_tuple(vec2.x, vec2.y); }
+    inline void ResetMouseDragDelta()                                                                 { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::ResetMouseDragDelta(); }
+    inline void ResetMouseDragDelta(int button)                                                       { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::ResetMouseDragDelta(static_cast<ImGuiMouseButton>(button)); }
 
     // Clipboard Utilities
-    inline std::string GetClipboardText()                                                             { return std::string(ImGui::GetClipboardText()); }
-    inline void SetClipboardText(const std::string& text)                                             { ImGui::SetClipboardText(text.c_str()); }
+    inline std::string GetClipboardText()                                                             { ASSERT_CORRECT_IMGUI_USAGE(); return std::string(ImGui::GetClipboardText()); }
+    inline void SetClipboardText(const std::string& text)                                             { ASSERT_CORRECT_IMGUI_USAGE(); ImGui::SetClipboardText(text.c_str()); }
 
     // Drawing APIs
     // Primitives
-    inline void ImDrawListAddLine(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, int col)                                                                                                    { drawlist->AddLine({ p1X, p1Y }, { p2X, p2Y }, static_cast<ImU32>(col)); }
-    inline void ImDrawListAddLine(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, int col, float thickness)                                                                                   { drawlist->AddLine({ p1X, p1Y }, { p2X, p2Y }, static_cast<ImU32>(col), thickness); }
-    inline void ImDrawListAddRect(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col)                                                                                        { drawlist->AddRect({ p_minX, p_minY }, { p_maxX, p_maxY }, static_cast<ImU32>(col)); }
-    inline void ImDrawListAddRect(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col, float rounding)                                                                        { drawlist->AddRect({ p_minX, p_minY }, { p_maxX, p_maxY }, static_cast<ImU32>(col), rounding); }
-    inline void ImDrawListAddRect(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col, float rounding, int flags)                                                             { drawlist->AddRect({ p_minX, p_minY }, { p_maxX, p_maxY }, static_cast<ImU32>(col), rounding, static_cast<ImDrawFlags>(flags)); }
-    inline void ImDrawListAddRect(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col, float rounding, int flags, float thickness)                                            { drawlist->AddRect({ p_minX, p_minY }, { p_maxX, p_maxY }, static_cast<ImU32>(col), rounding, static_cast<ImDrawFlags>(flags), thickness); }
-    inline void ImDrawListAddRectFilled(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col)                                                                                  { drawlist->AddRectFilled({ p_minX, p_minY }, { p_maxX, p_maxY }, static_cast<ImU32>(col)); }
-    inline void ImDrawListAddRectFilled(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col, float rounding)                                                                  { drawlist->AddRectFilled({ p_minX, p_minY }, { p_maxX, p_maxY }, static_cast<ImU32>(col), rounding); }
-    inline void ImDrawListAddRectFilled(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col, float rounding, int flags)                                                       { drawlist->AddRectFilled({ p_minX, p_minY }, { p_maxX, p_maxY }, static_cast<ImU32>(col), rounding, static_cast<ImDrawFlags>(flags)); }
-    inline void ImDrawListAddRectFilledMultiColor(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col_upr_left, int col_upr_right, int col_bot_right, int col_bot_left)       { drawlist->AddRectFilledMultiColor({ p_minX, p_minY }, { p_maxX, p_maxY }, static_cast<ImU32>(col_upr_left), static_cast<ImU32>(col_upr_right), static_cast<ImU32>(col_bot_right), static_cast<ImU32>(col_bot_left)); }
-    inline void ImDrawListAddQuad(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, float p4X, float p4Y, int col)                                                        { drawlist->AddQuad({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, { p4X, p4Y }, static_cast<ImU32>(col)); }
-    inline void ImDrawListAddQuad(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, float p4X, float p4Y, int col, float thickness)                                       { drawlist->AddQuad({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, { p4X, p4Y }, static_cast<ImU32>(col), thickness); }
-    inline void ImDrawListAddQuadFilled(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, float p4X, float p4Y, int col)                                                  { drawlist->AddQuadFilled({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, { p4X, p4Y }, static_cast<ImU32>(col)); }
-    inline void ImDrawListAddTriangle(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, int col)                                                                          { drawlist->AddTriangle({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, static_cast<ImU32>(col)); }
-    inline void ImDrawListAddTriangle(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, int col, float thickness)                                                         { drawlist->AddTriangle({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, static_cast<ImU32>(col), thickness); }
-    inline void ImDrawListAddTriangleFilled(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, int col)                                                                    { drawlist->AddTriangleFilled({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, static_cast<ImU32>(col)); }
-    inline void ImDrawListAddCircle(ImDrawList* drawlist, float centerX, float centerY, float radius, int col)                                                                                                  { drawlist->AddCircle({ centerX, centerY }, radius, static_cast<ImU32>(col)); }
-    inline void ImDrawListAddCircle(ImDrawList* drawlist, float centerX, float centerY, float radius, int col, int num_segments)                                                                                { drawlist->AddCircle({ centerX, centerY }, radius, static_cast<ImU32>(col), num_segments); }
-    inline void ImDrawListAddCircle(ImDrawList* drawlist, float centerX, float centerY, float radius, int col, int num_segments, float thickness)                                                               { drawlist->AddCircle({ centerX, centerY }, radius, static_cast<ImU32>(col), num_segments, thickness); }
-    inline void ImDrawListAddCircleFilled(ImDrawList* drawlist, float centerX, float centerY, float radius, int col)                                                                                            { drawlist->AddCircleFilled({ centerX, centerY }, radius, static_cast<ImU32>(col)); }
-    inline void ImDrawListAddCircleFilled(ImDrawList* drawlist, float centerX, float centerY, float radius, int col, int num_segments)                                                                          { drawlist->AddCircleFilled({ centerX, centerY }, radius, static_cast<ImU32>(col), num_segments); }
-    inline void ImDrawListAddNgon(ImDrawList* drawlist, float centerX, float centerY, float radius, int col, int num_segments)                                                                                  { drawlist->AddNgon({ centerX, centerY }, radius, static_cast<ImU32>(col), num_segments); }
-    inline void ImDrawListAddNgon(ImDrawList* drawlist, float centerX, float centerY, float radius, int col, int num_segments, float thickness)                                                                 { drawlist->AddNgon({ centerX, centerY }, radius, static_cast<ImU32>(col), num_segments, thickness); }
-    inline void ImDrawListAddNgonFilled(ImDrawList* drawlist, float centerX, float centerY, float radius, int col, int num_segments)                                                                            { drawlist->AddNgonFilled({ centerX, centerY }, radius, static_cast<ImU32>(col), num_segments); }
-    inline void ImDrawListAddText(ImDrawList* drawlist, float posX, float posY, int col, const std::string& text_begin)                                                                                         { drawlist->AddText({ posX, posY }, static_cast<ImU32>(col), text_begin.c_str()); }
-    inline void ImDrawListAddText(ImDrawList* drawlist, float font_size, float posX, float posY, int col, const std::string& text_begin)                                                                        { drawlist->AddText(ImGui::GetFont(), font_size, { posX, posY }, static_cast<ImU32>(col), text_begin.c_str()); }
-    inline void ImDrawListAddText(ImDrawList* drawlist, float font_size, float posX, float posY, int col, const std::string& text_begin, float wrap_width)                                                      { drawlist->AddText(ImGui::GetFont(), font_size, { posX, posY }, static_cast<ImU32>(col), text_begin.c_str(), nullptr, wrap_width); }
+    inline void ImDrawListAddLine(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, int col)                                                                                                    { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddLine({ p1X, p1Y }, { p2X, p2Y }, static_cast<ImU32>(col)); }
+    inline void ImDrawListAddLine(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, int col, float thickness)                                                                                   { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddLine({ p1X, p1Y }, { p2X, p2Y }, static_cast<ImU32>(col), thickness); }
+    inline void ImDrawListAddRect(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col)                                                                                        { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddRect({ p_minX, p_minY }, { p_maxX, p_maxY }, static_cast<ImU32>(col)); }
+    inline void ImDrawListAddRect(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col, float rounding)                                                                        { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddRect({ p_minX, p_minY }, { p_maxX, p_maxY }, static_cast<ImU32>(col), rounding); }
+    inline void ImDrawListAddRect(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col, float rounding, int flags)                                                             { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddRect({ p_minX, p_minY }, { p_maxX, p_maxY }, static_cast<ImU32>(col), rounding, static_cast<ImDrawFlags>(flags)); }
+    inline void ImDrawListAddRect(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col, float rounding, int flags, float thickness)                                            { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddRect({ p_minX, p_minY }, { p_maxX, p_maxY }, static_cast<ImU32>(col), rounding, static_cast<ImDrawFlags>(flags), thickness); }
+    inline void ImDrawListAddRectFilled(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col)                                                                                  { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddRectFilled({ p_minX, p_minY }, { p_maxX, p_maxY }, static_cast<ImU32>(col)); }
+    inline void ImDrawListAddRectFilled(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col, float rounding)                                                                  { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddRectFilled({ p_minX, p_minY }, { p_maxX, p_maxY }, static_cast<ImU32>(col), rounding); }
+    inline void ImDrawListAddRectFilled(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col, float rounding, int flags)                                                       { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddRectFilled({ p_minX, p_minY }, { p_maxX, p_maxY }, static_cast<ImU32>(col), rounding, static_cast<ImDrawFlags>(flags)); }
+    inline void ImDrawListAddRectFilledMultiColor(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col_upr_left, int col_upr_right, int col_bot_right, int col_bot_left)       { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddRectFilledMultiColor({ p_minX, p_minY }, { p_maxX, p_maxY }, static_cast<ImU32>(col_upr_left), static_cast<ImU32>(col_upr_right), static_cast<ImU32>(col_bot_right), static_cast<ImU32>(col_bot_left)); }
+    inline void ImDrawListAddQuad(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, float p4X, float p4Y, int col)                                                        { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddQuad({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, { p4X, p4Y }, static_cast<ImU32>(col)); }
+    inline void ImDrawListAddQuad(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, float p4X, float p4Y, int col, float thickness)                                       { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddQuad({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, { p4X, p4Y }, static_cast<ImU32>(col), thickness); }
+    inline void ImDrawListAddQuadFilled(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, float p4X, float p4Y, int col)                                                  { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddQuadFilled({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, { p4X, p4Y }, static_cast<ImU32>(col)); }
+    inline void ImDrawListAddTriangle(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, int col)                                                                          { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddTriangle({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, static_cast<ImU32>(col)); }
+    inline void ImDrawListAddTriangle(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, int col, float thickness)                                                         { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddTriangle({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, static_cast<ImU32>(col), thickness); }
+    inline void ImDrawListAddTriangleFilled(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, int col)                                                                    { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddTriangleFilled({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, static_cast<ImU32>(col)); }
+    inline void ImDrawListAddCircle(ImDrawList* drawlist, float centerX, float centerY, float radius, int col)                                                                                                  { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddCircle({ centerX, centerY }, radius, static_cast<ImU32>(col)); }
+    inline void ImDrawListAddCircle(ImDrawList* drawlist, float centerX, float centerY, float radius, int col, int num_segments)                                                                                { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddCircle({ centerX, centerY }, radius, static_cast<ImU32>(col), num_segments); }
+    inline void ImDrawListAddCircle(ImDrawList* drawlist, float centerX, float centerY, float radius, int col, int num_segments, float thickness)                                                               { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddCircle({ centerX, centerY }, radius, static_cast<ImU32>(col), num_segments, thickness); }
+    inline void ImDrawListAddCircleFilled(ImDrawList* drawlist, float centerX, float centerY, float radius, int col)                                                                                            { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddCircleFilled({ centerX, centerY }, radius, static_cast<ImU32>(col)); }
+    inline void ImDrawListAddCircleFilled(ImDrawList* drawlist, float centerX, float centerY, float radius, int col, int num_segments)                                                                          { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddCircleFilled({ centerX, centerY }, radius, static_cast<ImU32>(col), num_segments); }
+    inline void ImDrawListAddNgon(ImDrawList* drawlist, float centerX, float centerY, float radius, int col, int num_segments)                                                                                  { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddNgon({ centerX, centerY }, radius, static_cast<ImU32>(col), num_segments); }
+    inline void ImDrawListAddNgon(ImDrawList* drawlist, float centerX, float centerY, float radius, int col, int num_segments, float thickness)                                                                 { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddNgon({ centerX, centerY }, radius, static_cast<ImU32>(col), num_segments, thickness); }
+    inline void ImDrawListAddNgonFilled(ImDrawList* drawlist, float centerX, float centerY, float radius, int col, int num_segments)                                                                            { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddNgonFilled({ centerX, centerY }, radius, static_cast<ImU32>(col), num_segments); }
+    inline void ImDrawListAddText(ImDrawList* drawlist, float posX, float posY, int col, const std::string& text_begin)                                                                                         { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddText({ posX, posY }, static_cast<ImU32>(col), text_begin.c_str()); }
+    inline void ImDrawListAddText(ImDrawList* drawlist, float font_size, float posX, float posY, int col, const std::string& text_begin)                                                                        { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddText(ImGui::GetFont(), font_size, { posX, posY }, static_cast<ImU32>(col), text_begin.c_str()); }
+    inline void ImDrawListAddText(ImDrawList* drawlist, float font_size, float posX, float posY, int col, const std::string& text_begin, float wrap_width)                                                      { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddText(ImGui::GetFont(), font_size, { posX, posY }, static_cast<ImU32>(col), text_begin.c_str(), nullptr, wrap_width); }
     // TODO
-    // inline void ImDrawListAddText(ImDrawList* drawlist, float font_size, float posX, float posY, int col, const std::string& text_begin, float wrap_width, sol::table float cpu_fine_clip_rect)                 { drawlist->AddText(ImGui::GetFont(), font_size, { posX, posY }, ImU32(col), text_begin.c_str(), NULL, wrap_width, cpu_fine_clip_rect); }
-    // inline void ImDrawListAddPolyline(ImDrawList* drawlist, sol::table points, int num_points, int col, int flags, float thickness)                                                                             { drawlist->AddPolyline(points, num_points, ImU32(col), static_cast<ImDrawFlags>(flags), thickness); }
-    // inline void ImDrawListAddConvexPolyFilled(ImDrawList* drawlist, sol::table points, int num_points, int col)                                                                                                 { drawlist->AddConvexPolyFilled(points, num_points, ImU32(col)); }
-    inline void ImDrawListAddBezierCubic(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, float p4X, float p4Y, int col, float thickness)                                { drawlist->AddBezierCubic({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, { p4X, p4Y }, static_cast<ImU32>(col), thickness); }
-    inline void ImDrawListAddBezierCubic(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, float p4X, float p4Y, int col, float thickness, int num_segments)              { drawlist->AddBezierCubic({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, { p4X, p4Y }, static_cast<ImU32>(col), thickness, num_segments); }
-    inline void ImDrawListAddBezierQuadratic(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, int col, float thickness)                                                  { drawlist->AddBezierQuadratic({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, static_cast<ImU32>(col), thickness); }
-    inline void ImDrawListAddBezierQuadratic(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, int col, float thickness, int num_segments)                                { drawlist->AddBezierQuadratic({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, static_cast<ImU32>(col), thickness, num_segments); }
+    // inline void ImDrawListAddText(ImDrawList* drawlist, float font_size, float posX, float posY, int col, const std::string& text_begin, float wrap_width, sol::table float cpu_fine_clip_rect)                 { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddText(ImGui::GetFont(), font_size, { posX, posY }, ImU32(col), text_begin.c_str(), NULL, wrap_width, cpu_fine_clip_rect); }
+    // inline void ImDrawListAddPolyline(ImDrawList* drawlist, sol::table points, int num_points, int col, int flags, float thickness)                                                                             { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddPolyline(points, num_points, ImU32(col), static_cast<ImDrawFlags>(flags), thickness); }
+    // inline void ImDrawListAddConvexPolyFilled(ImDrawList* drawlist, sol::table points, int num_points, int col)                                                                                                 { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddConvexPolyFilled(points, num_points, ImU32(col)); }
+    inline void ImDrawListAddBezierCubic(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, float p4X, float p4Y, int col, float thickness)                                { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddBezierCubic({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, { p4X, p4Y }, static_cast<ImU32>(col), thickness); }
+    inline void ImDrawListAddBezierCubic(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, float p4X, float p4Y, int col, float thickness, int num_segments)              { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddBezierCubic({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, { p4X, p4Y }, static_cast<ImU32>(col), thickness, num_segments); }
+    inline void ImDrawListAddBezierQuadratic(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, int col, float thickness)                                                  { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddBezierQuadratic({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, static_cast<ImU32>(col), thickness); }
+    inline void ImDrawListAddBezierQuadratic(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, int col, float thickness, int num_segments)                                { ASSERT_CORRECT_IMGUI_USAGE(); drawlist->AddBezierQuadratic({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, static_cast<ImU32>(col), thickness, num_segments); }
 
     inline void InitUserType(sol::state& lua)
     {

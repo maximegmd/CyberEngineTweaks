@@ -22,7 +22,7 @@
 #include <reverse/RED4Ext/ResourceDepot.h>
 #include <reverse/TweakDB/TweakDB.h>
 
-#include "Utils.h"
+#include <Utils.h>
 
 #ifdef CET_DEBUG
 #include "GameHooks.h"
@@ -215,17 +215,23 @@ void Scripting::PostInitializeScripting()
         // Check if weak reference is still valid
         [](const WeakReference& aRef) -> bool
         {
+            ASSERT_CORRECT_GAME_USAGE();
+
             return !aRef.m_weakHandle.Expired();
         },
         // To make it callable for strong reference
         // although it's always valid unless it's null
         [](const StrongReference&) -> bool
         {
+            ASSERT_CORRECT_GAME_USAGE();
+
             return true;
         },
         // To make it callable on any value
         [](const sol::object&) -> bool
         {
+            ASSERT_CORRECT_GAME_USAGE();
+
             return false;
         });
 
@@ -240,6 +246,8 @@ void Scripting::PostInitializeScripting()
 
     luaGlobal["EnumInt"] = [this](Enum& aEnum) -> sol::object
     {
+        ASSERT_CORRECT_GAME_USAGE();
+
         static RTTILocator s_uint64Type{RED4ext::FNV1a64("Uint64")};
 
         auto lockedState = m_lua.Lock();
@@ -490,6 +498,8 @@ void Scripting::PostInitializeMods()
 
     luaGlobal["NewObject"] = [this](const std::string& acName, sol::this_environment aEnv) -> sol::object
     {
+        ASSERT_CORRECT_GAME_USAGE();
+
         auto* pRtti = RED4ext::CRTTISystem::Get();
         auto* pType = pRtti->GetType(RED4ext::FNV1a64(acName.c_str()));
 
@@ -508,21 +518,29 @@ void Scripting::PostInitializeMods()
 
     luaGlobal["GetSingleton"] = [this](const std::string& acName, sol::this_environment aThisEnv)
     {
+        ASSERT_CORRECT_GAME_USAGE();
+
         return this->GetSingletonHandle(acName, aThisEnv);
     };
 
     luaGlobal["Override"] = [this](const std::string& acTypeName, const std::string& acFullName,
                                    sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
+        ASSERT_CORRECT_GAME_USAGE();
+
         m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, true);
     };
 
     luaGlobal["ObserveBefore"] = [this](const std::string& acTypeName, const std::string& acFullName,
                                         sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
+        ASSERT_CORRECT_GAME_USAGE();
+
         m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, false, false);
     };
 
     luaGlobal["ObserveAfter"] = [this](const std::string& acTypeName, const std::string& acFullName,
                                        sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
+        ASSERT_CORRECT_GAME_USAGE();
+
         m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, false, true);
     };
 
@@ -531,21 +549,29 @@ void Scripting::PostInitializeMods()
     // Doesn't require RTTI, but still shouldn't be used before onInit as there is no guarantee that the required mod will be loaded before
     luaGlobal["GetMod"] = [this](const std::string& acName) -> sol::object
     {
+        ASSERT_CORRECT_GAME_USAGE();
+
         return GetMod(acName);
     };
 
     luaGlobal["GameDump"] = [this](const Type* acpType)
     {
+        ASSERT_CORRECT_GAME_USAGE();
+
         return acpType ? acpType->GameDump() : "Null";
     };
 
     luaGlobal["Dump"] = [this](const Type* acpType, bool aDetailed)
     {
+        ASSERT_CORRECT_GAME_USAGE();
+
         return acpType != nullptr ? acpType->Dump(aDetailed) : Type::Descriptor{};
     };
 
     luaGlobal["DumpType"] = [this](const std::string& acName, bool aDetailed)
     {
+        ASSERT_CORRECT_GAME_USAGE();
+
         auto* pRtti = RED4ext::CRTTISystem::Get();
         auto* pType = pRtti->GetClass(RED4ext::FNV1a64(acName.c_str()));
         if (!pType || pType->GetType() == RED4ext::ERTTIType::Simple)
@@ -557,6 +583,8 @@ void Scripting::PostInitializeMods()
 
     luaGlobal["DumpAllTypeNames"] = [this](sol::this_environment aThisEnv)
     {
+        ASSERT_CORRECT_GAME_USAGE();
+
         const auto* pRtti = RED4ext::CRTTISystem::Get();
 
         uint32_t count = 0;
@@ -573,6 +601,8 @@ void Scripting::PostInitializeMods()
 #ifdef CET_DEBUG
     luaGlobal["DumpVtables"] = [this]
     {
+        ASSERT_CORRECT_GAME_USAGE();
+
         // Hacky RTTI dump, this should technically only dump IScriptable instances and RTTI types as they are guaranteed to have a vtable
         // but there can occasionally be Class types that are not IScriptable derived that still have a vtable
         // some hierarchies may also not be accurately reflected due to hash ordering
@@ -582,6 +612,8 @@ void Scripting::PostInitializeMods()
     };
     luaGlobal["DumpReflection"] = [this](bool aVerbose, bool aExtendedPath, bool aPropertyHolders)
     {
+        ASSERT_CORRECT_GAME_USAGE();
+
         RED4ext::GameReflection::Dump(m_paths.CETRoot() / "dumps", aVerbose, aExtendedPath, aPropertyHolders);
     };
 #endif
@@ -602,6 +634,8 @@ void Scripting::RegisterOverrides()
     auto& luaVm = lua.Get();
 
     luaVm["RegisterGlobalInputListener"] = [](WeakReference& aSelf, sol::this_environment aThisEnv) {
+        ASSERT_CORRECT_GAME_USAGE();
+
         const sol::protected_function unregisterInputListener = aSelf.Index("UnregisterInputListener", aThisEnv);
         const sol::protected_function registerInputListener = aSelf.Index("RegisterInputListener", aThisEnv);
 
@@ -666,10 +700,14 @@ sol::object Scripting::GetMod(const std::string& acName) const
 
 void Scripting::ReloadAllMods()
 {
+    CET::Get().GetVM().SetGameAvailable(false);
+
     m_override.Clear();
     RegisterOverrides();
     current_path(m_paths.ModsRoot());
     m_store.LoadAll();
+
+    CET::Get().GetVM().SetGameAvailable(true);
 }
 
 bool Scripting::ExecuteLua(const std::string& acCommand) const
@@ -712,6 +750,8 @@ std::string Scripting::GetGlobalName() const noexcept
 
 sol::object Scripting::Index(const std::string& acName, sol::this_state aState, sol::this_environment aEnv)
 {
+    ASSERT_CORRECT_GAME_USAGE();
+
     if (const auto itor = m_properties.find(acName); itor != m_properties.end())
     {
         return itor->second;

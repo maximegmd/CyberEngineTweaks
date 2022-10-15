@@ -12,13 +12,11 @@ struct Sandbox
 
     uint64_t GetId() const;
     sol::environment& GetEnvironment();
-    sol::table& GetImGui();
     const std::filesystem::path& GetRootPath() const;
 
 private:
     uint64_t m_id{0};
     Scripting* m_pScripting;
     sol::environment m_env;
-    sol::table m_imgui;
     std::filesystem::path m_path{};
 };

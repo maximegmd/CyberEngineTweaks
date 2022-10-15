@@ -1,13 +1,18 @@
 #include <stdafx.h>
-#include <spdlog/fmt/fmt.h>
 
 #include "Type.h"
 
 #include "RTTIHelper.h"
 
+#include <CET.h>
+
+#include <spdlog/fmt/fmt.h>
+
 
 std::string Type::Descriptor::ToString() const
 {
+    ASSERT_CORRECT_GAME_USAGE();
+
     std::string result;
     result += "{\n\tname: " + name + ",\n\tfunctions: {\n";
     for (auto& function : functions)
@@ -37,11 +42,15 @@ Type::Type(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref&
 
 sol::object Type::Index(const std::string& acName, sol::this_environment aThisEnv)
 {
+    ASSERT_CORRECT_GAME_USAGE();
+
     return Index_Impl(acName, aThisEnv);
 }
 
 sol::object Type::NewIndex(const std::string& acName, sol::object aParam)
 {
+    ASSERT_CORRECT_GAME_USAGE();
+
     return NewIndex_Impl(acName, aParam);
 }
 

@@ -23,6 +23,8 @@ TweakDB::TweakDB(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>
 
 void TweakDB::DebugStats()
 {
+    ASSERT_CORRECT_GAME_USAGE();
+
     auto* pTDB = RED4ext::TweakDB::Get();
     std::shared_lock _1(pTDB->mutex00);
     std::shared_lock _2(pTDB->mutex01);
@@ -38,6 +40,8 @@ void TweakDB::DebugStats()
 
 sol::object TweakDB::GetRecords(const std::string& acRecordTypeName) const
 {
+    ASSERT_CORRECT_GAME_USAGE();
+
     static auto* pArrayType = RED4ext::CRTTISystem::Get()->GetType("array:handle:IScriptable");
     auto* pTDB = RED4ext::TweakDB::Get();
     std::shared_lock _(pTDB->mutex01);
@@ -62,6 +66,8 @@ sol::object TweakDB::GetRecordByName(const std::string& acRecordName) const
 
 sol::object TweakDB::GetRecord(TweakDBID aDBID) const
 {
+    ASSERT_CORRECT_GAME_USAGE();
+
     auto* pTDB = RED4ext::TweakDB::Get();
 
     RED4ext::Handle<RED4ext::IScriptable> record;
@@ -79,6 +85,8 @@ sol::object TweakDB::QueryByName(const std::string& acQueryName) const
 
 sol::object TweakDB::Query(TweakDBID aDBID) const
 {
+    ASSERT_CORRECT_GAME_USAGE();
+
     static auto* pArrayTweakDBIDType = RED4ext::CRTTISystem::Get()->GetType("array:TweakDBID");
     auto* pTDB = RED4ext::TweakDB::Get();
     std::shared_lock _(pTDB->mutex01);
@@ -99,6 +107,8 @@ sol::object TweakDB::GetFlatByName(const std::string& acFlatName) const
 
 sol::object TweakDB::GetFlat(TweakDBID aDBID) const
 {
+    ASSERT_CORRECT_GAME_USAGE();
+
     RED4ext::CStackType data = InternalGetFlat(aDBID.value);
 
     if (!data.value)
@@ -115,6 +125,8 @@ bool TweakDB::SetFlatsByName(const std::string& acRecordName, sol::table aTable,
 
 bool TweakDB::SetFlats(TweakDBID aDBID, sol::table aTable, sol::this_environment aThisEnv)
 {
+    ASSERT_CORRECT_GAME_USAGE();
+
     bool success = true;
     const TweakDBID prepDBID(aDBID, ".");
 
@@ -202,6 +214,8 @@ bool TweakDB::SetTypedFlat(TweakDBID aDBID, sol::object aObject, const std::stri
 bool TweakDB::SetOrCreateFlat(TweakDBID aDBID, sol::object aObject, const std::string& acFlatName,
                               const std::string& acTypeName, const std::shared_ptr<spdlog::logger>& aLogger) const
 {
+    ASSERT_CORRECT_GAME_USAGE();
+
     auto* pTDB = RED4ext::TweakDB::Get();
     static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 22);
     struct ResetAllocator
@@ -359,6 +373,8 @@ bool TweakDB::UpdateRecordByName(const std::string& acRecordName)
 
 bool TweakDB::UpdateRecordByID(TweakDBID aDBID)
 {
+    ASSERT_CORRECT_GAME_USAGE();
+
     auto* pTDB = RED4ext::TweakDB::Get();
 
     return pTDB->UpdateRecord(aDBID.value);
@@ -366,6 +382,8 @@ bool TweakDB::UpdateRecordByID(TweakDBID aDBID)
 
 bool TweakDB::UpdateRecord(sol::object aValue, sol::this_environment aThisEnv)
 {
+    ASSERT_CORRECT_GAME_USAGE();
+
     auto* pTDB = RED4ext::TweakDB::Get();
 
     const sol::environment cEnv = aThisEnv;
@@ -478,6 +496,8 @@ int32_t TweakDB::InternalSetFlat(RED4ext::TweakDBID aDBID, const RED4ext::CStack
 bool TweakDB::InternalCreateRecord(const std::string& acRecordName, const std::string& acRecordTypeName,
                                    const std::shared_ptr<spdlog::logger>& acpLogger)
 {
+    ASSERT_CORRECT_GAME_USAGE();
+
     auto* pTDB = RED4ext::TweakDB::Get();
 
     auto* pType = RED4ext::CRTTISystem::Get()->GetType(acRecordTypeName.c_str());
@@ -527,6 +547,8 @@ bool TweakDB::InternalCreateRecord(TweakDBID aDBID, const std::string& acRecordT
 
 bool TweakDB::InternalCloneRecord(const std::string& acRecordName, RED4ext::TweakDBID aClonedRecordDBID, const std::shared_ptr<spdlog::logger>& acpLogger)
 {
+    ASSERT_CORRECT_GAME_USAGE();
+
     auto* pTDB = RED4ext::TweakDB::Get();
 
     RED4ext::Handle<RED4ext::IScriptable> record;
@@ -662,6 +684,8 @@ bool TweakDB::InternalCloneFlats(RED4ext::TweakDBID aDBID, const RED4ext::gameda
 
 bool TweakDB::InternalDeleteRecord(RED4ext::TweakDBID aDBID, const std::shared_ptr<spdlog::logger>& acpLogger)
 {
+    ASSERT_CORRECT_GAME_USAGE();
+
     auto* pTDB = RED4ext::TweakDB::Get();
 
     if (!IsACreatedRecord(aDBID))

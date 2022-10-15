@@ -1,9 +1,9 @@
 #include <stdafx.h>
 
 #include "ScriptContext.h"
-#include "Utils.h"
 
 #include <CET.h>
+#include <Utils.h>
 
 namespace
 {
@@ -32,22 +32,21 @@ sol::protected_function_result TryLuaFunction(const std::shared_ptr<spdlog::logg
 }
 
 template <typename ...Args>
-sol::protected_function_result TryLuaFunctionWithImGui(Sandbox& aSandbox, const sol::state_view& aStateView, const std::shared_ptr<spdlog::logger>& acpLogger, const sol::function& aFunc, Args... aArgs)
+sol::protected_function_result TryLuaFunctionWithImGui(const std::shared_ptr<spdlog::logger>& acpLogger, const sol::function& aFunc, Args... aArgs)
 {
-    auto& env = aSandbox.GetEnvironment();
-    const auto& imgui = aSandbox.GetImGui();
+    auto& luaVM = CET::Get().GetVM();
 
-    for (const auto& kv : imgui)
-        env[DeepCopySolObject(kv.first, aStateView)] = DeepCopySolObject(kv.second, aStateView);
+    luaVM.SetGameAvailable(false);
+    luaVM.SetImGuiAvailable(true);
 
     const auto previousStyle = ImGui::GetStyle();
 
     auto result = TryLuaFunction(acpLogger, aFunc, aArgs...);
 
-    for (const auto& kv : imgui)
-        env[kv.first] = sol::nil;
-
     ImGui::GetStyle() = previousStyle;
+
+    luaVM.SetImGuiAvailable(false);
+    luaVM.SetGameAvailable(true);
 
     return result;
 }
@@ -90,12 +89,14 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
         {
             return [&aLuaSandbox, loggerRef, aCallback]{
                     auto lockedState = aLuaSandbox.GetLockedState();
+
                     TryLuaFunction(loggerRef, aCallback);
                 };
         }
 
         return [&aLuaSandbox, loggerRef, aCallback](bool isDown){
                 auto lockedState = aLuaSandbox.GetLockedState();
+
                 TryLuaFunction(loggerRef, aCallback, isDown);
             };
     };
@@ -106,10 +107,10 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
             auto callback = std::get<sol::function>(acDescription);
             if (callback != sol::nil)
             {
-                return [&aLuaSandbox, loggerRef, sandboxId, callback]{
+                return [&aLuaSandbox, loggerRef, callback]{
                     auto lockedState = aLuaSandbox.GetLockedState();
 
-                    TryLuaFunctionWithImGui(aLuaSandbox[sandboxId], lockedState.Get(), loggerRef, callback);
+                    TryLuaFunctionWithImGui(loggerRef, callback);
                 };
             }
             loggerRef->warn("Tried to register empty tooltip for handler!]");
@@ -184,6 +185,7 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
         current_path(sb.GetRootPath());
 
         const auto path = GetLuaPath(L"init.lua", acPath, false);
+
         const auto result = sb.ExecuteFile(UTF16ToUTF8(path.native()));
 
         current_path(previousCurrentPath);
@@ -270,7 +272,7 @@ void ScriptContext::TriggerOnDraw() const
 {
     auto lockedState = m_sandbox.GetLockedState();
 
-    TryLuaFunctionWithImGui(m_sandbox[m_sandboxID], lockedState.Get(), m_logger, m_onDraw);
+    TryLuaFunctionWithImGui(m_logger, m_onDraw);
 }
 
 void ScriptContext::TriggerOnOverlayOpen() const
