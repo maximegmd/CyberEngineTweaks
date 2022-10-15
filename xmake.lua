@@ -37,7 +37,7 @@ end
 local imguiUserConfig = path.absolute("src/imgui_impl/imgui_user_config.h")
 
 add_requireconfs("*", { debug = is_mode("debug"), lto = not is_mode("debug"), configs = { shared = false } })
-add_requires("spdlog 1.9")
+add_requires("spdlog 1.10.0")
 add_requires("nlohmann_json")
 add_requires("hopscotch-map")
 add_requires("minhook")

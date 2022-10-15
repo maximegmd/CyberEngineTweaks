@@ -582,12 +582,12 @@ void LuaSandbox::InitializeLoggerForSandbox(Sandbox& aSandbox, const sol::state&
 
     // assign logger to mod so it can be used from within it too
     sol::table spdlog(acpState, sol::create);
-    spdlog["trace"]    = [logger](const std::string& message) { logger->trace(message);    };
-    spdlog["debug"]    = [logger](const std::string& message) { logger->debug(message);    };
-    spdlog["info"]     = [logger](const std::string& message) { logger->info(message);     };
-    spdlog["warning"]  = [logger](const std::string& message) { logger->warn(message);     };
-    spdlog["error"]    = [logger](const std::string& message) { logger->error(message);    };
-    spdlog["critical"] = [logger](const std::string& message) { logger->critical(message); };
+    spdlog["trace"]    = [logger](const std::string& message) { logger->trace("{}", message);    };
+    spdlog["debug"]    = [logger](const std::string& message) { logger->debug("{}", message);    };
+    spdlog["info"]     = [logger](const std::string& message) { logger->info("{}", message);     };
+    spdlog["warning"]  = [logger](const std::string& message) { logger->warn("{}", message);     };
+    spdlog["error"]    = [logger](const std::string& message) { logger->error("{}", message);    };
+    spdlog["critical"] = [logger](const std::string& message) { logger->critical("{}", message); };
     sbEnv["spdlog"] = spdlog;
 
     // assign logger to special var so we can access it from our functions

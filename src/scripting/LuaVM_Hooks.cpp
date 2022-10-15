@@ -63,7 +63,7 @@ void LuaVM::HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack,
 
     std::string_view channelSV = channel.ToString();
     if (channelSV.empty())
-        spdlog::get("gamelog")->info("[?{0:x}] {}", channel.hash, textSV);
+        spdlog::get("gamelog")->info("[?{:X}] {}", channel.hash, textSV);
     else
         spdlog::get("gamelog")->info("[{}] {}", channelSV, textSV);
 

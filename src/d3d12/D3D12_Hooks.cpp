@@ -33,7 +33,7 @@ HRESULT D3D12::PresentDownlevel(ID3D12CommandQueueDownlevel* apCommandQueueDownl
     const auto cbegin = d3d12.m_downlevelBackbuffers.size() >= g_numDownlevelBackbuffersRequired
         ? d3d12.m_downlevelBackbuffers.cend() - g_numDownlevelBackbuffersRequired
         : d3d12.m_downlevelBackbuffers.cbegin();
-    auto it = std::find(cbegin, d3d12.m_downlevelBackbuffers.cend(), apSourceTex2D);
+    auto it = std::find_if(cbegin, d3d12.m_downlevelBackbuffers.cend(), [apSourceTex2D](const auto& downlevelBackbuffer){ return downlevelBackbuffer.Get() == apSourceTex2D; });
     if (it == d3d12.m_downlevelBackbuffers.cend())
     {
         if (d3d12.m_initialized)
@@ -55,7 +55,7 @@ HRESULT D3D12::PresentDownlevel(ID3D12CommandQueueDownlevel* apCommandQueueDownl
     // Determine the current buffer index
     d3d12.m_downlevelBufferIndex = static_cast<uint32_t>(std::distance(d3d12.m_downlevelBackbuffers.cbegin() + skip, it));
 
-    if (d3d12.InitializeDownlevel(d3d12.m_pCommandQueue, apSourceTex2D, ahWindow))
+    if (d3d12.InitializeDownlevel(d3d12.m_pCommandQueue.Get(), apSourceTex2D, ahWindow))
         d3d12.Update();
 
     return d3d12.m_realPresentD3D12Downlevel(apCommandQueueDownlevel, apOpenCommandList, apSourceTex2D, ahWindow, aFlags);
@@ -81,7 +81,7 @@ HRESULT D3D12::CreateCommittedResource(ID3D12Device* apDevice, const D3D12_HEAP_
     {
         // Store the returned resource
         d3d12.m_downlevelBackbuffers.emplace_back(static_cast<ID3D12Resource*>(*appvResource));
-        spdlog::debug("D3D12::CreateCommittedResourceD3D12() - found valid backbuffer target at {0}.", *appvResource);
+        spdlog::debug("D3D12::CreateCommittedResourceD3D12() - found valid backbuffer target at {}.", *appvResource);
 
         if (d3d12.m_initialized)
         {
@@ -225,10 +225,10 @@ void D3D12::Hook()
         }
 
         if (d3d12FailedHooksCount == 0)
-            Log::Info("D3D12on7: hook complete. ({1}/{2})", d3d12CompleteHooksCount,
+            Log::Info("D3D12on7: hook complete. ({}/{})", d3d12CompleteHooksCount,
                          d3d12CompleteHooksCount + d3d12FailedHooksCount);
         else
-            Log::Error("D3D12on7: hook failed! ({1}/{2})", d3d12CompleteHooksCount,
+            Log::Error("D3D12on7: hook failed! ({}/{})", d3d12CompleteHooksCount,
                           d3d12CompleteHooksCount + d3d12FailedHooksCount);
     }
     else

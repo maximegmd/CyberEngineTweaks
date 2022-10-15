@@ -70,7 +70,7 @@ D3D12::D3D12(Window& aWindow, Paths& aPaths, Options& aOptions)
         else
         {
             std::string_view d3d12type = kiero::isDownLevelDevice() ? "D3D12on7" : "D3D12";
-            Log::Info("Kiero initialized for {0}", d3d12type);
+            Log::Info("Kiero initialized for {}", d3d12type);
 
             Hook();
         }

@@ -1450,12 +1450,12 @@ namespace sol_ImGui
         for (int i{ 1 }; i <= items_count; i++)
         {
             const auto& stringItem = items.get<sol::optional<std::string>>(i);
-            strings.push_back(stringItem.value_or("Missing"));
+            strings.emplace_back(stringItem.value_or("Missing"));
         }
 
         TiltedPhoques::Vector<const char*> cstrings;
         for (auto& string : strings)
-            cstrings.push_back(string.c_str());
+            cstrings.emplace_back(string.c_str());
 
         bool clicked = ImGui::ListBox(label.c_str(), &current_item, cstrings.data(), items_count);
         return std::make_tuple(current_item, clicked);
@@ -1466,12 +1466,12 @@ namespace sol_ImGui
         for (int i{ 1 }; i <= items_count; i++)
         {
             const auto& stringItem = items.get<sol::optional<std::string>>(i);
-            strings.push_back(stringItem.value_or("Missing"));
+            strings.emplace_back(stringItem.value_or("Missing"));
         }
 
         TiltedPhoques::Vector<const char*> cstrings;
         for (auto& string : strings)
-            cstrings.push_back(string.c_str());
+            cstrings.emplace_back(string.c_str());
 
         bool clicked = ImGui::ListBox(label.c_str(), &current_item, cstrings.data(), items_count, height_in_items);
         return std::make_tuple(current_item, clicked);

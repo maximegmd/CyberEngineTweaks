@@ -10,10 +10,11 @@ bool g_ImGuiAssertionsEnabled{ false };
 extern "C" _ACRTIMP void __cdecl _wassert(wchar_t const* _Message, wchar_t const* _File, unsigned _Line);
 #endif
 
-// runtime assertions which can be enabled/disabled inside CET options
+// runtime assertions which can be enabled/disabled inside CET options, always logged into main log file when they happen
 void ImGuiAssert(wchar_t const* acpMessage, wchar_t const* acpFile, unsigned aLine)
 {
     // TODO - it looks like assertions dont get logged for some weird reason, even though there is flush_on set for errors (even higher for debug)
-    spdlog::error(L"ImGui assertion failed in file \"{ 0 }\" at line { 1 }! Expression ({ 2 }) evaluates to false!", acpFile, aLine, acpMessage);
-    _wassert(acpMessage, acpFile, aLine);
+    spdlog::error(L"ImGui assertion failed in file \"{}\" at line {}! Expression ({}) evaluates to false!", acpFile, aLine, acpMessage);
+    if (g_ImGuiAssertionsEnabled)
+        _wassert(acpMessage, acpFile, aLine);
 }

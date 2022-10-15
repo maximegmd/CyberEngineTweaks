@@ -739,7 +739,7 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
         // the underlying value must be unwrapped and the wrapper explicitly destroyed. The workaround has been proven to work,
         // but it seems too much for only one known case, so it is not included for now.
 
-        results.push_back(Scripting::ToLua(lockedState, result));
+        results.emplace_back(Scripting::ToLua(lockedState, result));
         FreeInstance(result, false, false, &s_scratchMemory);
     }
 
@@ -748,7 +748,7 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
         const auto cpParam = apFunc->params[callArgToParam[i]];
 
         if (cpParam->flags.isOut)
-            results.push_back(Scripting::ToLua(lockedState, callArgs[i]));
+            results.emplace_back(Scripting::ToLua(lockedState, callArgs[i]));
     }
 
     return results;

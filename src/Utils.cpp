@@ -104,8 +104,7 @@ spdlog::sink_ptr CreateCustomSinkMT(const std::function<void(const std::string&)
 std::shared_ptr<spdlog::logger> CreateLogger(const std::filesystem::path& acpPath, const std::string& acpID,
                                              const spdlog::sink_ptr& acpExtraSink, const std::string& acpPattern)
 {
-    auto existingLogger = spdlog::get(acpID);
-    if (existingLogger)
+    if (auto existingLogger = spdlog::get(acpID))
         return existingLogger;
 
     const auto rotSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(acpPath.native(), 1048576 * 5, 3);
@@ -118,7 +117,7 @@ std::shared_ptr<spdlog::logger> CreateLogger(const std::filesystem::path& acpPat
 #ifdef CET_DEBUG
     logger->flush_on(spdlog::level::trace);
 #else
-    logger->flush_on(spdlog::level::err);
+    logger->flush_on(spdlog::level::warn);
 #endif
 
     register_logger(logger);

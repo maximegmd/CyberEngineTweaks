@@ -101,17 +101,15 @@ std::string Type::FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithH
             continue;
         }
         typeName = param->type->GetName();
-        params.push_back(fmt::format("{}{}: {}", param->flags.isOptional ? "[opt] " : "",
+        params.emplace_back(fmt::format("{}{}: {}", param->flags.isOptional ? "[opt] " : "",
                                     param->name.ToString(), typeName.ToString()));
     }
 
-    for (auto i = 0u; i < params.size(); ++i)
+    if (!params.empty())
     {
-        ret << params[i];
-        if (i < params.size() - 1)
-        {
-            ret << ", ";
-        }
+        ret << params[0];
+        for (auto i = 1u; i < params.size(); ++i)
+            ret << ", " << params[i];
     }
 
     ret << ")";
@@ -123,7 +121,7 @@ std::string Type::FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithH
     if (hasReturnType)
     {
         typeName = apFunc->returnType->type->GetName();
-        params.push_back(typeName.ToString());
+        params.emplace_back(typeName.ToString());
     }
 
     if (hasOutParams)
@@ -139,23 +137,17 @@ std::string Type::FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithH
             }
 
             typeName = param->type->GetName();
-            params.push_back(param->name.ToString() + std::string(": ") + typeName.ToString());
+            params.emplace_back(fmt::format("{}: {}", param->name.ToString(), typeName.ToString()));
         }
 
     }
 
     if (!params.empty())
     {
-        ret << " => (";
+        ret << " => (" << params[0];
 
-        for (size_t i = 0; i < params.size(); ++i)
-        {
-            ret << params[i];
-            if (i < params.size() - 1)
-            {
-                ret << ", ";
-            }
-        }
+        for (size_t i = 1; i < params.size(); ++i)
+            ret << ", " << params[i];
 
         ret << ")";
     }
@@ -163,8 +155,7 @@ std::string Type::FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithH
 
     if (aWithHashes)
     {
-        const std::string funcHashes = "Hash:(" + fmt::format("{:016x}", apFunc->fullName.hash) + ") / ShortName:(" + apFunc->shortName.ToString() + ") Hash:(" + fmt::format("{:016x}", apFunc->shortName.hash) + ")";
-        ret << " # " << funcHashes;
+        ret << fmt::format(" # Hash:({:016X}) / ShortName:({}) Hash:({:016X}", apFunc->fullName.hash, apFunc->shortName.ToString(), apFunc->shortName.hash);
     }
 
     return ret.str();
@@ -218,16 +209,12 @@ Type::Descriptor ClassType::Dump(bool aWithHashes) const
         std::string name = type->name.ToString();
         for (auto i = 0u; i < type->funcs.size; ++i)
         {
-            auto* pFunc = type->funcs[i];
-            std::string funcDesc = FunctionDescriptor(pFunc, aWithHashes);
-            descriptor.functions.push_back(funcDesc);
+            descriptor.functions.emplace_back(FunctionDescriptor(type->funcs[i], aWithHashes));
         }
 
         for (auto i = 0u; i < type->staticFuncs.size; ++i)
         {
-            auto* pFunc = type->staticFuncs[i];
-            std::string funcDesc = FunctionDescriptor(pFunc, aWithHashes);
-            descriptor.staticFunctions.push_back(funcDesc);
+            descriptor.staticFunctions.emplace_back(FunctionDescriptor(type->staticFuncs[i], aWithHashes));
         }
 
         for (auto i = 0u; i < type->props.size; ++i)
@@ -235,7 +222,7 @@ Type::Descriptor ClassType::Dump(bool aWithHashes) const
             const auto* cpProperty = type->props[i];
             const auto cName = cpProperty->type->GetName();
 
-            descriptor.properties.push_back(cpProperty->name.ToString() + std::string(": ") + cName.ToString());
+            descriptor.properties.emplace_back(fmt::format("{}: {}", cpProperty->name.ToString(), cName.ToString()));
         }
 
         type = type->parent && type->parent->GetType() == RED4ext::ERTTIType::Class ? type->parent : nullptr;

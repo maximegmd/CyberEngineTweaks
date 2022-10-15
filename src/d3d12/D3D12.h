@@ -38,8 +38,8 @@ protected:
 
     struct FrameContext
     {
-        Microsoft::WRL::ComPtr<ID3D12CommandAllocator> CommandAllocator { nullptr };
-        Microsoft::WRL::ComPtr<ID3D12Resource> BackBuffer { nullptr };
+        Microsoft::WRL::ComPtr<ID3D12CommandAllocator> CommandAllocator { };
+        Microsoft::WRL::ComPtr<ID3D12Resource> BackBuffer { };
         D3D12_CPU_DESCRIPTOR_HANDLE MainRenderTargetDescriptor{ 0 };
     };
 
@@ -69,13 +69,13 @@ private:
     bool m_initialized{ false };
 
     TiltedPhoques::Vector<FrameContext> m_frameContexts{ };
-    TiltedPhoques::Vector<ID3D12Resource*> m_downlevelBackbuffers{ };
-    Microsoft::WRL::ComPtr<IDXGISwapChain3> m_pdxgiSwapChain{ nullptr };
-    Microsoft::WRL::ComPtr<ID3D12Device> m_pd3d12Device{ nullptr };
-    Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_pd3dRtvDescHeap{ nullptr };
-    Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_pd3dSrvDescHeap{ nullptr };
-    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_pd3dCommandList{ nullptr };
-    ID3D12CommandQueue* m_pCommandQueue{ nullptr };
+    TiltedPhoques::Vector<Microsoft::WRL::ComPtr<ID3D12Resource>> m_downlevelBackbuffers{ };
+    Microsoft::WRL::ComPtr<IDXGISwapChain3> m_pdxgiSwapChain{ };
+    Microsoft::WRL::ComPtr<ID3D12Device> m_pd3d12Device{ };
+    Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_pd3dRtvDescHeap{ };
+    Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_pd3dSrvDescHeap{ };
+    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_pd3dCommandList{ };
+    Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_pCommandQueue{ };
     uint32_t m_downlevelBufferIndex{ 0 };
 
     SIZE m_outSize{ };

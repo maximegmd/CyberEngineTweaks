@@ -6,9 +6,9 @@
 
 GameLog::GameLog()
 {
-    const auto gamelogSink = CreateCustomSinkST([this](const std::string& msg) { Log(msg); });
+    auto gamelogSink = CreateCustomSinkMT([this](const std::string& msg) { Log(msg); });
     gamelogSink->set_pattern("%L;%v");
-    spdlog::get("gamelog")->sinks().push_back(gamelogSink);
+    spdlog::get("gamelog")->sinks().emplace_back(std::move(gamelogSink));
 }
 
 WidgetResult GameLog::OnEnable()

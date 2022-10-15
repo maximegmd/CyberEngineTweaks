@@ -25,36 +25,36 @@ struct format_with_location
 template<typename... Args>
 void Warn(format_with_location fmt, Args&&... args)
 {
-    spdlog::default_logger_raw()->log(fmt.loc, spdlog::level::warn, fmt.value, std::forward<Args>(args)...);
+    spdlog::default_logger_raw()->log(fmt.loc, spdlog::level::warn, fmt::runtime(fmt.value), std::forward<Args>(args)...);
 }
 
 template<typename... Args>
 void Info(format_with_location fmt, Args&&... args)
 {
-    spdlog::default_logger_raw()->log(fmt.loc, spdlog::level::info, fmt.value, std::forward<Args>(args)...);
+    spdlog::default_logger_raw()->log(fmt.loc, spdlog::level::info, fmt::runtime(fmt.value), std::forward<Args>(args)...);
 }
 
 template<typename... Args>
 void Debug(format_with_location fmt, Args&&... args)
 {
-    spdlog::default_logger_raw()->log(fmt.loc, spdlog::level::debug, fmt.value, std::forward<Args>(args)...);
+    spdlog::default_logger_raw()->log(fmt.loc, spdlog::level::debug, fmt::runtime(fmt.value), std::forward<Args>(args)...);
 }
 
 template<typename... Args>
 void Error(format_with_location fmt, Args&&... args)
 {
-    spdlog::default_logger_raw()->log(fmt.loc, spdlog::level::err, fmt.value, std::forward<Args>(args)...);
+    spdlog::default_logger_raw()->log(fmt.loc, spdlog::level::err, fmt::runtime(fmt.value), std::forward<Args>(args)...);
 }
 
 template<typename... Args>
 void Critical(format_with_location fmt, Args&&... args)
 {
-    spdlog::default_logger_raw()->log(fmt.loc, spdlog::level::critical, fmt.value, std::forward<Args>(args)...);
+    spdlog::default_logger_raw()->log(fmt.loc, spdlog::level::critical, fmt::runtime(fmt.value), std::forward<Args>(args)...);
 }
 
 template<typename... Args>
 void Trace(format_with_location fmt, Args&&... args)
 {
-    spdlog::default_logger_raw()->log(fmt.loc, spdlog::level::trace, fmt.value, std::forward<Args>(args)...);
+    spdlog::default_logger_raw()->log(fmt.loc, spdlog::level::trace, fmt::runtime(fmt.value), std::forward<Args>(args)...);
 }
 } // namespace logging

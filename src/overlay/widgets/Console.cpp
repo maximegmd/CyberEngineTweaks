@@ -8,9 +8,9 @@
 Console::Console(LuaVM& aVm)
     : m_vm(aVm)
 {
-    const auto consoleSink = CreateCustomSinkST([this](const std::string& msg) { Log(msg); });
+    auto consoleSink = CreateCustomSinkMT([this](const std::string& msg) { Log(msg); });
     consoleSink->set_pattern("%L;%v");
-    spdlog::get("scripting")->sinks().push_back(consoleSink);
+    spdlog::get("scripting")->sinks().emplace_back(std::move(consoleSink));
 }
 
 WidgetResult Console::OnEnable()
@@ -126,7 +126,7 @@ void Console::Update()
         consoleLogger->info("> {}", m_Command);
 
         m_consoleHistoryIndex = m_consoleHistory.size();
-        m_consoleHistory.push_back(m_Command);
+        m_consoleHistory.emplace_back(m_Command);
         m_newConsoleHistory = true;
 
         if (!m_vm.ExecuteLua(m_Command))

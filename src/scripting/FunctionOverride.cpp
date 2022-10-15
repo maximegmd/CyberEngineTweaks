@@ -157,11 +157,10 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
 
                 if (!apFunction->flags.isStatic && pContext)
                 {
-                    const auto weak = RED4ext::WeakHandle(*reinterpret_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(&pContext->ref));
-                    const auto obj = make_object(luaState, WeakReference(lockedState, weak));
-
                     args.reserve(apFunction->params.size + 1);
-                    args.push_back(obj);
+
+                    const auto weak = RED4ext::WeakHandle(*reinterpret_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(&pContext->ref));
+                    args.emplace_back(make_object(luaState, WeakReference(lockedState, weak)));
                 }
                 else
                 {
@@ -176,10 +175,10 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
                     arg.type = p->type;
                     arg.value = pOffset;
 
-                    args.push_back(Scripting::ToLua(lockedState, arg));
+                    args.emplace_back(Scripting::ToLua(lockedState, arg));
 
                     if (p->flags.isOut)
-                        outArgs.push_back(arg);
+                        outArgs.emplace_back(arg);
                 }
             }
 
@@ -253,12 +252,11 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
                     self.value = apFrame->context;
                 }
 
+                args.reserve(apFunction->params.size + 1);
+
                 const auto ref = reinterpret_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(&static_cast<RED4ext::IScriptable*>(self.value)->ref);
                 const auto weak = RED4ext::WeakHandle(*ref);
-                const auto obj = make_object(luaState, WeakReference(lockedState, weak));
-
-                args.reserve(apFunction->params.size + 1);
-                args.push_back(obj);
+                args.emplace_back(make_object(luaState, WeakReference(lockedState, weak)));
             }
             else
             {
@@ -297,7 +295,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
                 const auto opcode = *apFrame->code++;
                 RED4ext::OpcodeHandlers::Run(opcode, apFrame->context, apFrame, pInstance, isScriptRef ? pInstance : nullptr);
 
-                args.push_back(Scripting::ToLua(lockedState, arg));
+                args.emplace_back(Scripting::ToLua(lockedState, arg));
 
                 if (pArg->flags.isOut)
                 {
@@ -305,7 +303,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
                     if (apFrame->data)
                         arg.value = apFrame->data;
 
-                    outArgs.push_back(arg);
+                    outArgs.emplace_back(arg);
                 }
 
                 // Release inner values
@@ -509,8 +507,8 @@ sol::function FunctionOverride::WrapNextOverride(const CallChain& aChain, int aS
             }
 
             sol::variadic_results results;
-            for (const auto element : result)
-                results.push_back(element);
+            for (auto&& element : result)
+                results.emplace_back(element);
 
             return results;
         });

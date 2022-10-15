@@ -7,7 +7,7 @@
 
 std::string Vector3::ToString() const noexcept
 {
-    return fmt::format("ToVector3{{ x = {0}, y = {1}, z = {2} }}", x, y, z);
+    return fmt::format("ToVector3{{ x = {}, y = {}, z = {} }}", x, y, z);
 }
 
 bool Vector3::operator==(const Vector3& acRhs) const noexcept
@@ -17,7 +17,7 @@ bool Vector3::operator==(const Vector3& acRhs) const noexcept
 
 std::string Vector4::ToString() const noexcept
 {
-    return fmt::format("ToVector4{{ x = {0}, y = {1}, z = {2}, w = {3} }}", x, y, z, w);
+    return fmt::format("ToVector4{{ x = {}, y = {}, z = {}, w = {} }}", x, y, z, w);
 }
 
 bool Vector4::operator==(const Vector4& acRhs) const noexcept
@@ -27,7 +27,7 @@ bool Vector4::operator==(const Vector4& acRhs) const noexcept
 
 std::string EulerAngles::ToString() const noexcept
 {
-    return fmt::format("ToEulerAngles{{ roll = {0}, pitch = {1}, yaw = {2} }}", roll, pitch, yaw);
+    return fmt::format("ToEulerAngles{{ roll = {}, pitch = {}, yaw = {} }}", roll, pitch, yaw);
 }
 
 bool EulerAngles::operator==(const EulerAngles& acRhs) const noexcept
@@ -37,7 +37,7 @@ bool EulerAngles::operator==(const EulerAngles& acRhs) const noexcept
 
 std::string Quaternion::ToString() const noexcept
 {
-    return fmt::format("ToQuaternion{{ i = {0}, j = {1}, k = {2}, r = {3} }}", i, j, k, r);
+    return fmt::format("ToQuaternion{{ i = {}, j = {}, k = {}, r = {} }}", i, j, k, r);
 }
 
 bool Quaternion::operator==(const Quaternion& acRhs) const noexcept
@@ -56,8 +56,8 @@ std::string CName::ToString() const noexcept
 
     const auto resolved = internal.ToString();
     if (!resolved)
-        return fmt::format("ToCName{{ hash_lo = 0x{0:08X}, hash_hi = 0x{1:08X} }}", hash_lo, hash_hi);
-    return fmt::format("ToCName{{ hash_lo = 0x{0:08X}, hash_hi = 0x{1:08X} --[[ {2} --]] }}", hash_lo, hash_hi, resolved);
+        return fmt::format("ToCName{{ hash_lo = 0x{:08X}, hash_hi = 0x{:08X} }}", hash_lo, hash_hi);
+    return fmt::format("ToCName{{ hash_lo = 0x{:08X}, hash_hi = 0x{:08X} --[[ {} --]] }}", hash_lo, hash_hi, resolved);
 }
 
 bool CName::operator==(const CName& acRhs) const noexcept
@@ -72,7 +72,7 @@ void CName::Add(const std::string& aName)
 
 std::string TweakDBID::ToString() const noexcept
 {
-    return fmt::format("ToTweakDBID{{ hash = 0x{0:08X}, length = {1:d} }}", name_hash, name_length);
+    return fmt::format("ToTweakDBID{{ hash = 0x{:08X}, length = {:d} }}", name_hash, name_length);
 }
 
 bool TweakDBID::operator==(const TweakDBID& acRhs) const noexcept
@@ -87,7 +87,7 @@ TweakDBID TweakDBID::operator+(const std::string_view acName) const noexcept
 
 std::string ItemID::ToString() const noexcept
 {
-    return fmt::format("ToItemID{{ id = {0}, rng_seed = {1}, unknown = {2}, maybe_type = {3} }}", id.ToString(), rng_seed, unknown, maybe_type);
+    return fmt::format("ToItemID{{ id = {}, rng_seed = {}, unknown = {}, maybe_type = {} }}", id.ToString(), rng_seed, unknown, maybe_type);
 }
 
 bool ItemID::operator==(const ItemID& acRhs) const noexcept
@@ -246,7 +246,7 @@ bool Variant::CanBeInlined(const RED4ext::CBaseRTTIType* aType) noexcept
 
 std::string CRUID::ToString() const noexcept
 {
-    return fmt::format("CRUID({0}ull)", hash);
+    return fmt::format("CRUID({}ull)", hash);
 }
 
 bool CRUID::operator==(const CRUID& acRhs) const noexcept
@@ -256,7 +256,7 @@ bool CRUID::operator==(const CRUID& acRhs) const noexcept
 
 std::string gamedataLocKeyWrapper::ToString() const noexcept
 {
-    return fmt::format("LocKey({0}ull)", hash);
+    return fmt::format("LocKey({}ull)", hash);
 }
 
 bool gamedataLocKeyWrapper::operator==(const gamedataLocKeyWrapper& acRhs) const noexcept

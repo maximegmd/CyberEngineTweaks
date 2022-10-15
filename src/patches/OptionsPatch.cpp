@@ -13,7 +13,7 @@ void* HookGameOptionInit(GameOption* apThis)
 
     if (std::ranges::find(gameOptions, apThis) == gameOptions.end())
     {
-        gameOptions.push_back(apThis);
+        gameOptions.emplace_back(apThis);
     }
 
     if (options.DumpGameOptions)
