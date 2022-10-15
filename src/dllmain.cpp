@@ -4,7 +4,7 @@
 
 #include "Options.h"
 
-#ifndef NDEBUG
+#ifdef CET_DEBUG
 #include "scripting/GameHooks.h"
 #endif
 
@@ -65,7 +65,7 @@ static void Initialize()
         OptionsInitHook();
 
 
-#ifndef NDEBUG
+#ifdef CET_DEBUG
         // We only need to hook the game thread right now to do RTTI Dump, which is Debug-only
         // if we need to queue tasks to the mainthread remove the debug check
         GameMainThread::Initialize();

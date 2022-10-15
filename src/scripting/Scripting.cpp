@@ -24,7 +24,7 @@
 
 #include "Utils.h"
 
-#ifndef NDEBUG
+#ifdef CET_DEBUG
 #include "GameHooks.h"
 #include "GameDump.h"
 #include <RED4ext/Dump/Reflection.hpp>
@@ -570,7 +570,7 @@ void Scripting::PostInitializeMods()
         logger->info("Dumped {} types", count);
     };
 
-#ifndef NDEBUG
+#ifdef CET_DEBUG
     luaGlobal["DumpVtables"] = [this]
     {
         // Hacky RTTI dump, this should technically only dump IScriptable instances and RTTI types as they are guaranteed to have a vtable

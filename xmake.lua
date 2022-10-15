@@ -74,13 +74,13 @@ target("cyber_engine_tweaks")
 
     on_package(function(target)
         import("net.http")
-        
+
         os.rm("package/*")
 
         os.mkdir("package/bin/x64/plugins/cyber_engine_tweaks/tweakdb")
         os.cp("tweakdb/*", "package/bin/x64/plugins/cyber_engine_tweaks/tweakdb")
         http.download("https://github.com/WolvenKit/WolvenKit/raw/main/WolvenKit.Common/Resources/usedhashes.kark", "package/bin/x64/plugins/cyber_engine_tweaks/tweakdb/usedhashes.kark")
-        
+
         os.mkdir("package/bin/x64/plugins/cyber_engine_tweaks/scripts")
         os.cp("scripts/*", "package/bin/x64/plugins/cyber_engine_tweaks/scripts")
 
