@@ -81,6 +81,25 @@ HRESULT D3D12::CreateCommittedResource(ID3D12Device* apDevice, const D3D12_HEAP_
     return result;
 }
 
+void D3D12::ExecuteCommandLists(ID3D12CommandQueue* apCommandQueue, UINT aNumCommandLists,
+                                ID3D12CommandList* const* apcpCommandLists)
+{
+    auto& d3d12 = CET::Get().GetD3D12();
+    if (d3d12.m_pCommandQueue == nullptr)
+    {
+        const auto desc = apCommandQueue->GetDesc();
+        if (desc.Type == D3D12_COMMAND_LIST_TYPE_DIRECT)
+        {
+            auto ret = reinterpret_cast<uintptr_t>(_ReturnAddress()) - reinterpret_cast<uintptr_t>(GetModuleHandleA(nullptr));
+            d3d12.m_pCommandQueue = apCommandQueue;
+            Log::Info("D3D12::ExecuteCommandListsD3D12() - found valid command queue. {:X}", ret);
+        }
+        else
+            Log::Info("D3D12::ExecuteCommandListsD3D12() - ignoring command queue - unusable command list type");
+    }
+    d3d12.m_realExecuteCommandLists(apCommandQueue, aNumCommandLists, apcpCommandLists);
+}
+
 void* ApplyHook(void** vtable, size_t index, void* target)
 {
     DWORD oldProtect;
@@ -199,6 +218,18 @@ void D3D12::Hook()
         else
         {
             Log::Info("D3D12on7: CreateCommittedResource hook complete.");
+            ++d3d12CompleteHooksCount;
+        }
+
+        if (kiero::bind(54, reinterpret_cast<void**>(&m_realExecuteCommandLists), reinterpret_cast<void*>(&ExecuteCommandLists)) !=
+            kiero::Status::Success)
+        {
+            Log::Error("D3D12on7: ExecuteCommandLists hook failed!");
+            ++d3d12FailedHooksCount;
+        }
+        else
+        {
+            Log::Info("D3D12on7: ExecuteCommandLists hook complete.");
             ++d3d12CompleteHooksCount;
         }
 

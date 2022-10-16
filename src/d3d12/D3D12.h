@@ -52,6 +52,7 @@ protected:
 
     static HRESULT PresentDownlevel(ID3D12CommandQueueDownlevel* apCommandQueueDownlevel, ID3D12GraphicsCommandList* apOpenCommandList, ID3D12Resource* apSourceTex2D, HWND ahWindow, D3D12_DOWNLEVEL_PRESENT_FLAGS aFlags);
     static HRESULT CreateCommittedResource(ID3D12Device* apDevice, const D3D12_HEAP_PROPERTIES* acpHeapProperties, D3D12_HEAP_FLAGS aHeapFlags, const D3D12_RESOURCE_DESC* acpDesc, D3D12_RESOURCE_STATES aInitialResourceState, const D3D12_CLEAR_VALUE* acpOptimizedClearValue, const IID* acpRIID, void** appvResource);
+    static void ExecuteCommandLists(ID3D12CommandQueue* apCommandQueue, UINT aNumCommandLists, ID3D12CommandList* const* apcpCommandLists);
     static void* CRenderNode_Present_InternalPresent(int32_t* apSomeInt, uint8_t aSomeSync, UINT aSyncInterval);
     static void* CRenderGlobal_Resize(uint32_t a1, uint32_t a2, uint32_t a3, uint8_t a4, int* a5);
 
@@ -59,6 +60,7 @@ private:
 
     TPresentD3D12Downlevel* m_realPresentD3D12Downlevel{ nullptr };
     TCreateCommittedResource* m_realCreateCommittedResource{ nullptr };
+    TExecuteCommandLists* m_realExecuteCommandLists{ nullptr };
     TCRenderNode_Present_InternalPresent* m_realInternalPresent{ nullptr };
     TCRenderGlobal_Resize* m_realInternalResize{nullptr};
 
