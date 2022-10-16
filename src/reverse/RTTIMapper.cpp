@@ -213,6 +213,10 @@ void RTTIMapper::RegisterScriptAliases(sol::table& aLuaGlobal, RED4ext::CRTTISys
 
 void RTTIMapper::RegisterSpecialAccessors(sol::state& aLuaState, sol::table& aLuaGlobal) const
 {
+    // Add global alias `Game.GetSystemRequestsHandler()`
+    // Replacement for `GetSingleton("inkMenuScenario"):GetSystemRequestsHandler()`
+    RTTIHelper::Get().AddFunctionAlias("GetSystemRequestsHandler", "inkMenuScenario", "GetSystemRequestsHandler");
+
     // TODO - fix me!
     return;
 
@@ -222,10 +226,6 @@ void RTTIMapper::RegisterSpecialAccessors(sol::state& aLuaState, sol::table& aLu
     ExtendUsertype<EulerAngles>("EulerAngles", aLuaState, aLuaGlobal);
     ExtendUsertype<Quaternion>("Quaternion", aLuaState, aLuaGlobal);
     ExtendUsertype<ItemID>("ItemID", aLuaState, aLuaGlobal);
-
-    // Add global alias `Game.GetSystemRequestsHandler()`
-    // Replacement for `GetSingleton("inkMenuScenario"):GetSystemRequestsHandler()`
-    RTTIHelper::Get().AddFunctionAlias("GetSystemRequestsHandler", "inkMenuScenario", "GetSystemRequestsHandler");
 }
 
 template <class T>

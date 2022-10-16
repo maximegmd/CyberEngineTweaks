@@ -37,7 +37,7 @@ void LuaVM::Update(float aDeltaTime)
 {
     if (!m_initialized)
     {
-        if (m_logCount.load(std::memory_order_relaxed) > 0)
+        if (m_logCount.load(std::memory_order_relaxed) > 2)
             PostInitializeMods();
 
         return;
