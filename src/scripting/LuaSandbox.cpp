@@ -8,7 +8,7 @@
 #include <CET.h>
 #include <Utils.h>
 
-static constexpr const char* s_cGlobalObjectsWhitelist[] =
+static constexpr const char* s_cVMGlobalObjectsWhitelist[] =
 {
     "_VERSION",
     "assert",
@@ -18,7 +18,6 @@ static constexpr const char* s_cGlobalObjectsWhitelist[] =
     "next",
     "pairs",
     "pcall",
-    "print",
 
     // Required for implementing classes
     "rawequal",
@@ -35,20 +34,52 @@ static constexpr const char* s_cGlobalObjectsWhitelist[] =
     "xpcall",
 
     "collectgarbage", //< Good for testing memory leaks and ref counters: `collectgarbage("collect")`, also used for forcing the release of some refs
-};
 
-static constexpr const char* s_cGlobalTablesWhitelist[] =
-{
     "string",
     "table",
     "math",
-    "bit32"
+    "bit32",
+    "json"
+};
+
+static constexpr const char* s_cGlobalObjectsWhitelist[] =
+{
+    "print",
+    "GetVersion",
+    "GetDisplayResolution",
+    "ModArchiveExists",
+    "Game",
+
+    "ImGuiCond",
+    "ImGuiTreeNodeFlags",
+    "ImGuiSelectableFlags",
+    "ImGuiInputTextFlags",
+    "ImGuiColorEditFlags",
+    "ImGuiComboFlags",
+    "ImGuiHoveredFlags",
+    "ImGuiFocusedFlags",
+    "ImGuiPopupFlags",
+    "ImGuiTabItemFlags",
+    "ImGuiWindowFlags",
+    "ImGuiStyleVar",
+    "ImGuiTabBarFlags",
+    "ImGuiSliderFlags",
+    "ImGuiTableFlags",
+    "ImGuiTableColumnFlags",
+    "ImGuiTableRowFlags",
+    "ImGuiTableBgTarget",
+    "ImGuiMouseButton",
+    "ImDrawCornerFlags",
+    "ImDrawFlags",
+    "ImGuiCol",
+    "ImGuiDir",
+    "ImVec2",
+    "ImVec4"
 };
 
 static constexpr const char* s_cPostInitializeScriptingProtectedList[] =
 {
     // initialized by Scripting
-    // note: commented out lines are additionally overriden by RTTIMapper during PostInitializeMods
     "__Game",
     "__Type",
     "__ClassType",
@@ -62,29 +93,23 @@ static constexpr const char* s_cPostInitializeScriptingProtectedList[] =
     "IsDefined",
     "Enum",
     "EnumInt",
-    //"Vector3",
-    //"ToVector3",
-    //"Vector4",
-    //"ToVector4",
-    //"EulerAngles",
-    //"ToEulerAngles",
-    //"Quaternion",
-    //"ToQuaternion",
+    "Vector3",
+    "ToVector3",
+    "Vector4",
+    "ToVector4",
+    "EulerAngles",
+    "ToEulerAngles",
+    "Quaternion",
+    "ToQuaternion",
     "CName",
     "ToCName",
     "TweakDBID",
     "ToTweakDBID",
-    //"ItemID",
-    //"ToItemID",
+    "ItemID",
+    "ToItemID",
     "CRUID",
     "LocKey",
-    "GameOptions"
-};
-
-static constexpr const char* s_cPostInitializeTweakDBProtectedList[] =
-{
-    // currently no special things are initialized during this stage
-    // note: moved here TweakDB related things from previous stage so it is not empty...
+    "GameOptions",
     "__TweakDB",
     "TweakDB"
 };
@@ -124,32 +149,6 @@ static constexpr const char* s_cPostInitializeModsProtectedList[] =
 static constexpr const char* s_cGlobalExtraLibsWhitelist[] =
 {
     "ImGui",
-    "ImGuiCond",
-    "ImGuiTreeNodeFlags",
-    "ImGuiSelectableFlags",
-    "ImGuiInputTextFlags",
-    "ImGuiColorEditFlags",
-    "ImGuiComboFlags",
-    "ImGuiHoveredFlags",
-    "ImGuiFocusedFlags",
-    "ImGuiPopupFlags",
-    "ImGuiTabItemFlags",
-    "ImGuiWindowFlags",
-    "ImGuiStyleVar",
-    "ImGuiTabBarFlags",
-    "ImGuiSliderFlags",
-    "ImGuiTableFlags",
-    "ImGuiTableColumnFlags",
-    "ImGuiTableRowFlags",
-    "ImGuiTableBgTarget",
-    "ImGuiMouseButton",
-    "ImDrawCornerFlags",
-    "ImDrawFlags",
-    "ImGuiCol",
-    "ImGuiDir",
-    "ImVec2",
-    "ImVec4",
-    "json"
 };
 
 LuaSandbox::LuaSandbox(Scripting* apScripting, const VKBindings& acVKBindings)
@@ -162,22 +161,23 @@ void LuaSandbox::Initialize()
 {
     auto lockedState = m_pScripting->GetLockedState();
     auto& luaState = lockedState.Get();
+    auto globals = luaState.globals();
 
     // initialize state + environment first
     m_env = {luaState, sol::create};
 
     // copy whitelisted things from global table
-    const auto cGlobals = luaState.globals();
-    for (const auto* cKey : s_cGlobalObjectsWhitelist)
-        m_env[cKey].set(cGlobals[cKey].get<sol::object>());
+    for (const auto* cKey : s_cVMGlobalObjectsWhitelist)
+        m_env[cKey] = DeepCopySolObject(globals[cKey].get<sol::object>(), luaState);
 
-    // copy whitelisted libs from global table
-    for (const auto* cKey : s_cGlobalTablesWhitelist)
-        m_env[cKey].set(cGlobals[cKey].get<sol::table>());
+    // copy whitelisted from our global table
+    auto ourGlobals = globals[m_pScripting->GetGlobalName()];
+    for (const auto* cKey : s_cGlobalObjectsWhitelist)
+        m_env[cKey] = DeepCopySolObject(ourGlobals[cKey].get<sol::object>(), luaState);
 
     // copy safe os functions
     {
-        auto os = cGlobals["os"].get<sol::table>();
+        auto os = globals["os"].get<sol::table>();
         sol::table osCopy(luaState, sol::create);
         osCopy["clock"] = os["clock"];
         osCopy["date"] = os["date"];
@@ -186,42 +186,27 @@ void LuaSandbox::Initialize()
         m_env["os"] = osCopy;
     }
 
-    CreateSandbox();
+    CreateSandbox("", "", false, false, false, false);
 }
 
 void LuaSandbox::PostInitializeScripting()
 {
     auto lockedState = m_pScripting->GetLockedState();
     auto& luaState = lockedState.Get();
+    auto globals = luaState.globals();
+    auto ourGlobals = globals[m_pScripting->GetGlobalName()];
 
-    // make shared things immutable
+    // copy whitelisted from global table
     for (const auto* cKey : s_cPostInitializeScriptingProtectedList)
     {
-        if (luaState[cKey] == sol::nil)
-            continue;
-
-        sol::object current = luaState[cKey].get<sol::object>();
-        WrapForGame(current);
-        MakeSolUsertypeImmutable(current, luaState);
+        m_env[cKey] = DeepCopySolObject(ourGlobals[cKey].get<sol::object>(), luaState);
+        MakeSolUsertypeImmutable(m_env[cKey], luaState);
     }
 }
 
 void LuaSandbox::PostInitializeTweakDB()
 {
     auto lockedState = m_pScripting->GetLockedState();
-    auto& luaState = lockedState.Get();
-
-    // make shared things immutable
-    for (const auto* cKey : s_cPostInitializeTweakDBProtectedList)
-    {
-        if (luaState[cKey] == sol::nil)
-            continue;
-
-        sol::object current = luaState[cKey].get<sol::object>();
-        WrapForGame(current);
-        MakeSolUsertypeImmutable(current, luaState);
-    }
-
     SetGameAvailable(true);
 }
 
@@ -229,31 +214,31 @@ void LuaSandbox::PostInitializeMods()
 {
     auto lockedState = m_pScripting->GetLockedState();
     auto& luaState = lockedState.Get();
+    auto globals = luaState.globals();
+    auto ourGlobals = globals[m_pScripting->GetGlobalName()];
 
-    // make shared things immutable
+    // copy whitelisted from global table
     for (const auto* cKey : s_cPostInitializeModsProtectedList)
     {
-        if (luaState[cKey] == sol::nil)
-            continue;
-
-        sol::object current = luaState[cKey].get<sol::object>();
-        WrapForGame(current);
-        MakeSolUsertypeImmutable(current, luaState);
+        m_env[cKey] = DeepCopySolObject(ourGlobals[cKey].get<sol::object>(), luaState);
+        MakeSolUsertypeImmutable(m_env[cKey], luaState);
     }
 }
 
 void LuaSandbox::ResetState()
 {
+    if (m_modules.empty())
+        return;
+
     auto lockedState = m_pScripting->GetLockedState();
     auto& luaState = lockedState.Get();
 
-    for (auto& cSandbox : m_sandboxes)
-        CloseDBForSandbox(cSandbox);
+    for (size_t i = 1; i < m_sandboxes.size(); ++i)
+        CloseDBForSandbox(m_sandboxes[i]);
 
     m_modules.clear();
 
-    if (m_sandboxes.size() > 1) // first one is always present, meant for console
-        m_sandboxes.erase(m_sandboxes.cbegin()+1, m_sandboxes.cend());
+    m_sandboxes.erase(m_sandboxes.cbegin() + 1, m_sandboxes.cend());
 
     luaState.collect_garbage();
 }
@@ -283,12 +268,12 @@ uint64_t LuaSandbox::CreateSandbox(const std::filesystem::path& acPath, const st
 
 sol::protected_function_result LuaSandbox::ExecuteFile(const std::string& acPath) const
 {
-    return m_sandboxes[0].ExecuteFile(acPath);
+    return m_pScripting->GetLockedState().Get().script_file(acPath, m_env, sol::load_mode::text);
 }
 
 sol::protected_function_result LuaSandbox::ExecuteString(const std::string& acString) const
 {
-    return m_sandboxes[0].ExecuteString(acString);
+    return m_pScripting->GetLockedState().Get().script(acString, m_env, sol:: detail::default_chunk_name(), sol::load_mode::text);
 }
 
 Sandbox& LuaSandbox::operator[](uint64_t aID)
@@ -310,156 +295,48 @@ TiltedPhoques::Locked<sol::state, std::recursive_mutex> LuaSandbox::GetLockedSta
 
 void LuaSandbox::SetImGuiAvailable(bool aAvailable)
 {
+    auto lockedState = m_pScripting->GetLockedState();
     m_imguiAvailable = aAvailable;
 }
 
 bool LuaSandbox::GetImGuiAvailable() const
 {
+    auto lockedState = m_pScripting->GetLockedState();
     return m_imguiAvailable;
 }
 
 void LuaSandbox::SetGameAvailable(bool aAvailable)
 {
+    auto lockedState = m_pScripting->GetLockedState();
     m_gameAvailable = aAvailable;
 }
 
 bool LuaSandbox::GetGameAvailable() const
 {
+    auto lockedState = m_pScripting->GetLockedState();
     return m_gameAvailable;
-}
-
-void LuaSandbox::WrapForGame(sol::object& apObject) const
-{
-    auto lockedState = m_pScripting->GetLockedState();
-    const auto& luaState = lockedState.Get();
-
-    if (apObject == sol::nil)
-        return;
-
-    if (apObject.get_type() == sol::type::table)
-    {
-        sol::table objects = apObject;
-
-        for (auto& [key, value] : objects)
-            WrapForGame(value);
-
-        sol::table metatable;
-        sol::object metaref = objects[sol::metatable_key];
-
-        if (metaref.is<sol::table>())
-            metatable = metaref;
-        else
-        {
-            metatable = {luaState, sol::create};
-            objects[sol::metatable_key] = metatable;
-        }
-
-        sol::function indexFunction = metatable[sol::meta_function::index];
-        WrapForGame(indexFunction);
-
-        sol::function staticIndexFunction = metatable[sol::meta_function::static_index];
-        WrapForGame(staticIndexFunction);
-
-        sol::function newIndexFunction = metatable[sol::meta_function::new_index];
-        WrapForGame(newIndexFunction);
-
-        sol::function staticNewIndexFunction = metatable[sol::meta_function::static_new_index];
-        WrapForGame(staticNewIndexFunction);
-
-        return;
-    }
-
-    if (apObject.get_type() == sol::type::function)
-    {
-        sol::function original = DeepCopySolObject(apObject, luaState);
-        apObject = make_object(luaState, [this, original](sol::variadic_args aVariadicArgs, sol::this_environment aThisEnv) -> sol::variadic_results {
-            const sol::environment cEnv = aThisEnv;
-            const auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
-            if (!GetGameAvailable())
-            {
-                logger->error("Tried to call Game, Type or similar from invalid event!");
-                return {};
-            }
-
-            return original(as_args(aVariadicArgs), aThisEnv);
-        });
-    }
-}
-
-void LuaSandbox::WrapForImGui(sol::object& apObject) const
-{
-    auto lockedState = m_pScripting->GetLockedState();
-    const auto& luaState = lockedState.Get();
-
-    if (apObject == sol::nil)
-        return;
-
-    if (apObject.get_type() == sol::type::table)
-    {
-        sol::table objects = apObject;
-
-        for (auto& [key, value] : objects)
-            WrapForImGui(value);
-
-        sol::table metatable;
-        sol::object metaref = objects[sol::metatable_key];
-
-        if (metaref.is<sol::table>())
-            metatable = metaref;
-        else
-        {
-            metatable = {luaState, sol::create};
-            objects[sol::metatable_key] = metatable;
-        }
-
-        sol::function indexFunction = metatable[sol::meta_function::index];
-        WrapForImGui(indexFunction);
-
-        sol::function staticIndexFunction = metatable[sol::meta_function::static_index];
-        WrapForImGui(staticIndexFunction);
-
-        sol::function newIndexFunction = metatable[sol::meta_function::new_index];
-        WrapForImGui(newIndexFunction);
-
-        sol::function staticNewIndexFunction = metatable[sol::meta_function::static_new_index];
-        WrapForImGui(staticNewIndexFunction);
-
-        return;
-    }
-
-    if (apObject.get_type() == sol::type::function)
-    {
-        sol::function original = DeepCopySolObject(apObject, luaState);
-        apObject = make_object(luaState, [this, original](sol::variadic_args aVariadicArgs, sol::this_environment aThisEnv) -> sol::variadic_results {
-            const sol::environment cEnv = aThisEnv;
-            const auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
-            if (!GetImGuiAvailable())
-            {
-                logger->error("Tried to call ImGui from invalid event!");
-                return {};
-            }
-
-            return original(as_args(aVariadicArgs), aThisEnv);
-        });
-    }
 }
 
 void LuaSandbox::InitializeExtraLibsForSandbox(Sandbox& aSandbox, const sol::state& acpState) const
 {
     auto& sbEnv = aSandbox.GetEnvironment();
     const auto& cSBRootPath = aSandbox.GetRootPath();
+    auto globals = acpState.globals();
+    auto ourGlobals = globals[m_pScripting->GetGlobalName()];
     sol::state_view stateView = acpState;
 
     // copy extra whitelisted libs from global table
-    const auto cGlobals = acpState.globals();
     for (const auto* cKey : s_cGlobalExtraLibsWhitelist)
-        sbEnv[cKey] = DeepCopySolObject(cGlobals[cKey].get<sol::object>(), acpState);
+        sbEnv[cKey] = DeepCopySolObject(ourGlobals[cKey].get<sol::object>(), acpState);
 
     sol::table imgui = sbEnv["ImGui"];
 
     Texture::BindTexture(imgui);
 
-    const auto cLoadTexture = [cSBRootPath, stateView](const std::string& acPath) -> std::tuple<std::shared_ptr<Texture>, sol::object> {
+    imgui["LoadTexture"] = [this, cSBRootPath, stateView](const std::string& acPath) -> std::tuple<std::shared_ptr<Texture>, sol::object> {
+        if (!GetImGuiAvailable())
+            return std::make_tuple(nullptr, make_object(stateView,"Tried to use ImGui outside of allowed events!"));
+
         const auto previousCurrentPath = std::filesystem::current_path();
         current_path(cSBRootPath);
 
@@ -472,9 +349,6 @@ void LuaSandbox::InitializeExtraLibsForSandbox(Sandbox& aSandbox, const sol::sta
 
         return std::make_tuple(texture, sol::nil);
     };
-    imgui.set_function("LoadTexture", cLoadTexture);
-
-    WrapForImGui(imgui);
 }
 
 void LuaSandbox::InitializeDBForSandbox(Sandbox& aSandbox, const sol::state& acpState)
@@ -482,9 +356,9 @@ void LuaSandbox::InitializeDBForSandbox(Sandbox& aSandbox, const sol::state& acp
     auto& sbEnv = aSandbox.GetEnvironment();
     const auto& cSBRootPath = aSandbox.GetRootPath();
     const auto sbId = aSandbox.GetId();
+    auto globals = acpState.globals();
 
-    const auto cGlobals = acpState.globals();
-    const auto cSQLite3 = cGlobals["sqlite3"].get<sol::table>();
+    const auto cSQLite3 = globals["sqlite3"].get<sol::table>();
     sol::table sqlite3Copy(acpState, sol::create);
     for (const auto& cKV : cSQLite3)
     {
@@ -519,6 +393,8 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
 {
     auto& sbEnv = aSandbox.GetEnvironment();
     const auto& cSBRootPath = aSandbox.GetRootPath();
+    auto globals = acpState.globals();
+    auto ourGlobals = globals[m_pScripting->GetGlobalName()];
     const auto cSBEnv = sbEnv;
     sol::state_view stateView = acpState;
 
@@ -688,10 +564,9 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
         return res;
     };
 
-    const auto cGlobals = acpState.globals();
     // define replacements for io lib
     {
-        const auto cIO = cGlobals["io"].get<sol::table>();
+        const auto cIO = globals["io"].get<sol::table>();
         sol::table ioSB(acpState, sol::create);
         ioSB["read"] = DeepCopySolObject(cIO["read"], acpState);
         ioSB["write"] = DeepCopySolObject(cIO["write"], acpState);
@@ -736,8 +611,8 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
 
     // add in rename and remove replacements for os lib
     {
-        const auto cOS = cGlobals["os"].get<sol::table>();
-        auto osSB = sbEnv["os"].get<sol::table>();
+        const auto cOS = globals["os"].get<sol::table>();
+        sol::table osSB = DeepCopySolObject(m_env["os"].get<sol::object>(), acpState);
         osSB["rename"] = [cOS, cSBRootPath](const std::string& acOldPath, const std::string& acNewPath) -> std::tuple<sol::object, std::string>
         {
             const auto previousCurrentPath = std::filesystem::current_path();
@@ -778,6 +653,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
 
             return cResult.valid() ? std::make_tuple(cResult.get<sol::object>(), "") : std::make_tuple(cResult.get<sol::object>(0), cResult.get<std::string>(1));
         };
+        sbEnv["os"] = osSB;
     }
 
     // add support functions for bindings

@@ -62,9 +62,32 @@ void Scripting::Initialize()
     // as this could get overriden by LUA_PATH environment variable
     luaVm["package"]["path"] = "./?.lua";
 
-    sol_ImGui::InitBindings(luaVm);
+    // global fallback table for all environments
+    sol::table luaGlobal(luaVm, sol::create);
+    luaVm[m_global] = luaGlobal;
 
-    luaVm["print"] = [](sol::variadic_args aArgs, sol::this_state aState)
+    sol_ImGui::InitBindings(luaVm, luaGlobal);
+    sol::table imgui = luaGlobal["ImGui"];
+    for (auto [key, value] : imgui)
+    {
+        if (value.get_type() != sol::type::function)
+            continue;
+
+        sol::function original = value;
+        imgui[key] = make_object(luaVm, [this, original](sol::variadic_args aVariadicArgs, sol::this_environment aThisEnv) -> sol::variadic_results {
+            const sol::environment cEnv = aThisEnv;
+            const auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+            if (!m_sandbox.GetImGuiAvailable())
+            {
+                logger->error("Tried to call ImGui from invalid event!");
+                throw "Tried to call ImGui from invalid event!";
+            }
+
+            return original(as_args(aVariadicArgs));
+        });
+    }
+
+    luaGlobal["print"] = [](sol::variadic_args aArgs, sol::this_state aState)
     {
         std::ostringstream oss;
         sol::state_view s(aState);
@@ -80,10 +103,6 @@ void Scripting::Initialize()
 
         spdlog::get("scripting")->info(oss.str());
     };
-
-    // global fallback table for all environments
-    sol::table luaGlobal(luaVm, sol::create);
-    luaVm[m_global] = luaGlobal;
 
     luaGlobal["GetVersion"] = []() -> std::string
     {
@@ -117,16 +136,12 @@ void Scripting::Initialize()
     };
 
     // fake game object to prevent errors from older autoexec.lua
-    luaVm["Game"] = sol::table(luaVm, sol::create);
-    luaGlobal["Game"] = luaVm["Game"];
+    luaGlobal["Game"] = sol::table(luaVm, sol::create);
 
     // execute autoexec.lua inside our default script directory
     const auto previousCurrentPath = std::filesystem::current_path();
     current_path(m_paths.CETRoot() / "scripts");
-    if (std::filesystem::exists("autoexec.lua"))
-        luaVm.do_file("autoexec.lua");
-    else
-        spdlog::get("scripting")->warn("WARNING: missing CET autoexec.lua!");
+    luaVm.script("json = require 'json/json'", sol:: detail::default_chunk_name(), sol::load_mode::text);
     current_path(previousCurrentPath);
 
     // initialize sandbox
@@ -158,56 +173,56 @@ void Scripting::PostInitializeScripting()
 
     sol::table luaGlobal = luaVm[m_global];
 
-    luaVm.new_usertype<Scripting>("__Game",
+    luaGlobal.new_usertype<Scripting>("__Game",
         sol::meta_function::construct, sol::no_constructor,
         sol::meta_function::index, &Scripting::Index);
 
-    luaVm.new_usertype<Type>("__Type",
+    luaGlobal.new_usertype<Type>("__Type",
         sol::meta_function::construct, sol::no_constructor,
         sol::meta_function::index, &Type::Index,
         sol::meta_function::new_index, &Type::NewIndex);
 
-    luaVm.new_usertype<ClassType>("__ClassType",
+    luaGlobal.new_usertype<ClassType>("__ClassType",
         sol::meta_function::construct, sol::no_constructor,
         sol::base_classes, sol::bases<Type>(),
         sol::meta_function::index, &ClassType::Index,
         sol::meta_function::new_index, &ClassType::NewIndex);
 
-    luaVm.new_usertype<Type::Descriptor>("Descriptor",
+    luaGlobal.new_usertype<Type::Descriptor>("Descriptor",
         sol::meta_function::to_string, &Type::Descriptor::ToString);
 
-    luaVm.new_usertype<StrongReference>("StrongReference",
+    luaGlobal.new_usertype<StrongReference>("StrongReference",
         sol::meta_function::construct, sol::no_constructor,
         sol::base_classes, sol::bases<Type, ClassType>(),
         sol::meta_function::index, &StrongReference::Index,
         sol::meta_function::new_index, &StrongReference::NewIndex);
 
-    luaVm.new_usertype<WeakReference>("WeakReference",
+    luaGlobal.new_usertype<WeakReference>("WeakReference",
         sol::meta_function::construct, sol::no_constructor,
         sol::base_classes, sol::bases<Type, ClassType>(),
         sol::meta_function::index, &WeakReference::Index,
         sol::meta_function::new_index, &WeakReference::NewIndex);
 
-    luaVm.new_usertype<SingletonReference>("SingletonReference",
+    luaGlobal.new_usertype<SingletonReference>("SingletonReference",
         sol::meta_function::construct, sol::no_constructor,
         sol::base_classes, sol::bases<Type, ClassType>(),
         sol::meta_function::index, &SingletonReference::Index,
         sol::meta_function::new_index, &SingletonReference::NewIndex);
 
-    luaVm.new_usertype<ClassReference>("ClassReference",
+    luaGlobal.new_usertype<ClassReference>("ClassReference",
         sol::meta_function::construct, sol::no_constructor,
         sol::base_classes, sol::bases<Type, ClassType>(),
         sol::meta_function::index, &ClassReference::Index,
         sol::meta_function::new_index, &ClassReference::NewIndex);
 
-    luaVm.new_usertype<ResourceAsyncReference>("ResourceAsyncReference",
+    luaGlobal.new_usertype<ResourceAsyncReference>("ResourceAsyncReference",
         sol::meta_function::construct, sol::no_constructor,
         sol::base_classes, sol::bases<Type, ClassType>(),
         sol::meta_function::index, &ResourceAsyncReference::Index,
         sol::meta_function::new_index, &ResourceAsyncReference::NewIndex,
         "hash", property(&ResourceAsyncReference::GetLuaHash));
 
-    luaVm.new_usertype<UnknownType>("Unknown",
+    luaGlobal.new_usertype<UnknownType>("Unknown",
         sol::meta_function::construct, sol::no_constructor,
         sol::base_classes, sol::bases<Type>(),
         sol::meta_function::index, &UnknownType::Index,
@@ -231,14 +246,12 @@ void Scripting::PostInitializeScripting()
             return false;
         });
 
-    luaVm.new_usertype<Enum>("Enum",
+    luaGlobal.new_usertype<Enum>("Enum",
         sol::constructors<Enum(const std::string&, const std::string&),
                           Enum(const std::string&, uint32_t), Enum(const Enum&)>(),
         sol::meta_function::to_string, &Enum::ToString,
         sol::meta_function::equal_to, &Enum::operator==,
         "value", sol::property(&Enum::GetValueName, &Enum::SetValueByName));
-
-    luaGlobal["Enum"] = luaVm["Enum"];
 
     luaGlobal["EnumInt"] = [this](Enum& aEnum) -> sol::object
     {
@@ -253,7 +266,7 @@ void Scripting::PostInitializeScripting()
         return Converter::ToLua(stackType, lockedState);
     };
 
-    luaVm.new_usertype<Vector3>("Vector3",
+    luaGlobal.new_usertype<Vector3>("Vector3",
         sol::constructors<Vector3(float, float, float), Vector3(float, float), Vector3(float), Vector3(const Vector3&), Vector3()>(),
         sol::meta_function::to_string, &Vector3::ToString,
         sol::meta_function::equal_to, &Vector3::operator==,
@@ -261,7 +274,6 @@ void Scripting::PostInitializeScripting()
         "y", &Vector3::y,
         "z", &Vector3::z);
 
-    luaGlobal["Vector3"] = luaVm["Vector3"];
     luaGlobal["ToVector3"] = [](sol::table table) -> Vector3
     {
         return Vector3
@@ -272,7 +284,7 @@ void Scripting::PostInitializeScripting()
         };
     };
 
-    luaVm.new_usertype<Vector4>("Vector4",
+    luaGlobal.new_usertype<Vector4>("Vector4",
         sol::constructors<Vector4(float, float, float, float), Vector4(float, float, float), Vector4(float, float),
                           Vector4(float), Vector4(const Vector4&), Vector4()>(),
         sol::meta_function::to_string, &Vector4::ToString,
@@ -282,7 +294,6 @@ void Scripting::PostInitializeScripting()
         "z", &Vector4::z,
         "w", &Vector4::w);
 
-    luaGlobal["Vector4"] = luaVm["Vector4"];
     luaGlobal["ToVector4"] = [](sol::table table) -> Vector4
     {
         return Vector4
@@ -294,7 +305,7 @@ void Scripting::PostInitializeScripting()
         };
     };
 
-    luaVm.new_usertype<EulerAngles>("EulerAngles",
+    luaGlobal.new_usertype<EulerAngles>("EulerAngles",
         sol::constructors<EulerAngles(float, float, float), EulerAngles(float, float), EulerAngles(float),
                           EulerAngles(const EulerAngles&), EulerAngles()>(),
         sol::meta_function::to_string, &EulerAngles::ToString,
@@ -303,7 +314,6 @@ void Scripting::PostInitializeScripting()
         "pitch", &EulerAngles::pitch,
         "yaw", &EulerAngles::yaw);
 
-    luaGlobal["EulerAngles"] = luaVm["EulerAngles"];
     luaGlobal["ToEulerAngles"] = [](sol::table table) -> EulerAngles
     {
         return EulerAngles
@@ -314,7 +324,7 @@ void Scripting::PostInitializeScripting()
         };
     };
 
-    luaVm.new_usertype<Quaternion>("Quaternion",
+    luaGlobal.new_usertype<Quaternion>("Quaternion",
         sol::constructors<Quaternion(float, float, float, float), Quaternion(float, float, float),
                           Quaternion(float, float), Quaternion(float), Quaternion(const Quaternion&), Quaternion()>(),
         sol::meta_function::to_string, &Quaternion::ToString,
@@ -324,7 +334,6 @@ void Scripting::PostInitializeScripting()
         "k", &Quaternion::k,
         "r", &Quaternion::r);
 
-    luaGlobal["Quaternion"] = luaVm["Quaternion"];
     luaGlobal["ToQuaternion"] = [](sol::table table) -> Quaternion
     {
         return Quaternion
@@ -336,7 +345,7 @@ void Scripting::PostInitializeScripting()
         };
     };
 
-    luaVm.new_usertype<CName>("CName",
+    luaGlobal.new_usertype<CName>("CName",
         sol::constructors<CName(const std::string&), CName(uint64_t), CName(uint32_t, uint32_t),
                           CName(const CName&), CName()>(),
         sol::call_constructor, sol::constructors<CName(const std::string&), CName(uint64_t)>(),
@@ -347,7 +356,6 @@ void Scripting::PostInitializeScripting()
         "value", sol::property(&CName::AsString),
         "add", &CName::Add);
 
-    luaGlobal["CName"] = luaVm["CName"];
     luaGlobal["ToCName"] = [](sol::table table) -> CName
     {
         return CName
@@ -357,7 +365,7 @@ void Scripting::PostInitializeScripting()
         };
     };
 
-    luaVm.new_usertype<TweakDBID>("TweakDBID",
+    luaGlobal.new_usertype<TweakDBID>("TweakDBID",
         sol::constructors<TweakDBID(const std::string&), TweakDBID(const TweakDBID&, const std::string&),
                           TweakDBID(uint32_t, uint8_t), TweakDBID(const TweakDBID&), TweakDBID()>(),
         sol::call_constructor, sol::constructors<TweakDBID(const std::string&)>(),
@@ -367,8 +375,8 @@ void Scripting::PostInitializeScripting()
         sol::meta_function::concatenation, &TweakDBID::operator+,
         "hash", &TweakDBID::name_hash,
         "length", &TweakDBID::name_length);
-
     luaGlobal["TweakDBID"] = luaVm["TweakDBID"];
+
     luaGlobal["ToTweakDBID"] = [](sol::table table) -> TweakDBID
     {
         return TweakDBID
@@ -378,7 +386,7 @@ void Scripting::PostInitializeScripting()
         };
     };
 
-    luaVm.new_usertype<ItemID>("ItemID",
+    luaGlobal.new_usertype<ItemID>("ItemID",
         sol::constructors<ItemID(const TweakDBID&, uint32_t, uint16_t, uint8_t),
                           ItemID(const TweakDBID&, uint32_t, uint16_t), ItemID(const TweakDBID&, uint32_t),
                           ItemID(const TweakDBID&), ItemID(const ItemID&), ItemID()>(),
@@ -390,7 +398,6 @@ void Scripting::PostInitializeScripting()
         "unknown", &ItemID::unknown,
         "maybe_type", &ItemID::maybe_type);
 
-    luaGlobal["ItemID"] = luaVm["ItemID"];
     luaGlobal["ToItemID"] = [](sol::table table) -> ItemID
     {
         return ItemID
@@ -402,16 +409,14 @@ void Scripting::PostInitializeScripting()
         };
     };
 
-    luaVm.new_usertype<CRUID>("CRUID",
+    luaGlobal.new_usertype<CRUID>("CRUID",
         sol::constructors<CRUID(uint64_t)>(),
         sol::call_constructor, sol::constructors<CRUID(uint64_t)>(),
         sol::meta_function::to_string, &CRUID::ToString,
         sol::meta_function::equal_to, &CRUID::operator==,
         "hash", &CRUID::hash);
 
-    luaGlobal["CRUID"] = luaVm["CRUID"];
-
-    luaVm.new_usertype<gamedataLocKeyWrapper>("LocKey",
+    luaGlobal.new_usertype<gamedataLocKeyWrapper>("LocKey",
         sol::constructors<gamedataLocKeyWrapper(uint64_t)>(),
         sol::meta_function::to_string, &gamedataLocKeyWrapper::ToString,
         sol::meta_function::equal_to, &gamedataLocKeyWrapper::operator==,
@@ -444,9 +449,7 @@ void Scripting::PostInitializeScripting()
             return converted.get<sol::object>();
         }));
 
-    luaGlobal["LocKey"] = luaVm["LocKey"];
-
-    luaVm.new_usertype<GameOptions>("GameOptions",
+    luaGlobal.new_usertype<GameOptions>("GameOptions",
         sol::meta_function::construct, sol::no_constructor,
         "Print", &GameOptions::Print,
         "Get", &GameOptions::Get,
@@ -461,9 +464,7 @@ void Scripting::PostInitializeScripting()
         "Dump", &GameOptions::Dump,
         "List", &GameOptions::List);
 
-    luaGlobal["GameOptions"] = luaVm["GameOptions"];
-
-    luaVm.new_usertype<TweakDB>("__TweakDB",
+    luaGlobal.new_usertype<TweakDB>("__TweakDB",
         sol::meta_function::construct, sol::no_constructor,
         "DebugStats", &TweakDB::DebugStats,
         "GetRecords", &TweakDB::GetRecords,
@@ -477,8 +478,6 @@ void Scripting::PostInitializeScripting()
         "CreateRecord", overload(&TweakDB::CreateRecordToID, &TweakDB::CreateRecord),
         "CloneRecord", overload(&TweakDB::CloneRecordByName, &TweakDB::CloneRecordToID, &TweakDB::CloneRecord),
         "DeleteRecord", overload(&TweakDB::DeleteRecordByID, &TweakDB::DeleteRecord));
-
-    luaGlobal["TweakDB"] = TweakDB(m_lua.AsRef());
 
     m_sandbox.PostInitializeScripting();
 }
@@ -594,8 +593,7 @@ void Scripting::PostInitializeMods()
     };
 #endif
 
-    luaVm["Game"] = this;
-    luaGlobal["Game"] = luaVm["Game"];
+    luaGlobal["Game"] = this;
 
     RTTIExtender::Initialize();
     m_mapper.Register();
@@ -706,9 +704,8 @@ bool Scripting::ExecuteLua(const std::string& acCommand) const
     // TODO: proper exception handling!
     try
     {
-        auto lock = std::scoped_lock{m_vmLock};
-
-        const auto cResult = m_sandbox.ExecuteString(acCommand);
+        auto lockedState = m_lua.Lock();
+        const auto cResult = m_sandbox[0].ExecuteString(acCommand);
         if (cResult.valid())
             return true;
         const sol::error cError = cResult;

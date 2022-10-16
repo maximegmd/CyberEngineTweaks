@@ -1737,21 +1737,21 @@ namespace sol_ImGui
     inline void ImDrawListAddBezierQuadratic(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, int col, float thickness)                                                  { drawlist->AddBezierQuadratic({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, static_cast<ImU32>(col), thickness); }
     inline void ImDrawListAddBezierQuadratic(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, int col, float thickness, int num_segments)                                { drawlist->AddBezierQuadratic({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, static_cast<ImU32>(col), thickness, num_segments); }
 
-    inline void InitUserType(sol::state& lua)
+    inline void InitUserType(sol::table luaGlobals)
     {
-        lua.new_usertype<ImVec2>("ImVec2", sol::constructors<ImVec2(), ImVec2(float, float)>(),
+        luaGlobals.new_usertype<ImVec2>("ImVec2", sol::constructors<ImVec2(), ImVec2(float, float)>(),
             "x"                              , &ImVec2::x,
             "y"                              , &ImVec2::y
         );
 
-        lua.new_usertype<ImVec4>("ImVec4", sol::constructors<ImVec4(), ImVec4(float, float, float, float)>(),
+        luaGlobals.new_usertype<ImVec4>("ImVec4", sol::constructors<ImVec4(), ImVec4(float, float, float, float)>(),
             "x"                              , &ImVec4::x,
             "y"                              , &ImVec4::y,
             "z"                              , &ImVec4::z,
             "w"                              , &ImVec4::w
         );
 
-        lua.new_usertype<ImGuiStyle>("ImGuiStyle",
+        luaGlobals.new_usertype<ImGuiStyle>("ImGuiStyle",
             "Alpha"                          , &ImGuiStyle::Alpha,
             "DisabledAlpha"                  , &ImGuiStyle::DisabledAlpha,
             "WindowPadding"                  , &ImGuiStyle::WindowPadding,
@@ -1796,10 +1796,10 @@ namespace sol_ImGui
         );
     }
 
-    inline void InitEnums(sol::state& lua)
+    inline void InitEnums(sol::table luaGlobals)
     {
 #pragma region Window Flags
-        lua.new_enum("ImGuiWindowFlags",
+        luaGlobals.new_enum("ImGuiWindowFlags",
             "None"                           , ImGuiWindowFlags_None,
             "NoTitleBar"                     , ImGuiWindowFlags_NoTitleBar,
             "NoResize"                       , ImGuiWindowFlags_NoResize,
@@ -1835,7 +1835,7 @@ namespace sol_ImGui
 #pragma endregion Window Flags
 
 #pragma region Focused Flags
-        lua.new_enum("ImGuiFocusedFlags",
+        luaGlobals.new_enum("ImGuiFocusedFlags",
             "None"                           , ImGuiFocusedFlags_None,
             "ChildWindows"                   , ImGuiFocusedFlags_ChildWindows,
             "RootWindow"                     , ImGuiFocusedFlags_RootWindow,
@@ -1845,7 +1845,7 @@ namespace sol_ImGui
 #pragma endregion Focused Flags
 
 #pragma region Hovered Flags
-        lua.new_enum("ImGuiHoveredFlags",
+        luaGlobals.new_enum("ImGuiHoveredFlags",
             "None"                           , ImGuiHoveredFlags_None,
             "ChildWindows"                   , ImGuiHoveredFlags_ChildWindows,
             "RootWindow"                     , ImGuiHoveredFlags_RootWindow,
@@ -1860,7 +1860,7 @@ namespace sol_ImGui
 #pragma endregion Hovered Flags
 
 #pragma region Cond
-        lua.new_enum("ImGuiCond",
+        luaGlobals.new_enum("ImGuiCond",
             "None"                           , ImGuiCond_None,
             "Always"                         , ImGuiCond_Always,
             "Once"                           , ImGuiCond_Once,
@@ -1870,7 +1870,7 @@ namespace sol_ImGui
 #pragma endregion Cond
 
 #pragma region Col
-        lua.new_enum("ImGuiCol",
+        luaGlobals.new_enum("ImGuiCol",
             "Text"                           , ImGuiCol_Text,
             "TextDisabled"                   , ImGuiCol_TextDisabled,
             "WindowBg"                       , ImGuiCol_WindowBg,
@@ -1929,7 +1929,7 @@ namespace sol_ImGui
 #pragma endregion Col
 
 #pragma region Style
-        lua.new_enum("ImGuiStyleVar",
+        luaGlobals.new_enum("ImGuiStyleVar",
             "Alpha"                          , ImGuiStyleVar_Alpha,
             "DisabledAlpha"                  , ImGuiStyleVar_DisabledAlpha,
             "WindowPadding"                  , ImGuiStyleVar_WindowPadding,
@@ -1960,7 +1960,7 @@ namespace sol_ImGui
 #pragma endregion Style
 
 #pragma region Dir
-        lua.new_enum("ImGuiDir",
+        luaGlobals.new_enum("ImGuiDir",
             "None"                           , ImGuiDir_None,
             "Left"                           , ImGuiDir_Left,
             "Right"                          , ImGuiDir_Right,
@@ -1971,7 +1971,7 @@ namespace sol_ImGui
 #pragma endregion Dir
 
 #pragma region Combo Flags
-        lua.new_enum("ImGuiComboFlags",
+        luaGlobals.new_enum("ImGuiComboFlags",
             "None"                           , ImGuiComboFlags_None,
             "PopupAlignLeft"                 , ImGuiComboFlags_PopupAlignLeft,
             "HeightSmall"                    , ImGuiComboFlags_HeightSmall,
@@ -1985,7 +1985,7 @@ namespace sol_ImGui
 #pragma endregion Combo Flags
 
 #pragma region InputText Flags
-        lua.new_enum("ImGuiInputTextFlags",
+        luaGlobals.new_enum("ImGuiInputTextFlags",
             "None"                           , ImGuiInputTextFlags_None,
             "CharsDecimal"                   , ImGuiInputTextFlags_CharsDecimal,
             "CharsHexadecimal"               , ImGuiInputTextFlags_CharsHexadecimal,
@@ -2011,7 +2011,7 @@ namespace sol_ImGui
 #pragma endregion InputText Flags
 
 #pragma region Slider Flags
-        lua.new_enum("ImGuiSliderFlags",
+        luaGlobals.new_enum("ImGuiSliderFlags",
             "None"                           , ImGuiSliderFlags_None,
             "ClampOnInput"                   , ImGuiSliderFlags_ClampOnInput,
             "Logarithmic"                    , ImGuiSliderFlags_Logarithmic,
@@ -2021,7 +2021,7 @@ namespace sol_ImGui
 #pragma endregion Slider Flags
 
 #pragma region ColorEdit Flags
-        lua.new_enum("ImGuiColorEditFlags",
+        luaGlobals.new_enum("ImGuiColorEditFlags",
             "None"                           , ImGuiColorEditFlags_None,
             "NoAlpha"                        , ImGuiColorEditFlags_NoAlpha,
             "NoPicker"                       , ImGuiColorEditFlags_NoPicker,
@@ -2058,7 +2058,7 @@ namespace sol_ImGui
 #pragma endregion ColorEdit Flags
 
 #pragma region TreeNode Flags
-        lua.new_enum("ImGuiTreeNodeFlags",
+        luaGlobals.new_enum("ImGuiTreeNodeFlags",
             "None"                           , ImGuiTreeNodeFlags_None,
             "Selected"                       , ImGuiTreeNodeFlags_Selected,
             "Framed"                         , ImGuiTreeNodeFlags_Framed,
@@ -2079,7 +2079,7 @@ namespace sol_ImGui
 #pragma endregion TreeNode Flags
 
 #pragma region Selectable Flags
-        lua.new_enum("ImGuiSelectableFlags",
+        luaGlobals.new_enum("ImGuiSelectableFlags",
             "None"                           , ImGuiSelectableFlags_None,
             "DontClosePopups"                , ImGuiSelectableFlags_DontClosePopups,
             "SpanAllColumns"                 , ImGuiSelectableFlags_SpanAllColumns,
@@ -2090,7 +2090,7 @@ namespace sol_ImGui
 #pragma endregion Selectable Flags
 
 #pragma region Popup Flags
-        lua.new_enum("ImGuiPopupFlags",
+        luaGlobals.new_enum("ImGuiPopupFlags",
             "None"                           , ImGuiPopupFlags_None,
             "MouseButtonLeft"                , ImGuiPopupFlags_MouseButtonLeft,
             "MouseButtonRight"               , ImGuiPopupFlags_MouseButtonRight,
@@ -2106,7 +2106,7 @@ namespace sol_ImGui
 #pragma endregion Popup Flags
 
 #pragma region Table Flags
-        lua.new_enum("ImGuiTableFlags",
+        luaGlobals.new_enum("ImGuiTableFlags",
             // Features
             "None"                           , ImGuiTableFlags_None,
             "Resizable"                      , ImGuiTableFlags_Resizable,
@@ -2156,7 +2156,7 @@ namespace sol_ImGui
 #pragma endregion Table Flags
 
 #pragma region TableColumn Flags
-        lua.new_enum("ImGuiTableColumnFlags",
+        luaGlobals.new_enum("ImGuiTableColumnFlags",
         // Input configuration flags
             "None"                           , ImGuiTableColumnFlags_None,
             "Disabled"                       , ImGuiTableColumnFlags_Disabled,
@@ -2191,14 +2191,14 @@ namespace sol_ImGui
 #pragma endregion TableColumn Flags
 
 #pragma region TableRow Flags
-        lua.new_enum("ImGuiTableRowFlags",
+        luaGlobals.new_enum("ImGuiTableRowFlags",
             "None"                           , ImGuiTableRowFlags_None,
             "Headers"                        , ImGuiTableRowFlags_Headers
         );
 #pragma endregion TableRow Flags
 
 #pragma region TableBg Target
-        lua.new_enum("ImGuiTableBgTarget",
+        luaGlobals.new_enum("ImGuiTableBgTarget",
             "None"                           , ImGuiTableBgTarget_None,
             "RowBg0"                         , ImGuiTableBgTarget_RowBg0,
             "RowBg1"                         , ImGuiTableBgTarget_RowBg1,
@@ -2207,7 +2207,7 @@ namespace sol_ImGui
 #pragma endregion TableBg Target
 
 #pragma region Draw Flags
-        lua.new_enum("ImDrawFlags",
+        luaGlobals.new_enum("ImDrawFlags",
             "None"                              , ImDrawFlags_None,
             "Closed"                            , ImDrawFlags_Closed,
             "ImDrawFlags_RoundCornersTopLeft"   , ImDrawFlags_RoundCornersTopLeft,
@@ -2224,7 +2224,7 @@ namespace sol_ImGui
 #pragma endregion Draw Flags
 
 #pragma region TabBar Flags
-        lua.new_enum("ImGuiTabBarFlags",
+        luaGlobals.new_enum("ImGuiTabBarFlags",
             "None"                           , ImGuiTabBarFlags_None,
             "Reorderable"                    , ImGuiTabBarFlags_Reorderable,
             "AutoSelectNewTabs"              , ImGuiTabBarFlags_AutoSelectNewTabs,
@@ -2240,7 +2240,7 @@ namespace sol_ImGui
 #pragma endregion TabBar Flags
 
 #pragma region TabItem Flags
-        lua.new_enum("ImGuiTabItemFlags",
+        luaGlobals.new_enum("ImGuiTabItemFlags",
             "None"                           , ImGuiTabItemFlags_None,
             "UnsavedDocument"                , ImGuiTabItemFlags_UnsavedDocument,
             "SetSelected"                    , ImGuiTabItemFlags_SetSelected,
@@ -2254,7 +2254,7 @@ namespace sol_ImGui
 #pragma endregion TabItem Flags
 
 #pragma region MouseButton
-        lua.new_enum("ImGuiMouseButton",
+        luaGlobals.new_enum("ImGuiMouseButton",
             "Left"                           , ImGuiMouseButton_Left,
             "Right"                          , ImGuiMouseButton_Right,
             "Middle"                         , ImGuiMouseButton_Middle,
@@ -2263,7 +2263,7 @@ namespace sol_ImGui
 #pragma endregion MouseButton
 
 #pragma region ImDrawCorner Flags
-        lua.new_enum("ImDrawCornerFlags",
+        luaGlobals.new_enum("ImDrawCornerFlags",
             "None"                           , ImDrawCornerFlags_None,
             "TopLeft"                        , ImDrawCornerFlags_TopLeft,
             "TopRight"                       , ImDrawCornerFlags_TopRight,
@@ -2278,12 +2278,12 @@ namespace sol_ImGui
 #pragma endregion ImDrawCorner Flags
     }
 
-    inline void InitBindings(sol::state& lua)
+    inline void InitBindings(sol::state& lua, sol::table luaGlobals)
     {
-        InitUserType(lua);
-        InitEnums(lua);
+        InitUserType(luaGlobals);
+        InitEnums(luaGlobals);
 
-        sol::table ImGui = lua.create_named_table("ImGui");
+        sol::table ImGui(lua, sol::create);
 
 #pragma region Windows
         ImGui.set_function("Begin"              , sol::overload(
@@ -3119,5 +3119,7 @@ namespace sol_ImGui
                                                                                sol::resolve<void(ImDrawList*, float, float, float, float, float, float, int, float, int)>(ImDrawListAddBezierQuadratic)
                                                                     ));
 #pragma endregion Drawing APIs
+
+        luaGlobals["ImGui"] = ImGui;
     }
 }

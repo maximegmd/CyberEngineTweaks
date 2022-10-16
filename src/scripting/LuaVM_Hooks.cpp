@@ -6,6 +6,8 @@
 #include <overlay/Overlay.h>
 #include <reverse/RTTILocator.h>
 
+static LuaVM* s_vm{ nullptr };
+
 void LuaVM::HookLog(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*, void*)
 {
     static RTTILocator s_stringLocator("String");
@@ -67,7 +69,7 @@ void LuaVM::HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack,
     else
         spdlog::get("gamelog")->info("[{}] {}", channelSV, textSV);
 
-    CET::Get().GetVM().m_logCount.fetch_add(1);
+    s_vm->m_logCount.fetch_add(1);
 }
 
 LuaVM::LuaVM(Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12, Options& aOptions)
@@ -87,9 +89,8 @@ LuaVM::~LuaVM()
 
 TDBID* LuaVM::HookTDBIDCtorDerive(TDBID* apBase, TDBID* apThis, const char* acpName)
 {
-    auto& luavm = CET::Get().GetVM();
-    auto result = luavm.m_realTDBIDCtorDerive(apBase, apThis, acpName);
-    luavm.RegisterTDBIDString(apThis->value, apBase->value, std::string(acpName));
+    const auto result = s_vm->m_realTDBIDCtorDerive(apBase, apThis, acpName);
+    s_vm->RegisterTDBIDString(apThis->value, apBase->value, std::string(acpName));
     return result;
 }
 
@@ -105,53 +106,47 @@ void LuaVM::HookTDBIDToStringDEBUG(RED4ext::IScriptable*, RED4ext::CStackFrame* 
 
     if (apResult)
     {
-        std::string name = CET::Get().GetVM().GetTDBIDString(tdbid.value);
-        RED4ext::CString s(name.c_str());
+        const std::string name = s_vm->GetTDBIDString(tdbid.value);
+        const RED4ext::CString s(name.c_str());
         *static_cast<RED4ext::CString*>(apResult) = s;
     }
 }
 
 bool LuaVM::HookRunningStateRun(uintptr_t aThis, uintptr_t aApp)
 {
-    auto& luavm = CET::Get().GetVM();
-
     const auto cNow = std::chrono::high_resolution_clock::now();
-    const auto cDelta = cNow - luavm.m_lastframe;
-    auto cSeconds = std::chrono::duration_cast<std::chrono::duration<float>>(cDelta);
+    const auto cDelta = cNow - s_vm->m_lastframe;
+    const auto cSeconds = std::chrono::duration_cast<std::chrono::duration<float>>(cDelta);
 
-    luavm.Update(cSeconds.count());
+    s_vm->Update(cSeconds.count());
 
-    luavm.m_lastframe = cNow;
+    s_vm->m_lastframe = cNow;
 
-    return luavm.m_realRunningStateRun(aThis, aApp);
+    return s_vm->m_realRunningStateRun(aThis, aApp);
 }
 
 uintptr_t LuaVM::HookSetLoadingState(uintptr_t aThis, int aState)
 {
-    auto& luavm = CET::Get().GetVM();
-
     static std::once_flag s_initBarrier;
 
     if (aState == 2)
     {
-        std::call_once(s_initBarrier, [&luavm]()
+        std::call_once(s_initBarrier, []
         {
-            luavm.PostInitializeMods();
+            s_vm->PostInitializeMods();
         });
     }
 
-    return luavm.m_realSetLoadingState(aThis, aState);
+    return s_vm->m_realSetLoadingState(aThis, aState);
 }
 
 bool LuaVM::HookTranslateBytecode(uintptr_t aBinder, uintptr_t aData)
 {
-    auto& luavm = CET::Get().GetVM();
-
-    const auto ret = luavm.m_realTranslateBytecode(aBinder, aData);
+    const auto ret = s_vm->m_realTranslateBytecode(aBinder, aData);
 
     if (ret)
     {
-        luavm.PostInitializeScripting();
+        s_vm->PostInitializeScripting();
     }
 
     return ret;
@@ -159,17 +154,17 @@ bool LuaVM::HookTranslateBytecode(uintptr_t aBinder, uintptr_t aData)
 
 uint64_t LuaVM::HookTweakDBLoad(uintptr_t aThis, uintptr_t aParam)
 {
-    auto& luavm = CET::Get().GetVM();
+    const auto ret = s_vm->m_realTweakDBLoad(aThis, aParam);
 
-    const auto ret = luavm.m_realTweakDBLoad(aThis, aParam);
-
-    luavm.PostInitializeTweakDB();
+    s_vm->PostInitializeTweakDB();
 
     return ret;
 }
 
 void LuaVM::Hook(Options& aOptions)
 {
+    s_vm = this;
+
     {
         RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_Log);
         uint8_t* pLocation = func.GetAddr();

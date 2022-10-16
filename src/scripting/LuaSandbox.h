@@ -30,9 +30,6 @@ struct LuaSandbox
     void SetGameAvailable(bool aAvailable);
     bool GetGameAvailable() const;
 
-    void WrapForGame(sol::object& apObject) const;
-    void WrapForImGui(sol::object& apObject) const;
-
 private:
 
     void InitializeExtraLibsForSandbox(Sandbox& aSandbox, const sol::state& acpState) const;
@@ -48,6 +45,6 @@ private:
     TiltedPhoques::Vector<Sandbox> m_sandboxes{};
     TiltedPhoques::Map<std::string, sol::object> m_modules{};
 
-    std::atomic_bool m_imguiAvailable{ false };
-    std::atomic_bool m_gameAvailable{ false };
+    bool m_imguiAvailable{ false };
+    bool m_gameAvailable{ false };
 };

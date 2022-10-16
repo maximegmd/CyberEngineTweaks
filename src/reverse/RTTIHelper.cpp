@@ -411,7 +411,7 @@ sol::function RTTIHelper::MakeInvokableFunction(RED4ext::CBaseFunction* apFunc)
 
     const bool cAllowNull = IsFunctionAlias(apFunc);
 
-    auto result = MakeSolFunction(luaState, [this, apFunc, cAllowNull](sol::variadic_args aArgs, sol::this_state aState, sol::this_environment aEnv) -> sol::variadic_results {
+    return MakeSolFunction(luaState, [this, apFunc, cAllowNull](sol::variadic_args aArgs, sol::this_state aState, sol::this_environment aEnv) -> sol::variadic_results {
         uint64_t argOffset = 0;
         const RED4ext::ScriptInstance pHandle = ResolveHandle(apFunc, aArgs, argOffset);
 
@@ -434,8 +434,6 @@ sol::function RTTIHelper::MakeInvokableFunction(RED4ext::CBaseFunction* apFunc)
 
         return result;
     });
-    m_sandbox.WrapForGame(result);
-    return result;
 }
 
 sol::function RTTIHelper::MakeInvokableOverload(std::map<uint64_t, RED4ext::CBaseFunction*> aOverloadedFuncs) const
@@ -448,7 +446,7 @@ sol::function RTTIHelper::MakeInvokableOverload(std::map<uint64_t, RED4ext::CBas
     for (const auto& func : aOverloadedFuncs | std::views::values)
         variants.emplace_back(func);
 
-    auto result = MakeSolFunction(luaState, [this, variants](sol::variadic_args aArgs, sol::this_state aState, sol::this_environment aEnv) mutable -> sol::variadic_results {
+    return MakeSolFunction(luaState, [this, variants](sol::variadic_args aArgs, sol::this_state aState, sol::this_environment aEnv) mutable -> sol::variadic_results {
         for (auto variant = variants.begin(); variant != variants.end(); ++variant)
         {
             variant->lastError.clear();
@@ -503,8 +501,6 @@ sol::function RTTIHelper::MakeInvokableOverload(std::map<uint64_t, RED4ext::CBas
 
         return {};
     });
-    m_sandbox.WrapForGame(result);
-    return result;
 }
 
 RED4ext::ScriptInstance RTTIHelper::ResolveHandle(RED4ext::CBaseFunction* apFunc, sol::variadic_args& aArgs,

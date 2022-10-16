@@ -62,5 +62,4 @@ private:
     FunctionOverride m_override;
     const Paths& m_paths;
     D3D12& m_d3d12;
-    mutable std::recursive_mutex m_vmLock;
 };
