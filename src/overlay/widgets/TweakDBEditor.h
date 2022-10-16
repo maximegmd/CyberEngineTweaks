@@ -130,8 +130,8 @@ private:
     LuaVM& m_vm;
     bool m_initialized = false;
     int32_t m_flatGroupNameDepth = 1;
-    TiltedPhoques::Vector<CachedFlatGroup> m_cachedFlatGroups;
-    TiltedPhoques::Vector<CachedRecordGroup> m_cachedRecords;
+    TiltedPhoques::Map<RED4ext::CName, CachedFlatGroup> m_cachedFlatGroups;
+    TiltedPhoques::Map<RED4ext::CName, CachedRecordGroup> m_cachedRecords;
     static bool s_recordsFilterIsRegex;
     static bool s_flatsFilterIsRegex;
     static char s_recordsFilterBuffer[256];

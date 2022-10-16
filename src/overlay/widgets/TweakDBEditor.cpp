@@ -204,8 +204,11 @@ void TweakDBEditor::RefreshRecords()
         {
             const auto typeName = acpRTTIType->GetName();
 
-            TiltedPhoques::Vector<CachedRecord> recordsVec;
-            recordsVec.reserve(aRecords.size);
+            if (!m_cachedRecords.contains(typeName))
+                m_cachedRecords.emplace(typeName, typeName);
+            auto& groupRecords = m_cachedRecords.at(typeName).m_records;
+
+            groupRecords.reserve(groupRecords.size() + aRecords.size);
             for (auto& handle : aRecords)
             {
                 const auto* record = reinterpret_cast<RED4ext::gamedataTweakDBRecord*>(handle.GetPtr());
@@ -214,30 +217,19 @@ void TweakDBEditor::RefreshRecords()
                     recordName.insert(0, "* ");
                 CachedRecord cachedRecord(std::move(recordName), record->recordID);
                 cachedRecord.InitializeFlats();
-                recordsVec.emplace_back(std::move(cachedRecord));
+                groupRecords.emplace_back(std::move(cachedRecord));
             }
-
-            CachedRecordGroup recordGroup(typeName);
-            recordGroup.m_records = std::move(recordsVec);
-            m_cachedRecords.emplace_back(std::move(recordGroup));
         });
-
-    std::ranges::sort(m_cachedRecords,
-                      [](const CachedRecordGroup& acLeft, const CachedRecordGroup& acRight)
-                      {
-                          return std::ranges::lexicographical_compare(acLeft.m_name, acRight.m_name);
-                      });
 }
 
 void TweakDBEditor::RefreshFlats()
 {
     auto* pTDB = RED4ext::TweakDB::Get();
-    constexpr uint64_t unknownGroupHash = RED4ext::FNV1a64("!Unknown!");
-    constexpr uint64_t badGroupHash = RED4ext::FNV1a64("!BadName!");
 
     std::shared_lock _1(pTDB->mutex00);
     std::shared_lock _2(pTDB->mutex01);
-    TiltedPhoques::Map<uint64_t, CachedFlatGroup> map;
+
+    m_cachedFlatGroups.clear();
 
     std::ranges::for_each(pTDB->flats, [&](RED4ext::TweakDBID dbid)
     {
@@ -250,22 +242,20 @@ void TweakDBEditor::RefreshFlats()
         const bool unknownFlatName = !GetTweakDBIDStringFlat(dbid, name);
         if (unknownFlatName)
         {
-            const auto it = map.find(unknownGroupHash);
-            if (it == map.end())
-                flatGroup = &map.emplace(unknownGroupHash, CachedFlatGroup("!Unknown!")).first.value();
-            else
+            if (const auto it = m_cachedFlatGroups.find("!Unknown!"); it != m_cachedFlatGroups.cend())
                 flatGroup = &it.value();
+            else
+                flatGroup = &m_cachedFlatGroups.emplace("!Unknown!", "!Unknown!").first.value();
         }
         else
         {
             size_t idx = name.find('.');
             if (idx == std::string::npos)
             {
-                const auto it = map.find(badGroupHash);
-                if (it == map.end())
-                    flatGroup = &map.emplace(badGroupHash, CachedFlatGroup("!BadName!")).first.value();
-                else
+                if (const auto it = m_cachedFlatGroups.find("!BadName!"); it != m_cachedFlatGroups.cend())
                     flatGroup = &it.value();
+                else
+                    flatGroup = &m_cachedFlatGroups.emplace("!BadName!", "!BadName!").first.value();
             }
             else
             {
@@ -283,35 +273,27 @@ void TweakDBEditor::RefreshFlats()
                 }
 
                 std::string groupName = name.substr(0, idx);
-                uint64_t groupHash = RED4ext::FNV1a64(groupName.c_str());
-                const auto it = map.find(groupHash);
-                if (it == map.end())
-                    flatGroup = &map.emplace(groupHash, std::move(groupName)).first.value();
-                else
+                if (const auto it = m_cachedFlatGroups.find(groupName.c_str()); it != m_cachedFlatGroups.cend())
                     flatGroup = &it.value();
+                else
+                    flatGroup = &m_cachedFlatGroups.emplace(groupName.c_str(), groupName.c_str()).first.value();
             }
         }
 
         flatGroup->m_flats.emplace_back(std::move(name), dbid);
     });
 
-    m_cachedFlatGroups.clear();
-    m_cachedFlatGroups.reserve(map.size());
-    for (auto it = map.begin(); it != map.end(); ++it)
+    if (const auto it = m_cachedFlatGroups.find("!Unknown!"); it != m_cachedFlatGroups.cend())
     {
-        const auto cGroupHash = it.key();
         auto& group = it.value();
-        if (cGroupHash == unknownGroupHash || cGroupHash == badGroupHash)
-            group.m_name = fmt::format("{} - {} flats!", group.m_name, group.m_flats.size());
-
-        m_cachedFlatGroups.emplace_back(std::move(group));
+        group.m_name = fmt::format("{} - {} flats!", group.m_name, group.m_flats.size());
     }
 
-    std::ranges::sort(m_cachedFlatGroups,
-                      [](const CachedFlatGroup& acLeft, const CachedFlatGroup& acRight)
-                      {
-                          return std::ranges::lexicographical_compare(acLeft.m_name, acRight.m_name);
-                      });
+    if (const auto it = m_cachedFlatGroups.find("!BadName!"); it != m_cachedFlatGroups.cend())
+    {
+        auto& group = it.value();
+        group.m_name = fmt::format("{} - {} flats!", group.m_name, group.m_flats.size());
+    }
 }
 
 void TweakDBEditor::FilterAll()
@@ -339,8 +321,10 @@ void TweakDBEditor::FilterRecords(bool aFilterTab, bool aFilterDropdown)
 {
     const RED4ext::TweakDBID dbid = ExtractTweakDBIDFromString(s_recordsFilterBuffer);
     const RED4ext::TweakDBID dbidDropdown = ExtractTweakDBIDFromString(s_tweakdbidFilterBuffer);
-    for (CachedRecordGroup& group : m_cachedRecords)
+    for (auto it = m_cachedRecords.begin(); it != m_cachedRecords.end(); ++it)
     {
+        auto& group = it.value();
+
         bool anyRecordsVisible = false;
         std::for_each(std::execution::par_unseq, group.m_records.begin(), group.m_records.end(),
           [&](CachedRecord& record)
@@ -400,10 +384,12 @@ void TweakDBEditor::FilterFlats()
 {
     if (s_flatsFilterBuffer[0] == '\0')
     {
-        for (CachedFlatGroup& group : m_cachedFlatGroups)
+        for (auto it = m_cachedFlatGroups.begin(); it != m_cachedFlatGroups.end(); ++it)
         {
+            auto& group = it.value();
+
             group.m_isFiltered = false;
-            for (CachedFlat& flat : group.m_flats)
+            for (auto& flat : group.m_flats)
             {
                 flat.m_isFiltered = false;
             }
@@ -412,10 +398,12 @@ void TweakDBEditor::FilterFlats()
     else
     {
         const RED4ext::TweakDBID dbid = ExtractTweakDBIDFromString(s_flatsFilterBuffer);
-        for (CachedFlatGroup& group : m_cachedFlatGroups)
+        for (auto it = m_cachedFlatGroups.begin(); it != m_cachedFlatGroups.end(); ++it)
         {
+            auto& group = it.value();
+
             bool anyFlatsVisible = false;
-            for (CachedFlat& flat : group.m_flats)
+            for (auto& flat : group.m_flats)
             {
                 if (flat.m_dbid != dbid &&
                     !StringContains(flat.m_name, s_flatsFilterBuffer, s_flatsFilterIsRegex))
@@ -476,9 +464,9 @@ bool TweakDBEditor::DrawRecordDropdown(const char* acpLabel, RED4ext::TweakDBID&
 
         if (ImGui::BeginChild("##dropdownScroll", ImVec2(0, g_comboDropdownHeight)))
         {
-            for (CachedRecordGroup& recordGroup : m_cachedRecords)
+            for (const auto& recordGroup : m_cachedRecords | std::views::values)
             {
-                for (CachedRecord& record : recordGroup.m_records)
+                for (const auto& record : recordGroup.m_records)
                 {
                     if (record.m_isDropdownFiltered)
                         continue;
@@ -1410,8 +1398,10 @@ void TweakDBEditor::DrawRecordsTab()
     if (!ImGui::BeginChild("##scrollable"))
         ImGui::EndChild();
 
-    for (auto& group : m_cachedRecords)
+    for (auto it = m_cachedRecords.begin(); it != m_cachedRecords.end(); ++it)
     {
+        auto& group = it.value();
+
         if (group.m_isFiltered || !group.m_visibilityChecker.IsVisible())
             continue;
 
@@ -1536,8 +1526,10 @@ void TweakDBEditor::DrawFlatsTab()
     if (!ImGui::BeginChild("##scrollable"))
         ImGui::EndChild();
 
-    for (CachedFlatGroup& group : m_cachedFlatGroups)
+    for (auto it = m_cachedFlatGroups.begin(); it != m_cachedFlatGroups.end(); ++it)
     {
+        auto& group = it.value();
+
         if (group.m_isFiltered || !group.m_visibilityChecker.IsVisible())
             continue;
 
@@ -1642,7 +1634,7 @@ void TweakDBEditor::DrawAdvancedTab()
             ImGui::InputTextWithHint("##dropdownSearch", "Search", comboSearchBuffer, sizeof(comboSearchBuffer));
             if (ImGui::BeginChild("##dropdownScroll", ImVec2(0, g_comboDropdownHeight)))
             {
-                for (CachedRecordGroup& recordGroup : m_cachedRecords)
+                for (const auto& recordGroup : m_cachedRecords | std::views::values)
                 {
                     if (comboSearchBuffer[0] != '\0' &&
                         !StringContains(recordGroup.m_name, comboSearchBuffer))
