@@ -62,21 +62,6 @@ D3D12::D3D12(Window& aWindow, Paths& aPaths, Options& aOptions)
     , m_options(aOptions)
 {
     HookGame();
-
-    std::thread t([this]
-    {
-        if (kiero::init() != kiero::Status::Success)
-            Log::Error("Kiero failed!");
-        else
-        {
-            std::string_view d3d12type = kiero::isDownLevelDevice() ? "D3D12on7" : "D3D12";
-            Log::Info("Kiero initialized for {}", d3d12type);
-
-            Hook();
-        }
-    });
-
-    t.detach();
 }
 
 D3D12::~D3D12()

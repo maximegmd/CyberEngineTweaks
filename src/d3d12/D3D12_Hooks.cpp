@@ -8,19 +8,7 @@
 
 #include <kiero/kiero.h>
 
-HRESULT D3D12::ResizeBuffers(IDXGISwapChain* apSwapChain, UINT aBufferCount, UINT aWidth, UINT aHeight, DXGI_FORMAT aNewFormat, UINT aSwapChainFlags)
-{
-    auto& d3d12 = CET::Get().GetD3D12();
-
-    if (d3d12.m_initialized)
-    {
-        // NOTE: right now, done in case of any swap chain ResizeBuffers call, which may not be ideal. We have yet to encounter multiple swap chains in use though, so should be safe
-        Log::Info("D3D12::ResizeBuffers() called with initialized D3D12, triggering D3D12::ResetState.");
-        d3d12.ResetState();
-    }
-
-    return d3d12.m_realResizeBuffersD3D12(apSwapChain, aBufferCount, aWidth, aHeight, aNewFormat, aSwapChainFlags);
-}
+#include <VersionHelpers.h>
 
 HRESULT D3D12::PresentDownlevel(ID3D12CommandQueueDownlevel* apCommandQueueDownlevel, ID3D12GraphicsCommandList* apOpenCommandList, ID3D12Resource* apSourceTex2D, HWND ahWindow, D3D12_DOWNLEVEL_PRESENT_FLAGS aFlags)
 {
@@ -93,25 +81,6 @@ HRESULT D3D12::CreateCommittedResource(ID3D12Device* apDevice, const D3D12_HEAP_
     return result;
 }
 
-void D3D12::ExecuteCommandLists(ID3D12CommandQueue* apCommandQueue, UINT aNumCommandLists,
-                                ID3D12CommandList* const* apcpCommandLists)
-{
-    auto& d3d12 = CET::Get().GetD3D12();
-    if (d3d12.m_pCommandQueue == nullptr)
-    {
-        const auto desc = apCommandQueue->GetDesc();
-        if (desc.Type == D3D12_COMMAND_LIST_TYPE_DIRECT)
-        {
-            auto ret = reinterpret_cast<uintptr_t>(_ReturnAddress()) - reinterpret_cast<uintptr_t>(GetModuleHandleA(nullptr));
-            d3d12.m_pCommandQueue = apCommandQueue;
-            Log::Info("D3D12::ExecuteCommandListsD3D12() - found valid command queue. {:X}", ret);
-        }
-        else
-            Log::Info("D3D12::ExecuteCommandListsD3D12() - ignoring command queue - unusable command list type");
-    }
-    d3d12.m_realExecuteCommandLists(apCommandQueue, aNumCommandLists, apcpCommandLists);
-}
-
 void* ApplyHook(void** vtable, size_t index, void* target)
 {
     DWORD oldProtect;
@@ -123,39 +92,60 @@ void* ApplyHook(void** vtable, size_t index, void* target)
     return ret;
 }
 
-void* D3D12::CRenderNode_Present_InternalPresent(int32_t* apSomeInt, uint8_t aSomeSync, UINT aSyncInterval)
+void* D3D12::CRenderNode_Present_InternalPresent(int32_t* apDeviceIndex, uint8_t aSomeSync, UINT aSyncInterval)
 {
+    static std::once_flag s_kieroOnce;
+
     auto& d3d12 = CET::Get().GetD3D12();
 
-    if (!kiero::isDownLevelDevice())
+    const auto* pContext = RenderContext::GetInstance();
+    auto* pDevice = pContext->devices[*apDeviceIndex - 1].pSwapChain;
+    if (pContext->unkED69C0 == nullptr)
     {
-        const auto idx = *apSomeInt - 1;
-
-        const auto* pContext = RenderContext::GetInstance();
-        if (pContext->unkED69C0 == nullptr)
+        if (d3d12.m_initialized)
+            d3d12.Update();
+        else
         {
-            auto* pDevice = pContext->devices[idx].pSwapChain;
-            d3d12.m_pCommandQueue = pContext->pDirectQueue;
+            // NOTE: checking against Windows 8 as Windows 10 requires specific compatibility manifest to be detected by these
+            //       DX12 does not work on Windows 8 and 8.1 so we should be safe with this check
+            if (IsWindows8OrGreater())
+            {
+                d3d12.m_pCommandQueue = pContext->pDirectQueue;
+                d3d12.Initialize(pDevice);
+            }
+            else
+            {
+                std::call_once(s_kieroOnce, [] {
+                    if (kiero::init() != kiero::Status::Success)
+                        Log::Error("Kiero failed!");
+                    else
+                    {
+                        std::string_view d3d12type = kiero::isDownLevelDevice() ? "D3D12on7" : "D3D12";
+                        Log::Info("Kiero initialized for {}", d3d12type);
 
-            if (d3d12.Initialize(pDevice))
-                d3d12.Update();
+                        CET::Get().GetD3D12().Hook();
+                    }
+                });
+            }
         }
     }
 
-    return d3d12.m_realInternalPresent(apSomeInt, aSomeSync, aSyncInterval);
+    return d3d12.m_realInternalPresent(apDeviceIndex, aSomeSync, aSyncInterval);
 }
 
-void* D3D12::CRenderGlobal_Resize(uint32_t a1, uint32_t a2, uint32_t a3, uint8_t a4, int* a5)
+void* D3D12::CRenderGlobal_Resize(uint32_t aWidth, uint32_t aHeight, uint32_t a3, uint8_t a4, int* apDeviceIndex)
 {
     auto& d3d12 = CET::Get().GetD3D12();
 
+    // TODO - ideally find a way to not call this on each minimize/maximize/etc. which causes this to be called
+    //        it can get called multiple times even when there was no resolution change or swapchain invalidation
     if (d3d12.m_initialized)
     {
         Log::Info("CRenderGlobal::Resize() called with initialized D3D12, triggering D3D12::ResetState.");
         d3d12.ResetState();
     }
 
-    return d3d12.m_realInternalResize(a1, a2, a3, a4, a5);
+    return d3d12.m_realInternalResize(aWidth, aHeight, a3, a4, apDeviceIndex);
 }
 
 ID3D12Device* D3D12::GetDevice() const
@@ -209,18 +199,6 @@ void D3D12::Hook()
         else
         {
             Log::Info("D3D12on7: CreateCommittedResource hook complete.");
-            ++d3d12CompleteHooksCount;
-        }
-
-        if (kiero::bind(54, reinterpret_cast<void**>(&m_realExecuteCommandLists), reinterpret_cast<void*>(&ExecuteCommandLists)) !=
-            kiero::Status::Success)
-        {
-            Log::Error("D3D12on7: ExecuteCommandLists hook failed!");
-            ++d3d12FailedHooksCount;
-        }
-        else
-        {
-            Log::Info("D3D12on7: ExecuteCommandLists hook complete.");
             ++d3d12CompleteHooksCount;
         }
 

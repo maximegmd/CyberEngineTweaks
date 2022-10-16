@@ -23,6 +23,7 @@ bool D3D12::ResetState(bool aClearDownlevelBackbuffers)
     if (aClearDownlevelBackbuffers)
         m_downlevelBackbuffers.clear();
 
+    m_pCommandQueue = nullptr;
     m_pdxgiSwapChain = nullptr;
     m_pd3d12Device = nullptr;
     m_pd3dRtvDescHeap = nullptr;
@@ -30,12 +31,15 @@ bool D3D12::ResetState(bool aClearDownlevelBackbuffers)
     m_pd3dCommandList = nullptr;
     m_downlevelBufferIndex = 0;
     m_outSize = { 0, 0 };
-    // NOTE: not clearing m_hWnd, m_wndProc and m_pCommandQueue, as these should be persistent once set till the EOL of D3D12
+    // NOTE: not clearing m_hWnd, m_wndProc, as these should be persistent once set till the EOL of D3D12
     return false;
 }
 
 bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
 {
+    if (m_initialized)
+        return true;
+
     if (!apSwapChain)
         return false;
 
@@ -44,30 +48,6 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
     {
         Log::Warn("D3D12::InitializeDownlevel() - window not yet hooked!");
         return false;
-    }
-
-    if (m_initialized)
-    {
-        Microsoft::WRL::ComPtr<IDXGISwapChain3> pSwapChain3{ nullptr };
-        if (FAILED(apSwapChain->QueryInterface(IID_PPV_ARGS(&pSwapChain3))))
-        {
-            Log::Error("D3D12::Initialize() - unable to query pSwapChain interface for IDXGISwapChain3! (pSwapChain = {:X})", reinterpret_cast<void*>(apSwapChain));
-            return false;
-        }
-        if (m_pdxgiSwapChain != pSwapChain3)
-        {
-            Log::Warn("D3D12::Initialize() - multiple swap chains detected! Currently hooked to {:X}, this call was from {:X}.", reinterpret_cast<void*>(m_pdxgiSwapChain.Get()), reinterpret_cast<void*>(apSwapChain));
-            return false;
-        }
-        {
-            DXGI_SWAP_CHAIN_DESC sdesc;
-            m_pdxgiSwapChain->GetDesc(&sdesc);
-
-            if (hWnd != sdesc.OutputWindow)
-                Log::Warn("D3D12::Initialize() - output window of current swap chain does not match hooked window! Currently hooked to {} while swap chain output window is {}.", reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(sdesc.OutputWindow));
-        }
-
-        return true;
     }
 
     if (FAILED(apSwapChain->QueryInterface(IID_PPV_ARGS(&m_pdxgiSwapChain))))
