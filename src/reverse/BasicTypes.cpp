@@ -2,6 +2,8 @@
 
 #include "BasicTypes.h"
 
+#include <CET.h>
+
 #include <spdlog/fmt/fmt.h>
 
 std::string Vector3::ToString() const noexcept
@@ -71,7 +73,8 @@ void CName::Add(const std::string& aName)
 
 std::string TweakDBID::ToString() const noexcept
 {
-    return fmt::format("ToTweakDBID{{ hash = 0x{:08X}, length = {:d} }}", name_hash, name_length);
+    auto str = CET::Get().GetVM().GetTDBIDString(value, true);
+    return str.empty() ? fmt::format("ToTweakDBID{{ name = 0x{:08X}, length = {:d} }}", name_hash, name_length) : str;
 }
 
 bool TweakDBID::operator==(const TweakDBID& acRhs) const noexcept

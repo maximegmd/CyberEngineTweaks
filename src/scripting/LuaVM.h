@@ -51,7 +51,7 @@ struct LuaVM
     uint64_t GetTDBIDBase(uint64_t aDBID);
     TDBIDLookupEntry GetTDBIDLookupEntry(uint64_t aDBID);
     std::string GetTDBDIDDebugString(TDBID aDBID) const;
-    std::string GetTDBIDString(uint64_t aDBID);
+    std::string GetTDBIDString(uint64_t aDBID, bool aOnlyRegistered = false);
 
     void RegisterTDBIDString(uint64_t aValue, uint64_t aBase, const std::string& acString);
 

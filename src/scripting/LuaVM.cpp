@@ -153,13 +153,13 @@ std::string LuaVM::GetTDBDIDDebugString(TDBID aDBID) const
         : fmt::format("<TDBID:{:08X}:{:02X}>", internal.name.hash, internal.name.length);
 }
 
-std::string LuaVM::GetTDBIDString(uint64_t aDBID)
+std::string LuaVM::GetTDBIDString(uint64_t aDBID, bool aOnlyRegistered)
 {
     std::shared_lock _{ m_tdbidLock };
 
     auto it = m_tdbidLookup.find(aDBID & 0xFFFFFFFFFF);
     if (it == m_tdbidLookup.end())
-        return GetTDBDIDDebugString(TDBID{ aDBID });
+        return aOnlyRegistered ? "" : GetTDBDIDDebugString(TDBID{ aDBID });
 
     std::string string = it->second.name;
     uint64_t base = it->second.base;
