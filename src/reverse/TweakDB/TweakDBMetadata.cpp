@@ -76,13 +76,8 @@ bool TweakDBMetadata::Initialize()
             auto size = OodleLZ_Decompress(encodedBytes.data() + headerSize, static_cast<int>(encodedBytes.size() - headerSize), decodedBytes.data(),
                                            static_cast<int>(decodedBytes.size()), 1, 1, 0, nullptr, nullptr, nullptr, nullptr, workingMemory, std::size(workingMemory), 3);
 
+            assert(size == decodedBytes.size());
             if (size != decodedBytes.size())
-            {
-                // this should not happen!
-                assert(false);
-                decodedBytes.resize(size);
-            }
-            else
             {
                 Log::Error("CDPRTweakDBMetadata::Initalize() - Failed to decompress tweakdbstr.kark!");
                 return false;
