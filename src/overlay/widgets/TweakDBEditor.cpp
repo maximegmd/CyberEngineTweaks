@@ -6,7 +6,6 @@
 #include <Utils.h>
 
 #include <reverse/TweakDB/ResourcesList.h>
-#include <reverse/TweakDB/TweakDBMetadata.h>
 #include <reverse/TweakDB/TweakDB.h>
 
 #include <RED4ext/Scripting/Natives/Generated/Color.hpp>
@@ -136,12 +135,6 @@ void TweakDBEditor::Update()
 
     if (!m_initialized)
     {
-        if (!ResourcesList::Get()->IsInitialized() || !TweakDBMetadata::Get()->IsInitialized())
-        {
-            ImGui::TextUnformatted("Failed to initialize TweakDBEditor due to missing resources!");
-            return;
-        }
-
         RefreshAll();
         m_initialized = true;
     }
@@ -510,9 +503,6 @@ std::string TweakDBEditor::GetTweakDBIDStringRecord(RED4ext::TweakDBID aDBID)
 
 bool TweakDBEditor::GetTweakDBIDStringRecord(RED4ext::TweakDBID aDBID, std::string& aString)
 {
-    if (TweakDBMetadata::Get()->GetRecordName(aDBID, aString))
-        return true;
-
     aString = CET::Get().GetVM().GetTDBIDString(aDBID);
     return !aString.starts_with('<') || !aString.ends_with('>');
 }
@@ -526,9 +516,6 @@ std::string TweakDBEditor::GetTweakDBIDStringFlat(RED4ext::TweakDBID aDBID)
 
 bool TweakDBEditor::GetTweakDBIDStringFlat(RED4ext::TweakDBID aDBID, std::string& aString)
 {
-    if (TweakDBMetadata::Get()->GetFlatName(aDBID, aString))
-        return true;
-
     aString = CET::Get().GetVM().GetTDBIDString(aDBID);
     return !aString.starts_with('<') || !aString.ends_with('>');
 }
@@ -542,9 +529,6 @@ std::string TweakDBEditor::GetTweakDBIDStringQuery(RED4ext::TweakDBID aDBID)
 
 bool TweakDBEditor::GetTweakDBIDStringQuery(RED4ext::TweakDBID aDBID, std::string& aString)
 {
-    if (TweakDBMetadata::Get()->GetQueryName(aDBID, aString))
-        return true;
-
     aString = CET::Get().GetVM().GetTDBIDString(aDBID);
     return aString[0] != '<' || aString[aString.size() - 1] != '>';
 }
