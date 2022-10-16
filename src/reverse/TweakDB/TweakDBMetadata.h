@@ -2,7 +2,8 @@
 
 struct TweakDBMetadata
 {
-    inline static const std::string c_defaultFilename = "tweakdb.str";
+    inline static const std::string c_defaultFilename = "tweakdbstr.kark";
+    inline static const std::string c_defaultFilenameRAW = "tweakdb.str";
 
     static TweakDBMetadata* Get();
 

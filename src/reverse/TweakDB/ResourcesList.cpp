@@ -24,6 +24,8 @@ bool ResourcesList::Initialize()
 {
     Reset();
 
+    // TODO - share decompression routine with TweakDBMetadata
+
     auto hOodleHandle = GetModuleHandle(TEXT("oo2ext_7_win64.dll"));
     if (hOodleHandle == nullptr)
     {
@@ -60,8 +62,10 @@ bool ResourcesList::Initialize()
         auto size = OodleLZ_Decompress(content.data() + headerSize, static_cast<int>(content.size() - headerSize), buffer.data(),
                                        static_cast<int>(buffer.size()), 1, 1, 0, nullptr, nullptr, nullptr, nullptr, workingMemory, std::size(workingMemory), 3);
 
-        if (size > 0)
+        if (size != buffer.size())
         {
+            // this should not happen!
+            assert(false);
             buffer.resize(size);
         }
         else

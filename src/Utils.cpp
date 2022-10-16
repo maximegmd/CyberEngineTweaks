@@ -2,7 +2,6 @@
 
 #include "Utils.h"
 
-#include <LzmaLib.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 
 void ltrim(std::string& s)
@@ -309,13 +308,14 @@ std::filesystem::path GetLuaPath(std::filesystem::path aFilePath, const std::fil
     return relative(aFilePath, std::filesystem::current_path());
 }
 
-std::vector<uint8_t> ReadWholeBinaryFile(const std::filesystem::path& acpPath)
+std::vector<char> ReadWholeBinaryFile(const std::filesystem::path& acpPath)
 {
     if (acpPath.empty() || !exists(acpPath))
         return {};
 
     std::ifstream file(acpPath, std::ios::binary);
-    std::vector<uint8_t> bytes(std::istreambuf_iterator{file}, {});
+    file.exceptions(std::ios::badbit | std::ios::failbit | std::ios::eofbit);
+    std::vector<char> bytes(std::istreambuf_iterator{file}, {});
     file.close();
 
     return bytes;
@@ -327,61 +327,9 @@ std::string ReadWholeTextFile(const std::filesystem::path& acpPath)
         return {};
 
     std::ifstream file(acpPath, std::ios::binary);
+    file.exceptions(std::ios::badbit | std::ios::failbit | std::ios::eofbit);
     std::string lines(std::istreambuf_iterator{file}, {});
     file.close();
 
     return lines;
 }
-
-std::vector<uint8_t> EncodeToLzma(const std::filesystem::path& acpPath)
-{
-    return EncodeToLzma(ReadWholeBinaryFile(acpPath));
-}
-
-std::vector<uint8_t> EncodeToLzma(const std::vector<uint8_t>& acpIn)
-{
-    size_t propsSize = LZMA_PROPS_SIZE;
-    size_t destLen = acpIn.size() + acpIn.size() / 3 + 128;
-    std::vector<uint8_t> outBuf;
-    outBuf.resize(propsSize + destLen + sizeof(uint64_t));
-
-    const auto res = LzmaCompress(
-        &outBuf[LZMA_PROPS_SIZE + sizeof(uint64_t)], &destLen,
-        acpIn.data(), acpIn.size(),
-        &outBuf[sizeof(uint64_t)], &propsSize,
-        -1, 0, -1, -1, -1, -1, -1);
-
-    assert(propsSize == LZMA_PROPS_SIZE);
-    assert(res == SZ_OK);
-
-    const uint64_t finalSize = acpIn.size();
-    std::memcpy(outBuf.data(), &finalSize, sizeof(uint64_t));
-
-    outBuf.resize(propsSize + destLen + sizeof(uint64_t));
-
-    return outBuf;
-}
-
-std::vector<uint8_t> DecodeFromLzma(const std::filesystem::path& acpPath)
-{
-    return DecodeFromLzma(ReadWholeBinaryFile(acpPath));
-}
-
-std::vector<uint8_t> DecodeFromLzma(const std::vector<uint8_t>& acpIn)
-{
-    uint64_t decodedSize = 0;
-    std::memcpy(&decodedSize, acpIn.data(), sizeof(uint64_t));
-
-    std::vector<uint8_t> outBuf;
-    outBuf.resize(decodedSize);
-
-    size_t srcLen = acpIn.size() - LZMA_PROPS_SIZE;
-    const auto res = LzmaUncompress(
-        outBuf.data(), &decodedSize,
-        &acpIn[LZMA_PROPS_SIZE + sizeof(uint64_t)], &srcLen,
-        &acpIn[sizeof(uint64_t)], LZMA_PROPS_SIZE);
-        assert(res == SZ_OK);
-
-    return outBuf;
-}
-
