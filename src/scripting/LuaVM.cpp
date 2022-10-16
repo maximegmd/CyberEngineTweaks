@@ -4,9 +4,6 @@
 
 #include <CET.h>
 
-#include <reverse/TweakDB/ResourcesList.h>
-#include <reverse/TweakDB/TweakDBMetadata.h>
-
 const VKBind* LuaVM::GetBind(const VKModBind& acModBind) const
 {
     return m_scripting.GetBind(acModBind);
@@ -195,9 +192,6 @@ void LuaVM::PostInitializeScripting()
 
 void LuaVM::PostInitializeTweakDB()
 {
-    if (!ResourcesList::Get()->Initialize() || !TweakDBMetadata::Get()->Initialize())
-        return;
-
     m_scripting.PostInitializeTweakDB();
 }
 

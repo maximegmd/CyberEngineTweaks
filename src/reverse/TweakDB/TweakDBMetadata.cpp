@@ -34,7 +34,7 @@ bool TweakDBMetadata::Initialize()
     }
 
     const auto tdbstrPathRAW = GetAbsolutePath(c_defaultFilenameRAW, CET::Get().GetPaths().TweakDB(), false, true);
-    if (!tdbstrPathRAW .empty())
+    if (!tdbstrPathRAW.empty())
     {
         try
         {
@@ -57,7 +57,7 @@ bool TweakDBMetadata::Initialize()
     else
     {
         const auto tdbstrPath = GetAbsolutePath(c_defaultFilename, CET::Get().GetPaths().TweakDB(), false, true);
-        if (tdbstrPath .empty())
+        if (tdbstrPath.empty())
         {
             Log::Error("CDPRTweakDBMetadata::Initalize() - Missing tweakdbstr.kark!");
             return false;

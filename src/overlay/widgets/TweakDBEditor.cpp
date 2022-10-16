@@ -23,8 +23,6 @@ char TweakDBEditor::s_tweakdbidFilterBuffer[256]{};
 float g_comboDropdownHeight = 300.0f;
 constexpr float c_searchDelay = 0.25f;
 
-bool SortString(const std::string& acLeft, const std::string& acRight);
-
 namespace ImGui
 {
 std::pair<bool, std::string*> InputTextCStr(const char* acpLabel, const char* acpBuf, size_t aBufSize,
@@ -76,19 +74,6 @@ bool NextItemVisible(const ImVec2& aSize = ImVec2(1, 1), bool aClaimSpaceIfInvis
 }
 }
 
-bool SortString(const std::string& acLeft, const std::string& acRight)
-{
-    const size_t minLength = std::min(acLeft.size(), acRight.size());
-    for (size_t i = 0; i != minLength; ++i)
-    {
-        const char a = std::tolower(acLeft[i]);
-        const char b = std::tolower(acRight[i]);
-        if (a != b)
-            return a < b;
-    }
-    return acLeft.size() < acRight.size();
-}
-
 bool SortTweakDBIDString(const std::string& acLeft, const std::string& acRight)
 {
     // unknown TweakDBID should be at the bottom
@@ -98,7 +83,7 @@ bool SortTweakDBIDString(const std::string& acLeft, const std::string& acRight)
     if (acLeft[0] != '<' && acRight[0] == '<')
         return true;
 
-    return SortString(acLeft, acRight);
+    return std::ranges::lexicographical_compare(acLeft, acRight);
 }
 
 bool StringContains(const std::string_view& acString, const std::string_view& acSearch, bool aRegex = false)
@@ -152,7 +137,10 @@ void TweakDBEditor::Update()
     if (!m_initialized)
     {
         if (!ResourcesList::Get()->IsInitialized() || !TweakDBMetadata::Get()->IsInitialized())
+        {
+            ImGui::TextUnformatted("Failed to initialize TweakDBEditor due to missing resources!");
             return;
+        }
 
         RefreshAll();
         m_initialized = true;
@@ -207,17 +195,16 @@ void TweakDBEditor::RefreshRecords()
     auto* pTDB = RED4ext::TweakDB::Get();
 
     std::shared_lock _(pTDB->mutex01);
-    TiltedPhoques::Map<uint64_t, TiltedPhoques::Vector<CachedRecord>> map;
 
-    size_t recordsCount = 0;
+    m_cachedRecords.clear();
+
     pTDB->recordsByType.for_each(
-        [this, &map, &recordsCount](const RED4ext::CBaseRTTIType* acpRTTIType,
-                                    RED4ext::DynArray<RED4ext::Handle<RED4ext::IScriptable>> aRecords)
+        [this](const RED4ext::CBaseRTTIType* acpRTTIType,
+                                    const RED4ext::DynArray<RED4ext::Handle<RED4ext::IScriptable>>& aRecords)
         {
-            recordsCount += aRecords.size;
             const auto typeName = acpRTTIType->GetName();
 
-            TiltedPhoques::Vector<CachedRecord>& recordsVec = map[typeName];
+            TiltedPhoques::Vector<CachedRecord> recordsVec;
             recordsVec.reserve(aRecords.size);
             for (auto& handle : aRecords)
             {
@@ -226,29 +213,19 @@ void TweakDBEditor::RefreshRecords()
                 if (TweakDB::IsACreatedRecord(record->recordID))
                     recordName.insert(0, "* ");
                 CachedRecord cachedRecord(std::move(recordName), record->recordID);
+                cachedRecord.InitializeFlats();
                 recordsVec.emplace_back(std::move(cachedRecord));
             }
+
+            CachedRecordGroup recordGroup(typeName);
+            recordGroup.m_records = std::move(recordsVec);
+            m_cachedRecords.emplace_back(std::move(recordGroup));
         });
-
-    m_cachedRecords.clear();
-    m_cachedRecords.reserve(recordsCount);
-    for (auto it = map.begin(); it != map.end(); ++it)
-    {
-        const auto cTypeName = it.key();
-        auto& records = it.value();
-
-        std::for_each(std::execution::par_unseq, records.begin(), records.end(),
-                      [](CachedRecord& record) { record.InitializeFlats(); });
-
-        CachedRecordGroup recordGroup(cTypeName);
-        recordGroup.m_records = std::move(records);
-        m_cachedRecords.emplace_back(std::move(recordGroup));
-    }
 
     std::ranges::sort(m_cachedRecords,
                       [](const CachedRecordGroup& acLeft, const CachedRecordGroup& acRight)
                       {
-                          return SortString(acLeft.m_name, acRight.m_name);
+                          return std::ranges::lexicographical_compare(acLeft.m_name, acRight.m_name);
                       });
 }
 
@@ -260,10 +237,9 @@ void TweakDBEditor::RefreshFlats()
 
     std::shared_lock _1(pTDB->mutex00);
     std::shared_lock _2(pTDB->mutex01);
-    std::mutex mapMutex;
     TiltedPhoques::Map<uint64_t, CachedFlatGroup> map;
 
-    std::for_each(std::execution::par_unseq, pTDB->flats.begin(), pTDB->flats.end(), [&](RED4ext::TweakDBID& dbid)
+    std::ranges::for_each(pTDB->flats, [&](RED4ext::TweakDBID dbid)
     {
         const uint64_t dbidBase = m_vm.GetTDBIDBase(dbid);
         if (dbidBase != 0 && pTDB->recordsByID.Get(dbidBase) != nullptr)
@@ -272,7 +248,6 @@ void TweakDBEditor::RefreshFlats()
         std::string name;
         CachedFlatGroup* flatGroup = nullptr;
         const bool unknownFlatName = !GetTweakDBIDStringFlat(dbid, name);
-        std::lock_guard _(mapMutex);
         if (unknownFlatName)
         {
             const auto it = map.find(unknownGroupHash);
@@ -335,7 +310,7 @@ void TweakDBEditor::RefreshFlats()
     std::ranges::sort(m_cachedFlatGroups,
                       [](const CachedFlatGroup& acLeft, const CachedFlatGroup& acRight)
                       {
-                          return SortString(acLeft.m_name, acRight.m_name);
+                          return std::ranges::lexicographical_compare(acLeft.m_name, acRight.m_name);
                       });
 }
 

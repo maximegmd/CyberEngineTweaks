@@ -163,15 +163,14 @@ void Scripting::PostInitializeScripting()
 {
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
+    sol::table luaGlobal = luaVm[m_global];
 
-    if (luaVm["__Game"] != sol::nil)
+    if (luaGlobal["__Game"] != sol::nil)
     {
         m_mapper.Refresh();
         m_override.Refresh();
         return;
     }
-
-    sol::table luaGlobal = luaVm[m_global];
 
     luaGlobal.new_usertype<Scripting>("__Game",
         sol::meta_function::construct, sol::no_constructor,
@@ -375,7 +374,6 @@ void Scripting::PostInitializeScripting()
         sol::meta_function::concatenation, &TweakDBID::operator+,
         "hash", &TweakDBID::name_hash,
         "length", &TweakDBID::name_length);
-    luaGlobal["TweakDBID"] = luaVm["TweakDBID"];
 
     luaGlobal["ToTweakDBID"] = [](sol::table table) -> TweakDBID
     {
@@ -464,6 +462,18 @@ void Scripting::PostInitializeScripting()
         "Dump", &GameOptions::Dump,
         "List", &GameOptions::List);
 
+    m_sandbox.PostInitializeScripting();
+}
+
+void Scripting::PostInitializeTweakDB()
+{
+    auto lua = m_lua.Lock();
+    auto& luaVm = lua.Get();
+    sol::table luaGlobal = luaVm[m_global];
+
+    ResourcesList::Get()->Initialize();
+    TweakDBMetadata::Get()->Initialize();
+
     luaGlobal.new_usertype<TweakDB>("__TweakDB",
         sol::meta_function::construct, sol::no_constructor,
         "DebugStats", &TweakDB::DebugStats,
@@ -479,11 +489,8 @@ void Scripting::PostInitializeScripting()
         "CloneRecord", overload(&TweakDB::CloneRecordByName, &TweakDB::CloneRecordToID, &TweakDB::CloneRecord),
         "DeleteRecord", overload(&TweakDB::DeleteRecordByID, &TweakDB::DeleteRecord));
 
-    m_sandbox.PostInitializeScripting();
-}
+    luaGlobal["TweakDB"] = TweakDB(m_lua.AsRef());
 
-void Scripting::PostInitializeTweakDB()
-{
     m_sandbox.PostInitializeTweakDB();
 
     TriggerOnTweak();
@@ -493,7 +500,6 @@ void Scripting::PostInitializeMods()
 {
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
-
     sol::table luaGlobal = luaVm[m_global];
 
     luaGlobal["NewObject"] = [this](const std::string& acName, sol::this_environment aEnv) -> sol::object
@@ -611,8 +617,9 @@ void Scripting::RegisterOverrides()
 {
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
+    sol::table luaGlobal = luaVm[m_global];
 
-    luaVm["RegisterGlobalInputListener"] = [](WeakReference& aSelf, sol::this_environment aThisEnv) {
+    luaGlobal["RegisterGlobalInputListener"] = [](WeakReference& aSelf, sol::this_environment aThisEnv) {
         const sol::protected_function unregisterInputListener = aSelf.Index("UnregisterInputListener", aThisEnv);
         const sol::protected_function registerInputListener = aSelf.Index("RegisterInputListener", aThisEnv);
 
@@ -620,7 +627,7 @@ void Scripting::RegisterOverrides()
         registerInputListener(aSelf, aSelf);
     };
 
-    m_override.Override("PlayerPuppet", "GracePeriodAfterSpawn", luaVm["RegisterGlobalInputListener"], sol::nil, false, false, true);
+    m_override.Override("PlayerPuppet", "GracePeriodAfterSpawn", luaGlobal["RegisterGlobalInputListener"], sol::nil, false, false, true);
     m_override.Override("PlayerPuppet", "OnDetach", sol::nil, sol::nil, false, false, true);
     m_override.Override("QuestTrackerGameController", "OnUninitialize", sol::nil, sol::nil, false, false, true);
 }

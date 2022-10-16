@@ -110,6 +110,11 @@ static constexpr const char* s_cPostInitializeScriptingProtectedList[] =
     "CRUID",
     "LocKey",
     "GameOptions",
+};
+
+static constexpr const char* s_cPostInitializeTweakDBProtectedList[] =
+{
+    // initialized by Scripting
     "__TweakDB",
     "TweakDB"
 };
@@ -207,6 +212,17 @@ void LuaSandbox::PostInitializeScripting()
 void LuaSandbox::PostInitializeTweakDB()
 {
     auto lockedState = m_pScripting->GetLockedState();
+    auto& luaState = lockedState.Get();
+    auto globals = luaState.globals();
+    auto ourGlobals = globals[m_pScripting->GetGlobalName()];
+
+    // copy whitelisted from global table
+    for (const auto* cKey : s_cPostInitializeTweakDBProtectedList)
+    {
+        m_env[cKey] = DeepCopySolObject(ourGlobals[cKey].get<sol::object>(), luaState);
+        MakeSolUsertypeImmutable(m_env[cKey], luaState);
+    }
+
     SetGameAvailable(true);
 }
 
