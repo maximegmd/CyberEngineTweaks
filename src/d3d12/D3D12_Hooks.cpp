@@ -119,33 +119,30 @@ void* D3D12::CRenderNode_Present_InternalPresent(int32_t* apDeviceIndex, uint8_t
 
     const auto* pContext = RenderContext::GetInstance();
     auto* pDevice = pContext->devices[*apDeviceIndex - 1].pSwapChain;
-    if (pContext->unkED69C0 == nullptr)
+    if (d3d12.m_initialized)
+        d3d12.Update();
+    else
     {
-        if (d3d12.m_initialized)
-            d3d12.Update();
+        // NOTE: checking against Windows 8 as Windows 10 requires specific compatibility manifest to be detected by these
+        //       DX12 does not work on Windows 8 and 8.1 so we should be safe with this check
+        if (IsWindows8OrGreater())
+        {
+            d3d12.m_pCommandQueue = pContext->pDirectQueue;
+            d3d12.Initialize(pDevice);
+        }
         else
         {
-            // NOTE: checking against Windows 8 as Windows 10 requires specific compatibility manifest to be detected by these
-            //       DX12 does not work on Windows 8 and 8.1 so we should be safe with this check
-            if (IsWindows8OrGreater())
-            {
-                d3d12.m_pCommandQueue = pContext->pDirectQueue;
-                d3d12.Initialize(pDevice);
-            }
-            else
-            {
-                std::call_once(s_kieroOnce, [] {
-                    if (kiero::init() != kiero::Status::Success)
-                        Log::Error("Kiero failed!");
-                    else
-                    {
-                        std::string_view d3d12type = kiero::isDownLevelDevice() ? "D3D12on7" : "D3D12";
-                        Log::Info("Kiero initialized for {}", d3d12type);
+            std::call_once(s_kieroOnce, [] {
+                if (kiero::init() != kiero::Status::Success)
+                    Log::Error("Kiero failed!");
+                else
+                {
+                    std::string_view d3d12type = kiero::isDownLevelDevice() ? "D3D12on7" : "D3D12";
+                    Log::Info("Kiero initialized for {}", d3d12type);
 
-                        CET::Get().GetD3D12().Hook();
-                    }
-                });
-            }
+                    CET::Get().GetD3D12().Hook();
+                }
+            });
         }
     }
 

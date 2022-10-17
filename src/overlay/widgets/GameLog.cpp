@@ -4,7 +4,8 @@
 
 #include <Utils.h>
 
-GameLog::GameLog()
+GameLog::GameLog(D3D12& aD3D12)
+    : m_d3d12(aD3D12)
 {
     auto gamelogSink = CreateCustomSinkMT([this](const std::string& msg) { Log(msg); });
     gamelogSink->set_pattern("%L;%v");

@@ -70,10 +70,18 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
 
     m_outSize = { static_cast<LONG>(sdesc.BufferDesc.Width), static_cast<LONG>(sdesc.BufferDesc.Height) };
 
-    const auto buffersCounts = sdesc.BufferCount;
+    const auto buffersCounts = std::min(sdesc.BufferCount, 3u);
     m_frameContexts.resize(buffersCounts);
-    for (UINT i = 0; i < buffersCounts; i++)
-        m_pdxgiSwapChain->GetBuffer(i, IID_PPV_ARGS(&m_frameContexts[i].BackBuffer));
+
+    D3D12_DESCRIPTOR_HEAP_DESC srvdesc = {};
+    srvdesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+    srvdesc.NumDescriptors = buffersCounts;
+    srvdesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+    if (FAILED(m_pd3d12Device->CreateDescriptorHeap(&srvdesc, IID_PPV_ARGS(&m_pd3dSrvDescHeap))))
+    {
+        Log::Error("D3D12::Initialize() - failed to create SRV descriptor heap!");
+        return ResetState();
+    }
 
     D3D12_DESCRIPTOR_HEAP_DESC rtvdesc;
     rtvdesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
@@ -88,20 +96,13 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
 
     const SIZE_T rtvDescriptorSize = m_pd3d12Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_pd3dRtvDescHeap->GetCPUDescriptorHandleForHeapStart();
-    for (auto& context : m_frameContexts)
+    for (UINT i = 0; i < buffersCounts; i++)
     {
+        auto& context = m_frameContexts[i];
         context.MainRenderTargetDescriptor = rtvHandle;
+        m_pdxgiSwapChain->GetBuffer(i, IID_PPV_ARGS(&context.BackBuffer));
+        m_pd3d12Device->CreateRenderTargetView(context.BackBuffer.Get(), nullptr, context.MainRenderTargetDescriptor);
         rtvHandle.ptr += rtvDescriptorSize;
-    }
-
-    D3D12_DESCRIPTOR_HEAP_DESC srvdesc = {};
-    srvdesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-    srvdesc.NumDescriptors = 200;
-    srvdesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-    if (FAILED(m_pd3d12Device->CreateDescriptorHeap(&srvdesc, IID_PPV_ARGS(&m_pd3dSrvDescHeap))))
-    {
-        Log::Error("D3D12::Initialize() - failed to create SRV descriptor heap!");
-        return ResetState();
     }
 
     for (auto& context : m_frameContexts)
@@ -117,9 +118,6 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
         Log::Error("D3D12::Initialize() - failed to create command list!");
         return ResetState();
     }
-
-    for (auto& context : m_frameContexts)
-        m_pd3d12Device->CreateRenderTargetView(context.BackBuffer.Get(), nullptr, context.MainRenderTargetDescriptor);
 
     if (!InitializeImGui(buffersCounts))
     {
@@ -442,8 +440,6 @@ void D3D12::Update() const
     const auto& frameContext = m_frameContexts[bufferIndex];
     frameContext.CommandAllocator->Reset();
 
-    m_pd3dCommandList->Reset(frameContext.CommandAllocator.Get(), nullptr);
-
     D3D12_RESOURCE_BARRIER barrier;
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
@@ -451,11 +447,12 @@ void D3D12::Update() const
     barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
     barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-    m_pd3dCommandList->ResourceBarrier(1, &barrier);
 
     ID3D12DescriptorHeap* heaps[] = { m_pd3dSrvDescHeap.Get() };
-    m_pd3dCommandList->SetDescriptorHeaps(1, heaps);
 
+    m_pd3dCommandList->Reset(frameContext.CommandAllocator.Get(), nullptr);
+    m_pd3dCommandList->ResourceBarrier(1, &barrier);
+    m_pd3dCommandList->SetDescriptorHeaps(1, heaps);
     m_pd3dCommandList->OMSetRenderTargets(1, &frameContext.MainRenderTargetDescriptor, FALSE, nullptr);
 
     ImGui::Render();
@@ -464,7 +461,6 @@ void D3D12::Update() const
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
     barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
     m_pd3dCommandList->ResourceBarrier(1, &barrier);
-
     m_pd3dCommandList->Close();
 
     ID3D12CommandList* commandLists[] = { m_pd3dCommandList.Get() };

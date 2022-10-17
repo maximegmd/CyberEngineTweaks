@@ -2,15 +2,19 @@
 
 #include "Console.h"
 
+#include <CET.h>
 #include <scripting/LuaVM.h>
 #include <Utils.h>
 
-Console::Console(LuaVM& aVm)
+Console::Console(LuaVM& aVm, D3D12& aD3D12)
     : m_vm(aVm)
+    , m_d3d12(aD3D12)
 {
     auto consoleSink = CreateCustomSinkMT([this](const std::string& msg) { Log(msg); });
     consoleSink->set_pattern("%L;%v");
     spdlog::get("scripting")->sinks().emplace_back(std::move(consoleSink));
+
+    m_command.resize(255);
 }
 
 WidgetResult Console::OnEnable()
@@ -21,7 +25,8 @@ WidgetResult Console::OnEnable()
 
 WidgetResult Console::OnDisable()
 {
-    std::fill_n(m_Command, sizeof(m_Command), 0);
+    m_command.clear();
+    m_command.resize(255);
     return WidgetResult::DISABLED;
 }
 
@@ -52,11 +57,40 @@ int Console::HandleConsoleHistory(ImGuiInputTextCallbackData* apData)
 
     if (pStr)
     {
-        std::memcpy(apData->Buf, pStr->c_str(), pStr->length() + 1);
+        pConsole->m_command.resize(pStr->length());
+        pConsole->m_command.shrink_to_fit();
+        pConsole->m_command = *pStr;
+
+        apData->Buf = pConsole->m_command.data();
         apData->BufDirty = true;
         apData->BufTextLen = static_cast<int>(pStr->length());
         apData->CursorPos = apData->BufTextLen;
     }
+
+    return 0;
+}
+
+int Console::HandleConsoleResize(ImGuiInputTextCallbackData* apData)
+{
+    auto* pConsole = static_cast<Console*>(apData->UserData);
+
+    if (apData->BufTextLen + 1 >= apData->BufSize)
+    {
+        pConsole->m_command.resize((apData->BufSize * 3) / 2);
+        apData->Buf = pConsole->m_command.data();
+    }
+    pConsole->m_commandLength = apData->BufTextLen;
+
+    return 0;
+}
+
+int Console::HandleConsole(ImGuiInputTextCallbackData* apData)
+{
+    if (apData->EventFlag & ImGuiInputTextFlags_CallbackHistory)
+        return HandleConsoleHistory(apData);
+
+    if (apData->EventFlag & ImGuiInputTextFlags_CallbackResize)
+        return HandleConsoleResize(apData);
 
     return 0;
 }
@@ -68,6 +102,7 @@ void Console::Update()
     if (ImGui::Button("Clear output", ImVec2(itemWidth, 0)))
     {
         std::lock_guard _{ m_outputLock };
+        m_outputNormalizedWidth = 0.0f;
         m_outputLines.clear();
     }
     ImGui::SameLine();
@@ -76,9 +111,16 @@ void Console::Update()
     const auto& style = ImGui::GetStyle();
     const auto inputLineHeight = ImGui::GetTextLineHeight() + style.ItemInnerSpacing.y * 2;
 
-    if (ImGui::ListBoxHeader("##ConsoleHeader", ImVec2(-1, -(inputLineHeight + style.ItemSpacing.y))))
+    if (ImGui::BeginChildFrame(ImGui::GetID("##ConsoleHeader"), ImVec2(-1, -(inputLineHeight + style.ItemSpacing.y)), ImGuiWindowFlags_HorizontalScrollbar))
     {
         std::lock_guard _{ m_outputLock };
+
+        if (!m_outputLines.empty() && m_outputNormalizedWidth == 0.0f)
+        {
+            for (auto& line : m_outputLines | std::views::values)
+                m_outputNormalizedWidth = std::max(m_outputNormalizedWidth, ImGui::CalcTextSize(line.c_str()).x);
+        }
+        const auto itemWidth = std::max(m_outputNormalizedWidth + style.ItemInnerSpacing.x * 2, ImGui::GetContentRegionAvail().x);
 
         ImGuiListClipper clipper;
         clipper.Begin(static_cast<int>(m_outputLines.size()));
@@ -89,15 +131,8 @@ void Console::Update()
                 // TODO - use level to color output
                 auto [level, item] = m_outputLines[i];
                 ImGui::PushID(i);
-                if (ImGui::Selectable(item.c_str()))
-                {
-                    auto str = item;
-                    if (item[0] == '>' && item[1] == ' ')
-                        str = str.substr(2);
-
-                    std::strncpy(m_Command, str.c_str(), sizeof(m_Command) - 1);
-                    m_focusConsoleInput = true;
-                }
+                ImGui::SetNextItemWidth(itemWidth);
+                ImGui::InputText(("##" + item).c_str(), item.data(), item.size(), ImGuiInputTextFlags_ReadOnly);
                 ImGui::PopID();
             }
         }
@@ -105,12 +140,14 @@ void Console::Update()
         if (m_outputScroll)
         {
             if (m_outputShouldScroll)
+            {
                 ImGui::SetScrollHereY();
+                ImGui::SetScrollX(0.0f);
+            }
             m_outputScroll = false;
         }
-
-        ImGui::ListBoxFooter();
     }
+    ImGui::EndChildFrame();
 
     if (m_focusConsoleInput)
     {
@@ -118,21 +155,22 @@ void Console::Update()
         m_focusConsoleInput = false;
     }
     ImGui::SetNextItemWidth(-FLT_MIN);
-    const auto execute = ImGui::InputText("##InputCommand", m_Command, std::size(m_Command), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory,  &HandleConsoleHistory, this);
+    constexpr auto flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackResize;
+    const auto execute = ImGui::InputText("##InputCommand", m_command.data(), m_command.capacity(), flags, &HandleConsole, this);
     ImGui::SetItemDefaultFocus();
     if (execute)
     {
         const auto consoleLogger = spdlog::get("scripting");
-        consoleLogger->info("> {}", m_Command);
+        consoleLogger->info("> {}", m_command);
 
         m_consoleHistoryIndex = m_consoleHistory.size();
-        m_consoleHistory.emplace_back(m_Command);
+        auto& history = m_consoleHistory.emplace_back();
+        history.swap(m_command);
+        m_command.resize(255);
         m_newConsoleHistory = true;
 
-        if (!m_vm.ExecuteLua(m_Command))
+        if (!m_vm.ExecuteLua(m_command))
             consoleLogger->info("Command failed to execute!");
-
-        std::fill_n(m_Command, sizeof(m_Command), 0);
 
         m_focusConsoleInput = true;
     }
@@ -164,12 +202,20 @@ void Console::Log(const std::string& acpText)
 
         if (second == std::string_view::npos)
         {
-            m_outputLines.emplace_back(acpText[0], acpText.substr(first));
+            auto text = acpText.substr(first);
+            if (m_d3d12.IsInitialized())
+                m_outputNormalizedWidth = std::max(m_outputNormalizedWidth, ImGui::CalcTextSize(text.c_str()).x);
+            m_outputLines.emplace_back(acpText[0], std::move(text));
             break;
         }
 
         if (first != second)
-            m_outputLines.emplace_back(acpText[0], acpText.substr(first, second-first));
+        {
+            auto text = acpText.substr(first, second-first);
+            if (m_d3d12.IsInitialized())
+                m_outputNormalizedWidth = std::max(m_outputNormalizedWidth, ImGui::CalcTextSize(text.c_str()).x);
+            m_outputLines.emplace_back(acpText[0], std::move(text));
+        }
 
         first = second + 1;
         char ch = acpText[first];
