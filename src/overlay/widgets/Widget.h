@@ -1,15 +1,5 @@
 #pragma once
 
-enum class WidgetID
-{
-    CONSOLE,
-    BINDINGS,
-    SETTINGS,
-    TWEAKDB,
-    GAMELOG,
-    COUNT
-};
-
 enum class WidgetResult
 {
     DISABLED,
@@ -19,7 +9,7 @@ enum class WidgetResult
 
 struct Widget
 {
-    Widget(const std::string& acpName);
+    Widget(const std::string& acpName, bool aOwnerDraw = false);
     virtual ~Widget() = default;
 
     virtual WidgetResult OnEnable();
@@ -37,6 +27,7 @@ protected:
     virtual void OnToggle();
 
     std::string m_name;
+    bool m_ownerDraw{ false };
     bool m_enabled{ false };
     bool m_toggle{ false };
     bool m_drawPopup{ false };

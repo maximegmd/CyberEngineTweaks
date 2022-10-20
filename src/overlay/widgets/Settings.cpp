@@ -86,7 +86,6 @@ void Settings::OnUpdate()
             ImGui::TreePush();
             if (ImGui::BeginTable("##SETTINGS_DEV", 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
             {
-                UpdateAndDrawSetting("Draw ImGui Diagnostic Window", "Toggles drawing of internal ImGui diagnostics window to show what is going on behind the scenes (useful when debugging ImGui issues).", m_options.DrawImGuiDiagnosticWindow, m_options.DrawImGuiDiagnosticWindow);
                 UpdateAndDrawSetting("Remove Dead Bindings", "Removes all bindings which are no longer valid (disabling this could be useful when debugging mod issues).", m_removeDeadBindings, m_options.RemoveDeadBindings);
                 UpdateAndDrawSetting("Enable ImGui Assertions", "Enables all ImGui assertions (useful when debugging ImGui issues, should also be used to check mods before shipping!).", m_enableImGuiAssertions, m_options.EnableImGuiAssertions);
                 UpdateAndDrawSetting("Enable Debug Build", "Sets internal flags to disguise as debug build (requires restart to take effect).", m_patchEnableDebug, m_options.PatchEnableDebug);

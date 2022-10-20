@@ -4,8 +4,9 @@
 
 #include <CET.h>
 
-Widget::Widget(const std::string& acpName)
+Widget::Widget(const std::string& acpName, bool aOwnerDraw)
     : m_name(acpName)
+    , m_ownerDraw(aOwnerDraw)
 {
 }
 
@@ -86,14 +87,19 @@ void Widget::Draw()
       return;
 
     bool newEnabled = m_enabled;
-    const auto [width, height] = CET::Get().GetD3D12().GetResolution();
 
-    ImGui::SetNextWindowPos(ImVec2(width * 0.2f, height * 0.2f), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(width * 0.6f, height * 0.6f), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSizeConstraints(ImVec2(420, 315), ImVec2(FLT_MAX, FLT_MAX));
-    if (ImGui::Begin(m_name.c_str(), &newEnabled))
+    if (m_ownerDraw)
         OnUpdate();
-    ImGui::End();
+    else
+    {
+        const auto [width, height] = CET::Get().GetD3D12().GetResolution();
+        ImGui::SetNextWindowPos(ImVec2(width * 0.2f, height * 0.2f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(width * 0.6f, height * 0.6f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSizeConstraints(ImVec2(420, 315), ImVec2(FLT_MAX, FLT_MAX));
+        if (ImGui::Begin(m_name.c_str(), &newEnabled))
+            OnUpdate();
+        ImGui::End();
+    }
 
     if (!newEnabled)
     {
