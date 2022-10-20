@@ -376,6 +376,12 @@ void Scripting::PostInitializeScripting()
 
     luaGlobal["ToTweakDBID"] = [](sol::table table) -> TweakDBID
     {
+        // try with name first
+        const auto name = table["name"].get_or<std::string>("");
+        if (!name.empty())
+            return TweakDBID(name);
+
+        // if conversion from name failed, look for old hash + length
         return TweakDBID
         {
             table["hash"].get_or<uint32_t>(0),

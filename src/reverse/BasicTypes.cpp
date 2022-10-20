@@ -73,8 +73,8 @@ void CName::Add(const std::string& aName)
 
 std::string TweakDBID::ToString() const noexcept
 {
-    auto str = CET::Get().GetVM().GetTDBIDString(value, true);
-    return str.empty() ? fmt::format("ToTweakDBID{{ name = 0x{:08X}, length = {:d} }}", name_hash, name_length) : str;
+    const auto str = CET::Get().GetVM().GetTDBIDString(value, true);
+    return str.empty() ? fmt::format("ToTweakDBID{{ hash = 0x{:08X}, length = {:d} }}", name_hash, name_length) : fmt::format("ToTweakDBID{{ name = '{}' }}", str);
 }
 
 bool TweakDBID::operator==(const TweakDBID& acRhs) const noexcept
