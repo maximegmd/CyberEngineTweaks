@@ -2,9 +2,6 @@
 
 #include "Widget.h"
 
-struct Overlay;
-struct LuaVM;
-
 struct VKBindInfo
 {
     const VKBind& Bind;
@@ -15,6 +12,7 @@ struct VKBindInfo
     bool operator==(const std::string& id) const;
 };
 
+struct LuaVM;
 struct Bindings : Widget
 {
     Bindings(VKBindings& aBindings, LuaVM& aVm);
@@ -22,7 +20,6 @@ struct Bindings : Widget
 
     WidgetResult OnEnable() override;
     WidgetResult OnDisable() override;
-    void Update() override;
 
     void Save();
     void ResetChanges();
@@ -33,6 +30,10 @@ struct Bindings : Widget
     [[nodiscard]] static const VKModBind& GetOverlayToggleModBind() noexcept;
     [[nodiscard]] static const VKBind& GetOverlayToggleBind() noexcept;
 
+protected:
+    void OnUpdate() override;
+    WidgetResult OnPopup() override;
+
 private:
     void Initialize();
     void UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKBindInfo);
@@ -42,7 +43,7 @@ private:
     VKBindings& m_bindings;
     LuaVM& m_vm;
 
-    bool m_enabled{ false };
+    TChangedCBResult m_popupResult{ TChangedCBResult::APPLY };
     bool m_madeChanges{ false };
     bool m_openChangesModal{ true };
 };

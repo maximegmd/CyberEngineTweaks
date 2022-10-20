@@ -13,10 +13,7 @@ void Overlay::PostInitialize()
     if (!m_initialized)
     {
         if (Bindings::IsFirstTimeSetup())
-        {
-            SetActiveWidget(WidgetID::BINDINGS);
             Toggle();
-        }
 
         m_initialized = true;
     }
@@ -55,97 +52,36 @@ void Overlay::Update()
 
     if (m_toggled)
     {
-        if (Bindings::IsFirstTimeSetup())
-        {
-            ImGui::OpenPopup("CET First Time Setup");
-            m_vm.BlockDraw(true);
-        }
+        if (m_bindings.FirstTimeSetup())
+            return;
 
         if (m_enabled)
-        {
-            const auto ret = m_widgets[static_cast<size_t>(m_activeWidgetID)]->OnDisable();
-            if (ret == WidgetResult::CANCEL)
-            {
-                m_toggled = false;
-            }
-            if (ret == WidgetResult::DISABLED)
-            {
-                m_vm.OnOverlayClose();
-                m_enabled = false;
-                m_toggled = false;
-            }
-        }
+            m_vm.OnOverlayClose();
         else
-        {
-            const auto ret = m_widgets[static_cast<size_t>(m_activeWidgetID)]->OnEnable();
-            if (ret == WidgetResult::CANCEL)
-            {
-                m_toggled = false;
-            }
-            if (ret == WidgetResult::ENABLED)
-            {
-                m_vm.OnOverlayOpen();
-                m_enabled = true;
-                m_toggled = false;
-            }
-        }
+            m_vm.OnOverlayOpen();
+        m_enabled = !m_enabled;
 
-        if (!m_toggled)
-        {
-            auto& d3d12 = CET::Get().GetD3D12();
-            d3d12.DelayedSetTrapInputInImGui(m_enabled);
-            ClipToCenter(RED4ext::CGameEngine::Get()->unkC0);
-        }
+        auto& d3d12 = CET::Get().GetD3D12();
+        d3d12.DelayedSetTrapInputInImGui(m_enabled);
+        ClipToCenter(RED4ext::CGameEngine::Get()->unkC0);
+        m_toggled = false;
     }
 
     if (!m_enabled)
         return;
 
-    if (m_bindings.FirstTimeSetup())
-        return;
-
-    const auto& d3d12 = CET::Get().GetD3D12();
-    const auto [width, height] = d3d12.GetResolution();
-
-    ImGui::SetNextWindowPos(ImVec2(width * 0.2f, height * 0.2f), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(width * 0.6f, height * 0.6f), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSizeConstraints(ImVec2(420, 315), ImVec2(FLT_MAX, FLT_MAX));
+    const auto minWidth = CET::Get().GetD3D12().GetResolution().cx * 0.5f;
+    const auto heightLimit = 2 * ImGui::GetFrameHeight() + 2 * ImGui::GetStyle().WindowPadding.y;
+    ImGui::SetNextWindowSizeConstraints({minWidth, heightLimit}, {FLT_MAX, heightLimit});
     if (ImGui::Begin("Cyber Engine Tweaks"))
-    {
-        SetActiveWidget(ToolbarWidget());
-
-        if (m_activeWidgetID == WidgetID::CONSOLE)
-        {
-            if (ImGui::BeginChildFrame(ImGui::GetID("ConsoleWidget"), ImGui::GetContentRegionAvail()))
-                m_console.Update();
-            ImGui::EndChildFrame();
-        }
-        if (m_activeWidgetID == WidgetID::BINDINGS)
-        {
-            if (ImGui::BeginChildFrame(ImGui::GetID("BindingsWidget"), ImGui::GetContentRegionAvail()))
-                m_bindings.Update();
-            ImGui::EndChildFrame();
-        }
-        if (m_activeWidgetID == WidgetID::SETTINGS)
-        {
-            if (ImGui::BeginChildFrame(ImGui::GetID("SettingsWidget"), ImGui::GetContentRegionAvail()))
-                m_settings.Update();
-            ImGui::EndChildFrame();
-        }
-        if (m_activeWidgetID == WidgetID::TWEAKDB)
-        {
-            if (ImGui::BeginChildFrame(ImGui::GetID("TweakDBWidget"), ImGui::GetContentRegionAvail()))
-                m_tweakDBEditor.Update();
-            ImGui::EndChildFrame();
-        }
-        if (m_activeWidgetID == WidgetID::GAMELOG)
-        {
-            if (ImGui::BeginChildFrame(ImGui::GetID("GameLogWidget"), ImGui::GetContentRegionAvail()))
-                m_gameLog.Update();
-            ImGui::EndChildFrame();
-        }
-    }
+        DrawToolbar();
     ImGui::End();
+
+    m_console.Draw();
+    m_bindings.Draw();
+    m_settings.Draw();
+    m_tweakDBEditor.Draw();
+    m_gameLog.Draw();
 
     if (m_options.DrawImGuiDiagnosticWindow)
         ImGui::ShowMetricsWindow(&m_options.DrawImGuiDiagnosticWindow);
@@ -199,7 +135,7 @@ void Overlay::Hook()
 }
 
 Overlay::Overlay(D3D12& aD3D12, VKBindings& aBindings, Options& aOptions, LuaVM& aVm)
-    : m_console(aVm, aD3D12)
+    : m_console(aD3D12, aVm)
     , m_bindings(aBindings, aVm)
     , m_settings(aOptions, aVm)
     , m_tweakDBEditor(aVm)
@@ -226,47 +162,45 @@ Overlay::~Overlay()
     m_d3d12.OnUpdate.Disconnect(m_connectUpdate);
 }
 
-void Overlay::SetActiveWidget(WidgetID aNewActive)
-{
-    if (aNewActive < WidgetID::COUNT)
-        m_nextActiveWidgetID = aNewActive;
-
-    if (m_activeWidgetID != m_nextActiveWidgetID)
-    {
-        assert(m_activeWidgetID < WidgetID::COUNT);
-
-        if (m_widgets[static_cast<size_t>(m_activeWidgetID)]->OnDisable() == WidgetResult::DISABLED)
-        {
-            assert(m_nextActiveWidgetID < WidgetID::COUNT);
-            if (m_widgets[static_cast<size_t>(m_nextActiveWidgetID)]->OnEnable() == WidgetResult::ENABLED)
-                m_activeWidgetID = m_nextActiveWidgetID;
-        }
-    }
-}
-
-WidgetID Overlay::ToolbarWidget() const
+void Overlay::DrawToolbar()
 {
     const auto itemWidth = GetAlignedItemWidth(static_cast<int64_t>(WidgetID::COUNT) + 1);
 
-    auto activeID = WidgetID::COUNT;
+    ImGui::PushStyleColor(ImGuiCol_Button, m_console.IsEnabled() ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive) : ImGui::GetStyleColorVec4(ImGuiCol_Button));
     if (ImGui::Button("Console", ImVec2(itemWidth, 0)))
-        activeID = WidgetID::CONSOLE;
+        m_console.Toggle();
+    ImGui::PopStyleColor();
+
     ImGui::SameLine();
+
+    ImGui::PushStyleColor(ImGuiCol_Button, m_bindings.IsEnabled() ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive) : ImGui::GetStyleColorVec4(ImGuiCol_Button));
     if (ImGui::Button("Bindings", ImVec2(itemWidth, 0)))
-        activeID = WidgetID::BINDINGS;
+        m_bindings.Toggle();
+    ImGui::PopStyleColor();
+
     ImGui::SameLine();
+
+    ImGui::PushStyleColor(ImGuiCol_Button, m_settings.IsEnabled() ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive) : ImGui::GetStyleColorVec4(ImGuiCol_Button));
     if (ImGui::Button("Settings", ImVec2(itemWidth, 0)))
-        activeID = WidgetID::SETTINGS;
+        m_settings.Toggle();
+    ImGui::PopStyleColor();
+
     ImGui::SameLine();
+
+    ImGui::PushStyleColor(ImGuiCol_Button, m_tweakDBEditor.IsEnabled() ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive) : ImGui::GetStyleColorVec4(ImGuiCol_Button));
     if (ImGui::Button("TweakDB Editor", ImVec2(itemWidth, 0)))
-        activeID = WidgetID::TWEAKDB;
+        m_tweakDBEditor.Toggle();
+    ImGui::PopStyleColor();
+
     ImGui::SameLine();
+
+    ImGui::PushStyleColor(ImGuiCol_Button, m_gameLog.IsEnabled() ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive) : ImGui::GetStyleColorVec4(ImGuiCol_Button));
     if (ImGui::Button("Game Log", ImVec2(itemWidth, 0)))
-        activeID = WidgetID::GAMELOG;
+        m_gameLog.Toggle();
+    ImGui::PopStyleColor();
+
     ImGui::SameLine();
+
     if (ImGui::Button("Reload all mods", ImVec2(itemWidth, 0)))
         m_vm.ReloadAllMods();
-    ImGui::Separator();
-
-    return activeID;
 }

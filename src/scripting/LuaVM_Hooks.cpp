@@ -28,13 +28,14 @@ void LuaVM::HookLog(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*,
     RED4ext::OpcodeHandlers::Run(opcode, apStack->context, apStack, &ref, &ref);
     apStack->code++; // skip ParamEnd
 
-    spdlog::get("gamelog")->info(ref.ref->c_str());
+    spdlog::get("gamelog")->info("[GENERAL] {}", ref.ref->c_str());
 }
 
 void LuaVM::HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*, void*)
 {
     static RTTILocator s_stringLocator("String");
     static RED4ext::CName s_debugChannel("DEBUG");
+    static RED4ext::CName s_assertionChannel("ASSERT");
 
     RED4ext::CName channel;
     apStack->data = 0;
@@ -59,15 +60,21 @@ void LuaVM::HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack,
 
     apStack->code++; // skip ParamEnd
 
-    std::string_view textSV = ref.ref->c_str();
     if (channel == s_debugChannel)
-        spdlog::get("scripting")->info(textSV);
+        spdlog::get("scripting")->debug("{}", ref.ref->c_str());
 
     std::string_view channelSV = channel.ToString();
     if (channelSV.empty())
-        spdlog::get("gamelog")->info("[?{:X}] {}", channel.hash, textSV);
+        spdlog::get("gamelog")->info("[?{:X}] {}", channel.hash, ref.ref->c_str());
     else
-        spdlog::get("gamelog")->info("[{}] {}", channelSV, textSV);
+    {
+        if (channel == s_debugChannel)
+            spdlog::get("gamelog")->debug("[{}] {}", channelSV, ref.ref->c_str());
+        else if (channel == s_assertionChannel)
+            spdlog::get("gamelog")->warn("[{}] {}", channelSV, ref.ref->c_str());
+        else
+            spdlog::get("gamelog")->info("[{}] {}", channelSV, ref.ref->c_str());
+    }
 
     s_vm->m_logCount.fetch_add(1);
 }

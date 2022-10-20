@@ -7,7 +7,8 @@
 #include <Utils.h>
 
 Settings::Settings(Options& aOptions, LuaVM& aVm)
-    : m_options(aOptions)
+    : Widget("Settings")
+    , m_options(aOptions)
     , m_vm(aVm)
 {
 }
@@ -22,42 +23,39 @@ WidgetResult Settings::OnEnable()
     return m_enabled ? WidgetResult::ENABLED : WidgetResult::DISABLED;
 }
 
-WidgetResult Settings::OnDisable()
+WidgetResult Settings::OnPopup()
 {
-    auto result = WidgetResult::ENABLED;
+    const auto ret = UnsavedChangesPopup(
+        m_openChangesModal,
+        m_madeChanges,
+        [this]{ Save(); },
+        [this]{ Load(); });
+    m_madeChanges = ret == TChangedCBResult::CHANGED;
+    m_popupResult = ret;
 
-    if (m_enabled)
-    {
-        m_vm.BlockDraw(m_madeChanges);
-        const auto ret = UnsavedChangesPopup(
-            m_openChangesModal,
-            m_madeChanges,
-            [this]{ Save(); },
-            [this]{ Load(); });
-        m_madeChanges = ret == THWUCPResult::CHANGED;
-        m_vm.BlockDraw(m_madeChanges);
-
-        m_enabled = m_madeChanges;
-        if (ret == THWUCPResult::CANCEL)
-        {
-            CET::Get().GetOverlay().SetActiveWidget(WidgetID::SETTINGS);
-            m_enabled = true;
-            result = WidgetResult::CANCEL;
-        }
-    }
-    if (!m_enabled)
-    {
-        // reset changes substates
-        m_madeChanges = false;
-    }
-
-    if (result != WidgetResult::CANCEL)
-        result = m_enabled ? WidgetResult::ENABLED : WidgetResult::DISABLED;
-
-    return result;
+    return m_madeChanges ? WidgetResult::ENABLED : WidgetResult::DISABLED;
 }
 
-void Settings::Update()
+WidgetResult Settings::OnDisable()
+{
+    if (m_enabled)
+    {
+        if (m_madeChanges)
+        {
+            m_drawPopup = true;
+            return WidgetResult::ENABLED;
+        }
+
+        if (m_popupResult == TChangedCBResult::CANCEL)
+            return WidgetResult::CANCEL;
+
+        m_enabled = false;
+    }
+
+    return m_enabled ? WidgetResult::ENABLED : WidgetResult::DISABLED;
+}
+
+void Settings::OnUpdate()
 {
     const auto frameSize = ImVec2(ImGui::GetContentRegionAvail().x, -(ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.y + ImGui::GetStyle().FramePadding.y + 2.0f));
     if (ImGui::BeginChild(ImGui::GetID("Settings"), frameSize))

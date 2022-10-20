@@ -2,11 +2,8 @@
 
 #include "Widget.h"
 
-struct VKBindings;
-struct Overlay;
 struct Options;
 struct LuaVM;
-
 struct Settings : Widget
 {
     Settings(Options& aOptions, LuaVM& aVm);
@@ -14,11 +11,14 @@ struct Settings : Widget
 
     WidgetResult OnEnable() override;
     WidgetResult OnDisable() override;
-    void Update() override;
 
     void Load();
     void Save() const;
     void ResetToDefaults();
+
+protected:
+    void OnUpdate() override;
+    WidgetResult OnPopup() override;
 
 private:
     void UpdateAndDrawSetting(const std::string& acLabel, const std::string& acTooltip, bool& aCurrent, const bool& acSaved);
@@ -41,7 +41,7 @@ private:
     Options& m_options;
     LuaVM& m_vm;
 
-    bool m_enabled{ false };
+    TChangedCBResult m_popupResult{ TChangedCBResult::APPLY };
     bool m_madeChanges{ false };
     bool m_openChangesModal{ true };
 };

@@ -29,15 +29,13 @@ struct Overlay
 
     void Update();
 
-    void SetActiveWidget(WidgetID aNewActive);
-
 protected:
     void Hook();
 
     static BOOL ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis);
 
 private:
-    WidgetID ToolbarWidget() const;
+    void DrawToolbar();
 
     Console m_console;
     Bindings m_bindings;
@@ -47,9 +45,6 @@ private:
     std::array<Widget*, static_cast<size_t>(WidgetID::COUNT)> m_widgets{ };
 
     TClipToCenter* m_realClipToCenter{ nullptr };
-
-    WidgetID m_activeWidgetID{ WidgetID::CONSOLE };
-    WidgetID m_nextActiveWidgetID{ WidgetID::CONSOLE };
 
     std::atomic_bool m_enabled{ false };
     std::atomic_bool m_toggled{ false };

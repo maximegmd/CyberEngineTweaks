@@ -21,7 +21,8 @@ bool VKBindInfo::operator==(const std::string& id) const
 }
 
 Bindings::Bindings(VKBindings& aBindings, LuaVM& aVm)
-    : m_bindings(aBindings)
+    : Widget("Bindings")
+    , m_bindings(aBindings)
     , m_vm(aVm)
 {
 }
@@ -32,45 +33,47 @@ WidgetResult Bindings::OnEnable()
     {
         m_bindings.StopRecordingBind();
         Initialize();
-        m_enabled = true;
     }
-    return m_enabled ? WidgetResult::ENABLED : WidgetResult::DISABLED;
+
+    return Widget::OnEnable();
+}
+
+WidgetResult Bindings::OnPopup()
+{
+    const auto ret = UnsavedChangesPopup(
+        m_openChangesModal,
+        m_madeChanges,
+        [this]{ Save(); },
+        [this]{ ResetChanges(); });
+    m_madeChanges = ret == TChangedCBResult::CHANGED;
+    m_popupResult = ret;
+
+    return m_madeChanges ? WidgetResult::ENABLED : WidgetResult::DISABLED;
 }
 
 WidgetResult Bindings::OnDisable()
 {
-    auto result = WidgetResult::ENABLED;
-
     if (m_enabled)
     {
-        m_vm.BlockDraw(m_madeChanges);
-        const auto ret = UnsavedChangesPopup(
-            m_openChangesModal,
-            m_madeChanges,
-            [this]{ Save(); },
-            [this]{ ResetChanges(); });
-        m_madeChanges = ret == THWUCPResult::CHANGED;
-        m_vm.BlockDraw(m_madeChanges);
-
-        m_enabled = m_madeChanges;
-        if (ret == THWUCPResult::CANCEL)
+        if (m_madeChanges)
         {
-            CET::Get().GetOverlay().SetActiveWidget(WidgetID::BINDINGS);
-            m_enabled = true;
-            result = WidgetResult::CANCEL;
+            m_drawPopup = true;
+            return WidgetResult::ENABLED;
         }
+
+        if (m_popupResult == TChangedCBResult::CANCEL)
+            return WidgetResult::CANCEL;
+
+        m_enabled = false;
     }
 
     if (!m_enabled)
         m_bindings.StopRecordingBind();
 
-    if (result != WidgetResult::CANCEL)
-        result = m_enabled ? WidgetResult::ENABLED : WidgetResult::DISABLED;
-
-    return result;
+    return m_enabled ? WidgetResult::ENABLED : WidgetResult::DISABLED;
 }
 
-void Bindings::Update()
+void Bindings::OnUpdate()
 {
     const auto frameSize = ImVec2(ImGui::GetContentRegionAvail().x, -(ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.y + ImGui::GetStyle().FramePadding.y + 2.0f));
     if (ImGui::BeginChild(ImGui::GetID("Bindings"), frameSize))
@@ -154,6 +157,11 @@ bool Bindings::FirstTimeSetup()
     if (!IsFirstTimeSetup())
         return false;
 
+    if (m_vkBindInfos.empty())
+        Initialize();
+
+    ImGui::OpenPopup("CET First Time Setup");
+
     if (ImGui::BeginPopupModal("CET First Time Setup", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
         const auto shorterTextSz { ImGui::CalcTextSize("Combo can be composed from up to 4 keys.").x };
@@ -172,12 +180,13 @@ bool Bindings::FirstTimeSetup()
         if (cetOverlayToggle.CodeBind != 0)
         {
             cetOverlayToggle.SavedCodeBind = cetOverlayToggle.CodeBind;
+            m_bindings.Save();
 
             m_vm.BlockDraw(false);
-            m_bindings.Save();
 
             ImGui::CloseCurrentPopup();
             ImGui::EndPopup();
+
             return false;
         }
 
@@ -254,7 +263,7 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
     if (aVKBindInfo.IsBinding && !isRecording)
     {
         const auto previousCodeBind = aVKBindInfo.CodeBind;
-
+        
         auto codeBind = m_bindings.GetLastRecordingResult();
         if (codeBind != aVKBindInfo.CodeBind)
         {

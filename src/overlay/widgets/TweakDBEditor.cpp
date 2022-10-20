@@ -110,21 +110,12 @@ bool StringContains(const std::string_view& acString, const std::string_view& ac
 }
 
 TweakDBEditor::TweakDBEditor(LuaVM& aVm)
-    : m_vm(aVm)
+    : Widget("TweakDB Editor")
+    , m_vm(aVm)
 {
 }
 
-WidgetResult TweakDBEditor::OnEnable()
-{
-    return WidgetResult::ENABLED;
-}
-
-WidgetResult TweakDBEditor::OnDisable()
-{
-    return WidgetResult::DISABLED;
-}
-
-void TweakDBEditor::Update()
+void TweakDBEditor::OnUpdate()
 {
     // LuaVM is initialized after TweakDB, let's wait for it
     if (!m_vm.IsInitialized())

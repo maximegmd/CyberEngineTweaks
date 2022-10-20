@@ -3,17 +3,14 @@
 #include "Widget.h"
 
 struct LuaVM;
-
 struct TweakDBEditor : Widget
 {
     TweakDBEditor(LuaVM& aVm);
     ~TweakDBEditor() override = default;
 
-    WidgetResult OnEnable() override;
-    WidgetResult OnDisable() override;
-    void Update() override;
-
 protected:
+    void OnUpdate() override;
+
     void RefreshAll();
     void RefreshRecords();
     void RefreshFlats();

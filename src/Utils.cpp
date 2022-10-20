@@ -108,7 +108,9 @@ std::shared_ptr<spdlog::logger> CreateLogger(const std::filesystem::path& acpPat
 
     const auto rotSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(acpPath.native(), 1048576 * 5, 3);
     rotSink->set_pattern(acpPattern);
+
     auto logger = std::make_shared<spdlog::logger>(acpID, spdlog::sinks_init_list{rotSink});
+    logger->set_level(spdlog::level::level_enum::trace);
 
     if (acpExtraSink)
         logger->sinks().emplace_back(acpExtraSink);
@@ -183,11 +185,11 @@ float GetCenteredOffsetForText(const char* acpText)
     return (ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(acpText).x) / 2.0f;
 }
 
-THWUCPResult UnsavedChangesPopup(bool& aFirstTime, const bool acMadeChanges, const TWidgetCB& acpSaveCB, const TWidgetCB& acpLoadCB, const TWidgetCB& acpCancelCB)
+TChangedCBResult UnsavedChangesPopup(bool& aFirstTime, const bool acMadeChanges, const TWidgetCB& acpSaveCB, const TWidgetCB& acpLoadCB, const TWidgetCB& acpCancelCB)
 {
     if (acMadeChanges)
     {
-        auto res = THWUCPResult::CHANGED;
+        auto res = TChangedCBResult::CHANGED;
         if (aFirstTime)
         {
             ImGui::OpenPopup("Unsaved changes");
@@ -211,7 +213,7 @@ THWUCPResult UnsavedChangesPopup(bool& aFirstTime, const bool acMadeChanges, con
             {
                 if (acpSaveCB)
                     acpSaveCB();
-                res = THWUCPResult::APPLY;
+                res = TChangedCBResult::APPLY;
                 aFirstTime = true;
                 ImGui::CloseCurrentPopup();
             }
@@ -220,7 +222,7 @@ THWUCPResult UnsavedChangesPopup(bool& aFirstTime, const bool acMadeChanges, con
             {
                 if (acpLoadCB)
                     acpLoadCB();
-                res = THWUCPResult::DISCARD;
+                res = TChangedCBResult::DISCARD;
                 aFirstTime = true;
                 ImGui::CloseCurrentPopup();
             }
@@ -229,7 +231,7 @@ THWUCPResult UnsavedChangesPopup(bool& aFirstTime, const bool acMadeChanges, con
             {
                 if (acpCancelCB)
                     acpCancelCB();
-                res = THWUCPResult::CANCEL;
+                res = TChangedCBResult::CANCEL;
                 aFirstTime = true;
                 ImGui::CloseCurrentPopup();
             }
@@ -239,7 +241,7 @@ THWUCPResult UnsavedChangesPopup(bool& aFirstTime, const bool acMadeChanges, con
         }
         return res;
     }
-    return THWUCPResult::APPLY; // no changes, same as if we were to Apply
+    return TChangedCBResult::APPLY; // no changes, same as if we were to Apply
 }
 
 std::filesystem::path GetAbsolutePath(const std::string& acFilePath, const std::filesystem::path& acRootPath, const bool acAllowNonExisting, const bool acAllowSymlink)

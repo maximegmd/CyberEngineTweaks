@@ -2,32 +2,22 @@
 
 #include "Console.h"
 
-#include <CET.h>
 #include <scripting/LuaVM.h>
-#include <Utils.h>
 
-Console::Console(LuaVM& aVm, D3D12& aD3D12)
-    : m_vm(aVm)
-    , m_d3d12(aD3D12)
+Console::Console(D3D12& aD3D12, LuaVM& aVm)
+    : Widget("Console")
+    , m_vm(aVm)
+    , m_logWindow(aD3D12, "scripting")
 {
-    auto consoleSink = CreateCustomSinkMT([this](const std::string& msg) { Log(msg); });
-    consoleSink->set_pattern("%L;%v");
-    spdlog::get("scripting")->sinks().emplace_back(std::move(consoleSink));
-
     m_command.resize(255);
-}
-
-WidgetResult Console::OnEnable()
-{
-    m_focusConsoleInput = true;
-    return WidgetResult::ENABLED;
 }
 
 WidgetResult Console::OnDisable()
 {
     m_command.clear();
     m_command.resize(255);
-    return WidgetResult::DISABLED;
+
+    return Widget::OnDisable();
 }
 
 int Console::HandleConsoleHistory(ImGuiInputTextCallbackData* apData)
@@ -36,24 +26,20 @@ int Console::HandleConsoleHistory(ImGuiInputTextCallbackData* apData)
 
     const std::string* pStr = nullptr;
 
-    if (pConsole->m_newConsoleHistory)
+    if (pConsole->m_newHistory)
     {
-        pStr = &pConsole->m_consoleHistory[pConsole->m_consoleHistoryIndex];
+        pStr = &pConsole->m_history[pConsole->m_historyIndex];
     }
-    else if (apData->EventKey == ImGuiKey_UpArrow && pConsole->m_consoleHistoryIndex > 0)
+    else if (apData->EventKey == ImGuiKey_UpArrow && pConsole->m_historyIndex > 0)
     {
-        pConsole->m_consoleHistoryIndex--;
-
-        pStr = &pConsole->m_consoleHistory[pConsole->m_consoleHistoryIndex];
+        pStr = &pConsole->m_history[--pConsole->m_historyIndex];
     }
-    else if (apData->EventKey == ImGuiKey_DownArrow && pConsole->m_consoleHistoryIndex + 1 < static_cast<int64_t>(pConsole->m_consoleHistory.size()))
+    else if (apData->EventKey == ImGuiKey_DownArrow && pConsole->m_historyIndex + 1 < pConsole->m_history.size())
     {
-        pConsole->m_consoleHistoryIndex++;
-
-        pStr = &pConsole->m_consoleHistory[pConsole->m_consoleHistoryIndex];
+        pStr = &pConsole->m_history[++pConsole->m_historyIndex];
     }
 
-    pConsole->m_newConsoleHistory = false;
+    pConsole->m_newHistory = false;
 
     if (pStr)
     {
@@ -95,65 +81,12 @@ int Console::HandleConsole(ImGuiInputTextCallbackData* apData)
     return 0;
 }
 
-void Console::Update()
+void Console::OnUpdate()
 {
-    const auto itemWidth = GetAlignedItemWidth(2);
-
-    if (ImGui::Button("Clear output", ImVec2(itemWidth, 0)))
-    {
-        std::lock_guard _{ m_outputLock };
-        m_outputNormalizedWidth = 0.0f;
-        m_outputLines.clear();
-    }
-    ImGui::SameLine();
-    ImGui::Checkbox("Auto-scroll", &m_outputShouldScroll);
-
     const auto& style = ImGui::GetStyle();
     const auto inputLineHeight = ImGui::GetTextLineHeight() + style.ItemInnerSpacing.y * 2;
+    m_logWindow.Draw({-FLT_MIN, -(inputLineHeight + style.ItemSpacing.y)});
 
-    if (ImGui::BeginChildFrame(ImGui::GetID("##ConsoleHeader"), ImVec2(-1, -(inputLineHeight + style.ItemSpacing.y)), ImGuiWindowFlags_HorizontalScrollbar))
-    {
-        std::lock_guard _{ m_outputLock };
-
-        if (!m_outputLines.empty() && m_outputNormalizedWidth == 0.0f)
-        {
-            for (auto& line : m_outputLines | std::views::values)
-                m_outputNormalizedWidth = std::max(m_outputNormalizedWidth, ImGui::CalcTextSize(line.c_str()).x);
-        }
-        const auto itemWidth = std::max(m_outputNormalizedWidth + style.ItemInnerSpacing.x * 2, ImGui::GetContentRegionAvail().x);
-
-        ImGuiListClipper clipper;
-        clipper.Begin(static_cast<int>(m_outputLines.size()));
-        while (clipper.Step())
-        {
-            for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i)
-            {
-                // TODO - use level to color output
-                auto [level, item] = m_outputLines[i];
-                ImGui::PushID(i);
-                ImGui::SetNextItemWidth(itemWidth);
-                ImGui::InputText(("##" + item).c_str(), item.data(), item.size(), ImGuiInputTextFlags_ReadOnly);
-                ImGui::PopID();
-            }
-        }
-
-        if (m_outputScroll)
-        {
-            if (m_outputShouldScroll)
-            {
-                ImGui::SetScrollHereY();
-                ImGui::SetScrollX(0.0f);
-            }
-            m_outputScroll = false;
-        }
-    }
-    ImGui::EndChildFrame();
-
-    if (m_focusConsoleInput)
-    {
-        ImGui::SetKeyboardFocusHere();
-        m_focusConsoleInput = false;
-    }
     ImGui::SetNextItemWidth(-FLT_MIN);
     constexpr auto flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackResize;
     const auto execute = ImGui::InputText("##InputCommand", m_command.data(), m_command.capacity(), flags, &HandleConsole, this);
@@ -163,65 +96,15 @@ void Console::Update()
         const auto consoleLogger = spdlog::get("scripting");
         consoleLogger->info("> {}", m_command);
 
-        m_consoleHistoryIndex = m_consoleHistory.size();
-        auto& history = m_consoleHistory.emplace_back();
+        m_historyIndex = m_history.size();
+        auto& history = m_history.emplace_back();
         history.swap(m_command);
         m_command.resize(255);
-        m_newConsoleHistory = true;
+        m_newHistory = true;
 
         if (!m_vm.ExecuteLua(m_command))
             consoleLogger->info("Command failed to execute!");
 
-        m_focusConsoleInput = true;
+        ImGui::SetKeyboardFocusHere(-1); // Auto focus previous widget
     }
-}
-
-void Console::Log(const std::string& acpText)
-{
-    assert(!acpText.empty());
-    assert(acpText.size() >= 2);
-    assert(acpText[1] == ';');
-
-    std::lock_guard _{ m_outputLock };
-
-    size_t first = 2;
-    const size_t size = acpText.size();
-    while (first < size)
-    {
-        // find_first_of \r or \n
-        size_t second = std::string::npos;
-        for (size_t i = first; i != size; ++i)
-        {
-            const auto ch = acpText[i];
-            if (ch == '\r' || ch == '\n')
-            {
-                second = i;
-                break;
-            }
-        }
-
-        if (second == std::string_view::npos)
-        {
-            auto text = acpText.substr(first);
-            if (m_d3d12.IsInitialized())
-                m_outputNormalizedWidth = std::max(m_outputNormalizedWidth, ImGui::CalcTextSize(text.c_str()).x);
-            m_outputLines.emplace_back(acpText[0], std::move(text));
-            break;
-        }
-
-        if (first != second)
-        {
-            auto text = acpText.substr(first, second-first);
-            if (m_d3d12.IsInitialized())
-                m_outputNormalizedWidth = std::max(m_outputNormalizedWidth, ImGui::CalcTextSize(text.c_str()).x);
-            m_outputLines.emplace_back(acpText[0], std::move(text));
-        }
-
-        first = second + 1;
-        char ch = acpText[first];
-        while (ch == '\r' || ch == '\n')
-            ch = acpText[++first];
-    }
-
-    m_outputScroll = true;
 }
