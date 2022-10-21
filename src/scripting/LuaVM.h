@@ -24,7 +24,7 @@ struct Image;
 struct LuaVM
 {
     LuaVM(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12);
-    ~LuaVM();
+    ~LuaVM() = default;
 
     [[nodiscard]] const VKBind* GetBind(const VKModBind& acModBind) const;
     [[nodiscard]] const TiltedPhoques::Vector<VKBind>* GetBinds(const std::string& acModName) const;

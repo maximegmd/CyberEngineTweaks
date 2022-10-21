@@ -20,8 +20,9 @@ void LogWindow::Draw(const ImVec2& size)
 
     if (ImGui::Button("Clear output", ImVec2(itemWidth, 0)))
     {
-        std::lock_guard _{ m_lock };
         m_normalizedWidth = -1.0f;
+        std::lock_guard _{ m_lock };
+        m_nextIndexToCheck = 0;
         m_lines.clear();
     }
     ImGui::SameLine();
@@ -34,10 +35,14 @@ void LogWindow::Draw(const ImVec2& size)
     {
         std::lock_guard _{ m_lock };
 
-        if (!m_lines.empty() && m_normalizedWidth < 0.0f)
+        if (!m_lines.empty() && (m_normalizedWidth < 0.0f || m_nextIndexToCheck < m_lines.size()))
         {
-            for (auto& line : m_lines | std::views::values)
+            for (size_t i = m_nextIndexToCheck; i < m_lines.size(); ++i)
+            {
+                auto& line = m_lines[i].second;
                 m_normalizedWidth = std::max(m_normalizedWidth, ImGui::CalcTextSize(line.c_str()).x);
+            }
+            m_nextIndexToCheck = m_lines.size();
         }
         const auto listItemWidth = std::max(m_normalizedWidth + style.ItemInnerSpacing.x * 2, ImGui::GetContentRegionAvail().x);
 
@@ -47,7 +52,6 @@ void LogWindow::Draw(const ImVec2& size)
         {
             for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i)
             {
-                // TODO - use level to color output
                 auto [level, item] = m_lines[i];
 
                 switch (level)
@@ -141,20 +145,16 @@ void LogWindow::Log(const std::string& acpText)
 
         if (second == std::string_view::npos)
         {
-            std::lock_guard _{ m_lock };
             auto text = acpText.substr(first);
-            if (m_d3d12.IsInitialized())
-                m_normalizedWidth = std::max(m_normalizedWidth, ImGui::CalcTextSize(text.c_str()).x);
+            std::lock_guard _{ m_lock };
             m_lines.emplace_back(level, std::move(text));
             break;
         }
 
         if (first != second)
         {
-            std::lock_guard _{ m_lock };
             auto text = acpText.substr(first, second-first);
-            if (m_d3d12.IsInitialized())
-                m_normalizedWidth = std::max(m_normalizedWidth, ImGui::CalcTextSize(text.c_str()).x);
+            std::lock_guard _{ m_lock };
             m_lines.emplace_back(level, std::move(text));
         }
 

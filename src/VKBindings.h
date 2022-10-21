@@ -81,9 +81,6 @@ struct VKBindings
 
     LRESULT OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam);
 
-    void ConnectUpdate(D3D12& aD3D12);
-    void DisconnectUpdate(D3D12& aD3D12);
-
     void SetVM(const LuaVM* acpVm);
 
 private:
@@ -118,6 +115,4 @@ private:
     const LuaVM* m_cpVm{ nullptr };
     Paths& m_paths;
     const Options& m_cOptions;
-
-    size_t m_connectUpdate{ static_cast<size_t>(-1) };
 };

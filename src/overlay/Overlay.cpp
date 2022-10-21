@@ -146,13 +146,11 @@ Overlay::Overlay(D3D12& aD3D12, VKBindings& aBindings, Options& aOptions, LuaVM&
     Hook();
 
     m_connectInitialized = aD3D12.OnInitialized.Connect([this]{ PostInitialize(); });
-    m_connectUpdate = aD3D12.OnUpdate.Connect([this]{ Update(); });
 }
 
 Overlay::~Overlay()
 {
     m_d3d12.OnInitialized.Disconnect(m_connectInitialized);
-    m_d3d12.OnUpdate.Disconnect(m_connectUpdate);
 }
 
 void Overlay::DrawToolbar()

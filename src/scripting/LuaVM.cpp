@@ -43,6 +43,8 @@ void LuaVM::Update(float aDeltaTime)
         return;
     }
 
+    CET::Get().GetBindings().Update();
+
     if (m_reload)
     {
         m_scripting.ReloadAllMods();
@@ -51,6 +53,9 @@ void LuaVM::Update(float aDeltaTime)
     }
 
     m_scripting.TriggerOnUpdate(aDeltaTime);
+
+    if (!m_d3d12.IsImGuiPresentDraw())
+        m_d3d12.PrepareUpdate();
 }
 
 void LuaVM::Draw() const

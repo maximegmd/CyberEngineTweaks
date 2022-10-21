@@ -4,9 +4,9 @@
 #include "Options.h"
 #include "Utils.h"
 
+#include <CET.h>
 #include <imgui_impl/dx12.h>
 #include <imgui_impl/win32.h>
-
 #include <window/window.h>
 
 bool D3D12::ResetState(bool aClearDownlevelBackbuffers)
@@ -268,7 +268,7 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
     {
         // do this once, do not repeat context creation!
         IMGUI_CHECKVERSION();
-        ImGui::CreateContext();
+        m_imguiContext = ImGui::CreateContext();
 
         ImGui::StyleColorsDark();
         m_styleReference = ImGui::GetStyle();
@@ -428,16 +428,60 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
     return true;
 }
 
-void D3D12::Update() const
+bool D3D12::IsImGuiPresentDraw() const
 {
-    ImGui_ImplDX12_NewFrame(m_pCommandQueue.Get());
+    return m_imguiPresentDraw;
+}
+
+void D3D12::PrepareUpdate(bool aPrepareMods)
+{
+    ImGui::SetCurrentContext(m_imguiContext);
     ImGui_ImplWin32_NewFrame(m_outSize);
     ImGui::NewFrame();
 
-    OnUpdate.Emit();
+    CET::Get().GetOverlay().Update();
 
+    if (aPrepareMods)
+        CET::Get().GetVM().Draw();
+
+    ImGui::Render();
+
+    auto& drawData = m_imguiDrawDataBuffers[aPrepareMods ? 2 : 0];
+
+    for (auto i = 0; i < drawData.CmdListsCount; ++i)
+        IM_DELETE(drawData.CmdLists[i]);
+    delete[] drawData.CmdLists;
+    drawData.CmdLists = nullptr;
+
+    drawData = *ImGui::GetDrawData();
+
+    ImDrawList** copiedDrawLists = new ImDrawList*[drawData.CmdListsCount];
+    for (auto i = 0; i < drawData.CmdListsCount; ++i)
+        copiedDrawLists[i] = drawData.CmdLists[i]->CloneOutput();
+    drawData.CmdLists = copiedDrawLists;
+
+    if (aPrepareMods)
+    {
+        std::unique_lock _(m_imguiDrawDataLock);
+        std::swap(m_imguiDrawDataBuffers[1], m_imguiDrawDataBuffers[2]);
+    }
+}
+
+void D3D12::Update()
+{
     const auto bufferIndex = m_pdxgiSwapChain != nullptr ? m_pdxgiSwapChain->GetCurrentBackBufferIndex() : m_downlevelBufferIndex;
-    const auto& frameContext = m_frameContexts[bufferIndex];
+    if (m_imguiPresentDraw)
+    {
+        PrepareUpdate(false);
+        m_imguiPresentDraw = !CET::Get().GetVM().IsInitialized();
+    }
+    else
+    {
+        std::unique_lock _(m_imguiDrawDataLock);
+        std::swap(m_imguiDrawDataBuffers[0], m_imguiDrawDataBuffers[1]);
+    }
+
+    auto& frameContext = m_frameContexts[bufferIndex];
     frameContext.CommandAllocator->Reset();
 
     D3D12_RESOURCE_BARRIER barrier;
@@ -455,8 +499,9 @@ void D3D12::Update() const
     m_pd3dCommandList->SetDescriptorHeaps(1, heaps);
     m_pd3dCommandList->OMSetRenderTargets(1, &frameContext.MainRenderTargetDescriptor, FALSE, nullptr);
 
-    ImGui::Render();
-    ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), m_pd3dCommandList.Get());
+    ImGui::SetCurrentContext(m_imguiContext);
+    ImGui_ImplDX12_NewFrame(m_pCommandQueue.Get());
+    ImGui_ImplDX12_RenderDrawData(&m_imguiDrawDataBuffers[0], m_pd3dCommandList.Get());
 
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
     barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;

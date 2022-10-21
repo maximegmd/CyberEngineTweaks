@@ -68,14 +68,10 @@ CET::CET()
     , m_vm(m_paths, m_bindings, m_d3d12)
     , m_overlay(m_d3d12, m_bindings, m_options, m_vm)
 {
-    m_bindings.ConnectUpdate(m_d3d12);
-
     m_vm.Initialize();
 }
 
 CET::~CET()
 {
     s_isRunning = false;
-
-    m_bindings.DisconnectUpdate(m_d3d12);
 }

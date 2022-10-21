@@ -25,8 +25,10 @@ struct D3D12
 
     LRESULT OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam) const;
 
+    bool IsImGuiPresentDraw() const;
+    void PrepareUpdate(bool aPrepareMods = true);
+
     TiltedPhoques::Signal<void()> OnInitialized;
-    TiltedPhoques::Signal<void()> OnUpdate;
 
     ID3D12Device* GetDevice() const;
     std::tuple<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> CreateTextureDescriptor();
@@ -38,8 +40,8 @@ protected:
 
     struct FrameContext
     {
-        Microsoft::WRL::ComPtr<ID3D12CommandAllocator> CommandAllocator { };
-        Microsoft::WRL::ComPtr<ID3D12Resource> BackBuffer { };
+        Microsoft::WRL::ComPtr<ID3D12CommandAllocator> CommandAllocator;
+        Microsoft::WRL::ComPtr<ID3D12Resource> BackBuffer;
         D3D12_CPU_DESCRIPTOR_HANDLE MainRenderTargetDescriptor{ 0 };
     };
 
@@ -48,7 +50,7 @@ protected:
     bool InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resource* apSourceTex2D, HWND ahWindow);
     bool InitializeImGui(size_t aBuffersCounts);
 
-    void Update() const;
+    void Update();
 
     static HRESULT PresentDownlevel(ID3D12CommandQueueDownlevel* apCommandQueueDownlevel, ID3D12GraphicsCommandList* apOpenCommandList, ID3D12Resource* apSourceTex2D, HWND ahWindow, D3D12_DOWNLEVEL_PRESENT_FLAGS aFlags);
     static HRESULT CreateCommittedResource(ID3D12Device* apDevice, const D3D12_HEAP_PROPERTIES* acpHeapProperties, D3D12_HEAP_FLAGS aHeapFlags, const D3D12_RESOURCE_DESC* acpDesc, D3D12_RESOURCE_STATES aInitialResourceState, const D3D12_CLEAR_VALUE* acpOptimizedClearValue, const IID* acpRIID, void** appvResource);
@@ -66,15 +68,16 @@ private:
 
     bool m_initialized{ false };
 
-    TiltedPhoques::Vector<FrameContext> m_frameContexts{ };
-    TiltedPhoques::Vector<Microsoft::WRL::ComPtr<ID3D12Resource>> m_downlevelBackbuffers{ };
+    TiltedPhoques::Vector<FrameContext> m_frameContexts;
+    TiltedPhoques::Vector<Microsoft::WRL::ComPtr<ID3D12Resource>> m_downlevelBackbuffers;
+    uint32_t m_downlevelBufferIndex{ 0 };
+
     Microsoft::WRL::ComPtr<IDXGISwapChain3> m_pdxgiSwapChain{ };
     Microsoft::WRL::ComPtr<ID3D12Device> m_pd3d12Device{ };
     Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_pd3dRtvDescHeap{ };
     Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_pd3dSrvDescHeap{ };
     Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_pd3dCommandList{ };
     Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_pCommandQueue{ };
-    uint32_t m_downlevelBufferIndex{ 0 };
 
     SIZE m_outSize{ };
 
@@ -85,6 +88,11 @@ private:
     Window& m_window;
     Options& m_options;
 
+    std::array<ImDrawData, 3> m_imguiDrawDataBuffers;
+    std::mutex m_imguiDrawDataLock;
+
+    ImGuiContext* m_imguiContext{ nullptr };
+    std::atomic_bool m_imguiPresentDraw{ true };
     std::atomic_bool m_delayedTrapInput{ false };
     std::atomic_bool m_delayedTrapInputState{ false };
 };
