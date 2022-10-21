@@ -37,7 +37,6 @@ struct Scripting
 
     LuaSandbox& GetSandbox();
     LockedState GetLockedState() const noexcept;
-    std::string GetGlobalName() const noexcept;
 
     static size_t Size(RED4ext::CBaseRTTIType* apRttiType);
     static sol::object ToLua(LockedState& aState, RED4ext::CStackType& aResult);
@@ -55,7 +54,6 @@ private:
     TiltedPhoques::Lockable<sol::state, std::recursive_mutex> m_lua;
     TiltedPhoques::Map<std::string, sol::object> m_properties{ };
     TiltedPhoques::Map<std::string, SingletonReference> m_singletons{ };
-    std::string m_global{ "Global" };
     LuaSandbox m_sandbox;
     RTTIMapper m_mapper;
     ScriptStore m_store;

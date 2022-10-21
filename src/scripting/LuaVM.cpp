@@ -248,7 +248,7 @@ void ReadTDBIDNameArray(std::istream& aFile, uint32_t aCount, TiltedPhoques::Map
         std::string str;
         str.resize(length);
         aFile.read(str.data(), length);
-        aOutMap.try_emplace(TweakDBID(str).value, 0, std::move(str));
+        aOutMap.try_emplace(TweakDBID(str).value, TDBIDLookupEntry{0, str});
     }
 }
 
@@ -307,7 +307,6 @@ bool InitializeTweakDBMetadata(TiltedPhoques::Map<uint64_t, TDBIDLookupEntry>& l
             decodedBytes.resize(reinterpret_cast<uint32_t*>(encodedBytes.data())[1]);
 
             char workingMemory[0x80000];
-
             auto size = OodleLZ_Decompress(encodedBytes.data() + headerSize, static_cast<int>(encodedBytes.size() - headerSize), decodedBytes.data(),
                                            static_cast<int>(decodedBytes.size()), 1, 1, 0, nullptr, nullptr, nullptr, nullptr, workingMemory, std::size(workingMemory), 3);
 

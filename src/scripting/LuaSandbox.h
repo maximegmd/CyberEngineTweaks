@@ -27,8 +27,7 @@ struct LuaSandbox
     void SetImGuiAvailable(bool aAvailable);
     bool GetImGuiAvailable() const;
 
-    void SetGameAvailable(bool aAvailable);
-    bool GetGameAvailable() const;
+    sol::environment& GetEnvironment();
 
 private:
 
@@ -46,5 +45,4 @@ private:
     TiltedPhoques::Map<std::string, sol::object> m_modules{};
 
     bool m_imguiAvailable{ false };
-    bool m_gameAvailable{ false };
 };

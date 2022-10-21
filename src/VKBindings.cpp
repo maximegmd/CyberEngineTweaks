@@ -594,14 +594,6 @@ LRESULT VKBindings::OnWndProc(HWND, UINT auMsg, WPARAM, LPARAM alParam)
     return 0;
 }
 
-bool VKBindings::IsLastRecordingKey(const USHORT acVKCode) const
-{
-    if (m_recordingLength == 0)
-        return false;
-
-    return m_recording[m_recordingLength - 1] == acVKCode;
-}
-
 LRESULT VKBindings::RecordKeyDown(const USHORT acVKCode)
 {
     if (m_keyStates[acVKCode])
@@ -734,7 +726,7 @@ void VKBindings::ExecuteRecording(const bool acLastKeyDown)
     if (m_recordingResult == 0)
         return;
 
-    const auto& possibleBind = m_binds.find(m_recordingResult)->second;
+    const auto& possibleBind = m_binds.lower_bound(m_recordingResult)->second;
     const auto bind = m_cpVm->GetBind(possibleBind);
     if (bind)
     {

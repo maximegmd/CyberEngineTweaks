@@ -2,7 +2,6 @@
 
 #include "LuaSandbox.h"
 
-#include "Scripting.h"
 #include "Texture.h"
 
 #include <CET.h>
@@ -39,7 +38,7 @@ static constexpr const char* s_cVMGlobalObjectsWhitelist[] =
     "table",
     "math",
     "bit32",
-    "json"
+    "json",
 };
 
 static constexpr const char* s_cGlobalObjectsWhitelist[] =
@@ -48,7 +47,6 @@ static constexpr const char* s_cGlobalObjectsWhitelist[] =
     "GetVersion",
     "GetDisplayResolution",
     "ModArchiveExists",
-    "Game",
 
     "ImGuiCond",
     "ImGuiTreeNodeFlags",
@@ -80,9 +78,6 @@ static constexpr const char* s_cGlobalObjectsWhitelist[] =
 static constexpr const char* s_cPostInitializeScriptingProtectedList[] =
 {
     // initialized by Scripting
-    "__Game",
-    "__Type",
-    "__ClassType",
     "Descriptor",
     "StrongReference",
     "WeakReference",
@@ -115,7 +110,6 @@ static constexpr const char* s_cPostInitializeScriptingProtectedList[] =
 static constexpr const char* s_cPostInitializeTweakDBProtectedList[] =
 {
     // initialized by Scripting
-    "__TweakDB",
     "TweakDB"
 };
 
@@ -173,12 +167,14 @@ void LuaSandbox::Initialize()
 
     // copy whitelisted things from global table
     for (const auto* cKey : s_cVMGlobalObjectsWhitelist)
+    {
         m_env[cKey] = DeepCopySolObject(globals[cKey].get<sol::object>(), luaState);
+        MakeSolUsertypeImmutable(m_env[cKey], luaState);
+    }
 
     // copy whitelisted from our global table
-    auto ourGlobals = globals[m_pScripting->GetGlobalName()];
     for (const auto* cKey : s_cGlobalObjectsWhitelist)
-        m_env[cKey] = DeepCopySolObject(ourGlobals[cKey].get<sol::object>(), luaState);
+        MakeSolUsertypeImmutable(m_env[cKey], luaState);
 
     // copy safe os functions
     {
@@ -199,14 +195,10 @@ void LuaSandbox::PostInitializeScripting()
     auto lockedState = m_pScripting->GetLockedState();
     auto& luaState = lockedState.Get();
     auto globals = luaState.globals();
-    auto ourGlobals = globals[m_pScripting->GetGlobalName()];
 
     // copy whitelisted from global table
     for (const auto* cKey : s_cPostInitializeScriptingProtectedList)
-    {
-        m_env[cKey] = DeepCopySolObject(ourGlobals[cKey].get<sol::object>(), luaState);
         MakeSolUsertypeImmutable(m_env[cKey], luaState);
-    }
 }
 
 void LuaSandbox::PostInitializeTweakDB()
@@ -214,16 +206,10 @@ void LuaSandbox::PostInitializeTweakDB()
     auto lockedState = m_pScripting->GetLockedState();
     auto& luaState = lockedState.Get();
     auto globals = luaState.globals();
-    auto ourGlobals = globals[m_pScripting->GetGlobalName()];
 
     // copy whitelisted from global table
     for (const auto* cKey : s_cPostInitializeTweakDBProtectedList)
-    {
-        m_env[cKey] = DeepCopySolObject(ourGlobals[cKey].get<sol::object>(), luaState);
         MakeSolUsertypeImmutable(m_env[cKey], luaState);
-    }
-
-    SetGameAvailable(true);
 }
 
 void LuaSandbox::PostInitializeMods()
@@ -231,14 +217,10 @@ void LuaSandbox::PostInitializeMods()
     auto lockedState = m_pScripting->GetLockedState();
     auto& luaState = lockedState.Get();
     auto globals = luaState.globals();
-    auto ourGlobals = globals[m_pScripting->GetGlobalName()];
 
     // copy whitelisted from global table
     for (const auto* cKey : s_cPostInitializeModsProtectedList)
-    {
-        m_env[cKey] = DeepCopySolObject(ourGlobals[cKey].get<sol::object>(), luaState);
         MakeSolUsertypeImmutable(m_env[cKey], luaState);
-    }
 }
 
 void LuaSandbox::ResetState()
@@ -321,16 +303,9 @@ bool LuaSandbox::GetImGuiAvailable() const
     return m_imguiAvailable;
 }
 
-void LuaSandbox::SetGameAvailable(bool aAvailable)
+sol::environment& LuaSandbox::GetEnvironment()
 {
-    auto lockedState = m_pScripting->GetLockedState();
-    m_gameAvailable = aAvailable;
-}
-
-bool LuaSandbox::GetGameAvailable() const
-{
-    auto lockedState = m_pScripting->GetLockedState();
-    return m_gameAvailable;
+    return m_env;
 }
 
 void LuaSandbox::InitializeExtraLibsForSandbox(Sandbox& aSandbox, const sol::state& acpState) const
@@ -338,16 +313,16 @@ void LuaSandbox::InitializeExtraLibsForSandbox(Sandbox& aSandbox, const sol::sta
     auto& sbEnv = aSandbox.GetEnvironment();
     const auto& cSBRootPath = aSandbox.GetRootPath();
     auto globals = acpState.globals();
-    auto ourGlobals = globals[m_pScripting->GetGlobalName()];
     sol::state_view stateView = acpState;
 
     // copy extra whitelisted libs from global table
     for (const auto* cKey : s_cGlobalExtraLibsWhitelist)
-        sbEnv[cKey] = DeepCopySolObject(ourGlobals[cKey].get<sol::object>(), acpState);
+    {
+        sbEnv[cKey] = DeepCopySolObject(globals[cKey].get<sol::object>(), acpState);
+        MakeSolUsertypeImmutable(sbEnv[cKey], acpState);
+    }
 
     sol::table imgui = sbEnv["ImGui"];
-
-    Texture::BindTexture(imgui);
 
     imgui["LoadTexture"] = [this, cSBRootPath, stateView](const std::string& acPath) -> std::tuple<std::shared_ptr<Texture>, sol::object> {
         if (!GetImGuiAvailable())
@@ -410,7 +385,6 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
     auto& sbEnv = aSandbox.GetEnvironment();
     const auto& cSBRootPath = aSandbox.GetRootPath();
     auto globals = acpState.globals();
-    auto ourGlobals = globals[m_pScripting->GetGlobalName()];
     const auto cSBEnv = sbEnv;
     sol::state_view stateView = acpState;
 

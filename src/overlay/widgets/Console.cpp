@@ -88,6 +88,9 @@ void Console::OnUpdate()
     ImGui::SetItemDefaultFocus();
     if (execute)
     {
+        m_command.resize(m_commandLength);
+        m_command.shrink_to_fit();
+
         const auto consoleLogger = spdlog::get("scripting");
         consoleLogger->info("> {}", m_command);
 
@@ -97,8 +100,10 @@ void Console::OnUpdate()
         m_historyIndex = m_history.size();
         auto& history = m_history.emplace_back();
         history.swap(m_command);
-        m_command.resize(255);
         m_newHistory = true;
+
+        m_command.resize(255);
+        m_commandLength = 0;
 
         ImGui::SetKeyboardFocusHere(-1); // Auto focus previous widget
     }

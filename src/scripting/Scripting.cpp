@@ -4,6 +4,7 @@
 
 #include "FunctionOverride.h"
 #include "GameOptions.h"
+#include "Texture.h"
 
 #include <CET.h>
 #include <lsqlite3/lsqlite3.h>
@@ -45,7 +46,6 @@ void Scripting::Initialize()
 {
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
-    auto& globals = m_sandbox.GetEnvironment();
 
     luaVm.open_libraries(sol::lib::base, sol::lib::string, sol::lib::io, sol::lib::math, sol::lib::package,
                          sol::lib::os, sol::lib::table, sol::lib::bit32);
@@ -55,9 +55,21 @@ void Scripting::Initialize()
     // as this could get overriden by LUA_PATH environment variable
     luaVm["package"]["path"] = "./?.lua";
 
+    // execute autoexec.lua inside our default script directory
+    const auto previousCurrentPath = std::filesystem::current_path();
+    current_path(m_paths.CETRoot() / "scripts");
+    luaVm.script("json = require 'json/json'", sol:: detail::default_chunk_name(), sol::load_mode::text);
+    current_path(previousCurrentPath);
+
+    // initialize sandbox
+    m_sandbox.Initialize();
+
+    auto& globals = m_sandbox.GetEnvironment();
+
     // load in imgui bindings
-    sol_ImGui::InitBindings(luaVm, luaVm.globals());
-    sol::table imgui = luaVm["ImGui"];
+    sol_ImGui::InitBindings(luaVm, globals);
+    sol::table imgui = globals["ImGui"];
+    Texture::BindTexture(imgui);
     for (auto [key, value] : imgui)
     {
         if (value.get_type() != sol::type::function)
@@ -76,15 +88,6 @@ void Scripting::Initialize()
             return original(as_args(aVariadicArgs));
         });
     }
-
-    // execute autoexec.lua inside our default script directory
-    const auto previousCurrentPath = std::filesystem::current_path();
-    current_path(m_paths.CETRoot() / "scripts");
-    luaVm.script("json = require 'json/json'", sol:: detail::default_chunk_name(), sol::load_mode::text);
-    current_path(previousCurrentPath);
-
-    // initialize sandbox
-    m_sandbox.Initialize();
 
     // setup logger for console sandbox
     auto& consoleSB = m_sandbox[0];

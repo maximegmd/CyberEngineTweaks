@@ -84,8 +84,7 @@ struct VKBindings
     void SetVM(const LuaVM* acpVm);
 
 private:
-
-    [[nodiscard]] bool IsLastRecordingKey(const USHORT acVKCode) const;
+    
     LRESULT RecordKeyDown(const USHORT acVKCode);
     LRESULT RecordKeyUp(const USHORT acVKCode);
 

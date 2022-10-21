@@ -58,10 +58,9 @@ bool ResourcesList::Initialize()
         buffer.resize(*reinterpret_cast<uint32_t*>(content.data() + 4));
 
         char workingMemory[0x80000];
-
         auto size = OodleLZ_Decompress(content.data() + headerSize, static_cast<int>(content.size() - headerSize), buffer.data(),
                                        static_cast<int>(buffer.size()), 1, 1, 0, nullptr, nullptr, nullptr, nullptr, workingMemory, std::size(workingMemory), 3);
-        
+
         assert(size == buffer.size());
         if (size != buffer.size())
         {

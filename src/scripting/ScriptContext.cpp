@@ -90,8 +90,6 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
                 return [&aLuaSandbox, loggerRef, callback]{
                     auto lockedState = aLuaSandbox.GetLockedState();
 
-                    const auto previousGameAvailable = aLuaSandbox.GetGameAvailable();
-                    aLuaSandbox.SetGameAvailable(false);
                     aLuaSandbox.SetImGuiAvailable(true);
 
                     const auto previousStyle = ImGui::GetStyle();
@@ -101,7 +99,6 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
                     ImGui::GetStyle() = previousStyle;
 
                     aLuaSandbox.SetImGuiAvailable(false);
-                    aLuaSandbox.SetGameAvailable(previousGameAvailable);
                 };
             }
             loggerRef->warn("Tried to register empty tooltip for handler!]");
@@ -263,8 +260,6 @@ void ScriptContext::TriggerOnDraw() const
 {
     auto lockedState = m_sandbox.GetLockedState();
 
-    const auto previousGameAvailable = m_sandbox.GetGameAvailable();
-    m_sandbox.SetGameAvailable(false);
     m_sandbox.SetImGuiAvailable(true);
 
     const auto previousStyle = ImGui::GetStyle();
@@ -274,7 +269,6 @@ void ScriptContext::TriggerOnDraw() const
     ImGui::GetStyle() = previousStyle;
 
     m_sandbox.SetImGuiAvailable(false);
-    m_sandbox.SetGameAvailable(previousGameAvailable);
 }
 
 void ScriptContext::TriggerOnOverlayOpen() const

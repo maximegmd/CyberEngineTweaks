@@ -8,9 +8,7 @@
 
 void Texture::BindTexture(sol::table& aTable)
 {
-    sol::state_view vm(aTable.lua_state());
-
-    vm.new_usertype<Texture>("ImguiTexture", sol::no_constructor,
+    aTable.new_usertype<Texture>("ImguiTexture", sol::no_constructor,
         "size", sol::property(&Texture::GetSize),
         "Release", &Texture::Release);
 
@@ -24,7 +22,6 @@ void Texture::BindTexture(sol::table& aTable)
        [](const Texture& acTexture, ImVec2 aSize) { ImGuiImage(acTexture, aSize); },
        [](const Texture& acTexture ){ ImGuiImage(acTexture); }
     ));
-
 }
 
 std::shared_ptr<Texture> Texture::Load(const std::string& acPath)

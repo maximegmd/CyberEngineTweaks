@@ -5,7 +5,7 @@ struct RTTIMapper
 {
     using LockableState = TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref;
 
-    RTTIMapper(const LockableState& acpLua, const std::string& acpGlobal, LuaSandbox& apSandbox);
+    RTTIMapper(const LockableState& acpLua, LuaSandbox& apSandbox);
     ~RTTIMapper();
 
     void Register();
@@ -48,6 +48,5 @@ private:
     void ExtendUsertype(const std::string acTypeName, sol::state& aLuaState, sol::table& aLuaGlobal) const;
 
     LockableState m_lua;
-    std::string m_global;
     LuaSandbox& m_sandbox;
 };

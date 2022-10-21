@@ -257,12 +257,12 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND ahWnd, UINT auMsg, WP
     case WM_KEYDOWN:
     case WM_SYSKEYDOWN:
         if (awParam < 256)
-            io.KeysDown[awParam] = 1;
+            io.KeysDown[awParam] = true;
         return 0;
     case WM_KEYUP:
     case WM_SYSKEYUP:
         if (awParam < 256)
-            io.KeysDown[awParam] = 0;
+            io.KeysDown[awParam] = false;
         return 0;
     case WM_CHAR:
         // You can also use ToAscii()+GetKeyboardState() to retrieve characters.
@@ -272,6 +272,10 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND ahWnd, UINT auMsg, WP
     case WM_SETCURSOR:
         if (LOWORD(alParam) == HTCLIENT && ImGui_ImplWin32_UpdateMouseCursor())
             return 1;
+        return 0;
+    case WM_KILLFOCUS:
+        std::fill_n(io.KeysDown, std::size(io.KeysDown), 0);
+        std::fill_n(io.MouseDown, std::size(io.MouseDown), 0);
         return 0;
     }
     return 0;

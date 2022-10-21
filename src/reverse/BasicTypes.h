@@ -62,8 +62,6 @@ struct Quaternion
 	bool operator==(const Quaternion& acRhs) const noexcept;
 };
 
-uint32_t crc32(const char* buf, size_t len, uint32_t seed);
-
 struct CName
 {
     CName(uint64_t aHash = 0) : hash(aHash){}
@@ -116,14 +114,14 @@ struct TweakDBID
 
     TweakDBID(const std::string_view aName)
     {
-        name_hash = crc32(aName.data(), aName.size(), 0);
+        name_hash = RED4ext::CRC32(aName.data(), 0);
         name_length = static_cast<uint8_t>(aName.size());
         unk5 = unk7 = 0;
     }
 
     TweakDBID(const TweakDBID& aBase, const std::string_view aName)
     {
-        name_hash = crc32(aName.data(), aName.size(), aBase.name_hash);
+        name_hash = RED4ext::CRC32(aName.data(), aBase.name_hash);
         name_length = static_cast<uint8_t>(aName.size() + aBase.name_length);
         unk5 = unk7 = 0;
     }

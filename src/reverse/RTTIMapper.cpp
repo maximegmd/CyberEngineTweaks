@@ -9,9 +9,8 @@
 #include "scripting/Scripting.h"
 #include "Utils.h"
 
-RTTIMapper::RTTIMapper(const LockableState& acpLua, const std::string& acpGlobal, LuaSandbox& apSandbox)
+RTTIMapper::RTTIMapper(const LockableState& acpLua, LuaSandbox& apSandbox)
     : m_lua(acpLua)
-    , m_global(acpGlobal)
     , m_sandbox(apSandbox)
 {
 }
@@ -28,14 +27,13 @@ void RTTIMapper::Register()
     auto lockedState = m_lua.Lock();
     auto& luaState = lockedState.Get();
 
-    auto luaGlobal = luaState.get<sol::table>(m_global);
     auto* pRtti = RED4ext::CRTTISystem::Get();
 
-    RegisterSimpleTypes(luaState, luaGlobal);
-    RegisterDirectTypes(luaState, luaGlobal, pRtti);
-    RegisterDirectGlobals(luaGlobal, pRtti);
-    RegisterScriptAliases(luaGlobal, pRtti);
-    RegisterSpecialAccessors(luaState, luaGlobal);
+    RegisterSimpleTypes(luaState, m_sandbox.GetEnvironment());
+    RegisterDirectTypes(luaState, m_sandbox.GetEnvironment(), pRtti);
+    RegisterDirectGlobals(m_sandbox.GetEnvironment(), pRtti);
+    RegisterScriptAliases(m_sandbox.GetEnvironment(), pRtti);
+    RegisterSpecialAccessors(luaState, m_sandbox.GetEnvironment());
 }
 
 void RTTIMapper::Refresh()
@@ -43,7 +41,7 @@ void RTTIMapper::Refresh()
     auto lockedState = m_lua.Lock();
     auto& luaState = lockedState.Get();
 
-    auto luaGlobal = luaState.get<sol::table>(m_global);
+    sol::table luaGlobal = luaState.globals();
     auto* pRtti = RED4ext::CRTTISystem::Get();
 
     RegisterDirectTypes(luaState, luaGlobal, pRtti);
