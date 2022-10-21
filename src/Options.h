@@ -30,9 +30,9 @@ struct Options
     std::string FontGlyphRanges{"Default"};
     float FontSize{ 18.0f };
     bool ExeValid{ false };
-    bool RemoveDeadBindings { true };
-    bool DrawImGuiDiagnosticWindow { false };
-    bool EnableImGuiAssertions { false };
+    bool RemoveDeadBindings{ true };
+    bool DrawImGuiDiagnosticWindow{ false };
+    bool EnableImGuiAssertionsLogging{ false };
 
 private:
 

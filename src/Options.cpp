@@ -24,7 +24,7 @@ void Options::Load()
             PatchMinimapFlicker = config.value("minimap_flicker", PatchMinimapFlicker);
 
             RemoveDeadBindings = config.value("cetdev_remove_dead_bindings", RemoveDeadBindings);
-            EnableImGuiAssertions = config.value("cetdev_enable_imgui_assertions", EnableImGuiAssertions);
+            EnableImGuiAssertionsLogging = config.value("cetdev_enable_imgui_assertions_logging", EnableImGuiAssertionsLogging);
             DumpGameOptions = config.value("dump_game_options", DumpGameOptions);
             PatchEnableDebug = config.value("enable_debug", PatchEnableDebug);
 
@@ -41,7 +41,7 @@ void Options::Load()
     }
 
     // set global "Enable ImGui Assertions"
-    g_ImGuiAssertionsEnabled = EnableImGuiAssertions;
+    g_ImGuiAssertionsEnabled = EnableImGuiAssertionsLogging;
 }
 
 void Options::Save()
@@ -60,7 +60,7 @@ void Options::Save()
     config["minimap_flicker"] = PatchMinimapFlicker;
 
     config["cetdev_remove_dead_bindings"] = RemoveDeadBindings;
-    config["cetdev_enable_imgui_assertions"] = EnableImGuiAssertions;
+    config["cetdev_enable_imgui_assertions_logging"] = EnableImGuiAssertionsLogging;
     config["enable_debug"] = PatchEnableDebug;
     config["dump_game_options"] = DumpGameOptions;
 
@@ -73,7 +73,7 @@ void Options::Save()
     o << config.dump(4) << std::endl;
 
     // set global "Enable ImGui Assertions"
-    g_ImGuiAssertionsEnabled = EnableImGuiAssertions;
+    g_ImGuiAssertionsEnabled = EnableImGuiAssertionsLogging;
 }
 
 void Options::ResetToDefaults()
@@ -90,7 +90,7 @@ void Options::ResetToDefaults()
     PatchMinimapFlicker = false;
 
     RemoveDeadBindings = true;
-    EnableImGuiAssertions = false;
+    EnableImGuiAssertionsLogging = false;
     PatchEnableDebug = false;
     DumpGameOptions = false;
 

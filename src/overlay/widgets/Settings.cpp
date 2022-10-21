@@ -81,13 +81,13 @@ void Settings::OnUpdate()
             }
             ImGui::TreePop();
         }
-        if (ImGui::CollapsingHeader("Dev", ImGuiTreeNodeFlags_DefaultOpen))
+        if (ImGui::CollapsingHeader("CET Development Settings", ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::TreePush();
             if (ImGui::BeginTable("##SETTINGS_DEV", 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
             {
                 UpdateAndDrawSetting("Remove Dead Bindings", "Removes all bindings which are no longer valid (disabling this could be useful when debugging mod issues).", m_removeDeadBindings, m_options.RemoveDeadBindings);
-                UpdateAndDrawSetting("Enable ImGui Assertions", "Enables all ImGui assertions (useful when debugging ImGui issues, should also be used to check mods before shipping!).", m_enableImGuiAssertions, m_options.EnableImGuiAssertions);
+                UpdateAndDrawSetting("Enable ImGui Assertions Logging", "Enables all ImGui assertions, assertions will get logged into log file of whoever triggered the assertion (useful when debugging ImGui issues, should also be used to check mods before shipping!).", m_enableImGuiAssertionsLogging, m_options.EnableImGuiAssertionsLogging);
                 UpdateAndDrawSetting("Enable Debug Build", "Sets internal flags to disguise as debug build (requires restart to take effect).", m_patchEnableDebug, m_options.PatchEnableDebug);
                 UpdateAndDrawSetting("Dump Game Options", "Dumps all game options into main log file (requires restart to take effect).", m_dumpGameOptions, m_options.DumpGameOptions);
 
@@ -127,7 +127,7 @@ void Settings::Load()
     m_patchMinimapFlicker = m_options.PatchMinimapFlicker;
 
     m_removeDeadBindings = m_options.RemoveDeadBindings;
-    m_enableImGuiAssertions = m_options.EnableImGuiAssertions;
+    m_enableImGuiAssertionsLogging = m_options.EnableImGuiAssertionsLogging;
     m_patchEnableDebug = m_options.PatchEnableDebug;
     m_dumpGameOptions = m_options.DumpGameOptions;
 }
@@ -146,7 +146,7 @@ void Settings::Save() const
     m_options.PatchMinimapFlicker = m_patchMinimapFlicker;
 
     m_options.RemoveDeadBindings = m_removeDeadBindings;
-    m_options.EnableImGuiAssertions = m_enableImGuiAssertions;
+    m_options.EnableImGuiAssertionsLogging = m_enableImGuiAssertionsLogging;
     m_options.PatchEnableDebug = m_patchEnableDebug;
     m_options.DumpGameOptions = m_dumpGameOptions;
 

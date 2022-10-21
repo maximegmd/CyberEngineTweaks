@@ -36,7 +36,7 @@ private:
     bool m_patchMinimapFlicker{ false };
     bool m_dumpGameOptions{ false };
     bool m_removeDeadBindings{ true };
-    bool m_enableImGuiAssertions{ true };
+    bool m_enableImGuiAssertionsLogging{ false };
 
     Options& m_options;
     LuaVM& m_vm;
