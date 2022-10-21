@@ -13,7 +13,7 @@ extern "C" _ACRTIMP void __cdecl _wassert(wchar_t const* _Message, wchar_t const
 // runtime assertions which can be enabled/disabled inside CET options, always logged into main log file when they happen
 void ImGuiAssert(wchar_t const* acpMessage, wchar_t const* acpFile, unsigned aLine)
 {
-    // TODO - make this log to  log of the one who caused assertion instead of default log!
+    // TODO - make this log to log of the one who caused assertion instead of default log!
     spdlog::error(L"ImGui assertion failed in file \"{}\" at line {}! Expression ({}) evaluates to false!", acpFile, aLine, acpMessage);
 
 #ifdef CET_DEBUG

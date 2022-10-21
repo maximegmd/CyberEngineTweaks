@@ -270,8 +270,17 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
 
-        ImGui::StyleColorsDark();
-        m_styleReference = ImGui::GetStyle();
+        // TODO - make this configurable eventually and overridable by mods for themselves easily
+        // setup CET default style
+        ImGui::StyleColorsDark(&m_styleReference);
+        m_styleReference.WindowRounding = 6.0f;
+        m_styleReference.WindowTitleAlign.x = 0.5f;
+        m_styleReference.ChildRounding = 6.0f;
+        m_styleReference.PopupRounding = 6.0f;
+        m_styleReference.FrameRounding = 6.0f;
+        m_styleReference.ScrollbarRounding = 12.0f;
+        m_styleReference.GrabRounding = 12.0f;
+        m_styleReference.TabRounding = 6.0f;
     }
 
     ImGui::GetStyle() = m_styleReference;
@@ -445,7 +454,7 @@ void D3D12::PrepareUpdate(bool aPrepareMods)
 
     ImGui::Render();
 
-    auto& drawData = m_imguiDrawDataBuffers[aPrepareMods ? 2 : 0];
+    auto& drawData = m_imguiDrawDataBuffers[2];
 
     for (auto i = 0; i < drawData.CmdListsCount; ++i)
         IM_DELETE(drawData.CmdLists[i]);
@@ -454,15 +463,15 @@ void D3D12::PrepareUpdate(bool aPrepareMods)
 
     drawData = *ImGui::GetDrawData();
 
-    ImDrawList** copiedDrawLists = new ImDrawList*[drawData.CmdListsCount];
+    auto** copiedDrawLists = new ImDrawList*[drawData.CmdListsCount];
     for (auto i = 0; i < drawData.CmdListsCount; ++i)
         copiedDrawLists[i] = drawData.CmdLists[i]->CloneOutput();
     drawData.CmdLists = copiedDrawLists;
 
-    if (aPrepareMods)
+    // swap backbuffer ImGui buffer with staging ImGui buffer
     {
         std::unique_lock _(m_imguiDrawDataLock);
-        std::swap(m_imguiDrawDataBuffers[1], m_imguiDrawDataBuffers[2]);
+        std::swap(m_imguiDrawDataBuffers[2], m_imguiDrawDataBuffers[1]);
     }
 }
 
@@ -474,7 +483,8 @@ void D3D12::Update()
         PrepareUpdate(false);
         m_imguiPresentDraw = !CET::Get().GetVM().IsInitialized();
     }
-    else
+
+    // swap staging ImGui buffer with render ImGui buffer
     {
         std::unique_lock _(m_imguiDrawDataLock);
         std::swap(m_imguiDrawDataBuffers[0], m_imguiDrawDataBuffers[1]);
