@@ -43,14 +43,9 @@ int Console::HandleConsoleHistory(ImGuiInputTextCallbackData* apData)
 
     if (pStr)
     {
-        pConsole->m_command.resize(pStr->length());
-        pConsole->m_command.shrink_to_fit();
-        pConsole->m_command = *pStr;
-
-        apData->Buf = pConsole->m_command.data();
-        apData->BufDirty = true;
-        apData->BufTextLen = static_cast<int>(pStr->length());
-        apData->CursorPos = apData->BufTextLen;
+        apData->DeleteChars(0, apData->BufTextLen);
+        apData->InsertChars(0, pStr->c_str());
+        apData->SelectAll();
     }
 
     return 0;
