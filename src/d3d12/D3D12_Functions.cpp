@@ -268,7 +268,7 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
     {
         // do this once, do not repeat context creation!
         IMGUI_CHECKVERSION();
-        m_imguiContext = ImGui::CreateContext();
+        ImGui::CreateContext();
 
         ImGui::StyleColorsDark();
         m_styleReference = ImGui::GetStyle();
@@ -435,7 +435,6 @@ bool D3D12::IsImGuiPresentDraw() const
 
 void D3D12::PrepareUpdate(bool aPrepareMods)
 {
-    ImGui::SetCurrentContext(m_imguiContext);
     ImGui_ImplWin32_NewFrame(m_outSize);
     ImGui::NewFrame();
 
@@ -499,7 +498,6 @@ void D3D12::Update()
     m_pd3dCommandList->SetDescriptorHeaps(1, heaps);
     m_pd3dCommandList->OMSetRenderTargets(1, &frameContext.MainRenderTargetDescriptor, FALSE, nullptr);
 
-    ImGui::SetCurrentContext(m_imguiContext);
     ImGui_ImplDX12_NewFrame(m_pCommandQueue.Get());
     ImGui_ImplDX12_RenderDrawData(&m_imguiDrawDataBuffers[0], m_pd3dCommandList.Get());
 

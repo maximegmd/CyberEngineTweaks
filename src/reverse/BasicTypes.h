@@ -128,6 +128,7 @@ struct TweakDBID
         unk5 = unk7 = 0;
     }
 
+    std::string AsString() const noexcept;
     std::string ToString() const noexcept;
 
 	bool operator==(const TweakDBID& acRhs) const noexcept;

@@ -71,10 +71,17 @@ void CName::Add(const std::string& aName)
     RED4ext::CNamePool::Add(aName.c_str());
 }
 
+std::string TweakDBID::AsString() const noexcept
+{
+    return CET::Get().GetVM().GetTDBIDString(value);
+}
+
 std::string TweakDBID::ToString() const noexcept
 {
-    const auto str = CET::Get().GetVM().GetTDBIDString(value, true);
-    return str.empty() ? fmt::format("ToTweakDBID{{ hash = 0x{:08X}, length = {:d} }}", name_hash, name_length) : fmt::format("ToTweakDBID{{ name = '{}' }}", str);
+    const auto resolved = CET::Get().GetVM().GetTDBIDString(value, true);
+    if (!resolved.empty())
+        return fmt::format("ToTweakDBID{{ hash = 0x{:08X}, length = {:d} }}", name_hash, name_length);
+    return fmt::format("ToTweakDBID{{ hash = 0x{:08X}, length = {:d} --[[ {} --]] }}", name_hash, name_length, resolved);
 }
 
 bool TweakDBID::operator==(const TweakDBID& acRhs) const noexcept

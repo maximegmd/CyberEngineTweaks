@@ -372,7 +372,8 @@ void Scripting::PostInitializeScripting()
         sol::meta_function::addition, &TweakDBID::operator+,
         sol::meta_function::concatenation, &TweakDBID::operator+,
         "hash", &TweakDBID::name_hash,
-        "length", &TweakDBID::name_length);
+        "length", &TweakDBID::name_length,
+        "value", sol::property(&TweakDBID::AsString));
 
     luaGlobal["ToTweakDBID"] = [](sol::table table) -> TweakDBID
     {
