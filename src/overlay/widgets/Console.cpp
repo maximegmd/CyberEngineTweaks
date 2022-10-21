@@ -91,14 +91,14 @@ void Console::OnUpdate()
         const auto consoleLogger = spdlog::get("scripting");
         consoleLogger->info("> {}", m_command);
 
+        if (!m_vm.ExecuteLua(m_command))
+            consoleLogger->info("Command failed to execute!");
+
         m_historyIndex = m_history.size();
         auto& history = m_history.emplace_back();
         history.swap(m_command);
         m_command.resize(255);
         m_newHistory = true;
-
-        if (!m_vm.ExecuteLua(m_command))
-            consoleLogger->info("Command failed to execute!");
 
         ImGui::SetKeyboardFocusHere(-1); // Auto focus previous widget
     }
