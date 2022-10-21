@@ -64,7 +64,7 @@ private:
     TCreateCommittedResource* m_realCreateCommittedResource{ nullptr };
     TExecuteCommandLists* m_realExecuteCommandLists{ nullptr };
     TCRenderNode_Present_InternalPresent* m_realInternalPresent{ nullptr };
-    TCRenderGlobal_Resize* m_realInternalResize{nullptr};
+    TCRenderGlobal_Resize* m_realInternalResize{ nullptr };
 
     bool m_initialized{ false };
 
@@ -88,8 +88,8 @@ private:
     Window& m_window;
     Options& m_options;
 
-    std::array<ImDrawData, 3> m_imguiDrawDataBuffers;
-    std::mutex m_imguiDrawDataLock;
+    std::mutex m_imguiLock;
+    std::array<ImDrawData, 2> m_imguiDrawDataBuffers;
     std::atomic_bool m_imguiPresentDraw{ true };
     std::atomic_bool m_delayedTrapInput{ false };
     std::atomic_bool m_delayedTrapInputState{ false };

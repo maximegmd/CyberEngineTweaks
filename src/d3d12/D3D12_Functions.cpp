@@ -444,7 +444,8 @@ bool D3D12::IsImGuiPresentDraw() const
 
 void D3D12::PrepareUpdate(bool aPrepareMods)
 {
-    ImGui_ImplWin32_NewFrame(m_outSize);
+    std::unique_lock _(m_imguiLock);
+
     ImGui::NewFrame();
 
     CET::Get().GetOverlay().Update();
@@ -454,12 +455,13 @@ void D3D12::PrepareUpdate(bool aPrepareMods)
 
     ImGui::Render();
 
-    auto& drawData = m_imguiDrawDataBuffers[2];
+    auto& drawData = m_imguiDrawDataBuffers[1];
 
     for (auto i = 0; i < drawData.CmdListsCount; ++i)
         IM_DELETE(drawData.CmdLists[i]);
     delete[] drawData.CmdLists;
     drawData.CmdLists = nullptr;
+    drawData.Clear();
 
     drawData = *ImGui::GetDrawData();
 
@@ -467,17 +469,16 @@ void D3D12::PrepareUpdate(bool aPrepareMods)
     for (auto i = 0; i < drawData.CmdListsCount; ++i)
         copiedDrawLists[i] = drawData.CmdLists[i]->CloneOutput();
     drawData.CmdLists = copiedDrawLists;
-
-    // swap backbuffer ImGui buffer with staging ImGui buffer
-    {
-        std::unique_lock _(m_imguiDrawDataLock);
-        std::swap(m_imguiDrawDataBuffers[2], m_imguiDrawDataBuffers[1]);
-    }
 }
 
 void D3D12::Update()
 {
-    const auto bufferIndex = m_pdxgiSwapChain != nullptr ? m_pdxgiSwapChain->GetCurrentBackBufferIndex() : m_downlevelBufferIndex;
+    {
+        std::unique_lock _(m_imguiLock);
+        ImGui_ImplWin32_NewFrame(m_outSize);
+        ImGui_ImplDX12_NewFrame(m_pCommandQueue.Get());
+    }
+
     if (m_imguiPresentDraw)
     {
         PrepareUpdate(false);
@@ -486,10 +487,13 @@ void D3D12::Update()
 
     // swap staging ImGui buffer with render ImGui buffer
     {
-        std::unique_lock _(m_imguiDrawDataLock);
+        std::unique_lock _(m_imguiLock);
         std::swap(m_imguiDrawDataBuffers[0], m_imguiDrawDataBuffers[1]);
     }
 
+    assert(m_imguiDrawDataBuffers[0].Valid);
+
+    const auto bufferIndex = m_pdxgiSwapChain != nullptr ? m_pdxgiSwapChain->GetCurrentBackBufferIndex() : m_downlevelBufferIndex;
     auto& frameContext = m_frameContexts[bufferIndex];
     frameContext.CommandAllocator->Reset();
 
@@ -508,7 +512,6 @@ void D3D12::Update()
     m_pd3dCommandList->SetDescriptorHeaps(1, heaps);
     m_pd3dCommandList->OMSetRenderTargets(1, &frameContext.MainRenderTargetDescriptor, FALSE, nullptr);
 
-    ImGui_ImplDX12_NewFrame(m_pCommandQueue.Get());
     ImGui_ImplDX12_RenderDrawData(&m_imguiDrawDataBuffers[0], m_pd3dCommandList.Get());
 
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
