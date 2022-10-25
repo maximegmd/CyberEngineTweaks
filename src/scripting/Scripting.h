@@ -15,8 +15,8 @@ struct Scripting
     ~Scripting() = default;
 
     void Initialize();
-    void PostInitializeStage1();
-    void PostInitializeStage2();
+    void PostInitializeScripting();
+    void PostInitializeMods();
 
     const TiltedPhoques::Vector<VKBindInfo>& GetBinds() const;
 

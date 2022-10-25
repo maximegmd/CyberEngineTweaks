@@ -52,8 +52,8 @@ void LuaVM::HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack,
 
     apStack->currentParam++;
 
-    apStack->data = 0;
-    apStack->dataType = 0;
+    apStack->data = nullptr;
+    apStack->dataType = nullptr;
     opcode = *(apStack->code++);
     RED4ext::OpcodeHandlers::Run(opcode, apStack->context, apStack, &ref, &ref);
 
@@ -65,13 +65,20 @@ void LuaVM::HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack,
         auto consoleLogger = spdlog::get("scripting");
 
         std::string_view textSV = ref.ref->c_str();
-        std::string_view channelSV = channel.ToString();
-        if (channelSV == "")
-            consoleLogger->info("[?{0:x}] {}", channel.hash, textSV);
+        if (channel == s_debugChannel)
+        {
+            consoleLogger->info(textSV);
+        }
         else
-            consoleLogger->info("[{}] {}", channelSV, textSV);
+        {
+            std::string_view channelSV = channel.ToString();
+            if (channelSV.empty())
+                consoleLogger->info("[?{0:x}] {}", channel.hash, textSV);
+            else
+                consoleLogger->info("[{}] {}", channelSV, textSV);
+        }
     }
-    
+
     CET::Get().GetVM().m_logCount.fetch_add(1);
 }
 
@@ -141,11 +148,25 @@ uintptr_t LuaVM::HookSetLoadingState(uintptr_t aThis, int aState)
     {
         std::call_once(s_initBarrier, [&luavm]()
         {
-            luavm.PostInitializeStage2();
+            luavm.PostInitializeMods();
         });
     }
 
     return luavm.m_realSetLoadingState(aThis, aState);
+}
+
+bool LuaVM::HookTranslateBytecode(uintptr_t aBinder, uintptr_t aData)
+{
+    auto& luavm = CET::Get().GetVM();
+
+    const auto ret = luavm.m_realTranslateBytecode(aBinder, aData);
+
+    if (ret)
+    {
+        luavm.PostInitializeScripting();
+    }
+
+    return ret;
 }
 
 uint64_t LuaVM::HookTweakDBLoad(uintptr_t aThis, uintptr_t aParam)
@@ -154,7 +175,7 @@ uint64_t LuaVM::HookTweakDBLoad(uintptr_t aThis, uintptr_t aParam)
 
     const auto ret = luavm.m_realTweakDBLoad(aThis, aParam);
 
-    luavm.PostInitializeStage1();
+    luavm.PostInitializeTweakDB();
 
     return ret;
 }
@@ -222,6 +243,22 @@ void LuaVM::Hook(Options& aOptions)
     }
 
     {
+        RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_TranslateBytecode);
+        uint8_t* pLocation = func.GetAddr();
+
+        if (pLocation)
+        {
+            if (MH_CreateHook(pLocation, &HookTranslateBytecode, reinterpret_cast<void**>(&m_realTranslateBytecode)) != MH_OK ||
+                MH_EnableHook(pLocation) != MH_OK)
+                Log::Error("Could not hook ScriptBinder::TranslateBytecode function!");
+            else
+            {
+                Log::Info("ScriptBinder::TranslateBytecode function hook complete!");
+            }
+        }
+    }
+
+    {
         RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_ToStringDEBUG);
         uint8_t* pLocation = func.GetAddr();
 
@@ -238,7 +275,7 @@ void LuaVM::Hook(Options& aOptions)
             }
         }
     }
-    
+
     {
         RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_TweakDBLoad);
         uint8_t* pLocation = func.GetAddr();
@@ -273,6 +310,4 @@ void LuaVM::Hook(Options& aOptions)
     //        }
     //    }
     //}
-
-    
 }

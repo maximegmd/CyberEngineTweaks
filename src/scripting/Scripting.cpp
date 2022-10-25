@@ -18,7 +18,7 @@
 #include <reverse/WeakReference.h>
 #include <reverse/ResourceAsyncReference.h>
 #include <reverse/Enum.h>
-#include <reverse/TweakDB.h>
+#include <reverse/TweakDB/TweakDB.h>
 #include <reverse/RTTILocator.h>
 #include <reverse/RTTIHelper.h>
 #include <reverse/RTTIExtender.h>
@@ -96,13 +96,22 @@ void Scripting::Initialize()
 
     luaGlobal["ModArchiveExists"] = [this](const std::string& acArchiveName) -> bool
     {
-        const auto cAbsPath = absolute(m_paths.ArchiveModsRoot() / acArchiveName);
-        const auto cRelPathStr = relative(cAbsPath, m_paths.ArchiveModsRoot()).string();
+        auto resourceDepot = RED4ext::ResourceDepot::Get();
 
-        if (cRelPathStr.find("..") != std::string::npos)
-            return false;
+        for (const auto& archiveGroup : resourceDepot->groups)
+        {
+            if (archiveGroup.scope == RED4ext::ArchiveScope::Mod)
+            {
+                for (const auto& archive : archiveGroup.archives)
+                {
+                    auto archivePath = std::filesystem::path(archive.path.c_str());
+                    if (archivePath.filename() == acArchiveName)
+                        return true;
+                }
+            }
+        }
 
-        return exists(cAbsPath);
+        return false;
     };
 
     // fake game object to prevent errors from older autoexec.lua
@@ -131,10 +140,18 @@ void Scripting::Initialize()
     m_store.LoadAll();
 }
 
-void Scripting::PostInitializeStage1()
+void Scripting::PostInitializeScripting()
 {
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
+
+    if (luaVm["__Game"] != sol::nil)
+    {
+        m_mapper.Refresh();
+        m_override.Refresh();
+        m_sandbox.PostInitialize();
+        return;
+    }
 
     sol::table luaGlobal = luaVm[m_global];
 
@@ -205,8 +222,8 @@ void Scripting::PostInitializeStage1()
         {
             return true;
         },
-        // To make it callable for null refs
-        [](sol::nil_t aNil) -> bool
+        // To make it callable on any value
+        [](const sol::object&) -> bool
         {
             return false;
         });
@@ -463,7 +480,7 @@ void Scripting::PostInitializeStage1()
     m_sandbox.PostInitialize();
 }
 
-void Scripting::PostInitializeStage2()
+void Scripting::PostInitializeMods()
 {
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
@@ -570,12 +587,6 @@ void Scripting::PostInitializeStage2()
 
     luaVm["Game"] = this;
     luaGlobal["Game"] = luaVm["Game"];
-
-    // CET has its own flat pool manager
-    // If any other mod made changes to TweakDB, local flat pools will become invalid
-    // We assume that other mods only change TweakDB before the initialization state,
-    // so we refresh the local flat pools when enter this state
-    TweakDB::RefreshFlatPools();
 
     RTTIExtender::Initialize();
     m_mapper.Register();
