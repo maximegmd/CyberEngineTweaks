@@ -51,7 +51,7 @@ void RTTIHelper::InitializeRTTI()
     const auto cpGameInstance = cpEngine->framework->gameInstance;
     const auto cpPlayerSystemType = m_pRtti->GetType(RED4ext::FNV1a64("cpPlayerSystem"));
 
-    m_pGameInstance = static_cast<ScriptGameInstance*>(m_pGameInstanceType->AllocInstance());
+    m_pGameInstance = static_cast<ScriptGameInstance*>(m_pGameInstanceType->CreateInstance());
     m_pGameInstance->gameInstance = cpGameInstance;
 
     m_pPlayerSystem = reinterpret_cast<RED4ext::ScriptInstance>(cpGameInstance->GetInstance(cpPlayerSystemType));
@@ -790,7 +790,7 @@ RED4ext::ScriptInstance RTTIHelper::NewInstance(RED4ext::CBaseRTTIType* apType, 
 
     // AllocInstance() seems to be the only function that initializes an instance.
     // Neither Init() nor InitCls() initializes properties.
-    auto* pInstance = pClass->AllocInstance();
+    auto* pInstance = pClass->CreateInstance();
 
     if (aProps.has_value())
         SetProperties(pClass, pInstance, aProps.value());

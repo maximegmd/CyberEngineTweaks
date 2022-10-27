@@ -5,11 +5,8 @@
 #include "FunctionOverride.h"
 #include "GameOptions.h"
 
-#include <sol_imgui/sol_imgui.h>
+#include <CET.h>
 #include <lsqlite3/lsqlite3.h>
-
-#include <d3d12/D3D12.h>
-
 #include <reverse/Type.h>
 #include <reverse/SingletonReference.h>
 #include <reverse/StrongReference.h>
@@ -18,12 +15,8 @@
 #include <reverse/RTTILocator.h>
 #include <reverse/RTTIExtender.h>
 #include <reverse/Converter.h>
-
-#include <reverse/RED4Ext/ResourceDepot.h>
 #include <reverse/TweakDB/TweakDB.h>
-#include "reverse/TweakDB/ResourcesList.h"
-
-#include <CET.h>
+#include <sol_imgui/sol_imgui.h>
 #include <Utils.h>
 
 #ifdef CET_DEBUG
@@ -38,7 +31,7 @@ static RTTILocator s_stringType{RED4ext::FNV1a64("String")};
 
 Scripting::Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12)
     : m_sandbox(this, aBindings)
-    , m_mapper(m_lua.AsRef(), m_global, m_sandbox)
+    , m_mapper(m_lua.AsRef(), m_sandbox)
     , m_store(m_sandbox, aPaths, aBindings)
     , m_override(this)
     , m_paths(aPaths)
@@ -52,6 +45,7 @@ void Scripting::Initialize()
 {
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
+    auto& globals = m_sandbox.GetEnvironment();
 
     luaVm.open_libraries(sol::lib::base, sol::lib::string, sol::lib::io, sol::lib::math, sol::lib::package,
                          sol::lib::os, sol::lib::table, sol::lib::bit32);
@@ -61,12 +55,9 @@ void Scripting::Initialize()
     // as this could get overriden by LUA_PATH environment variable
     luaVm["package"]["path"] = "./?.lua";
 
-    // global fallback table for all environments
-    sol::table luaGlobal(luaVm, sol::create);
-    luaVm[m_global] = luaGlobal;
-
-    sol_ImGui::InitBindings(luaVm, luaGlobal);
-    sol::table imgui = luaGlobal["ImGui"];
+    // load in imgui bindings
+    sol_ImGui::InitBindings(luaVm, luaVm.globals());
+    sol::table imgui = luaVm["ImGui"];
     for (auto [key, value] : imgui)
     {
         if (value.get_type() != sol::type::function)
@@ -86,7 +77,22 @@ void Scripting::Initialize()
         });
     }
 
-    luaGlobal["print"] = [](sol::variadic_args aArgs, sol::this_state aState)
+    // execute autoexec.lua inside our default script directory
+    const auto previousCurrentPath = std::filesystem::current_path();
+    current_path(m_paths.CETRoot() / "scripts");
+    luaVm.script("json = require 'json/json'", sol:: detail::default_chunk_name(), sol::load_mode::text);
+    current_path(previousCurrentPath);
+
+    // initialize sandbox
+    m_sandbox.Initialize();
+
+    // setup logger for console sandbox
+    auto& consoleSB = m_sandbox[0];
+    auto& consoleSBEnv = consoleSB.GetEnvironment();
+    consoleSBEnv["__logger"] = spdlog::get("scripting");
+
+    // load in game bindings
+    globals["print"] = [](sol::variadic_args aArgs, sol::this_state aState)
     {
         std::ostringstream oss;
         sol::state_view s(aState);
@@ -103,18 +109,18 @@ void Scripting::Initialize()
         spdlog::get("scripting")->info(oss.str());
     };
 
-    luaGlobal["GetVersion"] = []() -> std::string
+    globals["GetVersion"] = []() -> std::string
     {
         return CET_BUILD_COMMIT;
     };
 
-    luaGlobal["GetDisplayResolution"] = [this]() -> std::tuple<float, float>
+    globals["GetDisplayResolution"] = [this]() -> std::tuple<float, float>
     {
         const auto resolution = m_d3d12.GetResolution();
         return {static_cast<float>(resolution.cx), static_cast<float>(resolution.cy)};
     };
 
-    luaGlobal["ModArchiveExists"] = [this](const std::string& acArchiveName) -> bool
+    globals["ModArchiveExists"] = [this](const std::string& acArchiveName) -> bool
     {
         const auto resourceDepot = RED4ext::ResourceDepot::Get();
 
@@ -134,26 +140,6 @@ void Scripting::Initialize()
         return false;
     };
 
-    // fake game object to prevent errors from older autoexec.lua
-    luaGlobal["Game"] = sol::table(luaVm, sol::create);
-
-    // execute autoexec.lua inside our default script directory
-    const auto previousCurrentPath = std::filesystem::current_path();
-    current_path(m_paths.CETRoot() / "scripts");
-    luaVm.script("json = require 'json/json'", sol:: detail::default_chunk_name(), sol::load_mode::text);
-    current_path(previousCurrentPath);
-
-    // initialize sandbox
-    m_sandbox.Initialize();
-
-    // setup logger for console sandbox
-    auto& consoleSB = m_sandbox[0];
-    auto& consoleSBEnv = consoleSB.GetEnvironment();
-    consoleSBEnv["__logger"] = spdlog::get("scripting");
-
-    // set current path for following scripts to our ModsPath
-    current_path(m_paths.ModsRoot());
-
     // load mods
     m_store.LoadAll();
 }
@@ -162,71 +148,71 @@ void Scripting::PostInitializeScripting()
 {
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
-    sol::table luaGlobal = luaVm[m_global];
+    auto& globals = m_sandbox.GetEnvironment();
 
-    if (luaGlobal["__Game"] != sol::nil)
+    if (luaVm["__Game"] != sol::nil)
     {
         m_mapper.Refresh();
         m_override.Refresh();
         return;
     }
 
-    luaGlobal.new_usertype<Scripting>("__Game",
+    luaVm.new_usertype<Scripting>("__Game",
         sol::meta_function::construct, sol::no_constructor,
         sol::meta_function::index, &Scripting::Index);
 
-    luaGlobal.new_usertype<Type>("__Type",
+    luaVm.new_usertype<Type>("__Type",
         sol::meta_function::construct, sol::no_constructor,
         sol::meta_function::index, &Type::Index,
         sol::meta_function::new_index, &Type::NewIndex);
 
-    luaGlobal.new_usertype<ClassType>("__ClassType",
+    luaVm.new_usertype<ClassType>("__ClassType",
         sol::meta_function::construct, sol::no_constructor,
         sol::base_classes, sol::bases<Type>(),
         sol::meta_function::index, &ClassType::Index,
         sol::meta_function::new_index, &ClassType::NewIndex);
 
-    luaGlobal.new_usertype<Type::Descriptor>("Descriptor",
+    globals.new_usertype<Type::Descriptor>("Descriptor",
         sol::meta_function::to_string, &Type::Descriptor::ToString);
 
-    luaGlobal.new_usertype<StrongReference>("StrongReference",
+    globals.new_usertype<StrongReference>("StrongReference",
         sol::meta_function::construct, sol::no_constructor,
         sol::base_classes, sol::bases<Type, ClassType>(),
         sol::meta_function::index, &StrongReference::Index,
         sol::meta_function::new_index, &StrongReference::NewIndex);
 
-    luaGlobal.new_usertype<WeakReference>("WeakReference",
+    globals.new_usertype<WeakReference>("WeakReference",
         sol::meta_function::construct, sol::no_constructor,
         sol::base_classes, sol::bases<Type, ClassType>(),
         sol::meta_function::index, &WeakReference::Index,
         sol::meta_function::new_index, &WeakReference::NewIndex);
 
-    luaGlobal.new_usertype<SingletonReference>("SingletonReference",
+    globals.new_usertype<SingletonReference>("SingletonReference",
         sol::meta_function::construct, sol::no_constructor,
         sol::base_classes, sol::bases<Type, ClassType>(),
         sol::meta_function::index, &SingletonReference::Index,
         sol::meta_function::new_index, &SingletonReference::NewIndex);
 
-    luaGlobal.new_usertype<ClassReference>("ClassReference",
+    globals.new_usertype<ClassReference>("ClassReference",
         sol::meta_function::construct, sol::no_constructor,
         sol::base_classes, sol::bases<Type, ClassType>(),
         sol::meta_function::index, &ClassReference::Index,
         sol::meta_function::new_index, &ClassReference::NewIndex);
 
-    luaGlobal.new_usertype<ResourceAsyncReference>("ResourceAsyncReference",
+    globals.new_usertype<ResourceAsyncReference>("ResourceAsyncReference",
         sol::meta_function::construct, sol::no_constructor,
         sol::base_classes, sol::bases<Type, ClassType>(),
         sol::meta_function::index, &ResourceAsyncReference::Index,
         sol::meta_function::new_index, &ResourceAsyncReference::NewIndex,
         "hash", property(&ResourceAsyncReference::GetLuaHash));
 
-    luaGlobal.new_usertype<UnknownType>("Unknown",
+    globals.new_usertype<UnknownType>("Unknown",
         sol::meta_function::construct, sol::no_constructor,
         sol::base_classes, sol::bases<Type>(),
         sol::meta_function::index, &UnknownType::Index,
         sol::meta_function::new_index, &UnknownType::NewIndex);
 
-    luaGlobal["IsDefined"] =  sol::overload(
+    globals["IsDefined"] =  sol::overload(
         // Check if weak reference is still valid
         [](const WeakReference& aRef) -> bool
         {
@@ -244,14 +230,14 @@ void Scripting::PostInitializeScripting()
             return false;
         });
 
-    luaGlobal.new_usertype<Enum>("Enum",
+    globals.new_usertype<Enum>("Enum",
         sol::constructors<Enum(const std::string&, const std::string&),
                           Enum(const std::string&, uint32_t), Enum(const Enum&)>(),
         sol::meta_function::to_string, &Enum::ToString,
         sol::meta_function::equal_to, &Enum::operator==,
         "value", sol::property(&Enum::GetValueName, &Enum::SetValueByName));
 
-    luaGlobal["EnumInt"] = [this](Enum& aEnum) -> sol::object
+    globals["EnumInt"] = [this](Enum& aEnum) -> sol::object
     {
         static RTTILocator s_uint64Type{RED4ext::FNV1a64("Uint64")};
 
@@ -264,7 +250,7 @@ void Scripting::PostInitializeScripting()
         return Converter::ToLua(stackType, lockedState);
     };
 
-    luaGlobal.new_usertype<Vector3>("Vector3",
+    globals.new_usertype<Vector3>("Vector3",
         sol::constructors<Vector3(float, float, float), Vector3(float, float), Vector3(float), Vector3(const Vector3&), Vector3()>(),
         sol::meta_function::to_string, &Vector3::ToString,
         sol::meta_function::equal_to, &Vector3::operator==,
@@ -272,7 +258,7 @@ void Scripting::PostInitializeScripting()
         "y", &Vector3::y,
         "z", &Vector3::z);
 
-    luaGlobal["ToVector3"] = [](sol::table table) -> Vector3
+    globals["ToVector3"] = [](sol::table table) -> Vector3
     {
         return Vector3
         {
@@ -282,7 +268,7 @@ void Scripting::PostInitializeScripting()
         };
     };
 
-    luaGlobal.new_usertype<Vector4>("Vector4",
+    globals.new_usertype<Vector4>("Vector4",
         sol::constructors<Vector4(float, float, float, float), Vector4(float, float, float), Vector4(float, float),
                           Vector4(float), Vector4(const Vector4&), Vector4()>(),
         sol::meta_function::to_string, &Vector4::ToString,
@@ -292,7 +278,7 @@ void Scripting::PostInitializeScripting()
         "z", &Vector4::z,
         "w", &Vector4::w);
 
-    luaGlobal["ToVector4"] = [](sol::table table) -> Vector4
+    globals["ToVector4"] = [](sol::table table) -> Vector4
     {
         return Vector4
         {
@@ -303,7 +289,7 @@ void Scripting::PostInitializeScripting()
         };
     };
 
-    luaGlobal.new_usertype<EulerAngles>("EulerAngles",
+    globals.new_usertype<EulerAngles>("EulerAngles",
         sol::constructors<EulerAngles(float, float, float), EulerAngles(float, float), EulerAngles(float),
                           EulerAngles(const EulerAngles&), EulerAngles()>(),
         sol::meta_function::to_string, &EulerAngles::ToString,
@@ -312,7 +298,7 @@ void Scripting::PostInitializeScripting()
         "pitch", &EulerAngles::pitch,
         "yaw", &EulerAngles::yaw);
 
-    luaGlobal["ToEulerAngles"] = [](sol::table table) -> EulerAngles
+    globals["ToEulerAngles"] = [](sol::table table) -> EulerAngles
     {
         return EulerAngles
         {
@@ -322,7 +308,7 @@ void Scripting::PostInitializeScripting()
         };
     };
 
-    luaGlobal.new_usertype<Quaternion>("Quaternion",
+    globals.new_usertype<Quaternion>("Quaternion",
         sol::constructors<Quaternion(float, float, float, float), Quaternion(float, float, float),
                           Quaternion(float, float), Quaternion(float), Quaternion(const Quaternion&), Quaternion()>(),
         sol::meta_function::to_string, &Quaternion::ToString,
@@ -332,7 +318,7 @@ void Scripting::PostInitializeScripting()
         "k", &Quaternion::k,
         "r", &Quaternion::r);
 
-    luaGlobal["ToQuaternion"] = [](sol::table table) -> Quaternion
+    globals["ToQuaternion"] = [](sol::table table) -> Quaternion
     {
         return Quaternion
         {
@@ -343,7 +329,7 @@ void Scripting::PostInitializeScripting()
         };
     };
 
-    luaGlobal.new_usertype<CName>("CName",
+    globals.new_usertype<CName>("CName",
         sol::constructors<CName(const std::string&), CName(uint64_t), CName(uint32_t, uint32_t),
                           CName(const CName&), CName()>(),
         sol::call_constructor, sol::constructors<CName(const std::string&), CName(uint64_t)>(),
@@ -354,7 +340,7 @@ void Scripting::PostInitializeScripting()
         "value", sol::property(&CName::AsString),
         "add", &CName::Add);
 
-    luaGlobal["ToCName"] = [](sol::table table) -> CName
+    globals["ToCName"] = [](sol::table table) -> CName
     {
         return CName
         {
@@ -363,7 +349,7 @@ void Scripting::PostInitializeScripting()
         };
     };
 
-    luaGlobal.new_usertype<TweakDBID>("TweakDBID",
+    globals.new_usertype<TweakDBID>("TweakDBID",
         sol::constructors<TweakDBID(const std::string&), TweakDBID(const TweakDBID&, const std::string&),
                           TweakDBID(uint32_t, uint8_t), TweakDBID(const TweakDBID&), TweakDBID()>(),
         sol::call_constructor, sol::constructors<TweakDBID(const std::string&)>(),
@@ -375,7 +361,7 @@ void Scripting::PostInitializeScripting()
         "length", &TweakDBID::name_length,
         "value", sol::property(&TweakDBID::AsString));
 
-    luaGlobal["ToTweakDBID"] = [](sol::table table) -> TweakDBID
+    globals["ToTweakDBID"] = [](sol::table table) -> TweakDBID
     {
         // try with name first
         const auto name = table["name"].get_or<std::string>("");
@@ -390,19 +376,19 @@ void Scripting::PostInitializeScripting()
         };
     };
 
-    luaGlobal.new_usertype<ItemID>("ItemID",
-        sol::constructors<ItemID(const TweakDBID&, uint32_t, uint16_t, uint8_t),
-                          ItemID(const TweakDBID&, uint32_t, uint16_t), ItemID(const TweakDBID&, uint32_t),
-                          ItemID(const TweakDBID&), ItemID(const ItemID&), ItemID()>(),
-        sol::meta_function::to_string, &ItemID::ToString,
-        sol::meta_function::equal_to, &ItemID::operator==,
-        "id", &ItemID::id,
-        "tdbid", &ItemID::id,
-        "rng_seed", &ItemID::rng_seed,
-        "unknown", &ItemID::unknown,
-        "maybe_type", &ItemID::maybe_type);
+    globals.new_usertype<ItemID>("ItemID",
+    sol::constructors<ItemID(const TweakDBID&, uint32_t, uint16_t, uint8_t),
+                      ItemID(const TweakDBID&, uint32_t, uint16_t), ItemID(const TweakDBID&, uint32_t),
+                      ItemID(const TweakDBID&), ItemID(const ItemID&), ItemID()>(),
+    sol::meta_function::to_string, &ItemID::ToString,
+    sol::meta_function::equal_to, &ItemID::operator==,
+    "id", &ItemID::id,
+    "tdbid", &ItemID::id,
+    "rng_seed", &ItemID::rng_seed,
+    "unknown", &ItemID::unknown,
+    "maybe_type", &ItemID::maybe_type);
 
-    luaGlobal["ToItemID"] = [](sol::table table) -> ItemID
+    globals["ToItemID"] = [](sol::table table) -> ItemID
     {
         return ItemID
         {
@@ -413,14 +399,14 @@ void Scripting::PostInitializeScripting()
         };
     };
 
-    luaGlobal.new_usertype<CRUID>("CRUID",
+    globals.new_usertype<CRUID>("CRUID",
         sol::constructors<CRUID(uint64_t)>(),
         sol::call_constructor, sol::constructors<CRUID(uint64_t)>(),
         sol::meta_function::to_string, &CRUID::ToString,
         sol::meta_function::equal_to, &CRUID::operator==,
         "hash", &CRUID::hash);
 
-    luaGlobal.new_usertype<gamedataLocKeyWrapper>("LocKey",
+    globals.new_usertype<gamedataLocKeyWrapper>("LocKey",
         sol::constructors<gamedataLocKeyWrapper(uint64_t)>(),
         sol::meta_function::to_string, &gamedataLocKeyWrapper::ToString,
         sol::meta_function::equal_to, &gamedataLocKeyWrapper::operator==,
@@ -453,7 +439,7 @@ void Scripting::PostInitializeScripting()
             return converted.get<sol::object>();
         }));
 
-    luaGlobal.new_usertype<GameOptions>("GameOptions",
+    globals.new_usertype<GameOptions>("GameOptions",
         sol::meta_function::construct, sol::no_constructor,
         "Print", &GameOptions::Print,
         "Get", &GameOptions::Get,
@@ -475,9 +461,9 @@ void Scripting::PostInitializeTweakDB()
 {
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
-    sol::table luaGlobal = luaVm[m_global];
+    auto& globals = m_sandbox.GetEnvironment();
 
-    luaGlobal.new_usertype<TweakDB>("__TweakDB",
+    luaVm.new_usertype<TweakDB>("__TweakDB",
         sol::meta_function::construct, sol::no_constructor,
         "DebugStats", &TweakDB::DebugStats,
         "GetRecords", &TweakDB::GetRecords,
@@ -492,7 +478,7 @@ void Scripting::PostInitializeTweakDB()
         "CloneRecord", overload(&TweakDB::CloneRecordByName, &TweakDB::CloneRecordToID, &TweakDB::CloneRecord),
         "DeleteRecord", overload(&TweakDB::DeleteRecordByID, &TweakDB::DeleteRecord));
 
-    luaGlobal["TweakDB"] = TweakDB(m_lua.AsRef());
+    globals["TweakDB"] = TweakDB(m_lua.AsRef());
 
     m_sandbox.PostInitializeTweakDB();
 
@@ -503,9 +489,9 @@ void Scripting::PostInitializeMods()
 {
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
-    sol::table luaGlobal = luaVm[m_global];
+    auto& globals = m_sandbox.GetEnvironment();
 
-    luaGlobal["NewObject"] = [this](const std::string& acName, sol::this_environment aEnv) -> sol::object
+    globals["NewObject"] = [this](const std::string& acName, sol::this_environment aEnv) -> sol::object
     {
         auto* pRtti = RED4ext::CRTTISystem::Get();
         auto* pType = pRtti->GetType(RED4ext::FNV1a64(acName.c_str()));
@@ -523,44 +509,44 @@ void Scripting::PostInitializeMods()
         return RTTIHelper::Get().NewHandle(pType, sol::nullopt);
     };
 
-    luaGlobal["GetSingleton"] = [this](const std::string& acName, sol::this_environment aThisEnv)
+    globals["GetSingleton"] = [this](const std::string& acName, sol::this_environment aThisEnv)
     {
         return this->GetSingletonHandle(acName, aThisEnv);
     };
 
-    luaGlobal["Override"] = [this](const std::string& acTypeName, const std::string& acFullName,
+    globals["Override"] = [this](const std::string& acTypeName, const std::string& acFullName,
                                    sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
         m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, true);
     };
 
-    luaGlobal["ObserveBefore"] = [this](const std::string& acTypeName, const std::string& acFullName,
+    globals["ObserveBefore"] = [this](const std::string& acTypeName, const std::string& acFullName,
                                         sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
         m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, false, false);
     };
 
-    luaGlobal["ObserveAfter"] = [this](const std::string& acTypeName, const std::string& acFullName,
+    globals["ObserveAfter"] = [this](const std::string& acTypeName, const std::string& acFullName,
                                        sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
         m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, false, true);
     };
 
-    luaGlobal["Observe"] = luaGlobal["ObserveBefore"];
+    globals["Observe"] = globals["ObserveBefore"];
 
-    luaGlobal["GetMod"] = [this](const std::string& acName) -> sol::object
+    globals["GetMod"] = [this](const std::string& acName) -> sol::object
     {
         return GetMod(acName);
     };
 
-    luaGlobal["GameDump"] = [this](const Type* acpType)
+    globals["GameDump"] = [this](const Type* acpType)
     {
         return acpType ? acpType->GameDump() : "Null";
     };
 
-    luaGlobal["Dump"] = [this](const Type* acpType, bool aDetailed)
+    globals["Dump"] = [this](const Type* acpType, bool aDetailed)
     {
         return acpType != nullptr ? acpType->Dump(aDetailed) : Type::Descriptor{};
     };
 
-    luaGlobal["DumpType"] = [this](const std::string& acName, bool aDetailed)
+    globals["DumpType"] = [this](const std::string& acName, bool aDetailed)
     {
         auto* pRtti = RED4ext::CRTTISystem::Get();
         auto* pType = pRtti->GetClass(RED4ext::FNV1a64(acName.c_str()));
@@ -571,7 +557,7 @@ void Scripting::PostInitializeMods()
         return type.Dump(aDetailed);
     };
 
-    luaGlobal["DumpAllTypeNames"] = [this](sol::this_environment aThisEnv)
+    globals["DumpAllTypeNames"] = [this](sol::this_environment aThisEnv)
     {
         const auto* pRtti = RED4ext::CRTTISystem::Get();
 
@@ -587,7 +573,7 @@ void Scripting::PostInitializeMods()
     };
 
 #ifdef CET_DEBUG
-    luaGlobal["DumpVtables"] = [this]
+    globals["DumpVtables"] = [this]
     {
         // Hacky RTTI dump, this should technically only dump IScriptable instances and RTTI types as they are guaranteed to have a vtable
         // but there can occasionally be Class types that are not IScriptable derived that still have a vtable
@@ -596,13 +582,13 @@ void Scripting::PostInitializeMods()
         // error when there are classes that instantiate a parent class but don't actually have a subclass instance
         GameMainThread::Get().AddTask(&GameDump::DumpVTablesTask::Run);
     };
-    luaGlobal["DumpReflection"] = [this](bool aVerbose, bool aExtendedPath, bool aPropertyHolders)
+    globals["DumpReflection"] = [this](bool aVerbose, bool aExtendedPath, bool aPropertyHolders)
     {
         RED4ext::GameReflection::Dump(m_paths.CETRoot() / "dumps", aVerbose, aExtendedPath, aPropertyHolders);
     };
 #endif
 
-    luaGlobal["Game"] = this;
+    globals["Game"] = this;
 
     RTTIExtender::Initialize();
     m_mapper.Register();
@@ -620,9 +606,9 @@ void Scripting::RegisterOverrides()
 {
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
-    sol::table luaGlobal = luaVm[m_global];
+    auto& globals = m_sandbox.GetEnvironment();
 
-    luaGlobal["RegisterGlobalInputListener"] = [](WeakReference& aSelf, sol::this_environment aThisEnv) {
+    globals["RegisterGlobalInputListener"] = [](WeakReference& aSelf, sol::this_environment aThisEnv) {
         const sol::protected_function unregisterInputListener = aSelf.Index("UnregisterInputListener", aThisEnv);
         const sol::protected_function registerInputListener = aSelf.Index("RegisterInputListener", aThisEnv);
 
@@ -630,7 +616,7 @@ void Scripting::RegisterOverrides()
         registerInputListener(aSelf, aSelf);
     };
 
-    m_override.Override("PlayerPuppet", "GracePeriodAfterSpawn", luaGlobal["RegisterGlobalInputListener"], sol::nil, false, false, true);
+    m_override.Override("PlayerPuppet", "GracePeriodAfterSpawn", globals["RegisterGlobalInputListener"], sol::nil, false, false, true);
     m_override.Override("PlayerPuppet", "OnDetach", sol::nil, sol::nil, false, false, true);
     m_override.Override("QuestTrackerGameController", "OnUninitialize", sol::nil, sol::nil, false, false, true);
 }
@@ -688,15 +674,9 @@ sol::object Scripting::GetMod(const std::string& acName) const
 void Scripting::ReloadAllMods()
 {
     // Reload all mods may be called before game is initialized - save state!
-    const auto previousGameAvailable = m_sandbox.GetGameAvailable();
-    m_sandbox.SetGameAvailable(false);
-
     m_override.Clear();
     RegisterOverrides();
-    current_path(m_paths.ModsRoot());
     m_store.LoadAll();
-
-    m_sandbox.SetGameAvailable(previousGameAvailable);
 
     TriggerOnTweak();
     TriggerOnInit();
@@ -742,11 +722,6 @@ LuaSandbox& Scripting::GetSandbox()
 Scripting::LockedState Scripting::GetLockedState() const noexcept
 {
     return m_lua.Lock();
-}
-
-std::string Scripting::GetGlobalName() const noexcept
-{
-    return m_global;
 }
 
 sol::object Scripting::Index(const std::string& acName, sol::this_state aState, sol::this_environment aEnv)
