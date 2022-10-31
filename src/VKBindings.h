@@ -84,31 +84,29 @@ struct VKBindings
     void SetVM(const LuaVM* acpVm);
 
 private:
-    
-    LRESULT RecordKeyDown(const USHORT acVKCode);
-    LRESULT RecordKeyUp(const USHORT acVKCode);
-
-    [[nodiscard]] int32_t CheckRecording();
-    void ExecuteRecording(const bool acLastKeyDown);
 
     [[nodiscard]] LRESULT HandleRAWInput(HRAWINPUT achRAWInput);
 
-    void ClearRecording(const bool acClearBind = true);
+    LRESULT RecordKeyDown(const USHORT acVKCode);
+    LRESULT RecordKeyUp(const USHORT acVKCode);
+
+    void ExecuteRecording(const bool acLastKeyDown);
+    void ClearRecording(const bool acClearBind);
+    
+    std::map<uint64_t, VKModBind> m_binds{ }; // this map needs to be ordered!
+    TiltedPhoques::Map<std::string, TiltedPhoques::Map<std::string, uint64_t>> m_modIdToBinds{ };
+    TiltedPhoques::TaskQueue m_queuedCallbacks{ };
 
     std::bitset<1 << 16> m_keyStates{ };
 
-    std::map<uint64_t, VKModBind> m_binds{ }; // this map needs to be ordered!
-    TiltedPhoques::Map<std::string, TiltedPhoques::Map<std::string, uint64_t>> m_modIdToBinds{ };
-
-    TiltedPhoques::TaskQueue m_queuedCallbacks{ };
-
     VKCodeBindDecoded m_recording{ };
-    size_t m_recordingLength{ 0 };
-    bool m_recordingHKWasKeyPressed{ false };
-    VKModBind m_recordingModBind{ };
     uint64_t m_recordingResult{ 0 };
-
+    size_t m_recordingLength{ 0 };
+    bool m_recordingWasKeyPressed{ false };
+    
+    VKModBind m_recordingModBind{ };
     bool m_isBindRecording{ false };
+
     bool m_initialized{ false };
 
     const LuaVM* m_cpVm{ nullptr };

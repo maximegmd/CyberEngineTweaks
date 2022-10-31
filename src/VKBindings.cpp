@@ -421,7 +421,7 @@ bool VKBindings::StartRecordingBind(const VKModBind& acVKModBind)
     if (m_isBindRecording)
         return false;
 
-    ClearRecording();
+    ClearRecording(true);
 
     m_recordingModBind = acVKModBind;
     m_isBindRecording = true;
@@ -435,8 +435,6 @@ bool VKBindings::StopRecordingBind()
         return false;
 
     ClearRecording(false);
-
-    m_isBindRecording = false;
 
     return true;
 }
@@ -588,35 +586,44 @@ LRESULT VKBindings::OnWndProc(HWND, UINT auMsg, WPARAM, LPARAM alParam)
     case WM_KILLFOCUS:
         // reset key states on focus loss, as otherwise, we end up with broken recording state
         m_keyStates.reset();
-        ClearRecording();
+        ClearRecording(false);
     }
 
     return 0;
 }
 
 LRESULT VKBindings::RecordKeyDown(const USHORT acVKCode)
-{
+{    
     if (m_keyStates[acVKCode])
         return 0; // ignore repeats
 
     // mark key down
     m_keyStates[acVKCode] = true;
 
-    if (m_recordingLength >= m_recording.size())
+    if (m_recordingLength != 0)
     {
-        assert(m_recordingLength == m_recording.size());
-        return 0;
+        if (m_recordingLength >= m_recording.size())
+        {
+            ClearRecording(false);
+            m_recordingResult = 0;
+
+            return 0;
+        }
+
+        for (size_t i = 0; i < m_recordingLength; ++i)
+        {
+            assert(m_recording[i] != acVKCode);
+            if (m_recording[i] == acVKCode)
+                return 0;
+        }
     }
-
+    else if (m_keyStates.count() != 1)
+        return 0;
+    
     m_recording[m_recordingLength++] = acVKCode;
-
-    const auto previousRecordingLength = m_recordingLength;
-
-    if (CheckRecording() >= 0)
-        ExecuteRecording(true);
-
-    if (previousRecordingLength == m_recordingLength)
-        m_recordingHKWasKeyPressed = true;
+    m_recordingWasKeyPressed = true;
+    
+    ExecuteRecording(true);
 
     return 0;
 }
@@ -629,132 +636,67 @@ LRESULT VKBindings::RecordKeyUp(const USHORT acVKCode)
 
     // mark key up
     m_keyStates[acVKCode] = false;
-
-    // handle simple inputs first
-    if (!m_recordingLength)
-    {
-        m_recording[m_recordingLength++] = acVKCode;
-
-        if (CheckRecording() > 0)
-            ExecuteRecording(false);
-
-        return 0;
-    }
-
-    // handle hotkeys
+    
     for (size_t i = 0; i < m_recordingLength; ++i)
     {
         if (m_recording[i] != acVKCode)
             continue;
+        
+        if (m_recordingWasKeyPressed)
+            ExecuteRecording(false);
+        
+        // fix recording for future use, so user can use HKs like Ctrl+C, Ctrl+V without the need of pressing
+        // again Ctrl for example
+        m_recordingLength = i;
+        for (; i < m_recording.size(); ++i)
+            m_recording[i] = 0;
 
-        auto wasRecording = false;
-
-        if (m_recordingHKWasKeyPressed)
-        {
-            wasRecording = m_isBindRecording;
-
-            if (CheckRecording() >= 0)
-                ExecuteRecording(false);
-        }
-
-        if (!wasRecording)
-        {
-            m_recordingHKWasKeyPressed = false;
-
-            // fix recording for future use, so user can use HKs like Ctrl+C, Ctrl+V without the need of pressing
-            // again Ctrl for example
-            m_recordingLength = i;
-            for (; i < m_recording.size(); ++i)
-                m_recording[i] = 0;
-
-            while (CheckRecording() < 0) {}
-        }
+        m_recordingWasKeyPressed = false;
 
         return 0;
     }
 
-    // if we got here, aVKCode is not recorded key or there is no bind
-    ClearRecording();
-
     return 0;
-}
-
-int32_t VKBindings::CheckRecording()
-{
-    m_recordingResult = EncodeVKCodeBind(m_recording);
-
-    if (m_isBindRecording || m_recordingLength == 0)
-        return 0; // always valid for bind recordings or when empty
-
-    const auto possibleBind = m_binds.lower_bound(m_recordingResult);
-    if (possibleBind == m_binds.end())
-    {
-        m_recording[--m_recordingLength] = 0;
-        m_recordingResult = EncodeVKCodeBind(m_recording);
-        return -1; // seems like there is no possible HK here
-    }
-
-    const VKCodeBindDecoded pbCodeDec = DecodeVKCodeBind(possibleBind->first);
-    for (size_t i = 0; i < m_recordingLength; ++i)
-    {
-        if (pbCodeDec[i] != m_recording[i])
-        {
-            m_recording[--m_recordingLength] = 0;
-            m_recordingResult = EncodeVKCodeBind(m_recording);
-            return -1; // seems like there is no possible HK here
-        }
-    }
-
-    // valid recording, return 1 when there was match found and 0 when there is possible match
-    return m_recordingLength == 4 || !pbCodeDec[m_recordingLength];
 }
 
 void VKBindings::ExecuteRecording(const bool acLastKeyDown)
 {
-    // VM must be running by this point! (doesn't have to be initialized fully)
-    assert(m_cpVm != nullptr);
+    m_recordingResult = EncodeVKCodeBind(m_recording);
+    
+    if (acLastKeyDown && (m_isBindRecording || m_recordingLength != 1))
+        return;
 
-    if (m_isBindRecording)
+    if (!acLastKeyDown && m_isBindRecording)
     {
-        const auto bind = m_cpVm->GetBind(m_recordingModBind);
-        if (!acLastKeyDown || (bind && bind->IsInput()))
-            StopRecordingBind();
-
+        m_isBindRecording = false;
         return;
     }
 
-    if (m_recordingResult == 0)
-        return;
-
-    const auto& possibleBind = m_binds.lower_bound(m_recordingResult)->second;
-    const auto bind = m_cpVm->GetBind(possibleBind);
-    if (bind)
+    if (const auto bindIt = m_binds.find(m_recordingResult); bindIt != m_binds.cend())
     {
-        // we dont want to handle bindings when vm is not initialized or when overlay is open and we are not in binding state!
-        // only exception allowed is any CET bind
-        const auto& overlayToggleModBind = Bindings::GetOverlayToggleModBind();
-        const auto cetBind = possibleBind.ModName == overlayToggleModBind.ModName;
-        if (!cetBind && (!m_cpVm->IsInitialized() || CET::Get().GetOverlay().IsEnabled()))
+        if (bindIt->first != m_recordingResult)
+            return;
+
+        const auto& modBind = bindIt->second;
+        if (const auto vkBind = m_cpVm->GetBind(modBind))
         {
-            if (bind->IsInput())
-                ClearRecording();
+            // we dont want to handle bindings when vm is not initialized or when overlay is open and we are not in binding state!
+            // only exception allowed is any CET bind
+            const auto& overlayToggleModBind = Bindings::GetOverlayToggleModBind();
+            const auto cetModBind = modBind.ModName == overlayToggleModBind.ModName;
+            if (!cetModBind && (!m_cpVm->IsInitialized() || CET::Get().GetOverlay().IsEnabled()))
+                return;
+            
+            // check first if this is a hotkey, as those should only execute when last key was up
+            if (acLastKeyDown && vkBind->IsHotkey())
+                return;
 
-            return;
+            // execute CET binds immediately, otherwise cursor will not show on overlay toggle
+            if (cetModBind)
+                vkBind->Call(acLastKeyDown);
+            else
+                m_queuedCallbacks.Add(vkBind->DelayedCall(acLastKeyDown));
         }
-
-        // check first if this is a hotkey, as those should only execute when last key was up
-        if (bind->IsHotkey() && acLastKeyDown)
-            return;
-
-        // execute CET binds immediately, otherwise cursor will not show on overlay toggle
-        if (cetBind)
-            bind->Call(acLastKeyDown);
-        else
-            m_queuedCallbacks.Add(bind->DelayedCall(acLastKeyDown));
-
-        // reset recording for simple input
-        if (bind->IsInput())
-            ClearRecording();
     }
 }
 
@@ -829,12 +771,12 @@ LRESULT VKBindings::HandleRAWInput(const HRAWINPUT achRAWInput)
 
 void VKBindings::ClearRecording(const bool acClearBind)
 {
-    m_recordingHKWasKeyPressed = false;
+    m_recordingWasKeyPressed = false;
     m_recording.fill(0);
     m_recordingLength = 0;
+    m_isBindRecording = false;
     if (acClearBind)
     {
-        m_isBindRecording = false;
         m_recordingResult = 0;
         m_recordingModBind.ID.clear();
         m_recordingModBind.ModName.clear();
