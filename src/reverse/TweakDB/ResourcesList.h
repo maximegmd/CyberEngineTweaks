@@ -30,7 +30,7 @@ protected:
     void Reset();
 
 private:
-    bool m_isInitialized = false;
+    std::atomic_bool m_isInitialized = false;
     TiltedPhoques::Vector<Resource> m_resources;
     TiltedPhoques::Map<uint64_t, Resource*> m_resourcesByHash;
 };

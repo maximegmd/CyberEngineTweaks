@@ -74,7 +74,7 @@ protected:
 
 private:
 
-    std::shared_mutex m_tdbidLock{ };
+    std::mutex m_tdbidLock{ };
     TiltedPhoques::Map<uint64_t, TDBIDLookupEntry> m_tdbidLookup{ };
     // Used by TweakDB to get the flats associated with a record
     TiltedPhoques::Map<uint64_t, std::set<uint64_t>> m_tdbidDerivedLookup{ };

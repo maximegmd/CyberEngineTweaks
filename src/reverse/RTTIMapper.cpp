@@ -214,10 +214,7 @@ void RTTIMapper::RegisterSpecialAccessors(sol::state& aLuaState, sol::table& aLu
     // Add global alias `Game.GetSystemRequestsHandler()`
     // Replacement for `GetSingleton("inkMenuScenario"):GetSystemRequestsHandler()`
     RTTIHelper::Get().AddFunctionAlias("GetSystemRequestsHandler", "inkMenuScenario", "GetSystemRequestsHandler");
-
-    // TODO - fix me!
-    return;
-
+    
     // Merge RTTI versions of basic types with our own versions
     // Allows usertype and RTTI functions to be used under the same name
     ExtendUsertype<Vector4>("Vector4", aLuaState, aLuaGlobal);

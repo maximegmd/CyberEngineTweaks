@@ -271,7 +271,7 @@ void Scripting::PostInitializeScripting()
         };
     };
 
-    globals.new_usertype<Vector4>("Vector4",
+    luaVm.new_usertype<Vector4>("Vector4",
         sol::constructors<Vector4(float, float, float, float), Vector4(float, float, float), Vector4(float, float),
                           Vector4(float), Vector4(const Vector4&), Vector4()>(),
         sol::meta_function::to_string, &Vector4::ToString,
@@ -280,6 +280,7 @@ void Scripting::PostInitializeScripting()
         "y", &Vector4::y,
         "z", &Vector4::z,
         "w", &Vector4::w);
+    globals["Vector4"] = luaVm["Vector4"];
 
     globals["ToVector4"] = [](sol::table table) -> Vector4
     {
@@ -292,7 +293,7 @@ void Scripting::PostInitializeScripting()
         };
     };
 
-    globals.new_usertype<EulerAngles>("EulerAngles",
+    luaVm.new_usertype<EulerAngles>("EulerAngles",
         sol::constructors<EulerAngles(float, float, float), EulerAngles(float, float), EulerAngles(float),
                           EulerAngles(const EulerAngles&), EulerAngles()>(),
         sol::meta_function::to_string, &EulerAngles::ToString,
@@ -300,6 +301,7 @@ void Scripting::PostInitializeScripting()
         "roll", &EulerAngles::roll,
         "pitch", &EulerAngles::pitch,
         "yaw", &EulerAngles::yaw);
+    globals["EulerAngles"] = luaVm["EulerAngles"];
 
     globals["ToEulerAngles"] = [](sol::table table) -> EulerAngles
     {
@@ -311,7 +313,7 @@ void Scripting::PostInitializeScripting()
         };
     };
 
-    globals.new_usertype<Quaternion>("Quaternion",
+    luaVm.new_usertype<Quaternion>("Quaternion",
         sol::constructors<Quaternion(float, float, float, float), Quaternion(float, float, float),
                           Quaternion(float, float), Quaternion(float), Quaternion(const Quaternion&), Quaternion()>(),
         sol::meta_function::to_string, &Quaternion::ToString,
@@ -320,6 +322,7 @@ void Scripting::PostInitializeScripting()
         "j", &Quaternion::j,
         "k", &Quaternion::k,
         "r", &Quaternion::r);
+    globals["Quaternion"] = luaVm["Quaternion"];
 
     globals["ToQuaternion"] = [](sol::table table) -> Quaternion
     {
@@ -379,17 +382,18 @@ void Scripting::PostInitializeScripting()
         };
     };
 
-    globals.new_usertype<ItemID>("ItemID",
-    sol::constructors<ItemID(const TweakDBID&, uint32_t, uint16_t, uint8_t),
-                      ItemID(const TweakDBID&, uint32_t, uint16_t), ItemID(const TweakDBID&, uint32_t),
-                      ItemID(const TweakDBID&), ItemID(const ItemID&), ItemID()>(),
-    sol::meta_function::to_string, &ItemID::ToString,
-    sol::meta_function::equal_to, &ItemID::operator==,
-    "id", &ItemID::id,
-    "tdbid", &ItemID::id,
-    "rng_seed", &ItemID::rng_seed,
-    "unknown", &ItemID::unknown,
-    "maybe_type", &ItemID::maybe_type);
+    luaVm.new_usertype<ItemID>("ItemID",
+        sol::constructors<ItemID(const TweakDBID&, uint32_t, uint16_t, uint8_t),
+                          ItemID(const TweakDBID&, uint32_t, uint16_t), ItemID(const TweakDBID&, uint32_t),
+                          ItemID(const TweakDBID&), ItemID(const ItemID&), ItemID()>(),
+        sol::meta_function::to_string, &ItemID::ToString,
+        sol::meta_function::equal_to, &ItemID::operator==,
+        "id", &ItemID::id,
+        "tdbid", &ItemID::id,
+        "rng_seed", &ItemID::rng_seed,
+        "unknown", &ItemID::unknown,
+        "maybe_type", &ItemID::maybe_type);
+    globals["ItemID"] = luaVm["ItemID"];
 
     globals["ToItemID"] = [](sol::table table) -> ItemID
     {
