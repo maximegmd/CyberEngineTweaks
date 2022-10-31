@@ -88,8 +88,8 @@ private:
     Window& m_window;
     Options& m_options;
 
-    std::mutex m_imguiLock;
-    std::array<ImDrawData, 2> m_imguiDrawDataBuffers;
+    std::recursive_mutex m_imguiLock;
+    std::array<ImDrawData, 3> m_imguiDrawDataBuffers;
     std::atomic_bool m_imguiPresentDraw{ true };
     std::atomic_bool m_delayedTrapInput{ false };
     std::atomic_bool m_delayedTrapInputState{ false };

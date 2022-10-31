@@ -14,6 +14,8 @@ bool D3D12::ResetState(bool aClearDownlevelBackbuffers)
     if (m_initialized)
     {
         m_initialized = false;
+        
+        std::lock_guard _(m_imguiLock);
         ImGui_ImplDX12_Shutdown();
         ImGui_ImplWin32_Shutdown();
     }
@@ -260,6 +262,8 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
 
 bool D3D12::InitializeImGui(size_t aBuffersCounts)
 {
+    std::lock_guard _(m_imguiLock);
+
     // TODO - scale also by DPI
     const auto [resx, resy] = GetResolution();
     const auto scaleFromReference = std::min(static_cast<float>(resx) / 1920.0f, static_cast<float>(resy) / 1080.0f);
@@ -444,8 +448,9 @@ bool D3D12::IsImGuiPresentDraw() const
 
 void D3D12::PrepareUpdate(bool aPrepareMods)
 {
-    std::unique_lock _(m_imguiLock);
-
+    std::lock_guard _(m_imguiLock);
+    
+    ImGui_ImplWin32_NewFrame(m_outSize);
     ImGui::NewFrame();
 
     CET::Get().GetOverlay().Update();
@@ -455,7 +460,7 @@ void D3D12::PrepareUpdate(bool aPrepareMods)
 
     ImGui::Render();
 
-    auto& drawData = m_imguiDrawDataBuffers[1];
+    auto& drawData = m_imguiDrawDataBuffers[2];
 
     for (auto i = 0; i < drawData.CmdListsCount; ++i)
         IM_DELETE(drawData.CmdLists[i]);
@@ -469,16 +474,12 @@ void D3D12::PrepareUpdate(bool aPrepareMods)
     for (auto i = 0; i < drawData.CmdListsCount; ++i)
         copiedDrawLists[i] = drawData.CmdLists[i]->CloneOutput();
     drawData.CmdLists = copiedDrawLists;
+
+    std::swap(m_imguiDrawDataBuffers[1], m_imguiDrawDataBuffers[2]);
 }
 
 void D3D12::Update()
 {
-    {
-        std::unique_lock _(m_imguiLock);
-        ImGui_ImplWin32_NewFrame(m_outSize);
-        ImGui_ImplDX12_NewFrame(m_pCommandQueue.Get());
-    }
-
     if (m_imguiPresentDraw)
     {
         PrepareUpdate(false);
@@ -487,8 +488,13 @@ void D3D12::Update()
 
     // swap staging ImGui buffer with render ImGui buffer
     {
-        std::unique_lock _(m_imguiLock);
-        std::swap(m_imguiDrawDataBuffers[0], m_imguiDrawDataBuffers[1]);
+        std::lock_guard _(m_imguiLock);
+        ImGui_ImplDX12_NewFrame(m_pCommandQueue.Get());
+        if (m_imguiDrawDataBuffers[1].Valid)
+        {
+            std::swap(m_imguiDrawDataBuffers[0], m_imguiDrawDataBuffers[1]);
+            m_imguiDrawDataBuffers[1].Valid = false;
+        }
     }
 
     assert(m_imguiDrawDataBuffers[0].Valid);

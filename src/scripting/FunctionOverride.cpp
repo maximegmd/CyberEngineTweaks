@@ -95,7 +95,7 @@ void FunctionOverride::Refresh()
 
 void FunctionOverride::Clear()
 {
-    std::unique_lock lock(s_pOverride->m_lock);
+    std::lock_guard lock(s_pOverride->m_lock);
 
     // Reverse order as we want to swap from most recent to oldest change
     for (auto& [pFunction, pContext] : m_functions)
@@ -585,7 +585,7 @@ void FunctionOverride::Override(const std::string& acTypeName, const std::string
         }
     }
 
-    std::unique_lock lock(m_lock);
+    std::lock_guard lock(m_lock);
 
     CallChain* pEntry = nullptr;
     const auto itor = m_functions.find(pRealFunction);

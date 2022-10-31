@@ -174,9 +174,9 @@ void LuaVM::Hook()
         {
             if (MH_CreateHook(pLocation, reinterpret_cast<void*>(&HookLog), reinterpret_cast<void**>(&m_realLog)) != MH_OK ||
                 MH_EnableHook(pLocation) != MH_OK)
-                Log::Error("Could not hook Log function!");
+                Log::Error("Could not hook CScript::Log function!");
             else
-                Log::Info("Log function hook complete!");
+                Log::Info("CScript::Log function hook complete!");
         }
     }
 
@@ -188,9 +188,9 @@ void LuaVM::Hook()
         {
             if (MH_CreateHook(pLocation, reinterpret_cast<void*>(&HookLogChannel), reinterpret_cast<void**>(&m_realLogChannel)) != MH_OK ||
                 MH_EnableHook(pLocation) != MH_OK)
-                Log::Error("Could not hook LogChannel function!");
+                Log::Error("Could not hook CScript::LogChannel function!");
             else
-                Log::Info("LogChannel function hook complete!");
+                Log::Info("CScript::LogChannel function hook complete!");
         }
     }
 
@@ -203,9 +203,9 @@ void LuaVM::Hook()
             if (MH_CreateHook(pLocation, reinterpret_cast<void*>(&HookTDBIDCtorDerive), reinterpret_cast<void**>(&m_realTDBIDCtorDerive)) !=
                 MH_OK ||
                 MH_EnableHook(pLocation) != MH_OK)
-                Log::Error("Could not hook TDBID::ctor[Derive] function!");
+                Log::Error("Could not hook CScript::TDBIDConstructorDerive function!");
             else
-                Log::Info("TDBID::ctor[Derive] function hook complete!");
+                Log::Info("CScript::TDBIDConstructorDerive function hook complete!");
         }
     }
 
@@ -218,10 +218,10 @@ void LuaVM::Hook()
             if (MH_CreateHook(pLocation, reinterpret_cast<void*>(&HookRunningStateRun), reinterpret_cast<void**>(&m_realRunningStateRun)) !=
                     MH_OK ||
                 MH_EnableHook(pLocation) != MH_OK)
-                Log::Error("Could not hook RunningState::Run function!");
+                Log::Error("Could not hook CScript::ProcessRunningState function!");
             else
             {
-                Log::Info("RunningState::Run function hook complete!");
+                Log::Info("CScript::ProcessRunningState function hook complete!");
             }
         }
     }
@@ -234,10 +234,10 @@ void LuaVM::Hook()
         {
             if (MH_CreateHook(pLocation, reinterpret_cast<LPVOID>(HookTDBIDToStringDEBUG), reinterpret_cast<void**>(&m_realTDBIDToStringDEBUG)) != MH_OK ||
                 MH_EnableHook(pLocation) != MH_OK)
-                Log::Error("Could not hook RunningState::Run function!");
+                Log::Error("Could not hook CScript::ToStringDEBUG function!");
             else
             {
-                Log::Info("RunningState::Run function hook complete!");
+                Log::Info("CScript::ToStringDEBUG function hook complete!");
             }
         }
     }
@@ -250,10 +250,10 @@ void LuaVM::Hook()
         {
             if (MH_CreateHook(pLocation, reinterpret_cast<LPVOID>(HookTranslateBytecode), reinterpret_cast<void**>(&m_realTranslateBytecode)) != MH_OK ||
                 MH_EnableHook(pLocation) != MH_OK)
-                Log::Error("Could not hook ScriptBinder::TranslateBytecode function!");
+                Log::Error("Could not hook CScript::TranslateBytecode function!");
             else
             {
-                Log::Info("ScriptBinder::TranslateBytecode function hook complete!");
+                Log::Info("CScript::TranslateBytecode function hook complete!");
             }
         }
     }
@@ -266,10 +266,10 @@ void LuaVM::Hook()
         {
             if (MH_CreateHook(pLocation, reinterpret_cast<LPVOID>(HookTweakDBLoad), reinterpret_cast<void**>(&m_realTweakDBLoad)) != MH_OK ||
                 MH_EnableHook(pLocation) != MH_OK)
-                Log::Error("Could not hook TweakDB::Load function!");
+                Log::Error("Could not hook CScript::TweakDBLoad function!");
             else
             {
-                Log::Info("TweakDB::Load function hook complete!");
+                Log::Info("CScript::TweakDBLoad function hook complete!");
             }
         }
     }

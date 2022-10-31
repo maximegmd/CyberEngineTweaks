@@ -637,7 +637,7 @@ bool TweakDB::InternalCloneFlats(RED4ext::TweakDBID aDBID, const RED4ext::gameda
     }
 
     {
-        std::unique_lock _(pTDB->mutex00);
+        std::lock_guard _(pTDB->mutex00);
         pTDB->flats.InsertOrAssign(recordFlats);
     }
 
