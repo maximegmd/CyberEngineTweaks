@@ -40,14 +40,17 @@ WidgetResult Settings::OnDisable()
 {
     if (m_enabled)
     {
+        if (m_popupResult == TChangedCBResult::CANCEL)
+        {
+            m_popupResult = TChangedCBResult::APPLY;
+            return WidgetResult::CANCEL;
+        }
+
         if (m_madeChanges)
         {
             m_drawPopup = true;
             return WidgetResult::ENABLED;
         }
-
-        if (m_popupResult == TChangedCBResult::CANCEL)
-            return WidgetResult::CANCEL;
 
         m_enabled = false;
     }

@@ -55,16 +55,134 @@ void Overlay::Update()
         if (m_bindings.FirstTimeSetup())
             return;
 
+        auto drawPopup = false;
+        WidgetResult disableResult;
         if (m_enabled)
-            m_vm.OnOverlayClose();
+        {
+            if (m_consoleEnabled)
+            {
+                disableResult = m_console.OnDisable();
+                if (disableResult == WidgetResult::CANCEL)
+                    m_toggled = false;
+                if (disableResult == WidgetResult::ENABLED)
+                    drawPopup = true;
+            }
+            
+            if (m_bindingsEnabled)
+            {
+                disableResult = m_bindings.OnDisable();
+                if (disableResult == WidgetResult::CANCEL)
+                    m_toggled = false;
+                if (disableResult == WidgetResult::ENABLED)
+                    drawPopup = true;
+            }
+            
+            if (m_settingsEnabled)
+            {
+                disableResult = m_settings.OnDisable();
+                if (disableResult == WidgetResult::CANCEL)
+                    m_toggled = false;
+                if (disableResult == WidgetResult::ENABLED)
+                    drawPopup = true;
+            }
+            
+            if (m_tweakDBEditorEnabled)
+            {
+                disableResult = m_tweakDBEditor.OnDisable();
+                if (disableResult == WidgetResult::CANCEL)
+                    m_toggled = false;
+                if (disableResult == WidgetResult::ENABLED)
+                    drawPopup = true;
+            }
+            
+            if (m_gameLogEnabled)
+            {
+                disableResult = m_gameLog.OnDisable();
+                if (disableResult == WidgetResult::CANCEL)
+                    m_toggled = false;
+                if (disableResult == WidgetResult::ENABLED)
+                    drawPopup = true;
+            }
+            
+            if (m_imguiDebugEnabled)
+            {
+                disableResult = m_imguiDebug.OnDisable();
+                if (disableResult == WidgetResult::CANCEL)
+                    m_toggled = false;
+                if (disableResult == WidgetResult::ENABLED)
+                    drawPopup = true;
+            }
+        }
         else
-            m_vm.OnOverlayOpen();
-        m_enabled = !m_enabled;
+        {
+            if (m_consoleEnabled)
+            {
+                disableResult = m_console.OnEnable();
+                if (disableResult == WidgetResult::CANCEL)
+                    m_toggled = false;
+                if (disableResult == WidgetResult::DISABLED)
+                    drawPopup = true;
+            }
+            
+            if (m_bindingsEnabled)
+            {
+                disableResult = m_bindings.OnEnable();
+                if (disableResult == WidgetResult::CANCEL)
+                    m_toggled = false;
+                if (disableResult == WidgetResult::DISABLED)
+                    drawPopup = true;
+            }
+            
+            if (m_settingsEnabled)
+            {
+                disableResult = m_settings.OnEnable();
+                if (disableResult == WidgetResult::CANCEL)
+                    m_toggled = false;
+                if (disableResult == WidgetResult::DISABLED)
+                    drawPopup = true;
+            }
+            
+            if (m_tweakDBEditorEnabled)
+            {
+                disableResult = m_tweakDBEditor.OnEnable();
+                if (disableResult == WidgetResult::CANCEL)
+                    m_toggled = false;
+                if (disableResult == WidgetResult::DISABLED)
+                    drawPopup = true;
+            }
+            
+            if (m_gameLogEnabled)
+            {
+                disableResult = m_gameLog.OnEnable();
+                if (disableResult == WidgetResult::CANCEL)
+                    m_toggled = false;
+                if (disableResult == WidgetResult::DISABLED)
+                    drawPopup = true;
+            }
+            
+            if (m_imguiDebugEnabled)
+            {
+                disableResult = m_imguiDebug.OnEnable();
+                if (disableResult == WidgetResult::CANCEL)
+                    m_toggled = false;
+                if (disableResult == WidgetResult::DISABLED)
+                    drawPopup = true;
+            }
+        }
+        
+        if (!drawPopup && m_toggled)
+        {
+            if (m_enabled)
+                m_vm.OnOverlayClose();
+            else
+                m_vm.OnOverlayOpen();
+            m_enabled = !m_enabled;
 
-        auto& d3d12 = CET::Get().GetD3D12();
-        d3d12.DelayedSetTrapInputInImGui(m_enabled);
-        ClipToCenter(RED4ext::CGameEngine::Get()->unkC0);
-        m_toggled = false;
+            auto& d3d12 = CET::Get().GetD3D12();
+            d3d12.DelayedSetTrapInputInImGui(m_enabled);
+            ClipToCenter(RED4ext::CGameEngine::Get()->unkC0);
+            m_toggled = false;
+        }
     }
 
     if (!m_enabled)
@@ -157,44 +275,56 @@ void Overlay::DrawToolbar()
 {
     const auto itemWidth = GetAlignedItemWidth(7);
 
-    ImGui::PushStyleColor(ImGuiCol_Button, m_console.IsEnabled() ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive) : ImGui::GetStyleColorVec4(ImGuiCol_Button));
+    ImGui::PushStyleColor(ImGuiCol_Button, m_consoleEnabled ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive) : ImGui::GetStyleColorVec4(ImGuiCol_Button));
     if (ImGui::Button("Console", ImVec2(itemWidth, 0)))
         m_console.Toggle();
+    if (!m_toggled)
+        m_consoleEnabled = m_console.IsEnabled();
     ImGui::PopStyleColor();
 
     ImGui::SameLine();
 
-    ImGui::PushStyleColor(ImGuiCol_Button, m_bindings.IsEnabled() ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive) : ImGui::GetStyleColorVec4(ImGuiCol_Button));
+    ImGui::PushStyleColor(ImGuiCol_Button, m_bindingsEnabled ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive) : ImGui::GetStyleColorVec4(ImGuiCol_Button));
     if (ImGui::Button("Bindings", ImVec2(itemWidth, 0)))
         m_bindings.Toggle();
+    if (!m_toggled)
+        m_bindingsEnabled = m_bindings.IsEnabled();
     ImGui::PopStyleColor();
 
     ImGui::SameLine();
 
-    ImGui::PushStyleColor(ImGuiCol_Button, m_settings.IsEnabled() ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive) : ImGui::GetStyleColorVec4(ImGuiCol_Button));
+    ImGui::PushStyleColor(ImGuiCol_Button, m_settingsEnabled ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive) : ImGui::GetStyleColorVec4(ImGuiCol_Button));
     if (ImGui::Button("Settings", ImVec2(itemWidth, 0)))
         m_settings.Toggle();
+    if (!m_toggled)
+        m_settingsEnabled = m_settings.IsEnabled();
     ImGui::PopStyleColor();
 
     ImGui::SameLine();
 
-    ImGui::PushStyleColor(ImGuiCol_Button, m_tweakDBEditor.IsEnabled() ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive) : ImGui::GetStyleColorVec4(ImGuiCol_Button));
+    ImGui::PushStyleColor(ImGuiCol_Button, m_tweakDBEditorEnabled ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive) : ImGui::GetStyleColorVec4(ImGuiCol_Button));
     if (ImGui::Button("TweakDB Editor", ImVec2(itemWidth, 0)))
         m_tweakDBEditor.Toggle();
+    if (!m_toggled)
+        m_tweakDBEditorEnabled = m_tweakDBEditor.IsEnabled();
     ImGui::PopStyleColor();
 
     ImGui::SameLine();
 
-    ImGui::PushStyleColor(ImGuiCol_Button, m_gameLog.IsEnabled() ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive) : ImGui::GetStyleColorVec4(ImGuiCol_Button));
+    ImGui::PushStyleColor(ImGuiCol_Button, m_gameLogEnabled ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive) : ImGui::GetStyleColorVec4(ImGuiCol_Button));
     if (ImGui::Button("Game Log", ImVec2(itemWidth, 0)))
         m_gameLog.Toggle();
+    if (!m_toggled)
+        m_gameLogEnabled = m_gameLog.IsEnabled();
     ImGui::PopStyleColor();
 
     ImGui::SameLine();
 
-    ImGui::PushStyleColor(ImGuiCol_Button, m_imguiDebug.IsEnabled() ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive) : ImGui::GetStyleColorVec4(ImGuiCol_Button));
+    ImGui::PushStyleColor(ImGuiCol_Button, m_imguiDebugEnabled ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive) : ImGui::GetStyleColorVec4(ImGuiCol_Button));
     if (ImGui::Button("ImGui Debug", ImVec2(itemWidth, 0)))
         m_imguiDebug.Toggle();
+    if (!m_toggled)
+        m_imguiDebugEnabled = m_imguiDebug.IsEnabled();
     ImGui::PopStyleColor();
 
     ImGui::SameLine();

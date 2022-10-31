@@ -39,11 +39,17 @@ private:
     void DrawToolbar();
 
     Console m_console;
+    bool m_consoleEnabled = false;
     Bindings m_bindings;
+    bool m_bindingsEnabled = false;
     Settings m_settings;
+    bool m_settingsEnabled = false;
     TweakDBEditor m_tweakDBEditor;
+    bool m_tweakDBEditorEnabled = false;
     GameLog m_gameLog;
+    bool m_gameLogEnabled = false;
     ImGuiDebug m_imguiDebug;
+    bool m_imguiDebugEnabled = false;
 
     TClipToCenter* m_realClipToCenter{ nullptr };
 
