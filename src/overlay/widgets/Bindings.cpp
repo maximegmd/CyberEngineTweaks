@@ -258,19 +258,25 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
 {
     ImGui::TableNextRow();
     ImGui::TableNextColumn();
-
+    
+    auto codeBind = m_bindings.GetLastRecordingResult();
+    if (aVKBindInfo.IsBinding && aVKBindInfo.Bind.IsInput() && (codeBind & 0xFFFF000000000000ull) != codeBind)
+    {
+        m_bindings.StopRecordingBind();
+        aVKBindInfo.IsBinding = false;
+    }
+    
     const auto isRecording = m_bindings.IsRecordingBind();
     if (aVKBindInfo.IsBinding && !isRecording)
     {
         const auto previousCodeBind = aVKBindInfo.CodeBind;
         
-        auto codeBind = m_bindings.GetLastRecordingResult();
-        if (codeBind != aVKBindInfo.CodeBind)
+        if (codeBind != 0 && codeBind != previousCodeBind)
         {
             if (m_bindings.IsFirstKeyUsed(codeBind))
             {
                 // note - creating copy so we are not destroying reference to modBind when we unbind
-                const auto checkModBind = [this, &aVKBindInfo, codeBind](const VKModBind& modBind) {
+                const auto checkModBind = [this, &aVKBindInfo, codeBind](const VKModBind modBind) {
                     const auto cetBind = modBind == s_overlayToggleModBind;
                     if (!cetBind || aVKBindInfo.Bind.IsHotkey())
                     {
