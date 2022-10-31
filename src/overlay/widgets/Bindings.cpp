@@ -41,6 +41,7 @@ WidgetResult Bindings::OnEnable()
 WidgetResult Bindings::OnPopup()
 {
     const auto ret = UnsavedChangesPopup(
+        "Bindings",
         m_openChangesModal,
         m_madeChanges,
         [this]{ Save(); },

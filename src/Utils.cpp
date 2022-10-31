@@ -185,18 +185,21 @@ float GetCenteredOffsetForText(const char* acpText)
     return (ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(acpText).x) / 2.0f;
 }
 
-TChangedCBResult UnsavedChangesPopup(bool& aFirstTime, const bool acMadeChanges, const TWidgetCB& acpSaveCB, const TWidgetCB& acpLoadCB, const TWidgetCB& acpCancelCB)
+TChangedCBResult UnsavedChangesPopup(const std::string& acpOwnerName, bool& aFirstTime, const bool acMadeChanges, const TWidgetCB& acpSaveCB, const TWidgetCB& acpLoadCB, const TWidgetCB& acpCancelCB)
 {
+    auto popupTitle = acpOwnerName.empty() ? "Unsaved changes" : fmt::format("{} - Unsaved changes", acpOwnerName);
+
     if (acMadeChanges)
     {
         auto res = TChangedCBResult::CHANGED;
         if (aFirstTime)
         {
-            ImGui::OpenPopup("Unsaved changes");
+            
+            ImGui::OpenPopup(popupTitle.c_str());
             aFirstTime = false;
         }
 
-        if (ImGui::BeginPopupModal("Unsaved changes", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+        if (ImGui::BeginPopupModal(popupTitle.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize))
         {
             const auto shorterTextSz { ImGui::CalcTextSize("You have some unsaved changes.").x };
             const auto longerTextSz { ImGui::CalcTextSize("Do you wish to apply them or discard them?").x };

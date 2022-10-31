@@ -44,7 +44,7 @@ float GetAlignedItemWidth(const int64_t acItemsCount);
 
 float GetCenteredOffsetForText(const char* acpText);
 
-TChangedCBResult UnsavedChangesPopup(bool& aFirstTime, const bool acMadeChanges, const TWidgetCB& acpSaveCB, const TWidgetCB& acpLoadCB, const TWidgetCB& acpCancelCB = nullptr);
+TChangedCBResult UnsavedChangesPopup(const std::string& acpOwnerName, bool& aFirstTime, const bool acMadeChanges, const TWidgetCB& acpSaveCB, const TWidgetCB& acpLoadCB, const TWidgetCB& acpCancelCB = nullptr);
 
 [[nodiscard]] std::filesystem::path GetAbsolutePath(const std::string& acFilePath, const std::filesystem::path& acRootPath, const bool acAllowNonExisting, const bool acAllowSymlink = true);
 [[nodiscard]] std::filesystem::path GetAbsolutePath(std::filesystem::path aFilePath, const std::filesystem::path& acRootPath, const bool acAllowNonExisting, const bool acAllowSymlink = true);

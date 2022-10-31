@@ -59,7 +59,7 @@ void Overlay::Update()
         WidgetResult disableResult;
         if (m_enabled)
         {
-            if (m_consoleEnabled)
+            if (m_toggled && !drawPopup && m_consoleEnabled)
             {
                 disableResult = m_console.OnDisable();
                 if (disableResult == WidgetResult::CANCEL)
@@ -68,7 +68,7 @@ void Overlay::Update()
                     drawPopup = true;
             }
             
-            if (m_bindingsEnabled)
+            if (m_toggled && !drawPopup && m_bindingsEnabled)
             {
                 disableResult = m_bindings.OnDisable();
                 if (disableResult == WidgetResult::CANCEL)
@@ -77,7 +77,7 @@ void Overlay::Update()
                     drawPopup = true;
             }
             
-            if (m_settingsEnabled)
+            if (m_toggled && !drawPopup && m_settingsEnabled)
             {
                 disableResult = m_settings.OnDisable();
                 if (disableResult == WidgetResult::CANCEL)
@@ -86,7 +86,7 @@ void Overlay::Update()
                     drawPopup = true;
             }
             
-            if (m_tweakDBEditorEnabled)
+            if (m_toggled && !drawPopup && m_tweakDBEditorEnabled)
             {
                 disableResult = m_tweakDBEditor.OnDisable();
                 if (disableResult == WidgetResult::CANCEL)
@@ -95,7 +95,7 @@ void Overlay::Update()
                     drawPopup = true;
             }
             
-            if (m_gameLogEnabled)
+            if (m_toggled && !drawPopup && m_gameLogEnabled)
             {
                 disableResult = m_gameLog.OnDisable();
                 if (disableResult == WidgetResult::CANCEL)
@@ -104,7 +104,7 @@ void Overlay::Update()
                     drawPopup = true;
             }
             
-            if (m_imguiDebugEnabled)
+            if (m_toggled && !drawPopup && m_imguiDebugEnabled)
             {
                 disableResult = m_imguiDebug.OnDisable();
                 if (disableResult == WidgetResult::CANCEL)
@@ -115,7 +115,7 @@ void Overlay::Update()
         }
         else
         {
-            if (m_consoleEnabled)
+            if (m_toggled && !drawPopup && m_consoleEnabled)
             {
                 disableResult = m_console.OnEnable();
                 if (disableResult == WidgetResult::CANCEL)
@@ -124,7 +124,7 @@ void Overlay::Update()
                     drawPopup = true;
             }
             
-            if (m_bindingsEnabled)
+            if (m_toggled && !drawPopup && m_bindingsEnabled)
             {
                 disableResult = m_bindings.OnEnable();
                 if (disableResult == WidgetResult::CANCEL)
@@ -133,7 +133,7 @@ void Overlay::Update()
                     drawPopup = true;
             }
             
-            if (m_settingsEnabled)
+            if (m_toggled && !drawPopup && m_settingsEnabled)
             {
                 disableResult = m_settings.OnEnable();
                 if (disableResult == WidgetResult::CANCEL)
@@ -142,7 +142,7 @@ void Overlay::Update()
                     drawPopup = true;
             }
             
-            if (m_tweakDBEditorEnabled)
+            if (m_toggled && !drawPopup && m_tweakDBEditorEnabled)
             {
                 disableResult = m_tweakDBEditor.OnEnable();
                 if (disableResult == WidgetResult::CANCEL)
@@ -151,7 +151,7 @@ void Overlay::Update()
                     drawPopup = true;
             }
             
-            if (m_gameLogEnabled)
+            if (m_toggled && !drawPopup && m_gameLogEnabled)
             {
                 disableResult = m_gameLog.OnEnable();
                 if (disableResult == WidgetResult::CANCEL)
@@ -160,7 +160,7 @@ void Overlay::Update()
                     drawPopup = true;
             }
             
-            if (m_imguiDebugEnabled)
+            if (m_toggled && !drawPopup && m_imguiDebugEnabled)
             {
                 disableResult = m_imguiDebug.OnEnable();
                 if (disableResult == WidgetResult::CANCEL)

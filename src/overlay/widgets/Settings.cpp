@@ -26,6 +26,7 @@ WidgetResult Settings::OnEnable()
 WidgetResult Settings::OnPopup()
 {
     const auto ret = UnsavedChangesPopup(
+        "Settings",
         m_openChangesModal,
         m_madeChanges,
         [this]{ Save(); },
