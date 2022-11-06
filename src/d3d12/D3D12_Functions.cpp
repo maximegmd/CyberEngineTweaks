@@ -14,7 +14,7 @@ bool D3D12::ResetState(bool aClearDownlevelBackbuffers)
     if (m_initialized)
     {
         m_initialized = false;
-        
+
         std::lock_guard _(m_imguiLock);
         ImGui_ImplDX12_Shutdown();
         ImGui_ImplWin32_Shutdown();
@@ -285,6 +285,7 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         m_styleReference.ScrollbarRounding = 12.0f;
         m_styleReference.GrabRounding = 12.0f;
         m_styleReference.TabRounding = 6.0f;
+        m_styleReference.WindowMenuButtonPosition = ImGuiDir_None;
     }
 
     ImGui::GetStyle() = m_styleReference;
@@ -449,7 +450,7 @@ bool D3D12::IsImGuiPresentDraw() const
 void D3D12::PrepareUpdate(bool aPrepareMods)
 {
     std::lock_guard _(m_imguiLock);
-    
+
     ImGui_ImplWin32_NewFrame(m_outSize);
     ImGui::NewFrame();
 
