@@ -46,10 +46,12 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
 
     env["registerForEvent"] = [this](const std::string& acName, sol::function aCallback)
     {
-        if(acName == "onInit")
-            m_onInit = aCallback;
+        if(acName == "onHook")
+            m_onHook = aCallback;
         else if(acName == "onTweak")
             m_onTweak = aCallback;
+        else if(acName == "onInit")
+            m_onInit = aCallback;
         else if(acName == "onShutdown")
             m_onShutdown = aCallback;
         else if(acName == "onUpdate")
@@ -233,6 +235,13 @@ const VKBind* ScriptContext::GetBind(const std::string& acId) const
 const TiltedPhoques::Vector<VKBind>& ScriptContext::GetBinds() const
 {
     return m_vkBinds;
+}
+
+void ScriptContext::TriggerOnHook() const
+{
+    auto lockedState = m_sandbox.GetLockedState();
+
+    TryLuaFunction(m_logger, m_onHook);
 }
 
 void ScriptContext::TriggerOnTweak() const

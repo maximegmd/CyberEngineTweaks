@@ -33,12 +33,7 @@ bool LuaVM::ExecuteLua(const std::string& acCommand) const
 void LuaVM::Update(float aDeltaTime)
 {
     if (!m_initialized)
-    {
-        if (m_logCount.load(std::memory_order_relaxed) > 2)
-            PostInitializeMods();
-
         return;
-    }
 
     CET::Get().GetBindings().Update();
 

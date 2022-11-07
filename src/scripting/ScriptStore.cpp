@@ -99,6 +99,12 @@ const TiltedPhoques::Map<std::string, std::reference_wrapper<const TiltedPhoques
     return m_vkBinds;
 }
 
+void ScriptStore::TriggerOnHook() const
+{
+    for (const auto& mod : m_contexts | std::views::values)
+        mod.TriggerOnHook();
+}
+
 void ScriptStore::TriggerOnTweak() const
 {
     for (const auto& mod : m_contexts | std::views::values)

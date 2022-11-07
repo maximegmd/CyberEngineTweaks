@@ -462,6 +462,8 @@ void Scripting::PostInitializeScripting()
         "List", &GameOptions::List);
 
     m_sandbox.PostInitializeScripting();
+
+    TriggerOnHook();
 }
 
 void Scripting::PostInitializeTweakDB()
@@ -643,6 +645,11 @@ const TiltedPhoques::Map<std::string, std::reference_wrapper<const TiltedPhoques
     return m_store.GetAllBinds();
 }
 
+void Scripting::TriggerOnHook() const
+{
+    m_store.TriggerOnHook();
+}
+
 void Scripting::TriggerOnTweak() const
 {
     m_store.TriggerOnTweak();
@@ -691,6 +698,7 @@ void Scripting::ReloadAllMods()
 
     m_store.LoadAll();
 
+    TriggerOnHook();
     TriggerOnTweak();
     TriggerOnInit();
 

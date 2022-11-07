@@ -13,6 +13,7 @@ struct ScriptContext
     [[nodiscard]] const VKBind* GetBind(const std::string& acId) const;
     [[nodiscard]] const TiltedPhoques::Vector<VKBind>& GetBinds() const;
 
+    void TriggerOnHook() const;
     void TriggerOnTweak() const;
     void TriggerOnInit() const;
     void TriggerOnUpdate(float aDeltaTime) const;
@@ -32,6 +33,7 @@ private:
     LuaSandbox& m_sandbox;
     uint64_t m_sandboxID;
     sol::object m_object{ };
+    sol::function m_onHook{ };
     sol::function m_onTweak{ };
     sol::function m_onInit{ };
     sol::function m_onShutdown{ };

@@ -252,8 +252,6 @@ void LuaVM::HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack,
         else
             spdlog::get("gamelog")->info("[{}] {}", channelSV, ref.ref->c_str());
     }
-
-    s_vm->m_logCount.fetch_add(1);
 }
 
 LuaVM::LuaVM(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12)
@@ -348,6 +346,16 @@ bool LuaVM::HookTranslateBytecode(uintptr_t aBinder, uintptr_t aData)
     {
         s_vm->PostInitializeScripting();
     }
+
+    return ret;
+}
+
+uint64_t LuaVM::HookPlayerSpawned(uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4)
+{
+    const auto ret = s_vm->m_realPlayerSpawned(a1, a2, a3, a4);
+
+    if (!s_vm->m_initialized)
+        s_vm->PostInitializeMods();
 
     return ret;
 }
@@ -487,23 +495,20 @@ void LuaVM::Hook()
         }
     }
 
-    // Disable SetLoadingState hook temporarily and get back to log count workaround
-    // as it introduces major breaking change for onInit handler.
-    //{
-    //    const mem::pattern cPattern("48 89 5C 24 18 89 54 24 10 57 48 83 EC 20 48 8B D9 C7");
-    //    const mem::default_scanner cScanner(cPattern);
-    //    uint8_t* pLocation = cScanner(gameImage.TextRegion).as<uint8_t*>();
-    //
-    //    if (pLocation)
-    //    {
-    //        if (MH_CreateHook(pLocation, &HookSetLoadingState, reinterpret_cast<void**>(&m_realSetLoadingState)) != MH_OK
-    //         || MH_EnableHook(pLocation) != MH_OK)
-    //            Log::Error("Could not hook SetLoadingState function!");
-    //        else
-    //        {
-    //            Log::Info("SetLoadingState function hook complete!");
-    //        }
-    //    }
-    //}
+    {
+        const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::PlayerSystem_OnPlayerSpawned);
+        uint8_t* pLocation = func.GetAddr();
+
+        if (pLocation)
+        {
+            if (MH_CreateHook(pLocation, reinterpret_cast<LPVOID>(HookPlayerSpawned), reinterpret_cast<void**>(&m_realPlayerSpawned)) != MH_OK ||
+                MH_EnableHook(pLocation) != MH_OK)
+                Log::Error("Could not hook PlayerSystem::OnPlayerSpawned function!");
+            else
+            {
+                Log::Info("PlayerSystem::OnPlayerSpawned function hook complete!");
+            }
+        }
+    }
 
 }
