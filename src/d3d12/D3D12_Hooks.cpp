@@ -118,7 +118,7 @@ void* D3D12::CRenderNode_Present_InternalPresent(int32_t* apDeviceIndex, uint8_t
     auto& d3d12 = CET::Get().GetD3D12();
 
     const auto* pContext = RenderContext::GetInstance();
-    auto* pDevice = pContext->devices[*apDeviceIndex - 1].pSwapChain;
+    auto* pSwapChain = pContext->devices[*apDeviceIndex - 1].pSwapChain;
     if (d3d12.m_initialized)
         d3d12.Update();
     else
@@ -128,7 +128,8 @@ void* D3D12::CRenderNode_Present_InternalPresent(int32_t* apDeviceIndex, uint8_t
         if (IsWindows8OrGreater())
         {
             d3d12.m_pCommandQueue = pContext->pDirectQueue;
-            d3d12.Initialize(pDevice);
+            d3d12.m_pdxgiSwapChain = pSwapChain;
+            d3d12.Initialize();
         }
         else
         {
@@ -162,6 +163,15 @@ void* D3D12::CRenderGlobal_Resize(uint32_t aWidth, uint32_t aHeight, uint32_t a3
     }
 
     return d3d12.m_realInternalResize(aWidth, aHeight, a3, a4, apDeviceIndex);
+}
+
+void* D3D12::CRenderGlobal_Shutdown(uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4)
+{
+    auto& d3d12 = CET::Get().GetD3D12();
+
+    d3d12.ResetState(true, true);
+
+    return d3d12.m_realInternalShutdown(a1, a2, a3, a4);
 }
 
 ID3D12Device* D3D12::GetDevice() const
@@ -245,6 +255,7 @@ void D3D12::HookGame()
 {
     const RED4ext::RelocPtr<void> presentInternal(CyberEngineTweaks::Addresses::CRenderNode_Present_DoInternal);
     const RED4ext::RelocPtr<void> resizeInternal(CyberEngineTweaks::Addresses::CRenderGlobal_Resize);
+    const RED4ext::RelocPtr<void> shutdownInternal(CyberEngineTweaks::Addresses::CRenderGlobal_Shutdown);
 
     if (MH_CreateHook(presentInternal.GetAddr(), reinterpret_cast<void*>(&CRenderNode_Present_InternalPresent),
                       reinterpret_cast<void**>(&m_realInternalPresent)) != MH_OK ||
@@ -259,5 +270,12 @@ void D3D12::HookGame()
         Log::Error("Could not hook CRenderGlobal_Resize function!");
     else
         Log::Info("CRenderGlobal_Resize function hook complete!");
+
+    if (MH_CreateHook(shutdownInternal.GetAddr(), reinterpret_cast<void*>(&CRenderGlobal_Shutdown),
+                      reinterpret_cast<void**>(&m_realInternalShutdown)) != MH_OK ||
+        MH_EnableHook(shutdownInternal.GetAddr()) != MH_OK)
+        Log::Error("Could not hook CRenderGlobal_Shutdown function!");
+    else
+        Log::Info("CRenderGlobal_Shutdown function hook complete!");
 }
 

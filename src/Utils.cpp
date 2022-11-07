@@ -101,12 +101,13 @@ spdlog::sink_ptr CreateCustomSinkMT(const std::function<void(const std::string&)
 }
 
 std::shared_ptr<spdlog::logger> CreateLogger(const std::filesystem::path& acpPath, const std::string& acpID,
-                                             const spdlog::sink_ptr& acpExtraSink, const std::string& acpPattern)
+                                             const spdlog::sink_ptr& acpExtraSink, const std::string& acpPattern,
+                                             const size_t acMaxFileSize, const size_t acMaxFileCount)
 {
     if (auto existingLogger = spdlog::get(acpID))
         return existingLogger;
 
-    const auto rotSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(acpPath.native(), 1048576 * 5, 3);
+    const auto rotSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(acpPath.native(), acMaxFileSize, acMaxFileCount);
     rotSink->set_pattern(acpPattern);
 
     auto logger = std::make_shared<spdlog::logger>(acpID, spdlog::sinks_init_list{rotSink});
@@ -194,7 +195,7 @@ TChangedCBResult UnsavedChangesPopup(const std::string& acpOwnerName, bool& aFir
         auto res = TChangedCBResult::CHANGED;
         if (aFirstTime)
         {
-            
+
             ImGui::OpenPopup(popupTitle.c_str());
             aFirstTime = false;
         }

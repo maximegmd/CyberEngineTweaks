@@ -32,13 +32,14 @@ constexpr uintptr_t CPhotoMode_SetRecordID = 0x142DBB7E0 - ImageBase; // 48 8B C
 #pragma endregion
 
 #pragma region CRenderGlobal
-constexpr uintptr_t CRenderGlobal_InstanceOffset = 0x144DD6FB0 - ImageBase; // 49 8B 95 ? ? ? ? 48 8D 44 24 30 0F 57 C0, expected: 1, index: 0, offset: 3
+constexpr uintptr_t CRenderGlobal_InstanceOffset = 0x144DD6FB0 - ImageBase; // 48 89 5C 24 08 48 89 6C 24 18 48 89 74 24 20 57 41 56 41 57 48 83 EC 30 8B 01 41 8B F8 4C 8B 35, expected: 1, index: 0, offset: 32
 constexpr uintptr_t CRenderGlobal__DoNotUse_RenderQueueOffset = 0x151F68149 - ImageBase; // 49 39 29 0F 84 ? ? ? ? 41 39 69 24 0F 84 ? ? ? ? 49 8B 95, expected: 1, index: 0, offset: 0
 constexpr uintptr_t CRenderGlobal_Resize = 0x142CDCA30 - ImageBase; // 44 88 4C 24 20 44 89 44 24 18 89 54 24 10 89 4C, expected: 1, index: 0
+constexpr uintptr_t CRenderGlobal_Shutdown = 0x142CC71A0 - ImageBase; // 48 89 6C 24 20 41 56 48 83 EC 20 48 8D 05 3E 85 99 00, expected: 1, index: 0
 #pragma endregion
 
 #pragma region CRenderNode_Present
-constexpr uintptr_t CRenderNode_Present_DoInternal = 0x142CDEFC0 - ImageBase; // 48 89 5C 24 08 48 89 6C  24 18 48 89 74 24 20 57 41 56 41 57 48 83 EC 30 8B 01 41 8B F8 4C 8B 35, expected: 1, index: 0
+constexpr uintptr_t CRenderNode_Present_DoInternal = 0x142CDEFC0 - ImageBase; // 48 89 5C 24 08 48 89 6C 24 18 48 89 74 24 20 57 41 56 41 57 48 83 EC 30 8B 01 41 8B F8 4C 8B 35, expected: 1, index: 0
 #pragma endregion
 
 #pragma region CScript

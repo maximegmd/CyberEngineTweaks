@@ -30,7 +30,7 @@ LRESULT D3D12::OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam)
 
     if (d3d12.IsInitialized())
     {
-        { 
+        {
             std::lock_guard _(d3d12.m_imguiLock);
             if (const auto res = ImGui_ImplWin32_WndProcHandler(ahWnd, auMsg, awParam, alParam))
                 return res;
@@ -68,13 +68,5 @@ D3D12::D3D12(Window& aWindow, Paths& aPaths, Options& aOptions)
 
 D3D12::~D3D12()
 {
-    if (m_initialized)
-    {
-        std::lock_guard _(m_imguiLock);
-        ImGui_ImplDX12_Shutdown();
-        ImGui_ImplWin32_Shutdown();
-        ImGui::DestroyContext();
-    }
-
-    kiero::shutdown();
+    assert(!m_initialized);
 }

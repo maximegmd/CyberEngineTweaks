@@ -28,13 +28,15 @@ def get_groups() -> List[Group]:
     # Add new patterns here, please try to keep the groups ordering alphabetized.
     return [
         Group(name='CRenderGlobal', pointers=[
-            Item(name='InstanceOffset', pattern='49 8B 95 ? ? ? ? 48 8D 44 24 30 0F 57 C0', expected=1, offset=3),
+            # instance offset is used by CRenderNode_Present_DoInternal
+            Item(name='InstanceOffset', pattern='48 89 5C 24 08 48 89 6C 24 18 48 89 74 24 20 57 41 56 41 57 48 83 EC 30 8B 01 41 8B F8 4C 8B 35', expected=1, offset=32),
             Item(name='_DoNotUse_RenderQueueOffset', pattern='49 39 29 0F 84 ? ? ? ? 41 39 69 24 0F 84 ? ? ? ? 49 8B 95', expected=1)
         ], functions=[
-            Item(name='Resize', pattern='44 88 4C 24 20 44 89 44 24 18 89 54 24 10 89 4C', expected=1) 
+            Item(name='Resize', pattern='44 88 4C 24 20 44 89 44 24 18 89 54 24 10 89 4C', expected=1) ,
+            Item(name='Shutdown', pattern='48 89 6C 24 20 41 56 48 83 EC 20 48 8D 05 3E 85 99 00', expected=1)
         ]),
         Group(name='CRenderNode_Present', functions=[
-            Item(name='DoInternal', pattern='48 89 5C 24 08 48 89 6C  24 18 48 89 74 24 20 57 41 56 41 57 48 83 EC 30 8B 01 41 8B F8 4C 8B 35', expected=1)
+            Item(name='DoInternal', pattern='48 89 5C 24 08 48 89 6C 24 18 48 89 74 24 20 57 41 56 41 57 48 83 EC 30 8B 01 41 8B F8 4C 8B 35', expected=1)
         ]),
         Group(name='CScript', functions=[
             Item(name='RunPureScript', pattern='40 55 48 81 EC D0 00 00 00 48 8D 6C 24 40 8B', expected=1),

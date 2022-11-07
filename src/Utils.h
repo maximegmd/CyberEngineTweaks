@@ -11,7 +11,7 @@ std::wstring UTF8ToUTF16(std::string_view utf8);
 
 spdlog::sink_ptr CreateCustomSinkST(const std::function<void(const std::string&)>& acpSinkItHandler, const std::function<void()>& acpFlushHandler = nullptr);
 spdlog::sink_ptr CreateCustomSinkMT(const std::function<void(const std::string&)>& acpSinkItHandler, const std::function<void()>& acpFlushHandler = nullptr);
-std::shared_ptr<spdlog::logger> CreateLogger(const std::filesystem::path& acpPath, const std::string& acpID, const spdlog::sink_ptr& acpExtraSink = nullptr, const std::string& acpPattern = "[%Y-%m-%d %H:%M:%S UTC%z] [%t] %v");
+std::shared_ptr<spdlog::logger> CreateLogger(const std::filesystem::path& acpPath, const std::string& acpID, const spdlog::sink_ptr& acpExtraSink = nullptr, const std::string& acpPattern = "[%Y-%m-%d %H:%M:%S UTC%z] [%t] %v", const size_t acMaxFileSize = 5 * 1024 * 1024, const size_t acMaxFileCount = 3);
 
 // deep copies sol object (doesnt take into account potential duplicates)
 sol::object DeepCopySolObject(const sol::object& acpObj, const sol::state_view& acpStateView);

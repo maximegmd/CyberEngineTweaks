@@ -9,40 +9,54 @@
 #include <imgui_impl/win32.h>
 #include <window/window.h>
 
-bool D3D12::ResetState(bool aClearDownlevelBackbuffers)
+bool D3D12::ResetState(const bool acClearDownlevelBackbuffers, const bool acDestroyContext)
 {
     if (m_initialized)
     {
-        m_initialized = false;
-
         std::lock_guard _(m_imguiLock);
+
+        for (auto& drawData : m_imguiDrawDataBuffers)
+        {
+            for (auto i = 0; i < drawData.CmdListsCount; ++i)
+                IM_DELETE(drawData.CmdLists[i]);
+            delete[] drawData.CmdLists;
+            drawData.CmdLists = nullptr;
+            drawData.Clear();
+        }
+
         ImGui_ImplDX12_Shutdown();
         ImGui_ImplWin32_Shutdown();
+
+        if (acDestroyContext)
+            ImGui::DestroyContext();
     }
 
     m_frameContexts.clear();
-
-    if (aClearDownlevelBackbuffers)
-        m_downlevelBackbuffers.clear();
-
-    m_pCommandQueue = nullptr;
-    m_pdxgiSwapChain = nullptr;
-    m_pd3d12Device = nullptr;
-    m_pd3dRtvDescHeap = nullptr;
-    m_pd3dSrvDescHeap = nullptr;
-    m_pd3dCommandList = nullptr;
-    m_downlevelBufferIndex = 0;
     m_outSize = { 0, 0 };
-    // NOTE: not clearing m_hWnd, m_wndProc, as these should be persistent once set till the EOL of D3D12
+
+    if (acClearDownlevelBackbuffers)
+        m_downlevelBackbuffers.clear();
+    m_downlevelBufferIndex = 0;
+
+    m_pd3d12Device.Reset();
+    m_pd3dRtvDescHeap.Reset();
+    m_pd3dSrvDescHeap.Reset();
+    m_pd3dCommandList.Reset();
+
+    m_pCommandQueue.Reset();
+    m_pdxgiSwapChain.Reset();
+
+    m_initialized = false;
+
     return false;
 }
 
-bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
+bool D3D12::Initialize()
 {
     if (m_initialized)
         return true;
 
-    if (!apSwapChain)
+    if (!m_pdxgiSwapChain)
         return false;
 
     const HWND hWnd = m_window.GetWindow();
@@ -50,12 +64,6 @@ bool D3D12::Initialize(IDXGISwapChain* apSwapChain)
     {
         Log::Warn("D3D12::InitializeDownlevel() - window not yet hooked!");
         return false;
-    }
-
-    if (FAILED(apSwapChain->QueryInterface(IID_PPV_ARGS(&m_pdxgiSwapChain))))
-    {
-        Log::Error("D3D12::Initialize() - unable to query pSwapChain interface for IDXGISwapChain3! (pSwapChain = {})", reinterpret_cast<void*>(apSwapChain));
-        return ResetState();
     }
 
     if (FAILED(m_pdxgiSwapChain->GetDevice(IID_PPV_ARGS(&m_pd3d12Device))))
