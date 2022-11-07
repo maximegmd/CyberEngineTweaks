@@ -31,6 +31,7 @@ struct Scripting
     void TriggerOnOverlayClose() const;
 
     sol::object GetMod(const std::string& acName) const;
+    void UnloadAllMods();
     void ReloadAllMods();
     bool ExecuteLua(const std::string& acCommand) const;
     void CollectGarbage() const;

@@ -7,6 +7,7 @@ struct ScriptStore
     ScriptStore(LuaSandbox& aLuaSandbox, const Paths& aPaths, VKBindings& aBindings);
     ~ScriptStore() = default;
 
+    void DiscardAll();
     void LoadAll();
 
     [[nodiscard]] const VKBind* GetBind(const VKModBind& acModBind) const;

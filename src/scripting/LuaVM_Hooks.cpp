@@ -208,7 +208,7 @@ void LuaVM::HookLog(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*,
     RED4ext::OpcodeHandlers::Run(opcode, apStack->context, apStack, &ref, &ref);
     apStack->code++; // skip ParamEnd
 
-    spdlog::get("gamelog")->info("[GENERAL] {}", ref.ref->c_str());
+    spdlog::get("gamelog")->info("{}", ref.ref->c_str());
 }
 
 void LuaVM::HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*, void*)
@@ -239,9 +239,6 @@ void LuaVM::HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack,
     RED4ext::OpcodeHandlers::Run(opcode, apStack->context, apStack, &ref, &ref);
 
     apStack->code++; // skip ParamEnd
-
-    if (channel == s_debugChannel)
-        spdlog::get("scripting")->debug("{}", ref.ref->c_str());
 
     std::string_view channelSV = channel.ToString();
     if (channelSV.empty())
@@ -321,6 +318,13 @@ bool LuaVM::HookRunningStateRun(uintptr_t aThis, uintptr_t aApp)
     return s_vm->m_realRunningStateRun(aThis, aApp);
 }
 
+bool LuaVM::HookShutdownStateRun(uintptr_t aThis, uintptr_t aApp)
+{
+    s_vm->m_scripting.UnloadAllMods();
+
+    return s_vm->m_realShutdownStateRun(aThis, aApp);
+}
+
 uintptr_t LuaVM::HookSetLoadingState(uintptr_t aThis, int aState)
 {
     static std::once_flag s_initBarrier;
@@ -395,8 +399,7 @@ void LuaVM::Hook()
 
         if (pLocation)
         {
-            if (MH_CreateHook(pLocation, reinterpret_cast<void*>(&HookTDBIDCtorDerive), reinterpret_cast<void**>(&m_realTDBIDCtorDerive)) !=
-                MH_OK ||
+            if (MH_CreateHook(pLocation, reinterpret_cast<void*>(&HookTDBIDCtorDerive), reinterpret_cast<void**>(&m_realTDBIDCtorDerive)) != MH_OK ||
                 MH_EnableHook(pLocation) != MH_OK)
                 Log::Error("Could not hook CScript::TDBIDConstructorDerive function!");
             else
@@ -410,13 +413,28 @@ void LuaVM::Hook()
 
         if (pLocation)
         {
-            if (MH_CreateHook(pLocation, reinterpret_cast<void*>(&HookRunningStateRun), reinterpret_cast<void**>(&m_realRunningStateRun)) !=
-                    MH_OK ||
+            if (MH_CreateHook(pLocation, reinterpret_cast<void*>(&HookRunningStateRun), reinterpret_cast<void**>(&m_realRunningStateRun)) != MH_OK ||
                 MH_EnableHook(pLocation) != MH_OK)
                 Log::Error("Could not hook CScript::ProcessRunningState function!");
             else
             {
                 Log::Info("CScript::ProcessRunningState function hook complete!");
+            }
+        }
+    }
+
+    {
+        const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_ProcessShutdownState);
+        uint8_t* pLocation = func.GetAddr();
+
+        if (pLocation)
+        {
+            if (MH_CreateHook(pLocation, reinterpret_cast<void*>(&HookShutdownStateRun), reinterpret_cast<void**>(&m_realShutdownStateRun)) != MH_OK ||
+                MH_EnableHook(pLocation) != MH_OK)
+                Log::Error("Could not hook CScript::ProcessShutdownState function!");
+            else
+            {
+                Log::Info("CScript::ProcessShutdownState function hook complete!");
             }
         }
     }

@@ -678,11 +678,17 @@ sol::object Scripting::GetMod(const std::string& acName) const
     return m_store.GetMod(acName);
 }
 
-void Scripting::ReloadAllMods()
+void Scripting::UnloadAllMods()
 {
-    // Reload all mods may be called before game is initialized - save state!
     m_override.Clear();
     RegisterOverrides();
+    m_store.DiscardAll();
+}
+
+void Scripting::ReloadAllMods()
+{
+    UnloadAllMods();
+
     m_store.LoadAll();
 
     TriggerOnTweak();

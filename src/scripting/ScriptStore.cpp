@@ -13,11 +13,17 @@ ScriptStore::ScriptStore(LuaSandbox& aLuaSandbox, const Paths& aPaths, VKBinding
 {
 }
 
-void ScriptStore::LoadAll()
+void ScriptStore::DiscardAll()
 {
     m_vkBinds.clear();
     m_contexts.clear();
     m_sandbox.ResetState();
+    m_bindings.Load();
+}
+
+void ScriptStore::LoadAll()
+{
+    DiscardAll();
 
     const auto consoleLogger = spdlog::get("scripting");
 

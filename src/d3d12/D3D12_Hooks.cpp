@@ -165,6 +165,7 @@ void* D3D12::CRenderGlobal_Resize(uint32_t aWidth, uint32_t aHeight, uint32_t a3
     return d3d12.m_realInternalResize(aWidth, aHeight, a3, a4, apDeviceIndex);
 }
 
+// NOTE - this is called 32 times, as it seems to be called for each device object in RendererContext
 void* D3D12::CRenderGlobal_Shutdown(uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4)
 {
     auto& d3d12 = CET::Get().GetD3D12();
