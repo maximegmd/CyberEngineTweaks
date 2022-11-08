@@ -293,7 +293,6 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         m_styleReference.ScrollbarRounding = 12.0f;
         m_styleReference.GrabRounding = 12.0f;
         m_styleReference.TabRounding = 6.0f;
-        m_styleReference.WindowMenuButtonPosition = ImGuiDir_None;
     }
 
     ImGui::GetStyle() = m_styleReference;
