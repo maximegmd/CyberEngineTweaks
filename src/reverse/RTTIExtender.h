@@ -1,5 +1,4 @@
 #pragma once
-#include <RED4ext/CName.hpp>
 
 class RTTIExtender
 {

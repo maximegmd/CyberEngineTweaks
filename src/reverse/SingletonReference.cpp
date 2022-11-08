@@ -12,7 +12,7 @@ SingletonReference::~SingletonReference() = default;
 
 RED4ext::ScriptInstance SingletonReference::GetHandle() const
 {
-    auto* engine = RED4ext::CGameEngine::Get();
+    const auto* engine = RED4ext::CGameEngine::Get();
     auto* pGameInstance = engine->framework->gameInstance;
 
     return pGameInstance->GetInstance(m_pType);

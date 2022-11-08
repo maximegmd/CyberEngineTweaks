@@ -1,15 +1,25 @@
 #include <stdafx.h>
 
 #include "LuaVM.h"
-#include "CET.h"
-#include "overlay/Overlay.h"
 
-const TiltedPhoques::Vector<VKBindInfo>& LuaVM::GetBinds() const
+#include <CET.h>
+
+const VKBind* LuaVM::GetBind(const VKModBind& acModBind) const
 {
-    return m_scripting.GetBinds();
+    return m_scripting.GetBind(acModBind);
 }
 
-bool LuaVM::ExecuteLua(const std::string& acCommand)
+const TiltedPhoques::Vector<VKBind>* LuaVM::GetBinds(const std::string& acModName) const
+{
+    return m_scripting.GetBinds(acModName);
+}
+
+const TiltedPhoques::Map<std::string, std::reference_wrapper<const TiltedPhoques::Vector<VKBind>>>& LuaVM::GetAllBinds() const
+{
+    return m_scripting.GetAllBinds();
+}
+
+bool LuaVM::ExecuteLua(const std::string& acCommand) const
 {
     if (!m_initialized)
     {
@@ -23,17 +33,24 @@ bool LuaVM::ExecuteLua(const std::string& acCommand)
 void LuaVM::Update(float aDeltaTime)
 {
     if (!m_initialized)
-    {
-        if (m_logCount.load(std::memory_order_relaxed) > 0)
-            PostInitializeMods();
-
         return;
+
+    CET::Get().GetBindings().Update();
+
+    if (m_reload)
+    {
+        m_scripting.ReloadAllMods();
+
+        m_reload = false;
     }
 
     m_scripting.TriggerOnUpdate(aDeltaTime);
+
+    if (!m_d3d12.IsImGuiPresentDraw())
+        m_d3d12.PrepareUpdate();
 }
 
-void LuaVM::Draw()
+void LuaVM::Draw() const
 {
     if (!m_initialized || m_drawBlocked)
         return;
@@ -44,16 +61,7 @@ void LuaVM::Draw()
 void LuaVM::ReloadAllMods()
 {
     if (m_initialized)
-    {
-        m_scripting.ReloadAllMods();
-        m_scripting.TriggerOnTweak();
-        m_scripting.TriggerOnInit();
-
-        if (CET::Get().GetOverlay().IsEnabled())
-            m_scripting.TriggerOnOverlayOpen();
-
-        spdlog::get("scripting")->info("LuaVM: Reloaded all mods!");
-    }
+        m_reload = true;
 }
 
 void LuaVM::OnOverlayOpen() const
@@ -71,9 +79,7 @@ void LuaVM::OnOverlayClose() const
 void LuaVM::Initialize()
 {
     if (!IsInitialized())
-    {
         m_scripting.Initialize();
-    }
 }
 
 bool LuaVM::IsInitialized() const
@@ -88,7 +94,7 @@ void LuaVM::BlockDraw(bool aBlockDraw)
 
 void LuaVM::RemoveTDBIDDerivedFrom(uint64_t aDBID)
 {
-    std::lock_guard<std::shared_mutex> _{ m_tdbidLock };
+    std::lock_guard _{ m_tdbidLock };
 
     const auto it = m_tdbidDerivedLookup.find(aDBID);
     if (it != m_tdbidDerivedLookup.end())
@@ -104,20 +110,20 @@ void LuaVM::RemoveTDBIDDerivedFrom(uint64_t aDBID)
 
 bool LuaVM::GetTDBIDDerivedFrom(uint64_t aDBID, TiltedPhoques::Vector<uint64_t>& aDerivedList)
 {
-    std::shared_lock<std::shared_mutex> _{ m_tdbidLock };
+    std::lock_guard _{ m_tdbidLock };
 
     const auto it = m_tdbidDerivedLookup.find(aDBID & 0xFFFFFFFFFF);
     if (it == m_tdbidDerivedLookup.end())
         return false;
 
     aDerivedList.reserve(it->second.size());
-    std::copy(it->second.begin(), it->second.end(), std::back_inserter(aDerivedList));
+    std::ranges::copy(it->second, std::back_inserter(aDerivedList));
     return true;
 }
 
 uint64_t LuaVM::GetTDBIDBase(uint64_t aDBID)
 {
-    std::shared_lock<std::shared_mutex> _{ m_tdbidLock };
+    std::lock_guard _{ m_tdbidLock };
 
     const auto it = m_tdbidLookup.find(aDBID & 0xFFFFFFFFFF);
     if (it == m_tdbidLookup.end())
@@ -127,7 +133,7 @@ uint64_t LuaVM::GetTDBIDBase(uint64_t aDBID)
 
 TDBIDLookupEntry LuaVM::GetTDBIDLookupEntry(uint64_t aDBID)
 {
-    std::shared_lock<std::shared_mutex> _{ m_tdbidLock };
+    std::lock_guard _{ m_tdbidLock };
 
     const auto it = m_tdbidLookup.find(aDBID & 0xFFFFFFFFFF);
     if (it == m_tdbidLookup.end())
@@ -136,7 +142,7 @@ TDBIDLookupEntry LuaVM::GetTDBIDLookupEntry(uint64_t aDBID)
     return it->second;
 }
 
-std::string LuaVM::GetTDBDIDDebugString(TDBID aDBID)
+std::string LuaVM::GetTDBDIDDebugString(TDBID aDBID) const
 {
     RED4ext::TweakDBID internal(aDBID.value);
     return internal.HasTDBOffset()
@@ -144,13 +150,13 @@ std::string LuaVM::GetTDBDIDDebugString(TDBID aDBID)
         : fmt::format("<TDBID:{:08X}:{:02X}>", internal.name.hash, internal.name.length);
 }
 
-std::string LuaVM::GetTDBIDString(uint64_t aDBID)
+std::string LuaVM::GetTDBIDString(uint64_t aDBID, bool aOnlyRegistered)
 {
-    std::shared_lock<std::shared_mutex> _{ m_tdbidLock };
+    std::lock_guard _{ m_tdbidLock };
 
     auto it = m_tdbidLookup.find(aDBID & 0xFFFFFFFFFF);
     if (it == m_tdbidLookup.end())
-        return GetTDBDIDDebugString(TDBID{ aDBID });
+        return aOnlyRegistered ? "" : GetTDBDIDDebugString(TDBID{ aDBID });
 
     std::string string = it->second.name;
     uint64_t base = it->second.base;
@@ -169,12 +175,12 @@ std::string LuaVM::GetTDBIDString(uint64_t aDBID)
     return string;
 }
 
-void LuaVM::RegisterTDBIDString(uint64_t aValue, uint64_t aBase, const std::string& aName)
+void LuaVM::RegisterTDBIDString(uint64_t aValue, uint64_t aBase, const std::string& acString)
 {
     if (aValue == 0) return;
-    std::lock_guard<std::shared_mutex> _{ m_tdbidLock };
+    std::lock_guard _{ m_tdbidLock };
 
-    m_tdbidLookup[aValue] = { aBase, aName };
+    m_tdbidLookup[aValue] = { aBase, acString };
     if (aBase != 0)
         m_tdbidDerivedLookup[aBase].insert(aValue);
 }
@@ -186,7 +192,7 @@ void LuaVM::PostInitializeScripting()
 
 void LuaVM::PostInitializeTweakDB()
 {
-    m_scripting.TriggerOnTweak();
+    m_scripting.PostInitializeTweakDB();
 }
 
 void LuaVM::PostInitializeMods()
@@ -194,9 +200,6 @@ void LuaVM::PostInitializeMods()
     assert(!m_initialized);
 
     m_scripting.PostInitializeMods();
-    m_scripting.TriggerOnInit();
-    if (CET::Get().GetOverlay().IsEnabled())
-        m_scripting.TriggerOnOverlayOpen();
 
     spdlog::get("scripting")->info("LuaVM: initialization finished!");
 

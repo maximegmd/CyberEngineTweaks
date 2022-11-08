@@ -8,11 +8,11 @@ struct Options
 {
     Options(Paths& aPaths);
     ~Options() = default;
-   
+
     void Load();
     void Save();
-    void ResetToDefaults(); 
-    
+    void ResetToDefaults();
+
     Image GameImage;
     bool PatchEnableDebug{ false };
     bool PatchRemovePedestrians{ false };
@@ -26,14 +26,13 @@ struct Options
     bool PatchDisableWin7Vsync{ false };
     bool PatchMinimapFlicker{ false };
     bool DumpGameOptions{ false };
-    std::string FontPath;
-    std::string FontGlyphRanges{""};
-    float FontSize{ 13.0f };
+    std::string FontPath{ };
+    std::string FontGlyphRanges{"Default"};
+    float FontSize{ 18.0f };
     bool ExeValid{ false };
-    bool IsFirstLaunch { true };
-    bool RemoveDeadBindings { true };
-    bool DrawImGuiDiagnosticWindow { false };
-    bool EnableImGuiAssertions { false };
+    bool RemoveDeadBindings{ true };
+    bool DrawImGuiDiagnosticWindow{ false };
+    bool EnableImGuiAssertionsLogging{ false };
 
 private:
 

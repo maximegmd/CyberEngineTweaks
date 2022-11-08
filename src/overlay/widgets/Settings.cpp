@@ -1,94 +1,118 @@
 #include <stdafx.h>
 
 #include "Settings.h"
-#include <scripting/LuaVM.h>
+
+#include <CET.h>
+
+#include <Utils.h>
 
 Settings::Settings(Options& aOptions, LuaVM& aVm)
-    : m_options(aOptions)
+    : Widget("Settings")
+    , m_options(aOptions)
     , m_vm(aVm)
 {
 }
 
-bool Settings::OnEnable()
+WidgetResult Settings::OnEnable()
 {
     if (!m_enabled)
     {
         Load();
         m_enabled = true;
     }
-    return m_enabled;
+    return m_enabled ? WidgetResult::ENABLED : WidgetResult::DISABLED;
 }
 
-bool Settings::OnDisable()
+WidgetResult Settings::OnPopup()
+{
+    const auto ret = UnsavedChangesPopup(
+        "Settings",
+        m_openChangesModal,
+        m_madeChanges,
+        [this]{ Save(); },
+        [this]{ Load(); });
+    m_madeChanges = ret == TChangedCBResult::CHANGED;
+    m_popupResult = ret;
+
+    return m_madeChanges ? WidgetResult::ENABLED : WidgetResult::DISABLED;
+}
+
+WidgetResult Settings::OnDisable()
 {
     if (m_enabled)
     {
-        m_vm.BlockDraw(m_madeChanges);
-        m_madeChanges = (HelperWidgets::UnsavedChangesPopup(m_openChangesModal, m_madeChanges, m_saveCB, m_loadCB) == 0);
-        m_vm.BlockDraw(m_madeChanges);
-        m_enabled = m_madeChanges;
+        if (m_popupResult == TChangedCBResult::CANCEL)
+        {
+            m_popupResult = TChangedCBResult::APPLY;
+            return WidgetResult::CANCEL;
+        }
+
+        if (m_madeChanges)
+        {
+            m_drawPopup = true;
+            return WidgetResult::ENABLED;
+        }
+
+        m_enabled = false;
     }
-    if (!m_enabled)
-    {
-        // reset changes substates
-        m_patchesChanged = false;
-        m_devChanged = false;
-    }
-    return !m_enabled;
+
+    return m_enabled ? WidgetResult::ENABLED : WidgetResult::DISABLED;
 }
 
-void Settings::Update()
+void Settings::OnUpdate()
 {
-    if (ImGui::Button("Load"))
+    const auto frameSize = ImVec2(ImGui::GetContentRegionAvail().x, -(ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.y + ImGui::GetStyle().FramePadding.y + 2.0f));
+    if (ImGui::BeginChild(ImGui::GetID("Settings"), frameSize))
+    {
+        m_madeChanges = false;
+        if (ImGui::CollapsingHeader("Patches", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            ImGui::TreePush();
+            if (ImGui::BeginTable("##SETTINGS_PATCHES", 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
+            {
+                UpdateAndDrawSetting("AMD SMT Patch", "For AMD CPUs that did not get a performance boost after CDPR's patch (requires restart to take effect).", m_patchAmdSmt, m_options.PatchAmdSmt);
+                UpdateAndDrawSetting("Remove Pedestrians", "Removes most of the pedestrians and traffic (requires restart to take effect).", m_patchRemovePedestrians, m_options.PatchRemovePedestrians);
+                UpdateAndDrawSetting("Disable Async Compute", "Disables async compute, this can give a boost on older GPUs like Nvidia 10xx series for example (requires restart to take effect).", m_patchAsyncCompute, m_options.PatchAsyncCompute);
+                UpdateAndDrawSetting("Disable Anti-aliasing", "Completely disables anti-aliasing (requires restart to take effect).", m_patchAntialiasing, m_options.PatchAntialiasing);
+                UpdateAndDrawSetting("Skip Start Menu", "Skips the 'Breaching...' menu asking you to press space bar to continue (requires restart to take effect).", m_patchSkipStartMenu, m_options.PatchSkipStartMenu);
+                UpdateAndDrawSetting("Suppress Intro Movies", "Disables logos played at the beginning (requires restart to take effect).", m_patchDisableIntroMovies, m_options.PatchDisableIntroMovies);
+                UpdateAndDrawSetting("Disable Vignette", "Disables vignetting along screen borders (requires restart to take effect).", m_patchDisableVignette, m_options.PatchDisableVignette);
+                UpdateAndDrawSetting("Disable Boundary Teleport", "Allows players to access out-of-bounds locations (requires restart to take effect).", m_patchDisableBoundaryTeleport, m_options.PatchDisableBoundaryTeleport);
+                UpdateAndDrawSetting("Disable V-Sync (Windows 7 only)", " (requires restart to take effect).", m_patchDisableWin7Vsync, m_options.PatchDisableWin7Vsync);
+                UpdateAndDrawSetting("Fix Minimap Flicker", "Disables VSync on Windows 7 to bypass the 60 FPS limit (requires restart to take effect).", m_patchMinimapFlicker, m_options.PatchMinimapFlicker);
+
+                ImGui::EndTable();
+            }
+            ImGui::TreePop();
+        }
+        if (ImGui::CollapsingHeader("CET Development Settings", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            ImGui::TreePush();
+            if (ImGui::BeginTable("##SETTINGS_DEV", 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
+            {
+                UpdateAndDrawSetting("Remove Dead Bindings", "Removes all bindings which are no longer valid (disabling this could be useful when debugging mod issues).", m_removeDeadBindings, m_options.RemoveDeadBindings);
+                UpdateAndDrawSetting("Enable ImGui Assertions Logging", "Enables all ImGui assertions, assertions will get logged into log file of whoever triggered the assertion (useful when debugging ImGui issues, should also be used to check mods before shipping!).", m_enableImGuiAssertionsLogging, m_options.EnableImGuiAssertionsLogging);
+                UpdateAndDrawSetting("Enable Debug Build", "Sets internal flags to disguise as debug build (requires restart to take effect).", m_patchEnableDebug, m_options.PatchEnableDebug);
+                UpdateAndDrawSetting("Dump Game Options", "Dumps all game options into main log file (requires restart to take effect).", m_dumpGameOptions, m_options.DumpGameOptions);
+
+                ImGui::EndTable();
+            }
+            ImGui::TreePop();
+        }
+    }
+    ImGui::EndChild();
+
+    ImGui::Separator();
+
+    const auto itemWidth = GetAlignedItemWidth(3);
+    if (ImGui::Button("Load", ImVec2(itemWidth, 0)))
         Load();
     ImGui::SameLine();
-    if (ImGui::Button("Save"))
+    if (ImGui::Button("Save", ImVec2(itemWidth, 0)))
         Save();
     ImGui::SameLine();
-    if (ImGui::Button("Defaults"))
+    if (ImGui::Button("Defaults", ImVec2(itemWidth, 0)))
         ResetToDefaults();
-
-    ImGui::Spacing();
-
-    if (ImGui::BeginTabBar("##SETTINGS", ImGuiTabBarFlags_NoCloseWithMiddleMouseButton | ImGuiTabBarFlags_NoTooltip))
-    {
-        if (ImGui::BeginTabItem("Patches"))
-        {
-            if (ImGui::BeginChild("##SETTINGS_PATCHES"))
-            {
-                m_patchesChanged = HelperWidgets::BoolWidget("AMD SMT Patch:", m_patchAmdSmt, m_options.PatchAmdSmt);
-                m_patchesChanged |= HelperWidgets::BoolWidget("Remove Pedestrians:", m_patchRemovePedestrians, m_options.PatchRemovePedestrians);
-                m_patchesChanged |= HelperWidgets::BoolWidget("Disable Async Compute:", m_patchAsyncCompute, m_options.PatchAsyncCompute);
-                m_patchesChanged |= HelperWidgets::BoolWidget("Disable Antialiasing:", m_patchAntialiasing, m_options.PatchAntialiasing);
-                m_patchesChanged |= HelperWidgets::BoolWidget("Skip Start Menu:", m_patchSkipStartMenu, m_options.PatchSkipStartMenu);
-                m_patchesChanged |= HelperWidgets::BoolWidget("Suppress Intro Movies:", m_patchDisableIntroMovies, m_options.PatchDisableIntroMovies);
-                m_patchesChanged |= HelperWidgets::BoolWidget("Disable Vignette:", m_patchDisableVignette, m_options.PatchDisableVignette);
-                m_patchesChanged |= HelperWidgets::BoolWidget("Disable Boundary Teleport:", m_patchDisableBoundaryTeleport, m_options.PatchDisableBoundaryTeleport);
-                m_patchesChanged |= HelperWidgets::BoolWidget("Disable V-Sync (Windows 7 only):", m_patchDisableWin7Vsync, m_options.PatchDisableWin7Vsync);
-                m_patchesChanged |= HelperWidgets::BoolWidget("Fix Minimap Flicker:", m_patchMinimapFlicker, m_options.PatchMinimapFlicker);
-            }
-            ImGui::EndChild();
-            ImGui::EndTabItem();
-        }
-
-        if (ImGui::BeginTabItem("Dev"))
-        {
-            if (ImGui::BeginChild("##SETTINGS_DEV"))
-            {
-                HelperWidgets::BoolWidget("Draw ImGui Diagnostic Window:", m_options.DrawImGuiDiagnosticWindow, m_options.DrawImGuiDiagnosticWindow);
-                m_devChanged  = HelperWidgets::BoolWidget("Remove Dead Bindings:", m_removeDeadBindings, m_options.RemoveDeadBindings);
-                m_devChanged |= HelperWidgets::BoolWidget("Enable ImGui Assertions:", m_enableImGuiAssertions, m_options.EnableImGuiAssertions);
-                m_devChanged |= HelperWidgets::BoolWidget("Enable Debug Menu:", m_patchEnableDebug, m_options.PatchEnableDebug);
-                m_devChanged |= HelperWidgets::BoolWidget("Dump Game Options:", m_dumpGameOptions, m_options.DumpGameOptions);
-            }
-            ImGui::EndChild();
-            ImGui::EndTabItem();
-        }
-
-        m_madeChanges = m_patchesChanged || m_devChanged;
-
-        ImGui::EndTabBar();
-    }
 }
 
 void Settings::Load()
@@ -107,7 +131,7 @@ void Settings::Load()
     m_patchMinimapFlicker = m_options.PatchMinimapFlicker;
 
     m_removeDeadBindings = m_options.RemoveDeadBindings;
-    m_enableImGuiAssertions = m_options.EnableImGuiAssertions;
+    m_enableImGuiAssertionsLogging = m_options.EnableImGuiAssertionsLogging;
     m_patchEnableDebug = m_options.PatchEnableDebug;
     m_dumpGameOptions = m_options.DumpGameOptions;
 }
@@ -126,7 +150,7 @@ void Settings::Save() const
     m_options.PatchMinimapFlicker = m_patchMinimapFlicker;
 
     m_options.RemoveDeadBindings = m_removeDeadBindings;
-    m_options.EnableImGuiAssertions = m_enableImGuiAssertions;
+    m_options.EnableImGuiAssertionsLogging = m_enableImGuiAssertionsLogging;
     m_options.PatchEnableDebug = m_patchEnableDebug;
     m_options.DumpGameOptions = m_dumpGameOptions;
 
@@ -137,4 +161,37 @@ void Settings::ResetToDefaults()
 {
     m_options.ResetToDefaults();
     Load();
+}
+
+void Settings::UpdateAndDrawSetting(const std::string& acLabel, const std::string& acTooltip, bool& aCurrent, const bool& acSaved)
+{
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+
+    ImVec4 curTextColor = ImGui::GetStyleColorVec4(ImGuiCol_Text);
+    if (aCurrent != acSaved)
+        curTextColor = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
+
+    ImGui::AlignTextToFramePadding();
+
+    ImGui::PushStyleColor(ImGuiCol_Text, curTextColor);
+
+    ImGui::PushID(&acLabel);
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + GetCenteredOffsetForText(acLabel.c_str()));
+    ImGui::TextUnformatted(acLabel.c_str());
+    ImGui::PopID();
+
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled) && !acTooltip.empty())
+        ImGui::SetTooltip("%s", acTooltip.c_str());
+
+    ImGui::TableNextColumn();
+
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (ImGui::GetContentRegionAvail().x - ImGui::GetFrameHeight()) / 2);
+    ImGui::Checkbox(("##" + acLabel).c_str(), &aCurrent);
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+        ImGui::SetTooltip("%s", acTooltip.c_str());
+
+    ImGui::PopStyleColor();
+
+    m_madeChanges |= aCurrent != acSaved;
 }

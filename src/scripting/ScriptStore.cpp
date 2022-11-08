@@ -2,6 +2,10 @@
 
 #include "ScriptStore.h"
 
+#include <CET.h>
+
+#include "Utils.h"
+
 ScriptStore::ScriptStore(LuaSandbox& aLuaSandbox, const Paths& aPaths, VKBindings& aBindings)
     : m_sandbox(aLuaSandbox)
     , m_paths(aPaths)
@@ -9,13 +13,19 @@ ScriptStore::ScriptStore(LuaSandbox& aLuaSandbox, const Paths& aPaths, VKBinding
 {
 }
 
-void ScriptStore::LoadAll()
+void ScriptStore::DiscardAll()
 {
-    m_vkBindInfos.clear();
+    m_vkBinds.clear();
     m_contexts.clear();
     m_sandbox.ResetState();
+    m_bindings.Load();
+}
 
-    auto consoleLogger = spdlog::get("scripting");
+void ScriptStore::LoadAll()
+{
+    DiscardAll();
+
+    const auto consoleLogger = spdlog::get("scripting");
 
     const auto& cModsRoot = m_paths.ModsRoot();
     for (const auto& file : std::filesystem::directory_iterator(cModsRoot))
@@ -23,98 +33,119 @@ void ScriptStore::LoadAll()
         if (!file.is_directory())
             continue;
 
-        auto fPath = file.path();
+        const auto name = UTF16ToUTF8(file.path().filename().native());
+        const auto pathStr = UTF16ToUTF8((cModsRoot / file.path()).native());
 
-        try
+        if (file.path().native().starts_with(L"cet\\"))
         {
-            if (is_symlink(fPath))
-                fPath = read_symlink(fPath);
-            else if (is_symlink(fPath / "init.lua"))
-                fPath = read_symlink(fPath / "init.lua").parent_path();
-        }
-        catch (std::exception& e)
-        {
-        }
-
-        fPath = absolute(fPath);
-        auto fPathStr = fPath.string();
-
-        if (!exists(fPath / "init.lua"))
-        {
-            consoleLogger->warn("Ignoring directory that does not contain init.lua! ('{}')", fPathStr);
+            consoleLogger->warn("Ignoring mod using reserved name! ('{}')", pathStr);
             continue;
         }
 
-        auto name = file.path().filename().string();
-        if (name.find('.') != std::string::npos)
+        const auto path = GetAbsolutePath(file.path(), cModsRoot, false);
+        if (path.empty())
         {
-            consoleLogger->info("Ignoring directory containing '.', as this is reserved character! ('{}')", fPathStr);
+            consoleLogger->error("Tried to access invalid directory! ('{}')", pathStr);
             continue;
         }
 
-        auto ctx = ScriptContext{m_sandbox, fPath, name};
+        if (!exists(path / L"init.lua"))
+        {
+            consoleLogger->warn("Ignoring mod which does not contain init.lua! ('{}')", pathStr);
+            continue;
+        }
+
+        auto ctx = ScriptContext{m_sandbox, path, name};
         if (ctx.IsValid())
         {
-            auto& ctxBinds = ctx.GetBinds();
-            m_vkBindInfos.insert(m_vkBindInfos.cend(), ctxBinds.cbegin(), ctxBinds.cend());
             m_contexts.emplace(name, std::move(ctx));
-            consoleLogger->info("Mod {} loaded! ('{}')", name, fPathStr);
+            consoleLogger->info("Mod {} loaded! ('{}')", name, pathStr);
         }
         else
-        {
-            consoleLogger->error("Mod {} failed to load! ('{}')", name, fPathStr);
-        }
+            consoleLogger->error("Mod {} failed to load! ('{}')", name, pathStr);
     }
 
-    m_bindings.InitializeMods(m_vkBindInfos);
+    for (auto& contextIt : m_contexts)
+        m_vkBinds.insert({contextIt.first, contextIt.second.GetBinds()});
+
+    m_bindings.InitializeMods(m_vkBinds);
 }
 
-const TiltedPhoques::Vector<VKBindInfo>& ScriptStore::GetBinds() const
+const VKBind* ScriptStore::GetBind(const VKModBind& acModBind) const
 {
-    return m_vkBindInfos;
+    if (acModBind == Bindings::GetOverlayToggleModBind())
+        return &Bindings::GetOverlayToggleBind();
+
+    const auto it = m_contexts.find(acModBind.ModName);
+    if (it != m_contexts.cend())
+        return it->second.GetBind(acModBind.ID);
+
+    return nullptr;
+}
+
+const TiltedPhoques::Vector<VKBind>* ScriptStore::GetBinds(const std::string& acModName) const
+{
+    const auto it = m_contexts.find(acModName);
+    if (it != m_contexts.cend())
+    {
+        return &it->second.GetBinds();
+    }
+
+    return nullptr;
+}
+
+const TiltedPhoques::Map<std::string, std::reference_wrapper<const TiltedPhoques::Vector<VKBind>>>& ScriptStore::GetAllBinds() const
+{
+    return m_vkBinds;
+}
+
+void ScriptStore::TriggerOnHook() const
+{
+    for (const auto& mod : m_contexts | std::views::values)
+        mod.TriggerOnHook();
 }
 
 void ScriptStore::TriggerOnTweak() const
 {
-    for (const auto& kvp : m_contexts)
-        kvp.second.TriggerOnTweak();
+    for (const auto& mod : m_contexts | std::views::values)
+        mod.TriggerOnTweak();
 }
 
 void ScriptStore::TriggerOnInit() const
 {
-    for (const auto& kvp : m_contexts)
-        kvp.second.TriggerOnInit();
+    for (const auto& mod : m_contexts | std::views::values)
+        mod.TriggerOnInit();
 }
 
 void ScriptStore::TriggerOnUpdate(float aDeltaTime) const
 {
-    for (const auto& kvp : m_contexts)
-        kvp.second.TriggerOnUpdate(aDeltaTime);
+    for (const auto& mod : m_contexts | std::views::values)
+        mod.TriggerOnUpdate(aDeltaTime);
 }
 
 void ScriptStore::TriggerOnDraw() const
 {
-    for (const auto& kvp : m_contexts)
-        kvp.second.TriggerOnDraw();
+    for (const auto& mod : m_contexts | std::views::values)
+        mod.TriggerOnDraw();
 }
 
 void ScriptStore::TriggerOnOverlayOpen() const
 {
-    for (const auto& kvp : m_contexts)
-        kvp.second.TriggerOnOverlayOpen();
+    for (const auto& mod : m_contexts | std::views::values)
+        mod.TriggerOnOverlayOpen();
 }
 
 void ScriptStore::TriggerOnOverlayClose() const
 {
-    for (const auto& kvp : m_contexts)
-        kvp.second.TriggerOnOverlayClose();
+    for (const auto& mod : m_contexts | std::views::values)
+        mod.TriggerOnOverlayClose();
 }
 
 sol::object ScriptStore::GetMod(const std::string& acName) const
 {
-    const auto itor = m_contexts.find(acName);
-    if (itor != std::end(m_contexts))
-        return itor->second.GetRootObject();
+    const auto it = m_contexts.find(acName);
+    if (it != m_contexts.cend())
+        return it->second.GetRootObject();
 
     return sol::nil;
 }

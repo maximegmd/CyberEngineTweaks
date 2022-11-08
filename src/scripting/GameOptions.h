@@ -54,7 +54,6 @@ struct GameOption
 
         RED4ext::CString String;
     };
-    
 
     std::string GetInfo();
 
@@ -106,5 +105,4 @@ public:
     static void List(const std::string& category);
 
     static TiltedPhoques::Vector<GameOption*>& GetList();
-
 };

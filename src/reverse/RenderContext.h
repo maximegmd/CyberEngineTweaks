@@ -4,7 +4,7 @@ struct RenderContext
 {
     struct Device
     {
-        IDXGISwapChain* pSwapChain;
+        IDXGISwapChain4* pSwapChain;
         uint8_t pad8[0x90 - 0x8];
     };
 

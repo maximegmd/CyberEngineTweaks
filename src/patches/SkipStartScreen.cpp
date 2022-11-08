@@ -1,10 +1,8 @@
 #include <stdafx.h>
 
-#include "Image.h"
-
-void StartScreenPatch(const Image* apImage)
+void StartScreenPatch()
 {
-    RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CPatches_SkipStartScreen);
+    const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CPatches_SkipStartScreen);
     uint8_t* pLocation = func.GetAddr();
 
     if (pLocation == nullptr)

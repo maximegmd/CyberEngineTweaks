@@ -28,13 +28,15 @@ def get_groups() -> List[Group]:
     # Add new patterns here, please try to keep the groups ordering alphabetized.
     return [
         Group(name='CRenderGlobal', pointers=[
-            Item(name='InstanceOffset', pattern='49 8B 95 ? ? ? ? 48 8D 44 24 30 0F 57 C0', expected=1, offset=3),
+            # instance offset is used by CRenderNode_Present_DoInternal
+            Item(name='InstanceOffset', pattern='48 89 5C 24 08 48 89 6C 24 18 48 89 74 24 20 57 41 56 41 57 48 83 EC 30 8B 01 41 8B F8 4C 8B 35', expected=1, offset=32),
             Item(name='_DoNotUse_RenderQueueOffset', pattern='49 39 29 0F 84 ? ? ? ? 41 39 69 24 0F 84 ? ? ? ? 49 8B 95', expected=1)
         ], functions=[
-            Item(name='Resize', pattern='44 88 4C 24 20 44 89 44 24 18 89 54 24 10 89 4C', expected=1) 
+            Item(name='Resize', pattern='44 88 4C 24 20 44 89 44 24 18 89 54 24 10 89 4C', expected=1) ,
+            Item(name='Shutdown', pattern='48 89 6C 24 20 41 56 48 83 EC 20 48 8D 05 3E 85 99 00', expected=1)
         ]),
         Group(name='CRenderNode_Present', functions=[
-            Item(name='DoInternal', pattern='48 89 5C 24 08 48 89 6C  24 18 48 89 74 24 20 57 41 56 41 57 48 83 EC 30 8B 01 41 8B F8 4C 8B 35', expected=1)
+            Item(name='DoInternal', pattern='48 89 5C 24 08 48 89 6C 24 18 48 89 74 24 20 57 41 56 41 57 48 83 EC 30 8B 01 41 8B F8 4C 8B 35', expected=1)
         ]),
         Group(name='CScript', functions=[
             Item(name='RunPureScript', pattern='40 55 48 81 EC D0 00 00 00 48 8D 6C 24 40 8B', expected=1),
@@ -44,6 +46,7 @@ def get_groups() -> List[Group]:
             Item(name='LogChannel', pattern='4C 8B DC 49 89 5B 08 49  89 73 18 57 48 83 EC 70 48 8B 02 ? ? ? ? ? ? ? FE 42 62 4D 8D 43 10 33 FF 45 33 C9 49 89  7B 10 48 8B DA 48 89 7A', expected=1),
             Item(name='TDBIDConstructorDerive', pattern='40 53 48 83 EC 30 33 C0 4C 89 44 24 20 48 8B DA', expected=1),
             Item(name='ProcessRunningState', pattern='40 53 48 83 EC 20 48 8B 0D ? ? ? ? 48 8B DA E8 ? ? ? ? 84 C0', expected=1),
+            Item(name='ProcessShutdownState', pattern='48 89 6C 24 18 56 48 83 EC 30 48 8B 0D ? ? ? ?', expected=1),
             Item(name='TranslateBytecode', pattern='4C 8B DC 55 53 57 41 55 49 8D 6B A1 48 81 EC 98 00 00 00 48 8B 1A 4C 8B E9 8B 42 0C 48 8D 3C C3'),
             Item(name='TweakDBLoad', pattern='48 89 5C 24 18 55 57 41 56 48 8B EC 48 83 EC 70 48 8B D9 45 33 F6 48 8D', expected=1),
             Item(name='RegisterMemberFunction', pattern='48 89 5C 24 08 57 48 83 EC 20 49 8B C1 4D 8B D0 44 8B 4C 24 58 48 8B DA 41 83 C9 03', expected=1)
@@ -74,6 +77,9 @@ def get_groups() -> List[Group]:
         ]),
         Group(name='CGame', functions=[
             Item(name='Main', pattern='40 57 48 83 EC 70 48 8B F9 0F 29 7C 24 50 48 8D 4C 24 38', expected=1)
+        ]),
+        Group(name='PlayerSystem', functions=[
+            Item(name='OnPlayerSpawned', pattern='48 8B C4 4C 89 48 20 55 56 57 48 8B EC 48 81 EC 80 00 00 00 44 8B 15 25 60 54 02 48 8B F1', expected=1)
         ]),
     ]
 

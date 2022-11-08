@@ -3,17 +3,14 @@
 #include "Widget.h"
 
 struct LuaVM;
-
 struct TweakDBEditor : Widget
 {
     TweakDBEditor(LuaVM& aVm);
     ~TweakDBEditor() override = default;
 
-    bool OnEnable() override;
-    bool OnDisable() override;
-    void Update() override;
-
 protected:
+    void OnUpdate() override;
+
     void RefreshAll();
     void RefreshRecords();
     void RefreshFlats();
@@ -62,10 +59,10 @@ private:
         void End();
 
     private:
-        ImVec2 m_itemSize;
-        float m_beginCursorY;
+        ImVec2 m_itemSize{ 0.0f, 0.0f };
+        float m_beginCursorY{ 0.0f };
     };
-    
+
     struct CachedFlat
     {
         bool m_isFiltered = false;
@@ -130,8 +127,8 @@ private:
     LuaVM& m_vm;
     bool m_initialized = false;
     int32_t m_flatGroupNameDepth = 1;
-    TiltedPhoques::Vector<CachedFlatGroup> m_cachedFlatGroups;
-    TiltedPhoques::Vector<CachedRecordGroup> m_cachedRecords;
+    TiltedPhoques::Map<RED4ext::CName, CachedFlatGroup> m_cachedFlatGroups;
+    TiltedPhoques::Map<RED4ext::CName, CachedRecordGroup> m_cachedRecords;
     static bool s_recordsFilterIsRegex;
     static bool s_flatsFilterIsRegex;
     static char s_recordsFilterBuffer[256];

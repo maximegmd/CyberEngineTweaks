@@ -13,7 +13,7 @@ ClassReference::ClassReference(const TiltedPhoques::Locked<sol::state, std::recu
 }
 
 ClassReference::ClassReference(ClassReference&& aOther) noexcept
-    : ClassType(std::move(aOther))
+    : ClassType(aOther)
     , m_pInstance(aOther.m_pInstance)
 {
     aOther.m_pInstance = nullptr;

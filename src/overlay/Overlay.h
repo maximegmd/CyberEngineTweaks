@@ -1,10 +1,11 @@
 #pragma once
 
-#include "widgets/Widget.h"
 #include "widgets/Console.h"
 #include "widgets/Bindings.h"
 #include "widgets/Settings.h"
 #include "widgets/TweakDBEditor.h"
+#include "widgets/GameLog.h"
+#include "widgets/ImGuiDebug.h"
 
 using TClipToCenter = HWND(RED4ext::CGameEngine::UnkC0*);
 
@@ -12,54 +13,49 @@ struct D3D12;
 struct Options;
 
 struct Overlay
-{  
+{
     Overlay(D3D12& aD3D12, VKBindings& aBindings, Options& aOptions, LuaVM& aVm);
     ~Overlay();
 
     void PostInitialize();
-    
+
     [[nodiscard]] bool IsInitialized() const noexcept;
 
-    Console& GetConsole();
-    Bindings& GetBindings();
-    Settings& GetSettings();
-    
+    [[nodiscard]] Console& GetConsole();
+    [[nodiscard]] Bindings& GetBindings();
+    [[nodiscard]] Settings& GetSettings();
+
     void Toggle();
     [[nodiscard]] bool IsEnabled() const noexcept;
-    [[nodiscard]] VKBind GetBind() const noexcept;
 
     void Update();
 
-    LRESULT OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam);
-
 protected:
-    
     void Hook();
-    
+
     static BOOL ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis);
 
 private:
-
-    void SetActiveWidget(WidgetID aNewActive);
-    
-    VKBindInfo m_VKBIOverlay{ { "cet.overlay_key", "Overlay Key", [this](){ Toggle(); } }, 0, 0, false };
+    void DrawToolbar();
 
     Console m_console;
+    bool m_consoleEnabled = false;
     Bindings m_bindings;
+    bool m_bindingsEnabled = false;
     Settings m_settings;
+    bool m_settingsEnabled = false;
     TweakDBEditor m_tweakDBEditor;
-    std::array<Widget*, size_t(WidgetID::COUNT)> m_widgets{ }; 
+    bool m_tweakDBEditorEnabled = false;
+    GameLog m_gameLog;
+    bool m_gameLogEnabled = false;
+    ImGuiDebug m_imguiDebug;
+    bool m_imguiDebugEnabled = false;
 
     TClipToCenter* m_realClipToCenter{ nullptr };
 
-    WidgetID m_activeWidgetID{ WidgetID::CONSOLE };
-    WidgetID m_nextActiveWidgetID{ WidgetID::CONSOLE };
-    
     std::atomic_bool m_enabled{ false };
     std::atomic_bool m_toggled{ false };
     bool m_initialized{ false };
-
-    std::atomic_bool m_showFirstTimeModal{ false };
 
     D3D12& m_d3d12;
     Options& m_options;

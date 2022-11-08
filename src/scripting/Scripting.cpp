@@ -6,45 +6,40 @@
 #include "GameOptions.h"
 #include "Texture.h"
 
-#include <sol_imgui/sol_imgui.h>
+#include <CET.h>
 #include <lsqlite3/lsqlite3.h>
-
-#include <d3d12/D3D12.h>
-
 #include <reverse/Type.h>
-#include <reverse/BasicTypes.h>
 #include <reverse/SingletonReference.h>
 #include <reverse/StrongReference.h>
 #include <reverse/WeakReference.h>
 #include <reverse/ResourceAsyncReference.h>
-#include <reverse/Enum.h>
-#include <reverse/TweakDB/TweakDB.h>
 #include <reverse/RTTILocator.h>
-#include <reverse/RTTIHelper.h>
 #include <reverse/RTTIExtender.h>
 #include <reverse/Converter.h>
+#include <reverse/TweakDB/TweakDB.h>
+#include <sol_imgui/sol_imgui.h>
+#include <Utils.h>
 
-#include "Utils.h"
-
-#ifndef NDEBUG
+#ifdef CET_DEBUG
 #include "GameHooks.h"
 #include "GameDump.h"
 #include <RED4ext/Dump/Reflection.hpp>
 #endif
 
-static constexpr const bool s_cThrowLuaErrors = true;
+static constexpr bool s_cThrowLuaErrors = true;
 
-static RTTILocator s_stringType{RED4ext::FNV1a("String")};
+static RTTILocator s_stringType{RED4ext::FNV1a64("String")};
 
-Scripting::Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12, Options& aOptions)
+Scripting::Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12)
     : m_sandbox(this, aBindings)
+    , m_mapper(m_lua.AsRef(), m_sandbox)
     , m_store(m_sandbox, aPaths, aBindings)
-    , m_override(this, aOptions)
+    , m_override(this)
     , m_paths(aPaths)
     , m_d3d12(aD3D12)
-    , m_mapper(m_lua.AsRef(), m_global)
 {
     CreateLogger(aPaths.CETRoot() / "scripting.log", "scripting");
+    CreateLogger(aPaths.CETRoot() / "gamelog.log", "gamelog");
 }
 
 void Scripting::Initialize()
@@ -60,9 +55,47 @@ void Scripting::Initialize()
     // as this could get overriden by LUA_PATH environment variable
     luaVm["package"]["path"] = "./?.lua";
 
-    sol_ImGui::InitBindings(luaVm);
+    // execute autoexec.lua inside our default script directory
+    const auto previousCurrentPath = std::filesystem::current_path();
+    current_path(m_paths.CETRoot() / "scripts");
+    luaVm.script("json = require 'json/json'", sol:: detail::default_chunk_name(), sol::load_mode::text);
+    current_path(previousCurrentPath);
 
-    luaVm["print"] = [](sol::variadic_args aArgs, sol::this_state aState)
+    // initialize sandbox
+    m_sandbox.Initialize();
+
+    auto& globals = m_sandbox.GetEnvironment();
+
+    // load in imgui bindings
+    sol_ImGui::InitBindings(luaVm, globals);
+    sol::table imgui = globals["ImGui"];
+    Texture::BindTexture(imgui);
+    for (auto [key, value] : imgui)
+    {
+        if (value.get_type() != sol::type::function)
+            continue;
+
+        sol::function original = value;
+        imgui[key] = make_object(luaVm, [this, original](sol::variadic_args aVariadicArgs, sol::this_environment aThisEnv) -> sol::variadic_results {
+            const sol::environment cEnv = aThisEnv;
+            const auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+            if (!m_sandbox.GetImGuiAvailable())
+            {
+                logger->error("Tried to call ImGui from invalid event!");
+                throw "Tried to call ImGui from invalid event!";
+            }
+
+            return original(as_args(aVariadicArgs));
+        });
+    }
+
+    // setup logger for console sandbox
+    auto& consoleSB = m_sandbox[0];
+    auto& consoleSBEnv = consoleSB.GetEnvironment();
+    consoleSBEnv["__logger"] = spdlog::get("scripting");
+
+    // load in game bindings
+    globals["print"] = [](sol::variadic_args aArgs, sol::this_state aState)
     {
         std::ostringstream oss;
         sol::state_view s(aState);
@@ -79,24 +112,20 @@ void Scripting::Initialize()
         spdlog::get("scripting")->info(oss.str());
     };
 
-    // global fallback table for all environments
-    sol::table luaGlobal = sol::table(luaVm, sol::create);
-    luaVm[m_global] = luaGlobal;
-
-    luaGlobal["GetVersion"] = []() -> std::string
+    globals["GetVersion"] = []() -> std::string
     {
         return CET_BUILD_COMMIT;
     };
 
-    luaGlobal["GetDisplayResolution"] = [this]() -> std::tuple<float, float>
+    globals["GetDisplayResolution"] = [this]() -> std::tuple<float, float>
     {
         const auto resolution = m_d3d12.GetResolution();
         return {static_cast<float>(resolution.cx), static_cast<float>(resolution.cy)};
     };
 
-    luaGlobal["ModArchiveExists"] = [this](const std::string& acArchiveName) -> bool
+    globals["ModArchiveExists"] = [this](const std::string& acArchiveName) -> bool
     {
-        auto resourceDepot = RED4ext::ResourceDepot::Get();
+        const auto resourceDepot = RED4ext::ResourceDepot::Get();
 
         for (const auto& archiveGroup : resourceDepot->groups)
         {
@@ -114,28 +143,6 @@ void Scripting::Initialize()
         return false;
     };
 
-    // fake game object to prevent errors from older autoexec.lua
-    luaVm["Game"] = sol::table(luaVm, sol::create);
-    luaGlobal["Game"] = luaVm["Game"];
-
-    // execute autoexec.lua inside our default script directory
-    current_path(m_paths.CETRoot() / "scripts");
-    if (std::filesystem::exists("autoexec.lua"))
-        luaVm.do_file("autoexec.lua");
-    else
-        spdlog::get("scripting")->warn("WARNING: missing CET autoexec.lua!");
-
-    // initialize sandbox
-    m_sandbox.Initialize();
-
-    // setup logger for console sandbox
-    auto& consoleSB = m_sandbox[0];
-    auto& consoleSBEnv = consoleSB.GetEnvironment();
-    consoleSBEnv["__logger"] = spdlog::get("scripting");
-
-    // set current path for following scripts to our ModsPath
-    current_path(m_paths.ModsRoot());
-
     // load mods
     m_store.LoadAll();
 }
@@ -144,16 +151,14 @@ void Scripting::PostInitializeScripting()
 {
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
+    auto& globals = m_sandbox.GetEnvironment();
 
     if (luaVm["__Game"] != sol::nil)
     {
         m_mapper.Refresh();
         m_override.Refresh();
-        m_sandbox.PostInitialize();
         return;
     }
-
-    sol::table luaGlobal = luaVm[m_global];
 
     luaVm.new_usertype<Scripting>("__Game",
         sol::meta_function::construct, sol::no_constructor,
@@ -170,55 +175,55 @@ void Scripting::PostInitializeScripting()
         sol::meta_function::index, &ClassType::Index,
         sol::meta_function::new_index, &ClassType::NewIndex);
 
-    luaVm.new_usertype<Type::Descriptor>("Descriptor",
+    globals.new_usertype<Type::Descriptor>("Descriptor",
         sol::meta_function::to_string, &Type::Descriptor::ToString);
 
-    luaVm.new_usertype<StrongReference>("StrongReference",
+    globals.new_usertype<StrongReference>("StrongReference",
         sol::meta_function::construct, sol::no_constructor,
         sol::base_classes, sol::bases<Type, ClassType>(),
         sol::meta_function::index, &StrongReference::Index,
         sol::meta_function::new_index, &StrongReference::NewIndex);
 
-    luaVm.new_usertype<WeakReference>("WeakReference",
+    globals.new_usertype<WeakReference>("WeakReference",
         sol::meta_function::construct, sol::no_constructor,
         sol::base_classes, sol::bases<Type, ClassType>(),
         sol::meta_function::index, &WeakReference::Index,
         sol::meta_function::new_index, &WeakReference::NewIndex);
 
-    luaVm.new_usertype<SingletonReference>("SingletonReference",
+    globals.new_usertype<SingletonReference>("SingletonReference",
         sol::meta_function::construct, sol::no_constructor,
         sol::base_classes, sol::bases<Type, ClassType>(),
         sol::meta_function::index, &SingletonReference::Index,
         sol::meta_function::new_index, &SingletonReference::NewIndex);
 
-    luaVm.new_usertype<ClassReference>("ClassReference",
+    globals.new_usertype<ClassReference>("ClassReference",
         sol::meta_function::construct, sol::no_constructor,
         sol::base_classes, sol::bases<Type, ClassType>(),
         sol::meta_function::index, &ClassReference::Index,
         sol::meta_function::new_index, &ClassReference::NewIndex);
 
-    luaVm.new_usertype<ResourceAsyncReference>("ResourceAsyncReference",
+    globals.new_usertype<ResourceAsyncReference>("ResourceAsyncReference",
         sol::meta_function::construct, sol::no_constructor,
         sol::base_classes, sol::bases<Type, ClassType>(),
         sol::meta_function::index, &ResourceAsyncReference::Index,
         sol::meta_function::new_index, &ResourceAsyncReference::NewIndex,
-        "hash", sol::property(&ResourceAsyncReference::GetLuaHash));
+        "hash", property(&ResourceAsyncReference::GetLuaHash));
 
-    luaVm.new_usertype<UnknownType>("Unknown",
+    globals.new_usertype<UnknownType>("Unknown",
         sol::meta_function::construct, sol::no_constructor,
         sol::base_classes, sol::bases<Type>(),
         sol::meta_function::index, &UnknownType::Index,
         sol::meta_function::new_index, &UnknownType::NewIndex);
 
-    luaGlobal["IsDefined"] =  sol::overload(
+    globals["IsDefined"] =  sol::overload(
         // Check if weak reference is still valid
-        [](WeakReference& aRef) -> bool
+        [](const WeakReference& aRef) -> bool
         {
             return !aRef.m_weakHandle.Expired();
         },
         // To make it callable for strong reference
         // although it's always valid unless it's null
-        [](StrongReference& aRef) -> bool
+        [](const StrongReference&) -> bool
         {
             return true;
         },
@@ -228,18 +233,16 @@ void Scripting::PostInitializeScripting()
             return false;
         });
 
-    luaVm.new_usertype<Enum>("Enum",
+    globals.new_usertype<Enum>("Enum",
         sol::constructors<Enum(const std::string&, const std::string&),
                           Enum(const std::string&, uint32_t), Enum(const Enum&)>(),
         sol::meta_function::to_string, &Enum::ToString,
         sol::meta_function::equal_to, &Enum::operator==,
         "value", sol::property(&Enum::GetValueName, &Enum::SetValueByName));
 
-    luaGlobal["Enum"] = luaVm["Enum"];
-
-    luaGlobal["EnumInt"] = [this](Enum& aEnum) -> sol::object
+    globals["EnumInt"] = [this](Enum& aEnum) -> sol::object
     {
-        static RTTILocator s_uint64Type{RED4ext::FNV1a("Uint64")};
+        static RTTILocator s_uint64Type{RED4ext::FNV1a64("Uint64")};
 
         auto lockedState = m_lua.Lock();
 
@@ -250,7 +253,7 @@ void Scripting::PostInitializeScripting()
         return Converter::ToLua(stackType, lockedState);
     };
 
-    luaVm.new_usertype<Vector3>("Vector3",
+    globals.new_usertype<Vector3>("Vector3",
         sol::constructors<Vector3(float, float, float), Vector3(float, float), Vector3(float), Vector3(const Vector3&), Vector3()>(),
         sol::meta_function::to_string, &Vector3::ToString,
         sol::meta_function::equal_to, &Vector3::operator==,
@@ -258,8 +261,7 @@ void Scripting::PostInitializeScripting()
         "y", &Vector3::y,
         "z", &Vector3::z);
 
-    luaGlobal["Vector3"] = luaVm["Vector3"];
-    luaGlobal["ToVector3"] = [](sol::table table) -> Vector3
+    globals["ToVector3"] = [](sol::table table) -> Vector3
     {
         return Vector3
         {
@@ -278,9 +280,9 @@ void Scripting::PostInitializeScripting()
         "y", &Vector4::y,
         "z", &Vector4::z,
         "w", &Vector4::w);
+    globals["Vector4"] = luaVm["Vector4"];
 
-    luaGlobal["Vector4"] = luaVm["Vector4"];
-    luaGlobal["ToVector4"] = [](sol::table table) -> Vector4
+    globals["ToVector4"] = [](sol::table table) -> Vector4
     {
         return Vector4
         {
@@ -299,9 +301,9 @@ void Scripting::PostInitializeScripting()
         "roll", &EulerAngles::roll,
         "pitch", &EulerAngles::pitch,
         "yaw", &EulerAngles::yaw);
+    globals["EulerAngles"] = luaVm["EulerAngles"];
 
-    luaGlobal["EulerAngles"] = luaVm["EulerAngles"];
-    luaGlobal["ToEulerAngles"] = [](sol::table table) -> EulerAngles
+    globals["ToEulerAngles"] = [](sol::table table) -> EulerAngles
     {
         return EulerAngles
         {
@@ -320,9 +322,9 @@ void Scripting::PostInitializeScripting()
         "j", &Quaternion::j,
         "k", &Quaternion::k,
         "r", &Quaternion::r);
+    globals["Quaternion"] = luaVm["Quaternion"];
 
-    luaGlobal["Quaternion"] = luaVm["Quaternion"];
-    luaGlobal["ToQuaternion"] = [](sol::table table) -> Quaternion
+    globals["ToQuaternion"] = [](sol::table table) -> Quaternion
     {
         return Quaternion
         {
@@ -333,7 +335,7 @@ void Scripting::PostInitializeScripting()
         };
     };
 
-    luaVm.new_usertype<CName>("CName",
+    globals.new_usertype<CName>("CName",
         sol::constructors<CName(const std::string&), CName(uint64_t), CName(uint32_t, uint32_t),
                           CName(const CName&), CName()>(),
         sol::call_constructor, sol::constructors<CName(const std::string&), CName(uint64_t)>(),
@@ -344,8 +346,7 @@ void Scripting::PostInitializeScripting()
         "value", sol::property(&CName::AsString),
         "add", &CName::Add);
 
-    luaGlobal["CName"] = luaVm["CName"];
-    luaGlobal["ToCName"] = [](sol::table table) -> CName
+    globals["ToCName"] = [](sol::table table) -> CName
     {
         return CName
         {
@@ -354,7 +355,7 @@ void Scripting::PostInitializeScripting()
         };
     };
 
-    luaVm.new_usertype<TweakDBID>("TweakDBID",
+    globals.new_usertype<TweakDBID>("TweakDBID",
         sol::constructors<TweakDBID(const std::string&), TweakDBID(const TweakDBID&, const std::string&),
                           TweakDBID(uint32_t, uint8_t), TweakDBID(const TweakDBID&), TweakDBID()>(),
         sol::call_constructor, sol::constructors<TweakDBID(const std::string&)>(),
@@ -363,11 +364,17 @@ void Scripting::PostInitializeScripting()
         sol::meta_function::addition, &TweakDBID::operator+,
         sol::meta_function::concatenation, &TweakDBID::operator+,
         "hash", &TweakDBID::name_hash,
-        "length", &TweakDBID::name_length);
+        "length", &TweakDBID::name_length,
+        "value", sol::property(&TweakDBID::AsString));
 
-    luaGlobal["TweakDBID"] = luaVm["TweakDBID"];
-    luaGlobal["ToTweakDBID"] = [](sol::table table) -> TweakDBID
+    globals["ToTweakDBID"] = [](sol::table table) -> TweakDBID
     {
+        // try with name first
+        const auto name = table["name"].get_or<std::string>("");
+        if (!name.empty())
+            return TweakDBID(name);
+
+        // if conversion from name failed, look for old hash + length
         return TweakDBID
         {
             table["hash"].get_or<uint32_t>(0),
@@ -386,9 +393,9 @@ void Scripting::PostInitializeScripting()
         "rng_seed", &ItemID::rng_seed,
         "unknown", &ItemID::unknown,
         "maybe_type", &ItemID::maybe_type);
+    globals["ItemID"] = luaVm["ItemID"];
 
-    luaGlobal["ItemID"] = luaVm["ItemID"];
-    luaGlobal["ToItemID"] = [](sol::table table) -> ItemID
+    globals["ToItemID"] = [](sol::table table) -> ItemID
     {
         return ItemID
         {
@@ -399,16 +406,14 @@ void Scripting::PostInitializeScripting()
         };
     };
 
-    luaVm.new_usertype<CRUID>("CRUID",
+    globals.new_usertype<CRUID>("CRUID",
         sol::constructors<CRUID(uint64_t)>(),
         sol::call_constructor, sol::constructors<CRUID(uint64_t)>(),
         sol::meta_function::to_string, &CRUID::ToString,
         sol::meta_function::equal_to, &CRUID::operator==,
         "hash", &CRUID::hash);
 
-    luaGlobal["CRUID"] = luaVm["CRUID"];
-
-    luaVm.new_usertype<gamedataLocKeyWrapper>("LocKey",
+    globals.new_usertype<gamedataLocKeyWrapper>("LocKey",
         sol::constructors<gamedataLocKeyWrapper(uint64_t)>(),
         sol::meta_function::to_string, &gamedataLocKeyWrapper::ToString,
         sol::meta_function::equal_to, &gamedataLocKeyWrapper::operator==,
@@ -424,7 +429,7 @@ void Scripting::PostInitializeScripting()
                 }
                 else if (IsLuaCData(aValue))
                 {
-                    std::string str = lua["tostring"](aValue);
+                    const std::string str = lua["tostring"](aValue);
                     result.hash = std::stoull(str);
                 }
                 else if (aValue.get_type() == sol::type::string)
@@ -437,13 +442,11 @@ void Scripting::PostInitializeScripting()
         }),
         "hash", sol::property([](gamedataLocKeyWrapper& aThis, sol::this_state aState) -> sol::object {
             sol::state_view lua(aState);
-            auto converted = lua.script(fmt::format("return {}ull", aThis.hash));
+            const auto converted = lua.script(fmt::format("return {}ull", aThis.hash));
             return converted.get<sol::object>();
         }));
 
-    luaGlobal["LocKey"] = luaVm["LocKey"];
-
-    luaVm.new_usertype<GameOptions>("GameOptions",
+    globals.new_usertype<GameOptions>("GameOptions",
         sol::meta_function::construct, sol::no_constructor,
         "Print", &GameOptions::Print,
         "Get", &GameOptions::Get,
@@ -458,44 +461,54 @@ void Scripting::PostInitializeScripting()
         "Dump", &GameOptions::Dump,
         "List", &GameOptions::List);
 
-    luaGlobal["GameOptions"] = luaVm["GameOptions"];
+    m_sandbox.PostInitializeScripting();
+
+    TriggerOnHook();
+}
+
+void Scripting::PostInitializeTweakDB()
+{
+    auto lua = m_lua.Lock();
+    auto& luaVm = lua.Get();
+    auto& globals = m_sandbox.GetEnvironment();
 
     luaVm.new_usertype<TweakDB>("__TweakDB",
         sol::meta_function::construct, sol::no_constructor,
         "DebugStats", &TweakDB::DebugStats,
         "GetRecords", &TweakDB::GetRecords,
-        "GetRecord", sol::overload(&TweakDB::GetRecordByName, &TweakDB::GetRecord),
-        "Query", sol::overload(&TweakDB::QueryByName, &TweakDB::Query),
-        "GetFlat", sol::overload(&TweakDB::GetFlatByName, &TweakDB::GetFlat),
-        "SetFlats", sol::overload(&TweakDB::SetFlatsByName, &TweakDB::SetFlats),
-        "SetFlat", sol::overload(&TweakDB::SetFlatByNameAutoUpdate, &TweakDB::SetFlatAutoUpdate, &TweakDB::SetTypedFlat, &TweakDB::SetTypedFlatByName),
-        "SetFlatNoUpdate", sol::overload(&TweakDB::SetFlatByName, &TweakDB::SetFlat),
-        "Update", sol::overload(&TweakDB::UpdateRecordByName, &TweakDB::UpdateRecordByID, &TweakDB::UpdateRecord),
-        "CreateRecord", sol::overload(&TweakDB::CreateRecordToID, &TweakDB::CreateRecord),
-        "CloneRecord", sol::overload(&TweakDB::CloneRecordByName, &TweakDB::CloneRecordToID, &TweakDB::CloneRecord),
-        "DeleteRecord", sol::overload(&TweakDB::DeleteRecordByID, &TweakDB::DeleteRecord));
+        "GetRecord", overload(&TweakDB::GetRecordByName, &TweakDB::GetRecord),
+        "Query", overload(&TweakDB::QueryByName, &TweakDB::Query),
+        "GetFlat", overload(&TweakDB::GetFlatByName, &TweakDB::GetFlat),
+        "SetFlats", overload(&TweakDB::SetFlatsByName, &TweakDB::SetFlats),
+        "SetFlat", overload(&TweakDB::SetFlatByNameAutoUpdate, &TweakDB::SetFlatAutoUpdate, &TweakDB::SetTypedFlat, &TweakDB::SetTypedFlatByName),
+        "SetFlatNoUpdate", overload(&TweakDB::SetFlatByName, &TweakDB::SetFlat),
+        "Update", overload(&TweakDB::UpdateRecordByName, &TweakDB::UpdateRecordByID, &TweakDB::UpdateRecord),
+        "CreateRecord", overload(&TweakDB::CreateRecordToID, &TweakDB::CreateRecord),
+        "CloneRecord", overload(&TweakDB::CloneRecordByName, &TweakDB::CloneRecordToID, &TweakDB::CloneRecord),
+        "DeleteRecord", overload(&TweakDB::DeleteRecordByID, &TweakDB::DeleteRecord));
 
-    luaGlobal["TweakDB"] = TweakDB(m_lua.AsRef());
+    globals["TweakDB"] = TweakDB(m_lua.AsRef());
 
-    m_sandbox.PostInitialize();
+    m_sandbox.PostInitializeTweakDB();
+
+    TriggerOnTweak();
 }
 
 void Scripting::PostInitializeMods()
 {
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
+    auto& globals = m_sandbox.GetEnvironment();
 
-    sol::table luaGlobal = luaVm[m_global];
-
-    luaGlobal["NewObject"] = [this](const std::string& acName, sol::this_environment aEnv) -> sol::object
+    globals["NewObject"] = [this](const std::string& acName, sol::this_environment aEnv) -> sol::object
     {
         auto* pRtti = RED4ext::CRTTISystem::Get();
-        auto* pType = pRtti->GetType(RED4ext::FNV1a(acName.c_str()));
+        auto* pType = pRtti->GetType(RED4ext::FNV1a64(acName.c_str()));
 
         if (!pType)
         {
             const sol::environment cEnv = aEnv;
-            std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+            const auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
             logger->info("Type '{}' not found.", acName);
             return sol::nil;
         }
@@ -505,48 +518,47 @@ void Scripting::PostInitializeMods()
         return RTTIHelper::Get().NewHandle(pType, sol::nullopt);
     };
 
-    luaGlobal["GetSingleton"] = [this](const std::string& acName, sol::this_environment aThisEnv)
+    globals["GetSingleton"] = [this](const std::string& acName, sol::this_environment aThisEnv)
     {
         return this->GetSingletonHandle(acName, aThisEnv);
     };
 
-    luaGlobal["Override"] = [this](const std::string& acTypeName, const std::string& acFullName,
+    globals["Override"] = [this](const std::string& acTypeName, const std::string& acFullName,
                                    sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
         m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, true);
     };
 
-    luaGlobal["ObserveBefore"] = [this](const std::string& acTypeName, const std::string& acFullName,
+    globals["ObserveBefore"] = [this](const std::string& acTypeName, const std::string& acFullName,
                                         sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
         m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, false, false);
     };
 
-    luaGlobal["ObserveAfter"] = [this](const std::string& acTypeName, const std::string& acFullName,
+    globals["ObserveAfter"] = [this](const std::string& acTypeName, const std::string& acFullName,
                                        sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
         m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, false, true);
     };
 
-    luaGlobal["Observe"] = luaGlobal["ObserveBefore"];
+    globals["Observe"] = globals["ObserveBefore"];
 
-    // Doesn't require RTTI, but still shouldn't be used before onInit as there is no guarantee that the required mod will be loaded before
-    luaGlobal["GetMod"] = [this](const std::string& acName) -> sol::object
+    globals["GetMod"] = [this](const std::string& acName) -> sol::object
     {
         return GetMod(acName);
     };
 
-    luaGlobal["GameDump"] = [this](Type* apType)
+    globals["GameDump"] = [this](const Type* acpType)
     {
-        return apType ? apType->GameDump() : "Null";
+        return acpType ? acpType->GameDump() : "Null";
     };
 
-    luaGlobal["Dump"] = [this](Type* apType, bool aDetailed)
+    globals["Dump"] = [this](const Type* acpType, bool aDetailed)
     {
-        return apType != nullptr ? apType->Dump(aDetailed) : Type::Descriptor{};
+        return acpType != nullptr ? acpType->Dump(aDetailed) : Type::Descriptor{};
     };
 
-    luaGlobal["DumpType"] = [this](const std::string& acName, bool aDetailed)
+    globals["DumpType"] = [this](const std::string& acName, bool aDetailed)
     {
         auto* pRtti = RED4ext::CRTTISystem::Get();
-        auto* pType = pRtti->GetClass(RED4ext::FNV1a(acName.c_str()));
+        auto* pType = pRtti->GetClass(RED4ext::FNV1a64(acName.c_str()));
         if (!pType || pType->GetType() == RED4ext::ERTTIType::Simple)
             return Type::Descriptor();
 
@@ -554,23 +566,23 @@ void Scripting::PostInitializeMods()
         return type.Dump(aDetailed);
     };
 
-    luaGlobal["DumpAllTypeNames"] = [this](sol::this_environment aThisEnv)
+    globals["DumpAllTypeNames"] = [this](sol::this_environment aThisEnv)
     {
-        auto* pRtti = RED4ext::CRTTISystem::Get();
+        const auto* pRtti = RED4ext::CRTTISystem::Get();
 
         uint32_t count = 0;
-        pRtti->types.for_each([&count](RED4ext::CName name, RED4ext::CBaseRTTIType*& type)
+        pRtti->types.for_each([&count](RED4ext::CName name, RED4ext::CBaseRTTIType*&)
         {
             Log::Info(name.ToString());
             count++;
         });
         const sol::environment cEnv = aThisEnv;
-        std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+        const auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
         logger->info("Dumped {} types", count);
     };
 
-#ifndef NDEBUG
-    luaGlobal["DumpVtables"] = [this]()
+#ifdef CET_DEBUG
+    globals["DumpVtables"] = [this]
     {
         // Hacky RTTI dump, this should technically only dump IScriptable instances and RTTI types as they are guaranteed to have a vtable
         // but there can occasionally be Class types that are not IScriptable derived that still have a vtable
@@ -579,43 +591,63 @@ void Scripting::PostInitializeMods()
         // error when there are classes that instantiate a parent class but don't actually have a subclass instance
         GameMainThread::Get().AddTask(&GameDump::DumpVTablesTask::Run);
     };
-    luaGlobal["DumpReflection"] = [this](bool aVerbose, bool aExtendedPath, bool aPropertyHolders)
+    globals["DumpReflection"] = [this](bool aVerbose, bool aExtendedPath, bool aPropertyHolders)
     {
         RED4ext::GameReflection::Dump(m_paths.CETRoot() / "dumps", aVerbose, aExtendedPath, aPropertyHolders);
     };
 #endif
 
-    luaVm["Game"] = this;
-    luaGlobal["Game"] = luaVm["Game"];
+    globals["Game"] = this;
 
     RTTIExtender::Initialize();
     m_mapper.Register();
-    m_sandbox.PostInitialize();
 
     RegisterOverrides();
+
+    m_sandbox.PostInitializeMods();
+
+    TriggerOnInit();
+    if (CET::Get().GetOverlay().IsEnabled())
+        TriggerOnOverlayOpen();
 }
 
 void Scripting::RegisterOverrides()
 {
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
+    auto& globals = m_sandbox.GetEnvironment();
 
-    luaVm["RegisterGlobalInputListener"] = [](WeakReference& aSelf, sol::this_environment aThisEnv) {
-        sol::protected_function unregisterInputListener = aSelf.Index("UnregisterInputListener", aThisEnv);
-        sol::protected_function registerInputListener = aSelf.Index("RegisterInputListener", aThisEnv);
+    globals["RegisterGlobalInputListener"] = [](WeakReference& aSelf, sol::this_environment aThisEnv) {
+        const sol::protected_function unregisterInputListener = aSelf.Index("UnregisterInputListener", aThisEnv);
+        const sol::protected_function registerInputListener = aSelf.Index("RegisterInputListener", aThisEnv);
 
         unregisterInputListener(aSelf, aSelf);
         registerInputListener(aSelf, aSelf);
     };
 
-    m_override.Override("PlayerPuppet", "GracePeriodAfterSpawn", luaVm["RegisterGlobalInputListener"], sol::nil, false, false, true);
+    m_override.Override("PlayerPuppet", "GracePeriodAfterSpawn", globals["RegisterGlobalInputListener"], sol::nil, false, false, true);
     m_override.Override("PlayerPuppet", "OnDetach", sol::nil, sol::nil, false, false, true);
     m_override.Override("QuestTrackerGameController", "OnUninitialize", sol::nil, sol::nil, false, false, true);
 }
 
-const TiltedPhoques::Vector<VKBindInfo>& Scripting::GetBinds() const
+const VKBind* Scripting::GetBind(const VKModBind& acModBind) const
 {
-    return m_store.GetBinds();
+    return m_store.GetBind(acModBind);
+}
+
+const TiltedPhoques::Vector<VKBind>* Scripting::GetBinds(const std::string& acModName) const
+{
+    return m_store.GetBinds(acModName);
+}
+
+const TiltedPhoques::Map<std::string, std::reference_wrapper<const TiltedPhoques::Vector<VKBind>>>& Scripting::GetAllBinds() const
+{
+    return m_store.GetAllBinds();
+}
+
+void Scripting::TriggerOnHook() const
+{
+    m_store.TriggerOnHook();
 }
 
 void Scripting::TriggerOnTweak() const
@@ -653,22 +685,36 @@ sol::object Scripting::GetMod(const std::string& acName) const
     return m_store.GetMod(acName);
 }
 
-void Scripting::ReloadAllMods()
+void Scripting::UnloadAllMods()
 {
     m_override.Clear();
     RegisterOverrides();
-    current_path(m_paths.ModsRoot());
-    m_store.LoadAll();
+    m_store.DiscardAll();
 }
 
-bool Scripting::ExecuteLua(const std::string& acCommand)
+void Scripting::ReloadAllMods()
+{
+    UnloadAllMods();
+
+    m_store.LoadAll();
+
+    TriggerOnHook();
+    TriggerOnTweak();
+    TriggerOnInit();
+
+    if (CET::Get().GetOverlay().IsEnabled())
+        TriggerOnOverlayOpen();
+
+    spdlog::get("scripting")->info("LuaVM: Reloaded all mods!");
+}
+
+bool Scripting::ExecuteLua(const std::string& acCommand) const
 {
     // TODO: proper exception handling!
     try
     {
-        auto lock = std::scoped_lock{m_vmLock};
-
-        const auto cResult = m_sandbox.ExecuteString(acCommand);
+        auto lockedState = m_lua.Lock();
+        const auto cResult = m_sandbox[0].ExecuteString(acCommand);
         if (cResult.valid())
             return true;
         const sol::error cError = cResult;
@@ -681,7 +727,7 @@ bool Scripting::ExecuteLua(const std::string& acCommand)
     return false;
 }
 
-void Scripting::CollectGarbage()
+void Scripting::CollectGarbage() const
 {
     auto lockedState = m_lua.Lock();
     auto& luaState = lockedState.Get();
@@ -689,14 +735,14 @@ void Scripting::CollectGarbage()
     luaState.collect_garbage();
 }
 
-Scripting::LockedState Scripting::GetState() const noexcept
+LuaSandbox& Scripting::GetSandbox()
 {
-    return m_lua.Lock();
+    return m_sandbox;
 }
 
-std::string Scripting::GetGlobalName() const noexcept
+Scripting::LockedState Scripting::GetLockedState() const noexcept
 {
-    return m_global;
+    return m_lua.Lock();
 }
 
 sol::object Scripting::Index(const std::string& acName, sol::this_state aState, sol::this_environment aEnv)
@@ -706,7 +752,7 @@ sol::object Scripting::Index(const std::string& acName, sol::this_state aState, 
         return itor->second;
     }
 
-    auto func = RTTIHelper::Get().ResolveFunction(acName);
+    const auto func = RTTIHelper::Get().ResolveFunction(acName);
 
     if (!func)
     {
@@ -719,7 +765,7 @@ sol::object Scripting::Index(const std::string& acName, sol::this_state aState, 
         else
         {
             const sol::environment cEnv = aEnv;
-            std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+            auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
             logger->error("Error: {}", errorMessage);
         }
 
@@ -727,31 +773,31 @@ sol::object Scripting::Index(const std::string& acName, sol::this_state aState, 
     }
 
     auto& property = m_properties[acName];
-    property = std::move(func);
+    property = func;
     return property;
 }
 
 sol::object Scripting::GetSingletonHandle(const std::string& acName, sol::this_environment aThisEnv)
 {
-    auto locked = m_lua.Lock();
-    auto& lua = locked.Get();
+    auto lockedState = m_lua.Lock();
+    const auto& luaState = lockedState.Get();
 
-    auto itor = m_singletons.find(acName);
+    const auto itor = m_singletons.find(acName);
     if (itor != std::end(m_singletons))
-        return make_object(lua, itor->second);
+        return make_object(luaState, itor->second);
 
     auto* pRtti = RED4ext::CRTTISystem::Get();
-    auto* pType = pRtti->GetClass(RED4ext::FNV1a(acName.c_str()));
+    auto* pType = pRtti->GetClass(RED4ext::FNV1a64(acName.c_str()));
     if (!pType)
     {
         const sol::environment cEnv = aThisEnv;
-        std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+        const auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
         logger->info("Type '{}' not found.", acName);
         return sol::nil;
     }
 
-    auto result = m_singletons.emplace(std::make_pair(acName, SingletonReference{m_lua.AsRef(), pType}));
-    return make_object(lua, result.first->second);
+    const auto result = m_singletons.emplace(std::make_pair(acName, SingletonReference{m_lua.AsRef(), pType}));
+    return make_object(luaState, result.first->second);
 }
 
 size_t Scripting::Size(RED4ext::CBaseRTTIType* apRttiType)
@@ -770,7 +816,7 @@ sol::object Scripting::ToLua(LockedState& aState, RED4ext::CStackType& aResult)
 {
     auto* pType = aResult.type;
 
-    auto& state = aState.Get();
+    const auto& state = aState.Get();
 
     if (pType == nullptr)
         return sol::nil;
@@ -780,17 +826,17 @@ sol::object Scripting::ToLua(LockedState& aState, RED4ext::CStackType& aResult)
     {
         const auto handle = *static_cast<RED4ext::Handle<RED4ext::IScriptable>*>(aResult.value);
         if (handle)
-            return make_object(state, StrongReference(aState, handle, static_cast<RED4ext::CHandle*>(pType)));
+            return make_object(state, StrongReference(aState, handle, static_cast<RED4ext::CRTTIHandleType*>(pType)));
     }
     else if (pType->GetType() == RED4ext::ERTTIType::WeakHandle)
     {
         const auto handle = *static_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(aResult.value);
         if (!handle.Expired())
-            return make_object(state, WeakReference(aState, handle, static_cast<RED4ext::CWeakHandle*>(pType)));
+            return make_object(state, WeakReference(aState, handle, static_cast<RED4ext::CRTTIWeakHandleType*>(pType)));
     }
     else if (pType->GetType() == RED4ext::ERTTIType::Array)
     {
-        auto* pArrayType = static_cast<RED4ext::CArray*>(pType);
+        const auto* pArrayType = static_cast<RED4ext::CRTTIArrayType*>(pType);
         const uint32_t cLength = pArrayType->GetLength(aResult.value);
         sol::table result(state, sol::create);
         for (auto i = 0u; i < cLength; ++i)
@@ -812,7 +858,7 @@ sol::object Scripting::ToLua(LockedState& aState, RED4ext::CStackType& aResult)
     }
     else if (pType->GetType() == RED4ext::ERTTIType::ScriptReference)
     {
-        auto* pInstance = static_cast<RED4ext::ScriptRef<void>*>(aResult.value);
+        const auto* pInstance = static_cast<RED4ext::ScriptRef<void>*>(aResult.value);
         RED4ext::CStackType innerStack;
         innerStack.value = pInstance->ref;
         innerStack.type = pInstance->innerType;
@@ -828,8 +874,7 @@ sol::object Scripting::ToLua(LockedState& aState, RED4ext::CStackType& aResult)
     return sol::nil;
 }
 
-RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRttiType,
-                                     TiltedPhoques::Allocator* apAllocator)
+RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRttiType, TiltedPhoques::Allocator* apAllocator)
 {
     RED4ext::CStackType result;
 
@@ -845,7 +890,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
             if (hasData)
             {
                 sol::state_view v(aObject.lua_state());
-                str = v["tostring"](aObject);
+                str = v["tostring"](aObject).get<std::string>();
             }
             result.value = apAllocator->New<RED4ext::CString>(str.c_str());
         }
@@ -853,8 +898,8 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
         {
             if (aObject.is<StrongReference>())
             {
-                auto* pSubType = static_cast<RED4ext::CClass*>(apRttiType)->parent;
-                auto* pType = static_cast<RED4ext::CClass*>(aObject.as<StrongReference*>()->m_pType);
+                const auto* pSubType = static_cast<RED4ext::CClass*>(apRttiType)->parent;
+                const auto* pType = static_cast<RED4ext::CClass*>(aObject.as<StrongReference*>()->m_pType);
                 if (pType && pType->IsA(pSubType))
                 {
                     result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>(
@@ -863,8 +908,8 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
             }
             else if (aObject.is<WeakReference>())
             {
-                auto* pSubType = static_cast<RED4ext::CClass*>(apRttiType)->parent;
-                auto* pType = static_cast<RED4ext::CClass*>(aObject.as<WeakReference*>()->m_pType);
+                const auto* pSubType = static_cast<RED4ext::CClass*>(apRttiType)->parent;
+                const auto* pType = static_cast<RED4ext::CClass*>(aObject.as<WeakReference*>()->m_pType);
                 if (pType && pType->IsA(pSubType))
                 {
                     result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>(
@@ -880,8 +925,8 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
         {
             if (aObject.is<WeakReference>())
             {
-                auto* pSubType = static_cast<RED4ext::CClass*>(apRttiType)->parent;
-                auto* pType = static_cast<RED4ext::CClass*>(aObject.as<WeakReference*>()->m_pType);
+                const auto* pSubType = static_cast<RED4ext::CClass*>(apRttiType)->parent;
+                const auto* pType = static_cast<RED4ext::CClass*>(aObject.as<WeakReference*>()->m_pType);
                 if (pType && pType->IsA(pSubType))
                 {
                     result.value = apAllocator->New<RED4ext::WeakHandle<RED4ext::IScriptable>>(
@@ -890,8 +935,8 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
             }
             else if (aObject.is<StrongReference>()) // Handle Implicit Cast
             {
-                auto* pSubType = static_cast<RED4ext::CClass*>(apRttiType)->parent;
-                auto* pType = static_cast<RED4ext::CClass*>(aObject.as<StrongReference*>()->m_pType);
+                const auto* pSubType = static_cast<RED4ext::CClass*>(apRttiType)->parent;
+                const auto* pType = static_cast<RED4ext::CClass*>(aObject.as<StrongReference*>()->m_pType);
                 if (pType && pType->IsA(pSubType))
                 {
                     result.value = apAllocator->New<RED4ext::WeakHandle<RED4ext::IScriptable>>(
@@ -907,13 +952,13 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
         {
             if (!hasData || aObject.get_type() == sol::type::table)
             {
-                auto* pArrayType = static_cast<RED4ext::CArray*>(apRttiType);
+                auto* pArrayType = static_cast<RED4ext::CRTTIArrayType*>(apRttiType);
                 auto pMemory = static_cast<RED4ext::DynArray<void*>*>(apAllocator->Allocate(apRttiType->GetSize()));
-                apRttiType->Init(pMemory);
+                apRttiType->Construct(pMemory);
 
                 if (hasData)
                 {
-                    auto tbl = aObject.as<sol::table>();
+                    const auto tbl = aObject.as<sol::table>();
 
                     if (tbl.size() > 0)
                     {
@@ -921,15 +966,15 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
                         const auto shouldDestroy = pArrayInnerType->GetType() != RED4ext::ERTTIType::Class;
 
                         // Copy elements from the table into the array
-                        pArrayType->Resize(pMemory, tbl.size());
+                        pArrayType->Resize(pMemory, static_cast<uint32_t>(tbl.size()));
                         for (uint32_t i = 1; i <= tbl.size(); ++i)
                         {
-                            RED4ext::CStackType type = ToRED(tbl.get<sol::object>(i), pArrayInnerType, apAllocator);
+                            const RED4ext::CStackType type = ToRED(tbl.get<sol::object>(i), pArrayInnerType, apAllocator);
 
                             // Break on first incompatible element
                             if (!type.value)
                             {
-                                pArrayType->Destroy(pMemory);
+                                pArrayType->Destruct(pMemory);
                                 pMemory = nullptr;
                                 break;
                             }
@@ -938,7 +983,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
                             pArrayInnerType->Assign(pElement, type.value);
 
                             if (shouldDestroy)
-                                pArrayInnerType->Destroy(type.value);
+                                pArrayInnerType->Destruct(type.value);
                         }
                     }
                 }
@@ -949,14 +994,14 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
         else if (apRttiType->GetType() == RED4ext::ERTTIType::ScriptReference)
         {
             auto* pInnerType = static_cast<RED4ext::CRTTIScriptReferenceType*>(apRttiType)->innerType;
-            RED4ext::CStackType innerValue = ToRED(aObject, pInnerType, apAllocator);
+            const RED4ext::CStackType innerValue = ToRED(aObject, pInnerType, apAllocator);
 
             if (innerValue.value)
             {
                 auto* pScriptRef = apAllocator->New<RED4ext::ScriptRef<void>>();
                 pScriptRef->innerType = innerValue.type;
                 pScriptRef->ref = innerValue.value;
-                apRttiType->GetName(pScriptRef->hash);
+                pScriptRef->hash = apRttiType->GetName();
                 result.value = pScriptRef;
             }
         }
@@ -985,7 +1030,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
                 else if (IsLuaCData(aObject))
                 {
                     sol::state_view v(aObject.lua_state());
-                    std::string str = v["tostring"](aObject);
+                    const std::string str = v["tostring"](aObject);
                     hash = std::stoull(str);
                 }
 
@@ -1011,12 +1056,12 @@ void Scripting::ToRED(sol::object aObject, RED4ext::CStackType& aRet)
 {
     static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 13);
 
-    auto result = ToRED(aObject, aRet.type, &s_scratchMemory);
+    const auto result = ToRED(aObject, aRet.type, &s_scratchMemory);
 
     aRet.type->Assign(aRet.value, result.value);
 
     if (aRet.type->GetType() != RED4ext::ERTTIType::Class)
-        aRet.type->Destroy(result.value);
+        aRet.type->Destruct(result.value);
 
     s_scratchMemory.Reset();
 }

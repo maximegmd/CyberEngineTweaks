@@ -5,67 +5,32 @@ using TVKBindInputCallback = void(bool);
 
 using VKCodeBindDecoded = std::array<uint16_t, 4>;
 
+struct VKModBind
+{
+    std::string ModName;
+    std::string ID;
+
+    [[nodiscard]] auto operator<=>(const VKModBind&) const = default;
+};
+
 struct VKBind
 {
-    std::string ID { };
-    std::string Description { };
+    std::string ID{};
+    std::string DisplayName{};
+    std::variant<std::string, std::function<void()>> Description{};
     std::variant<std::function<TVKBindHotkeyCallback>, std::function<TVKBindInputCallback>> Handler{};
 
-    [[nodiscard]] std::function<void()> DelayedCall(bool isDown) const
-    {
-        if (!isDown) // hotkeys only on key up
-        {
-            const auto* fn = std::get_if<std::function<TVKBindHotkeyCallback>>(&Handler);
-            if (fn)
-                return *fn;
-        }
+    [[nodiscard]] std::function<void()> DelayedCall(const bool acIsDown) const;
+    void Call(const bool acIsDown) const;
 
-        {
-            const auto* fn = std::get_if<std::function<TVKBindInputCallback>>(&Handler);
-            if (fn)
-                return std::bind(*fn, isDown);
-        }
+    [[nodiscard]] bool IsHotkey() const;
+    [[nodiscard]] bool IsInput() const;
 
-        assert(isDown); // nullptr should ever return only for key down events, in case binding is a hotkey
-        return nullptr;
-    }
+    [[nodiscard]] bool HasSimpleDescription() const;
+    [[nodiscard]] bool HasComplexDescription() const;
 
-    void Call(bool isDown) const
-    {
-        auto fn { DelayedCall(isDown) };
-        if (fn)
-            fn();
-    }
-
-    [[nodiscard]] bool IsValid() const
-    {
-        return (Handler.index() != std::variant_npos);
-    }
-
-    [[nodiscard]] bool IsHotkey() const
-    {
-        return std::holds_alternative<std::function<TVKBindHotkeyCallback>>(Handler);
-    }
-
-    [[nodiscard]] bool IsInput() const
-    {
-        return std::holds_alternative<std::function<TVKBindInputCallback>>(Handler);
-    }
+    [[nodiscard]] bool operator==(const std::string& acpId) const;
 };
-
-struct VKBindInfo
-{
-    VKBind Bind { };
-    uint64_t CodeBind { 0 };
-    uint64_t SavedCodeBind{ 0 };
-    bool IsBinding{ false };
-
-    void Fill(uint64_t aVKCodeBind, const VKBind& aVKBind);
-
-    uint64_t Apply();
-};
-
-static const VKBind* VKBRecord_OK { reinterpret_cast<const VKBind*>(true) };
 
 constexpr USHORT VKBC_MWHEELUP    { RI_MOUSE_WHEEL  | 1 };
 constexpr USHORT VKBC_MWHEELDOWN  { RI_MOUSE_WHEEL  | 0 };
@@ -75,6 +40,7 @@ constexpr USHORT VKBC_MWHEELLEFT  { RI_MOUSE_HWHEEL | 0 };
 struct Options;
 struct Overlay;
 struct D3D12;
+struct LuaVM;
 struct VKBindings
 {
     VKBindings(Paths& aPaths, const Options& acOptions);
@@ -82,68 +48,68 @@ struct VKBindings
 
     [[nodiscard]] bool IsInitialized() const noexcept;
 
-    TiltedPhoques::Vector<VKBindInfo> InitializeMods(TiltedPhoques::Vector<VKBindInfo> aVKBindInfos);
+    void InitializeMods(const TiltedPhoques::Map<std::string, std::reference_wrapper<const TiltedPhoques::Vector<VKBind>>>& acVKBinds);
 
-    static VKCodeBindDecoded DecodeVKCodeBind(uint64_t aVKCodeBind);
-    static uint64_t EncodeVKCodeBind(VKCodeBindDecoded aVKCodeBindDecoded);
-    static const char* GetSpecialKeyName(USHORT aVKCode);
-    
-    bool Load(const Overlay& acOverlay);
+    [[nodiscard]] static VKCodeBindDecoded DecodeVKCodeBind(const uint64_t acVKCodeBind);
+    [[nodiscard]] static uint64_t EncodeVKCodeBind(VKCodeBindDecoded aVKCodeBindDecoded);
+    [[nodiscard]] static const char* GetSpecialKeyName(const USHORT acVKCode);
+
+    void Load();
     void Save();
 
     void Update();
 
-    void Clear();
-    bool Bind(uint64_t aVKCodeBind, const VKBind& aBind);
-    bool UnBind(uint64_t aVKCodeBind);
-    bool UnBind(const std::string& aID);
-    bool IsBound(uint64_t aVKCodeBind) const;
-    bool IsBound(const std::string& aID) const;
+    bool Bind(const uint64_t acVKCodeBind, const VKModBind& acVKModBind);
+    bool UnBind(const uint64_t acVKCodeBind);
+    bool UnBind(const VKModBind& acVKModBind);
+    [[nodiscard]] bool IsBound(const uint64_t acVKCodeBind) const;
+    [[nodiscard]] bool IsBound(const VKModBind& acVKModBind) const;
+    [[nodiscard]] bool IsFirstKeyUsed(const uint64_t acVKCodeBind) const;
 
-    static std::string GetBindString(uint64_t aVKCodeBind);
-    std::string GetBindString(const std::string aID) const;
+    [[nodiscard]] static std::string GetBindString(const uint64_t acVKCodeBind);
+    [[nodiscard]] std::string GetBindString(const VKModBind& acVKModBind) const;
 
-    uint64_t GetBindCodeForID(const std::string& aID) const;
-    std::string GetIDForBindCode(uint64_t aVKCodeBind) const;
-    
-    bool StartRecordingBind(const VKBind& aBind);
+    [[nodiscard]] uint64_t GetBindCodeForModBind(const VKModBind& acVKModBind, const bool acIncludeDead = false) const;
+    [[nodiscard]] const VKModBind* GetModBindForBindCode(const uint64_t acVKCodeBind) const;
+    [[nodiscard]] const VKModBind* GetModBindStartingWithBindCode(const uint64_t acVKCodeBind) const;
+
+    bool StartRecordingBind(const VKModBind& acVKModBind);
     bool StopRecordingBind();
 
-    bool IsRecordingBind() const;
-    uint64_t GetLastRecordingResult() const;
+    [[nodiscard]] bool IsRecordingBind() const;
+    [[nodiscard]] uint64_t GetLastRecordingResult() const;
 
     LRESULT OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam);
 
-    void ConnectUpdate(D3D12& aD3D12);
-    void DisconnectUpdate(D3D12& aD3D12);
+    void SetVM(const LuaVM* acpVm);
 
 private:
 
-    bool IsLastRecordingKey(USHORT aVKCode);
-    LRESULT RecordKeyDown(USHORT aVKCode);
-    LRESULT RecordKeyUp(USHORT aVKCode);
+    [[nodiscard]] LRESULT HandleRAWInput(HRAWINPUT achRAWInput);
 
-    const VKBind* VerifyRecording();
+    LRESULT RecordKeyDown(const USHORT acVKCode);
+    LRESULT RecordKeyUp(const USHORT acVKCode);
 
-    LRESULT HandleRAWInput(HRAWINPUT ahRAWInput);
+    void ExecuteRecording(const bool acLastKeyDown);
+    void ClearRecording(const bool acClearBind);
+    
+    std::map<uint64_t, VKModBind> m_binds{ }; // this map needs to be ordered!
+    TiltedPhoques::Map<std::string, TiltedPhoques::Map<std::string, uint64_t>> m_modIdToBinds{ };
+    TiltedPhoques::TaskQueue m_queuedCallbacks{ };
 
     std::bitset<1 << 16> m_keyStates{ };
 
-    std::map<uint64_t, VKBind> m_binds{ }; // this map needs to be ordered!
-    TiltedPhoques::Map<std::string, uint64_t> m_idToBind{ };
-    
-    TiltedPhoques::TaskQueue m_queuedCallbacks{ };
-    
     VKCodeBindDecoded m_recording{ };
-    size_t m_recordingLength{ 0 };
-    VKBind m_recordingBind { };
     uint64_t m_recordingResult{ 0 };
+    size_t m_recordingLength{ 0 };
+    bool m_recordingWasKeyPressed{ false };
+    
+    VKModBind m_recordingModBind{ };
     bool m_isBindRecording{ false };
+
     bool m_initialized{ false };
 
+    const LuaVM* m_cpVm{ nullptr };
     Paths& m_paths;
     const Options& m_cOptions;
-    const Overlay* m_cpOverlay{ nullptr };
-    
-    size_t m_connectUpdate{ static_cast<size_t>(-1) };
 };

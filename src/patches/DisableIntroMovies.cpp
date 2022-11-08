@@ -1,7 +1,5 @@
 #include <stdafx.h>
 
-#include "Image.h"
-
 using TInitScriptMemberVariable = void*(void* a1, void* a2, uint64_t a3, uint64_t nameHash, void* a5, void* a6, void* a7);
 TInitScriptMemberVariable* RealInitScriptMemberVariable = nullptr;
 
@@ -15,12 +13,12 @@ void* HookInitScriptMemberVariable(void* a1, void* a2, uint64_t a3, uint64_t nam
     // Ideally I think the real solution is to change GameFramework/InitialState INI variable from "Initialization" to "PreGameSession" or "MainMenu" instead
     // Unfortunately that causes a black screen on launch though, likely only works properly on non-shipping builds
 
-    if (nameHash == RED4ext::FNV1a("logoTrainWBBink") ||
-        nameHash == RED4ext::FNV1a("logoTrainNamcoBink") ||
-        nameHash == RED4ext::FNV1a("logoTrainStadiaBink") ||
-        nameHash == RED4ext::FNV1a("logoTrainNoRTXBink") ||
-        nameHash == RED4ext::FNV1a("logoTrainRTXBink") ||
-        nameHash == RED4ext::FNV1a("introMessageBink"))
+    if (nameHash == RED4ext::FNV1a64("logoTrainWBBink") ||
+        nameHash == RED4ext::FNV1a64("logoTrainNamcoBink") ||
+        nameHash == RED4ext::FNV1a64("logoTrainStadiaBink") ||
+        nameHash == RED4ext::FNV1a64("logoTrainNoRTXBink") ||
+        nameHash == RED4ext::FNV1a64("logoTrainRTXBink") ||
+        nameHash == RED4ext::FNV1a64("introMessageBink"))
     {
         nameHash = ~nameHash;
     }
@@ -28,10 +26,10 @@ void* HookInitScriptMemberVariable(void* a1, void* a2, uint64_t a3, uint64_t nam
     return RealInitScriptMemberVariable(a1, a2, a3, nameHash, a5, a6, a7);
 }
 
-void DisableIntroMoviesPatch(const Image* apImage)
+void DisableIntroMoviesPatch()
 {
-    RED4ext::RelocPtr<void> func(CyberEngineTweaks::Addresses::CPatches_IntroMovie);
-    RealInitScriptMemberVariable = static_cast<TInitScriptMemberVariable*>(func.GetAddr());
+    const RED4ext::RelocPtr<void> func(CyberEngineTweaks::Addresses::CPatches_IntroMovie);
+    RealInitScriptMemberVariable = reinterpret_cast<TInitScriptMemberVariable*>(func.GetAddr());
 
     if (RealInitScriptMemberVariable == nullptr)
     {
@@ -39,6 +37,8 @@ void DisableIntroMoviesPatch(const Image* apImage)
         return;
     }
 
-    MH_CreateHook(RealInitScriptMemberVariable, &HookInitScriptMemberVariable, reinterpret_cast<void**>(&RealInitScriptMemberVariable));
+    MH_CreateHook(reinterpret_cast<void*>(RealInitScriptMemberVariable),
+                  reinterpret_cast<void*>(&HookInitScriptMemberVariable),
+                  reinterpret_cast<void**>(&RealInitScriptMemberVariable));
     Log::Info("Disable intro movies patch: success");
 }

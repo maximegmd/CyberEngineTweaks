@@ -1,188 +1,110 @@
 #include <stdafx.h>
 
 #include "Console.h"
-#include "Utils.h"
 
 #include <scripting/LuaVM.h>
 
-Console::Console(LuaVM& aVm)
-    : m_vm(aVm)
+Console::Console(D3D12& aD3D12, LuaVM& aVm)
+    : Widget("Console")
+    , m_vm(aVm)
+    , m_logWindow(aD3D12, "scripting")
 {
-    const auto consoleSink = CreateCustomSinkST([this](const std::string& msg) { Log(msg); });
-    consoleSink->set_pattern("%v");
-
-    spdlog::get("scripting")->sinks().push_back(consoleSink);
+    m_command.resize(255);
 }
 
-bool Console::OnEnable()
+WidgetResult Console::OnDisable()
 {
-    m_focusConsoleInput = true;
-    return true;
-}
+    m_command.clear();
+    m_command.resize(255);
 
-bool Console::OnDisable()
-{
-    return true;
+    return Widget::OnDisable();
 }
 
 int Console::HandleConsoleHistory(ImGuiInputTextCallbackData* apData)
 {
     auto* pConsole = static_cast<Console*>(apData->UserData);
 
-    std::string* pStr = nullptr;
+    const std::string* pStr = nullptr;
 
-    if (pConsole->m_newConsoleHistory)
+    if (pConsole->m_newHistory)
     {
-        pStr = &pConsole->m_consoleHistory[pConsole->m_consoleHistoryIndex];
+        pStr = &pConsole->m_history[pConsole->m_historyIndex];
     }
-    else if (apData->EventKey == ImGuiKey_UpArrow && pConsole->m_consoleHistoryIndex > 0)
+    else if (apData->EventKey == ImGuiKey_UpArrow && pConsole->m_historyIndex > 0)
     {
-        pConsole->m_consoleHistoryIndex--;
-
-        pStr = &pConsole->m_consoleHistory[pConsole->m_consoleHistoryIndex];
+        pStr = &pConsole->m_history[--pConsole->m_historyIndex];
     }
-    else if (apData->EventKey == ImGuiKey_DownArrow && pConsole->m_consoleHistoryIndex + 1 < pConsole->m_consoleHistory.size())
+    else if (apData->EventKey == ImGuiKey_DownArrow && pConsole->m_historyIndex + 1 < pConsole->m_history.size())
     {
-        pConsole->m_consoleHistoryIndex++;
-
-        pStr = &pConsole->m_consoleHistory[pConsole->m_consoleHistoryIndex];
+        pStr = &pConsole->m_history[++pConsole->m_historyIndex];
     }
 
-    pConsole->m_newConsoleHistory = false;
+    pConsole->m_newHistory = false;
 
     if (pStr)
     {
-        std::memcpy(apData->Buf, pStr->c_str(), pStr->length() + 1);
-        apData->BufDirty = true;
-        apData->BufTextLen = pStr->length();
-        apData->CursorPos = apData->BufTextLen;
+        apData->DeleteChars(0, apData->BufTextLen);
+        apData->InsertChars(0, pStr->c_str());
+        apData->SelectAll();
     }
 
     return 0;
 }
 
-void Console::Update()
+int Console::HandleConsoleResize(ImGuiInputTextCallbackData* apData)
 {
-    ImGui::Checkbox("Clear Input", &m_inputClear);
-    ImGui::SameLine();
-    if (ImGui::Button("Clear Output"))
-    {
-        std::lock_guard<std::recursive_mutex> _{ m_outputLock };
-        m_outputLines.clear();
-    }
-    ImGui::SameLine();
-    ImGui::Checkbox("Scroll Output", &m_outputShouldScroll);
-    ImGui::SameLine();
-    ImGui::Checkbox("Disable Game Log", &m_disabledGameLog);
-    ImGui::SameLine();
-    if (ImGui::Button("Reload All Mods"))
-        m_vm.ReloadAllMods();
-        
-    auto& style = ImGui::GetStyle();
-    auto inputLineHeight = ImGui::GetTextLineHeight() + style.ItemInnerSpacing.y * 2;
-    
-    if (ImGui::ListBoxHeader("##ConsoleHeader", ImVec2(-1, -(inputLineHeight + style.ItemSpacing.y))))
-    {
-        std::lock_guard<std::recursive_mutex> _{ m_outputLock };
+    auto* pConsole = static_cast<Console*>(apData->UserData);
 
-        ImGuiListClipper clipper;
-        clipper.Begin(m_outputLines.size());
-        while (clipper.Step())
-            for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i) 
-            {
-                auto& item = m_outputLines[i];
-                ImGui::PushID(i);
-                if (ImGui::Selectable(item.c_str()))
-                {
-                    auto str = item;
-                    if (item[0] == '>' && item[1] == ' ')
-                        str = str.substr(2);
-
-                    std::strncpy(m_Command, str.c_str(), sizeof(m_Command) - 1);
-                    m_focusConsoleInput = true;
-                }
-                ImGui::PopID();
-            }
-
-        if (m_outputScroll)
-        {
-            if (m_outputShouldScroll)
-                ImGui::SetScrollHereY();
-            m_outputScroll = false;
-        }
-        
-        ImGui::ListBoxFooter();
-    }
-    
-    if (m_focusConsoleInput)
+    if (apData->BufTextLen + 1 >= apData->BufSize)
     {
-        ImGui::SetKeyboardFocusHere();
-        m_focusConsoleInput = false;
+        pConsole->m_command.resize((apData->BufSize * 3) / 2);
+        apData->Buf = pConsole->m_command.data();
     }
+    pConsole->m_commandLength = apData->BufTextLen;
+
+    return 0;
+}
+
+int Console::HandleConsole(ImGuiInputTextCallbackData* apData)
+{
+    if (apData->EventFlag & ImGuiInputTextFlags_CallbackHistory)
+        return HandleConsoleHistory(apData);
+
+    if (apData->EventFlag & ImGuiInputTextFlags_CallbackResize)
+        return HandleConsoleResize(apData);
+
+    return 0;
+}
+
+void Console::OnUpdate()
+{
+    const auto& style = ImGui::GetStyle();
+    const auto inputLineHeight = ImGui::GetTextLineHeight() + style.ItemInnerSpacing.y * 2;
+    m_logWindow.Draw({-FLT_MIN, -(inputLineHeight + style.ItemSpacing.y)});
+
     ImGui::SetNextItemWidth(-FLT_MIN);
-    const auto execute = ImGui::InputText("##InputCommand", m_Command, std::size(m_Command),
-                                          ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory,  &HandleConsoleHistory, this);
+    constexpr auto flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackResize;
+    const auto execute = ImGui::InputText("##InputCommand", m_command.data(), m_command.capacity(), flags, &HandleConsole, this);
     ImGui::SetItemDefaultFocus();
     if (execute)
     {
-        auto consoleLogger = spdlog::get("scripting");
-        consoleLogger->info("> {}", m_Command);
+        m_command.resize(m_commandLength);
+        m_command.shrink_to_fit();
 
-        m_consoleHistoryIndex = m_consoleHistory.size();
-        m_consoleHistory.push_back(m_Command);
-        m_newConsoleHistory = true;
-        
-        if (!m_vm.ExecuteLua(m_Command))
+        const auto consoleLogger = spdlog::get("scripting");
+        consoleLogger->info("> {}", m_command);
+
+        if (!m_vm.ExecuteLua(m_command))
             consoleLogger->info("Command failed to execute!");
 
-        if (m_inputClear)
-        {
-            std::memset(m_Command, 0, sizeof(m_Command));
-        }
+        m_historyIndex = m_history.size();
+        auto& history = m_history.emplace_back();
+        history.swap(m_command);
+        m_newHistory = true;
 
-        m_focusConsoleInput = true;
+        m_command.resize(255);
+        m_commandLength = 0;
+
+        ImGui::SetKeyboardFocusHere(-1); // Auto focus previous widget
     }
-}
-
-void Console::Log(const std::string& acpText)
-{
-    std::lock_guard<std::recursive_mutex> _{ m_outputLock };
-
-    size_t first = 0;
-    size_t size = acpText.size();
-    while (first < size)
-    {
-        // find_first_of \r or \n
-        size_t second = std::string::npos;
-        for (size_t i = first; i != size; ++i)
-        {
-            char ch = acpText[i];
-            if (ch == '\r' || ch == '\n')
-            {
-                second = i;
-                break;
-            }
-        }
-
-        if (second == std::string_view::npos)
-        {
-            m_outputLines.emplace_back(acpText.substr(first));
-            break;
-        }
-
-        if (first != second)
-            m_outputLines.emplace_back(acpText.substr(first, second-first));
-
-        first = second + 1;
-        char ch = acpText[first];
-        while (ch == '\r' || ch == '\n')
-            ch = acpText[++first];
-    }
-
-    m_outputScroll = true;
-}
-
-bool Console::GameLogEnabled() const
-{
-    return !m_disabledGameLog;
 }

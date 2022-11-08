@@ -8,31 +8,41 @@ struct LuaSandbox
     ~LuaSandbox() = default;
 
     void Initialize();
-    void PostInitialize();
+    void PostInitializeScripting();
+    void PostInitializeTweakDB();
+    void PostInitializeMods();
+
     void ResetState();
 
-    size_t CreateSandbox(const std::filesystem::path& acPath = "", const std::string& acName = "", bool aEnableExtraLibs = true, bool aEnableDB = true, bool aEnableIO = true, bool aEnableLogger = true);
-    
-    sol::protected_function_result ExecuteFile(const std::string& acPath);
-    sol::protected_function_result ExecuteString(const std::string& acString);
-    
-    Sandbox& operator[](size_t aID);
-    const Sandbox& operator[](size_t aID) const;
+    uint64_t CreateSandbox(const std::filesystem::path& acPath = "", const std::string& acName = "", bool aEnableExtraLibs = true, bool aEnableDB = true, bool aEnableIO = true, bool aEnableLogger = true);
 
-    [[nodiscard]] TiltedPhoques::Locked<sol::state, std::recursive_mutex> GetState() const;
-    
+    sol::protected_function_result ExecuteFile(const std::string& acPath) const;
+    sol::protected_function_result ExecuteString(const std::string& acString) const;
+
+    Sandbox& operator[](uint64_t aID);
+    const Sandbox& operator[](uint64_t aID) const;
+
+    [[nodiscard]] TiltedPhoques::Locked<sol::state, std::recursive_mutex> GetLockedState() const;
+
+    void SetImGuiAvailable(bool aAvailable);
+    bool GetImGuiAvailable() const;
+
+    sol::environment& GetEnvironment();
+
 private:
 
-    void InitializeExtraLibsForSandbox(Sandbox& aSandbox) const;
-    void InitializeDBForSandbox(Sandbox& aSandbox) const;
-    void InitializeIOForSandbox(Sandbox& aSandbox, const std::string& acName);
-    void InitializeLoggerForSandbox(Sandbox& aSandbox, const std::string& acName) const;
+    void InitializeExtraLibsForSandbox(Sandbox& aSandbox, const sol::state& acpState) const;
+    void InitializeDBForSandbox(Sandbox& aSandbox, const sol::state& acpState);
+    void InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acpState, const std::string& acName);
+    void InitializeLoggerForSandbox(Sandbox& aSandbox, const sol::state& acpState, const std::string& acName) const;
 
-	void CloseDBForSandbox(Sandbox& aSandbox) const;
+    void CloseDBForSandbox(const Sandbox& aSandbox) const;
 
     Scripting* m_pScripting;
     const VKBindings& m_vkBindings;
-    sol::environment m_env{ };
+    sol::environment m_env{};
     TiltedPhoques::Vector<Sandbox> m_sandboxes{};
-    TiltedPhoques::Map<std::string, sol::object> m_modules{ };
+    TiltedPhoques::Map<std::string, sol::object> m_modules{};
+
+    bool m_imguiAvailable{ false };
 };

@@ -20,6 +20,8 @@ void CET::Shutdown()
 
 CET& CET::Get()
 {
+    // we should always call this after initialization, never before!
+    assert(s_pInstance);
     return *s_pInstance;
 }
 
@@ -61,21 +63,15 @@ bool CET::IsRunning() noexcept
 CET::CET()
     : m_options(m_paths)
     , m_bindings(m_paths, m_options)
-    , m_window(&m_overlay, &m_bindings, &m_d3d12)
+    , m_window(&m_bindings, &m_d3d12)
     , m_d3d12(m_window, m_paths, m_options)
-    , m_vm(m_paths, m_bindings, m_d3d12, m_options)
+    , m_vm(m_paths, m_bindings, m_d3d12)
     , m_overlay(m_d3d12, m_bindings, m_options, m_vm)
-    , m_tasks(m_options)
 {
-    m_bindings.ConnectUpdate(m_d3d12);
-
     m_vm.Initialize();
 }
 
 CET::~CET()
 {
     s_isRunning = false;
-
-    m_bindings.DisconnectUpdate(m_d3d12);
-    m_bindings.Clear();
 }

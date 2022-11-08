@@ -1,10 +1,10 @@
 #include <stdafx.h>
-#include <spdlog/fmt/fmt.h>
 
 #include "Type.h"
 
 #include "RTTIHelper.h"
-#include "scripting/Scripting.h"
+
+#include <spdlog/fmt/fmt.h>
 
 
 std::string Type::Descriptor::ToString() const
@@ -31,8 +31,8 @@ std::string Type::Descriptor::ToString() const
 }
 
 Type::Type(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::CBaseRTTIType* apClass)
-    : m_lua(aView)
-    , m_pType(apClass)
+    : m_pType(apClass)
+    , m_lua(aView)
 {
 }
 
@@ -67,11 +67,10 @@ std::string Type::GetName() const
 {
     if (m_pType)
     {
-        RED4ext::CName name;
-        m_pType->GetName(name);
-        if (!name.IsEmpty())
+        const auto cName = m_pType->GetName();
+        if (!cName.IsNone())
         {
-            return name.ToString();
+            return cName.ToString();
         }
     }
 
@@ -93,7 +92,7 @@ std::string Type::FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithH
 
     for (auto i = 0u; i < apFunc->params.size; ++i)
     {
-        auto* param = apFunc->params[i];
+        const auto* param = apFunc->params[i];
 
         if (param->flags.isOut)
         {
@@ -102,37 +101,35 @@ std::string Type::FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithH
             hasOutParams = true;
             continue;
         }
-        param->type->GetName(typeName);
-        params.push_back(fmt::format("{}{}: {}", param->flags.isOptional ? "[opt] " : "",
+        typeName = param->type->GetName();
+        params.emplace_back(fmt::format("{}{}: {}", param->flags.isOptional ? "[opt] " : "",
                                     param->name.ToString(), typeName.ToString()));
     }
 
-    for (auto i = 0u; i < params.size(); ++i)
+    if (!params.empty())
     {
-        ret << params[i];
-        if (i < params.size() - 1)
-        {
-            ret << ", ";
-        }
+        ret << params[0];
+        for (auto i = 1u; i < params.size(); ++i)
+            ret << ", " << params[i];
     }
 
     ret << ")";
 
-    const bool hasReturnType = (apFunc->returnType) != nullptr && (apFunc->returnType->type) != nullptr;
+    const bool hasReturnType = apFunc->returnType != nullptr && apFunc->returnType->type != nullptr;
 
     params.clear();
 
     if (hasReturnType)
     {
-        apFunc->returnType->type->GetName(typeName);
-        params.push_back(typeName.ToString());
+        typeName = apFunc->returnType->type->GetName();
+        params.emplace_back(typeName.ToString());
     }
 
     if (hasOutParams)
     {
         for (auto i = 0u; i < apFunc->params.size; ++i)
         {
-            auto* param = apFunc->params[i];
+            const auto* param = apFunc->params[i];
 
             if (!param->flags.isOut)
             {
@@ -140,24 +137,18 @@ std::string Type::FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithH
                 continue;
             }
 
-            param->type->GetName(typeName);
-            params.push_back(param->name.ToString() + std::string(": ") + typeName.ToString());
+            typeName = param->type->GetName();
+            params.emplace_back(fmt::format("{}: {}", param->name.ToString(), typeName.ToString()));
         }
 
     }
 
-    if (params.size() > 0)
+    if (!params.empty())
     {
-        ret << " => (";
+        ret << " => (" << params[0];
 
-        for (auto i = 0; i < params.size(); ++i)
-        {
-            ret << params[i];
-            if (i < params.size() - 1)
-            {
-                ret << ", ";
-            }
-        }
+        for (size_t i = 1; i < params.size(); ++i)
+            ret << ", " << params[i];
 
         ret << ")";
     }
@@ -165,8 +156,7 @@ std::string Type::FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithH
 
     if (aWithHashes)
     {
-        const std::string funcHashes = "Hash:(" + fmt::format("{:016x}", apFunc->fullName.hash) + ") / ShortName:(" + apFunc->shortName.ToString() + ") Hash:(" + fmt::format("{:016x}", apFunc->shortName.hash) + ")";
-        ret << " # " << funcHashes;
+        ret << fmt::format(" # Hash:({:016X}) / ShortName:({}) Hash:({:016X}", apFunc->fullName.hash, apFunc->shortName.ToString(), apFunc->shortName.hash);
     }
 
     return ret.str();
@@ -178,9 +168,8 @@ Type::Descriptor Type::Dump(bool aWithHashes) const
 
     if (m_pType)
     {
-        RED4ext::CName name;
-        m_pType->GetName(name);
-        if (!name.IsEmpty())
+        const auto name = m_pType->GetName();
+        if (!name.IsNone())
         {
             descriptor.name = name.ToString();
         }
@@ -189,12 +178,12 @@ Type::Descriptor Type::Dump(bool aWithHashes) const
     return descriptor;
 }
 
-std::string Type::GameDump()
+std::string Type::GameDump() const
 {
     RED4ext::CString str("");
     if (m_pType)
     {
-        auto handle = GetHandle();
+        const auto handle = GetHandle();
         if (handle)
         {
             m_pType->ToString(handle, str);
@@ -221,25 +210,20 @@ Type::Descriptor ClassType::Dump(bool aWithHashes) const
         std::string name = type->name.ToString();
         for (auto i = 0u; i < type->funcs.size; ++i)
         {
-            auto* pFunc = type->funcs[i];
-            std::string funcDesc = FunctionDescriptor(pFunc, aWithHashes);
-            descriptor.functions.push_back(funcDesc);
+            descriptor.functions.emplace_back(FunctionDescriptor(type->funcs[i], aWithHashes));
         }
 
         for (auto i = 0u; i < type->staticFuncs.size; ++i)
         {
-            auto* pFunc = type->staticFuncs[i];
-            std::string funcDesc = FunctionDescriptor(pFunc, aWithHashes);
-            descriptor.staticFunctions.push_back(funcDesc);
+            descriptor.staticFunctions.emplace_back(FunctionDescriptor(type->staticFuncs[i], aWithHashes));
         }
 
         for (auto i = 0u; i < type->props.size; ++i)
         {
-            auto* pProperty = type->props[i];
-            RED4ext::CName name;
-            pProperty->type->GetName(name);
+            const auto* cpProperty = type->props[i];
+            const auto cName = cpProperty->type->GetName();
 
-            descriptor.properties.push_back(pProperty->name.ToString() + std::string(": ") + name.ToString());
+            descriptor.properties.emplace_back(fmt::format("{}: {}", cpProperty->name.ToString(), cName.ToString()));
         }
 
         type = type->parent && type->parent->GetType() == RED4ext::ERTTIType::Class ? type->parent : nullptr;
@@ -271,17 +255,17 @@ sol::object ClassType::Index_Impl(const std::string& acName, sol::this_environme
     if (result != sol::nil)
         return result;
 
-    auto func = RTTIHelper::Get().ResolveFunction(pClass, acName, pHandle != nullptr);
+    const auto func = RTTIHelper::Get().ResolveFunction(pClass, acName, pHandle != nullptr);
 
     if (!func)
     {
         const sol::environment cEnv = aThisEnv;
-        std::shared_ptr<spdlog::logger> logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+        const auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
         logger->warn("Warning: {} not found in {}.", acName, GetName());
         return sol::nil;
     }
 
-    return Type::NewIndex(acName, std::move(func));
+    return NewIndex(acName, func);
 }
 
 sol::object ClassType::NewIndex_Impl(const std::string& acName, sol::object aParam)

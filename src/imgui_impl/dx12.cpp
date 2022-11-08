@@ -462,8 +462,8 @@ bool ImGui_ImplDX12_CreateDeviceObjects(ID3D12CommandQueue* apCommandQueue)
 
             // If failed, we should be on Windows 10.
             if (d3d12_dll == NULL)
-                d3d12_dll = ::LoadLibrary(_T("d3d12.dll")); 
-        
+                d3d12_dll = ::LoadLibrary(_T("d3d12.dll"));
+
             if (d3d12_dll == NULL)
                 return false;
         }

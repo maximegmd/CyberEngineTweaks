@@ -37,18 +37,6 @@ jobs:
     - name: Update xmake repository
       run: xmake.exe repo --update
 
-    # Fetch xmake dephash
-    #- name: Retrieve dependencies hash
-    #  id: dep_hash
-    #  run: echo "::set-output name=hash::$(xmake.exe dephash)"
-
-    # Cache xmake dependencies
-    #- name: Retrieve cached xmake dependencies
-    #  uses: actions/cache@v2
-    #  with:
-    #    path: xmake-global\.xmake\packages
-    #    key: ${{ runner.os }}-${{ matrix.arch }}-${{ matrix.mode }}-${{ steps.dep_hash.outputs.hash }}
-
     # Setup compilation mode and install project dependencies
     - name: Configure xmake and install dependencies
       run: xmake.exe config --arch=${{ matrix.arch }} --mode=${{ matrix.mode }} --yes

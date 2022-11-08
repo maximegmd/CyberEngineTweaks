@@ -1,7 +1,6 @@
 #include <stdafx.h>
 
 #include "GameHooks.h"
-#include "CET.h"
 
 static std::unique_ptr<GameMainThread> s_pGameMainThread;
 
@@ -40,7 +39,7 @@ GameMainThread::~GameMainThread()
 
 bool GameMainThread::HookMainThread(void* a1, void* a2)
 {
-    auto& gmt = GameMainThread::Get();
+    auto& gmt = Get();
 
     gmt.m_taskQueue.Drain();
 
@@ -51,13 +50,13 @@ void GameMainThread::Hook()
 {
     if (!m_pMainThreadLocation)
     {
-        RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CGame_Main);
+        const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CGame_Main);
         m_pMainThreadLocation = func.GetAddr();
     }
 
     if (m_pMainThreadLocation)
     {
-        if (MH_CreateHook(m_pMainThreadLocation, &GameMainThread::HookMainThread, reinterpret_cast<void**>(&m_pMainThreadOriginal)) != MH_OK ||
+        if (MH_CreateHook(m_pMainThreadLocation, reinterpret_cast<void*>(&GameMainThread::HookMainThread), reinterpret_cast<void**>(&m_pMainThreadOriginal)) != MH_OK ||
             MH_EnableHook(m_pMainThreadLocation) != MH_OK)
             Log::Error("Could not hook main thread function!");
         else

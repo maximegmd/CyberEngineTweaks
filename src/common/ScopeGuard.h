@@ -15,7 +15,7 @@ public:
         throw;
     }
 
-    ScopeGuard(ScopeGuard&& other)
+    ScopeGuard(ScopeGuard&& other) noexcept
         : f(std::move(other.f))
     {
         other.f = nullptr;

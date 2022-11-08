@@ -1,8 +1,6 @@
 #include <stdafx.h>
 
-#include "Image.h"
-
-void RemovePedsPatch(const Image* apImage)
+void RemovePedsPatch()
 {
     /* RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CPatches_);
     uint8_t* pLocation = func.GetAddr();

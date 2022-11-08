@@ -1,9 +1,8 @@
 #pragma once
 
-struct Options;
 struct CETTasks
 {
-    CETTasks(Options& aOptions);
+    CETTasks();
     ~CETTasks();
 
 private:

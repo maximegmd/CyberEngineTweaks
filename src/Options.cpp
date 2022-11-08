@@ -5,12 +5,13 @@
 
 void Options::Load()
 {
-    if (exists(m_paths.Config()))
+    const auto path = GetAbsolutePath(m_paths.Config(), "", false);
+    if (!path.empty())
     {
-        std::ifstream configFile(m_paths.Config());
+        std::ifstream configFile(path);
         if(configFile)
         {
-            auto config = nlohmann::json::parse(configFile);
+            const auto config = nlohmann::json::parse(configFile);
             PatchRemovePedestrians = config.value("remove_pedestrians", PatchRemovePedestrians);
             PatchSkipStartMenu = config.value("skip_start_menu", PatchSkipStartMenu);
             PatchAmdSmt = config.value("amd_smt", PatchAmdSmt);
@@ -23,7 +24,7 @@ void Options::Load()
             PatchMinimapFlicker = config.value("minimap_flicker", PatchMinimapFlicker);
 
             RemoveDeadBindings = config.value("cetdev_remove_dead_bindings", RemoveDeadBindings);
-            EnableImGuiAssertions = config.value("cetdev_enable_imgui_assertions", EnableImGuiAssertions);
+            EnableImGuiAssertionsLogging = config.value("cetdev_enable_imgui_assertions_logging", EnableImGuiAssertionsLogging);
             DumpGameOptions = config.value("dump_game_options", DumpGameOptions);
             PatchEnableDebug = config.value("enable_debug", PatchEnableDebug);
 
@@ -40,7 +41,7 @@ void Options::Load()
     }
 
     // set global "Enable ImGui Assertions"
-    g_ImGuiAssertionsEnabled = EnableImGuiAssertions;
+    g_ImGuiAssertionsEnabled = EnableImGuiAssertionsLogging;
 }
 
 void Options::Save()
@@ -59,7 +60,7 @@ void Options::Save()
     config["minimap_flicker"] = PatchMinimapFlicker;
 
     config["cetdev_remove_dead_bindings"] = RemoveDeadBindings;
-    config["cetdev_enable_imgui_assertions"] = EnableImGuiAssertions;
+    config["cetdev_enable_imgui_assertions_logging"] = EnableImGuiAssertionsLogging;
     config["enable_debug"] = PatchEnableDebug;
     config["dump_game_options"] = DumpGameOptions;
 
@@ -67,11 +68,12 @@ void Options::Save()
     config["font_glyph_ranges"] = FontGlyphRanges;
     config["font_size"] = FontSize;
 
-    std::ofstream o(m_paths.Config());
+    const auto path = GetAbsolutePath(m_paths.Config(), "", true);
+    std::ofstream o(path);
     o << config.dump(4) << std::endl;
 
     // set global "Enable ImGui Assertions"
-    g_ImGuiAssertionsEnabled = EnableImGuiAssertions;
+    g_ImGuiAssertionsEnabled = EnableImGuiAssertionsLogging;
 }
 
 void Options::ResetToDefaults()
@@ -88,9 +90,13 @@ void Options::ResetToDefaults()
     PatchMinimapFlicker = false;
 
     RemoveDeadBindings = true;
-    EnableImGuiAssertions = false;
+    EnableImGuiAssertionsLogging = false;
     PatchEnableDebug = false;
     DumpGameOptions = false;
+
+    FontPath = "";
+    FontGlyphRanges = "Default";
+    FontSize = 18.0f;
 
     Save();
 }
@@ -99,10 +105,10 @@ Options::Options(Paths& aPaths)
     : m_paths(aPaths)
 {
     const auto* exePathStr = aPaths.Executable().native().c_str();
-    int verInfoSz = GetFileVersionInfoSize(exePathStr, nullptr);
+    const auto verInfoSz = GetFileVersionInfoSize(exePathStr, nullptr);
     if(verInfoSz)
     {
-        auto verInfo = std::make_unique<BYTE[]>(verInfoSz);
+        const auto verInfo = std::make_unique<BYTE[]>(verInfoSz);
         if(GetFileVersionInfo(exePathStr, 0, verInfoSz, verInfo.get()))
         {
             struct
@@ -131,13 +137,12 @@ Options::Options(Paths& aPaths)
         }
     }
     // check if exe name matches in case previous check fails
-    ExeValid = ExeValid || (aPaths.Executable().filename() == "Cyberpunk2077.exe");
+    ExeValid = ExeValid || aPaths.Executable().filename() == "Cyberpunk2077.exe";
 
     if (!ExeValid)
         throw std::runtime_error("Not Cyberpunk2077.exe");
 
-    set_default_logger(CreateLogger(m_paths.CETRoot() / "cyber_engine_tweaks.log", "main"));
-
+    set_default_logger(CreateLogger(GetAbsolutePath(L"cyber_engine_tweaks.log", m_paths.CETRoot(), true), "main", nullptr, "[%Y-%m-%d %H:%M:%S UTC%z] [%l] [%!] [%t] %v"));
 
     Log::Info("Cyber Engine Tweaks is starting...");
 
@@ -148,13 +153,13 @@ Options::Options(Paths& aPaths)
         Log::Info("CET version {} [{}]", CET_BUILD_COMMIT, CET_BUILD_BRANCH);
         auto [major, minor] = GameImage.GetVersion();
         Log::Info("Game version {}.{:02d}", major, minor);
-        Log::Info("Root path: \"{}\"", aPaths.GameRoot().string());
-        Log::Info("Cyber Engine Tweaks path: \"{}\"", aPaths.CETRoot().string());
-        Log::Info("Lua scripts search path: \"{}\"", aPaths.ModsRoot().string());
+        Log::Info("Root path: \"{}\"", UTF16ToUTF8(aPaths.GameRoot().native()));
+        Log::Info("Cyber Engine Tweaks path: \"{}\"", UTF16ToUTF8(aPaths.CETRoot().native()));
+        Log::Info("Lua scripts search path: \"{}\"", UTF16ToUTF8(aPaths.ModsRoot().native()));
 
-        if (GameImage.GetVersion() != GameImage.GetSupportedVersion())
+        if (GameImage.GetVersion() != Image::GetSupportedVersion())
         {
-            auto [smajor, sminor] = GameImage.GetSupportedVersion();
+            const auto [smajor, sminor] = Image::GetSupportedVersion();
             Log::Error("Unsupported game version! Only {}.{:02d} is supported.", smajor, sminor);
             throw std::runtime_error("Unsupported version");
         }

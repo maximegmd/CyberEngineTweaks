@@ -1,27 +1,59 @@
 #include <stdafx.h>
 
 #include "CET.h"
+#include "Utils.h"
 
-#include <overlay/Overlay.h>
-
-void VKBindInfo::Fill(uint64_t aVKCodeBind, const VKBind& aVKBind)
+std::function<void()> VKBind::DelayedCall(const bool acIsDown) const
 {
-    Bind = aVKBind;
-    CodeBind = aVKCodeBind;
-    SavedCodeBind = aVKCodeBind;
-    IsBinding = false;
+    if (!acIsDown) // hotkeys only on key up
+    {
+        if (const auto* fn = std::get_if<std::function<TVKBindHotkeyCallback>>(&Handler))
+            return *fn;
+    }
+
+    if (const auto* fn = std::get_if<std::function<TVKBindInputCallback>>(&Handler))
+        return [cb = *fn, acIsDown]{ cb(acIsDown); };
+
+    assert(acIsDown); // nullptr should ever return only for key down events, in case binding is a hotkey
+    return nullptr;
 }
 
-uint64_t VKBindInfo::Apply()
+void VKBind::Call(const bool acIsDown) const
 {
-    SavedCodeBind = CodeBind;
-    return CodeBind;
+    if (const auto fn { DelayedCall(acIsDown) })
+        fn();
+}
+
+bool VKBind::IsHotkey() const
+{
+    return std::holds_alternative<std::function<TVKBindHotkeyCallback>>(Handler);
+}
+
+bool VKBind::IsInput() const
+{
+    return std::holds_alternative<std::function<TVKBindInputCallback>>(Handler);
+}
+
+bool VKBind::HasSimpleDescription() const
+{
+    return std::holds_alternative<std::string>(Description);
+}
+
+bool VKBind::HasComplexDescription() const
+{
+    return std::holds_alternative<std::function<void()>>(Description);
+}
+
+bool VKBind::operator==(const std::string& acpId) const
+{
+    return ID == acpId;
 }
 
 VKBindings::VKBindings(Paths& aPaths, const Options& acOptions)
     : m_paths(aPaths)
     , m_cOptions(acOptions)
 {
+    Load();
 }
 
 bool VKBindings::IsInitialized() const noexcept
@@ -29,160 +61,150 @@ bool VKBindings::IsInitialized() const noexcept
     return m_initialized;
 }
 
-TiltedPhoques::Vector<VKBindInfo> VKBindings::InitializeMods(TiltedPhoques::Vector<VKBindInfo> aVKBindInfos)
+void VKBindings::InitializeMods(const TiltedPhoques::Map<std::string, std::reference_wrapper<const TiltedPhoques::Vector<VKBind>>>& acVKBinds)
 {
+    m_binds.clear();
+
+    const auto& overlayToggleModBind = Bindings::GetOverlayToggleModBind();
+
     // first, check existing bindings and try to bind in case there is no binding
-    for (auto& vkBindInfo : aVKBindInfos)
+    for (auto& [vkModName, vkBinds] : acVKBinds)
     {
-        const auto bind = GetBindCodeForID(vkBindInfo.Bind.ID);
-        if (bind != 0)
+        VKModBind vkModBind;
+        vkModBind.ModName = vkModName;
+        for (auto& modBind : vkBinds.get())
         {
-            const auto ret = Bind(bind, vkBindInfo.Bind); // rebind
-            assert(ret);                            // we never really want ret == false here!
-            vkBindInfo.SavedCodeBind = bind;
-            vkBindInfo.CodeBind = bind;
-            continue;
-        }
-        // VKBind not bound yet - try to bind to default key (if any was chosen)
-        if (vkBindInfo.CodeBind != 0)
-        {
-            const auto ret = Bind(vkBindInfo.CodeBind, vkBindInfo.Bind);
-            if (ret)
+            // check for existing binding
+            vkModBind.ID = modBind.ID;
+            const auto bind = GetBindCodeForModBind(vkModBind, true);
+            if (!Bind(bind, vkModBind))
             {
-                // we successfully bound!
-                vkBindInfo.SavedCodeBind = vkBindInfo.CodeBind;
+                // register new binding
+                m_modIdToBinds[vkModBind.ModName][vkModBind.ID] = 0;
+            }
+        }
+    }
+
+    // now, find all dead bindings
+    TiltedPhoques::Vector<std::string> deadMods;
+    for (const auto& [modName, modIdToBinds] : m_modIdToBinds)
+    {
+        // always ignore internal bindings
+        if (modName == overlayToggleModBind.ModName)
+            continue;
+
+        // check if mod is present
+        const auto currentModBindingsIt = acVKBinds.find(modName);
+        if (currentModBindingsIt == acVKBinds.cend())
+        {
+            // when we want to filter dead bindings, mark mod for removal (default)
+            if (m_cOptions.RemoveDeadBindings)
+            {
+                deadMods.emplace_back(modName);
                 continue;
             }
         }
-        // Cannot be bound now, key is most probably bound to something
-        vkBindInfo.SavedCodeBind = 0;
-        vkBindInfo.CodeBind = 0;
-    }
 
-    // filter dead bindings if option is enabled (default)
-    if (m_cOptions.RemoveDeadBindings)
-    {
-        // now, find all dead bindings
-        TiltedPhoques::Vector<std::pair<std::string, uint64_t>> deadIDToBinds;
-        for (auto& idToBind : m_idToBind)
+        // find all dead bindings for current mod
+        TiltedPhoques::Vector<std::string> deadIDs;
+        for (auto& idToBind : modIdToBinds)
         {
-            // always ignore internal CET binds here!
-            if (!idToBind.first.compare(0, 4, "cet."))
-                continue;
-
-            // TODO - try to avoid O(n^2) situation here
             auto found = false;
-            for (auto& vkBindInfo : aVKBindInfos)
+            if (currentModBindingsIt != acVKBinds.cend())
             {
-                found = (idToBind.first == vkBindInfo.Bind.ID);
-                if (found)
+                for (auto& vkBind : currentModBindingsIt->second.get())
                 {
-                    // test if bind is hotkey and if not, check if bind is valid for input (which means it has single input key, not combo)
-                    found = (vkBindInfo.Bind.IsHotkey() || ((idToBind.second & 0xFFFF000000000000) == idToBind.second));
-                    break; // we just reset found flag accordingly and exit here, we found valid entry, no need to continue regardless of result
+                    found = idToBind.first == vkBind.ID;
+                    if (found)
+                    {
+                        // test if bind is hotkey and if not, check if bind is valid for input (which means it has
+                        // simple input key, not combo)
+                        found = vkBind.IsHotkey() || (idToBind.second & 0xFFFF000000000000) == idToBind.second;
+                        break; // we just reset found flag accordingly and exit here, we found valid entry, no need to
+                               // continue regardless of result
+                    }
                 }
             }
 
             if (!found)
-                deadIDToBinds.emplace_back(idToBind);
+                deadIDs.emplace_back(idToBind.first);
         }
 
-        // and remove them
-        for (auto& idToBind : deadIDToBinds)
+        // filter dead bindings if option is enabled (default)
+        // register them otherwise to prevent rebinds
+        for (const auto& deadId : deadIDs)
         {
-            m_idToBind.erase(idToBind.first);
-            m_binds.erase(idToBind.second);
+            if (m_cOptions.RemoveDeadBindings)
+                m_modIdToBinds[modName].erase(deadId);
+            else
+                Bind(m_modIdToBinds[modName][deadId], {modName, deadId});
         }
-
-        // finally, save our filtered bindings back to not lose them
-        Save();
     }
 
-    // insert CET overlay bind info
-    assert(m_cpOverlay); // overlay must be set before first use!
-    const auto overlayKeyBind { m_cpOverlay->GetBind() };
-    const auto overlayKeyCodeIt { m_idToBind.find(overlayKeyBind.ID) };
-    const auto overlayKeyCode { (overlayKeyCodeIt == m_idToBind.cend()) ? (0) : (overlayKeyCodeIt->second) };
-    aVKBindInfos.insert(aVKBindInfos.cbegin(), VKBindInfo{overlayKeyBind, overlayKeyCode, overlayKeyCode, false});
+    // and lastly, remove all dead mods (if we have any to remove)
+    for (const auto& deadMod : deadMods)
+        m_modIdToBinds.erase(deadMod);
 
-    // return corrected bindings
-    return aVKBindInfos;
+    // lastly, insert CET overlay bind info
+    const auto overlayBindCode{GetBindCodeForModBind(overlayToggleModBind, true)};
+    if (!Bind(overlayBindCode, overlayToggleModBind))
+        m_modIdToBinds[overlayToggleModBind.ModName][overlayToggleModBind.ID] = 0;
+
+    // finally, save our filtered bindings back to not lose them
+    Save();
 }
 
-bool VKBindings::Load(const Overlay& acOverlay)
+void VKBindings::Load()
 {
-    auto parseConfig {[this, &acOverlay](const std::filesystem::path& path, bool old = false) -> std::pair<bool, uint64_t> {
-        std::ifstream ifs { path };
-        if (ifs)
-        {
-            auto config { nlohmann::json::parse(ifs) };
-            VKBind overlayBind { acOverlay.GetBind() };
-            uint64_t overlayBindCode { 0 };
-            for (auto& it : config.items())
-            {
-                uint64_t key { it.value() };
-                if (old)
-                {
-                    // encoded key bind was 32-bit number in old config, convert it to new 64-bit format
-                    key =
-                    {
-                          ((key & 0x000000FF) << 8*0)
-                        | ((key & 0x0000FF00) << 8*1)
-                        | ((key & 0x00FF0000) << 8*2)
-                        | ((key & 0xFF000000) << 8*3)
-                    };
-                }
+    StopRecordingBind();
 
-                // properly auto-bind Overlay if it is present here (could be this is first start so it may not be
-                // in here yet)
-                VKBind vkBind { it.key() };
-                if (it.key() == overlayBind.ID)
-                {
-                    vkBind = overlayBind;
-                    overlayBindCode = key;
-                }
-
-                const auto ret { Bind(key, vkBind) };
-                assert(ret); // we want this to never fail!
-            }
-            return std::make_pair(true, overlayBindCode);
-        }
-        return std::make_pair(false, 0);
-    }};
- 
-    // try to load from current path
-    auto [res, key] = parseConfig(m_paths.VKBindings());
-    if (!res)
+    // try to load config
+    const auto path = GetAbsolutePath(m_paths.VKBindings(), "", false);
+    if (std::ifstream ifs{path})
     {
-        // if failed, try to look for old config
-        auto oldPath = m_paths.CETRoot() / "hotkeys.json";
-        const auto [resOld, keyOld] = parseConfig(oldPath, true);
-        if (resOld)
+        auto config{nlohmann::json::parse(ifs)};
+        for (auto& mod : config.items())
         {
-            // old config found and parsed, remove it and save it to current location
-            remove(oldPath);
-            Save();
-
-            // replace former res and key with ones from old config
-            res = resOld;
-            key = keyOld;
+            const auto& modName{mod.key()};
+            const auto concatPoint = modName.find('.');
+            if (concatPoint < modName.length())
+            {
+                // load old config type
+                auto modBindName = modName.substr(0, concatPoint);
+                auto modBindId = modName.substr(concatPoint + 1);
+                m_modIdToBinds[modBindName][modBindId] = mod.value();
+            }
+            else
+            {
+                // load new config type
+                for (auto& bind : mod.value().items())
+                    m_modIdToBinds[modName][bind.key()] = bind.value();
+            }
         }
     }
 
-    m_cpOverlay = &acOverlay;
-    m_initialized = true;
+    Save();
 
-    return res && key;
+    m_initialized = true;
 }
 
 void VKBindings::Save()
 {
+    StopRecordingBind();
+
     nlohmann::json config;
 
-    for (auto& idToBind : m_idToBind)
-        config[idToBind.first.c_str()] = idToBind.second;
+    for (const auto& [modName, modIdToBinds] : m_modIdToBinds)
+    {
+        auto& node = config[modName];
+        for (const auto& [id, bind] : modIdToBinds)
+        {
+            node[id] = bind;
+        }
+    }
 
-    std::ofstream ofs{m_paths.VKBindings()};
+    const auto path = GetAbsolutePath(m_paths.VKBindings(), "", true);
+    std::ofstream ofs{path};
     ofs << config.dump(4) << std::endl;
 }
 
@@ -191,169 +213,195 @@ void VKBindings::Update()
     m_queuedCallbacks.Drain();
 }
 
-void VKBindings::Clear()
+static bool FirstKeyMatches(const uint64_t acFirst, const uint64_t acSecond)
 {
-    m_binds.clear();
-    m_recordingBind = {};
+    return (acFirst & 0xFFFF000000000000ull) == (acSecond & 0xFFFF000000000000ull);
 }
 
-inline static bool FirstKeyMatches(uint64_t aFirst, uint64_t aSecond)
+bool VKBindings::Bind(const uint64_t acVKCodeBind, const VKModBind& acVKModBind)
 {
-    return ((aFirst & 0xFFFF000000000000ull) == (aSecond & 0xFFFF000000000000ull));
-}
+    if (acVKCodeBind == 0)
+        return false;
 
-bool VKBindings::Bind(uint64_t aVKCodeBind, const VKBind& aBind)
-{
-    // bind check 1 (check for rebind and already bound case)
+    const auto bind = m_binds.lower_bound(acVKCodeBind);
+    if (bind != m_binds.end())
     {
-        auto bind = m_binds.lower_bound(aVKCodeBind);
-        if (bind != m_binds.end())
+        // check if code binds are equal
+        if (bind->first == acVKCodeBind)
         {
-            if (bind->first == aVKCodeBind)
-            {
-                if (bind->second.ID == aBind.ID)
+            // if these do not match, code bind is already bound to other mod bind!
+            return bind->second == acVKModBind;
+        }
+
+        // in this case, we may have found a hotkey or simple input starting with same key
+        if (FirstKeyMatches(bind->first, acVKCodeBind))
+        {
+            // first char matches! lets check that both binds are hotkey in this case
+            const auto isHotkey = [vm = m_cpVm](const VKModBind& vkModBind) {
+                if (!vm)
                 {
-                    bind->second.Handler = aBind.Handler; // rebind
-                    return true;
+                    // this should never happen!
+                    assert(false);
+                    return false;
                 }
-                return false; // combo already bound and it is not the same VKBind!
-            }
-            // in this case, we may have found a hotkey or single input starting with same key
-            if (FirstKeyMatches(aVKCodeBind, bind->first))
+
+                const auto vkBind = vm->GetBind(vkModBind);
+                return vkBind && vkBind->IsHotkey();
+            };
+
+            if (!isHotkey(bind->second) || !isHotkey(acVKModBind))
             {
-                // first char matches! lets check that both binds are hotkey in this case
-                if (aBind.IsInput() || bind->second.IsInput())
-                    return false; // one of these is not a hotkey! single inputs cannot start with same key as some hotkey and vice versa!
+                // one of these is not a hotkey! simple inputs cannot start with same key as some
+                // hotkey and vice versa!
+                return false;
             }
         }
     }
 
-    // bind check 2 (includes unbind in case it is probably desired)
+    UnBind(acVKModBind);
+    m_binds[acVKCodeBind] = acVKModBind;
+    m_modIdToBinds[acVKModBind.ModName][acVKModBind.ID] = acVKCodeBind;
+    return true;
+}
+
+bool VKBindings::UnBind(const uint64_t acVKCodeBind)
+{
+    if (m_binds.contains(acVKCodeBind))
     {
-        const auto idToBind = m_idToBind.find(aBind.ID);
-        if (idToBind != m_idToBind.end())
-        {
-            auto bind = m_binds.find(idToBind->second);
-            assert (bind != m_binds.end()); // if these are not true for some reason, we have Fd up binding maps!
-            assert (bind->second.ID == aBind.ID); // if these are not true for some reason, we have Fd up binding maps!
-            if (!bind->second.IsValid())
-            {
-                bind->second.Handler = aBind.Handler; // rebind
-                return true;
-            }
-            // this is not a rebind, this is new combo assignment to handler
-            m_binds.erase(bind);
-            m_idToBind.erase(idToBind);
-            // dont return or anything in this case, continue!
-        }
+        const auto& modBind = m_binds.at(acVKCodeBind);
+        m_modIdToBinds.at(modBind.ModName).at(modBind.ID) = 0;
+        m_binds.erase(acVKCodeBind);
+        return true;
     }
-
-    m_binds[aVKCodeBind] = aBind;
-    m_idToBind[aBind.ID] = aVKCodeBind;
-    return true;
+    return false;
 }
 
-bool VKBindings::UnBind(uint64_t aVKCodeBind)
+bool VKBindings::UnBind(const VKModBind& acVKModBind)
 {
-    auto bind = m_binds.find(aVKCodeBind);
-    if (bind == m_binds.end())
+    const auto modBinds = m_modIdToBinds.find(acVKModBind.ModName);
+    if (modBinds == m_modIdToBinds.cend())
         return false;
 
-    m_idToBind.erase(bind->second.ID);
-    m_binds.erase(bind);
-    return true;
-}
-
-bool VKBindings::UnBind(const std::string& aID)
-{
-    const auto idToBind = m_idToBind.find(aID);
-    if (idToBind == m_idToBind.end())
+    auto& idToBinds = modBinds.value();
+    const auto idToBind = idToBinds.find(acVKModBind.ID);
+    if (idToBind == idToBinds.cend())
         return false;
-    
-    m_binds.erase(idToBind->second);
-    m_idToBind.erase(idToBind);
-    return true;
+
+    return UnBind(idToBind->second);
 }
 
-bool VKBindings::IsBound(uint64_t aVKCodeBind) const
+bool VKBindings::IsBound(const uint64_t acVKCodeBind) const
 {
-    return m_binds.count(aVKCodeBind);
+    const auto bind = m_binds.find(acVKCodeBind);
+    return bind != m_binds.end();
 }
 
-bool VKBindings::IsBound(const std::string& aID) const
+bool VKBindings::IsBound(const VKModBind& acVKModBind) const
 {
-    return m_idToBind.count(aID);
-}
-
-std::string VKBindings::GetBindString(uint64_t aVKCodeBind)
-{
-    std::string bindStr { };
-    if (aVKCodeBind == 0)
-        bindStr = "NOT BOUND";
-    else
+    if (const auto modIdToBindsIt = m_modIdToBinds.find(acVKModBind.ModName); modIdToBindsIt != m_modIdToBinds.cend())
     {
-        auto bindDec { DecodeVKCodeBind(aVKCodeBind) };
-        for (auto vkCode : bindDec)
-        {
-            if (vkCode == 0)
-                break;
+        const auto& modIdToBinds = modIdToBindsIt->second;
+        if (const auto bindIt = modIdToBinds.find(acVKModBind.ID); bindIt != modIdToBinds.cend())
+            return IsBound(bindIt->second);
+    }
+    return false;
+}
 
-            const char* specialName { GetSpecialKeyName(vkCode) };
-            if (specialName)
-                bindStr += specialName;
+bool VKBindings::IsFirstKeyUsed(const uint64_t acVKCodeBind) const
+{
+    const auto bind = m_binds.lower_bound(acVKCodeBind & 0xFFFF000000000000ull);
+    return bind != m_binds.end() ? FirstKeyMatches(acVKCodeBind, bind->first) : false;
+}
+
+std::string VKBindings::GetBindString(const uint64_t acVKCodeBind)
+{
+    if (acVKCodeBind == 0)
+        return "Unbound";
+
+    std::string bindStr;
+    const auto bindDec{DecodeVKCodeBind(acVKCodeBind)};
+    for (const auto vkCode : bindDec)
+    {
+        if (vkCode == 0)
+            break;
+
+        const char* specialName{GetSpecialKeyName(vkCode)};
+        if (specialName)
+            bindStr += specialName;
+        else
+        {
+            const char vkChar{static_cast<char>(MapVirtualKey(vkCode, MAPVK_VK_TO_CHAR))};
+            if (vkChar != 0)
+                bindStr += vkChar;
             else
-            {
-                char vkChar { static_cast<char>(MapVirtualKey(vkCode, MAPVK_VK_TO_CHAR)) };
-                if (vkChar != 0)
-                    bindStr += vkChar;
-                else
-                    bindStr += "UNKNOWN";
-            }
-            bindStr += " + ";
+                bindStr += "Unknown";
         }
-        bindStr.erase(bindStr.rfind(" + "));
+        bindStr += " + ";
     }
-    return bindStr;
+    return bindStr.erase(bindStr.rfind(" + "));
 }
 
-std::string VKBindings::GetBindString(const std::string aID) const
+std::string VKBindings::GetBindString(const VKModBind& acVKModBind) const
 {
-    return GetBindString(GetBindCodeForID(aID));
+    return GetBindString(GetBindCodeForModBind(acVKModBind));
 }
-    
-uint64_t VKBindings::GetBindCodeForID(const std::string& aID) const
+
+uint64_t VKBindings::GetBindCodeForModBind(const VKModBind& acVKModBind, const bool acIncludeDead) const
 {
-    assert(!aID.empty()); // we never really want aID to be empty here... but leave some fallback for release!
-    if (aID.empty())
+    assert(!acVKModBind.ModName.empty()); // we never really want acModName to be empty here... but leave some fallback for release!
+    assert(!acVKModBind.ID.empty());   // we never really want acID to be empty here... but leave some fallback for release!
+    if (acVKModBind.ModName.empty() || acVKModBind.ID.empty())
         return 0;
 
-    const auto idToBind = m_idToBind.find(aID);
-    if (idToBind == m_idToBind.cend())
+    const auto modBinds = m_modIdToBinds.find(acVKModBind.ModName);
+    if (modBinds == m_modIdToBinds.cend())
         return 0;
 
-    return idToBind->second;
+    const auto& idToBinds = modBinds.value();
+    const auto idToBind = idToBinds.find(acVKModBind.ID);
+    if (idToBind == idToBinds.cend())
+        return 0;
+
+    return acIncludeDead || IsBound(idToBind->second) ? idToBind->second : 0;
 }
 
-std::string VKBindings::GetIDForBindCode(uint64_t aVKCodeBind) const
+const VKModBind* VKBindings::GetModBindForBindCode(const uint64_t acVKCodeBind) const
 {
-    assert(aVKCodeBind != 0); // we never really want aVKCodeBind == 0 here... but leave some fallback for release!
-    if (aVKCodeBind == 0)
-        return { };
+    assert(acVKCodeBind != 0); // we never really want aVKCodeBind == 0 here... but leave some fallback for release!
+    if (acVKCodeBind == 0)
+        return nullptr;
 
-    const auto bind = m_binds.find(aVKCodeBind);
+    const auto bind = m_binds.find(acVKCodeBind);
     if (bind == m_binds.cend())
-        return { };
+        return nullptr;
 
-    return bind->second.ID;
+    return &bind->second;
 }
 
-VKCodeBindDecoded VKBindings::DecodeVKCodeBind(uint64_t aVKCodeBind)
+const VKModBind* VKBindings::GetModBindStartingWithBindCode(const uint64_t acVKCodeBind) const
 {
-    if (aVKCodeBind == 0)
-        return { };
+    assert(acVKCodeBind != 0); // we never really want aVKCodeBind == 0 here... but leave some fallback for release!
+    if (acVKCodeBind == 0)
+        return nullptr;
 
-    VKCodeBindDecoded res{ };
-    *reinterpret_cast<uint64_t*>(res.data()) = _byteswap_uint64(aVKCodeBind);
+    const auto bind = m_binds.lower_bound(acVKCodeBind & 0xFFFF000000000000ull);
+    if (bind == m_binds.cend())
+        return nullptr;
+
+    if (!FirstKeyMatches(bind->first, acVKCodeBind))
+        return nullptr;
+
+    return &bind->second;
+}
+
+VKCodeBindDecoded VKBindings::DecodeVKCodeBind(const uint64_t acVKCodeBind)
+{
+    if (acVKCodeBind == 0)
+        return {};
+
+    VKCodeBindDecoded res{};
+    const auto vkCodeBind = _byteswap_uint64(acVKCodeBind);
+    std::memcpy(res.data(), &vkCodeBind, sizeof(uint64_t));
     for (auto& key : res)
         key = _byteswap_ushort(key);
     return res;
@@ -363,18 +411,19 @@ uint64_t VKBindings::EncodeVKCodeBind(VKCodeBindDecoded aVKCodeBindDecoded)
 {
     for (auto& key : aVKCodeBindDecoded)
         key = _byteswap_ushort(key);
-    return _byteswap_uint64(*reinterpret_cast<const uint64_t*>(aVKCodeBindDecoded.data()));
+    uint64_t vkCodeBindEncoded = 0;
+    std::memcpy(&vkCodeBindEncoded, aVKCodeBindDecoded.data(), sizeof(uint64_t));
+    return _byteswap_uint64(vkCodeBindEncoded);
 }
 
-bool VKBindings::StartRecordingBind(const VKBind& aBind)
+bool VKBindings::StartRecordingBind(const VKModBind& acVKModBind)
 {
     if (m_isBindRecording)
         return false;
 
-    m_recording.fill(0);
-    m_recordingLength = 0;
-    m_recordingBind = aBind;
-    m_recordingResult = 0;
+    ClearRecording(true);
+
+    m_recordingModBind = acVKModBind;
     m_isBindRecording = true;
 
     return true;
@@ -384,10 +433,8 @@ bool VKBindings::StopRecordingBind()
 {
     if (!m_isBindRecording)
         return false;
-    
-    m_isBindRecording = false;
-    m_recordingLength = 0;
-    m_recording.fill(0);
+
+    ClearRecording(false);
 
     return true;
 }
@@ -402,128 +449,128 @@ uint64_t VKBindings::GetLastRecordingResult() const
     return m_recordingResult;
 }
 
-const char* VKBindings::GetSpecialKeyName(USHORT aVKCode)
+const char* VKBindings::GetSpecialKeyName(const USHORT acVKCode)
 {
-    switch (aVKCode)
+    switch (acVKCode)
     {
-        case VK_LBUTTON:
-            return "Mouse LB";
-        case VK_RBUTTON:
-            return "Mouse RB";
-        case VK_MBUTTON:
-            return "Mouse MB";
-        case VK_XBUTTON1:
-            return "Mouse X1";
-        case VK_XBUTTON2:
-            return "Mouse X2";
-        case VK_BACK:
-            return "Backspace";
-        case VK_TAB:
-            return "Tab";
-        case VK_CLEAR:
-            return "Clear";
-        case VK_RETURN:
-            return "Enter";
-        case VK_SHIFT:
-            return "Shift";
-        case VK_CONTROL:
-            return "Ctrl";
-        case VK_MENU:
-            return "Alt";
-        case VK_PAUSE:
-            return "Pause";
-        case VK_CAPITAL:
-            return "Caps Lock";
-        case VK_ESCAPE:
-            return "Esc";
-        case VK_SPACE:
-            return "Space";
-        case VK_PRIOR:
-            return "Page Up";
-        case VK_NEXT:
-            return "Page Down";
-        case VK_END:
-            return "End";
-        case VK_HOME:
-            return "Home";
-        case VK_LEFT:
-            return "Left Arrow";
-        case VK_UP:
-            return "Up Arrow";
-        case VK_RIGHT:
-            return "Right Arrow";
-        case VK_DOWN:
-            return "Down Arrow";
-        case VK_SELECT:
-            return "Select";
-        case VK_PRINT:
-            return "Print";
-        case VK_EXECUTE:
-            return "Execute";
-        case VK_INSERT:
-            return "Insert";
-        case VK_DELETE:
-            return "Delete";
-        case VK_HELP:
-            return "Help";
-        case VK_NUMPAD0:
-            return "Numpad 0";
-        case VK_NUMPAD1:
-            return "Numpad 1";
-        case VK_NUMPAD2:
-            return "Numpad 2";
-        case VK_NUMPAD3:
-            return "Numpad 3";
-        case VK_NUMPAD4:
-            return "Numpad 4";
-        case VK_NUMPAD5:
-            return "Numpad 5";
-        case VK_NUMPAD6:
-            return "Numpad 6";
-        case VK_NUMPAD7:
-            return "Numpad 7";
-        case VK_NUMPAD8:
-            return "Numpad 8";
-        case VK_NUMPAD9:
-            return "Numpad 9";
-        case VK_F1:
-            return "F1";
-        case VK_F2:
-            return "F2";
-        case VK_F3:
-            return "F3";
-        case VK_F4:
-            return "F4";
-        case VK_F5:
-            return "F5";
-        case VK_F6:
-            return "F6";
-        case VK_F7:
-            return "F7";
-        case VK_F8:
-            return "F8";
-        case VK_F9:
-            return "F9";
-        case VK_F10:
-            return "F10";
-        case VK_F11:
-            return "F11";
-        case VK_F12:
-            return "F12";
-        case VK_NUMLOCK:
-            return "Num Lock";
-        case VK_SCROLL:
-            return "Scroll Lock";
-        case VKBC_MWHEELUP:
-            return "Mouse Wheel Up";
-        case VKBC_MWHEELDOWN:
-            return "Mouse Wheel Down";
-        case VKBC_MWHEELLEFT:
-            return "Mouse Wheel Left";
-        case VKBC_MWHEELRIGHT:
-            return "Mouse Wheel Right";
-        default:
-            return nullptr;
+    case VK_LBUTTON:
+        return "Mouse LB";
+    case VK_RBUTTON:
+        return "Mouse RB";
+    case VK_MBUTTON:
+        return "Mouse MB";
+    case VK_XBUTTON1:
+        return "Mouse X1";
+    case VK_XBUTTON2:
+        return "Mouse X2";
+    case VK_BACK:
+        return "Backspace";
+    case VK_TAB:
+        return "Tab";
+    case VK_CLEAR:
+        return "Clear";
+    case VK_RETURN:
+        return "Enter";
+    case VK_SHIFT:
+        return "Shift";
+    case VK_CONTROL:
+        return "Ctrl";
+    case VK_MENU:
+        return "Alt";
+    case VK_PAUSE:
+        return "Pause";
+    case VK_CAPITAL:
+        return "Caps Lock";
+    case VK_ESCAPE:
+        return "Esc";
+    case VK_SPACE:
+        return "Space";
+    case VK_PRIOR:
+        return "Page Up";
+    case VK_NEXT:
+        return "Page Down";
+    case VK_END:
+        return "End";
+    case VK_HOME:
+        return "Home";
+    case VK_LEFT:
+        return "Left Arrow";
+    case VK_UP:
+        return "Up Arrow";
+    case VK_RIGHT:
+        return "Right Arrow";
+    case VK_DOWN:
+        return "Down Arrow";
+    case VK_SELECT:
+        return "Select";
+    case VK_PRINT:
+        return "Print";
+    case VK_EXECUTE:
+        return "Execute";
+    case VK_INSERT:
+        return "Insert";
+    case VK_DELETE:
+        return "Delete";
+    case VK_HELP:
+        return "Help";
+    case VK_NUMPAD0:
+        return "Numpad 0";
+    case VK_NUMPAD1:
+        return "Numpad 1";
+    case VK_NUMPAD2:
+        return "Numpad 2";
+    case VK_NUMPAD3:
+        return "Numpad 3";
+    case VK_NUMPAD4:
+        return "Numpad 4";
+    case VK_NUMPAD5:
+        return "Numpad 5";
+    case VK_NUMPAD6:
+        return "Numpad 6";
+    case VK_NUMPAD7:
+        return "Numpad 7";
+    case VK_NUMPAD8:
+        return "Numpad 8";
+    case VK_NUMPAD9:
+        return "Numpad 9";
+    case VK_F1:
+        return "F1";
+    case VK_F2:
+        return "F2";
+    case VK_F3:
+        return "F3";
+    case VK_F4:
+        return "F4";
+    case VK_F5:
+        return "F5";
+    case VK_F6:
+        return "F6";
+    case VK_F7:
+        return "F7";
+    case VK_F8:
+        return "F8";
+    case VK_F9:
+        return "F9";
+    case VK_F10:
+        return "F10";
+    case VK_F11:
+        return "F11";
+    case VK_F12:
+        return "F12";
+    case VK_NUMLOCK:
+        return "Num Lock";
+    case VK_SCROLL:
+        return "Scroll Lock";
+    case VKBC_MWHEELUP:
+        return "Mouse Wheel Up";
+    case VKBC_MWHEELDOWN:
+        return "Mouse Wheel Down";
+    case VKBC_MWHEELLEFT:
+        return "Mouse Wheel Left";
+    case VKBC_MWHEELRIGHT:
+        return "Mouse Wheel Right";
+    default:
+        return nullptr;
     }
 }
 
@@ -534,195 +581,133 @@ LRESULT VKBindings::OnWndProc(HWND, UINT auMsg, WPARAM, LPARAM alParam)
 
     switch (auMsg)
     {
-        case WM_INPUT:
-            return HandleRAWInput(reinterpret_cast<HRAWINPUT>(alParam));
+    case WM_INPUT:
+        return HandleRAWInput(reinterpret_cast<HRAWINPUT>(alParam));
+    case WM_KILLFOCUS:
+        // reset key states on focus loss, as otherwise, we end up with broken recording state
+        m_keyStates.reset();
+        ClearRecording(false);
     }
+
     return 0;
 }
 
-void VKBindings::ConnectUpdate(D3D12& aD3D12)
-{
-    m_connectUpdate = aD3D12.OnUpdate.Connect([this](){ this->Update(); });
-}
-
-void VKBindings::DisconnectUpdate(D3D12& aD3D12)
-{
-    aD3D12.OnUpdate.Disconnect(m_connectUpdate);
-    m_connectUpdate = static_cast<size_t>(-1);
-}
-
-bool VKBindings::IsLastRecordingKey(USHORT aVKCode)
-{
-    if (m_recordingLength == 0)
-        return false;
-
-    return (m_recording[m_recordingLength-1] == aVKCode);
-}
-
-LRESULT VKBindings::RecordKeyDown(USHORT aVKCode)
-{
-    if (m_keyStates[aVKCode])
+LRESULT VKBindings::RecordKeyDown(const USHORT acVKCode)
+{    
+    if (m_keyStates[acVKCode])
         return 0; // ignore repeats
-    
+
     // mark key down
-    m_keyStates[aVKCode] = true;
+    m_keyStates[acVKCode] = true;
 
-    if (m_recordingLength >= m_recording.size())
+    if (m_recordingLength != 0)
     {
-        assert(m_recordingLength == m_recording.size());
-        for (size_t i = 1; i < m_recordingLength; ++i)
-            m_recording[i-1] = m_recording[i];
-        --m_recordingLength;
-    }
-
-    m_recording[m_recordingLength++] = aVKCode;
-
-    const VKBind* bind { VerifyRecording() };
-
-    if (m_isBindRecording)
-        return 0; // don't do anything else when bind is being recorded
-
-    if (bind && (bind != VKBRecord_OK))
-    {
-        if (m_cpOverlay && m_cpOverlay->IsEnabled())
-            return 0; // we dont want to handle bindings if overlay is open and we are not in binding state!
-
-        if (bind->IsValid()) // prevention for freshly loaded bind from file without rebinding
+        if (m_recordingLength >= m_recording.size())
         {
-            if (!bind->ID.compare(0, 4, "cet."))
-                bind->Call(true); // we need to execute this immediately, otherwise cursor will not show on overlay toggle
-            else
-            {
-                auto delayedCall { bind->DelayedCall(true) };
-                if (delayedCall)
-                    m_queuedCallbacks.Add(delayedCall);
+            ClearRecording(false);
+            m_recordingResult = 0;
 
-                // reset recording for single input
-                if (bind->IsInput())
-                {
-                    m_recording.fill(0);
-                    m_recordingLength = 0;
-                }
-            }
+            return 0;
+        }
+
+        for (size_t i = 0; i < m_recordingLength; ++i)
+        {
+            assert(m_recording[i] != acVKCode);
+            if (m_recording[i] == acVKCode)
+                return 0;
         }
     }
+    else if (m_keyStates.count() != 1)
+        return 0;
+    
+    m_recording[m_recordingLength++] = acVKCode;
+    m_recordingWasKeyPressed = true;
+    
+    ExecuteRecording(true);
 
     return 0;
 }
 
-LRESULT VKBindings::RecordKeyUp(USHORT aVKCode)
+LRESULT VKBindings::RecordKeyUp(const USHORT acVKCode)
 {
-    if (!m_keyStates[aVKCode])
-        return 0; // ignore up event when we did not register down event
+    // ignore up event when we did not register down event
+    if (!m_keyStates[acVKCode])
+        return 0;
 
     // mark key up
-    m_keyStates[aVKCode] = false;
+    m_keyStates[acVKCode] = false;
     
-    // handle single inputs first
-    if (!m_recordingLength)
+    for (size_t i = 0; i < m_recordingLength; ++i)
     {
-        m_recording[m_recordingLength++] = aVKCode;
-        m_recordingResult = EncodeVKCodeBind(m_recording);
-        const auto* cpBind = VerifyRecording();
-        if (cpBind && (cpBind != VKBRecord_OK))
-        {
-            if (cpBind->IsInput())
-            {
-                if (m_cpOverlay && !m_cpOverlay->IsEnabled()) // we dont want to handle bindings if overlay is open
-                {
-                    if (cpBind->IsValid()) // prevention for freshly loaded bind from file without rebinding
-                        m_queuedCallbacks.Add(cpBind->DelayedCall(false));
-                }
-                else
-                {
-                    // remark key as down! otherwise, bad things may happen...
-                    m_keyStates[aVKCode] = true;
-                }
-            }
-        }
-        m_recordingResult = 0;
-        m_recording[0] = 0;
-        m_recordingLength = 0; // explicitly reset to 0, as VerifyRecording can make it 0 which would underflow if we decreased it...
+        if (m_recording[i] != acVKCode)
+            continue;
+        
+        if (m_recordingWasKeyPressed)
+            ExecuteRecording(false);
+        
+        // fix recording for future use, so user can use HKs like Ctrl+C, Ctrl+V without the need of pressing
+        // again Ctrl for example
+        m_recordingLength = i;
+        for (; i < m_recording.size(); ++i)
+            m_recording[i] = 0;
+
+        m_recordingWasKeyPressed = false;
+
         return 0;
     }
 
-    // handle hotkeys
-    for (size_t i = 0; i < m_recordingLength; ++i)
-    {
-        if (m_recording[i] == aVKCode)
-        {
-            m_recordingResult = EncodeVKCodeBind(m_recording);
-            m_recordingLength = i;
-
-            for (; i < m_recording.size(); ++i)
-                m_recording[i] = 0;
-
-            while (!VerifyRecording()) {} // fix recording for future use, so user can use HKs like Ctrl+C, Ctrl+V without the need of pressing again Ctrl for example
-
-            if (m_isBindRecording)
-            {
-                if (!Bind(m_recordingResult, m_recordingBind))
-                    m_recordingResult = 0;
-
-                m_isBindRecording = false;
-
-                return 0;
-            }
-
-            const auto bind = m_binds.find(m_recordingResult);
-            if (bind != m_binds.end())
-            {
-                if (m_cpOverlay && m_cpOverlay->IsEnabled() && (bind->second.ID != m_cpOverlay->GetBind().ID))
-                    return 0; // we dont want to handle bindings if toolbar is open and we are not in binding state!
-
-                if (bind->second.IsValid()) // prevention for freshly loaded bind from file without rebinding
-                {
-                    if (!bind->second.ID.compare(0, 4, "cet."))
-                        bind->second.Call(false); // we need to execute this immediately, otherwise cursor will not show on overlay toggle
-                    else
-                        m_queuedCallbacks.Add(bind->second.DelayedCall(false));
-                }
-            }
-            return 0;
-        }
-    }
-    // if we got here, aVKCode is not recorded key or there is no bind, so we ignore this event
     return 0;
 }
 
-const VKBind* VKBindings::VerifyRecording()
+void VKBindings::ExecuteRecording(const bool acLastKeyDown)
 {
-    if ((m_isBindRecording) || (m_recordingLength == 0))
-        return VKBRecord_OK; // always valid for bind recordings or when empty
+    m_recordingResult = EncodeVKCodeBind(m_recording);
+    
+    if (acLastKeyDown && (m_isBindRecording || m_recordingLength != 1))
+        return;
 
-    const auto possibleBind = m_binds.lower_bound(EncodeVKCodeBind(m_recording));
-    if (possibleBind == m_binds.end())
+    if (!acLastKeyDown && m_isBindRecording)
     {
-        m_recording[--m_recordingLength] = 0;
-        return nullptr; // seems like there is no possible HK here
+        m_isBindRecording = false;
+        return;
     }
 
-    VKCodeBindDecoded pbCodeDec = DecodeVKCodeBind(possibleBind->first);
-    for (size_t i = 0; i < m_recordingLength; ++i)
+    if (const auto bindIt = m_binds.find(m_recordingResult); bindIt != m_binds.cend())
     {
-        if (pbCodeDec[i] != m_recording[i])
+        if (bindIt->first != m_recordingResult)
+            return;
+
+        const auto& modBind = bindIt->second;
+        if (const auto vkBind = m_cpVm->GetBind(modBind))
         {
-            m_recording[--m_recordingLength] = 0;
-            return nullptr; // seems like there is no possible HK here
+            // we dont want to handle bindings when vm is not initialized or when overlay is open and we are not in binding state!
+            // only exception allowed is any CET bind
+            const auto& overlayToggleModBind = Bindings::GetOverlayToggleModBind();
+            const auto cetModBind = modBind.ModName == overlayToggleModBind.ModName;
+            if (!cetModBind && (!m_cpVm->IsInitialized() || CET::Get().GetOverlay().IsEnabled()))
+                return;
+            
+            // check first if this is a hotkey, as those should only execute when last key was up
+            if (acLastKeyDown && vkBind->IsHotkey())
+                return;
+
+            // execute CET binds immediately, otherwise cursor will not show on overlay toggle
+            if (cetModBind)
+                vkBind->Call(acLastKeyDown);
+            else
+                m_queuedCallbacks.Add(vkBind->DelayedCall(acLastKeyDown));
         }
     }
-    // valid recording
-    return ((m_recordingLength == 4) || !pbCodeDec[m_recordingLength]) ? (&possibleBind->second) : (VKBRecord_OK); // ptr to VKBind if equal, OK if possible match exists
 }
 
-LRESULT VKBindings::HandleRAWInput(HRAWINPUT ahRAWInput)
+LRESULT VKBindings::HandleRAWInput(const HRAWINPUT achRAWInput)
 {
-    UINT dwSize { 0 };
-    GetRawInputData(ahRAWInput, RID_INPUT, nullptr, &dwSize, sizeof(RAWINPUTHEADER));
+    UINT dwSize{0};
+    GetRawInputData(achRAWInput, RID_INPUT, nullptr, &dwSize, sizeof(RAWINPUTHEADER));
 
     const auto lpb = std::make_unique<BYTE[]>(dwSize);
-    if (GetRawInputData(ahRAWInput, RID_INPUT, lpb.get(), &dwSize, sizeof(RAWINPUTHEADER)) != dwSize )
-         Log::Warn("VKBindings::HandleRAWInput() - GetRawInputData() does not return correct size !");
+    if (GetRawInputData(achRAWInput, RID_INPUT, lpb.get(), &dwSize, sizeof(RAWINPUTHEADER)) != dwSize)
+        Log::Warn("VKBindings::HandleRAWInput() - GetRawInputData() does not return correct size!");
 
     const auto* raw = reinterpret_cast<const RAWINPUT*>(lpb.get());
     if (raw->header.dwType == RIM_TYPEKEYBOARD)
@@ -730,56 +715,80 @@ LRESULT VKBindings::HandleRAWInput(HRAWINPUT ahRAWInput)
         const auto& kb = raw->data.keyboard;
         switch (kb.Message)
         {
-            case WM_KEYDOWN:
-            case WM_SYSKEYDOWN:
-                return RecordKeyDown(kb.VKey);
-            case WM_KEYUP:
-            case WM_SYSKEYUP:
-                return RecordKeyUp(kb.VKey);
+        case WM_KEYDOWN:
+        case WM_SYSKEYDOWN:
+            return RecordKeyDown(kb.VKey);
+        case WM_KEYUP:
+        case WM_SYSKEYUP:
+            return RecordKeyUp(kb.VKey);
         }
     }
-    else if (raw->header.dwType == RIM_TYPEMOUSE) 
+    else if (raw->header.dwType == RIM_TYPEMOUSE)
     {
-        if (m_cpOverlay && m_isBindRecording && (m_recordingBind.ID == m_cpOverlay->GetBind().ID))
+        if (m_isBindRecording && m_recordingModBind == Bindings::GetOverlayToggleModBind())
             return 0; // ignore mouse keys for toolbar key binding!
 
         const auto& m = raw->data.mouse;
         switch (m.usButtonFlags)
         {
-            case RI_MOUSE_LEFT_BUTTON_DOWN:
-                return RecordKeyDown(VK_LBUTTON);
-            case RI_MOUSE_LEFT_BUTTON_UP:
-                return RecordKeyUp(VK_LBUTTON);
-            case RI_MOUSE_RIGHT_BUTTON_DOWN:
-                return RecordKeyDown(VK_RBUTTON);
-            case RI_MOUSE_RIGHT_BUTTON_UP:
-                return RecordKeyUp(VK_RBUTTON);
-            case RI_MOUSE_MIDDLE_BUTTON_DOWN:
-                return RecordKeyDown(VK_MBUTTON);
-            case RI_MOUSE_MIDDLE_BUTTON_UP:
-                return RecordKeyUp(VK_MBUTTON);
-            case RI_MOUSE_BUTTON_4_DOWN:
-                return RecordKeyDown(VK_XBUTTON1);
-            case RI_MOUSE_BUTTON_4_UP:
-                return RecordKeyUp(VK_XBUTTON1);
-            case RI_MOUSE_BUTTON_5_DOWN:
-                return RecordKeyDown(VK_XBUTTON2);
-            case RI_MOUSE_BUTTON_5_UP:
-                return RecordKeyUp(VK_XBUTTON2);
-            case RI_MOUSE_WHEEL:
-            {
-                const USHORT key { static_cast<USHORT>(RI_MOUSE_WHEEL | ((m.usButtonData & 0x8000) ? 0 : 1)) };
-                RecordKeyDown(key);
-                return RecordKeyUp(key);
-            }
-            case RI_MOUSE_HWHEEL:
-            {
-                const USHORT key{static_cast<USHORT>(RI_MOUSE_HWHEEL | ((m.usButtonData & 0x8000) ? 0 : 1))};
-                RecordKeyDown(key);
-                return RecordKeyUp(key);
-            }
+        case RI_MOUSE_LEFT_BUTTON_DOWN:
+            return RecordKeyDown(VK_LBUTTON);
+        case RI_MOUSE_LEFT_BUTTON_UP:
+            return RecordKeyUp(VK_LBUTTON);
+        case RI_MOUSE_RIGHT_BUTTON_DOWN:
+            return RecordKeyDown(VK_RBUTTON);
+        case RI_MOUSE_RIGHT_BUTTON_UP:
+            return RecordKeyUp(VK_RBUTTON);
+        case RI_MOUSE_MIDDLE_BUTTON_DOWN:
+            return RecordKeyDown(VK_MBUTTON);
+        case RI_MOUSE_MIDDLE_BUTTON_UP:
+            return RecordKeyUp(VK_MBUTTON);
+        case RI_MOUSE_BUTTON_4_DOWN:
+            return RecordKeyDown(VK_XBUTTON1);
+        case RI_MOUSE_BUTTON_4_UP:
+            return RecordKeyUp(VK_XBUTTON1);
+        case RI_MOUSE_BUTTON_5_DOWN:
+            return RecordKeyDown(VK_XBUTTON2);
+        case RI_MOUSE_BUTTON_5_UP:
+            return RecordKeyUp(VK_XBUTTON2);
+        case RI_MOUSE_WHEEL:
+        {
+            const USHORT key{static_cast<USHORT>(RI_MOUSE_WHEEL | ((m.usButtonData & 0x8000) ? 0 : 1))};
+            RecordKeyDown(key);
+            return RecordKeyUp(key);
+        }
+        case RI_MOUSE_HWHEEL:
+        {
+            const USHORT key{static_cast<USHORT>(RI_MOUSE_HWHEEL | ((m.usButtonData & 0x8000) ? 0 : 1))};
+            RecordKeyDown(key);
+            return RecordKeyUp(key);
+        }
         }
     }
 
-    return 0; 
+    return 0;
+}
+
+void VKBindings::ClearRecording(const bool acClearBind)
+{
+    m_recordingWasKeyPressed = false;
+    m_recording.fill(0);
+    m_recordingLength = 0;
+    m_isBindRecording = false;
+    if (acClearBind)
+    {
+        m_recordingResult = 0;
+        m_recordingModBind.ID.clear();
+        m_recordingModBind.ModName.clear();
+    }
+}
+
+void VKBindings::SetVM(const LuaVM* acpVm)
+{
+    // this should happen only once
+    assert(m_cpVm == nullptr);
+    // vm pointer shall be always valid when this is called!
+    assert(acpVm != nullptr);
+
+    m_cpVm = acpVm;
 }

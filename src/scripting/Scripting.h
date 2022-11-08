@@ -11,15 +11,19 @@ struct Scripting
 {
     using LockedState = TiltedPhoques::Locked<sol::state, std::recursive_mutex>;
 
-    Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12, Options& aOptions);
+    Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12);
     ~Scripting() = default;
 
     void Initialize();
     void PostInitializeScripting();
+    void PostInitializeTweakDB();
     void PostInitializeMods();
 
-    const TiltedPhoques::Vector<VKBindInfo>& GetBinds() const;
+    [[nodiscard]] const VKBind* GetBind(const VKModBind& acModBind) const;
+    [[nodiscard]] const TiltedPhoques::Vector<VKBind>* GetBinds(const std::string& acModName) const;
+    [[nodiscard]] const TiltedPhoques::Map<std::string, std::reference_wrapper<const TiltedPhoques::Vector<VKBind>>>& GetAllBinds() const;
 
+    void TriggerOnHook() const;
     void TriggerOnTweak() const;
     void TriggerOnInit() const;
     void TriggerOnUpdate(float aDeltaTime) const;
@@ -28,12 +32,13 @@ struct Scripting
     void TriggerOnOverlayClose() const;
 
     sol::object GetMod(const std::string& acName) const;
+    void UnloadAllMods();
     void ReloadAllMods();
-    bool ExecuteLua(const std::string& acCommand);
-    void CollectGarbage();
+    bool ExecuteLua(const std::string& acCommand) const;
+    void CollectGarbage() const;
 
-    LockedState GetState() const noexcept;
-    std::string GetGlobalName() const noexcept;
+    LuaSandbox& GetSandbox();
+    LockedState GetLockedState() const noexcept;
 
     static size_t Size(RED4ext::CBaseRTTIType* apRttiType);
     static sol::object ToLua(LockedState& aState, RED4ext::CStackType& aResult);
@@ -51,12 +56,10 @@ private:
     TiltedPhoques::Lockable<sol::state, std::recursive_mutex> m_lua;
     TiltedPhoques::Map<std::string, sol::object> m_properties{ };
     TiltedPhoques::Map<std::string, SingletonReference> m_singletons{ };
-    std::string m_global{ "Global" };
-    RTTIMapper m_mapper;
     LuaSandbox m_sandbox;
+    RTTIMapper m_mapper;
     ScriptStore m_store;
     FunctionOverride m_override;
     const Paths& m_paths;
     D3D12& m_d3d12;
-    mutable std::recursive_mutex m_vmLock;
 };

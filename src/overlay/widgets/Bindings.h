@@ -1,42 +1,49 @@
 #pragma once
 
 #include "Widget.h"
-#include "HelperWidgets.h"
 
-struct Overlay;
+struct VKBindInfo
+{
+    const VKBind& Bind;
+    uint64_t CodeBind{ 0 };
+    uint64_t SavedCodeBind{ 0 };
+    bool IsBinding{ false };
+
+    bool operator==(const std::string& id) const;
+};
+
 struct LuaVM;
-
 struct Bindings : Widget
 {
-    Bindings(VKBindings& aBindings, Overlay& aOverlay, LuaVM& aVm);
+    Bindings(VKBindings& aBindings, LuaVM& aVm);
     ~Bindings() override = default;
 
-    bool OnEnable() override;
-    bool OnDisable() override;
-    void Update() override;
-    
-    void Load();
+    WidgetResult OnEnable() override;
+    WidgetResult OnDisable() override;
+
     void Save();
     void ResetChanges();
 
-private:
-    bool DrawBindings(bool aDrawHotkeys);
+    [[nodiscard]] static bool IsFirstTimeSetup();
+    [[nodiscard]] bool FirstTimeSetup();
 
-    TiltedPhoques::Vector<VKBindInfo> m_vkBindInfos{ };
+    [[nodiscard]] static const VKModBind& GetOverlayToggleModBind() noexcept;
+    [[nodiscard]] static const VKBind& GetOverlayToggleBind() noexcept;
+
+protected:
+    void OnUpdate() override;
+    WidgetResult OnPopup() override;
+
+private:
+    void Initialize();
+    void UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKBindInfo);
+    void UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoques::Vector<VKBindInfo>& aVKBindInfos, size_t aHotkeyCount, bool aSimplified = false);
+
+    TiltedPhoques::Map<std::string, std::pair<TiltedPhoques::Vector<VKBindInfo>, size_t>> m_vkBindInfos{ };
     VKBindings& m_bindings;
-    Overlay& m_overlay;
     LuaVM& m_vm;
 
-    std::string m_overlayKeyID;
-
-    HelperWidgets::TUCHPSave m_saveCB { [this](){ Save(); } };
-    HelperWidgets::TUCHPLoad m_loadCB { [this](){ ResetChanges(); } };
-
-    bool m_luaVMReady{ false };
-    bool m_enabled{ false };
+    TChangedCBResult m_popupResult{ TChangedCBResult::APPLY };
     bool m_madeChanges{ false };
     bool m_openChangesModal{ true };
-
-    bool m_hotkeysChanged{ false };
-    bool m_inputsChanged{ false };
 };

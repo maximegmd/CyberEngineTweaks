@@ -2,12 +2,12 @@
 
 #include "LuaSandbox.h"
 
-#include "Scripting.h"
 #include "Texture.h"
 
+#include <CET.h>
 #include <Utils.h>
 
-static constexpr const char* s_cGlobalObjectsWhitelist[] =
+static constexpr const char* s_cVMGlobalObjectsWhitelist[] =
 {
     "_VERSION",
     "assert",
@@ -17,7 +17,6 @@ static constexpr const char* s_cGlobalObjectsWhitelist[] =
     "next",
     "pairs",
     "pcall",
-    "print",
 
     // Required for implementing classes
     "rawequal",
@@ -34,41 +33,21 @@ static constexpr const char* s_cGlobalObjectsWhitelist[] =
     "xpcall",
 
     "collectgarbage", //< Good for testing memory leaks and ref counters: `collectgarbage("collect")`, also used for forcing the release of some refs
-};
 
-static constexpr const char* s_cGlobalTablesWhitelist[] =
-{
     "string",
     "table",
     "math",
-    "bit32"
+    "bit32",
+    "json",
 };
 
-static constexpr const char* s_cGlobalImmutablesList[] =
+static constexpr const char* s_cGlobalObjectsWhitelist[] =
 {
-    "__Game",
-    "__Type",
-    "ClassReference",
-    "CName",
-    "Descriptor",
-    "Enum",
-    "EulerAngles",
-    "Game",
-    "GameOptions",
-    "ItemID",
-    "Quaternion",
-    "SingletonReference",
-    "StrongReference",
-    "TweakDBID",
-    "Unknown",
-    "Vector3",
-    "Vector4",
-    "WeakReference"
-};
+    "print",
+    "GetVersion",
+    "GetDisplayResolution",
+    "ModArchiveExists",
 
-static constexpr const char* s_cGlobalExtraLibsWhitelist[] =
-{
-    "ImGui",
     "ImGuiCond",
     "ImGuiTreeNodeFlags",
     "ImGuiSelectableFlags",
@@ -93,8 +72,82 @@ static constexpr const char* s_cGlobalExtraLibsWhitelist[] =
     "ImGuiCol",
     "ImGuiDir",
     "ImVec2",
-    "ImVec4",
-    "json"
+    "ImVec4"
+};
+
+static constexpr const char* s_cPostInitializeScriptingProtectedList[] =
+{
+    // initialized by Scripting
+    "Descriptor",
+    "StrongReference",
+    "WeakReference",
+    "SingletonReference",
+    "ClassReference",
+    "ResourceAsyncReference",
+    "Unknown",
+    "IsDefined",
+    "Enum",
+    "EnumInt",
+    "Vector3",
+    "ToVector3",
+    "Vector4",
+    "ToVector4",
+    "EulerAngles",
+    "ToEulerAngles",
+    "Quaternion",
+    "ToQuaternion",
+    "CName",
+    "ToCName",
+    "TweakDBID",
+    "ToTweakDBID",
+    "ItemID",
+    "ToItemID",
+    "CRUID",
+    "LocKey",
+    "GameOptions",
+};
+
+static constexpr const char* s_cPostInitializeTweakDBProtectedList[] =
+{
+    // initialized by Scripting
+    "TweakDB"
+};
+
+static constexpr const char* s_cPostInitializeModsProtectedList[] =
+{
+    // initialized by Scripting
+    "NewObject",
+    "GetSingleton",
+    "Override",
+    "ObserveBefore",
+    "ObserveAfter",
+    "Observe",
+    "GetMod",
+    "GameDump",
+    "Dump",
+    "DumpType",
+    "DumpAllTypeNames",
+    "DumpVtables",
+    "DumpReflection",
+    "Game",
+    "RegisterGlobalInputListener",
+
+    // initialized by RTTIMapper
+    "Vector3",
+    "ToVector3",
+    "Vector4",
+    "ToVector4",
+    "EulerAngles",
+    "ToEulerAngles",
+    "Quaternion",
+    "ToQuaternion",
+    "ItemID",
+    "ToItemID"
+};
+
+static constexpr const char* s_cGlobalExtraLibsWhitelist[] =
+{
+    "ImGui",
 };
 
 LuaSandbox::LuaSandbox(Scripting* apScripting, const VKBindings& acVKBindings)
@@ -105,25 +158,28 @@ LuaSandbox::LuaSandbox(Scripting* apScripting, const VKBindings& acVKBindings)
 
 void LuaSandbox::Initialize()
 {
-    auto lock = m_pScripting->GetState();
-    auto& luaView = lock.Get();
+    auto lockedState = m_pScripting->GetLockedState();
+    auto& luaState = lockedState.Get();
+    auto globals = luaState.globals();
 
     // initialize state + environment first
-    m_env = {luaView, sol::create};
+    m_env = {luaState, sol::create};
 
     // copy whitelisted things from global table
-    const auto cGlobals = luaView.globals();
-    for (const auto* cKey : s_cGlobalObjectsWhitelist)
-        m_env[cKey].set(cGlobals[cKey].get<sol::object>());
+    for (const auto* cKey : s_cVMGlobalObjectsWhitelist)
+    {
+        m_env[cKey] = DeepCopySolObject(globals[cKey].get<sol::object>(), luaState);
+        MakeSolUsertypeImmutable(m_env[cKey], luaState);
+    }
 
-    // copy whitelisted libs from global table
-    for (const auto* cKey : s_cGlobalTablesWhitelist)
-        m_env[cKey].set(cGlobals[cKey].get<sol::table>());
+    // copy whitelisted from our global table
+    for (const auto* cKey : s_cGlobalObjectsWhitelist)
+        MakeSolUsertypeImmutable(m_env[cKey], luaState);
 
     // copy safe os functions
     {
-        auto os = cGlobals["os"].get<sol::table>();
-        sol::table osCopy(luaView, sol::create);
+        auto os = globals["os"].get<sol::table>();
+        sol::table osCopy(luaState, sol::create);
         osCopy["clock"] = os["clock"];
         osCopy["date"] = os["date"];
         osCopy["difftime"] = os["difftime"];
@@ -131,174 +187,250 @@ void LuaSandbox::Initialize()
         m_env["os"] = osCopy;
     }
 
-    CreateSandbox();
+    CreateSandbox("", "", false, false, false, false);
 }
 
-void LuaSandbox::PostInitialize()
+void LuaSandbox::PostInitializeScripting()
 {
-    auto lock = m_pScripting->GetState();
-    auto& luaView = lock.Get();
+    auto lockedState = m_pScripting->GetLockedState();
+    auto& luaState = lockedState.Get();
+    auto globals = luaState.globals();
 
-    // make shared things immutable
-    for (const auto* cKey : s_cGlobalImmutablesList)
-        MakeSolUsertypeImmutable(luaView[cKey], luaView);
+    // copy whitelisted from global table
+    for (const auto* cKey : s_cPostInitializeScriptingProtectedList)
+        MakeSolUsertypeImmutable(m_env[cKey], luaState);
+}
+
+void LuaSandbox::PostInitializeTweakDB()
+{
+    auto lockedState = m_pScripting->GetLockedState();
+    auto& luaState = lockedState.Get();
+    auto globals = luaState.globals();
+
+    // copy whitelisted from global table
+    for (const auto* cKey : s_cPostInitializeTweakDBProtectedList)
+        MakeSolUsertypeImmutable(m_env[cKey], luaState);
+}
+
+void LuaSandbox::PostInitializeMods()
+{
+    auto lockedState = m_pScripting->GetLockedState();
+    auto& luaState = lockedState.Get();
+    auto globals = luaState.globals();
+
+    // copy whitelisted from global table
+    for (const auto* cKey : s_cPostInitializeModsProtectedList)
+        MakeSolUsertypeImmutable(m_env[cKey], luaState);
 }
 
 void LuaSandbox::ResetState()
 {
-    for (auto& cSandbox : m_sandboxes)
-        CloseDBForSandbox(cSandbox);
+    if (m_modules.empty())
+        return;
+
+    auto lockedState = m_pScripting->GetLockedState();
+    auto& luaState = lockedState.Get();
+
+    for (size_t i = 1; i < m_sandboxes.size(); ++i)
+        CloseDBForSandbox(m_sandboxes[i]);
 
     m_modules.clear();
 
-    if (m_sandboxes.size() > 1) // first one is always present, meant for console
-        m_sandboxes.erase(m_sandboxes.cbegin()+1, m_sandboxes.cend());
+    m_sandboxes.erase(m_sandboxes.cbegin() + 1, m_sandboxes.cend());
 
-    auto lock = m_pScripting->GetState();
-    auto& luaView = lock.Get();
-    luaView.collect_garbage();
+    luaState.collect_garbage();
 }
 
-size_t LuaSandbox::CreateSandbox(const std::filesystem::path& acPath, const std::string& acName, bool aEnableExtraLibs, bool aEnableDB, bool aEnableIO, bool aEnableLogger)
+uint64_t LuaSandbox::CreateSandbox(const std::filesystem::path& acPath, const std::string& acName, bool aEnableExtraLibs, bool aEnableDB, bool aEnableIO, bool aEnableLogger)
 {
-    const size_t cResID = m_sandboxes.size();
+    const uint64_t cResID = m_sandboxes.size();
     assert(!cResID || (!acPath.empty() && !acName.empty()));
-    auto& res = m_sandboxes.emplace_back(m_pScripting, m_env, acPath);
+
+    auto lockedState = m_pScripting->GetLockedState();
+    const auto& luaState = lockedState.Get();
+
+    auto& res = m_sandboxes.emplace_back(cResID, m_pScripting, m_env, acPath);
     if (!acPath.empty() && !acName.empty())
     {
         if (aEnableExtraLibs)
-            InitializeExtraLibsForSandbox(res);
+            InitializeExtraLibsForSandbox(res, luaState);
         if (aEnableDB)
-            InitializeDBForSandbox(res);
+            InitializeDBForSandbox(res, luaState);
         if (aEnableIO)
-            InitializeIOForSandbox(res, acName);
+            InitializeIOForSandbox(res, luaState, acName);
         if (aEnableLogger)
-            InitializeLoggerForSandbox(res, acName);
+            InitializeLoggerForSandbox(res, luaState, acName);
     }
     return cResID;
 }
 
-sol::protected_function_result LuaSandbox::ExecuteFile(const std::string& acPath)
+sol::protected_function_result LuaSandbox::ExecuteFile(const std::string& acPath) const
 {
-    return m_sandboxes[0].ExecuteFile(acPath);
+    return m_pScripting->GetLockedState().Get().script_file(acPath, m_env, sol::load_mode::text);
 }
 
-sol::protected_function_result LuaSandbox::ExecuteString(const std::string& acString)
+sol::protected_function_result LuaSandbox::ExecuteString(const std::string& acString) const
 {
-    return m_sandboxes[0].ExecuteString(acString);
+    return m_pScripting->GetLockedState().Get().script(acString, m_env, sol:: detail::default_chunk_name(), sol::load_mode::text);
 }
 
-Sandbox& LuaSandbox::operator[](size_t aID)
-{
-    assert(aID < m_sandboxes.size());
-    return m_sandboxes[aID];
-}
-
-const Sandbox& LuaSandbox::operator[](size_t aID) const
+Sandbox& LuaSandbox::operator[](uint64_t aID)
 {
     assert(aID < m_sandboxes.size());
     return m_sandboxes[aID];
 }
 
-TiltedPhoques::Locked<sol::state, std::recursive_mutex> LuaSandbox::GetState() const
+const Sandbox& LuaSandbox::operator[](uint64_t aID) const
 {
-    return m_pScripting->GetState();
+    assert(aID < m_sandboxes.size());
+    return m_sandboxes[aID];
 }
 
-void LuaSandbox::InitializeExtraLibsForSandbox(Sandbox& aSandbox) const
+TiltedPhoques::Locked<sol::state, std::recursive_mutex> LuaSandbox::GetLockedState() const
+{
+    return m_pScripting->GetLockedState();
+}
+
+void LuaSandbox::SetImGuiAvailable(bool aAvailable)
+{
+    auto lockedState = m_pScripting->GetLockedState();
+    m_imguiAvailable = aAvailable;
+}
+
+bool LuaSandbox::GetImGuiAvailable() const
+{
+    auto lockedState = m_pScripting->GetLockedState();
+    return m_imguiAvailable;
+}
+
+sol::environment& LuaSandbox::GetEnvironment()
+{
+    return m_env;
+}
+
+void LuaSandbox::InitializeExtraLibsForSandbox(Sandbox& aSandbox, const sol::state& acpState) const
 {
     auto& sbEnv = aSandbox.GetEnvironment();
-    sol::state_view sbStateView = GetState();
-    const auto cSBRootPath = aSandbox.GetRootPath();
-
-    auto lock = m_pScripting->GetState();
-    auto& luaView = lock.Get();
+    const auto& cSBRootPath = aSandbox.GetRootPath();
+    auto globals = acpState.globals();
+    sol::state_view stateView = acpState;
 
     // copy extra whitelisted libs from global table
-    const auto cGlobals = luaView.globals();
     for (const auto* cKey : s_cGlobalExtraLibsWhitelist)
-        sbEnv[cKey] = DeepCopySolObject(cGlobals[cKey].get<sol::object>(), luaView);
+    {
+        sbEnv[cKey] = DeepCopySolObject(globals[cKey].get<sol::object>(), acpState);
+        MakeSolUsertypeImmutable(sbEnv[cKey], acpState);
+    }
 
-    auto ImGui = sbEnv.get<sol::table>("ImGui");
-    Texture::BindTexture(ImGui);
+    sol::table imgui = sbEnv["ImGui"];
 
-    const auto cLoadTexture = [cSBRootPath, sbStateView](const std::string& acPath) -> std::tuple<std::shared_ptr<Texture>, sol::object> {
-        auto absPath = absolute(cSBRootPath / acPath).make_preferred();
+    imgui["LoadTexture"] = [this, cSBRootPath, stateView](const std::string& acPath) -> std::tuple<std::shared_ptr<Texture>, sol::object> {
+        if (!GetImGuiAvailable())
+            return std::make_tuple(nullptr, make_object(stateView,"Tried to use ImGui outside of allowed events!"));
 
-        const auto cRelPathStr = relative(absPath, cSBRootPath).string();
-        if (!exists(absPath) || !is_regular_file(absPath) || (cRelPathStr.find("..") != std::string::npos))
-            return std::make_tuple(nullptr, make_object(sbStateView, "Invalid path!"));
+        const auto previousCurrentPath = std::filesystem::current_path();
+        current_path(cSBRootPath);
 
-        auto texture = Texture::Load(absPath.string());
+        const auto path = GetLuaPath(acPath, cSBRootPath, false);
+        auto texture = Texture::Load(UTF16ToUTF8(path.native()));
         if (!texture)
-            return std::make_tuple(nullptr, make_object(sbStateView, "Failed to load '" + absPath.string() + "'"));
+            return std::make_tuple(nullptr, make_object(stateView, fmt::format("Failed to load '{}'", acPath)));
+
+        current_path(previousCurrentPath);
 
         return std::make_tuple(texture, sol::nil);
     };
-    ImGui.set_function("LoadTexture", cLoadTexture);
 }
 
-void LuaSandbox::InitializeDBForSandbox(Sandbox& aSandbox) const
+void LuaSandbox::InitializeDBForSandbox(Sandbox& aSandbox, const sol::state& acpState)
 {
     auto& sbEnv = aSandbox.GetEnvironment();
-    const auto cSBRootPath = aSandbox.GetRootPath();
+    const auto& cSBRootPath = aSandbox.GetRootPath();
+    const auto sbId = aSandbox.GetId();
+    auto globals = acpState.globals();
 
-    auto lock = m_pScripting->GetState();
-    auto& luaView = lock.Get();
-
-    const auto cGlobals = luaView.globals();
-    const auto cSQLite3 = cGlobals["sqlite3"].get<sol::table>();
-    sol::table sqlite3Copy(luaView, sol::create);
+    const auto cSQLite3 = globals["sqlite3"].get<sol::table>();
+    sol::table sqlite3Copy(acpState, sol::create);
     for (const auto& cKV : cSQLite3)
     {
         const auto cKeyStr = cKV.first.as<std::string>();
         if (cKeyStr.compare(0, 4, "open"))
-            sqlite3Copy[cKV.first] = DeepCopySolObject(cKV.second, luaView);
+            sqlite3Copy[cKV.first] = DeepCopySolObject(cKV.second, acpState);
     }
+    const auto dbOpen = acpState["sqlite3"]["open"].get<sol::function>();
+    sqlite3Copy["reopen"] = [this, sbId, dbOpen]{
+        auto& sandbox = m_sandboxes[sbId];
+
+        const auto previousCurrentPath = std::filesystem::current_path();
+        current_path(sandbox.GetRootPath());
+
+        CloseDBForSandbox(sandbox);
+        sandbox.GetEnvironment()["db"] = dbOpen(UTF16ToUTF8(GetLuaPath(L"db.sqlite3", sandbox.GetRootPath(), true).native()));
+
+        current_path(previousCurrentPath);
+    };
+
     sbEnv["sqlite3"] = sqlite3Copy;
 
-    sbEnv["db"] = luaView["sqlite3"]["open"]((cSBRootPath / "db.sqlite3").string());
+    const auto previousCurrentPath = std::filesystem::current_path();
+    current_path(cSBRootPath);
+
+    sbEnv["db"] = dbOpen(UTF16ToUTF8(GetLuaPath(L"db.sqlite3", cSBRootPath, true).native()));
+
+    current_path(previousCurrentPath);
 }
 
-void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& acName)
+void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acpState, const std::string& acName)
 {
-    sol::state_view sbStateView = GetState();
-    auto sbEnv = aSandbox.GetEnvironment();
-    const auto cSBRootPath = aSandbox.GetRootPath();
+    auto& sbEnv = aSandbox.GetEnvironment();
+    const auto& cSBRootPath = aSandbox.GetRootPath();
+    auto globals = acpState.globals();
+    const auto cSBEnv = sbEnv;
+    sol::state_view stateView = acpState;
 
-    const auto cLoadString = [sbStateView, sbEnv](const std::string& acStr, const std::string &acChunkName) -> std::tuple<sol::object, sol::object>
+    const auto cLoadString = [stateView, cSBEnv](const std::string& acStr, const std::string &acChunkName) -> std::tuple<sol::object, sol::object>
     {
-        sol::state_view sv = sbStateView;
-        const sol::environment cEnv = sbEnv;
+        if (!acStr.empty() && acStr[0] == LUA_SIGNATURE[0])
+            return std::make_tuple(sol::nil, make_object(stateView, "Bytecode prohibited!"));
 
-        if (!acStr.empty() && (acStr[0] == LUA_SIGNATURE[0]))
-            return std::make_tuple(sol::nil, make_object(sbStateView, "Bytecode prohibited!"));
-
-        const auto& acKey = (acChunkName.empty()) ? (acStr) : (acChunkName);
-        const auto cResult = sv.load(acStr, acKey, sol::load_mode::text);
+        sol::state_view luaView = stateView;
+        const auto& acKey = acChunkName.empty() ? acStr : acChunkName;
+        const auto cResult = luaView.load(acStr, acKey, sol::load_mode::text);
         if (cResult.valid())
         {
             const auto cFunc = cResult.get<sol::function>();
-            cEnv.set_on(cFunc);
+            cSBEnv.set_on(cFunc);
             return std::make_tuple(cFunc, sol::nil);
         }
 
-        return std::make_tuple(sol::nil, make_object(sv, cResult.get<sol::error>().what()));
+        return std::make_tuple(sol::nil, make_object(stateView, cResult.get<sol::error>().what()));
     };
     sbEnv["loadstring"] = cLoadString;
 
-    const auto cLoadFile = [cSBRootPath, cLoadString, sbStateView](const std::string& acPath) -> std::tuple<sol::object, sol::object>
+    const auto cLoadFile = [cSBRootPath, cLoadString, stateView](const std::string& acPath) -> std::tuple<sol::object, sol::object>
     {
-        auto absPath = absolute(cSBRootPath / acPath).make_preferred();
-        if (!exists(absPath) || !is_regular_file(absPath))
-            absPath += ".lua";
-        const auto cRelPathStr = relative(absPath, cSBRootPath).string();
-        if (!exists(absPath) || !is_regular_file(absPath) || (cRelPathStr.find("..") != std::string::npos))
-            return std::make_tuple(sol::nil, make_object(sbStateView, "Invalid path!"));
+        const auto previousCurrentPath = std::filesystem::current_path();
+        current_path(cSBRootPath);
 
-        std::ifstream ifs(absPath);
-        const std::string cScriptString((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
-        return cLoadString(cScriptString, "@" + absPath.string());
+        auto path = GetLuaPath(acPath, cSBRootPath, false);
+
+        if (path.empty() || !is_regular_file(path))
+            path = GetLuaPath(acPath + ".lua", cSBRootPath, false);
+
+        if (path.empty() || !is_regular_file(path))
+        {
+            current_path(previousCurrentPath);
+
+            return std::make_tuple(sol::nil, make_object(stateView, "Tried to access invalid path '" + acPath + "'!"));
+        }
+
+        std::ifstream ifs(path);
+        const std::string cScriptString((std::istreambuf_iterator(ifs)), std::istreambuf_iterator<char>());
+        auto result = cLoadString(cScriptString, "@" + UTF16ToUTF8(path.native()));
+
+        current_path(previousCurrentPath);
+
+        return result;
     };
     sbEnv["loadfile"] = cLoadFile;
 
@@ -312,39 +444,46 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
         return func().get<sol::object>(); // is OK, dofile should throw if there is an error, we try to copy it...
     };
 
-    sbEnv["require"] = [this, cLoadString, cSBRootPath, sbStateView, sbEnv](const std::string& acPath) -> std::tuple<sol::object, sol::object>
+    // TODO - add _LOADED table and fill in when module loads some value, react in these functions when the key is sol::nil
+    sbEnv["require"] = [this, cLoadString, cSBRootPath, stateView, cSBEnv](const std::string& acPath) -> std::tuple<sol::object, sol::object>
     {
-        auto absPath = absolute(cSBRootPath / acPath).make_preferred();
-        if (!exists(absPath) || !is_regular_file(absPath))
+        const auto previousCurrentPath = std::filesystem::current_path();
+        current_path(cSBRootPath);
+
+        auto path = GetLuaPath(acPath, cSBRootPath, false);
+
+        if (path.empty() || !is_regular_file(path))
+            path = GetLuaPath(acPath + ".lua", cSBRootPath, false);
+
+        if (path.empty() || !is_regular_file(path))
+            path = GetLuaPath(acPath + "\\init.lua", cSBRootPath, false);
+
+        if (path.empty() || !is_regular_file(path))
         {
-            auto absPath2 = absPath;
-            absPath2 += ".lua";
-            if (exists(absPath2) && is_regular_file(absPath2))
-                absPath = absPath2;
-            else
-            {
-                auto absPath3 = absPath;
-                absPath3 /= "init.lua";
-                if (!exists(absPath3) || !is_regular_file(absPath3))
-                    return std::make_tuple(sol::nil, make_object(sbStateView, "Invalid path!"));
-                absPath = absPath3;
-            }
+            current_path(previousCurrentPath);
+
+            return std::make_tuple(sol::nil, make_object(stateView, "Tried to access invalid path '" + acPath + "'!"));
         }
-        const auto cRelPathStr = relative(absPath, cSBRootPath).string();
-        if ((cRelPathStr.find("..") != std::string::npos))
-            return std::make_tuple(sol::nil, make_object(sbStateView, "Invalid path!"));
 
-        const auto cKey = absPath.string();
-        const auto cExistingModule = this->m_modules.find(cKey);
-        if (cExistingModule != this->m_modules.end())
+        const auto cKey = UTF16ToUTF8((cSBRootPath / path).native());
+        const auto cExistingModule = m_modules.find(cKey);
+        if (cExistingModule != m_modules.end())
+        {
+            current_path(previousCurrentPath);
+
             return std::make_tuple(cExistingModule->second, sol::nil);
+        }
 
-        std::ifstream ifs(absPath);
-        const std::string cScriptString((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
-        auto res = cLoadString(cScriptString, "@" + absPath.string());
+        std::ifstream ifs(path);
+        const std::string cScriptString((std::istreambuf_iterator(ifs)), std::istreambuf_iterator<char>());
+        auto res = cLoadString(cScriptString, "@" + cKey);
         auto obj = std::get<0>(res);
         if (obj == sol::nil)
+        {
+            current_path(previousCurrentPath);
+
             return res;
+        }
 
         sol::function func = std::get<0>(res);
         if (func != sol::nil)
@@ -357,71 +496,100 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
             }
             catch(std::exception& e)
             {
-                return std::make_tuple(sol::nil, make_object(sbStateView, e.what()));
+                current_path(previousCurrentPath);
+
+                return std::make_tuple(sol::nil, make_object(stateView, e.what()));
             }
 
             if (result.valid())
             {
-                auto obj = result.get<sol::object>();
-                this->m_modules[cKey] = obj;
-                return std::make_tuple(obj, sol::nil);
+                auto resultObj = result.get<sol::object>();
+                m_modules[cKey] = resultObj;
+
+                current_path(previousCurrentPath);
+
+                return std::make_tuple(resultObj, sol::nil);
             }
 
             sol::error err = result;
-			std::shared_ptr<spdlog::logger> logger = sbEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
-			logger->error("Error: Cannot load module '{}': {}", acPath, err.what());
+            auto logger = cSBEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+            logger->error("Error: Cannot load module '{}': {}", acPath, err.what());
 
-            return std::make_tuple(sol::nil, make_object(sbStateView, err.what()));
+            current_path(previousCurrentPath);
+
+            return std::make_tuple(sol::nil, make_object(stateView, err.what()));
         }
+
+        current_path(previousCurrentPath);
+
         return res;
     };
 
-    sbEnv["dir"] = [cSBRootPath, sbStateView](const std::string& acPath) -> sol::table
+    sbEnv["dir"] = [cSBRootPath, stateView](const std::string& acPath) -> sol::table
     {
-        sol::state_view sv = sbStateView;
+        const auto previousCurrentPath = std::filesystem::current_path();
+        current_path(cSBRootPath);
 
-        auto absPath = absolute(cSBRootPath / acPath).make_preferred();
-        const auto cRelPathStr = relative(absPath, cSBRootPath).string();
-        if (!exists(absPath) || !is_directory(absPath) || (cRelPathStr.find("..") != std::string::npos))
-            return sol::nil;
+        const auto path = GetLuaPath(acPath, cSBRootPath, false);
 
-        sol::table res(sv, sol::create);
-        int index = 1;
-        for (const auto& file : std::filesystem::directory_iterator(absPath))
+        if (path.empty() || !is_directory(path))
         {
-            sol::table item(sv, sol::create);
-            item["name"] = relative(file.path(), absPath).string();
-            item["type"] = (file.is_directory()) ? ("directory") : ("file");
+            current_path(previousCurrentPath);
+
+            return sol::nil;
+        }
+
+        sol::table res(stateView, sol::create);
+        int index = 1;
+        for (const auto& entry : std::filesystem::directory_iterator(path))
+        {
+            sol::table item(stateView, sol::create);
+            item["name"] = UTF16ToUTF8(relative(entry.path(), path).native());
+            item["type"] = entry.is_directory() ? "directory" : "file";
             res[index++] = item;
         }
+
+        current_path(previousCurrentPath);
+
         return res;
     };
 
-    auto lock = m_pScripting->GetState();
-    auto& luaView = lock.Get();
-
-    const auto cGlobals = luaView.globals();
     // define replacements for io lib
     {
-        const auto cIO = cGlobals["io"].get<sol::table>();
-        sol::table ioSB(luaView, sol::create);
-        ioSB["type"] = DeepCopySolObject(cIO["type"], luaView);
-        ioSB["close"] = DeepCopySolObject(cIO["close"], luaView);
+        const auto cIO = globals["io"].get<sol::table>();
+        sol::table ioSB(acpState, sol::create);
+        ioSB["read"] = DeepCopySolObject(cIO["read"], acpState);
+        ioSB["write"] = DeepCopySolObject(cIO["write"], acpState);
+        ioSB["input"] = DeepCopySolObject(cIO["input"], acpState);
+        ioSB["output"] = DeepCopySolObject(cIO["output"], acpState);
+        ioSB["type"] = DeepCopySolObject(cIO["type"], acpState);
+        ioSB["close"] = DeepCopySolObject(cIO["close"], acpState);
         ioSB["lines"] = [cIO, cSBRootPath](const std::string& acPath)
         {
-            const auto cAbsPath = absolute(cSBRootPath / acPath).make_preferred();
-            const auto cRelPathStr = relative(cAbsPath, cSBRootPath).string();
-            if (cRelPathStr.find("..") == std::string::npos)
-                return cIO["lines"](cAbsPath.string());
-            return cIO["lines"](""); // simulate invalid input even though it may be valid - we dont want mod access outside!
+            const auto previousCurrentPath = std::filesystem::current_path();
+            current_path(cSBRootPath);
+
+            const auto path = GetLuaPath(acPath, cSBRootPath, false);
+
+            auto result = cIO["lines"](path.empty() || acPath == "db.sqlite3" ? "" : UTF16ToUTF8(path.native()));
+
+            current_path(previousCurrentPath);
+
+            return result;
+
         };
         const auto cOpenWithMode = [cIO, cSBRootPath](const std::string& acPath, const std::string& acMode)
         {
-            const auto cAbsPath = absolute(cSBRootPath / acPath).make_preferred();
-            const auto cRelPathStr = relative(cAbsPath, cSBRootPath).string();
-            if (cRelPathStr.find("..") == std::string::npos && (cRelPathStr != "db.sqlite3"))
-                return cIO["open"](cAbsPath.string(), acMode);
-            return cIO["open"]("", acMode); // simulate invalid input even though it may be valid - we dont want mod access outside!
+            const auto previousCurrentPath = std::filesystem::current_path();
+            current_path(cSBRootPath);
+
+            const auto path = GetLuaPath(acPath, cSBRootPath, true);
+
+            auto result = cIO["open"](path.empty() || acPath == "db.sqlite3" ? "" : UTF16ToUTF8(path.native()), acMode);
+
+            current_path(previousCurrentPath);
+
+            return result;
         };
         auto cOpenDefault = [cOpenWithMode](const std::string& acPath)
         {
@@ -431,77 +599,87 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const std::string& ac
         sbEnv["io"] = ioSB;
     }
 
-    // add in rename and remove repacements for os lib
+    // add in rename and remove replacements for os lib
     {
-        const auto cOS = cGlobals["os"].get<sol::table>();
-        sol::table osSB = sbEnv["os"].get<sol::table>();
+        const auto cOS = globals["os"].get<sol::table>();
+        sol::table osSB = DeepCopySolObject(m_env["os"].get<sol::object>(), acpState);
         osSB["rename"] = [cOS, cSBRootPath](const std::string& acOldPath, const std::string& acNewPath) -> std::tuple<sol::object, std::string>
         {
-            const auto cAbsOldPath = absolute(cSBRootPath / acOldPath).make_preferred();
-            const auto cRelOldPathStr =  relative(cAbsOldPath, cSBRootPath).string();
-            if (!exists(cAbsOldPath) || (cRelOldPathStr.find("..") != std::string::npos) || (cRelOldPathStr == "db.sqlite3"))
-                return std::make_tuple(sol::nil, "Argument oldpath is invalid!");
+            const auto previousCurrentPath = std::filesystem::current_path();
+            current_path(cSBRootPath);
 
-            const auto cAbsNewPath = absolute(cSBRootPath / acNewPath).make_preferred();
-            const auto cRelNewPathStr =  relative(cAbsNewPath, cSBRootPath).string();
-            if (cRelNewPathStr.find("..") != std::string::npos)
-                return std::make_tuple(sol::nil, "Argument newpath is invalid!");
+            const auto oldPath = GetLuaPath(acOldPath, cSBRootPath, false);
+            if (oldPath.empty() || acOldPath == "db.sqlite3")
+            {
+                current_path(previousCurrentPath);
 
-            const auto cResult = cOS["rename"](cAbsOldPath.string(), cAbsNewPath.string());
-            if (cResult.valid())
-                return std::make_tuple(cResult.get<sol::object>(), "");
-            return std::make_tuple(cResult.get<sol::object>(0), cResult.get<std::string>(1));
+                return std::make_tuple(sol::nil, "Argument oldPath is invalid! ('" + acOldPath + "')");
+            }
+
+            const auto newPath = GetLuaPath(acOldPath, cSBRootPath, true);
+            if (newPath.empty() || exists(newPath)|| acNewPath == "db.sqlite3")
+            {
+                current_path(previousCurrentPath);
+
+                return std::make_tuple(sol::nil, "Argument newPath is invalid! ('" + acNewPath + "')");
+            }
+
+            const auto cResult = cOS["rename"](UTF16ToUTF8(oldPath.native()), UTF16ToUTF8(newPath.native()));
+
+            current_path(previousCurrentPath);
+
+            return cResult.valid() ? std::make_tuple(cResult.get<sol::object>(), "") : std::make_tuple(cResult.get<sol::object>(0), cResult.get<std::string>(1));
         };
         osSB["remove"] = [cOS, cSBRootPath](const std::string& acPath) -> std::tuple<sol::object, std::string>
         {
-            const auto cAbsPath = absolute(cSBRootPath / acPath).make_preferred();
-            const auto cRelPathStr = relative(cAbsPath, cSBRootPath).string();
-            if (!exists(cAbsPath) || (cRelPathStr.find("..") != std::string::npos) || (cRelPathStr == "db.sqlite3"))
-                return std::make_tuple(sol::nil, "Argument path is invalid!");
+            const auto previousCurrentPath = std::filesystem::current_path();
+            current_path(cSBRootPath);
 
-            const auto cResult = cOS["remove"](cAbsPath.string());
-            if (cResult.valid())
-                return std::make_tuple(cResult.get<sol::object>(), "");
-            return std::make_tuple(cResult.get<sol::object>(0), cResult.get<std::string>(1));
+            const auto path = GetLuaPath(acPath, cSBRootPath, false);
+
+            const auto cResult = cOS["remove"](UTF16ToUTF8(path.native()));
+
+            current_path(previousCurrentPath);
+
+            return cResult.valid() ? std::make_tuple(cResult.get<sol::object>(), "") : std::make_tuple(cResult.get<sol::object>(0), cResult.get<std::string>(1));
         };
+        sbEnv["os"] = osSB;
     }
 
     // add support functions for bindings
     sbEnv["IsBound"] = [vkb = &m_vkBindings, name = acName](const std::string& aID) -> bool
     {
-        return vkb->IsBound(name + '.' + aID);
+        return vkb->IsBound({name, aID});
     };
     sbEnv["GetBind"] = [vkb = &m_vkBindings, name = acName](const std::string& aID) -> std::string
     {
-        return vkb->GetBindString(name + '.' + aID);
+        return vkb->GetBindString({name, aID});
     };
 }
 
-void LuaSandbox::InitializeLoggerForSandbox(Sandbox& aSandbox, const std::string& acName) const
+void LuaSandbox::InitializeLoggerForSandbox(Sandbox& aSandbox, const sol::state& acpState, const std::string& acName) const
 {
     auto& sbEnv = aSandbox.GetEnvironment();
-    const auto cSBRootPath = aSandbox.GetRootPath();
+    const auto& cSBRootPath = aSandbox.GetRootPath();
 
     // initialize logger for this mod
-    auto logger = CreateLogger(cSBRootPath / (acName + ".log"), acName);
-
-    auto state = m_pScripting->GetState();
+    auto logger = CreateLogger(GetAbsolutePath(acName + ".log", cSBRootPath, true), acName);
 
     // assign logger to mod so it can be used from within it too
-    sol::table spdlog(state.Get(), sol::create);
-    spdlog["trace"]    = [logger](const std::string& message) { logger->trace(message);    };
-    spdlog["debug"]    = [logger](const std::string& message) { logger->debug(message);    };
-    spdlog["info"]     = [logger](const std::string& message) { logger->info(message);     };
-    spdlog["warning"]  = [logger](const std::string& message) { logger->warn(message);     };
-    spdlog["error"]    = [logger](const std::string& message) { logger->error(message);    };
-    spdlog["critical"] = [logger](const std::string& message) { logger->critical(message); };
+    sol::table spdlog(acpState, sol::create);
+    spdlog["trace"]    = [logger](const std::string& message) { logger->trace("{}", message);    };
+    spdlog["debug"]    = [logger](const std::string& message) { logger->debug("{}", message);    };
+    spdlog["info"]     = [logger](const std::string& message) { logger->info("{}", message);     };
+    spdlog["warning"]  = [logger](const std::string& message) { logger->warn("{}", message);     };
+    spdlog["error"]    = [logger](const std::string& message) { logger->error("{}", message);    };
+    spdlog["critical"] = [logger](const std::string& message) { logger->critical("{}", message); };
     sbEnv["spdlog"] = spdlog;
 
     // assign logger to special var so we can access it from our functions
     sbEnv["__logger"] = logger;
 }
 
-void LuaSandbox::CloseDBForSandbox(Sandbox& aSandbox) const
+void LuaSandbox::CloseDBForSandbox(const Sandbox& aSandbox) const
 {
     aSandbox.ExecuteString(R"(
         if type(db) == 'userdata' and tostring(db):find('^sqlite database') then
