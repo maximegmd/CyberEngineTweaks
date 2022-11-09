@@ -600,6 +600,8 @@ LRESULT VKBindings::RecordKeyDown(const USHORT acVKCode)
     // mark key down
     m_keyStates[acVKCode] = true;
 
+    ExecuteSingleInput(acVKCode, true);
+
     if (m_recordingLength != 0)
     {
         if (m_recordingLength >= m_recording.size())
@@ -623,8 +625,6 @@ LRESULT VKBindings::RecordKeyDown(const USHORT acVKCode)
     m_recording[m_recordingLength++] = acVKCode;
     m_recordingResult = EncodeVKCodeBind(m_recording);
     m_recordingWasKeyPressed = true;
-
-    ExecuteSingleInput(acVKCode, true);
 
     return 0;
 }
