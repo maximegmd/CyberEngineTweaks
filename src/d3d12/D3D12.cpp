@@ -3,7 +3,6 @@
 #include "D3D12.h"
 #include "CET.h"
 
-#include <kiero/kiero.h>
 #include <imgui_impl/dx12.h>
 #include <imgui_impl/win32.h>
 

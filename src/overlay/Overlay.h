@@ -11,7 +11,6 @@ using TClipToCenter = HWND(RED4ext::CGameEngine::UnkC0*);
 
 struct D3D12;
 struct Options;
-
 struct Overlay
 {
     Overlay(D3D12& aD3D12, VKBindings& aBindings, Options& aOptions, LuaVM& aVm);
@@ -61,5 +60,4 @@ private:
     Options& m_options;
     LuaVM& m_vm;
     size_t m_connectInitialized;
-    size_t m_connectUpdate;
 };
