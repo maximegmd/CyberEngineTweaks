@@ -31,7 +31,7 @@ void Options::Load()
             // font config
             FontPath = config.value("font_path", FontPath);
             FontGlyphRanges = config.value("font_glyph_ranges", FontGlyphRanges);
-            FontSize = config.value("font_size", FontSize);
+            FontSize = config.value("font_size_base", FontSize);
 
             // check old config names
             if (config.value("unlock_menu", false))
@@ -66,7 +66,7 @@ void Options::Save()
 
     config["font_path"] = FontPath;
     config["font_glyph_ranges"] = FontGlyphRanges;
-    config["font_size"] = FontSize;
+    config["font_size_base"] = FontSize;
 
     const auto path = GetAbsolutePath(m_paths.Config(), "", true);
     std::ofstream o(path);
