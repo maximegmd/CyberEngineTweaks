@@ -262,19 +262,19 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
 {
     ImGui::TableNextRow();
     ImGui::TableNextColumn();
-    
+
     auto codeBind = m_bindings.GetLastRecordingResult();
     if (aVKBindInfo.IsBinding && aVKBindInfo.Bind.IsInput() && (codeBind & 0xFFFF000000000000ull) != codeBind)
     {
         m_bindings.StopRecordingBind();
         aVKBindInfo.IsBinding = false;
     }
-    
+
     const auto isRecording = m_bindings.IsRecordingBind();
     if (aVKBindInfo.IsBinding && !isRecording)
     {
         const auto previousCodeBind = aVKBindInfo.CodeBind;
-        
+
         if (codeBind != 0 && codeBind != previousCodeBind)
         {
             if (m_bindings.IsFirstKeyUsed(codeBind))
@@ -341,7 +341,6 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
     const auto& bind = aVKBindInfo.Bind;
 
     ImGui::PushID(&aVKBindInfo.Bind.ID);
-    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + GetCenteredOffsetForText(bind.DisplayName.c_str()));
     ImGui::TextUnformatted(bind.DisplayName.c_str());
     ImGui::PopID();
 
@@ -471,12 +470,14 @@ void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoq
     {
         if (!aSimplified)
         {
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + GetCenteredOffsetForText("Hotkeys"));
             ImGui::TextUnformatted("Hotkeys");
             if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
                 ImGui::SetTooltip("Hotkeys react after assigned key combination has been pressed and subsequently released. You can bind up to 4 key combination to them.");
+            ImGui::Separator();
         }
 
-        if (ImGui::BeginTable(("##HOTKEYS_" + activeModName).c_str(), 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
+        if (ImGui::BeginTable(("##HOTKEYS_" + activeModName).c_str(), 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
         {
             for (auto& binding : aVKBindInfos)
             {
@@ -492,12 +493,14 @@ void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoq
     {
         if (!aSimplified)
         {
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + GetCenteredOffsetForText("Inputs"));
             ImGui::TextUnformatted("Inputs");
             if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
                 ImGui::SetTooltip("Inputs react when key is pressed and released. You can bind single key to them.");
+            ImGui::Separator();
         }
 
-        if (ImGui::BeginTable(("##INPUTS_" + activeModName).c_str(), 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
+        if (ImGui::BeginTable(("##INPUTS_" + activeModName).c_str(), 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
         {
             for (auto& binding : aVKBindInfos)
             {
