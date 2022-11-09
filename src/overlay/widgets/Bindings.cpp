@@ -340,6 +340,8 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
 
     const auto& bind = aVKBindInfo.Bind;
 
+    ImGui::AlignTextToFramePadding();
+
     ImGui::PushID(&aVKBindInfo.Bind.ID);
     ImGui::TextUnformatted(bind.DisplayName.c_str());
     ImGui::PopID();
@@ -451,20 +453,14 @@ void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoq
         return c;
     });
 
-    bool pushed = false;
     auto headerOpen =  aSimplified;
     if (!headerOpen)
-    {
         headerOpen = ImGui::CollapsingHeader(activeModName.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
-        if (headerOpen)
-        {
-            ImGui::TreePush();
-            pushed = true;
-        }
-    }
 
     if (!headerOpen)
         return;
+
+    ImGui::TreePush();
 
     if (aHotkeyCount > 0)
     {
@@ -512,6 +508,5 @@ void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoq
         }
     }
 
-    if (pushed)
-        ImGui::TreePop();
+    ImGui::TreePop();
 }
