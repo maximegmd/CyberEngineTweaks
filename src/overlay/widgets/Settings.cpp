@@ -68,7 +68,7 @@ void Settings::OnUpdate()
         if (ImGui::CollapsingHeader("Patches", ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::TreePush();
-            if (ImGui::BeginTable("##SETTINGS_PATCHES", 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
+            if (ImGui::BeginTable("##SETTINGS_PATCHES", 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
             {
                 UpdateAndDrawSetting("AMD SMT Patch", "For AMD CPUs that did not get a performance boost after CDPR's patch (requires restart to take effect).", m_patchAmdSmt, m_options.PatchAmdSmt);
                 UpdateAndDrawSetting("Remove Pedestrians", "Removes most of the pedestrians and traffic (requires restart to take effect).", m_patchRemovePedestrians, m_options.PatchRemovePedestrians);
@@ -88,7 +88,7 @@ void Settings::OnUpdate()
         if (ImGui::CollapsingHeader("CET Development Settings", ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::TreePush();
-            if (ImGui::BeginTable("##SETTINGS_DEV", 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_Borders, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
+            if (ImGui::BeginTable("##SETTINGS_DEV", 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
             {
                 UpdateAndDrawSetting("Remove Dead Bindings", "Removes all bindings which are no longer valid (disabling this could be useful when debugging mod issues).", m_removeDeadBindings, m_options.RemoveDeadBindings);
                 UpdateAndDrawSetting("Enable ImGui Assertions Logging", "Enables all ImGui assertions, assertions will get logged into log file of whoever triggered the assertion (useful when debugging ImGui issues, should also be used to check mods before shipping!).", m_enableImGuiAssertionsLogging, m_options.EnableImGuiAssertionsLogging);
@@ -177,7 +177,6 @@ void Settings::UpdateAndDrawSetting(const std::string& acLabel, const std::strin
     ImGui::PushStyleColor(ImGuiCol_Text, curTextColor);
 
     ImGui::PushID(&acLabel);
-    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + GetCenteredOffsetForText(acLabel.c_str()));
     ImGui::TextUnformatted(acLabel.c_str());
     ImGui::PopID();
 
