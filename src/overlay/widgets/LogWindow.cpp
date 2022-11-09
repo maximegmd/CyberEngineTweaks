@@ -78,9 +78,17 @@ void LogWindow::Draw(const ImVec2& size)
                     ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_Text));
                 }
 
+                ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0,0,0,0));
+                ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0,0,0,0));
+                ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0,0,0,0));
+                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+
                 ImGui::SetNextItemWidth(listItemWidth);
                 ImGui::InputText(("##" + item).c_str(), item.data(), item.size(), ImGuiInputTextFlags_ReadOnly);
-                ImGui::PopStyleColor();
+
+                ImGui::PopStyleVar(2);
+                ImGui::PopStyleColor(4);
             }
         }
 
