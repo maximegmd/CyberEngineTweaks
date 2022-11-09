@@ -48,6 +48,7 @@ static constexpr const char* s_cGlobalObjectsWhitelist[] =
     "GetDisplayResolution",
     "ModArchiveExists",
 
+    "ImGuiListClipper",
     "ImGuiCond",
     "ImGuiTreeNodeFlags",
     "ImGuiSelectableFlags",
