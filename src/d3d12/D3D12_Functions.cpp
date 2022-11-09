@@ -303,8 +303,7 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
 
     ImFontConfig config;
     config.SizePixels = std::floorf(m_options.FontSize * scaleFromReference);
-    config.OversampleH = config.OversampleV = 2;
-    config.PixelSnapH = true;
+    config.OversampleH = 2;
     config.MergeMode = false;
 
     // add default font
