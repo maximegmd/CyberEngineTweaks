@@ -241,7 +241,7 @@ void LuaVM::HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack,
     apStack->code++; // skip ParamEnd
 
     if (channel == s_debugChannel)
-        spdlog::get("scripting")->debug("{}", ref.ref->c_str());
+        spdlog::get("scripting")->info("{}", ref.ref->c_str());
 
     std::string_view channelSV = channel.ToString();
     if (channelSV.empty())
