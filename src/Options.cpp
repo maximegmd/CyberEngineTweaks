@@ -31,7 +31,9 @@ void Options::Load()
             // font config
             FontPath = config.value("font_path", FontPath);
             FontGlyphRanges = config.value("font_glyph_ranges", FontGlyphRanges);
-            FontSize = config.value("font_size", FontSize);
+            FontSizeBase = config.value("font_size_base", FontSizeBase);
+            FontOversampleHorizontal = config.value("font_oversample_horizontal", FontOversampleHorizontal);
+            FontOversampleVertical = config.value("font_oversample_vertical", FontOversampleVertical);
 
             // check old config names
             if (config.value("unlock_menu", false))
@@ -66,7 +68,9 @@ void Options::Save()
 
     config["font_path"] = FontPath;
     config["font_glyph_ranges"] = FontGlyphRanges;
-    config["font_size"] = FontSize;
+    config["font_size_base"] = FontSizeBase;
+    config["font_oversample_horizontal"] = FontOversampleHorizontal;
+    config["font_oversample_vertical"] = FontOversampleVertical;
 
     const auto path = GetAbsolutePath(m_paths.Config(), "", true);
     std::ofstream o(path);
@@ -96,7 +100,9 @@ void Options::ResetToDefaults()
 
     FontPath = "";
     FontGlyphRanges = "Default";
-    FontSize = 18.0f;
+    FontSizeBase = 18.0f;
+    FontOversampleHorizontal = 3;
+    FontOversampleVertical = 1;
 
     Save();
 }

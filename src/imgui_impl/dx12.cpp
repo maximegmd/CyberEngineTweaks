@@ -687,6 +687,6 @@ void ImGui_ImplDX12_Shutdown()
 
 void ImGui_ImplDX12_NewFrame(ID3D12CommandQueue* apCommandQueue)
 {
-    if (!g_pPipelineState)
+    if (!g_pPipelineState || !ImGui::GetIO().Fonts->IsBuilt())
         ImGui_ImplDX12_CreateDeviceObjects(apCommandQueue);
 }

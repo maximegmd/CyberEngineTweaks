@@ -593,12 +593,14 @@ LRESULT VKBindings::OnWndProc(HWND, UINT auMsg, WPARAM, LPARAM alParam)
 }
 
 LRESULT VKBindings::RecordKeyDown(const USHORT acVKCode)
-{    
+{
     if (m_keyStates[acVKCode])
         return 0; // ignore repeats
 
     // mark key down
     m_keyStates[acVKCode] = true;
+
+    ExecuteSingleInput(acVKCode, true);
 
     if (m_recordingLength != 0)
     {
@@ -619,11 +621,10 @@ LRESULT VKBindings::RecordKeyDown(const USHORT acVKCode)
     }
     else if (m_keyStates.count() != 1)
         return 0;
-    
+
     m_recording[m_recordingLength++] = acVKCode;
+    m_recordingResult = EncodeVKCodeBind(m_recording);
     m_recordingWasKeyPressed = true;
-    
-    ExecuteRecording(true);
 
     return 0;
 }
@@ -636,15 +637,17 @@ LRESULT VKBindings::RecordKeyUp(const USHORT acVKCode)
 
     // mark key up
     m_keyStates[acVKCode] = false;
-    
+
+    ExecuteSingleInput(acVKCode, false);
+
     for (size_t i = 0; i < m_recordingLength; ++i)
     {
         if (m_recording[i] != acVKCode)
             continue;
-        
+
         if (m_recordingWasKeyPressed)
-            ExecuteRecording(false);
-        
+            ExecuteRecording();
+
         // fix recording for future use, so user can use HKs like Ctrl+C, Ctrl+V without the need of pressing
         // again Ctrl for example
         m_recordingLength = i;
@@ -659,14 +662,45 @@ LRESULT VKBindings::RecordKeyUp(const USHORT acVKCode)
     return 0;
 }
 
-void VKBindings::ExecuteRecording(const bool acLastKeyDown)
+void VKBindings::ExecuteSingleInput(const USHORT acVKCode, const bool acKeyDown)
 {
-    m_recordingResult = EncodeVKCodeBind(m_recording);
-    
-    if (acLastKeyDown && (m_isBindRecording || m_recordingLength != 1))
+    // ignore single inputs when we are recording bind!
+    if (m_isBindRecording)
         return;
 
-    if (!acLastKeyDown && m_isBindRecording)
+    const auto cInput = EncodeVKCodeBind({acVKCode, 0, 0, 0});
+
+    if (const auto bindIt = m_binds.find(cInput); bindIt != m_binds.cend())
+    {
+        if (bindIt->first != cInput)
+            return;
+
+        const auto& modBind = bindIt->second;
+        if (const auto vkBind = m_cpVm->GetBind(modBind))
+        {
+            // we dont want to handle bindings when vm is not initialized or when overlay is open and we are not in binding state!
+            // only exception allowed is any CET bind
+            const auto& overlayToggleModBind = Bindings::GetOverlayToggleModBind();
+            const auto cetModBind = modBind.ModName == overlayToggleModBind.ModName;
+            if (!cetModBind && (!m_cpVm->IsInitialized() || CET::Get().GetOverlay().IsEnabled()))
+                return;
+
+            // this handler is not for hotkeys!
+            if (vkBind->IsHotkey())
+                return;
+
+            // execute CET binds immediately, otherwise cursor will not show on overlay toggle
+            if (cetModBind)
+                vkBind->Call(acKeyDown);
+            else
+                m_queuedCallbacks.Add(vkBind->DelayedCall(acKeyDown));
+        }
+    }
+}
+
+void VKBindings::ExecuteRecording()
+{
+    if (m_isBindRecording)
     {
         m_isBindRecording = false;
         return;
@@ -686,16 +720,16 @@ void VKBindings::ExecuteRecording(const bool acLastKeyDown)
             const auto cetModBind = modBind.ModName == overlayToggleModBind.ModName;
             if (!cetModBind && (!m_cpVm->IsInitialized() || CET::Get().GetOverlay().IsEnabled()))
                 return;
-            
-            // check first if this is a hotkey, as those should only execute when last key was up
-            if (acLastKeyDown && vkBind->IsHotkey())
+
+            // this handler is not for inputs! it should be used only on key up event for hotkeys!
+            if (vkBind->IsInput())
                 return;
 
             // execute CET binds immediately, otherwise cursor will not show on overlay toggle
             if (cetModBind)
-                vkBind->Call(acLastKeyDown);
+                vkBind->Call(false);
             else
-                m_queuedCallbacks.Add(vkBind->DelayedCall(acLastKeyDown));
+                m_queuedCallbacks.Add(vkBind->DelayedCall(false));
         }
     }
 }

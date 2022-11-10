@@ -268,43 +268,23 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
     return true;
 }
 
-bool D3D12::InitializeImGui(size_t aBuffersCounts)
+void D3D12::ReloadFonts()
 {
     std::lock_guard _(m_imguiLock);
 
     // TODO - scale also by DPI
-    const auto [resx, resy] = GetResolution();
+    const auto [resx, resy] = m_outSize;
     const auto scaleFromReference = std::min(static_cast<float>(resx) / 1920.0f, static_cast<float>(resy) / 1080.0f);
-
-    if (ImGui::GetCurrentContext() == nullptr)
-    {
-        // do this once, do not repeat context creation!
-        IMGUI_CHECKVERSION();
-        ImGui::CreateContext();
-
-        // TODO - make this configurable eventually and overridable by mods for themselves easily
-        // setup CET default style
-        ImGui::StyleColorsDark(&m_styleReference);
-        m_styleReference.WindowRounding = 6.0f;
-        m_styleReference.WindowTitleAlign.x = 0.5f;
-        m_styleReference.ChildRounding = 6.0f;
-        m_styleReference.PopupRounding = 6.0f;
-        m_styleReference.FrameRounding = 6.0f;
-        m_styleReference.ScrollbarRounding = 12.0f;
-        m_styleReference.GrabRounding = 12.0f;
-        m_styleReference.TabRounding = 6.0f;
-    }
-
-    ImGui::GetStyle() = m_styleReference;
-    ImGui::GetStyle().ScaleAllSizes(scaleFromReference);
 
     auto& io = ImGui::GetIO();
     io.Fonts->Clear();
 
     ImFontConfig config;
-    config.SizePixels = std::floorf(m_options.FontSize * scaleFromReference);
-    config.OversampleH = config.OversampleV = 2;
-    config.PixelSnapH = true;
+    config.SizePixels = std::floorf(m_options.FontSizeBase * scaleFromReference);
+    config.OversampleH = m_options.FontOversampleHorizontal;
+    config.OversampleV = m_options.FontOversampleVertical;
+    if (config.OversampleH == 1 && config.OversampleV == 1)
+        config.PixelSnapH = true;
     config.MergeMode = false;
 
     // add default font
@@ -314,11 +294,11 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
     if (customFontPath.empty())
     {
         if (!m_options.FontPath.empty())
-            Log::Warn("D3D12::InitializeImGui() - Custom font path is invalid! Using default CET font.");
+            Log::Warn("D3D12::ReloadFonts() - Custom font path is invalid! Using default CET font.");
 
         if (cetFontPath.empty())
         {
-            Log::Warn("D3D12::InitializeImGui() - Missing default fonts!");
+            Log::Warn("D3D12::ReloadFonts() - Missing default fonts!");
             io.Fonts->AddFontDefault(&config);
         }
         else
@@ -409,11 +389,11 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
     if (customFontPath.empty())
     {
         if (!m_options.FontPath.empty())
-            Log::Warn("D3D12::InitializeImGui() - Custom font path is invalid! Using default CET font.");
+            Log::Warn("D3D12::ReloadFonts() - Custom font path is invalid! Using default CET font.");
 
         if (cetFontPath.empty())
         {
-            Log::Warn("D3D12::InitializeImGui() - Missing fonts for extra language glyphs!");
+            Log::Warn("D3D12::ReloadFonts() - Missing fonts for extra language glyphs!");
             io.Fonts->AddFontDefault(&config);
         }
         else
@@ -421,6 +401,37 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
     }
     else
         io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(customFontPath.native()).c_str(), config.SizePixels, &config, cpGlyphRanges);
+}
+
+bool D3D12::InitializeImGui(size_t aBuffersCounts)
+{
+    std::lock_guard _(m_imguiLock);
+
+    // TODO - scale also by DPI
+    const auto [resx, resy] = m_outSize;
+    const auto scaleFromReference = std::min(static_cast<float>(resx) / 1920.0f, static_cast<float>(resy) / 1080.0f);
+
+    if (ImGui::GetCurrentContext() == nullptr)
+    {
+        // do this once, do not repeat context creation!
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+
+        // TODO - make this configurable eventually and overridable by mods for themselves easily
+        // setup CET default style
+        ImGui::StyleColorsDark(&m_styleReference);
+        m_styleReference.WindowRounding = 6.0f;
+        m_styleReference.WindowTitleAlign.x = 0.5f;
+        m_styleReference.ChildRounding = 6.0f;
+        m_styleReference.PopupRounding = 6.0f;
+        m_styleReference.FrameRounding = 6.0f;
+        m_styleReference.ScrollbarRounding = 12.0f;
+        m_styleReference.GrabRounding = 12.0f;
+        m_styleReference.TabRounding = 6.0f;
+    }
+
+    ImGui::GetStyle() = m_styleReference;
+    ImGui::GetStyle().ScaleAllSizes(scaleFromReference);
 
     if (!ImGui_ImplWin32_Init(m_window.GetWindow()))
     {
@@ -437,6 +448,8 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         ImGui_ImplWin32_Shutdown();
         return false;
     }
+
+    ReloadFonts();
 
     if (!ImGui_ImplDX12_CreateDeviceObjects(m_pCommandQueue.Get()))
     {

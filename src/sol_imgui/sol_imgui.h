@@ -1794,6 +1794,11 @@ namespace sol_ImGui
             "CircleTessellationMaxError"     , &ImGuiStyle::CircleTessellationMaxError,
             "ScaleAllSizes"                  , &ImGuiStyle::ScaleAllSizes
         );
+
+        luaGlobals.new_usertype<ImGuiListClipper>("ImGuiListClipper", sol::constructors<ImGuiListClipper()>(),
+            "Begin"                              , &ImGuiListClipper::Begin,
+            "Step"                               , &ImGuiListClipper::Step
+        );
     }
 
     inline void InitEnums(sol::table luaGlobals)

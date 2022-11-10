@@ -269,17 +269,19 @@ std::filesystem::path GetAbsolutePath(std::filesystem::path aFilePath, const std
         aFilePath = absolute(aFilePath);
     }
 
-    if (!exists(aFilePath))
-    {
-        if (!acAllowNonExisting)
-            return {};
-    }
-    else if (is_symlink(aFilePath))
+
+    if (is_symlink(aFilePath))
     {
         if (acAllowSymlink)
             return absolute(read_symlink(aFilePath));
 
         return {};
+    }
+
+    if (!exists(aFilePath))
+    {
+        if (!acAllowNonExisting)
+            return {};
     }
 
     return aFilePath;

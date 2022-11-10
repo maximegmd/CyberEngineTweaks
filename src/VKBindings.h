@@ -90,9 +90,10 @@ private:
     LRESULT RecordKeyDown(const USHORT acVKCode);
     LRESULT RecordKeyUp(const USHORT acVKCode);
 
-    void ExecuteRecording(const bool acLastKeyDown);
+    void ExecuteSingleInput(const USHORT acVKCode, const bool acKeyDown);
+    void ExecuteRecording();
     void ClearRecording(const bool acClearBind);
-    
+
     std::map<uint64_t, VKModBind> m_binds{ }; // this map needs to be ordered!
     TiltedPhoques::Map<std::string, TiltedPhoques::Map<std::string, uint64_t>> m_modIdToBinds{ };
     TiltedPhoques::TaskQueue m_queuedCallbacks{ };
@@ -103,7 +104,7 @@ private:
     uint64_t m_recordingResult{ 0 };
     size_t m_recordingLength{ 0 };
     bool m_recordingWasKeyPressed{ false };
-    
+
     VKModBind m_recordingModBind{ };
     bool m_isBindRecording{ false };
 

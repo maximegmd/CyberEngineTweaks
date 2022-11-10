@@ -13,7 +13,13 @@ void Overlay::PostInitialize()
     if (!m_initialized)
     {
         if (Bindings::IsFirstTimeSetup())
+        {
             Toggle();
+
+            auto& d3d12 = CET::Get().GetD3D12();
+            d3d12.DelayedSetTrapInputInImGui(true);
+            ClipToCenter(RED4ext::CGameEngine::Get()->unkC0);
+        }
 
         m_initialized = true;
     }
@@ -42,7 +48,8 @@ void Overlay::Toggle()
 
 bool Overlay::IsEnabled() const noexcept
 {
-    return m_initialized && m_enabled;
+    // return true also when overlay is closed but toggling on/off
+    return m_initialized && (m_enabled || m_toggled);
 }
 
 void Overlay::Update()
@@ -67,7 +74,7 @@ void Overlay::Update()
                 if (disableResult == WidgetResult::ENABLED)
                     drawPopup = true;
             }
-            
+
             if (m_toggled && !drawPopup && m_bindingsEnabled)
             {
                 disableResult = m_bindings.OnDisable();
@@ -76,7 +83,7 @@ void Overlay::Update()
                 if (disableResult == WidgetResult::ENABLED)
                     drawPopup = true;
             }
-            
+
             if (m_toggled && !drawPopup && m_settingsEnabled)
             {
                 disableResult = m_settings.OnDisable();
@@ -85,7 +92,7 @@ void Overlay::Update()
                 if (disableResult == WidgetResult::ENABLED)
                     drawPopup = true;
             }
-            
+
             if (m_toggled && !drawPopup && m_tweakDBEditorEnabled)
             {
                 disableResult = m_tweakDBEditor.OnDisable();
@@ -94,7 +101,7 @@ void Overlay::Update()
                 if (disableResult == WidgetResult::ENABLED)
                     drawPopup = true;
             }
-            
+
             if (m_toggled && !drawPopup && m_gameLogEnabled)
             {
                 disableResult = m_gameLog.OnDisable();
@@ -103,7 +110,7 @@ void Overlay::Update()
                 if (disableResult == WidgetResult::ENABLED)
                     drawPopup = true;
             }
-            
+
             if (m_toggled && !drawPopup && m_imguiDebugEnabled)
             {
                 disableResult = m_imguiDebug.OnDisable();
@@ -123,7 +130,7 @@ void Overlay::Update()
                 if (disableResult == WidgetResult::DISABLED)
                     drawPopup = true;
             }
-            
+
             if (m_toggled && !drawPopup && m_bindingsEnabled)
             {
                 disableResult = m_bindings.OnEnable();
@@ -132,7 +139,7 @@ void Overlay::Update()
                 if (disableResult == WidgetResult::DISABLED)
                     drawPopup = true;
             }
-            
+
             if (m_toggled && !drawPopup && m_settingsEnabled)
             {
                 disableResult = m_settings.OnEnable();
@@ -141,7 +148,7 @@ void Overlay::Update()
                 if (disableResult == WidgetResult::DISABLED)
                     drawPopup = true;
             }
-            
+
             if (m_toggled && !drawPopup && m_tweakDBEditorEnabled)
             {
                 disableResult = m_tweakDBEditor.OnEnable();
@@ -150,7 +157,7 @@ void Overlay::Update()
                 if (disableResult == WidgetResult::DISABLED)
                     drawPopup = true;
             }
-            
+
             if (m_toggled && !drawPopup && m_gameLogEnabled)
             {
                 disableResult = m_gameLog.OnEnable();
@@ -159,7 +166,7 @@ void Overlay::Update()
                 if (disableResult == WidgetResult::DISABLED)
                     drawPopup = true;
             }
-            
+
             if (m_toggled && !drawPopup && m_imguiDebugEnabled)
             {
                 disableResult = m_imguiDebug.OnEnable();
@@ -169,7 +176,7 @@ void Overlay::Update()
                     drawPopup = true;
             }
         }
-        
+
         if (!drawPopup && m_toggled)
         {
             if (m_enabled)

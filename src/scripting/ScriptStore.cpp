@@ -30,7 +30,7 @@ void ScriptStore::LoadAll()
     const auto& cModsRoot = m_paths.ModsRoot();
     for (const auto& file : std::filesystem::directory_iterator(cModsRoot))
     {
-        if (!file.is_directory())
+        if (!file.is_directory() && !file.is_symlink())
             continue;
 
         const auto name = UTF16ToUTF8(file.path().filename().native());
@@ -48,6 +48,13 @@ void ScriptStore::LoadAll()
             consoleLogger->error("Tried to access invalid directory! ('{}')", pathStr);
             continue;
         }
+
+        if (!is_directory(path))
+        {
+            // no error message, path was probably symlink to file
+            continue;
+        }
+
 
         if (!exists(path / L"init.lua"))
         {
