@@ -64,7 +64,7 @@ void Scripting::Initialize()
     // initialize sandbox
     m_sandbox.Initialize();
 
-    auto& globals = m_sandbox.GetEnvironment();
+    auto& globals = m_sandbox.GetGlobals();
 
     // load in imgui bindings
     sol_ImGui::InitBindings(luaVm, globals);
@@ -151,7 +151,7 @@ void Scripting::PostInitializeScripting()
 {
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
-    auto& globals = m_sandbox.GetEnvironment();
+    auto& globals = m_sandbox.GetGlobals();
 
     if (luaVm["__Game"] != sol::nil)
     {
@@ -488,7 +488,7 @@ void Scripting::PostInitializeTweakDB()
 {
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
-    auto& globals = m_sandbox.GetEnvironment();
+    auto& globals = m_sandbox.GetGlobals();
 
     luaVm.new_usertype<TweakDB>("__TweakDB",
         sol::meta_function::construct, sol::no_constructor,
@@ -516,7 +516,7 @@ void Scripting::PostInitializeMods()
 {
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
-    auto& globals = m_sandbox.GetEnvironment();
+    auto& globals = m_sandbox.GetGlobals();
 
     globals["NewObject"] = [this](const std::string& acName, sol::this_environment aEnv) -> sol::object
     {

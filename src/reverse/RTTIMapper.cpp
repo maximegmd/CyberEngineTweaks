@@ -29,11 +29,11 @@ void RTTIMapper::Register()
 
     auto* pRtti = RED4ext::CRTTISystem::Get();
 
-    RegisterSimpleTypes(luaState, m_sandbox.GetEnvironment());
-    RegisterDirectTypes(luaState, m_sandbox.GetEnvironment(), pRtti);
-    RegisterDirectGlobals(m_sandbox.GetEnvironment(), pRtti);
-    RegisterScriptAliases(m_sandbox.GetEnvironment(), pRtti);
-    RegisterSpecialAccessors(luaState, m_sandbox.GetEnvironment());
+    RegisterSimpleTypes(luaState, m_sandbox.GetGlobals());
+    RegisterDirectTypes(luaState, m_sandbox.GetGlobals(), pRtti);
+    RegisterDirectGlobals(m_sandbox.GetGlobals(), pRtti);
+    RegisterScriptAliases(m_sandbox.GetGlobals(), pRtti);
+    RegisterSpecialAccessors(luaState, m_sandbox.GetGlobals());
 }
 
 void RTTIMapper::Refresh()

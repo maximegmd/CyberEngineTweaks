@@ -24,7 +24,7 @@ struct LuaSandbox
     void SetImGuiAvailable(bool aAvailable);
     bool GetImGuiAvailable() const;
 
-    sol::table& GetEnvironment();
+    sol::table& GetGlobals();
 
 private:
 
@@ -37,7 +37,7 @@ private:
 
     Scripting* m_pScripting;
     const VKBindings& m_vkBindings;
-    sol::table m_env{};
+    sol::table m_globals{};
     TiltedPhoques::Vector<Sandbox> m_sandboxes{};
     TiltedPhoques::Map<std::string, sol::object> m_modules{};
 
