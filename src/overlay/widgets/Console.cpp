@@ -3,6 +3,7 @@
 #include "Console.h"
 
 #include <scripting/LuaVM.h>
+#include <Utils.h>
 
 Console::Console(D3D12& aD3D12, LuaVM& aVm)
     : Widget("Console")
@@ -89,21 +90,28 @@ void Console::OnUpdate()
     if (execute)
     {
         m_command.resize(m_commandLength);
-        m_command.shrink_to_fit();
+
+        // make sure to ignore trailing and beginning whitespaces
+        trim(m_command);
 
         const auto consoleLogger = spdlog::get("scripting");
         consoleLogger->info("> {}", m_command);
 
-        if (!m_vm.ExecuteLua(m_command))
-            consoleLogger->info("Command failed to execute!");
+        // execute command and record it to history if it is not empty
+        if (!m_command.empty())
+        {
+            if (!m_vm.ExecuteLua(m_command))
+                consoleLogger->info("Command failed to execute!");
 
-        m_historyIndex = m_history.size();
-        auto& history = m_history.emplace_back();
-        history.swap(m_command);
-        m_newHistory = true;
+            m_command.shrink_to_fit();
+            m_historyIndex = m_history.size();
+            auto& history = m_history.emplace_back();
+            history.swap(m_command);
+            m_newHistory = true;
 
-        m_command.resize(255);
-        m_commandLength = 0;
+            m_command.resize(255);
+            m_commandLength = 0;
+        }
 
         ImGui::SetKeyboardFocusHere(-1); // Auto focus previous widget
     }
