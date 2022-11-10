@@ -214,9 +214,10 @@ void RTTIMapper::RegisterSpecialAccessors(sol::state& aLuaState, sol::table& aLu
     // Add global alias `Game.GetSystemRequestsHandler()`
     // Replacement for `GetSingleton("inkMenuScenario"):GetSystemRequestsHandler()`
     RTTIHelper::Get().AddFunctionAlias("GetSystemRequestsHandler", "inkMenuScenario", "GetSystemRequestsHandler");
-    
+
     // Merge RTTI versions of basic types with our own versions
     // Allows usertype and RTTI functions to be used under the same name
+    ExtendUsertype<Vector3>("Vector3", aLuaState, aLuaGlobal);
     ExtendUsertype<Vector4>("Vector4", aLuaState, aLuaGlobal);
     ExtendUsertype<EulerAngles>("EulerAngles", aLuaState, aLuaGlobal);
     ExtendUsertype<Quaternion>("Quaternion", aLuaState, aLuaGlobal);

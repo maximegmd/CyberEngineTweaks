@@ -253,13 +253,14 @@ void Scripting::PostInitializeScripting()
         return Converter::ToLua(stackType, lockedState);
     };
 
-    globals.new_usertype<Vector3>("Vector3",
+    luaVm.new_usertype<Vector3>("Vector3",
         sol::constructors<Vector3(float, float, float), Vector3(float, float), Vector3(float), Vector3(const Vector3&), Vector3()>(),
         sol::meta_function::to_string, &Vector3::ToString,
         sol::meta_function::equal_to, &Vector3::operator==,
         "x", &Vector3::x,
         "y", &Vector3::y,
         "z", &Vector3::z);
+    globals["Vector3"] = luaVm["Vector3"];
 
     globals["ToVector3"] = [](sol::table table) -> Vector3
     {
