@@ -102,6 +102,7 @@ int32_t FlatPool::AllocateDefault(const RED4ext::CBaseRTTIType* aType)
     if (offsetIt == m_defaults.end())
     {
         auto value = aType->GetAllocator()->AllocAligned(aType->GetSize(), aType->GetAlignment());
+        std::memset(value.memory, 0, value.size);
         aType->Construct(value.memory);
 
         offset = AllocateValue(aType, value.memory);
