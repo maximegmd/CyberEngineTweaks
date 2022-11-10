@@ -217,11 +217,13 @@ void RTTIMapper::RegisterSpecialAccessors(sol::state& aLuaState, sol::table& aLu
 
     // Merge RTTI versions of basic types with our own versions
     // Allows usertype and RTTI functions to be used under the same name
-    ExtendUsertype<Vector3>("Vector3", aLuaState, aLuaGlobal);
     ExtendUsertype<Vector4>("Vector4", aLuaState, aLuaGlobal);
     ExtendUsertype<EulerAngles>("EulerAngles", aLuaState, aLuaGlobal);
     ExtendUsertype<Quaternion>("Quaternion", aLuaState, aLuaGlobal);
     ExtendUsertype<ItemID>("ItemID", aLuaState, aLuaGlobal);
+
+    // Replace RTTI version of class with our own version
+    aLuaGlobal["Vector3"] = aLuaState["Vector3"];
 }
 
 template <class T>
