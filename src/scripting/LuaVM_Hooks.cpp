@@ -251,7 +251,7 @@ void LuaVM::HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack,
         if (channel == s_debugChannel)
             spdlog::get("gamelog")->debug("[{}] {}", channelSV, ref.ref->c_str());
         else if (channel == s_assertionChannel)
-            spdlog::get("gamelog")->warn("[{}] {}", channelSV, ref.ref->c_str());
+            spdlog::get("gamelog")->error("[{}] {}", channelSV, ref.ref->c_str());
         else
             spdlog::get("gamelog")->info("[{}] {}", channelSV, ref.ref->c_str());
     }

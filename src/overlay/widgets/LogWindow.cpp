@@ -85,7 +85,10 @@ void LogWindow::Draw(const ImVec2& size)
                 ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
 
                 ImGui::SetNextItemWidth(listItemWidth);
+
+                ImGui::PushID(i);
                 ImGui::InputText(("##" + item).c_str(), item.data(), item.size(), ImGuiInputTextFlags_ReadOnly);
+                ImGui::PopID();
 
                 ImGui::PopStyleVar(2);
                 ImGui::PopStyleColor(4);
