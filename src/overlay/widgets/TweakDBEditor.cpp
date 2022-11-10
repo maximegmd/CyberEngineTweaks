@@ -73,6 +73,19 @@ bool NextItemVisible(const ImVec2& aSize = ImVec2(1, 1), bool aClaimSpaceIfInvis
 }
 }
 
+bool SortString(const std::string& acLeft, const std::string& acRight)
+{
+    size_t minLength = std::min(acLeft.size(), acRight.size());
+    for (size_t i = 0; i != minLength; ++i)
+    {
+        char a = std::tolower(acLeft[i]);
+        char b = std::tolower(acRight[i]);
+        if (a != b)
+            return a < b;
+    }
+    return acLeft.size() < acRight.size();
+}
+
 bool SortTweakDBIDString(const std::string& acLeft, const std::string& acRight)
 {
     // unknown TweakDBID should be at the bottom
@@ -181,16 +194,14 @@ void TweakDBEditor::RefreshRecords()
     std::shared_lock _(pTDB->mutex01);
 
     m_cachedRecords.clear();
+    m_cachedRecords.reserve(pTDB->recordsByType.size);
 
     pTDB->recordsByType.for_each(
         [this](const RED4ext::CBaseRTTIType* acpRTTIType,
                                     const RED4ext::DynArray<RED4ext::Handle<RED4ext::IScriptable>>& aRecords)
         {
             const auto typeName = acpRTTIType->GetName();
-
-            if (!m_cachedRecords.contains(typeName))
-                m_cachedRecords.emplace(typeName, typeName);
-            auto& groupRecords = m_cachedRecords.at(typeName).m_records;
+            auto& groupRecords = m_cachedRecords.emplace_back(typeName).m_records;
 
             groupRecords.reserve(groupRecords.size() + aRecords.size);
             for (auto& handle : aRecords)
@@ -204,14 +215,40 @@ void TweakDBEditor::RefreshRecords()
                 groupRecords.emplace_back(std::move(cachedRecord));
             }
         });
+
+    std::ranges::sort(
+        m_cachedRecords,
+        [](const CachedRecordGroup& acLeft, const CachedRecordGroup& acRight)
+        {
+            return SortString(acLeft.m_name, acRight.m_name);
+        });
 }
 
 void TweakDBEditor::RefreshFlats()
 {
     auto* pTDB = RED4ext::TweakDB::Get();
+    constexpr uint64_t unknownGroupHash = RED4ext::FNV1a64("!Unknown!");
+    constexpr uint64_t badGroupHash = RED4ext::FNV1a64("!BadName!");
 
     std::shared_lock _1(pTDB->mutex00);
     std::shared_lock _2(pTDB->mutex01);
+
+    TiltedPhoques::Map<uint64_t, size_t> cachedFlatGroupsMap;
+    auto cacheFlat = [&](uint64_t groupHash, const char* groupName, std::string&& name, RED4ext::TweakDBID dbid) {
+        size_t index = 0;
+
+        if (const auto it = cachedFlatGroupsMap.find(groupHash); it != cachedFlatGroupsMap.cend())
+            index = it.value();
+        else
+        {
+            index = m_cachedFlatGroups.size();
+
+            m_cachedFlatGroups.emplace_back(groupName);
+            cachedFlatGroupsMap.emplace(groupHash, index);
+        }
+
+        m_cachedFlatGroups[index].m_flats.emplace_back(std::move(name), dbid);
+    };
 
     m_cachedFlatGroups.clear();
 
@@ -221,63 +258,54 @@ void TweakDBEditor::RefreshFlats()
         if (dbidBase != 0 && pTDB->recordsByID.Get(dbidBase) != nullptr)
             return; // that's a record flat, ignoring that.
 
-        std::string name;
-        CachedFlatGroup* flatGroup = nullptr;
-        const bool unknownFlatName = !GetTweakDBIDStringFlat(dbid, name);
+        std::string flatName;
+        const bool unknownFlatName = !GetTweakDBIDStringFlat(dbid, flatName);
         if (unknownFlatName)
-        {
-            if (const auto it = m_cachedFlatGroups.find("!Unknown!"); it != m_cachedFlatGroups.cend())
-                flatGroup = &it.value();
-            else
-                flatGroup = &m_cachedFlatGroups.emplace("!Unknown!", "!Unknown!").first.value();
-        }
+            cacheFlat(unknownGroupHash, "!Unknown!", std::move(flatName), dbid);
         else
         {
-            size_t idx = name.find('.');
+            size_t idx = flatName.find('.');
             if (idx == std::string::npos)
-            {
-                if (const auto it = m_cachedFlatGroups.find("!BadName!"); it != m_cachedFlatGroups.cend())
-                    flatGroup = &it.value();
-                else
-                    flatGroup = &m_cachedFlatGroups.emplace("!BadName!", "!BadName!").first.value();
-            }
+                cacheFlat(badGroupHash, "!BadName!", std::move(flatName), dbid);
             else
             {
                 // < 1 || > size = group as much as possible
                 for (int32_t i = 1; i != m_flatGroupNameDepth; ++i)
                 {
-                    if (idx + 1 == name.size())
+                    if (idx + 1 == flatName.size())
                         break;
 
-                    const size_t idx2 = name.find('.', idx + 1);
+                    const size_t idx2 = flatName.find('.', idx + 1);
                     if (idx2 == std::string::npos)
                         break;
 
                     idx = idx2;
                 }
 
-                std::string groupName = name.substr(0, idx);
-                if (const auto it = m_cachedFlatGroups.find(groupName.c_str()); it != m_cachedFlatGroups.cend())
-                    flatGroup = &it.value();
-                else
-                    flatGroup = &m_cachedFlatGroups.emplace(groupName.c_str(), groupName.c_str()).first.value();
+                const auto cGroupName = flatName.substr(0, idx);
+                cacheFlat(RED4ext::FNV1a64(cGroupName.c_str()), cGroupName.c_str(), flatName.substr(idx, idx + 1), dbid);
             }
         }
-
-        flatGroup->m_flats.emplace_back(std::move(name), dbid);
     });
 
-    if (const auto it = m_cachedFlatGroups.find("!Unknown!"); it != m_cachedFlatGroups.cend())
+    if (const auto it = cachedFlatGroupsMap.find(unknownGroupHash); it != cachedFlatGroupsMap.cend())
     {
-        auto& group = it.value();
+        auto& group = m_cachedFlatGroups[it.value()];
         group.m_name = fmt::format("{} - {} flats!", group.m_name, group.m_flats.size());
     }
 
-    if (const auto it = m_cachedFlatGroups.find("!BadName!"); it != m_cachedFlatGroups.cend())
+    if (const auto it = cachedFlatGroupsMap.find(badGroupHash); it != cachedFlatGroupsMap.cend())
     {
-        auto& group = it.value();
+        auto& group = m_cachedFlatGroups[it.value()];
         group.m_name = fmt::format("{} - {} flats!", group.m_name, group.m_flats.size());
     }
+
+    std::ranges::sort(
+        m_cachedFlatGroups,
+        [](const CachedFlatGroup& acLeft, const CachedFlatGroup& acRight)
+        {
+            return SortString(acLeft.m_name, acRight.m_name);
+        });
 }
 
 void TweakDBEditor::FilterAll()
@@ -305,10 +333,8 @@ void TweakDBEditor::FilterRecords(bool aFilterTab, bool aFilterDropdown)
 {
     const RED4ext::TweakDBID dbid = ExtractTweakDBIDFromString(s_recordsFilterBuffer);
     const RED4ext::TweakDBID dbidDropdown = ExtractTweakDBIDFromString(s_tweakdbidFilterBuffer);
-    for (auto it = m_cachedRecords.begin(); it != m_cachedRecords.end(); ++it)
+    for (auto& group : m_cachedRecords)
     {
-        auto& group = it.value();
-
         bool anyRecordsVisible = false;
         std::for_each(std::execution::par_unseq, group.m_records.begin(), group.m_records.end(),
           [&](CachedRecord& record)
@@ -368,10 +394,8 @@ void TweakDBEditor::FilterFlats()
 {
     if (s_flatsFilterBuffer[0] == '\0')
     {
-        for (auto it = m_cachedFlatGroups.begin(); it != m_cachedFlatGroups.end(); ++it)
+        for (auto& group : m_cachedFlatGroups)
         {
-            auto& group = it.value();
-
             group.m_isFiltered = false;
             for (auto& flat : group.m_flats)
             {
@@ -382,10 +406,8 @@ void TweakDBEditor::FilterFlats()
     else
     {
         const RED4ext::TweakDBID dbid = ExtractTweakDBIDFromString(s_flatsFilterBuffer);
-        for (auto it = m_cachedFlatGroups.begin(); it != m_cachedFlatGroups.end(); ++it)
+        for (auto& group : m_cachedFlatGroups)
         {
-            auto& group = it.value();
-
             bool anyFlatsVisible = false;
             for (auto& flat : group.m_flats)
             {
@@ -448,7 +470,7 @@ bool TweakDBEditor::DrawRecordDropdown(const char* acpLabel, RED4ext::TweakDBID&
 
         if (ImGui::BeginChild("##dropdownScroll", ImVec2(0, g_comboDropdownHeight)))
         {
-            for (const auto& recordGroup : m_cachedRecords | std::views::values)
+            for (const auto& recordGroup : m_cachedRecords)
             {
                 for (const auto& record : recordGroup.m_records)
                 {
@@ -1349,7 +1371,7 @@ bool TweakDBEditor::DrawFlatInt32(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
 void TweakDBEditor::DrawRecordsTab()
 {
     static float searchTimer = 0.0f;
-    ImGui::SetNextItemWidth(-70);
+    ImGui::SetNextItemWidth(-(ImGui::GetFrameHeight() + ImGui::CalcTextSize("Regex").x + ImGui::GetStyle().ItemSpacing.x + ImGui::GetStyle().ItemInnerSpacing.x + ImGui::GetStyle().FramePadding.x));
     if (ImGui::InputTextWithHint("##search", "Search", s_recordsFilterBuffer, sizeof(s_recordsFilterBuffer)))
     {
         searchTimer = c_searchDelay;
@@ -1373,10 +1395,8 @@ void TweakDBEditor::DrawRecordsTab()
     if (!ImGui::BeginChild("##scrollable"))
         ImGui::EndChild();
 
-    for (auto it = m_cachedRecords.begin(); it != m_cachedRecords.end(); ++it)
+    for (auto& group : m_cachedRecords)
     {
-        auto& group = it.value();
-
         if (group.m_isFiltered || !group.m_visibilityChecker.IsVisible())
             continue;
 
@@ -1477,7 +1497,7 @@ void TweakDBEditor::DrawQueriesTab()
 void TweakDBEditor::DrawFlatsTab()
 {
     static float searchTimer = 0.0f;
-    ImGui::SetNextItemWidth(-70);
+    ImGui::SetNextItemWidth(-(ImGui::GetFrameHeight() + ImGui::CalcTextSize("Regex").x + ImGui::GetStyle().ItemSpacing.x + ImGui::GetStyle().ItemInnerSpacing.x + ImGui::GetStyle().FramePadding.x));
     if (ImGui::InputTextWithHint("##search", "Search", s_flatsFilterBuffer, sizeof(s_flatsFilterBuffer)))
     {
         searchTimer = c_searchDelay;
@@ -1501,10 +1521,8 @@ void TweakDBEditor::DrawFlatsTab()
     if (!ImGui::BeginChild("##scrollable"))
         ImGui::EndChild();
 
-    for (auto it = m_cachedFlatGroups.begin(); it != m_cachedFlatGroups.end(); ++it)
+    for (auto& group : m_cachedFlatGroups)
     {
-        auto& group = it.value();
-
         if (group.m_isFiltered || !group.m_visibilityChecker.IsVisible())
             continue;
 
@@ -1564,6 +1582,7 @@ void TweakDBEditor::DrawFlatsTab()
 
 void TweakDBEditor::DrawAdvancedTab()
 {
+
     if (ImGui::InputScalar("'Flats' Grouping depth", ImGuiDataType_S8, &m_flatGroupNameDepth, nullptr, nullptr, nullptr,
                            ImGuiInputTextFlags_EnterReturnsTrue))
     {
@@ -1579,7 +1598,7 @@ void TweakDBEditor::DrawAdvancedTab()
         FilterAll();
     }
 
-    if (ImGui::BeginChild("CreateRecord", ImVec2(0.0f, 170.0f), true))
+    if (ImGui::BeginChild("CreateRecord", ImVec2(0.0f, 0.0f), true))
     {
         static auto status = "";
         static float statusTimer = 0.0f;
@@ -1609,7 +1628,7 @@ void TweakDBEditor::DrawAdvancedTab()
             ImGui::InputTextWithHint("##dropdownSearch", "Search", comboSearchBuffer, sizeof(comboSearchBuffer));
             if (ImGui::BeginChild("##dropdownScroll", ImVec2(0, g_comboDropdownHeight)))
             {
-                for (const auto& recordGroup : m_cachedRecords | std::views::values)
+                for (const auto& recordGroup : m_cachedRecords)
                 {
                     if (comboSearchBuffer[0] != '\0' &&
                         !StringContains(recordGroup.m_name, comboSearchBuffer))
