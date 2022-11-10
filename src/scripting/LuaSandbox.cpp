@@ -106,6 +106,10 @@ static constexpr const char* s_cPostInitializeScriptingProtectedList[] =
     "CRUID",
     "LocKey",
     "GameOptions",
+    "Override",
+    "ObserveBefore",
+    "ObserveAfter",
+    "Observe",
 };
 
 static constexpr const char* s_cPostInitializeTweakDBProtectedList[] =
@@ -119,10 +123,6 @@ static constexpr const char* s_cPostInitializeModsProtectedList[] =
     // initialized by Scripting
     "NewObject",
     "GetSingleton",
-    "Override",
-    "ObserveBefore",
-    "ObserveAfter",
-    "Observe",
     "GetMod",
     "GameDump",
     "Dump",

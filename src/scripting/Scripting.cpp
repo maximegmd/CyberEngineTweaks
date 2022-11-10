@@ -462,6 +462,23 @@ void Scripting::PostInitializeScripting()
         "Dump", &GameOptions::Dump,
         "List", &GameOptions::List);
 
+    globals["Override"] = [this](const std::string& acTypeName, const std::string& acFullName,
+                                 sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
+        m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, true);
+    };
+
+    globals["ObserveBefore"] = [this](const std::string& acTypeName, const std::string& acFullName,
+                                      sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
+        m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, false, false);
+    };
+
+    globals["ObserveAfter"] = [this](const std::string& acTypeName, const std::string& acFullName,
+                                     sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
+        m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, false, true);
+    };
+
+    globals["Observe"] = globals["ObserveBefore"];
+
     m_sandbox.PostInitializeScripting();
 
     TriggerOnHook();
@@ -523,23 +540,6 @@ void Scripting::PostInitializeMods()
     {
         return this->GetSingletonHandle(acName, aThisEnv);
     };
-
-    globals["Override"] = [this](const std::string& acTypeName, const std::string& acFullName,
-                                   sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
-        m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, true);
-    };
-
-    globals["ObserveBefore"] = [this](const std::string& acTypeName, const std::string& acFullName,
-                                        sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
-        m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, false, false);
-    };
-
-    globals["ObserveAfter"] = [this](const std::string& acTypeName, const std::string& acFullName,
-                                       sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
-        m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, false, true);
-    };
-
-    globals["Observe"] = globals["ObserveBefore"];
 
     globals["GetMod"] = [this](const std::string& acName) -> sol::object
     {
