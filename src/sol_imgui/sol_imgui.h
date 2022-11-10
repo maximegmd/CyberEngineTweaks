@@ -1797,7 +1797,9 @@ namespace sol_ImGui
 
         luaGlobals.new_usertype<ImGuiListClipper>("ImGuiListClipper", sol::constructors<ImGuiListClipper()>(),
             "Begin"                              , &ImGuiListClipper::Begin,
-            "Step"                               , &ImGuiListClipper::Step
+            "Step"                               , &ImGuiListClipper::Step,
+            "DisplayStart"                       , &ImGuiListClipper::DisplayStart,
+            "DisplayEnd"                         , &ImGuiListClipper::DisplayEnd
         );
     }
 
