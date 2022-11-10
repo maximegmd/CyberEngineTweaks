@@ -48,7 +48,8 @@ void Overlay::Toggle()
 
 bool Overlay::IsEnabled() const noexcept
 {
-    return m_initialized && m_enabled;
+    // return true also when overlay is closed but toggling on/off
+    return m_initialized && (m_enabled || m_toggled);
 }
 
 void Overlay::Update()
