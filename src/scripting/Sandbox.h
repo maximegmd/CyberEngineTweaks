@@ -4,7 +4,7 @@ struct Scripting;
 
 struct Sandbox
 {
-    Sandbox(uint64_t aId, Scripting* apScripting, sol::environment aBaseEnvironment, const std::filesystem::path& acRootPath);
+    Sandbox(uint64_t aId, Scripting* apScripting, sol::table aBaseEnvironment, const std::filesystem::path& acRootPath);
     ~Sandbox() = default;
 
     sol::protected_function_result ExecuteFile(const std::string& acPath) const;

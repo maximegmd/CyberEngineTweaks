@@ -131,7 +131,6 @@ static constexpr const char* s_cPostInitializeModsProtectedList[] =
     "DumpVtables",
     "DumpReflection",
     "Game",
-    "RegisterGlobalInputListener",
 
     // initialized by RTTIMapper
     "Vector3",
@@ -265,16 +264,6 @@ uint64_t LuaSandbox::CreateSandbox(const std::filesystem::path& acPath, const st
     return cResID;
 }
 
-sol::protected_function_result LuaSandbox::ExecuteFile(const std::string& acPath) const
-{
-    return m_pScripting->GetLockedState().Get().script_file(acPath, m_env, sol::load_mode::text);
-}
-
-sol::protected_function_result LuaSandbox::ExecuteString(const std::string& acString) const
-{
-    return m_pScripting->GetLockedState().Get().script(acString, m_env, sol:: detail::default_chunk_name(), sol::load_mode::text);
-}
-
 Sandbox& LuaSandbox::operator[](uint64_t aID)
 {
     assert(aID < m_sandboxes.size());
@@ -304,7 +293,7 @@ bool LuaSandbox::GetImGuiAvailable() const
     return m_imguiAvailable;
 }
 
-sol::environment& LuaSandbox::GetEnvironment()
+sol::table& LuaSandbox::GetEnvironment()
 {
     return m_env;
 }
