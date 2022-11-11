@@ -283,7 +283,7 @@ void TweakDBEditor::RefreshFlats()
                 }
 
                 const auto cGroupName = flatName.substr(0, idx);
-                cacheFlat(RED4ext::FNV1a64(cGroupName.c_str()), cGroupName.c_str(), flatName.substr(idx, idx + 1), dbid);
+                cacheFlat(RED4ext::FNV1a64(cGroupName.c_str()), cGroupName.c_str(), flatName.c_str(), dbid);
             }
         }
     });
