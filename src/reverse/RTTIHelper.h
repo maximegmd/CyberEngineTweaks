@@ -38,6 +38,7 @@ struct RTTIHelper
     std::map<uint64_t, RED4ext::CBaseFunction*> FindFunctions(RED4ext::CClass* apClass, const uint64_t acShortNameHash, bool aIsMember) const;
 
     static void Initialize(const LockableState& acpLua, LuaSandbox& apSandbox);
+    static void PostInitialize();
     static void Shutdown();
     static RTTIHelper& Get();
 
@@ -46,6 +47,7 @@ private:
     RTTIHelper(const LockableState& acLua, LuaSandbox& apSandbox);
 
     void InitializeRTTI();
+    void InitializeRuntime();
     void ParseGlobalStatics();
 
     bool IsFunctionAlias(RED4ext::CBaseFunction* apFunc);

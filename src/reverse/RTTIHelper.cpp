@@ -18,7 +18,18 @@ static std::unique_ptr<RTTIHelper> s_pInstance{ nullptr };
 
 void RTTIHelper::Initialize(const LockableState& acLua, LuaSandbox& apSandbox)
 {
-    s_pInstance.reset(new RTTIHelper(acLua, apSandbox));
+    if (!s_pInstance)
+    {
+        s_pInstance.reset(new RTTIHelper(acLua, apSandbox));
+    }
+}
+
+void RTTIHelper::PostInitialize()
+{
+    if (s_pInstance)
+    {
+        s_pInstance->InitializeRuntime();
+    }
 }
 
 void RTTIHelper::Shutdown()
@@ -47,6 +58,10 @@ void RTTIHelper::InitializeRTTI()
     m_pRtti = RED4ext::CRTTISystem::Get();
     m_pGameInstanceType = m_pRtti->GetClass(RED4ext::FNV1a64("ScriptGameInstance"));
 
+}
+
+void RTTIHelper::InitializeRuntime()
+{
     const auto cpEngine = RED4ext::CGameEngine::Get();
     const auto cpGameInstance = cpEngine->framework->gameInstance;
     const auto cpPlayerSystemType = m_pRtti->GetType(RED4ext::FNV1a64("cpPlayerSystem"));

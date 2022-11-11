@@ -481,6 +481,8 @@ void Scripting::PostInitializeScripting()
 
     m_sandbox.PostInitializeScripting();
 
+    RTTIHelper::Initialize(m_lua.AsRef(), m_sandbox);
+
     TriggerOnHook();
 }
 
@@ -601,6 +603,7 @@ void Scripting::PostInitializeMods()
     globals["Game"] = this;
 
     RTTIExtender::Initialize();
+    RTTIHelper::PostInitialize();
     m_mapper.Register();
 
     RegisterOverrides();
