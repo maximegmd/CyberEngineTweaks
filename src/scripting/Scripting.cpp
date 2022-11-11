@@ -64,7 +64,7 @@ void Scripting::Initialize()
     // initialize sandbox
     m_sandbox.Initialize();
 
-    auto& globals = m_sandbox.GetEnvironment();
+    auto& globals = m_sandbox.GetGlobals();
 
     // load in imgui bindings
     sol_ImGui::InitBindings(luaVm, globals);
@@ -151,7 +151,7 @@ void Scripting::PostInitializeScripting()
 {
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
-    auto& globals = m_sandbox.GetEnvironment();
+    auto& globals = m_sandbox.GetGlobals();
 
     if (luaVm["__Game"] != sol::nil)
     {
@@ -462,6 +462,23 @@ void Scripting::PostInitializeScripting()
         "Dump", &GameOptions::Dump,
         "List", &GameOptions::List);
 
+    globals["Override"] = [this](const std::string& acTypeName, const std::string& acFullName,
+                                 sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
+        m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, true);
+    };
+
+    globals["ObserveBefore"] = [this](const std::string& acTypeName, const std::string& acFullName,
+                                      sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
+        m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, false, false);
+    };
+
+    globals["ObserveAfter"] = [this](const std::string& acTypeName, const std::string& acFullName,
+                                     sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
+        m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, false, true);
+    };
+
+    globals["Observe"] = globals["ObserveBefore"];
+
     m_sandbox.PostInitializeScripting();
 
     TriggerOnHook();
@@ -471,7 +488,7 @@ void Scripting::PostInitializeTweakDB()
 {
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
-    auto& globals = m_sandbox.GetEnvironment();
+    auto& globals = m_sandbox.GetGlobals();
 
     luaVm.new_usertype<TweakDB>("__TweakDB",
         sol::meta_function::construct, sol::no_constructor,
@@ -499,7 +516,7 @@ void Scripting::PostInitializeMods()
 {
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
-    auto& globals = m_sandbox.GetEnvironment();
+    auto& globals = m_sandbox.GetGlobals();
 
     globals["NewObject"] = [this](const std::string& acName, sol::this_environment aEnv) -> sol::object
     {
@@ -523,23 +540,6 @@ void Scripting::PostInitializeMods()
     {
         return this->GetSingletonHandle(acName, aThisEnv);
     };
-
-    globals["Override"] = [this](const std::string& acTypeName, const std::string& acFullName,
-                                   sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
-        m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, true);
-    };
-
-    globals["ObserveBefore"] = [this](const std::string& acTypeName, const std::string& acFullName,
-                                        sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
-        m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, false, false);
-    };
-
-    globals["ObserveAfter"] = [this](const std::string& acTypeName, const std::string& acFullName,
-                                       sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
-        m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, false, true);
-    };
-
-    globals["Observe"] = globals["ObserveBefore"];
 
     globals["GetMod"] = [this](const std::string& acName) -> sol::object
     {
@@ -616,9 +616,8 @@ void Scripting::RegisterOverrides()
 {
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
-    auto& globals = m_sandbox.GetEnvironment();
 
-    globals["RegisterGlobalInputListener"] = [](WeakReference& aSelf, sol::this_environment aThisEnv) {
+    luaVm["RegisterGlobalInputListener"] = [](WeakReference& aSelf, sol::this_environment aThisEnv) {
         const sol::protected_function unregisterInputListener = aSelf.Index("UnregisterInputListener", aThisEnv);
         const sol::protected_function registerInputListener = aSelf.Index("RegisterInputListener", aThisEnv);
 
@@ -626,7 +625,7 @@ void Scripting::RegisterOverrides()
         registerInputListener(aSelf, aSelf);
     };
 
-    m_override.Override("PlayerPuppet", "GracePeriodAfterSpawn", globals["RegisterGlobalInputListener"], sol::nil, false, false, true);
+    m_override.Override("PlayerPuppet", "GracePeriodAfterSpawn", luaVm["RegisterGlobalInputListener"], sol::nil, false, false, true);
     m_override.Override("PlayerPuppet", "OnDetach", sol::nil, sol::nil, false, false, true);
     m_override.Override("QuestTrackerGameController", "OnUninitialize", sol::nil, sol::nil, false, false, true);
 }

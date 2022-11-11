@@ -106,6 +106,10 @@ static constexpr const char* s_cPostInitializeScriptingProtectedList[] =
     "CRUID",
     "LocKey",
     "GameOptions",
+    "Override",
+    "ObserveBefore",
+    "ObserveAfter",
+    "Observe",
 };
 
 static constexpr const char* s_cPostInitializeTweakDBProtectedList[] =
@@ -119,10 +123,6 @@ static constexpr const char* s_cPostInitializeModsProtectedList[] =
     // initialized by Scripting
     "NewObject",
     "GetSingleton",
-    "Override",
-    "ObserveBefore",
-    "ObserveAfter",
-    "Observe",
     "GetMod",
     "GameDump",
     "Dump",
@@ -131,7 +131,6 @@ static constexpr const char* s_cPostInitializeModsProtectedList[] =
     "DumpVtables",
     "DumpReflection",
     "Game",
-    "RegisterGlobalInputListener",
 
     // initialized by RTTIMapper
     "Vector3",
@@ -164,18 +163,18 @@ void LuaSandbox::Initialize()
     auto globals = luaState.globals();
 
     // initialize state + environment first
-    m_env = {luaState, sol::create};
+    m_globals = {luaState, sol::create};
 
     // copy whitelisted things from global table
     for (const auto* cKey : s_cVMGlobalObjectsWhitelist)
     {
-        m_env[cKey] = DeepCopySolObject(globals[cKey].get<sol::object>(), luaState);
-        MakeSolUsertypeImmutable(m_env[cKey], luaState);
+        m_globals[cKey] = DeepCopySolObject(globals[cKey].get<sol::object>(), luaState);
+        MakeSolUsertypeImmutable(m_globals[cKey], luaState);
     }
 
     // copy whitelisted from our global table
     for (const auto* cKey : s_cGlobalObjectsWhitelist)
-        MakeSolUsertypeImmutable(m_env[cKey], luaState);
+        MakeSolUsertypeImmutable(m_globals[cKey], luaState);
 
     // copy safe os functions
     {
@@ -185,7 +184,7 @@ void LuaSandbox::Initialize()
         osCopy["date"] = os["date"];
         osCopy["difftime"] = os["difftime"];
         osCopy["time"] = os["time"];
-        m_env["os"] = osCopy;
+        m_globals["os"] = osCopy;
     }
 
     CreateSandbox("", "", false, false, false, false);
@@ -199,7 +198,7 @@ void LuaSandbox::PostInitializeScripting()
 
     // copy whitelisted from global table
     for (const auto* cKey : s_cPostInitializeScriptingProtectedList)
-        MakeSolUsertypeImmutable(m_env[cKey], luaState);
+        MakeSolUsertypeImmutable(m_globals[cKey], luaState);
 }
 
 void LuaSandbox::PostInitializeTweakDB()
@@ -210,7 +209,7 @@ void LuaSandbox::PostInitializeTweakDB()
 
     // copy whitelisted from global table
     for (const auto* cKey : s_cPostInitializeTweakDBProtectedList)
-        MakeSolUsertypeImmutable(m_env[cKey], luaState);
+        MakeSolUsertypeImmutable(m_globals[cKey], luaState);
 }
 
 void LuaSandbox::PostInitializeMods()
@@ -221,7 +220,7 @@ void LuaSandbox::PostInitializeMods()
 
     // copy whitelisted from global table
     for (const auto* cKey : s_cPostInitializeModsProtectedList)
-        MakeSolUsertypeImmutable(m_env[cKey], luaState);
+        MakeSolUsertypeImmutable(m_globals[cKey], luaState);
 }
 
 void LuaSandbox::ResetState()
@@ -250,7 +249,7 @@ uint64_t LuaSandbox::CreateSandbox(const std::filesystem::path& acPath, const st
     auto lockedState = m_pScripting->GetLockedState();
     const auto& luaState = lockedState.Get();
 
-    auto& res = m_sandboxes.emplace_back(cResID, m_pScripting, m_env, acPath);
+    auto& res = m_sandboxes.emplace_back(cResID, m_pScripting, m_globals, acPath);
     if (!acPath.empty() && !acName.empty())
     {
         if (aEnableExtraLibs)
@@ -263,16 +262,6 @@ uint64_t LuaSandbox::CreateSandbox(const std::filesystem::path& acPath, const st
             InitializeLoggerForSandbox(res, luaState, acName);
     }
     return cResID;
-}
-
-sol::protected_function_result LuaSandbox::ExecuteFile(const std::string& acPath) const
-{
-    return m_pScripting->GetLockedState().Get().script_file(acPath, m_env, sol::load_mode::text);
-}
-
-sol::protected_function_result LuaSandbox::ExecuteString(const std::string& acString) const
-{
-    return m_pScripting->GetLockedState().Get().script(acString, m_env, sol:: detail::default_chunk_name(), sol::load_mode::text);
 }
 
 Sandbox& LuaSandbox::operator[](uint64_t aID)
@@ -304,9 +293,9 @@ bool LuaSandbox::GetImGuiAvailable() const
     return m_imguiAvailable;
 }
 
-sol::environment& LuaSandbox::GetEnvironment()
+sol::table& LuaSandbox::GetGlobals()
 {
-    return m_env;
+    return m_globals;
 }
 
 void LuaSandbox::InitializeExtraLibsForSandbox(Sandbox& aSandbox, const sol::state& acpState) const
@@ -603,7 +592,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
     // add in rename and remove replacements for os lib
     {
         const auto cOS = globals["os"].get<sol::table>();
-        sol::table osSB = DeepCopySolObject(m_env["os"].get<sol::object>(), acpState);
+        sol::table osSB = DeepCopySolObject(m_globals["os"].get<sol::object>(), acpState);
         osSB["rename"] = [cOS, cSBRootPath](const std::string& acOldPath, const std::string& acNewPath) -> std::tuple<sol::object, std::string>
         {
             const auto previousCurrentPath = std::filesystem::current_path();

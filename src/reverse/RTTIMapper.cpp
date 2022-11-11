@@ -29,11 +29,11 @@ void RTTIMapper::Register()
 
     auto* pRtti = RED4ext::CRTTISystem::Get();
 
-    RegisterSimpleTypes(luaState, m_sandbox.GetEnvironment());
-    RegisterDirectTypes(luaState, m_sandbox.GetEnvironment(), pRtti);
-    RegisterDirectGlobals(m_sandbox.GetEnvironment(), pRtti);
-    RegisterScriptAliases(m_sandbox.GetEnvironment(), pRtti);
-    RegisterSpecialAccessors(luaState, m_sandbox.GetEnvironment());
+    RegisterSimpleTypes(luaState, m_sandbox.GetGlobals());
+    RegisterDirectTypes(luaState, m_sandbox.GetGlobals(), pRtti);
+    RegisterDirectGlobals(m_sandbox.GetGlobals(), pRtti);
+    RegisterScriptAliases(m_sandbox.GetGlobals(), pRtti);
+    RegisterSpecialAccessors(luaState, m_sandbox.GetGlobals());
 }
 
 void RTTIMapper::Refresh()
@@ -217,11 +217,13 @@ void RTTIMapper::RegisterSpecialAccessors(sol::state& aLuaState, sol::table& aLu
 
     // Merge RTTI versions of basic types with our own versions
     // Allows usertype and RTTI functions to be used under the same name
-    ExtendUsertype<Vector3>("Vector3", aLuaState, aLuaGlobal);
     ExtendUsertype<Vector4>("Vector4", aLuaState, aLuaGlobal);
     ExtendUsertype<EulerAngles>("EulerAngles", aLuaState, aLuaGlobal);
     ExtendUsertype<Quaternion>("Quaternion", aLuaState, aLuaGlobal);
     ExtendUsertype<ItemID>("ItemID", aLuaState, aLuaGlobal);
+
+    // Replace RTTI version of class with our own version
+    aLuaGlobal["Vector3"] = aLuaState["Vector3"];
 }
 
 template <class T>

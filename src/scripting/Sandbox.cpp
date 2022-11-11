@@ -3,7 +3,7 @@
 #include "Sandbox.h"
 #include "Scripting.h"
 
-Sandbox::Sandbox(uint64_t aId, Scripting* apScripting, sol::environment aBaseEnvironment, const std::filesystem::path& acRootPath)
+Sandbox::Sandbox(uint64_t aId, Scripting* apScripting, sol::table aBaseEnvironment, const std::filesystem::path& acRootPath)
     : m_id(aId)
     , m_pScripting(apScripting)
     , m_env(apScripting->GetLockedState().Get(), sol::create, aBaseEnvironment)

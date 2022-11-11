@@ -16,9 +16,6 @@ struct LuaSandbox
 
     uint64_t CreateSandbox(const std::filesystem::path& acPath = "", const std::string& acName = "", bool aEnableExtraLibs = true, bool aEnableDB = true, bool aEnableIO = true, bool aEnableLogger = true);
 
-    sol::protected_function_result ExecuteFile(const std::string& acPath) const;
-    sol::protected_function_result ExecuteString(const std::string& acString) const;
-
     Sandbox& operator[](uint64_t aID);
     const Sandbox& operator[](uint64_t aID) const;
 
@@ -27,7 +24,7 @@ struct LuaSandbox
     void SetImGuiAvailable(bool aAvailable);
     bool GetImGuiAvailable() const;
 
-    sol::environment& GetEnvironment();
+    sol::table& GetGlobals();
 
 private:
 
@@ -40,7 +37,7 @@ private:
 
     Scripting* m_pScripting;
     const VKBindings& m_vkBindings;
-    sol::environment m_env{};
+    sol::table m_globals{};
     TiltedPhoques::Vector<Sandbox> m_sandboxes{};
     TiltedPhoques::Map<std::string, sol::object> m_modules{};
 

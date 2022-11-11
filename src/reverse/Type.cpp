@@ -258,12 +258,7 @@ sol::object ClassType::Index_Impl(const std::string& acName, sol::this_environme
     const auto func = RTTIHelper::Get().ResolveFunction(pClass, acName, pHandle != nullptr);
 
     if (!func)
-    {
-        const sol::environment cEnv = aThisEnv;
-        const auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
-        logger->warn("Warning: {} not found in {}.", acName, GetName());
         return sol::nil;
-    }
 
     return NewIndex(acName, func);
 }
