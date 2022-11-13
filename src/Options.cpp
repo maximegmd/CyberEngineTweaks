@@ -51,8 +51,8 @@ void PatchesSettings::ResetToDefaults()
 void FontSettings::Load(const nlohmann::json& aConfig)
 {
     Path = aConfig.value("path", Path);
-    GlyphRanges = aConfig.value("glyph_ranges", GlyphRanges);
-    SizeBase = aConfig.value("size_base", SizeBase);
+    Language = aConfig.value("language", Language);
+    BaseSize = aConfig.value("base_size", BaseSize);
     OversampleHorizontal = aConfig.value("oversample_horizontal", OversampleHorizontal);
     OversampleVertical = aConfig.value("oversample_vertical", OversampleVertical);
 }
@@ -60,9 +60,9 @@ void FontSettings::Load(const nlohmann::json& aConfig)
 nlohmann::json FontSettings::Save() const
 {
     return {
-      {"font_path", Path},
-      {"font_glyph_ranges", GlyphRanges},
-      {"font_size_base", SizeBase},
+      {"path", Path},
+      {"language", Language},
+      {"base_size", BaseSize},
       {"oversample_horizontal", OversampleHorizontal},
       {"oversample_vertical", OversampleVertical}
     };
@@ -71,8 +71,8 @@ nlohmann::json FontSettings::Save() const
 void FontSettings::ResetToDefaults()
 {
     Path = "";
-    GlyphRanges = "Default";
-    SizeBase = 18.0f;
+    Language = "Default";
+    BaseSize = 18.0f;
     OversampleHorizontal = 3;
     OversampleVertical = 1;
 }
@@ -81,8 +81,8 @@ void DeveloperSettings::Load(const nlohmann::json& aConfig)
 {
     RemoveDeadBindings = aConfig.value("remove_dead_bindings", RemoveDeadBindings);
     EnableImGuiAssertions = aConfig.value("enable_imgui_assertions", EnableImGuiAssertions);
-    DumpGameOptions = aConfig.value("dump_game_options", DumpGameOptions);
     EnableDebug = aConfig.value("enable_debug", EnableDebug);
+    DumpGameOptions = aConfig.value("dump_game_options", DumpGameOptions);
 
     // set global "Enable ImGui Assertions"
     g_ImGuiAssertionsEnabled = EnableImGuiAssertions;
@@ -134,16 +134,6 @@ nlohmann::json OverlayPersistentState::Save() const
     };
 }
 
-void OverlayPersistentState::ResetToDefaults()
-{
-    ConsoleToggled = false;
-    BindingsToggled = false;
-    SettingsToggled = false;
-    TweakDBEditorToggled = false;
-    GameLogToggled = false;
-    ImGuiDebugToggled = false;
-}
-
 void PersistentState::Load(const nlohmann::json& aConfig)
 {
     const auto& overlayJson = aConfig["overlay"];
@@ -156,11 +146,6 @@ nlohmann::json PersistentState::Save() const
     return {
         {"overlay", Overlay.Save()}
     };
-}
-
-void PersistentState::ResetToDefaults()
-{
-    Overlay.ResetToDefaults();
 }
 
 void Options::Load(const bool acPersistentStateReload)
@@ -218,7 +203,6 @@ void Options::ResetToDefaults()
     Patches.ResetToDefaults();
     Font.ResetToDefaults();
     Developer.ResetToDefaults();
-    PersistentState.ResetToDefaults();
 
     Save();
 }

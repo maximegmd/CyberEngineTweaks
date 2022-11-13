@@ -29,8 +29,8 @@ struct FontSettings
     void ResetToDefaults();
 
     std::string Path{ };
-    std::string GlyphRanges{"Default"};
-    float SizeBase{ 18.0f };
+    std::string Language{"Default"};
+    float BaseSize{ 18.0f };
     int32_t OversampleHorizontal{ 3 };
     int32_t OversampleVertical{ 1 };
 };
@@ -51,7 +51,6 @@ struct OverlayPersistentState
 {
     void Load(const nlohmann::json& aConfig);
     nlohmann::json Save() const;
-    void ResetToDefaults();
 
     bool ConsoleToggled = false;
     bool BindingsToggled = false;
@@ -65,7 +64,6 @@ struct PersistentState
 {
     void Load(const nlohmann::json& aConfig);
     nlohmann::json Save() const;
-    void ResetToDefaults();
 
     OverlayPersistentState Overlay{ };
 };

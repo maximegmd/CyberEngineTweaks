@@ -281,7 +281,7 @@ void D3D12::ReloadFonts()
 
     ImFontConfig config;
     const auto& fontSettings = m_options.Font;
-    config.SizePixels = std::floorf(fontSettings.SizeBase * scaleFromReference);
+    config.SizePixels = std::floorf(fontSettings.BaseSize * scaleFromReference);
     config.OversampleH = fontSettings.OversampleHorizontal;
     config.OversampleV = fontSettings.OversampleVertical;
     if (config.OversampleH == 1 && config.OversampleV == 1)
@@ -308,37 +308,37 @@ void D3D12::ReloadFonts()
     else
         io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(customFontPath.native()).c_str(), config.SizePixels, &config, cpGlyphRanges);
 
-    if (fontSettings.GlyphRanges == "ChineseFull")
+    if (fontSettings.Language == "ChineseFull")
     {
         cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansTC-Regular.otf", m_paths.Fonts(), false);
         cpGlyphRanges = io.Fonts->GetGlyphRangesChineseFull();
     }
-    else if (fontSettings.GlyphRanges == "ChineseSimplifiedCommon")
+    else if (fontSettings.Language == "ChineseSimplifiedCommon")
     {
         cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansSC-Regular.otf", m_paths.Fonts(), false);
         cpGlyphRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
     }
-    else if (fontSettings.GlyphRanges == "Japanese")
+    else if (fontSettings.Language == "Japanese")
     {
         cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansJP-Regular.otf", m_paths.Fonts(), false);
         cpGlyphRanges = io.Fonts->GetGlyphRangesJapanese();
     }
-    else if (fontSettings.GlyphRanges == "Korean")
+    else if (fontSettings.Language == "Korean")
     {
         cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansKR-Regular.otf", m_paths.Fonts(), false);
         cpGlyphRanges = io.Fonts->GetGlyphRangesKorean();
     }
-    else if (fontSettings.GlyphRanges == "Cyrillic")
+    else if (fontSettings.Language == "Cyrillic")
     {
         cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSans-Regular.ttf", m_paths.Fonts(), false);
         cpGlyphRanges = io.Fonts->GetGlyphRangesCyrillic();
     }
-    else if (fontSettings.GlyphRanges == "Thai")
+    else if (fontSettings.Language == "Thai")
     {
         cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansThai-Regular.ttf", m_paths.Fonts(), false);
         cpGlyphRanges = io.Fonts->GetGlyphRangesThai();
     }
-    else if (fontSettings.GlyphRanges == "Vietnamese")
+    else if (fontSettings.Language == "Vietnamese")
     {
         cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSans-Regular.ttf", m_paths.Fonts(), false);
         cpGlyphRanges = io.Fonts->GetGlyphRangesVietnamese();
