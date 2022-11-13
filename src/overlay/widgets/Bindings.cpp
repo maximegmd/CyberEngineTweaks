@@ -164,6 +164,8 @@ bool Bindings::FirstTimeSetup()
     if (m_vkBindInfos.empty())
         Initialize();
 
+    m_vm.BlockDraw(true);
+
     ImGui::OpenPopup("CET First Time Setup");
 
     if (ImGui::BeginPopupModal("CET First Time Setup", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
