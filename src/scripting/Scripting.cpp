@@ -651,7 +651,7 @@ void Scripting::TriggerOnUpdate(float aDeltaTime) const
     m_store.TriggerOnUpdate(aDeltaTime);
 }
 
-void Scripting::TriggerOnDraw() const
+void Scripting::TriggerOnDraw()
 {
     m_store.TriggerOnDraw();
 }

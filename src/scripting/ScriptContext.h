@@ -2,6 +2,7 @@
 
 #include "LuaSandbox.h"
 
+struct LogWindow;
 struct ScriptContext
 {
     ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::path& acPath, const std::string& acName);
@@ -17,7 +18,7 @@ struct ScriptContext
     void TriggerOnTweak() const;
     void TriggerOnInit() const;
     void TriggerOnUpdate(float aDeltaTime) const;
-    void TriggerOnDraw() const;
+    void TriggerOnDraw();
 
     void TriggerOnOverlayOpen() const;
     void TriggerOnOverlayClose() const;
@@ -44,5 +45,6 @@ private:
     TiltedPhoques::Vector<VKBind> m_vkBinds{ };
     std::string m_name{ };
     std::shared_ptr<spdlog::logger> m_logger{ nullptr };
+    std::shared_ptr<LogWindow> m_loggerWindow{ nullptr };
     bool m_initialized{ false };
 };

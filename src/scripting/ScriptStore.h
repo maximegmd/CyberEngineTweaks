@@ -18,7 +18,7 @@ struct ScriptStore
     void TriggerOnTweak() const;
     void TriggerOnInit() const;
     void TriggerOnUpdate(float aDeltaTime) const;
-    void TriggerOnDraw() const;
+    void TriggerOnDraw();
 
     void TriggerOnOverlayOpen() const;
     void TriggerOnOverlayClose() const;
