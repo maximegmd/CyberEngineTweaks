@@ -2,11 +2,10 @@
 
 #include "LogWindow.h"
 
-#include <d3d12/D3D12.h>
 #include <Utils.h>
 
-LogWindow::LogWindow(D3D12& aD3D12, const std::string& acpLoggerName)
-    : m_d3d12(aD3D12)
+LogWindow::LogWindow(const std::string& acpWindowTitle, const std::string& acpLoggerName)
+    : Widget(acpWindowTitle)
     , m_loggerName(acpLoggerName)
 {
     auto logSink = CreateCustomSinkMT([this](const std::string& msg){ Log(msg); });
@@ -14,7 +13,12 @@ LogWindow::LogWindow(D3D12& aD3D12, const std::string& acpLoggerName)
     spdlog::get(m_loggerName)->sinks().emplace_back(std::move(logSink));
 }
 
-void LogWindow::Draw(const ImVec2& size)
+void LogWindow::OnUpdate()
+{
+    DrawLog({-FLT_MIN, -FLT_MIN});
+}
+
+void LogWindow::DrawLog(const ImVec2& size)
 {
     const auto itemWidth = GetAlignedItemWidth(2);
 
