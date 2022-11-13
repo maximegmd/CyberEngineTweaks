@@ -89,15 +89,11 @@ void Scripting::Initialize()
         });
     }
 
-    auto& consoleSB = m_sandbox[0];
-    auto& consoleSBEnv = consoleSB.GetEnvironment();
 
     // load in basic game bindings
-    globals["print"] = [consoleSBEnv](sol::variadic_args aArgs, sol::this_state aState)
-    {
-        // for backwards compatibility
-        consoleSBEnv["spdlog"]["info"](aArgs, aState);
-    };
+    auto& consoleSB = m_sandbox[0];
+    auto& consoleSBEnv = consoleSB.GetEnvironment();
+    globals["print"] = consoleSBEnv["consoleLog"]["info"]; // alias for backwards compat
 
     globals["GetVersion"] = []() -> std::string
     {
