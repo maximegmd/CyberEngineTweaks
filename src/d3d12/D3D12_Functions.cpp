@@ -280,20 +280,21 @@ void D3D12::ReloadFonts()
     io.Fonts->Clear();
 
     ImFontConfig config;
-    config.SizePixels = std::floorf(m_options.FontSizeBase * scaleFromReference);
-    config.OversampleH = m_options.FontOversampleHorizontal;
-    config.OversampleV = m_options.FontOversampleVertical;
+    const auto& fontSettings = m_options.Font;
+    config.SizePixels = std::floorf(fontSettings.SizeBase * scaleFromReference);
+    config.OversampleH = fontSettings.OversampleHorizontal;
+    config.OversampleV = fontSettings.OversampleVertical;
     if (config.OversampleH == 1 && config.OversampleV == 1)
         config.PixelSnapH = true;
     config.MergeMode = false;
 
     // add default font
-    const auto customFontPath = m_options.FontPath.empty() ? std::filesystem::path{} : GetAbsolutePath(UTF8ToUTF16(m_options.FontPath), m_paths.Fonts(), false);
+    const auto customFontPath = fontSettings.Path.empty() ? std::filesystem::path{} : GetAbsolutePath(UTF8ToUTF16(fontSettings.Path), m_paths.Fonts(), false);
     auto cetFontPath = GetAbsolutePath(L"NotoSans-Regular.ttf", m_paths.Fonts(), false);
     const auto* cpGlyphRanges = io.Fonts->GetGlyphRangesDefault();
     if (customFontPath.empty())
     {
-        if (!m_options.FontPath.empty())
+        if (!fontSettings.Path.empty())
             Log::Warn("D3D12::ReloadFonts() - Custom font path is invalid! Using default CET font.");
 
         if (cetFontPath.empty())
@@ -307,37 +308,37 @@ void D3D12::ReloadFonts()
     else
         io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(customFontPath.native()).c_str(), config.SizePixels, &config, cpGlyphRanges);
 
-    if (m_options.FontGlyphRanges == "ChineseFull")
+    if (fontSettings.GlyphRanges == "ChineseFull")
     {
         cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansTC-Regular.otf", m_paths.Fonts(), false);
         cpGlyphRanges = io.Fonts->GetGlyphRangesChineseFull();
     }
-    else if (m_options.FontGlyphRanges == "ChineseSimplifiedCommon")
+    else if (fontSettings.GlyphRanges == "ChineseSimplifiedCommon")
     {
         cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansSC-Regular.otf", m_paths.Fonts(), false);
         cpGlyphRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
     }
-    else if (m_options.FontGlyphRanges == "Japanese")
+    else if (fontSettings.GlyphRanges == "Japanese")
     {
         cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansJP-Regular.otf", m_paths.Fonts(), false);
         cpGlyphRanges = io.Fonts->GetGlyphRangesJapanese();
     }
-    else if (m_options.FontGlyphRanges == "Korean")
+    else if (fontSettings.GlyphRanges == "Korean")
     {
         cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansKR-Regular.otf", m_paths.Fonts(), false);
         cpGlyphRanges = io.Fonts->GetGlyphRangesKorean();
     }
-    else if (m_options.FontGlyphRanges == "Cyrillic")
+    else if (fontSettings.GlyphRanges == "Cyrillic")
     {
         cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSans-Regular.ttf", m_paths.Fonts(), false);
         cpGlyphRanges = io.Fonts->GetGlyphRangesCyrillic();
     }
-    else if (m_options.FontGlyphRanges == "Thai")
+    else if (fontSettings.GlyphRanges == "Thai")
     {
         cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansThai-Regular.ttf", m_paths.Fonts(), false);
         cpGlyphRanges = io.Fonts->GetGlyphRangesThai();
     }
-    else if (m_options.FontGlyphRanges == "Vietnamese")
+    else if (fontSettings.GlyphRanges == "Vietnamese")
     {
         cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSans-Regular.ttf", m_paths.Fonts(), false);
         cpGlyphRanges = io.Fonts->GetGlyphRangesVietnamese();
@@ -388,7 +389,7 @@ void D3D12::ReloadFonts()
     config.MergeMode = true;
     if (customFontPath.empty())
     {
-        if (!m_options.FontPath.empty())
+        if (!fontSettings.Path.empty())
             Log::Warn("D3D12::ReloadFonts() - Custom font path is invalid! Using default CET font.");
 
         if (cetFontPath.empty())

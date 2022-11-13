@@ -3,106 +3,161 @@
 #include "Paths.h"
 #include "Utils.h"
 
+
+void PatchesSettings::Load(const nlohmann::json& aConfig)
+{
+    RemovePedestrians = aConfig.value("remove_pedestrians", RemovePedestrians);
+    SkipStartMenu = aConfig.value("skip_start_menu", SkipStartMenu);
+    AmdSmt = aConfig.value("amd_smt", AmdSmt);
+    AsyncCompute = aConfig.value("disable_async_compute", AsyncCompute);
+    Antialiasing = aConfig.value("disable_antialiasing", Antialiasing);
+    DisableIntroMovies = aConfig.value("disable_intro_movies", DisableIntroMovies);
+    DisableVignette = aConfig.value("disable_vignette", DisableVignette);
+    DisableBoundaryTeleport = aConfig.value("disable_boundary_teleport", DisableBoundaryTeleport);
+    DisableWin7Vsync = aConfig.value("disable_win7_vsync", DisableWin7Vsync);
+    MinimapFlicker = aConfig.value("minimap_flicker", MinimapFlicker);
+}
+
+nlohmann::json PatchesSettings::Save() const
+{
+    return {
+      {"remove_pedestrians", RemovePedestrians},
+      {"disable_async_compute", AsyncCompute},
+      {"disable_antialiasing", Antialiasing},
+      {"skip_start_menu", SkipStartMenu},
+      {"amd_smt", AmdSmt},
+      {"disable_intro_movies", DisableIntroMovies},
+      {"disable_vignette", DisableVignette},
+      {"disable_boundary_teleport", DisableBoundaryTeleport},
+      {"disable_win7_vsync", DisableWin7Vsync},
+      {"minimap_flicker", MinimapFlicker},
+    };
+}
+
+void PatchesSettings::ResetToDefaults()
+{
+    RemovePedestrians = false;
+    AsyncCompute = false;
+    Antialiasing = false;
+    SkipStartMenu = false;
+    AmdSmt = false;
+    DisableIntroMovies = false;
+    DisableVignette = false;
+    DisableBoundaryTeleport = false;
+    DisableWin7Vsync = false;
+    MinimapFlicker = false;
+}
+
+void FontSettings::Load(const nlohmann::json& aConfig)
+{
+    Path = aConfig.value("path", Path);
+    GlyphRanges = aConfig.value("glyph_ranges", GlyphRanges);
+    SizeBase = aConfig.value("size_base", SizeBase);
+    OversampleHorizontal = aConfig.value("oversample_horizontal", OversampleHorizontal);
+    OversampleVertical = aConfig.value("oversample_vertical", OversampleVertical);
+}
+
+nlohmann::json FontSettings::Save() const
+{
+    return {
+      {"font_path", Path},
+      {"font_glyph_ranges", GlyphRanges},
+      {"font_size_base", SizeBase},
+      {"oversample_horizontal", OversampleHorizontal},
+      {"oversample_vertical", OversampleVertical}
+    };
+}
+
+void FontSettings::ResetToDefaults()
+{
+    Path = "";
+    GlyphRanges = "Default";
+    SizeBase = 18.0f;
+    OversampleHorizontal = 3;
+    OversampleVertical = 1;
+}
+
+void DeveloperSettings::Load(const nlohmann::json& aConfig)
+{
+    RemoveDeadBindings = aConfig.value("remove_dead_bindings", RemoveDeadBindings);
+    EnableImGuiAssertions = aConfig.value("enable_imgui_assertions", EnableImGuiAssertions);
+    DumpGameOptions = aConfig.value("dump_game_options", DumpGameOptions);
+    EnableDebug = aConfig.value("enable_debug", EnableDebug);
+
+    // set global "Enable ImGui Assertions"
+    g_ImGuiAssertionsEnabled = EnableImGuiAssertions;
+}
+
+nlohmann::json DeveloperSettings::Save() const
+{
+    // set global "Enable ImGui Assertions"
+    g_ImGuiAssertionsEnabled = EnableImGuiAssertions;
+
+    return {
+      {"remove_dead_bindings", RemoveDeadBindings},
+      {"enable_imgui_assertions", EnableImGuiAssertions},
+      {"enable_debug", EnableDebug},
+      {"dump_game_options", DumpGameOptions},
+    };
+}
+
+void DeveloperSettings::ResetToDefaults()
+{
+    RemoveDeadBindings = true;
+    EnableImGuiAssertions = false;
+    EnableDebug = false;
+    DumpGameOptions = false;
+
+    // set global "Enable ImGui Assertions"
+    g_ImGuiAssertionsEnabled = EnableImGuiAssertions;
+}
+
 void Options::Load()
 {
     const auto path = GetAbsolutePath(m_paths.Config(), "", false);
-    if (!path.empty())
-    {
-        std::ifstream configFile(path);
-        if(configFile)
-        {
-            const auto config = nlohmann::json::parse(configFile);
-            PatchRemovePedestrians = config.value("remove_pedestrians", PatchRemovePedestrians);
-            PatchSkipStartMenu = config.value("skip_start_menu", PatchSkipStartMenu);
-            PatchAmdSmt = config.value("amd_smt", PatchAmdSmt);
-            PatchAsyncCompute = config.value("disable_async_compute", PatchAsyncCompute);
-            PatchAntialiasing = config.value("disable_antialiasing", PatchAntialiasing);
-            PatchDisableIntroMovies = config.value("disable_intro_movies", PatchDisableIntroMovies);
-            PatchDisableVignette = config.value("disable_vignette", PatchDisableVignette);
-            PatchDisableBoundaryTeleport = config.value("disable_boundary_teleport", PatchDisableBoundaryTeleport);
-            PatchDisableWin7Vsync = config.value("disable_win7_vsync", PatchDisableWin7Vsync);
-            PatchMinimapFlicker = config.value("minimap_flicker", PatchMinimapFlicker);
+    if (path.empty())
+        return;
 
-            RemoveDeadBindings = config.value("cetdev_remove_dead_bindings", RemoveDeadBindings);
-            EnableImGuiAssertionsLogging = config.value("cetdev_enable_imgui_assertions_logging", EnableImGuiAssertionsLogging);
-            DumpGameOptions = config.value("dump_game_options", DumpGameOptions);
-            PatchEnableDebug = config.value("enable_debug", PatchEnableDebug);
+    std::ifstream configFile(path);
+    if(!configFile)
+        return;
 
-            // font config
-            FontPath = config.value("font_path", FontPath);
-            FontGlyphRanges = config.value("font_glyph_ranges", FontGlyphRanges);
-            FontSizeBase = config.value("font_size_base", FontSizeBase);
-            FontOversampleHorizontal = config.value("font_oversample_horizontal", FontOversampleHorizontal);
-            FontOversampleVertical = config.value("font_oversample_vertical", FontOversampleVertical);
+    auto config = nlohmann::json::parse(configFile);
 
-            // check old config names
-            if (config.value("unlock_menu", false))
-                PatchEnableDebug = true;
-        }
-        configFile.close();
-    }
+    // patches config
+    const auto& patchesConfig = config["patches"];
+    if (!patchesConfig.empty())
+        Patches.Load(patchesConfig);
 
-    // set global "Enable ImGui Assertions"
-    g_ImGuiAssertionsEnabled = EnableImGuiAssertionsLogging;
+    // font config
+    const auto& fontConfig = config["font"];
+    if (!fontConfig.empty())
+        Font.Load(fontConfig);
+
+    // developer config
+    const auto& developerConfig = config["developer"];
+    if (!developerConfig.empty())
+        Developer.Load(developerConfig);
 }
 
-void Options::Save()
+void Options::Save() const
 {
-    nlohmann::json config;
-
-    config["remove_pedestrians"] = PatchRemovePedestrians;
-    config["disable_async_compute"] = PatchAsyncCompute;
-    config["disable_antialiasing"] = PatchAntialiasing;
-    config["skip_start_menu"] = PatchSkipStartMenu;
-    config["amd_smt"] = PatchAmdSmt;
-    config["disable_intro_movies"] = PatchDisableIntroMovies;
-    config["disable_vignette"] = PatchDisableVignette;
-    config["disable_boundary_teleport"] = PatchDisableBoundaryTeleport;
-    config["disable_win7_vsync"] = PatchDisableWin7Vsync;
-    config["minimap_flicker"] = PatchMinimapFlicker;
-
-    config["cetdev_remove_dead_bindings"] = RemoveDeadBindings;
-    config["cetdev_enable_imgui_assertions_logging"] = EnableImGuiAssertionsLogging;
-    config["enable_debug"] = PatchEnableDebug;
-    config["dump_game_options"] = DumpGameOptions;
-
-    config["font_path"] = FontPath;
-    config["font_glyph_ranges"] = FontGlyphRanges;
-    config["font_size_base"] = FontSizeBase;
-    config["font_oversample_horizontal"] = FontOversampleHorizontal;
-    config["font_oversample_vertical"] = FontOversampleVertical;
+    nlohmann::json config = {
+      {"patches", Patches.Save()},
+      {"font", Font.Save()},
+      {"developer", Developer.Save()}
+    };
 
     const auto path = GetAbsolutePath(m_paths.Config(), "", true);
     std::ofstream o(path);
     o << config.dump(4) << std::endl;
-
-    // set global "Enable ImGui Assertions"
-    g_ImGuiAssertionsEnabled = EnableImGuiAssertionsLogging;
 }
 
 void Options::ResetToDefaults()
 {
-    PatchRemovePedestrians = false;
-    PatchAsyncCompute = false;
-    PatchAntialiasing = false;
-    PatchSkipStartMenu = false;
-    PatchAmdSmt = false;
-    PatchDisableIntroMovies = false;
-    PatchDisableVignette = false;
-    PatchDisableBoundaryTeleport = false;
-    PatchDisableWin7Vsync = false;
-    PatchMinimapFlicker = false;
-
-    RemoveDeadBindings = true;
-    EnableImGuiAssertionsLogging = false;
-    PatchEnableDebug = false;
-    DumpGameOptions = false;
-
-    FontPath = "";
-    FontGlyphRanges = "Default";
-    FontSizeBase = 18.0f;
-    FontOversampleHorizontal = 3;
-    FontOversampleVertical = 1;
+    Patches.ResetToDefaults();
+    Font.ResetToDefaults();
+    Developer.ResetToDefaults();
 
     Save();
 }
@@ -178,5 +233,11 @@ Options::Options(Paths& aPaths)
     }
 
     Load();
+    Save();
+}
+
+Options::~Options()
+{
+    // save on exit to make sure persistent state is preserved
     Save();
 }

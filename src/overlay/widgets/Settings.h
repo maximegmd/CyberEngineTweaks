@@ -2,7 +2,8 @@
 
 #include "Widget.h"
 
-struct Options;
+#include <Options.h>
+
 struct LuaVM;
 struct Settings : Widget
 {
@@ -23,20 +24,8 @@ protected:
 private:
     void UpdateAndDrawSetting(const std::string& acLabel, const std::string& acTooltip, bool& aCurrent, const bool& acSaved);
 
-    bool m_patchEnableDebug{ false };
-    bool m_patchRemovePedestrians{ false };
-    bool m_patchAsyncCompute{ false };
-    bool m_patchAntialiasing{ false };
-    bool m_patchSkipStartMenu{ false };
-    bool m_patchAmdSmt{ false };
-    bool m_patchDisableIntroMovies{ false };
-    bool m_patchDisableVignette{ false };
-    bool m_patchDisableBoundaryTeleport{ false };
-    bool m_patchDisableWin7Vsync{ false };
-    bool m_patchMinimapFlicker{ false };
-    bool m_dumpGameOptions{ false };
-    bool m_removeDeadBindings{ true };
-    bool m_enableImGuiAssertionsLogging{ false };
+    PatchesSettings m_patches;
+    DeveloperSettings m_developer;
 
     Options& m_options;
     LuaVM& m_vm;
