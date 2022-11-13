@@ -1,10 +1,9 @@
 #pragma once
 
-#include "Widget.h"
 #include "LogWindow.h"
 
 struct LuaVM;
-struct Console : Widget
+struct Console : LogWindow
 {
     Console(Options& aOptions, PersistentState& aPersistentState, LuaVM& aVm);
     ~Console() override = default;
@@ -19,11 +18,8 @@ private:
     static int HandleConsoleResize(ImGuiInputTextCallbackData* apData);
     static int HandleConsole(ImGuiInputTextCallbackData* apData);
 
-    Options& m_options;
     PersistentState& m_persistentState;
     LuaVM& m_vm;
-
-    LogWindow m_logWindow;
 
     size_t m_historyIndex{ 0 };
     bool m_newHistory{ true };

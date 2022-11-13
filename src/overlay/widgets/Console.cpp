@@ -6,11 +6,9 @@
 #include <Utils.h>
 
 Console::Console(Options& aOptions, PersistentState& aPersistentState, LuaVM& aVm)
-    : Widget("Console", "scripting")
-    , m_options(aOptions)
+    : LogWidget("Console", "scripting")
     , m_persistentState(aPersistentState)
     , m_vm(aVm)
-    , m_logWindow("scripting")
 {
     m_command.resize(255);
     m_historyIndex = m_persistentState.Console.History.empty() ? 0 : m_persistentState.Console.History.size() - 1;
@@ -86,7 +84,7 @@ void Console::OnUpdate()
 {
     const auto& style = ImGui::GetStyle();
     const auto inputLineHeight = ImGui::GetTextLineHeight() + style.ItemInnerSpacing.y * 2;
-    m_logWindow.Draw({-FLT_MIN, -(inputLineHeight + style.ItemSpacing.y)});
+    DrawLog({-FLT_MIN, -(inputLineHeight + style.ItemSpacing.y)});
 
     ImGui::SetNextItemWidth(-FLT_MIN);
     constexpr auto flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackResize;

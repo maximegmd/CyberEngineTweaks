@@ -4,15 +4,21 @@
 
 #include <Utils.h>
 
-LogWindow::LogWindow(const std::string& acpLoggerName)
-    : m_loggerName(acpLoggerName)
+LogWindow::LogWindow(const std::string& acpWindowTitle, const std::string& acpLoggerName)
+    : Widget(acpWindowTitle)
+    , m_loggerName(acpLoggerName)
 {
     auto logSink = CreateCustomSinkMT([this](const std::string& msg){ Log(msg); });
     logSink->set_pattern("%L;%v");
     spdlog::get(m_loggerName)->sinks().emplace_back(std::move(logSink));
 }
 
-void LogWindow::Draw(const ImVec2& size)
+void LogWindow::OnUpdate()
+{
+    DrawLog({-FLT_MIN, -FLT_MIN});
+}
+
+void LogWindow::DrawLog(const ImVec2& size)
 {
     const auto itemWidth = GetAlignedItemWidth(2);
 

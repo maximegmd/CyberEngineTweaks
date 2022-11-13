@@ -3,12 +3,6 @@
 #include "GameLog.h"
 
 GameLog::GameLog()
-    : Widget("Game Log")
-    , m_logWindow("gamelog")
+    : LogWindow("Game Log", "gamelog")
 {
-}
-
-void GameLog::OnUpdate()
-{
-    m_logWindow.Draw({-FLT_MIN, -FLT_MIN});
 }
