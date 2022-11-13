@@ -31,6 +31,11 @@ sol::environment& Sandbox::GetEnvironment()
     return m_env;
 }
 
+const sol::environment& Sandbox::GetEnvironment() const
+{
+    return m_env;
+}
+
 const std::filesystem::path& Sandbox::GetRootPath() const
 {
     return m_path;
