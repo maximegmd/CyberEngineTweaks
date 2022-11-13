@@ -50,7 +50,7 @@ void LuaVM::Update(float aDeltaTime)
         m_d3d12.PrepareUpdate();
 }
 
-void LuaVM::Draw() const
+void LuaVM::Draw()
 {
     if (!m_initialized || m_drawBlocked)
         return;
