@@ -55,7 +55,7 @@ void LogWindow::Draw(const ImVec2& size)
                 switch (level)
                 {
                 case spdlog::level::level_enum::trace:
-                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{0.0f, 0.0f, 1.0f, 1.0f});
+                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{0.0f, 1.0f, 1.0f, 1.0f});
                     break;
 
                 case spdlog::level::level_enum::debug:

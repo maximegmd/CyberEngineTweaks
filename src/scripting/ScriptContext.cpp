@@ -44,6 +44,7 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
     auto& env = sb.GetEnvironment();
     m_logger = env["__logger"].get<std::shared_ptr<spdlog::logger>>();
 
+
     env["registerForEvent"] = [this](const std::string& acName, sol::function aCallback)
     {
         if(acName == "onHook")

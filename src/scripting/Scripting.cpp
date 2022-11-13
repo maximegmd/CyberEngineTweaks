@@ -89,28 +89,11 @@ void Scripting::Initialize()
         });
     }
 
-    // setup logger for console sandbox
+
+    // load in basic game bindings
     auto& consoleSB = m_sandbox[0];
     auto& consoleSBEnv = consoleSB.GetEnvironment();
-    consoleSBEnv["__logger"] = spdlog::get("scripting");
-
-    // load in game bindings
-    globals["print"] = [](sol::variadic_args aArgs, sol::this_state aState)
-    {
-        std::ostringstream oss;
-        sol::state_view s(aState);
-        for (auto it = aArgs.cbegin(); it != aArgs.cend(); ++it)
-        {
-            if (it != aArgs.cbegin())
-            {
-                oss << " ";
-            }
-            std::string str = s["tostring"]((*it).get<sol::object>());
-            oss << str;
-        }
-
-        spdlog::get("scripting")->info(oss.str());
-    };
+    globals["print"] = consoleSBEnv["consoleLog"]["info"]; // alias for backwards compat
 
     globals["GetVersion"] = []() -> std::string
     {
