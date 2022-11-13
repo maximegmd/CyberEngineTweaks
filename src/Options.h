@@ -47,12 +47,35 @@ struct DeveloperSettings
     bool DumpGameOptions{ false };
 };
 
+struct OverlayPersistentState
+{
+    void Load(const nlohmann::json& aConfig);
+    nlohmann::json Save() const;
+    void ResetToDefaults();
+
+    bool ConsoleToggled = false;
+    bool BindingsToggled = false;
+    bool SettingsToggled = false;
+    bool TweakDBEditorToggled = false;
+    bool GameLogToggled = false;
+    bool ImGuiDebugToggled = false;
+};
+
+struct PersistentState
+{
+    void Load(const nlohmann::json& aConfig);
+    nlohmann::json Save() const;
+    void ResetToDefaults();
+
+    OverlayPersistentState Overlay{ };
+};
+
 struct Options
 {
     Options(Paths& aPaths);
     ~Options();
 
-    void Load();
+    void Load(const bool acPersistentStateReload = false);
     void Save() const;
     void ResetToDefaults();
 
@@ -62,6 +85,7 @@ struct Options
     PatchesSettings Patches{ };
     FontSettings Font{ };
     DeveloperSettings Developer{ };
+    PersistentState PersistentState{ };
 
 private:
 

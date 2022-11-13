@@ -112,7 +112,58 @@ void DeveloperSettings::ResetToDefaults()
     g_ImGuiAssertionsEnabled = EnableImGuiAssertions;
 }
 
-void Options::Load()
+void OverlayPersistentState::Load(const nlohmann::json& aConfig)
+{
+    ConsoleToggled = aConfig.value("console_toggled", ConsoleToggled);
+    BindingsToggled = aConfig.value("bindings_toggled", BindingsToggled);
+    SettingsToggled = aConfig.value("settings_toggled", SettingsToggled);
+    TweakDBEditorToggled = aConfig.value("tweakdbeditor_toggled", TweakDBEditorToggled);
+    GameLogToggled = aConfig.value("gamelog_toggled", GameLogToggled);
+    ImGuiDebugToggled = aConfig.value("imguidebug_toggled", ImGuiDebugToggled);
+}
+
+nlohmann::json OverlayPersistentState::Save() const
+{
+    return {
+      {"console_toggled", ConsoleToggled},
+      {"bindings_toggled", BindingsToggled},
+      {"settings_toggled", SettingsToggled},
+      {"tweakdbeditor_toggled", TweakDBEditorToggled},
+      {"gamelog_toggled", GameLogToggled},
+      {"imguidebug_toggled", ImGuiDebugToggled}
+    };
+}
+
+void OverlayPersistentState::ResetToDefaults()
+{
+    ConsoleToggled = false;
+    BindingsToggled = false;
+    SettingsToggled = false;
+    TweakDBEditorToggled = false;
+    GameLogToggled = false;
+    ImGuiDebugToggled = false;
+}
+
+void PersistentState::Load(const nlohmann::json& aConfig)
+{
+    const auto& overlayJson = aConfig["overlay"];
+    if (!overlayJson.empty())
+        Overlay.Load(overlayJson);
+}
+
+nlohmann::json PersistentState::Save() const
+{
+    return {
+        {"overlay", Overlay.Save()}
+    };
+}
+
+void PersistentState::ResetToDefaults()
+{
+    Overlay.ResetToDefaults();
+}
+
+void Options::Load(const bool acPersistentStateReload)
 {
     const auto path = GetAbsolutePath(m_paths.Config(), "", false);
     if (path.empty())
@@ -138,6 +189,14 @@ void Options::Load()
     const auto& developerConfig = config["developer"];
     if (!developerConfig.empty())
         Developer.Load(developerConfig);
+
+    if (!acPersistentStateReload)
+        return;
+
+    // persistent state config
+    const auto& persistentStateConfig = config["persistent_state"];
+    if (!persistentStateConfig.empty())
+        PersistentState.Load(persistentStateConfig);
 }
 
 void Options::Save() const
@@ -145,7 +204,8 @@ void Options::Save() const
     nlohmann::json config = {
       {"patches", Patches.Save()},
       {"font", Font.Save()},
-      {"developer", Developer.Save()}
+      {"developer", Developer.Save()},
+      {"persistent_state", PersistentState.Save()}
     };
 
     const auto path = GetAbsolutePath(m_paths.Config(), "", true);
@@ -158,6 +218,7 @@ void Options::ResetToDefaults()
     Patches.ResetToDefaults();
     Font.ResetToDefaults();
     Developer.ResetToDefaults();
+    PersistentState.ResetToDefaults();
 
     Save();
 }
@@ -232,7 +293,7 @@ Options::Options(Paths& aPaths)
         throw std::runtime_error("Unknown version");
     }
 
-    Load();
+    Load(true);
     Save();
 }
 

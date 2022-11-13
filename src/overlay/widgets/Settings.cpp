@@ -11,16 +11,7 @@ Settings::Settings(Options& aOptions, LuaVM& aVm)
     , m_options(aOptions)
     , m_vm(aVm)
 {
-}
-
-WidgetResult Settings::OnEnable()
-{
-    if (!m_enabled)
-    {
-        Load();
-        m_enabled = true;
-    }
-    return m_enabled ? WidgetResult::ENABLED : WidgetResult::DISABLED;
+    Load();
 }
 
 WidgetResult Settings::OnPopup()

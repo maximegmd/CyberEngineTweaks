@@ -10,7 +10,6 @@ struct Settings : Widget
     Settings(Options& aOptions, LuaVM& aVm);
     ~Settings() override = default;
 
-    WidgetResult OnEnable() override;
     WidgetResult OnDisable() override;
 
     void Load();
