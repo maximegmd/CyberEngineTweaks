@@ -12,7 +12,7 @@
 
 HRESULT D3D12::PresentDownlevel(ID3D12CommandQueueDownlevel* apCommandQueueDownlevel, ID3D12GraphicsCommandList* apOpenCommandList, ID3D12Resource* apSourceTex2D, HWND ahWindow, D3D12_DOWNLEVEL_PRESENT_FLAGS aFlags)
 {
-    if (CET::Get().GetOptions().PatchDisableWin7Vsync)
+    if (CET::Get().GetOptions().Patches.DisableWin7Vsync)
         aFlags &= ~D3D12_DOWNLEVEL_PRESENT_FLAG_WAIT_FOR_VBLANK;
 
     auto& d3d12 = CET::Get().GetD3D12();
