@@ -11,6 +11,6 @@ namespace GameDump
 {
 struct DumpVTablesTask
 {
-    static void Run();
+    static bool Run();
 };
 } // namespace GameDump

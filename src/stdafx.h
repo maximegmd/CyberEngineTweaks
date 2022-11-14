@@ -11,6 +11,7 @@
 #include <RED4ext/CName.hpp>
 #include <RED4ext/CString.hpp>
 #include <RED4ext/DynArray.hpp>
+#include "RED4ext/GameApplication.hpp"
 #include <RED4ext/GameEngine.hpp>
 #include <RED4ext/Hashing/CRC.hpp>
 #include <RED4ext/ISerializable.hpp>
@@ -66,6 +67,7 @@
 #include "Options.h"
 #include "Paths.h"
 #include "reverse/Addresses.h"
+#include "scripting/GameHooks.h"
 #include "VKBindings.h"
 
 template<>

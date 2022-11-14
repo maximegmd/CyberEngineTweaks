@@ -4,7 +4,7 @@
 
 namespace GameDump
 {
-void DumpVTablesTask::Run()
+bool DumpVTablesTask::Run()
 {
     TiltedPhoques::Map<uintptr_t, std::string> vtableMap;
 
@@ -82,5 +82,7 @@ void DumpVTablesTask::Run()
     {
         Log::Info("{:016X},{}", key, value);
     }
+
+    return true;
 }
 } // namespace GameDump

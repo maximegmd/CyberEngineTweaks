@@ -306,26 +306,6 @@ void LuaVM::HookTDBIDToStringDEBUG(RED4ext::IScriptable*, RED4ext::CStackFrame* 
     }
 }
 
-bool LuaVM::HookRunningStateRun(uintptr_t aThis, uintptr_t aApp)
-{
-    const auto cNow = std::chrono::high_resolution_clock::now();
-    const auto cDelta = cNow - s_vm->m_lastframe;
-    const auto cSeconds = std::chrono::duration_cast<std::chrono::duration<float>>(cDelta);
-
-    s_vm->Update(cSeconds.count());
-
-    s_vm->m_lastframe = cNow;
-
-    return s_vm->m_realRunningStateRun(aThis, aApp);
-}
-
-bool LuaVM::HookShutdownStateRun(uintptr_t aThis, uintptr_t aApp)
-{
-    s_vm->m_scripting.UnloadAllMods();
-
-    return s_vm->m_realShutdownStateRun(aThis, aApp);
-}
-
 uintptr_t LuaVM::HookSetLoadingState(uintptr_t aThis, int aState)
 {
     static std::once_flag s_initBarrier;
@@ -419,38 +399,6 @@ void LuaVM::Hook()
     }
 
     {
-        const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_ProcessRunningState);
-        uint8_t* pLocation = func.GetAddr();
-
-        if (pLocation)
-        {
-            if (MH_CreateHook(pLocation, reinterpret_cast<void*>(&HookRunningStateRun), reinterpret_cast<void**>(&m_realRunningStateRun)) != MH_OK ||
-                MH_EnableHook(pLocation) != MH_OK)
-                Log::Error("Could not hook CScript::ProcessRunningState function!");
-            else
-            {
-                Log::Info("CScript::ProcessRunningState function hook complete!");
-            }
-        }
-    }
-
-    {
-        const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_ProcessShutdownState);
-        uint8_t* pLocation = func.GetAddr();
-
-        if (pLocation)
-        {
-            if (MH_CreateHook(pLocation, reinterpret_cast<void*>(&HookShutdownStateRun), reinterpret_cast<void**>(&m_realShutdownStateRun)) != MH_OK ||
-                MH_EnableHook(pLocation) != MH_OK)
-                Log::Error("Could not hook CScript::ProcessShutdownState function!");
-            else
-            {
-                Log::Info("CScript::ProcessShutdownState function hook complete!");
-            }
-        }
-    }
-
-    {
         const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_ToStringDEBUG);
         uint8_t* pLocation = func.GetAddr();
 
@@ -513,5 +461,23 @@ void LuaVM::Hook()
             }
         }
     }
+
+    GameMainThread::Get().AddRunningTask([this]{
+        const auto cNow = std::chrono::high_resolution_clock::now();
+        const auto cDelta = cNow - s_vm->m_lastframe;
+        const auto cSeconds = std::chrono::duration_cast<std::chrono::duration<float>>(cDelta);
+
+        s_vm->Update(cSeconds.count());
+
+        s_vm->m_lastframe = cNow;
+
+        return false;
+    });
+
+    GameMainThread::Get().AddShutdownTask([this]{
+        s_vm->m_scripting.UnloadAllMods();
+
+        return true;
+    });
 
 }

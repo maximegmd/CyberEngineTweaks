@@ -69,8 +69,6 @@ protected:
     static void HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*, void*);
     static void HookTDBIDToStringDEBUG(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void* apResult, void*);
     static TDBID* HookTDBIDCtorDerive(TDBID* apBase, TDBID* apThis, const char* acpName);
-    static bool HookRunningStateRun(uintptr_t aThis, uintptr_t aApp);
-    static bool HookShutdownStateRun(uintptr_t aThis, uintptr_t aApp);
     static uintptr_t HookSetLoadingState(uintptr_t aThis, int aState);
     static uint64_t HookTweakDBLoad(uintptr_t aThis, uintptr_t aParam);
     static bool HookTranslateBytecode(uintptr_t aBinder, uintptr_t aData);
@@ -87,8 +85,6 @@ private:
     RED4ext::OpcodeHandlers::Handler_t m_realLogChannel{nullptr};
     RED4ext::OpcodeHandlers::Handler_t m_realTDBIDToStringDEBUG{nullptr};
     TTDBIDCtorDerive* m_realTDBIDCtorDerive{ nullptr };
-    TRunningStateRun* m_realRunningStateRun{ nullptr };
-    TShutdownStateRun* m_realShutdownStateRun{ nullptr };
     TSetLoadingState* m_realSetLoadingState{ nullptr };
     TTweakDBLoad* m_realTweakDBLoad{ nullptr };
     TTranslateBytecode* m_realTranslateBytecode{ nullptr };

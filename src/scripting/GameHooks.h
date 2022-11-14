@@ -7,8 +7,11 @@ struct GameMainThread
 
     static GameMainThread& Get();
 
-    void AddTask(const std::function<void()>& aFunction);
-    void AddRepeatedTask(std::function<void()> aFunction);
+    void AddBaseInitializationTask(const std::function<bool()>& aFunction);
+    void AddInitializationTask(const std::function<bool()>& aFunction);
+    void AddRunningTask(const std::function<bool()>& aFunction);
+    void AddShutdownTask(const std::function<bool()>& aFunction);
+    void AddGenericTask(const std::function<bool()>& aFunction);
 
     ~GameMainThread();
 
@@ -18,13 +21,15 @@ private:
     void Hook();
     void Unhook() const;
 
-    using TMainThreadLoop = bool(void*, void*);
+    using TMainThreadStateTick = bool(RED4ext::IGameState*, RED4ext::CGameApplication*);
 
-    static bool HookMainThread(void* a1, void* a2);
+    static bool HookMainThreadStateTick(RED4ext::IGameState* apThisState, RED4ext::CGameApplication* apGameApplication);
 
-    uint8_t* m_pMainThreadLocation = nullptr;
-    TMainThreadLoop* m_pMainThreadOriginal = nullptr;
+    std::array<std::pair<uint8_t*, TMainThreadStateTick*>, 4> m_ppMainThreadStateTickLocations;
 
-    TiltedPhoques::Vector<std::function<void()>> m_repeatedTasks;
-    TiltedPhoques::TaskQueue m_taskQueue;
+    TiltedPhoques::Vector<std::function<bool()>> m_baseInitializationTasks;
+    TiltedPhoques::Vector<std::function<bool()>> m_initializationTasks;
+    TiltedPhoques::Vector<std::function<bool()>> m_runningTasks;
+    TiltedPhoques::Vector<std::function<bool()>> m_shutdownTasks;
+    TiltedPhoques::Vector<std::function<bool()>> m_genericTasks;
 };
