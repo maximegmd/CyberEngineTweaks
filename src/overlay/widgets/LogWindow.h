@@ -1,16 +1,21 @@
 #pragma once
 
-struct D3D12;
-struct LogWindow
-{
-    LogWindow(D3D12& aD3D12, const std::string& acpLoggerName);
+#include "Widget.h"
 
-    void Draw(const ImVec2& size);
+struct Options;
+struct LogWindow : Widget
+{
+    LogWindow(const Options& acOptions, const std::string& acpWindowTitle, const std::string& acpLoggerName);
+
+protected:
+    void OnUpdate() override;
+
+    void DrawLog(const ImVec2& size);
+
+    const Options& m_options;
 
 private:
     void Log(const std::string& acpText);
-
-    D3D12& m_d3d12;
 
     std::string m_loggerName;
     float m_normalizedWidth{ -1.0f };

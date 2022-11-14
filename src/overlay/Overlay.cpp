@@ -261,11 +261,11 @@ void Overlay::Hook()
 }
 
 Overlay::Overlay(D3D12& aD3D12, VKBindings& aBindings, Options& aOptions, LuaVM& aVm)
-    : m_console(aD3D12, aVm)
+    : m_console(aOptions, aVm)
     , m_bindings(aBindings, aVm)
     , m_settings(aOptions, aVm)
     , m_tweakDBEditor(aVm)
-    , m_gameLog(aD3D12)
+    , m_gameLog(aOptions, "Game Log", "gamelog")
     , m_d3d12(aD3D12)
     , m_options(aOptions)
     , m_vm(aVm)

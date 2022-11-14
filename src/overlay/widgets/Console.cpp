@@ -5,10 +5,9 @@
 #include <scripting/LuaVM.h>
 #include <Utils.h>
 
-Console::Console(D3D12& aD3D12, LuaVM& aVm)
-    : Widget("Console")
+Console::Console(Options& aOptions, LuaVM& aVm)
+    : LogWindow(aOptions, "Console", "scripting")
     , m_vm(aVm)
-    , m_logWindow(aD3D12, "scripting")
 {
     m_command.resize(255);
 }
@@ -81,7 +80,7 @@ void Console::OnUpdate()
 {
     const auto& style = ImGui::GetStyle();
     const auto inputLineHeight = ImGui::GetTextLineHeight() + style.ItemInnerSpacing.y * 2;
-    m_logWindow.Draw({-FLT_MIN, -(inputLineHeight + style.ItemSpacing.y)});
+    DrawLog({-FLT_MIN, -(inputLineHeight + style.ItemSpacing.y)});
 
     ImGui::SetNextItemWidth(-FLT_MIN);
     constexpr auto flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackResize;

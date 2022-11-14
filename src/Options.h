@@ -45,6 +45,7 @@ struct DeveloperSettings
     bool EnableImGuiAssertions{ false };
     bool EnableDebug{ false };
     bool DumpGameOptions{ false };
+    uint64_t MaxLinesLogOutput{ 1000 };
 };
 
 struct OverlayPersistentState

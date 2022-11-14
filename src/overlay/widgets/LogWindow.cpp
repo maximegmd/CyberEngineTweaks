@@ -2,11 +2,13 @@
 
 #include "LogWindow.h"
 
-#include <d3d12/D3D12.h>
+#include "CET.h"
+
 #include <Utils.h>
 
-LogWindow::LogWindow(D3D12& aD3D12, const std::string& acpLoggerName)
-    : m_d3d12(aD3D12)
+LogWindow::LogWindow(const Options& acOptions, const std::string& acpWindowTitle, const std::string& acpLoggerName)
+    : Widget(acpWindowTitle)
+    , m_options(acOptions)
     , m_loggerName(acpLoggerName)
 {
     auto logSink = CreateCustomSinkMT([this](const std::string& msg){ Log(msg); });
@@ -14,7 +16,12 @@ LogWindow::LogWindow(D3D12& aD3D12, const std::string& acpLoggerName)
     spdlog::get(m_loggerName)->sinks().emplace_back(std::move(logSink));
 }
 
-void LogWindow::Draw(const ImVec2& size)
+void LogWindow::OnUpdate()
+{
+    DrawLog({-FLT_MIN, -FLT_MIN});
+}
+
+void LogWindow::DrawLog(const ImVec2& size)
 {
     const auto itemWidth = GetAlignedItemWidth(2);
 
@@ -57,7 +64,7 @@ void LogWindow::Draw(const ImVec2& size)
                 switch (level)
                 {
                 case spdlog::level::level_enum::trace:
-                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{0.0f, 0.0f, 1.0f, 1.0f});
+                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{0.0f, 1.0f, 1.0f, 1.0f});
                     break;
 
                 case spdlog::level::level_enum::debug:
@@ -138,6 +145,13 @@ void LogWindow::Log(const std::string& acpText)
     }
     assert(level != spdlog::level::level_enum::off);
 
+    auto emplaceText = [maxLines = m_options.Developer.MaxLinesLogOutput, lines = &m_lines, level](std::string apText) {
+        if (lines->size() >= maxLines)
+            lines->erase(lines->begin(), lines->begin() + lines->size() - maxLines + 1);
+
+        lines->emplace_back(level, std::move(apText));
+    };
+
     size_t first = 2;
     const size_t size = acpText.size();
     while (first < size)
@@ -156,17 +170,15 @@ void LogWindow::Log(const std::string& acpText)
 
         if (second == std::string_view::npos)
         {
-            auto text = acpText.substr(first);
             std::lock_guard _{ m_lock };
-            m_lines.emplace_back(level, std::move(text));
+            emplaceText(acpText.substr(first));
             break;
         }
 
         if (first != second)
         {
-            auto text = acpText.substr(first, second-first);
             std::lock_guard _{ m_lock };
-            m_lines.emplace_back(level, std::move(text));
+            emplaceText(acpText.substr(first, second-first));
         }
 
         first = second + 1;

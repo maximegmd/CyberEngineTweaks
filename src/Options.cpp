@@ -70,6 +70,7 @@ void DeveloperSettings::Load(const nlohmann::json& aConfig)
     EnableImGuiAssertions = aConfig.value("enable_imgui_assertions", EnableImGuiAssertions);
     EnableDebug = aConfig.value("enable_debug", EnableDebug);
     DumpGameOptions = aConfig.value("dump_game_options", DumpGameOptions);
+    MaxLinesLogOutput = aConfig.value("max_lines_log_output", MaxLinesLogOutput);
 
     // set global "Enable ImGui Assertions"
     g_ImGuiAssertionsEnabled = EnableImGuiAssertions;
@@ -85,6 +86,7 @@ nlohmann::json DeveloperSettings::Save() const
       {"enable_imgui_assertions", EnableImGuiAssertions},
       {"enable_debug", EnableDebug},
       {"dump_game_options", DumpGameOptions},
+      {"max_lines_log_output", MaxLinesLogOutput}
     };
 }
 
