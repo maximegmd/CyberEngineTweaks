@@ -27,8 +27,6 @@ struct D3D12
 
     LRESULT OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam) const;
 
-    void PrepareUpdate();
-
     TiltedPhoques::Signal<void()> OnInitialized;
 
     ID3D12Device* GetDevice() const;
@@ -51,6 +49,7 @@ protected:
     bool InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resource* apSourceTex2D, HWND ahWindow);
     bool InitializeImGui(size_t aBuffersCounts);
 
+    void PrepareUpdate();
     void Update();
 
     static HRESULT PresentDownlevel(ID3D12CommandQueueDownlevel* apCommandQueueDownlevel, ID3D12GraphicsCommandList* apOpenCommandList, ID3D12Resource* apSourceTex2D, HWND ahWindow, D3D12_DOWNLEVEL_PRESENT_FLAGS aFlags);
