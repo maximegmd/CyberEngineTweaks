@@ -27,8 +27,7 @@ struct D3D12
 
     LRESULT OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam) const;
 
-    bool IsImGuiPresentDraw() const;
-    void PrepareUpdate(bool aPrepareMods = true);
+    void PrepareUpdate();
 
     TiltedPhoques::Signal<void()> OnInitialized;
 
@@ -97,7 +96,6 @@ private:
 
     std::recursive_mutex m_imguiLock;
     std::array<ImDrawData, 3> m_imguiDrawDataBuffers;
-    std::atomic_bool m_imguiPresentDraw{ true };
     std::atomic_bool m_delayedTrapInput{ false };
     std::atomic_bool m_delayedTrapInputState{ false };
 };

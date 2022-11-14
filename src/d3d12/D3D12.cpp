@@ -29,11 +29,8 @@ LRESULT D3D12::OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam)
 
     if (d3d12.IsInitialized())
     {
-        {
-            std::lock_guard _(d3d12.m_imguiLock);
-            if (const auto res = ImGui_ImplWin32_WndProcHandler(ahWnd, auMsg, awParam, alParam))
-                return res;
-        }
+        if (const auto res = ImGui_ImplWin32_WndProcHandler(ahWnd, auMsg, awParam, alParam))
+            return res;
 
         if (d3d12.m_delayedTrapInput)
         {

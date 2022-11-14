@@ -32,22 +32,21 @@ bool LuaVM::ExecuteLua(const std::string& acCommand) const
 
 void LuaVM::Update(float aDeltaTime)
 {
-    if (!m_initialized)
-        return;
-
-    CET::Get().GetBindings().Update();
-
-    if (m_reload)
+    if (m_initialized)
     {
-        m_scripting.ReloadAllMods();
+        CET::Get().GetBindings().Update();
 
-        m_reload = false;
+        if (m_reload)
+        {
+            m_scripting.ReloadAllMods();
+
+            m_reload = false;
+        }
+
+        m_scripting.TriggerOnUpdate(aDeltaTime);
     }
 
-    m_scripting.TriggerOnUpdate(aDeltaTime);
-
-    if (!m_d3d12.IsImGuiPresentDraw())
-        m_d3d12.PrepareUpdate();
+    m_d3d12.PrepareUpdate();
 }
 
 void LuaVM::Draw() const
