@@ -20,6 +20,11 @@ const std::filesystem::path& Paths::Config() const
     return m_config;
 }
 
+const std::filesystem::path& Paths::PersistentState() const
+{
+    return m_persistentState;
+}
+
 const std::filesystem::path& Paths::VKBindings() const
 {
     return m_vkBindings;
@@ -62,6 +67,11 @@ Paths::Paths()
     // remove empty config.json
     if (exists(m_config) && !file_size(m_config))
         std::filesystem::remove(m_config);
+
+    m_persistentState = m_cetRoot / L"persistent.json";
+    // remove empty persistentState.json
+    if (exists(m_persistentState) && !file_size(m_persistentState))
+        std::filesystem::remove(m_persistentState);
 
     m_vkBindings = m_cetRoot / L"bindings.json";
     // remove empty vkbindings.json

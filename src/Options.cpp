@@ -3,7 +3,6 @@
 #include "Paths.h"
 #include "Utils.h"
 
-
 void PatchesSettings::Load(const nlohmann::json& aConfig)
 {
     RemovePedestrians = aConfig.value("remove_pedestrians", RemovePedestrians);
@@ -83,6 +82,9 @@ void DeveloperSettings::Load(const nlohmann::json& aConfig)
     EnableImGuiAssertions = aConfig.value("enable_imgui_assertions", EnableImGuiAssertions);
     EnableDebug = aConfig.value("enable_debug", EnableDebug);
     DumpGameOptions = aConfig.value("dump_game_options", DumpGameOptions);
+    MaxLinesLogOutput = aConfig.value("max_lines_log_output", MaxLinesLogOutput);
+    MaxLinesConsoleHistory = aConfig.value("max_lines_console_history", MaxLinesConsoleHistory);
+    PersistentConsole = aConfig.value("persistent_console", PersistentConsole);
 
     // set global "Enable ImGui Assertions"
     g_ImGuiAssertionsEnabled = EnableImGuiAssertions;
@@ -98,6 +100,9 @@ nlohmann::json DeveloperSettings::Save() const
       {"enable_imgui_assertions", EnableImGuiAssertions},
       {"enable_debug", EnableDebug},
       {"dump_game_options", DumpGameOptions},
+      {"max_lines_log_output", MaxLinesLogOutput},
+      {"max_lines_console_history", MaxLinesConsoleHistory},
+      {"persistent_console", PersistentConsole}
     };
 }
 
@@ -107,48 +112,15 @@ void DeveloperSettings::ResetToDefaults()
     EnableImGuiAssertions = false;
     EnableDebug = false;
     DumpGameOptions = false;
+    MaxLinesLogOutput = 1000;
+    MaxLinesConsoleHistory = 1000;
+    PersistentConsole = true;
 
     // set global "Enable ImGui Assertions"
     g_ImGuiAssertionsEnabled = EnableImGuiAssertions;
 }
 
-void OverlayPersistentState::Load(const nlohmann::json& aConfig)
-{
-    ConsoleToggled = aConfig.value("console_toggled", ConsoleToggled);
-    BindingsToggled = aConfig.value("bindings_toggled", BindingsToggled);
-    SettingsToggled = aConfig.value("settings_toggled", SettingsToggled);
-    TweakDBEditorToggled = aConfig.value("tweakdbeditor_toggled", TweakDBEditorToggled);
-    GameLogToggled = aConfig.value("gamelog_toggled", GameLogToggled);
-    ImGuiDebugToggled = aConfig.value("imguidebug_toggled", ImGuiDebugToggled);
-}
-
-nlohmann::json OverlayPersistentState::Save() const
-{
-    return {
-      {"console_toggled", ConsoleToggled},
-      {"bindings_toggled", BindingsToggled},
-      {"settings_toggled", SettingsToggled},
-      {"tweakdbeditor_toggled", TweakDBEditorToggled},
-      {"gamelog_toggled", GameLogToggled},
-      {"imguidebug_toggled", ImGuiDebugToggled}
-    };
-}
-
-void PersistentState::Load(const nlohmann::json& aConfig)
-{
-    const auto& overlayJson = aConfig["overlay"];
-    if (!overlayJson.empty())
-        Overlay.Load(overlayJson);
-}
-
-nlohmann::json PersistentState::Save() const
-{
-    return {
-        {"overlay", Overlay.Save()}
-    };
-}
-
-void Options::Load(const bool acPersistentStateReload)
+void Options::Load()
 {
     const auto path = GetAbsolutePath(m_paths.Config(), "", false);
     if (path.empty())
@@ -174,14 +146,6 @@ void Options::Load(const bool acPersistentStateReload)
     const auto& developerConfig = config["developer"];
     if (!developerConfig.empty())
         Developer.Load(developerConfig);
-
-    if (!acPersistentStateReload)
-        return;
-
-    // persistent state config
-    const auto& persistentStateConfig = config["persistent_state"];
-    if (!persistentStateConfig.empty())
-        PersistentState.Load(persistentStateConfig);
 }
 
 void Options::Save() const
@@ -189,8 +153,7 @@ void Options::Save() const
     nlohmann::json config = {
       {"patches", Patches.Save()},
       {"font", Font.Save()},
-      {"developer", Developer.Save()},
-      {"persistent_state", PersistentState.Save()}
+      {"developer", Developer.Save()}
     };
 
     const auto path = GetAbsolutePath(m_paths.Config(), "", true);
@@ -277,12 +240,6 @@ Options::Options(Paths& aPaths)
         throw std::runtime_error("Unknown version");
     }
 
-    Load(true);
-    Save();
-}
-
-Options::~Options()
-{
-    // save on exit to make sure persistent state is preserved
+    Load();
     Save();
 }

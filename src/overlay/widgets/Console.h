@@ -2,10 +2,12 @@
 
 #include "LogWindow.h"
 
+struct Options;
+struct PersistentState;
 struct LuaVM;
 struct Console : LogWindow
 {
-    Console(LuaVM& aVm);
+    Console(Options& aOptions, PersistentState& aPersistentState, LuaVM& aVm);
     ~Console() override = default;
 
     WidgetResult OnDisable() override;
@@ -18,9 +20,10 @@ private:
     static int HandleConsoleResize(ImGuiInputTextCallbackData* apData);
     static int HandleConsole(ImGuiInputTextCallbackData* apData);
 
+    Options& m_options;
+    PersistentState& m_persistentState;
     LuaVM& m_vm;
 
-    TiltedPhoques::Vector<std::string> m_history;
     size_t m_historyIndex{ 0 };
     bool m_newHistory{ true };
 
