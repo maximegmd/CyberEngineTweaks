@@ -62,7 +62,7 @@ D3D12::D3D12(Window& aWindow, Paths& aPaths, Options& aOptions)
 {
     HookGame();
 
-    //
+    // add repeated task which prepares next ImGui frame for update
     GameMainThread::Get().AddRepeatedTask([this]{ PrepareUpdate(); });
 }
 
