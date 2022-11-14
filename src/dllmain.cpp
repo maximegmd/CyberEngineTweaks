@@ -38,28 +38,28 @@ static void Initialize()
             return;
 
         // initialize patches
-        if (options.PatchEnableDebug)
+        if (options.Developer.EnableDebug)
             EnableDebugPatch();
 
-        if (options.PatchSkipStartMenu)
+        if (options.Patches.SkipStartMenu)
             StartScreenPatch();
 
-        if (options.PatchRemovePedestrians)
+        if (options.Patches.RemovePedestrians)
             RemovePedsPatch();
 
-        if (options.PatchDisableIntroMovies)
+        if (options.Patches.DisableIntroMovies)
             DisableIntroMoviesPatch();
 
-        if (options.PatchDisableVignette)
+        if (options.Patches.DisableVignette)
             DisableVignettePatch();
 
-        if (options.PatchDisableBoundaryTeleport)
+        if (options.Patches.DisableBoundaryTeleport)
             DisableBoundaryTeleportPatch();
 
-        if (options.PatchAmdSmt)
+        if (options.Patches.AmdSmt)
             SmtAmdPatch();
 
-        if (options.PatchMinimapFlicker)
+        if (options.Patches.MinimapFlicker)
             MinimapFlickerPatch();
 
         OptionsInitHook();

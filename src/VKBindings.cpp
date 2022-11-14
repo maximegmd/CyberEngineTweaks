@@ -98,7 +98,7 @@ void VKBindings::InitializeMods(const TiltedPhoques::Map<std::string, std::refer
         if (currentModBindingsIt == acVKBinds.cend())
         {
             // when we want to filter dead bindings, mark mod for removal (default)
-            if (m_cOptions.RemoveDeadBindings)
+            if (m_cOptions.Developer.RemoveDeadBindings)
             {
                 deadMods.emplace_back(modName);
                 continue;
@@ -134,7 +134,7 @@ void VKBindings::InitializeMods(const TiltedPhoques::Map<std::string, std::refer
         // register them otherwise to prevent rebinds
         for (const auto& deadId : deadIDs)
         {
-            if (m_cOptions.RemoveDeadBindings)
+            if (m_cOptions.Developer.RemoveDeadBindings)
                 m_modIdToBinds[modName].erase(deadId);
             else
                 Bind(m_modIdToBinds[modName][deadId], {modName, deadId});
