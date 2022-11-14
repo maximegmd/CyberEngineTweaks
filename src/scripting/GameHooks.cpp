@@ -47,11 +47,11 @@ bool GameMainThread::HookMainThread(void* a1, void* a2)
 {
     auto& gmt = Get();
 
-    // add all repeated tasks
+    // do all repeated tasks
     for (auto& task : gmt.m_repeatedTasks)
-        gmt.m_taskQueue.Add(task);
+        task();
 
-
+    // do single tasks
     gmt.m_taskQueue.Drain();
 
     return gmt.m_pMainThreadOriginal(a1, a2);
