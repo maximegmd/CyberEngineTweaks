@@ -463,22 +463,19 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
     return true;
 }
 
-bool D3D12::IsImGuiPresentDraw() const
-{
-    return m_imguiPresentDraw;
-}
-
-void D3D12::PrepareUpdate(bool aPrepareMods)
+void D3D12::PrepareUpdate()
 {
     std::lock_guard _(m_imguiLock);
+
+    if (!m_initialized)
+        return;
 
     ImGui_ImplWin32_NewFrame(m_outSize);
     ImGui::NewFrame();
 
     CET::Get().GetOverlay().Update();
 
-    if (aPrepareMods)
-        CET::Get().GetVM().Draw();
+    CET::Get().GetVM().Draw();
 
     ImGui::Render();
 
@@ -502,12 +499,6 @@ void D3D12::PrepareUpdate(bool aPrepareMods)
 
 void D3D12::Update()
 {
-    if (m_imguiPresentDraw)
-    {
-        PrepareUpdate(false);
-        m_imguiPresentDraw = !CET::Get().GetVM().IsInitialized();
-    }
-
     // swap staging ImGui buffer with render ImGui buffer
     {
         std::lock_guard _(m_imguiLock);
@@ -519,7 +510,8 @@ void D3D12::Update()
         }
     }
 
-    assert(m_imguiDrawDataBuffers[0].Valid);
+    if (!m_imguiDrawDataBuffers[0].Valid)
+        return;
 
     const auto bufferIndex = m_pdxgiSwapChain != nullptr ? m_pdxgiSwapChain->GetCurrentBackBufferIndex() : m_downlevelBufferIndex;
     auto& frameContext = m_frameContexts[bufferIndex];

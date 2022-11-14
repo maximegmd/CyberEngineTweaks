@@ -19,12 +19,18 @@ void GameMainThread::Shutdown()
 
 GameMainThread& GameMainThread::Get()
 {
+    Initialize();
     return *s_pGameMainThread;
 }
 
-void GameMainThread::AddTask(std::function<void()> aFunction)
+void GameMainThread::AddTask(const std::function<void()>& aFunction)
 {
-    m_taskQueue.Add(std::move(aFunction));
+    m_taskQueue.Add(aFunction);
+}
+
+void GameMainThread::AddRepeatedTask(std::function<void()> aFunction)
+{
+    m_repeatedTasks.emplace_back(std::move(aFunction));
 }
 
 GameMainThread::GameMainThread()
@@ -41,6 +47,11 @@ bool GameMainThread::HookMainThread(void* a1, void* a2)
 {
     auto& gmt = Get();
 
+    // do all repeated tasks
+    for (auto& task : gmt.m_repeatedTasks)
+        task();
+
+    // do single tasks
     gmt.m_taskQueue.Drain();
 
     return gmt.m_pMainThreadOriginal(a1, a2);
