@@ -694,7 +694,7 @@ void LuaSandbox::InitializeLoggerForSandbox(Sandbox& aSandbox, const sol::state&
     sbEnv["consoleLog"] = m_sandboxes[0].GetEnvironment()["consoleLog"];
 
     // keep old spdlog binding for compatibility
-    sbEnv["spdlog"] = sbEnv["modlog"];
+    sbEnv["spdlog"] = sbEnv["modLog"];
 
     // TODO - make this use real mod name when we have mod info
     auto logWindow = std::make_shared<LogWindow>(acName + " Log", acName);
