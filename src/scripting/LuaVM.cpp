@@ -47,7 +47,7 @@ void LuaVM::Update(float aDeltaTime)
     m_scripting.TriggerOnUpdate(aDeltaTime);
 }
 
-void LuaVM::Draw() const
+void LuaVM::Draw()
 {
     if (!m_initialized || m_drawBlocked)
         return;

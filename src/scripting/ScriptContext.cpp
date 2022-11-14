@@ -43,6 +43,7 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
     auto& sb = m_sandbox[m_sandboxID];
     auto& env = sb.GetEnvironment();
     m_logger = env["__logger"].get<std::shared_ptr<spdlog::logger>>();
+    m_loggerWindow = env["__loggerWindow"].get<std::shared_ptr<LogWindow>>();
 
     env["registerForEvent"] = [this](const std::string& acName, sol::function aCallback)
     {
@@ -83,7 +84,7 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
             };
     };
 
-    auto wrapDescription = [&aLuaSandbox, loggerRef = m_logger, sandboxId = m_sandboxID](const std::variant<std::string, sol::function>& acDescription) -> std::variant<std::string, std::function<void()>> {
+    auto wrapDescription = [&aLuaSandbox, loggerRef = m_logger](const std::variant<std::string, sol::function>& acDescription) -> std::variant<std::string, std::function<void()>> {
         if (std::holds_alternative<sol::function>(acDescription))
         {
             auto callback = std::get<sol::function>(acDescription);
@@ -265,13 +266,16 @@ void ScriptContext::TriggerOnUpdate(float aDeltaTime) const
     TryLuaFunction(m_logger, m_onUpdate, aDeltaTime);
 }
 
-void ScriptContext::TriggerOnDraw() const
+void ScriptContext::TriggerOnDraw()
 {
     auto lockedState = m_sandbox.GetLockedState();
 
     m_sandbox.SetImGuiAvailable(true);
 
     const auto previousStyle = ImGui::GetStyle();
+
+    if (m_loggerWindow)
+        m_loggerWindow->Draw();
 
     TryLuaFunction(m_logger, m_onDraw);
 

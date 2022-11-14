@@ -130,10 +130,11 @@ void ScriptStore::TriggerOnUpdate(float aDeltaTime) const
         mod.TriggerOnUpdate(aDeltaTime);
 }
 
-void ScriptStore::TriggerOnDraw() const
+void ScriptStore::TriggerOnDraw()
 {
-    for (const auto& mod : m_contexts | std::views::values)
-        mod.TriggerOnDraw();
+    // TODO - needs to be like this, cant use auto& like above as it is always const
+    for (auto it = m_contexts.begin(); it != m_contexts.end(); ++it)
+        it.value().TriggerOnDraw();
 }
 
 void ScriptStore::TriggerOnOverlayOpen() const

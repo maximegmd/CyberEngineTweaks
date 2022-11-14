@@ -12,6 +12,7 @@ struct Sandbox
 
     uint64_t GetId() const;
     sol::environment& GetEnvironment();
+    const sol::environment& GetEnvironment() const;
     const std::filesystem::path& GetRootPath() const;
 
 private:
