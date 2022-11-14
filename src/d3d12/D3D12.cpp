@@ -5,6 +5,7 @@
 
 #include <imgui_impl/dx12.h>
 #include <imgui_impl/win32.h>
+#include <scripting/GameHooks.h>
 
 void D3D12::SetTrapInputInImGui(const bool acEnabled)
 {
@@ -60,6 +61,9 @@ D3D12::D3D12(Window& aWindow, Paths& aPaths, Options& aOptions)
     , m_options(aOptions)
 {
     HookGame();
+
+    //
+    GameMainThread::Get().AddRepeatedTask([this]{ PrepareUpdate(); });
 }
 
 D3D12::~D3D12()

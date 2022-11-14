@@ -466,6 +466,9 @@ void D3D12::PrepareUpdate()
 {
     std::lock_guard _(m_imguiLock);
 
+    if (!m_initialized)
+        return;
+
     ImGui_ImplWin32_NewFrame(m_outSize);
     ImGui::NewFrame();
 
