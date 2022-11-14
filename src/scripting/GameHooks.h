@@ -7,13 +7,14 @@ struct GameMainThread
 
     static GameMainThread& Get();
 
-    void AddTask(std::function<void()> aFunction);
+    void AddTask(const std::function<void()>& aFunction);
+    void AddRepeatedTask(std::function<void()> aFunction);
 
     ~GameMainThread();
 
 private:
     GameMainThread();
-    
+
     void Hook();
     void Unhook() const;
 
@@ -24,5 +25,6 @@ private:
     uint8_t* m_pMainThreadLocation = nullptr;
     TMainThreadLoop* m_pMainThreadOriginal = nullptr;
 
+    TiltedPhoques::Vector<std::function<void()>> m_repeatedTasks;
     TiltedPhoques::TaskQueue m_taskQueue;
 };

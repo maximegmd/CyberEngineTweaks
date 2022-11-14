@@ -1,13 +1,11 @@
 #pragma once
 
-#include "Widget.h"
 #include "LogWindow.h"
 
-struct D3D12;
 struct LuaVM;
-struct Console : Widget
+struct Console : LogWindow
 {
-    Console(D3D12& aD3D12, LuaVM& aVm);
+    Console(LuaVM& aVm);
     ~Console() override = default;
 
     WidgetResult OnDisable() override;
@@ -21,7 +19,6 @@ private:
     static int HandleConsole(ImGuiInputTextCallbackData* apData);
 
     LuaVM& m_vm;
-    LogWindow m_logWindow;
 
     TiltedPhoques::Vector<std::string> m_history;
     size_t m_historyIndex{ 0 };

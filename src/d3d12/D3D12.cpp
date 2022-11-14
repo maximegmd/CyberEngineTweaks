@@ -5,6 +5,7 @@
 
 #include <imgui_impl/dx12.h>
 #include <imgui_impl/win32.h>
+#include <scripting/GameHooks.h>
 
 void D3D12::SetTrapInputInImGui(const bool acEnabled)
 {
@@ -29,11 +30,8 @@ LRESULT D3D12::OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam)
 
     if (d3d12.IsInitialized())
     {
-        {
-            std::lock_guard _(d3d12.m_imguiLock);
-            if (const auto res = ImGui_ImplWin32_WndProcHandler(ahWnd, auMsg, awParam, alParam))
-                return res;
-        }
+        if (const auto res = ImGui_ImplWin32_WndProcHandler(ahWnd, auMsg, awParam, alParam))
+            return res;
 
         if (d3d12.m_delayedTrapInput)
         {
@@ -63,6 +61,9 @@ D3D12::D3D12(Window& aWindow, Paths& aPaths, Options& aOptions)
     , m_options(aOptions)
 {
     HookGame();
+
+    // add repeated task which prepares next ImGui frame for update
+    GameMainThread::Get().AddRepeatedTask([this]{ PrepareUpdate(); });
 }
 
 D3D12::~D3D12()
