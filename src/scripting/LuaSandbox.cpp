@@ -699,10 +699,10 @@ void LuaSandbox::InitializeLoggerForSandbox(Sandbox& aSandbox, const sol::state&
     // TODO - make this use real mod name when we have mod info
     auto logWindow = std::make_shared<LogWindow>(acName + " Log", acName);
     sbEnv["__loggerWindow"] = logWindow;
-    sbEnv["ToggleModLog"] = [logWindow]{
+    sbEnv["ToggleModLogDraw"] = [logWindow]{
         logWindow->Toggle();
     };
-    sbEnv["IsModLogEnabled"] = [logWindow]{
+    sbEnv["IsModLogDrawEnabled"] = [logWindow]{
         return logWindow->IsEnabled();
     };
 }
