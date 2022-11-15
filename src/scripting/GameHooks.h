@@ -2,27 +2,50 @@
 
 struct GameMainThread
 {
-    static void Initialize();
-    static void Shutdown();
-
     static GameMainThread& Get();
 
-    void AddTask(std::function<void()> aFunction);
-
-    ~GameMainThread();
+    void AddBaseInitializationTask(const std::function<bool()>& aFunction);
+    void AddInitializationTask(const std::function<bool()>& aFunction);
+    void AddRunningTask(const std::function<bool()>& aFunction);
+    void AddShutdownTask(const std::function<bool()>& aFunction);
+    void AddGenericTask(const std::function<bool()>& aFunction);
 
 private:
-    GameMainThread();
-    
-    void Hook();
-    void Unhook() const;
+    GameMainThread() = default;
 
-    using TMainThreadLoop = bool(void*, void*);
+    using TStateTick = bool(RED4ext::IGameState*, RED4ext::CGameApplication*);
 
-    static bool HookMainThread(void* a1, void* a2);
+    static bool HookStateTick(RED4ext::IGameState* apThisState, RED4ext::CGameApplication* apGameApplication);
 
-    uint8_t* m_pMainThreadLocation = nullptr;
-    TMainThreadLoop* m_pMainThreadOriginal = nullptr;
+    // helper task queue which executes added tasks each drain until they are finished
+    struct RepeatedTaskQueue
+    {
+        void AddTask(const std::function<bool()>& aFunction);
+        void Drain();
 
-    TiltedPhoques::TaskQueue m_taskQueue;
+    private:
+        std::recursive_mutex m_mutex;
+        TiltedPhoques::Vector<std::function<bool()>> m_tasks;
+    };
+
+    struct StateTickOverride
+    {
+        StateTickOverride(const uintptr_t acOffset, const char* acpRealFunctionName);
+        ~StateTickOverride();
+
+        bool OnTick(RED4ext::IGameState*, RED4ext::CGameApplication*);
+
+        uint8_t* Location = nullptr;
+        TStateTick* RealFunction = nullptr;
+        RepeatedTaskQueue Tasks;
+    };
+
+    std::array<StateTickOverride, 4> m_stateTickOverrides {
+        StateTickOverride(CyberEngineTweaks::Addresses::CBaseInitializationState_OnTick, "CBaseInitializationState::OnTick"),
+        StateTickOverride(CyberEngineTweaks::Addresses::CInitializationState_OnTick, "CInitializationState::OnTick"),
+        StateTickOverride(CyberEngineTweaks::Addresses::CRunningState_OnTick, "CRunningState::OnTick"),
+        StateTickOverride(CyberEngineTweaks::Addresses::CShutdownState_OnTick, "CShutdownState::OnTick")
+    };
+
+    RepeatedTaskQueue m_genericQueue;
 };

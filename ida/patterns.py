@@ -45,8 +45,6 @@ def get_groups() -> List[Group]:
             Item(name='ToStringDEBUG', pattern='48 89 5C 24 08 57 48 83  EC 20 FE 42 62 4C 8D 15 ? ? ? ? 33 C9 33 C0', expected=4, index=2),
             Item(name='LogChannel', pattern='4C 8B DC 49 89 5B 08 49  89 73 18 57 48 83 EC 70 48 8B 02 ? ? ? ? ? ? ? FE 42 62 4D 8D 43 10 33 FF 45 33 C9 49 89  7B 10 48 8B DA 48 89 7A', expected=1),
             Item(name='TDBIDConstructorDerive', pattern='40 53 48 83 EC 30 33 C0 4C 89 44 24 20 48 8B DA', expected=1),
-            Item(name='ProcessRunningState', pattern='40 53 48 83 EC 20 48 8B 0D ? ? ? ? 48 8B DA E8 ? ? ? ? 84 C0', expected=1),
-            Item(name='ProcessShutdownState', pattern='48 89 6C 24 18 56 48 83 EC 30 48 8B 0D ? ? ? ?', expected=1),
             Item(name='TranslateBytecode', pattern='4C 8B DC 55 53 57 41 55 49 8D 6B A1 48 81 EC 98 00 00 00 48 8B 1A 4C 8B E9 8B 42 0C 48 8D 3C C3'),
             Item(name='TweakDBLoad', pattern='48 89 5C 24 18 55 57 41 56 48 8B EC 48 83 EC 70 48 8B D9 45 33 F6 48 8D', expected=1),
             Item(name='RegisterMemberFunction', pattern='48 89 5C 24 08 57 48 83 EC 20 49 8B C1 4D 8B D0 44 8B 4C 24 58 48 8B DA 41 83 C9 03', expected=1)
@@ -77,6 +75,21 @@ def get_groups() -> List[Group]:
         ]),
         Group(name='CGame', functions=[
             Item(name='Main', pattern='40 57 48 83 EC 70 48 8B F9 0F 29 7C 24 50 48 8D 4C 24 38', expected=1)
+        ]),
+        Group(name='CGameApplication', functions=[
+            Item(name='Run', pattern='48 89 5C 24 08 57 48 83 EC 20 48 8B D9 33 FF 90 E8 ? ? ? ? 84 C0', expected=1)
+        ]),
+        Group(name='CBaseInitializationState', functions=[
+            Item(name='OnTick', pattern='48 83 EC 28 48 8B 05 ? ? ? ? 4C 8B C2 48 85 C0 75 12 8D 50 03 49 8B C8 E8 ? ? ? ?', expected=1)
+        ]),
+        Group(name='CInitializationState', functions=[
+            Item(name='OnTick', pattern='48 83 EC 28 48 8B 05 ? ? ? ? 4C 8B C2 8B 88 F8 00 00 00 85 C9 74 3D 83 E9 02 74 25 83 E9 01', expected=1)
+        ]),
+        Group(name='CRunningState', functions=[
+            Item(name='OnTick', pattern='40 53 48 83 EC 20 48 8B 0D ? ? ? ? 48 8B DA E8 ? ? ? ? 84 C0', expected=1)
+        ]),
+        Group(name='CShutdownState', functions=[
+            Item(name='OnTick', pattern='48 89 6C 24 18 56 48 83 EC 30 48 8B 0D ? ? ? ?', expected=1)
         ]),
         Group(name='PlayerSystem', functions=[
             Item(name='OnPlayerSpawned', pattern='48 8B C4 4C 89 48 20 55 56 57 48 8B EC 48 81 EC 80 00 00 00', expected=1)

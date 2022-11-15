@@ -592,7 +592,7 @@ void Scripting::PostInitializeMods()
         // some hierarchies may also not be accurately reflected due to hash ordering
         // technically this table is flattened and contains all hierarchy, but traversing the hierarchy first reduces
         // error when there are classes that instantiate a parent class but don't actually have a subclass instance
-        GameMainThread::Get().AddTask(&GameDump::DumpVTablesTask::Run);
+        GameMainThread::Get().AddRunningTask(&GameDump::DumpVTablesTask::Run);
     };
     globals["DumpReflection"] = [this](bool aVerbose, bool aExtendedPath, bool aPropertyHolders)
     {
