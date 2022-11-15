@@ -11,7 +11,7 @@ void D3D12::CRenderNode_Present_InternalPresent(uint32_t* apSwapChainDataId, uin
     auto& d3d12 = CET::Get().GetD3D12();
 
     // D3D12 should always be initialized before getting here from CRenderGlobal_Resize hook
-    //assert(d3d12.m_initialized);
+    assert(d3d12.m_initialized);
     if (!d3d12.m_initialized)
         d3d12.Initialize(*apSwapChainDataId);
 

@@ -2,10 +2,6 @@
 
 #include "GameHooks.h"
 
-#include "RED4ext/GameStates.hpp"
-
-static std::unique_ptr<GameMainThread> s_pGameMainThread;
-
 void GameMainThread::RepeatedTaskQueue::AddTask(const std::function<bool()>& aFunction)
 {
     std::lock_guard lock(m_mutex);
@@ -17,6 +13,7 @@ void GameMainThread::RepeatedTaskQueue::Drain()
     std::lock_guard lock(m_mutex);
     for (auto taskIt = m_tasks.begin(); taskIt != m_tasks.end();)
     {
+        assert(*taskIt != nullptr);
         if ((*taskIt)())
             taskIt = m_tasks.erase(taskIt);
         else
@@ -65,24 +62,28 @@ GameMainThread& GameMainThread::Get()
 void GameMainThread::AddBaseInitializationTask(const std::function<bool()>& aFunction)
 {
     constexpr auto cStateIndex = static_cast<size_t>(RED4ext::EGameStateType::BaseInitialization);
+    assert(cStateIndex < m_stateTickOverrides.size());
     return m_stateTickOverrides[cStateIndex].Tasks.AddTask(aFunction);
 }
 
 void GameMainThread::AddInitializationTask(const std::function<bool()>& aFunction)
 {
     constexpr auto cStateIndex = static_cast<size_t>(RED4ext::EGameStateType::Initialization);
+    assert(cStateIndex < m_stateTickOverrides.size());
     return m_stateTickOverrides[cStateIndex].Tasks.AddTask(aFunction);
 }
 
 void GameMainThread::AddRunningTask(const std::function<bool()>& aFunction)
 {
     constexpr auto cStateIndex = static_cast<size_t>(RED4ext::EGameStateType::Running);
+    assert(cStateIndex < m_stateTickOverrides.size());
     return m_stateTickOverrides[cStateIndex].Tasks.AddTask(aFunction);
 }
 
 void GameMainThread::AddShutdownTask(const std::function<bool()>& aFunction)
 {
     constexpr auto cStateIndex = static_cast<size_t>(RED4ext::EGameStateType::Shutdown);
+    assert(cStateIndex < m_stateTickOverrides.size());
     return m_stateTickOverrides[cStateIndex].Tasks.AddTask(aFunction);
 }
 
@@ -98,7 +99,8 @@ bool GameMainThread::HookStateTick(RED4ext::IGameState* apThisState, RED4ext::CG
     // drain generic tasks
     gmt.m_genericQueue.Drain();
 
-    // execute specific state tasks, including original function
+    // drain specific state tasks, including original function
     const auto cStateIndex = static_cast<size_t>(apThisState->GetType());
+    assert(cStateIndex < gmt.m_stateTickOverrides.size());
     return gmt.m_stateTickOverrides[cStateIndex].OnTick(apThisState, apGameApplication);
 }

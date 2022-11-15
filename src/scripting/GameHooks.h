@@ -49,3 +49,8 @@ private:
 
     RepeatedTaskQueue m_genericQueue;
 };
+
+static_assert(static_cast<size_t>(RED4ext::EGameStateType::BaseInitialization) == 0);
+static_assert(static_cast<size_t>(RED4ext::EGameStateType::Initialization) == 1);
+static_assert(static_cast<size_t>(RED4ext::EGameStateType::Running) == 2);
+static_assert(static_cast<size_t>(RED4ext::EGameStateType::Shutdown) == 3);
