@@ -10,13 +10,8 @@ struct GameMainThread
     void AddShutdownTask(const std::function<bool()>& aFunction);
     void AddGenericTask(const std::function<bool()>& aFunction);
 
-    ~GameMainThread();
-
 private:
-    GameMainThread();
-
-    void Hook();
-    void Unhook();
+    GameMainThread() = default;
 
     using TStateTick = bool(RED4ext::IGameState*, RED4ext::CGameApplication*);
 
@@ -36,11 +31,9 @@ private:
     struct StateTickOverride
     {
         StateTickOverride(const uintptr_t acOffset, const char* acpRealFunctionName);
+        ~StateTickOverride();
 
         bool OnTick(RED4ext::IGameState*, RED4ext::CGameApplication*);
-
-        const uintptr_t Offset;
-        const char* RealFunctionName;
 
         uint8_t* Location = nullptr;
         TStateTick* RealFunction = nullptr;
