@@ -3,106 +3,190 @@
 #include "Paths.h"
 #include "Utils.h"
 
-void Options::Load()
+
+void PatchesSettings::Load(const nlohmann::json& aConfig)
 {
-    const auto path = GetAbsolutePath(m_paths.Config(), "", false);
-    if (!path.empty())
-    {
-        std::ifstream configFile(path);
-        if(configFile)
-        {
-            const auto config = nlohmann::json::parse(configFile);
-            PatchRemovePedestrians = config.value("remove_pedestrians", PatchRemovePedestrians);
-            PatchSkipStartMenu = config.value("skip_start_menu", PatchSkipStartMenu);
-            PatchAmdSmt = config.value("amd_smt", PatchAmdSmt);
-            PatchAsyncCompute = config.value("disable_async_compute", PatchAsyncCompute);
-            PatchAntialiasing = config.value("disable_antialiasing", PatchAntialiasing);
-            PatchDisableIntroMovies = config.value("disable_intro_movies", PatchDisableIntroMovies);
-            PatchDisableVignette = config.value("disable_vignette", PatchDisableVignette);
-            PatchDisableBoundaryTeleport = config.value("disable_boundary_teleport", PatchDisableBoundaryTeleport);
-            PatchDisableWin7Vsync = config.value("disable_win7_vsync", PatchDisableWin7Vsync);
-            PatchMinimapFlicker = config.value("minimap_flicker", PatchMinimapFlicker);
-
-            RemoveDeadBindings = config.value("cetdev_remove_dead_bindings", RemoveDeadBindings);
-            EnableImGuiAssertionsLogging = config.value("cetdev_enable_imgui_assertions_logging", EnableImGuiAssertionsLogging);
-            DumpGameOptions = config.value("dump_game_options", DumpGameOptions);
-            PatchEnableDebug = config.value("enable_debug", PatchEnableDebug);
-
-            // font config
-            FontPath = config.value("font_path", FontPath);
-            FontGlyphRanges = config.value("font_glyph_ranges", FontGlyphRanges);
-            FontSizeBase = config.value("font_size_base", FontSizeBase);
-            FontOversampleHorizontal = config.value("font_oversample_horizontal", FontOversampleHorizontal);
-            FontOversampleVertical = config.value("font_oversample_vertical", FontOversampleVertical);
-
-            // check old config names
-            if (config.value("unlock_menu", false))
-                PatchEnableDebug = true;
-        }
-        configFile.close();
-    }
-
-    // set global "Enable ImGui Assertions"
-    g_ImGuiAssertionsEnabled = EnableImGuiAssertionsLogging;
+    RemovePedestrians = aConfig.value("remove_pedestrians", RemovePedestrians);
+    SkipStartMenu = aConfig.value("skip_start_menu", SkipStartMenu);
+    AmdSmt = aConfig.value("amd_smt", AmdSmt);
+    AsyncCompute = aConfig.value("disable_async_compute", AsyncCompute);
+    Antialiasing = aConfig.value("disable_antialiasing", Antialiasing);
+    DisableIntroMovies = aConfig.value("disable_intro_movies", DisableIntroMovies);
+    DisableVignette = aConfig.value("disable_vignette", DisableVignette);
+    DisableBoundaryTeleport = aConfig.value("disable_boundary_teleport", DisableBoundaryTeleport);
+    DisableWin7Vsync = aConfig.value("disable_win7_vsync", DisableWin7Vsync);
+    MinimapFlicker = aConfig.value("minimap_flicker", MinimapFlicker);
 }
 
-void Options::Save()
+nlohmann::json PatchesSettings::Save() const
 {
-    nlohmann::json config;
+    return {
+      {"remove_pedestrians", RemovePedestrians},
+      {"disable_async_compute", AsyncCompute},
+      {"disable_antialiasing", Antialiasing},
+      {"skip_start_menu", SkipStartMenu},
+      {"amd_smt", AmdSmt},
+      {"disable_intro_movies", DisableIntroMovies},
+      {"disable_vignette", DisableVignette},
+      {"disable_boundary_teleport", DisableBoundaryTeleport},
+      {"disable_win7_vsync", DisableWin7Vsync},
+      {"minimap_flicker", MinimapFlicker},
+    };
+}
 
-    config["remove_pedestrians"] = PatchRemovePedestrians;
-    config["disable_async_compute"] = PatchAsyncCompute;
-    config["disable_antialiasing"] = PatchAntialiasing;
-    config["skip_start_menu"] = PatchSkipStartMenu;
-    config["amd_smt"] = PatchAmdSmt;
-    config["disable_intro_movies"] = PatchDisableIntroMovies;
-    config["disable_vignette"] = PatchDisableVignette;
-    config["disable_boundary_teleport"] = PatchDisableBoundaryTeleport;
-    config["disable_win7_vsync"] = PatchDisableWin7Vsync;
-    config["minimap_flicker"] = PatchMinimapFlicker;
+void PatchesSettings::ResetToDefaults()
+{
+    *this = {};
+}
 
-    config["cetdev_remove_dead_bindings"] = RemoveDeadBindings;
-    config["cetdev_enable_imgui_assertions_logging"] = EnableImGuiAssertionsLogging;
-    config["enable_debug"] = PatchEnableDebug;
-    config["dump_game_options"] = DumpGameOptions;
+void FontSettings::Load(const nlohmann::json& aConfig)
+{
+    Path = aConfig.value("path", Path);
+    Language = aConfig.value("language", Language);
+    BaseSize = aConfig.value("base_size", BaseSize);
+    OversampleHorizontal = aConfig.value("oversample_horizontal", OversampleHorizontal);
+    OversampleVertical = aConfig.value("oversample_vertical", OversampleVertical);
+}
 
-    config["font_path"] = FontPath;
-    config["font_glyph_ranges"] = FontGlyphRanges;
-    config["font_size_base"] = FontSizeBase;
-    config["font_oversample_horizontal"] = FontOversampleHorizontal;
-    config["font_oversample_vertical"] = FontOversampleVertical;
+nlohmann::json FontSettings::Save() const
+{
+    return {
+      {"path", Path},
+      {"language", Language},
+      {"base_size", BaseSize},
+      {"oversample_horizontal", OversampleHorizontal},
+      {"oversample_vertical", OversampleVertical}
+    };
+}
+
+void FontSettings::ResetToDefaults()
+{
+    *this = {};
+}
+
+void DeveloperSettings::Load(const nlohmann::json& aConfig)
+{
+    RemoveDeadBindings = aConfig.value("remove_dead_bindings", RemoveDeadBindings);
+    EnableImGuiAssertions = aConfig.value("enable_imgui_assertions", EnableImGuiAssertions);
+    EnableDebug = aConfig.value("enable_debug", EnableDebug);
+    DumpGameOptions = aConfig.value("dump_game_options", DumpGameOptions);
+
+    // set global "Enable ImGui Assertions"
+    g_ImGuiAssertionsEnabled = EnableImGuiAssertions;
+}
+
+nlohmann::json DeveloperSettings::Save() const
+{
+    // set global "Enable ImGui Assertions"
+    g_ImGuiAssertionsEnabled = EnableImGuiAssertions;
+
+    return {
+      {"remove_dead_bindings", RemoveDeadBindings},
+      {"enable_imgui_assertions", EnableImGuiAssertions},
+      {"enable_debug", EnableDebug},
+      {"dump_game_options", DumpGameOptions},
+    };
+}
+
+void DeveloperSettings::ResetToDefaults()
+{
+    *this = {};
+
+    // set global "Enable ImGui Assertions"
+    g_ImGuiAssertionsEnabled = EnableImGuiAssertions;
+}
+
+void OverlayPersistentState::Load(const nlohmann::json& aConfig)
+{
+    ConsoleToggled = aConfig.value("console_toggled", ConsoleToggled);
+    BindingsToggled = aConfig.value("bindings_toggled", BindingsToggled);
+    SettingsToggled = aConfig.value("settings_toggled", SettingsToggled);
+    TweakDBEditorToggled = aConfig.value("tweakdbeditor_toggled", TweakDBEditorToggled);
+    GameLogToggled = aConfig.value("gamelog_toggled", GameLogToggled);
+    ImGuiDebugToggled = aConfig.value("imguidebug_toggled", ImGuiDebugToggled);
+}
+
+nlohmann::json OverlayPersistentState::Save() const
+{
+    return {
+      {"console_toggled", ConsoleToggled},
+      {"bindings_toggled", BindingsToggled},
+      {"settings_toggled", SettingsToggled},
+      {"tweakdbeditor_toggled", TweakDBEditorToggled},
+      {"gamelog_toggled", GameLogToggled},
+      {"imguidebug_toggled", ImGuiDebugToggled}
+    };
+}
+
+void PersistentState::Load(const nlohmann::json& aConfig)
+{
+    const auto& overlayJson = aConfig["overlay"];
+    if (!overlayJson.empty())
+        Overlay.Load(overlayJson);
+}
+
+nlohmann::json PersistentState::Save() const
+{
+    return {
+        {"overlay", Overlay.Save()}
+    };
+}
+
+void Options::Load(const bool acPersistentStateReload)
+{
+    const auto path = GetAbsolutePath(m_paths.Config(), "", false);
+    if (path.empty())
+        return;
+
+    std::ifstream configFile(path);
+    if(!configFile)
+        return;
+
+    auto config = nlohmann::json::parse(configFile);
+
+    // patches config
+    const auto& patchesConfig = config["patches"];
+    if (!patchesConfig.empty())
+        Patches.Load(patchesConfig);
+
+    // font config
+    const auto& fontConfig = config["font"];
+    if (!fontConfig.empty())
+        Font.Load(fontConfig);
+
+    // developer config
+    const auto& developerConfig = config["developer"];
+    if (!developerConfig.empty())
+        Developer.Load(developerConfig);
+
+    if (!acPersistentStateReload)
+        return;
+
+    // persistent state config
+    const auto& persistentStateConfig = config["persistent_state"];
+    if (!persistentStateConfig.empty())
+        PersistentState.Load(persistentStateConfig);
+}
+
+void Options::Save() const
+{
+    nlohmann::json config = {
+      {"patches", Patches.Save()},
+      {"font", Font.Save()},
+      {"developer", Developer.Save()},
+      {"persistent_state", PersistentState.Save()}
+    };
 
     const auto path = GetAbsolutePath(m_paths.Config(), "", true);
     std::ofstream o(path);
     o << config.dump(4) << std::endl;
-
-    // set global "Enable ImGui Assertions"
-    g_ImGuiAssertionsEnabled = EnableImGuiAssertionsLogging;
 }
 
 void Options::ResetToDefaults()
 {
-    PatchRemovePedestrians = false;
-    PatchAsyncCompute = false;
-    PatchAntialiasing = false;
-    PatchSkipStartMenu = false;
-    PatchAmdSmt = false;
-    PatchDisableIntroMovies = false;
-    PatchDisableVignette = false;
-    PatchDisableBoundaryTeleport = false;
-    PatchDisableWin7Vsync = false;
-    PatchMinimapFlicker = false;
-
-    RemoveDeadBindings = true;
-    EnableImGuiAssertionsLogging = false;
-    PatchEnableDebug = false;
-    DumpGameOptions = false;
-
-    FontPath = "";
-    FontGlyphRanges = "Default";
-    FontSizeBase = 18.0f;
-    FontOversampleHorizontal = 3;
-    FontOversampleVertical = 1;
+    Patches.ResetToDefaults();
+    Font.ResetToDefaults();
+    Developer.ResetToDefaults();
 
     Save();
 }
@@ -177,6 +261,12 @@ Options::Options(Paths& aPaths)
         throw std::runtime_error("Unknown version");
     }
 
-    Load();
+    Load(true);
+    Save();
+}
+
+Options::~Options()
+{
+    // save on exit to make sure persistent state is preserved
     Save();
 }

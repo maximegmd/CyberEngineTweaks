@@ -16,17 +16,17 @@ void* HookGameOptionInit(GameOption* apThis)
         gameOptions.emplace_back(apThis);
     }
 
-    if (options.DumpGameOptions)
+    if (options.Developer.DumpGameOptions)
         Log::Info(apThis->GetInfo());
 
-    if (options.PatchAsyncCompute && strcmp(apThis->pCategory, "Rendering/AsyncCompute") == 0)
+    if (options.Patches.AsyncCompute && strcmp(apThis->pCategory, "Rendering/AsyncCompute") == 0)
     {
         if (apThis->SetBool(false))
             Log::Info("Disabled hidden setting \"{}/{}\"", apThis->pCategory, apThis->pName);
         else
             Log::Warn("Failed to disable hidden setting \"{}/{}\"", apThis->pCategory, apThis->pName);
     }
-    else if (options.PatchAntialiasing && (strcmp(apThis->pName, "Antialiasing") == 0 || strcmp(apThis->pName, "ScreenSpaceReflection") == 0))
+    else if (options.Patches.Antialiasing && (strcmp(apThis->pName, "Antialiasing") == 0 || strcmp(apThis->pName, "ScreenSpaceReflection") == 0))
     {
         if (apThis->SetBool(false))
             Log::Info("Disabled hidden setting \"{}/{}\"", apThis->pCategory, apThis->pName);
