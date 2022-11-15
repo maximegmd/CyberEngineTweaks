@@ -36,16 +36,7 @@ nlohmann::json PatchesSettings::Save() const
 
 void PatchesSettings::ResetToDefaults()
 {
-    RemovePedestrians = false;
-    AsyncCompute = false;
-    Antialiasing = false;
-    SkipStartMenu = false;
-    AmdSmt = false;
-    DisableIntroMovies = false;
-    DisableVignette = false;
-    DisableBoundaryTeleport = false;
-    DisableWin7Vsync = false;
-    MinimapFlicker = false;
+    *this = {};
 }
 
 void FontSettings::Load(const nlohmann::json& aConfig)
@@ -70,11 +61,7 @@ nlohmann::json FontSettings::Save() const
 
 void FontSettings::ResetToDefaults()
 {
-    Path = "";
-    Language = "Default";
-    BaseSize = 18.0f;
-    OversampleHorizontal = 3;
-    OversampleVertical = 1;
+    *this = {};
 }
 
 void DeveloperSettings::Load(const nlohmann::json& aConfig)
@@ -103,10 +90,7 @@ nlohmann::json DeveloperSettings::Save() const
 
 void DeveloperSettings::ResetToDefaults()
 {
-    RemoveDeadBindings = true;
-    EnableImGuiAssertions = false;
-    EnableDebug = false;
-    DumpGameOptions = false;
+    *this = {};
 
     // set global "Enable ImGui Assertions"
     g_ImGuiAssertionsEnabled = EnableImGuiAssertions;
