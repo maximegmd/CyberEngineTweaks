@@ -464,10 +464,10 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
 
 void D3D12::PrepareUpdate()
 {
-    std::lock_guard _(m_imguiLock);
-
     if (!m_initialized)
         return;
+
+    std::lock_guard _(m_imguiLock);
 
     ImGui_ImplWin32_NewFrame(m_outSize);
     ImGui::NewFrame();
