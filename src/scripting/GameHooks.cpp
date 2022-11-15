@@ -6,48 +6,53 @@
 
 static std::unique_ptr<GameMainThread> s_pGameMainThread;
 
-void GameMainThread::Initialize()
+void GameMainThread::TaskQueue::AddTask(const std::function<bool()>& aFunction)
 {
-    if (!s_pGameMainThread)
-    {
-        s_pGameMainThread.reset(new (std::nothrow) GameMainThread);
-    }
+    std::lock_guard lock(m_mutex);
+    m_tasks.emplace_back(aFunction);
 }
 
-void GameMainThread::Shutdown()
+void GameMainThread::TaskQueue::Drain()
 {
-    s_pGameMainThread = nullptr;
+    std::lock_guard lock(m_mutex);
+    for (auto taskIt = m_tasks.begin(); taskIt != m_tasks.end();)
+    {
+        if ((*taskIt)())
+            taskIt = m_tasks.erase(taskIt);
+        else
+            ++taskIt;
+    }
 }
 
 GameMainThread& GameMainThread::Get()
 {
-    Initialize();
-    return *s_pGameMainThread;
+    static GameMainThread s_gameMainThread;
+    return s_gameMainThread;
 }
 
 void GameMainThread::AddBaseInitializationTask(const std::function<bool()>& aFunction)
 {
-    m_baseInitializationTasks.emplace_back(aFunction);
+    m_baseInitializationQueue.AddTask(aFunction);
 }
 
 void GameMainThread::AddInitializationTask(const std::function<bool()>& aFunction)
 {
-    m_initializationTasks.emplace_back(aFunction);
+    m_initializationQueue.AddTask(aFunction);
 }
 
 void GameMainThread::AddRunningTask(const std::function<bool()>& aFunction)
 {
-    m_runningTasks.emplace_back(aFunction);
+    m_runningQueue.AddTask(aFunction);
 }
 
 void GameMainThread::AddShutdownTask(const std::function<bool()>& aFunction)
 {
-    m_shutdownTasks.emplace_back(aFunction);
+    m_shutdownQueue.AddTask(aFunction);
 }
 
 void GameMainThread::AddGenericTask(const std::function<bool()>& aFunction)
 {
-    m_genericTasks.emplace_back(aFunction);
+    m_genericQueue.AddTask(aFunction);
 }
 
 GameMainThread::GameMainThread()
@@ -64,52 +69,25 @@ bool GameMainThread::HookMainThreadStateTick(RED4ext::IGameState* apThisState, R
 {
     auto& gmt = Get();
 
-    for (auto taskIt = gmt.m_genericTasks.begin(); taskIt != gmt.m_genericTasks.end(); ++taskIt)
-    {
-        if ((*taskIt)())
-            taskIt = gmt.m_genericTasks.erase(taskIt);
-    }
+    gmt.m_genericQueue.Drain();
 
     switch (apThisState->GetType())
     {
     case RED4ext::EGameStateType::BaseInitialization:
-        for (auto taskIt = gmt.m_baseInitializationTasks.begin(); taskIt != gmt.m_baseInitializationTasks.end();)
-        {
-            if ((*taskIt)())
-                taskIt = gmt.m_baseInitializationTasks.erase(taskIt);
-            else
-                ++taskIt;
-        }
+        gmt.m_baseInitializationQueue.Drain();
         return gmt.m_ppMainThreadStateTickLocations[0].second(apThisState, apGameApplication);
     case RED4ext::EGameStateType::Initialization:
-        for (auto taskIt = gmt.m_initializationTasks.begin(); taskIt != gmt.m_initializationTasks.end();)
-        {
-            if ((*taskIt)())
-                taskIt = gmt.m_initializationTasks.erase(taskIt);
-            else
-                ++taskIt;
-        }
+        gmt.m_initializationQueue.Drain();
         return gmt.m_ppMainThreadStateTickLocations[1].second(apThisState, apGameApplication);
     case RED4ext::EGameStateType::Running:
-        for (auto taskIt = gmt.m_runningTasks.begin(); taskIt != gmt.m_runningTasks.end();)
-        {
-            if ((*taskIt)())
-                taskIt = gmt.m_runningTasks.erase(taskIt);
-            else
-                ++taskIt;
-        }
+        gmt.m_runningQueue.Drain();
         return gmt.m_ppMainThreadStateTickLocations[2].second(apThisState, apGameApplication);
     case RED4ext::EGameStateType::Shutdown:
-        for (auto taskIt = gmt.m_shutdownTasks.begin(); taskIt != gmt.m_shutdownTasks.end();)
-        {
-            if ((*taskIt)())
-                taskIt = gmt.m_shutdownTasks.erase(taskIt);
-            else
-                ++taskIt;
-        }
+        gmt.m_shutdownQueue.Drain();
         return gmt.m_ppMainThreadStateTickLocations[3].second(apThisState, apGameApplication);
     }
 
+    // this function should never get here!
     assert(false);
     return false;
 }
