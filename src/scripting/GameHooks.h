@@ -16,16 +16,14 @@ private:
     GameMainThread();
 
     void Hook();
-    void Unhook() const;
+    void Unhook();
 
-    using TMainThreadStateTick = bool(RED4ext::IGameState*, RED4ext::CGameApplication*);
+    using TStateTick = bool(RED4ext::IGameState*, RED4ext::CGameApplication*);
 
-    static bool HookMainThreadStateTick(RED4ext::IGameState* apThisState, RED4ext::CGameApplication* apGameApplication);
-
-    std::array<std::pair<uint8_t*, TMainThreadStateTick*>, 4> m_ppMainThreadStateTickLocations;
+    static bool HookStateTick(RED4ext::IGameState* apThisState, RED4ext::CGameApplication* apGameApplication);
 
     // helper task queue which executes added tasks each drain until they are finished
-    struct TaskQueue
+    struct RepeatedTaskQueue
     {
         void AddTask(const std::function<bool()>& aFunction);
         void Drain();
@@ -35,9 +33,26 @@ private:
         TiltedPhoques::Vector<std::function<bool()>> m_tasks;
     };
 
-    TaskQueue m_baseInitializationQueue;
-    TaskQueue m_initializationQueue;
-    TaskQueue m_runningQueue;
-    TaskQueue m_shutdownQueue;
-    TaskQueue m_genericQueue;
+    struct StateTickOverride
+    {
+        StateTickOverride(const uintptr_t acOffset, const char* acpRealFunctionName);
+
+        bool OnTick(RED4ext::IGameState*, RED4ext::CGameApplication*);
+
+        const uintptr_t Offset;
+        const char* RealFunctionName;
+
+        uint8_t* Location = nullptr;
+        TStateTick* RealFunction = nullptr;
+        RepeatedTaskQueue Tasks;
+    };
+
+    std::array<StateTickOverride, 4> m_stateTickOverrides {
+        StateTickOverride(CyberEngineTweaks::Addresses::CBaseInitializationState_OnTick, "CBaseInitializationState::OnTick"),
+        StateTickOverride(CyberEngineTweaks::Addresses::CInitializationState_OnTick, "CInitializationState::OnTick"),
+        StateTickOverride(CyberEngineTweaks::Addresses::CRunningState_OnTick, "CRunningState::OnTick"),
+        StateTickOverride(CyberEngineTweaks::Addresses::CShutdownState_OnTick, "CShutdownState::OnTick")
+    };
+
+    RepeatedTaskQueue m_genericQueue;
 };
