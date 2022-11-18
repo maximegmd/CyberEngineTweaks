@@ -326,14 +326,12 @@ bool LuaVM::HookTranslateBytecode(uintptr_t aBinder, uintptr_t aData)
     const auto ret = s_vm->m_realTranslateBytecode(aBinder, aData);
 
     if (ret)
-    {
         s_vm->PostInitializeScripting();
-    }
 
     return ret;
 }
 
-uint64_t LuaVM::HookPlayerSpawned(uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4)
+int64_t LuaVM::HookPlayerSpawned(int64_t a1, int64_t a2, int64_t a3, int64_t* a4)
 {
     const auto ret = s_vm->m_realPlayerSpawned(a1, a2, a3, a4);
 

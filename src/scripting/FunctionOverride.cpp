@@ -517,7 +517,7 @@ sol::function FunctionOverride::WrapNextOverride(const CallChain& aChain, int aS
 void FunctionOverride::Hook() const
 {
     {
-        const RED4ext::RelocPtr<void> func(CyberEngineTweaks::Addresses::CScript_RunPureScript);
+        const RED4ext::RelocPtr<void> func(RED4ext::Addresses::CBaseFunction_ExecuteScripted);
         RealRunPureScriptFunction = reinterpret_cast<TRunPureScriptFunction>(func.GetAddr());
         if (!RealRunPureScriptFunction)
             Log::Error("Could not find pure run script function!");

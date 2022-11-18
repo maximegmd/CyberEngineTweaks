@@ -45,9 +45,7 @@ constexpr uintptr_t CPhotoMode_SetRecordID = 0x142DC0CC0 - ImageBase; // 48 8B C
 
 #pragma region CRenderGlobal
 constexpr uintptr_t CRenderGlobal_InstanceOffset = 0x144DDDDF0 - ImageBase; // 48 89 5C 24 08 48 89 6C 24 18 48 89 74 24 20 57 41 56 41 57 48 83 EC 30 8B 01 41 8B F8 4C 8B 35, expected: 1, index: 0, offset: 32
-constexpr uintptr_t CRenderGlobal__DoNotUse_RenderQueueOffset = 0x151F6D589 - ImageBase; // 49 39 29 0F 84 ? ? ? ? 41 39 69 24 0F 84 ? ? ? ? 49 8B 95, expected: 1, index: 0, offset: 0
 constexpr uintptr_t CRenderGlobal_Resize = 0x142CE1EA0 - ImageBase; // 44 88 4C 24 20 44 89 44 24 18 89 54 24 10 89 4C, expected: 1, index: 0
-constexpr uintptr_t CRenderGlobal_Shutdown = 0x142CCC550 - ImageBase; // 48 89 6C 24 20 41 56 48 83 EC 20 48 8D 05, expected: 1, index: 0
 #pragma endregion
 
 #pragma region CRenderNode_Present
@@ -59,7 +57,6 @@ constexpr uintptr_t CRunningState_OnTick = 0x140A72FE0 - ImageBase; // 40 53 48 
 #pragma endregion
 
 #pragma region CScript
-constexpr uintptr_t CScript_RunPureScript = 0x14020B9C0 - ImageBase; // 40 55 48 81 EC D0 00 00 00 48 8D 6C 24 40 8B, expected: 1, index: 0
 constexpr uintptr_t CScript_AllocateFunction = 0x1401AC0F0 - ImageBase; // BA B8 00 00 00 48 8D 4D D7 E8, expected: 3, index: 0
 constexpr uintptr_t CScript_Log = 0x1401EDC40 - ImageBase; // 40 53 48 83 EC ? 48 8D 4C 24 20 48 8B DA E8 ? ? ? ? 33 D2 48 8D 4C  24 40 E8, expected: 1, index: 0
 constexpr uintptr_t CScript_ToStringDEBUG = 0x140BD5400 - ImageBase; // 48 89 5C 24 08 57 48 83  EC 20 FE 42 62 4C 8D 15 ? ? ? ? 33 C9 33 C0, expected: 4, index: 2

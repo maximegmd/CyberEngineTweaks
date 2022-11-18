@@ -63,11 +63,13 @@
 #include <vector>
 
 #include "CETVersion.h"
+#include "common/D3D12Downlevel.h"
 #include "common/Logging.h"
 #include "Options.h"
 #include "Paths.h"
 #include "PersistentState.h"
 #include "reverse/Addresses.h"
+#include "reverse/RenderContext.h"
 #include "scripting/GameHooks.h"
 #include "VKBindings.h"
 

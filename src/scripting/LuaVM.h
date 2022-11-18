@@ -9,12 +9,10 @@ struct UnknownString;
 
 using TSetMousePosition = BOOL(void*, HWND, long, long);
 using TTDBIDCtorDerive = TDBID*(const TDBID*, TDBID*, const char*);
-using TRunningStateRun = bool(uintptr_t, uintptr_t);
-using TShutdownStateRun = bool(uintptr_t, uintptr_t);
 using TSetLoadingState = uintptr_t(uintptr_t, int);
 using TTweakDBLoad = uint64_t(uintptr_t, uintptr_t);
 using TTranslateBytecode = bool(uintptr_t, uintptr_t);
-using TPlayerSpawned = uint64_t(uint64_t, uint64_t, uint64_t, uint64_t);
+using TPlayerSpawned = int64_t(int64_t, int64_t, int64_t, int64_t*);
 
 struct TDBIDLookupEntry
 {
@@ -72,7 +70,7 @@ protected:
     static uintptr_t HookSetLoadingState(uintptr_t aThis, int aState);
     static uint64_t HookTweakDBLoad(uintptr_t aThis, uintptr_t aParam);
     static bool HookTranslateBytecode(uintptr_t aBinder, uintptr_t aData);
-    static uint64_t HookPlayerSpawned(uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4);
+    static int64_t HookPlayerSpawned(int64_t a1, int64_t a2, int64_t a3, int64_t* a4);
 
 private:
 

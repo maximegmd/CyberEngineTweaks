@@ -26,8 +26,10 @@ void Texture::BindTexture(sol::table& aTable)
 
 std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
 {
-    auto d3d_device = CET::Get().GetD3D12().GetDevice();
-    if (d3d_device == nullptr)
+    auto* pRenderContext = RenderContext::GetInstance();
+    auto device = pRenderContext->pDevice;
+
+    if (device == nullptr)
         return {};
 
     auto [srvCpuHandle, srvGpuHandle] = CET::Get().GetD3D12().CreateTextureDescriptor();
@@ -66,7 +68,7 @@ std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
     desc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
     Microsoft::WRL::ComPtr<ID3D12Resource> pTexture = nullptr;
-    d3d_device->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&pTexture));
+    device->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&pTexture));
 
     // Create a temporary upload resource to move the data in
     UINT uploadPitch = (image_width * 4 + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u) & ~(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u);
@@ -88,8 +90,7 @@ std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
     props.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
 
     Microsoft::WRL::ComPtr<ID3D12Resource> uploadBuffer = nullptr;
-    HRESULT hr = d3d_device->CreateCommittedResource(
-        &props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadBuffer));
+    HRESULT hr = device->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadBuffer));
     IM_ASSERT(SUCCEEDED(hr));
 
     // Write pixels into the upload resource
@@ -126,7 +127,7 @@ std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
 
     // Create a temporary command queue to do the copy with
     Microsoft::WRL::ComPtr<ID3D12Fence> fence = nullptr;
-    hr = d3d_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
+    hr = device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
     IM_ASSERT(SUCCEEDED(hr));
 
     HANDLE event = CreateEvent(nullptr, 0, 0, nullptr);
@@ -138,15 +139,15 @@ std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
     queueDesc.NodeMask = 1;
 
     Microsoft::WRL::ComPtr<ID3D12CommandQueue> cmdQueue = nullptr;
-    hr = d3d_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&cmdQueue));
+    hr = device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&cmdQueue));
     IM_ASSERT(SUCCEEDED(hr));
 
     Microsoft::WRL::ComPtr<ID3D12CommandAllocator> cmdAlloc = nullptr;
-    hr = d3d_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&cmdAlloc));
+    hr = device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&cmdAlloc));
     IM_ASSERT(SUCCEEDED(hr));
 
     Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList = nullptr;
-    hr = d3d_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, cmdAlloc.Get(), nullptr, IID_PPV_ARGS(&cmdList));
+    hr = device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, cmdAlloc.Get(), nullptr, IID_PPV_ARGS(&cmdList));
     IM_ASSERT(SUCCEEDED(hr));
 
     cmdList->CopyTextureRegion(&dstLocation, 0, 0, 0, &srcLocation, nullptr);
@@ -181,7 +182,7 @@ std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
     srvDesc.Texture2D.MipLevels = desc.MipLevels;
     srvDesc.Texture2D.MostDetailedMip = 0;
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    d3d_device->CreateShaderResourceView(pTexture.Get(), &srvDesc, srvCpuHandle);
+    device->CreateShaderResourceView(pTexture.Get(), &srvDesc, srvCpuHandle);
 
     // Return results
     auto texture = std::make_shared<Texture>();

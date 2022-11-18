@@ -8,23 +8,6 @@ using namespace std::chrono_literals;
 
 static Window* s_pWindow = nullptr;
 
-static BOOL CALLBACK EnumWindowsProcCP77(HWND ahWnd, LPARAM alParam)
-{
-    DWORD lpdwProcessId;
-    GetWindowThreadProcessId(ahWnd, &lpdwProcessId);
-    if (lpdwProcessId == GetCurrentProcessId())
-    {
-        TCHAR name[512] = { 0 };
-        GetWindowText(ahWnd, name, 511);
-        if (_tcscmp(_T("Cyberpunk 2077 (C) 2020 by CD Projekt RED"), name) == 0)
-        {
-            *reinterpret_cast<HWND*>(alParam) = ahWnd;
-            return FALSE;
-        }
-    }
-    return TRUE;
-}
-
 LRESULT APIENTRY Window::WndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam)
 {
     if (s_pWindow)
@@ -62,31 +45,38 @@ Window::Window(VKBindings* apBindings, D3D12* apD3D12)
     , m_pD3D12(apD3D12)
 {
     s_pWindow = this;
+}
 
-    std::thread t([this]
-    {
-        while (m_hWnd == nullptr)
-        {
-            if (EnumWindows(EnumWindowsProcCP77, reinterpret_cast<LPARAM>(&m_hWnd)))
-                std::this_thread::sleep_for(50ms);
-            else
-            {
-                m_wndProc = reinterpret_cast<WNDPROC>(
-                    SetWindowLongPtr(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(WndProc)));
-                Log::Info("Window::Initialize() - window hook complete.");
-            }
-        }
+void Window::Hook(HWND apWindowHandle)
+{
+    if (m_hWnd == apWindowHandle)
+        return;
 
-        m_initialized = true;
-    });
+    m_initialized = false;
 
-    t.detach();
+    if (m_hWnd && m_wndProc)
+        SetWindowLongPtr(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(m_wndProc));
+
+    m_hWnd = nullptr;
+    m_wndProc = nullptr;
+
+    if (!apWindowHandle)
+        return;
+
+    m_hWnd = apWindowHandle;
+
+    m_wndProc = reinterpret_cast<WNDPROC>(SetWindowLongPtr(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(WndProc)));
+
+    Log::Info("Window::Initialize() - window hook complete.");
+
+    m_initialized = true;
 }
 
 Window::~Window()
 {
     s_pWindow = nullptr;
 
-    if (m_hWnd != nullptr)
-        SetWindowLongPtr(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(m_wndProc));
+    assert(!m_initialized);
+    if (m_initialized)
+        Hook(nullptr);
 }

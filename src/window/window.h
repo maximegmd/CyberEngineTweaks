@@ -8,6 +8,8 @@ struct Window
     Window(VKBindings* apBindings, D3D12* apD3D12);
     ~Window();
 
+    void Hook(HWND apWindowHandle);
+
     HWND GetWindow() const { return m_hWnd; }
 
     POINT GetWndPos() const { return m_wndPos; }

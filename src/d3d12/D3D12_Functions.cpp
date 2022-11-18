@@ -9,7 +9,7 @@
 #include <imgui_impl/win32.h>
 #include <window/window.h>
 
-bool D3D12::ResetState(const bool acClearDownlevelBackbuffers, const bool acDestroyContext)
+bool D3D12::ResetState(const bool acDestroyContext)
 {
     if (m_initialized)
     {
@@ -28,239 +28,78 @@ bool D3D12::ResetState(const bool acClearDownlevelBackbuffers, const bool acDest
         ImGui_ImplWin32_Shutdown();
 
         if (acDestroyContext)
+        {
+            m_window.Hook(nullptr);
             ImGui::DestroyContext();
+        }
     }
 
-    m_frameContexts.clear();
     m_outSize = { 0, 0 };
 
-    if (acClearDownlevelBackbuffers)
-        m_downlevelBackbuffers.clear();
-    m_downlevelBufferIndex = 0;
+    for (auto& frameContext : m_frameContexts)
+    {
+        frameContext.CommandAllocator.Reset();
+        frameContext.CommandList.Reset();
+    }
 
-    m_pd3d12Device.Reset();
-    m_pd3dRtvDescHeap.Reset();
     m_pd3dSrvDescHeap.Reset();
-    m_pd3dCommandList.Reset();
-
-    m_pCommandQueue.Reset();
-    m_pdxgiSwapChain.Reset();
 
     m_initialized = false;
 
     return false;
 }
 
-bool D3D12::Initialize()
+bool D3D12::Initialize(uint32_t aSwapChainDataId)
 {
     if (m_initialized)
         return true;
 
-    if (!m_pdxgiSwapChain)
+    if (aSwapChainDataId == 0)
         return false;
 
-    const HWND hWnd = m_window.GetWindow();
-    if (!hWnd)
-    {
-        Log::Warn("D3D12::InitializeDownlevel() - window not yet hooked!");
-        return false;
-    }
+    m_swapChainDataId = aSwapChainDataId;
+    auto* pRenderContext = RenderContext::GetInstance();
+    auto device = pRenderContext->pDevice;
+    auto swapChainData = pRenderContext->pSwapChainData[aSwapChainDataId - 1];
+    auto window = swapChainData.window;
 
-    if (FAILED(m_pdxgiSwapChain->GetDevice(IID_PPV_ARGS(&m_pd3d12Device))))
-    {
-        Log::Error("D3D12::Initialize() - failed to get device!");
-        return ResetState();
-    }
+    m_window.Hook(window);
 
-    DXGI_SWAP_CHAIN_DESC sdesc;
-    m_pdxgiSwapChain->GetDesc(&sdesc);
-
-    if (hWnd != sdesc.OutputWindow)
-        Log::Warn("D3D12::Initialize() - output window of current swap chain does not match hooked window! Currently hooked to {} while swap chain output window is {}.", reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(sdesc.OutputWindow));
-
-    m_outSize = { static_cast<LONG>(sdesc.BufferDesc.Width), static_cast<LONG>(sdesc.BufferDesc.Height) };
-
-    const auto buffersCounts = std::min(sdesc.BufferCount, 3u);
-    m_frameContexts.resize(buffersCounts);
+    m_outSize = m_window.GetClientSize();
 
     D3D12_DESCRIPTOR_HEAP_DESC srvdesc = {};
     srvdesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-    srvdesc.NumDescriptors = buffersCounts;
+    srvdesc.NumDescriptors = SwapChainData_BackBufferCount;
     srvdesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-    if (FAILED(m_pd3d12Device->CreateDescriptorHeap(&srvdesc, IID_PPV_ARGS(&m_pd3dSrvDescHeap))))
+    if (FAILED(device->CreateDescriptorHeap(&srvdesc, IID_PPV_ARGS(&m_pd3dSrvDescHeap))))
     {
         Log::Error("D3D12::Initialize() - failed to create SRV descriptor heap!");
         return ResetState();
     }
 
-    D3D12_DESCRIPTOR_HEAP_DESC rtvdesc;
-    rtvdesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-    rtvdesc.NumDescriptors = buffersCounts;
-    rtvdesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-    rtvdesc.NodeMask = 1;
-    if (FAILED(m_pd3d12Device->CreateDescriptorHeap(&rtvdesc, IID_PPV_ARGS(&m_pd3dRtvDescHeap))))
+    for (auto& frameContext : m_frameContexts)
     {
-        Log::Error("D3D12::Initialize() - failed to create RTV descriptor heap!");
-        return ResetState();
-    }
-
-    const SIZE_T rtvDescriptorSize = m_pd3d12Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_pd3dRtvDescHeap->GetCPUDescriptorHandleForHeapStart();
-    for (UINT i = 0; i < buffersCounts; i++)
-    {
-        auto& context = m_frameContexts[i];
-        context.MainRenderTargetDescriptor = rtvHandle;
-        m_pdxgiSwapChain->GetBuffer(i, IID_PPV_ARGS(&context.BackBuffer));
-        m_pd3d12Device->CreateRenderTargetView(context.BackBuffer.Get(), nullptr, context.MainRenderTargetDescriptor);
-        rtvHandle.ptr += rtvDescriptorSize;
-    }
-
-    for (auto& context : m_frameContexts)
-        if (FAILED(m_pd3d12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&context.CommandAllocator))))
+        if (FAILED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&frameContext.CommandAllocator))))
         {
             Log::Error("D3D12::Initialize() - failed to create command allocator!");
             return ResetState();
         }
 
-    if (FAILED(m_pd3d12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_frameContexts[0].CommandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_pd3dCommandList))) ||
-        FAILED(m_pd3dCommandList->Close()))
-    {
-        Log::Error("D3D12::Initialize() - failed to create command list!");
-        return ResetState();
+        if (FAILED(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, frameContext.CommandAllocator.Get(), nullptr, IID_PPV_ARGS(&frameContext.CommandList))) ||
+            FAILED(frameContext.CommandList->Close()))
+        {
+            Log::Error("D3D12::Initialize() - failed to create command list!");
+            return ResetState();
+        }
     }
 
-    if (!InitializeImGui(buffersCounts))
+    if (!InitializeImGui())
     {
         Log::Error("D3D12::Initialize() - failed to initialize ImGui!");
         return ResetState();
     }
 
     Log::Info("D3D12::Initialize() - initialization successful!");
-    m_initialized = true;
-
-    OnInitialized.Emit();
-
-    return true;
-}
-
-bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resource* apSourceTex2D, HWND ahWindow)
-{
-    if (!apCommandQueue || !apSourceTex2D)
-        return false;
-
-    const HWND hWnd = m_window.GetWindow();
-    if (!hWnd)
-    {
-        Log::Warn("D3D12::InitializeDownlevel() - window not yet hooked!");
-        return false;
-    }
-
-    if (m_initialized)
-    {
-        if (hWnd != ahWindow)
-            Log::Warn("D3D12::InitializeDownlevel() - current output window does not match hooked window! Currently hooked to {} while current output window is {}.", reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(ahWindow));
-
-        return true;
-    }
-
-    const auto cmdQueueDesc = apCommandQueue->GetDesc();
-    if(cmdQueueDesc.Type != D3D12_COMMAND_LIST_TYPE_DIRECT)
-    {
-        Log::Warn("D3D12::InitializeDownlevel() - ignoring command queue - invalid type of command list!");
-        return false;
-    }
-
-    m_pCommandQueue = apCommandQueue;
-
-    const auto st2DDesc = apSourceTex2D->GetDesc();
-    m_outSize = { static_cast<LONG>(st2DDesc.Width), static_cast<LONG>(st2DDesc.Height) };
-
-    if (hWnd != ahWindow)
-        Log::Warn("D3D12::InitializeDownlevel() - current output window does not match hooked window! Currently hooked to {} while current output window is {}.", reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(ahWindow));
-
-    if (FAILED(apSourceTex2D->GetDevice(IID_PPV_ARGS(&m_pd3d12Device))))
-    {
-        Log::Error("D3D12::InitializeDownlevel() - failed to get device!");
-        return ResetState();
-    }
-
-    const size_t buffersCounts = m_downlevelBackbuffers.size();
-    m_frameContexts.resize(buffersCounts);
-    if (buffersCounts == 0)
-    {
-        Log::Error("D3D12::InitializeDownlevel() - no backbuffers were found!");
-        return ResetState();
-    }
-    if (buffersCounts < g_numDownlevelBackbuffersRequired)
-    {
-        Log::Info("D3D12::InitializeDownlevel() - backbuffer list is not complete yet; assuming window was resized");
-        return false;
-    }
-
-    D3D12_DESCRIPTOR_HEAP_DESC rtvdesc;
-    rtvdesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-    rtvdesc.NumDescriptors = static_cast<UINT>(buffersCounts);
-    rtvdesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-    rtvdesc.NodeMask = 1;
-    if (FAILED(m_pd3d12Device->CreateDescriptorHeap(&rtvdesc, IID_PPV_ARGS(&m_pd3dRtvDescHeap))))
-    {
-        Log::Error("D3D12::InitializeDownlevel() - failed to create RTV descriptor heap!");
-        return ResetState();
-    }
-
-    const SIZE_T rtvDescriptorSize = m_pd3d12Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_pd3dRtvDescHeap->GetCPUDescriptorHandleForHeapStart();
-    for (auto& context : m_frameContexts)
-    {
-        context.MainRenderTargetDescriptor = rtvHandle;
-        rtvHandle.ptr += rtvDescriptorSize;
-    }
-
-    D3D12_DESCRIPTOR_HEAP_DESC srvdesc = {};
-    srvdesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-    srvdesc.NumDescriptors = 2;
-    srvdesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-    if (FAILED(m_pd3d12Device->CreateDescriptorHeap(&srvdesc, IID_PPV_ARGS(&m_pd3dSrvDescHeap))))
-    {
-        Log::Error("D3D12::InitializeDownlevel() - failed to create SRV descriptor heap!");
-        return ResetState();
-    }
-
-    for (auto& context : m_frameContexts)
-    {
-        if (FAILED(m_pd3d12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&context.CommandAllocator))))
-        {
-            Log::Error("D3D12::InitializeDownlevel() - failed to create command allocator!");
-            return ResetState();
-        }
-    }
-
-    if (FAILED(m_pd3d12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_frameContexts[0].CommandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_pd3dCommandList))))
-    {
-        Log::Error("D3D12::InitializeDownlevel() - failed to create command list!");
-        return ResetState();
-    }
-
-    if (FAILED(m_pd3dCommandList->Close()))
-    {
-        Log::Error("D3D12::InitializeDownlevel() - failed to close command list!");
-        return ResetState();
-    }
-
-    for (size_t i = 0; i < buffersCounts; i++)
-    {
-        auto& context = m_frameContexts[i];
-        context.BackBuffer = m_downlevelBackbuffers[i];
-        m_pd3d12Device->CreateRenderTargetView(context.BackBuffer.Get(), nullptr, context.MainRenderTargetDescriptor);
-    }
-
-    if (!InitializeImGui(buffersCounts))
-    {
-        Log::Error("D3D12::InitializeDownlevel() - failed to initialize ImGui!");
-        return ResetState();
-    }
-
-    Log::Info("D3D12::InitializeDownlevel() - initialization successful!");
     m_initialized = true;
 
     OnInitialized.Emit();
@@ -404,8 +243,15 @@ void D3D12::ReloadFonts()
         io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(customFontPath.native()).c_str(), config.SizePixels, &config, cpGlyphRanges);
 }
 
-bool D3D12::InitializeImGui(size_t aBuffersCounts)
+bool D3D12::InitializeImGui()
 {
+    if (m_swapChainDataId == 0)
+        return false;
+
+    auto* pRenderContext = RenderContext::GetInstance();
+    auto device = pRenderContext->pDevice;
+    auto commandQueue = pRenderContext->pDirectCommandQueue;
+
     std::lock_guard _(m_imguiLock);
 
     // TODO - scale also by DPI
@@ -440,7 +286,7 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         return false;
     }
 
-    if (!ImGui_ImplDX12_Init(m_pd3d12Device.Get(), static_cast<int>(aBuffersCounts),
+    if (!ImGui_ImplDX12_Init(device.Get(), SwapChainData_BackBufferCount,
         DXGI_FORMAT_R8G8B8A8_UNORM, m_pd3dSrvDescHeap.Get(),
         m_pd3dSrvDescHeap->GetCPUDescriptorHandleForHeapStart(),
         m_pd3dSrvDescHeap->GetGPUDescriptorHandleForHeapStart()))
@@ -452,7 +298,7 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
 
     ReloadFonts();
 
-    if (!ImGui_ImplDX12_CreateDeviceObjects(m_pCommandQueue.Get()))
+    if (!ImGui_ImplDX12_CreateDeviceObjects(commandQueue.Get()))
     {
         Log::Error("D3D12::InitializeImGui() - ImGui_ImplDX12_CreateDeviceObjects call failed!");
         ImGui_ImplDX12_Shutdown();
@@ -499,10 +345,21 @@ void D3D12::PrepareUpdate()
 
 void D3D12::Update()
 {
+    if (!m_initialized)
+        return;
+
+    auto* pRenderContext = RenderContext::GetInstance();
+    auto& swapChainData = pRenderContext->pSwapChainData[m_swapChainDataId - 1];
+    const auto backBufferIndex = swapChainData.backBufferIndex;
+    auto backBuffer = swapChainData.backBuffers[backBufferIndex];
+    auto& frameContext = m_frameContexts[backBufferIndex];
+    auto renderTargetView = swapChainData.renderTargetViews[backBufferIndex];
+    auto commandQueue = pRenderContext->pDirectCommandQueue;
+
     // swap staging ImGui buffer with render ImGui buffer
     {
         std::lock_guard _(m_imguiLock);
-        ImGui_ImplDX12_NewFrame(m_pCommandQueue.Get());
+        ImGui_ImplDX12_NewFrame(commandQueue.Get());
         if (m_imguiDrawDataBuffers[1].Valid)
         {
             std::swap(m_imguiDrawDataBuffers[0], m_imguiDrawDataBuffers[1]);
@@ -513,33 +370,31 @@ void D3D12::Update()
     if (!m_imguiDrawDataBuffers[0].Valid)
         return;
 
-    const auto bufferIndex = m_pdxgiSwapChain != nullptr ? m_pdxgiSwapChain->GetCurrentBackBufferIndex() : m_downlevelBufferIndex;
-    auto& frameContext = m_frameContexts[bufferIndex];
     frameContext.CommandAllocator->Reset();
 
     D3D12_RESOURCE_BARRIER barrier;
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    barrier.Transition.pResource = frameContext.BackBuffer.Get();
+    barrier.Transition.pResource = backBuffer.Get();
     barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
     barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
     ID3D12DescriptorHeap* heaps[] = { m_pd3dSrvDescHeap.Get() };
 
-    m_pd3dCommandList->Reset(frameContext.CommandAllocator.Get(), nullptr);
-    m_pd3dCommandList->ResourceBarrier(1, &barrier);
-    m_pd3dCommandList->SetDescriptorHeaps(1, heaps);
-    m_pd3dCommandList->OMSetRenderTargets(1, &frameContext.MainRenderTargetDescriptor, FALSE, nullptr);
+    frameContext.CommandList->Reset(frameContext.CommandAllocator.Get(), nullptr);
+    frameContext.CommandList->ResourceBarrier(1, &barrier);
+    frameContext.CommandList->SetDescriptorHeaps(1, heaps);
+    frameContext.CommandList->OMSetRenderTargets(1, &renderTargetView, FALSE, nullptr);
 
-    ImGui_ImplDX12_RenderDrawData(&m_imguiDrawDataBuffers[0], m_pd3dCommandList.Get());
+    ImGui_ImplDX12_RenderDrawData(&m_imguiDrawDataBuffers[0], frameContext.CommandList.Get());
 
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
     barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-    m_pd3dCommandList->ResourceBarrier(1, &barrier);
-    m_pd3dCommandList->Close();
+    frameContext.CommandList->ResourceBarrier(1, &barrier);
+    frameContext.CommandList->Close();
 
-    ID3D12CommandList* commandLists[] = { m_pd3dCommandList.Get() };
-    m_pCommandQueue->ExecuteCommandLists(1, commandLists);
+    ID3D12CommandList* commandLists[] = { frameContext.CommandList.Get() };
+    commandQueue->ExecuteCommandLists(1, commandLists);
 }
 
