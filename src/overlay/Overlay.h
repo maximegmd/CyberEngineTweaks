@@ -11,9 +11,10 @@ using TClipToCenter = HWND(RED4ext::CGameEngine::UnkC0*);
 
 struct D3D12;
 struct Options;
+struct PersistentState;
 struct Overlay
 {
-    Overlay(D3D12& aD3D12, VKBindings& aBindings, Options& aOptions, LuaVM& aVm);
+    Overlay(D3D12& aD3D12, VKBindings& aBindings, Options& aOptions, PersistentState& aPersistentState, LuaVM& aVm);
     ~Overlay();
 
     void PostInitialize();
@@ -52,6 +53,7 @@ private:
 
     D3D12& m_d3d12;
     Options& m_options;
+    PersistentState& m_persistentState;
     LuaVM& m_vm;
     size_t m_connectInitialized;
 };
