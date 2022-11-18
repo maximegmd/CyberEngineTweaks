@@ -59,6 +59,12 @@ void Window::Hook(HWND apWindowHandle)
 
     m_hWnd = nullptr;
     m_wndProc = nullptr;
+    m_wndPos = {0, 0};
+    m_wndSize = {0, 0};
+    m_clientPos = {0, 0};
+    m_clientSize = {0, 0};
+
+    Log::Info("Window::Hook() - window unhook complete!");
 
     if (!apWindowHandle)
         return;
@@ -67,9 +73,19 @@ void Window::Hook(HWND apWindowHandle)
 
     m_wndProc = reinterpret_cast<WNDPROC>(SetWindowLongPtr(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(WndProc)));
 
-    Log::Info("Window::Initialize() - window hook complete.");
+    RECT wr;
+    GetWindowRect(m_hWnd, &wr);
+    m_wndPos = {wr.left, wr.top};
+    m_wndSize = {wr.right - wr.left, wr.bottom - wr.top};
+
+    RECT cr;
+    GetClientRect(m_hWnd, &cr);
+    m_clientPos = {cr.left, cr.top};
+    m_clientSize = {cr.right - cr.left, cr.bottom - cr.top};
 
     m_initialized = true;
+
+    Log::Info("Window::Hook() - window hook complete!");
 }
 
 Window::~Window()

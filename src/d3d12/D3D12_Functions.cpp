@@ -15,6 +15,9 @@ bool D3D12::ResetState(const bool acDestroyContext)
     {
         std::lock_guard _(m_imguiLock);
 
+        if (acDestroyContext)
+            m_window.Hook(nullptr);
+
         for (auto& drawData : m_imguiDrawDataBuffers)
         {
             for (auto i = 0; i < drawData.CmdListsCount; ++i)
@@ -28,13 +31,8 @@ bool D3D12::ResetState(const bool acDestroyContext)
         ImGui_ImplWin32_Shutdown();
 
         if (acDestroyContext)
-        {
-            m_window.Hook(nullptr);
             ImGui::DestroyContext();
-        }
     }
-
-    m_outSize = { 0, 0 };
 
     for (auto& frameContext : m_frameContexts)
     {
@@ -63,10 +61,6 @@ bool D3D12::Initialize(uint32_t aSwapChainDataId)
     auto swapChainData = pRenderContext->pSwapChainData[aSwapChainDataId - 1];
     auto window = swapChainData.window;
 
-    m_window.Hook(window);
-
-    m_outSize = m_window.GetClientSize();
-
     D3D12_DESCRIPTOR_HEAP_DESC srvdesc = {};
     srvdesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     srvdesc.NumDescriptors = SwapChainData_BackBufferCount;
@@ -93,16 +87,18 @@ bool D3D12::Initialize(uint32_t aSwapChainDataId)
         }
     }
 
+    m_window.Hook(window);
+
     if (!InitializeImGui())
     {
         Log::Error("D3D12::Initialize() - failed to initialize ImGui!");
-        return ResetState();
+        return ResetState(true);
     }
+
+    OnInitialize.Emit();
 
     Log::Info("D3D12::Initialize() - initialization successful!");
     m_initialized = true;
-
-    OnInitialized.Emit();
 
     return true;
 }
@@ -111,16 +107,24 @@ void D3D12::ReloadFonts()
 {
     std::lock_guard _(m_imguiLock);
 
-    // TODO - scale also by DPI
-    const auto [resx, resy] = m_outSize;
-    const auto scaleFromReference = std::min(static_cast<float>(resx) / 1920.0f, static_cast<float>(resy) / 1080.0f);
+    const auto& fontSettings = m_options.Font;
+
+    const auto [resx, resy] = m_window.GetClientSize();
+
+    const auto dpiScale = 1.0f; // TODO - will be replaced in another PR
+    const auto resolutionScaleFromReference = std::min(static_cast<float>(resx) / 1920.0f, static_cast<float>(resy) / 1080.0f);
+
+    const auto fontSize = std::floorf(fontSettings.BaseSize * dpiScale * resolutionScaleFromReference);
+    const auto fontScaleFromReference = fontSize / 18.0f;
+
+    ImGui::GetStyle() = m_styleReference;
+    ImGui::GetStyle().ScaleAllSizes(fontScaleFromReference);
 
     auto& io = ImGui::GetIO();
     io.Fonts->Clear();
 
     ImFontConfig config;
-    const auto& fontSettings = m_options.Font;
-    config.SizePixels = std::floorf(fontSettings.BaseSize * scaleFromReference);
+    config.SizePixels = fontSize;
     config.OversampleH = fontSettings.OversampleHorizontal;
     config.OversampleV = fontSettings.OversampleVertical;
     if (config.OversampleH == 1 && config.OversampleV == 1)
@@ -254,10 +258,6 @@ bool D3D12::InitializeImGui()
 
     std::lock_guard _(m_imguiLock);
 
-    // TODO - scale also by DPI
-    const auto [resx, resy] = m_outSize;
-    const auto scaleFromReference = std::min(static_cast<float>(resx) / 1920.0f, static_cast<float>(resy) / 1080.0f);
-
     if (ImGui::GetCurrentContext() == nullptr)
     {
         // do this once, do not repeat context creation!
@@ -276,9 +276,6 @@ bool D3D12::InitializeImGui()
         m_styleReference.GrabRounding = 12.0f;
         m_styleReference.TabRounding = 6.0f;
     }
-
-    ImGui::GetStyle() = m_styleReference;
-    ImGui::GetStyle().ScaleAllSizes(scaleFromReference);
 
     if (!ImGui_ImplWin32_Init(m_window.GetWindow()))
     {
@@ -316,7 +313,7 @@ void D3D12::PrepareUpdate()
 
     std::lock_guard _(m_imguiLock);
 
-    ImGui_ImplWin32_NewFrame(m_outSize);
+    ImGui_ImplWin32_NewFrame(m_window.GetClientSize());
     ImGui::NewFrame();
 
     CET::Get().GetOverlay().Update();

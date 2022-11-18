@@ -274,10 +274,6 @@ Overlay::Overlay(VKBindings& aBindings, Options& aOptions, PersistentState& aPer
     GameMainThread::Get().AddBaseInitializationTask([this]{ PostInitialize(); return true; });
 }
 
-Overlay::~Overlay()
-{
-}
-
 void Overlay::DrawToolbar()
 {
     const auto itemWidth = GetAlignedItemWidth(7);
