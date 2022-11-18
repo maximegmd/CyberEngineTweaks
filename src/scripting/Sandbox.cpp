@@ -3,22 +3,42 @@
 #include "Sandbox.h"
 #include "Scripting.h"
 
-Sandbox::Sandbox(uint64_t aId, Scripting* apScripting, sol::table aBaseEnvironment, const std::filesystem::path& acRootPath)
-    : m_id(aId)
-    , m_pScripting(apScripting)
-    , m_env(apScripting->GetLockedState().Get(), sol::create, aBaseEnvironment)
+Sandbox::Sandbox(Scripting& aScripting, uint64_t aId, sol::table aBaseEnvironment, const std::filesystem::path& acRootPath)
+    : m_scripting(aScripting)
+    , m_id(aId)
+    , m_env(aScripting.GetLockedState().Get(), sol::create, aBaseEnvironment)
     , m_path(acRootPath)
 {
 }
 
+Sandbox::Sandbox(Sandbox&& aOther) noexcept
+    : m_scripting(aOther.m_scripting)
+    , m_id(aOther.m_id)
+    , m_env(std::move(aOther.m_env))
+    , m_path(std::move(aOther.m_path))
+{
+}
+
+Sandbox& Sandbox::operator=(Sandbox&& aOther) noexcept
+{
+    if (this == &aOther)
+        return *this;
+
+    m_id = aOther.m_id;
+    m_env = aOther.m_env;
+    m_path = aOther.m_path;
+
+    return *this;
+}
+
 sol::protected_function_result Sandbox::ExecuteFile(const std::string& acPath) const
 {
-    return m_pScripting->GetLockedState().Get().script_file(acPath, m_env, sol::load_mode::text);
+    return m_scripting.GetLockedState().Get().script_file(acPath, m_env, sol::load_mode::text);
 }
 
 sol::protected_function_result Sandbox::ExecuteString(const std::string& acString) const
 {
-    return m_pScripting->GetLockedState().Get().script(acString, m_env, sol:: detail::default_chunk_name(), sol::load_mode::text);
+    return m_scripting.GetLockedState().Get().script(acString, m_env, sol:: detail::default_chunk_name(), sol::load_mode::text);
 }
 
 uint64_t Sandbox::GetId() const

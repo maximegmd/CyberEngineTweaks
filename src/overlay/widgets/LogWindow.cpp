@@ -2,10 +2,13 @@
 
 #include "LogWindow.h"
 
+#include "CET.h"
+
 #include <Utils.h>
 
-LogWindow::LogWindow(const std::string& acpWindowTitle, const std::string& acpLoggerName)
+LogWindow::LogWindow(const Options& acOptions, const std::string& acpWindowTitle, const std::string& acpLoggerName)
     : Widget(acpWindowTitle)
+    , m_options(acOptions)
     , m_loggerName(acpLoggerName)
 {
     auto logSink = CreateCustomSinkMT([this](const std::string& msg){ Log(msg); });
@@ -142,6 +145,13 @@ void LogWindow::Log(const std::string& acpText)
     }
     assert(level != spdlog::level::level_enum::off);
 
+    auto emplaceText = [maxLines = m_options.Developer.MaxLinesLogOutput, lines = &m_lines, level](std::string apText) {
+        if (lines->size() >= maxLines)
+            lines->erase(lines->begin(), lines->begin() + lines->size() - maxLines + 1);
+
+        lines->emplace_back(level, std::move(apText));
+    };
+
     size_t first = 2;
     const size_t size = acpText.size();
     while (first < size)
@@ -160,17 +170,15 @@ void LogWindow::Log(const std::string& acpText)
 
         if (second == std::string_view::npos)
         {
-            auto text = acpText.substr(first);
             std::lock_guard _{ m_lock };
-            m_lines.emplace_back(level, std::move(text));
+            emplaceText(acpText.substr(first));
             break;
         }
 
         if (first != second)
         {
-            auto text = acpText.substr(first, second-first);
             std::lock_guard _{ m_lock };
-            m_lines.emplace_back(level, std::move(text));
+            emplaceText(acpText.substr(first, second-first));
         }
 
         first = second + 1;

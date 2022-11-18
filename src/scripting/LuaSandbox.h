@@ -4,7 +4,7 @@
 
 struct LuaSandbox
 {
-    LuaSandbox(Scripting* apScripting, const VKBindings& acVKBindings);
+    LuaSandbox(const Options& acOptions, Scripting& aScripting, const VKBindings& acVKBindings);
     ~LuaSandbox() = default;
 
     void Initialize();
@@ -35,7 +35,8 @@ private:
 
     void CloseDBForSandbox(const Sandbox& aSandbox) const;
 
-    Scripting* m_pScripting;
+    const Options& m_options;
+    Scripting& m_scripting;
     const VKBindings& m_vkBindings;
     sol::table m_globals{};
     TiltedPhoques::Vector<Sandbox> m_sandboxes{};

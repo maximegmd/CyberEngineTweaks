@@ -265,6 +265,7 @@ Overlay::Overlay(VKBindings& aBindings, Options& aOptions, PersistentState& aPer
     , m_bindings(aBindings, aVm)
     , m_settings(aOptions, aVm)
     , m_tweakDBEditor(aVm)
+    , m_gameLog(aOptions, "Game Log", "gamelog")
     , m_options(aOptions)
     , m_persistentState(aPersistentState)
     , m_vm(aVm)

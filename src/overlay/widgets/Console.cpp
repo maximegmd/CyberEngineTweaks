@@ -6,7 +6,7 @@
 #include <Utils.h>
 
 Console::Console(Options& aOptions, PersistentState& aPersistentState, LuaVM& aVm)
-    : LogWidget("Console", "scripting")
+    : LogWindow(aOptions, "Console", "scripting")
     , m_persistentState(aPersistentState)
     , m_vm(aVm)
 {

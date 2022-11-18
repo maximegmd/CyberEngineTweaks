@@ -11,7 +11,7 @@ struct Scripting
 {
     using LockedState = TiltedPhoques::Locked<sol::state, std::recursive_mutex>;
 
-    Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12);
+    Scripting(const Paths& acPaths, const Options& acOptions, VKBindings& aBindings, D3D12& aD3D12);
     ~Scripting() = default;
 
     void Initialize();

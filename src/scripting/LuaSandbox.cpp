@@ -150,15 +150,16 @@ static constexpr const char* s_cGlobalExtraLibsWhitelist[] =
     "ImGui",
 };
 
-LuaSandbox::LuaSandbox(Scripting* apScripting, const VKBindings& acVKBindings)
-    : m_pScripting(apScripting)
+LuaSandbox::LuaSandbox(const Options& acOptions, Scripting& aScripting, const VKBindings& acVKBindings)
+    : m_options(acOptions)
+    , m_scripting(aScripting)
     , m_vkBindings(acVKBindings)
 {
 }
 
 void LuaSandbox::Initialize()
 {
-    auto lockedState = m_pScripting->GetLockedState();
+    auto lockedState = m_scripting.GetLockedState();
     auto& luaState = lockedState.Get();
     auto globals = luaState.globals();
 
@@ -192,7 +193,7 @@ void LuaSandbox::Initialize()
 
 void LuaSandbox::PostInitializeScripting()
 {
-    auto lockedState = m_pScripting->GetLockedState();
+    auto lockedState = m_scripting.GetLockedState();
     auto& luaState = lockedState.Get();
     auto globals = luaState.globals();
 
@@ -203,7 +204,7 @@ void LuaSandbox::PostInitializeScripting()
 
 void LuaSandbox::PostInitializeTweakDB()
 {
-    auto lockedState = m_pScripting->GetLockedState();
+    auto lockedState = m_scripting.GetLockedState();
     auto& luaState = lockedState.Get();
     auto globals = luaState.globals();
 
@@ -214,7 +215,7 @@ void LuaSandbox::PostInitializeTweakDB()
 
 void LuaSandbox::PostInitializeMods()
 {
-    auto lockedState = m_pScripting->GetLockedState();
+    auto lockedState = m_scripting.GetLockedState();
     auto& luaState = lockedState.Get();
     auto globals = luaState.globals();
 
@@ -228,7 +229,7 @@ void LuaSandbox::ResetState()
     if (m_modules.empty())
         return;
 
-    auto lockedState = m_pScripting->GetLockedState();
+    auto lockedState = m_scripting.GetLockedState();
     auto& luaState = lockedState.Get();
 
     for (size_t i = 1; i < m_sandboxes.size(); ++i)
@@ -246,10 +247,10 @@ uint64_t LuaSandbox::CreateSandbox(const std::filesystem::path& acPath, const st
     const uint64_t cResID = m_sandboxes.size();
     assert(!cResID || (!acPath.empty() && !acName.empty()));
 
-    auto lockedState = m_pScripting->GetLockedState();
+    auto lockedState = m_scripting.GetLockedState();
     const auto& luaState = lockedState.Get();
 
-    auto& res = m_sandboxes.emplace_back(cResID, m_pScripting, m_globals, acPath);
+    auto& res = m_sandboxes.emplace_back(m_scripting, cResID, m_globals, acPath);
     if (!acPath.empty() && !acName.empty())
     {
         if (aEnableExtraLibs)
@@ -278,18 +279,18 @@ const Sandbox& LuaSandbox::operator[](uint64_t aID) const
 
 TiltedPhoques::Locked<sol::state, std::recursive_mutex> LuaSandbox::GetLockedState() const
 {
-    return m_pScripting->GetLockedState();
+    return m_scripting.GetLockedState();
 }
 
 void LuaSandbox::SetImGuiAvailable(bool aAvailable)
 {
-    auto lockedState = m_pScripting->GetLockedState();
+    auto lockedState = m_scripting.GetLockedState();
     m_imguiAvailable = aAvailable;
 }
 
 bool LuaSandbox::GetImGuiAvailable() const
 {
-    auto lockedState = m_pScripting->GetLockedState();
+    auto lockedState = m_scripting.GetLockedState();
     return m_imguiAvailable;
 }
 
@@ -697,7 +698,7 @@ void LuaSandbox::InitializeLoggerForSandbox(Sandbox& aSandbox, const sol::state&
     sbEnv["spdlog"] = sbEnv["modLog"];
 
     // TODO - make this use real mod name when we have mod info
-    auto logWindow = std::make_shared<LogWindow>(acName + " Log", acName);
+    auto logWindow = std::make_shared<LogWindow>(m_options, acName + " Log", acName);
     sbEnv["__loggerWindow"] = logWindow;
     sbEnv["ToggleModLogDraw"] = [logWindow]{
         logWindow->Toggle();

@@ -2,14 +2,17 @@
 
 #include "Widget.h"
 
+struct Options;
 struct LogWindow : Widget
 {
-    LogWindow(const std::string& acpWindowTitle, const std::string& acpLoggerName);
+    LogWindow(const Options& acOptions, const std::string& acpWindowTitle, const std::string& acpLoggerName);
 
 protected:
     void OnUpdate() override;
 
     void DrawLog(const ImVec2& size);
+
+    const Options& m_options;
 
 private:
     void Log(const std::string& acpText);

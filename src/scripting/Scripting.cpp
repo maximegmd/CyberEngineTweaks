@@ -30,16 +30,16 @@ static constexpr bool s_cThrowLuaErrors = true;
 
 static RTTILocator s_stringType{RED4ext::FNV1a64("String")};
 
-Scripting::Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12)
-    : m_sandbox(this, aBindings)
+Scripting::Scripting(const Paths& acPaths, const Options& acOptions, VKBindings& aBindings, D3D12& aD3D12)
+    : m_sandbox(acOptions, *this, aBindings)
     , m_mapper(m_lua.AsRef(), m_sandbox)
-    , m_store(m_sandbox, aPaths, aBindings)
+    , m_store(m_sandbox, acPaths, aBindings)
     , m_override(this)
-    , m_paths(aPaths)
+    , m_paths(acPaths)
     , m_d3d12(aD3D12)
 {
-    CreateLogger(aPaths.CETRoot() / "scripting.log", "scripting");
-    CreateLogger(aPaths.CETRoot() / "gamelog.log", "gamelog");
+    CreateLogger(acPaths.CETRoot() / "scripting.log", "scripting");
+    CreateLogger(acPaths.CETRoot() / "gamelog.log", "gamelog");
 }
 
 void Scripting::Initialize()
