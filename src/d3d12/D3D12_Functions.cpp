@@ -5,8 +5,8 @@
 #include "Utils.h"
 
 #include <CET.h>
-#include <imgui_impl/dx12.h>
-#include <imgui_impl/win32.h>
+#include <imgui/imgui_impl_dx12.h>
+#include <imgui/imgui_impl_win32.h>
 #include <window/window.h>
 
 bool D3D12::ResetState(const bool acClearDownlevelBackbuffers, const bool acDestroyContext)
@@ -272,16 +272,24 @@ void D3D12::ReloadFonts()
 {
     std::lock_guard _(m_imguiLock);
 
-    // TODO - scale also by DPI
+    const auto& fontSettings = m_options.Font;
+
     const auto [resx, resy] = m_outSize;
-    const auto scaleFromReference = std::min(static_cast<float>(resx) / 1920.0f, static_cast<float>(resy) / 1080.0f);
+
+    const auto dpiScale = ImGui_ImplWin32_GetDpiScaleForHwnd(m_window.GetWindow());
+    const auto resolutionScaleFromReference = std::min(static_cast<float>(resx) / 1920.0f, static_cast<float>(resy) / 1080.0f);
+
+    const auto fontSize = std::floorf(fontSettings.BaseSize * dpiScale * resolutionScaleFromReference);
+    const auto fontScaleFromReference = fontSize / 18.0f;
+
+    ImGui::GetStyle() = m_styleReference;
+    ImGui::GetStyle().ScaleAllSizes(fontScaleFromReference);
 
     auto& io = ImGui::GetIO();
     io.Fonts->Clear();
 
     ImFontConfig config;
-    const auto& fontSettings = m_options.Font;
-    config.SizePixels = std::floorf(fontSettings.BaseSize * scaleFromReference);
+    config.SizePixels = fontSize;
     config.OversampleH = fontSettings.OversampleHorizontal;
     config.OversampleV = fontSettings.OversampleVertical;
     if (config.OversampleH == 1 && config.OversampleV == 1)
@@ -408,15 +416,19 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
 {
     std::lock_guard _(m_imguiLock);
 
-    // TODO - scale also by DPI
-    const auto [resx, resy] = m_outSize;
-    const auto scaleFromReference = std::min(static_cast<float>(resx) / 1920.0f, static_cast<float>(resy) / 1080.0f);
-
     if (ImGui::GetCurrentContext() == nullptr)
     {
         // do this once, do not repeat context creation!
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
+
+        auto& io = ImGui::GetIO();
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
+        //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
+        //io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
+        //io.ConfigViewportsNoAutoMerge = true;
+        //io.ConfigViewportsNoTaskBarIcon = true;
 
         // TODO - make this configurable eventually and overridable by mods for themselves easily
         // setup CET default style
@@ -431,14 +443,13 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         m_styleReference.TabRounding = 6.0f;
     }
 
-    ImGui::GetStyle() = m_styleReference;
-    ImGui::GetStyle().ScaleAllSizes(scaleFromReference);
-
     if (!ImGui_ImplWin32_Init(m_window.GetWindow()))
     {
         Log::Error("D3D12::InitializeImGui() - ImGui_ImplWin32_Init call failed!");
         return false;
     }
+
+    ImGui_ImplWin32_EnableDpiAwareness();
 
     if (!ImGui_ImplDX12_Init(m_pd3d12Device.Get(), static_cast<int>(aBuffersCounts),
         DXGI_FORMAT_R8G8B8A8_UNORM, m_pd3dSrvDescHeap.Get(),
@@ -452,13 +463,14 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
 
     ReloadFonts();
 
-    if (!ImGui_ImplDX12_CreateDeviceObjects(m_pCommandQueue.Get()))
+    if (!ImGui_ImplDX12_CreateDeviceObjects())
     {
         Log::Error("D3D12::InitializeImGui() - ImGui_ImplDX12_CreateDeviceObjects call failed!");
         ImGui_ImplDX12_Shutdown();
         ImGui_ImplWin32_Shutdown();
         return false;
     }
+
 
     return true;
 }
@@ -470,8 +482,13 @@ void D3D12::PrepareUpdate()
 
     std::lock_guard _(m_imguiLock);
 
-    ImGui_ImplWin32_NewFrame(m_outSize);
+    ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
+
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, {0.0f, 0.0f, 0.0f, 0.0f});
+    ImGui::PushStyleColor(ImGuiCol_DockingEmptyBg, {0.0f, 0.0f, 0.0f, 0.0f});
+    ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+    ImGui::PopStyleColor(2);
 
     CET::Get().GetOverlay().Update();
 
@@ -502,7 +519,7 @@ void D3D12::Update()
     // swap staging ImGui buffer with render ImGui buffer
     {
         std::lock_guard _(m_imguiLock);
-        ImGui_ImplDX12_NewFrame(m_pCommandQueue.Get());
+        ImGui_ImplDX12_NewFrame();
         if (m_imguiDrawDataBuffers[1].Valid)
         {
             std::swap(m_imguiDrawDataBuffers[0], m_imguiDrawDataBuffers[1]);
