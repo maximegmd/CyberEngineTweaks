@@ -3,9 +3,11 @@
 #include "D3D12.h"
 
 #include <CET.h>
-#include <imgui_impl/dx12.h>
-#include <imgui_impl/win32.h>
+#include <imgui/imgui_impl_dx12.h>
+#include <imgui/imgui_impl_win32.h>
 #include <scripting/GameHooks.h>
+
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 void D3D12::SetTrapInputInImGui(const bool acEnabled)
 {

@@ -3,8 +3,8 @@
 #include "D3D12.h"
 
 #include <CET.h>
-#include <imgui_impl/dx12.h>
-#include <imgui_impl/win32.h>
+#include <imgui/imgui_impl_dx12.h>
+#include <imgui/imgui_impl_win32.h>
 #include <Utils.h>
 #include <window/window.h>
 
@@ -136,7 +136,7 @@ void D3D12::ReloadFonts()
 
     const auto& cFontSettings = m_options.Font;
 
-    const auto cDPIScale = 1.0f; // TODO - will be replaced in another PR
+    const auto cDPIScale = ImGui_ImplWin32_GetDpiScaleForHwnd(m_window.GetWindow());
     const auto cResolution = GetResolution();
     const auto cResolutionScaleFromReference = std::min(cResolution.x / 1920.0f, cResolution.y / 1080.0f);
 
@@ -283,7 +283,7 @@ void D3D12::ReloadFonts()
     if (cpCommandQueue == nullptr)
         return;
 
-    if (!ImGui_ImplDX12_CreateDeviceObjects(cpCommandQueue.Get()))
+    if (!ImGui_ImplDX12_CreateDeviceObjects())
         Log::Error("D3D12::InitializeImGui() - ImGui_ImplDX12_CreateDeviceObjects call failed!");
 }
 
@@ -464,7 +464,7 @@ void D3D12::Update(uint32_t aSwapChainDataId)
     cFrameContext.CommandList->SetDescriptorHeaps(1, heaps);
     cFrameContext.CommandList->OMSetRenderTargets(1, &cpRenderTargetView, FALSE, nullptr);
 
-    ImGui_ImplDX12_NewFrame(cpCommandQueue.Get());
+    ImGui_ImplDX12_NewFrame();
     ImGui_ImplDX12_RenderDrawData(&m_imguiDrawDataBuffers[0], cFrameContext.CommandList.Get());
 
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
