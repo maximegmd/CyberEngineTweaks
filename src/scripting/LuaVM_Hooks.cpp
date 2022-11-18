@@ -306,37 +306,12 @@ void LuaVM::HookTDBIDToStringDEBUG(RED4ext::IScriptable*, RED4ext::CStackFrame* 
     }
 }
 
-uintptr_t LuaVM::HookSetLoadingState(uintptr_t aThis, int aState)
-{
-    static std::once_flag s_initBarrier;
-
-    if (aState == 2)
-    {
-        std::call_once(s_initBarrier, []
-        {
-            s_vm->PostInitializeMods();
-        });
-    }
-
-    return s_vm->m_realSetLoadingState(aThis, aState);
-}
-
 bool LuaVM::HookTranslateBytecode(uintptr_t aBinder, uintptr_t aData)
 {
     const auto ret = s_vm->m_realTranslateBytecode(aBinder, aData);
 
     if (ret)
         s_vm->PostInitializeScripting();
-
-    return ret;
-}
-
-int64_t LuaVM::HookPlayerSpawned(int64_t a1, int64_t a2, int64_t a3, int64_t* a4)
-{
-    const auto ret = s_vm->m_realPlayerSpawned(a1, a2, a3, a4);
-
-    if (!s_vm->m_initialized)
-        s_vm->PostInitializeMods();
 
     return ret;
 }
@@ -348,6 +323,14 @@ uint64_t LuaVM::HookTweakDBLoad(uintptr_t aThis, uintptr_t aParam)
     s_vm->PostInitializeTweakDB();
 
     return ret;
+}
+
+void LuaVM::HookInitializeGame(uintptr_t a1, uintptr_t a2)
+{
+    s_vm->m_realInitializeGame(a1, a2);
+
+    if (!s_vm->m_initialized)
+        s_vm->PostInitializeMods();
 }
 
 void LuaVM::Hook()
@@ -445,17 +428,17 @@ void LuaVM::Hook()
     }
 
     {
-        const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::PlayerSystem_OnPlayerSpawned);
+        const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CJob_InitializeGame);
         uint8_t* pLocation = func.GetAddr();
 
         if (pLocation)
         {
-            if (MH_CreateHook(pLocation, reinterpret_cast<LPVOID>(HookPlayerSpawned), reinterpret_cast<void**>(&m_realPlayerSpawned)) != MH_OK ||
+            if (MH_CreateHook(pLocation, reinterpret_cast<LPVOID>(HookInitializeGame), reinterpret_cast<void**>(&m_realInitializeGame)) != MH_OK ||
                 MH_EnableHook(pLocation) != MH_OK)
-                Log::Error("Could not hook PlayerSystem::OnPlayerSpawned function!");
+                Log::Error("Could not hook GameSession::Initialize function!");
             else
             {
-                Log::Info("PlayerSystem::OnPlayerSpawned function hook complete!");
+                Log::Info("GameSession::Initialize function hook complete!");
             }
         }
     }

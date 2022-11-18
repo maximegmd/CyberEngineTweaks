@@ -9,10 +9,9 @@ struct UnknownString;
 
 using TSetMousePosition = BOOL(void*, HWND, long, long);
 using TTDBIDCtorDerive = TDBID*(const TDBID*, TDBID*, const char*);
-using TSetLoadingState = uintptr_t(uintptr_t, int);
 using TTweakDBLoad = uint64_t(uintptr_t, uintptr_t);
 using TTranslateBytecode = bool(uintptr_t, uintptr_t);
-using TPlayerSpawned = int64_t(int64_t, int64_t, int64_t, int64_t*);
+using TInitializeGame = void(uintptr_t, uintptr_t);
 
 struct TDBIDLookupEntry
 {
@@ -67,10 +66,9 @@ protected:
     static void HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*, void*);
     static void HookTDBIDToStringDEBUG(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void* apResult, void*);
     static TDBID* HookTDBIDCtorDerive(TDBID* apBase, TDBID* apThis, const char* acpName);
-    static uintptr_t HookSetLoadingState(uintptr_t aThis, int aState);
     static uint64_t HookTweakDBLoad(uintptr_t aThis, uintptr_t aParam);
     static bool HookTranslateBytecode(uintptr_t aBinder, uintptr_t aData);
-    static int64_t HookPlayerSpawned(int64_t a1, int64_t a2, int64_t a3, int64_t* a4);
+    static void HookInitializeGame(uintptr_t a1, uintptr_t a2);
 
 private:
 
@@ -83,10 +81,9 @@ private:
     RED4ext::OpcodeHandlers::Handler_t m_realLogChannel{nullptr};
     RED4ext::OpcodeHandlers::Handler_t m_realTDBIDToStringDEBUG{nullptr};
     TTDBIDCtorDerive* m_realTDBIDCtorDerive{ nullptr };
-    TSetLoadingState* m_realSetLoadingState{ nullptr };
     TTweakDBLoad* m_realTweakDBLoad{ nullptr };
     TTranslateBytecode* m_realTranslateBytecode{ nullptr };
-    TPlayerSpawned* m_realPlayerSpawned{ nullptr };
+    TInitializeGame* m_realInitializeGame{ nullptr };
 
     Scripting m_scripting;
 

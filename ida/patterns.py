@@ -87,8 +87,11 @@ def get_groups() -> List[Group]:
         Group(name='CShutdownState', functions=[
             Item(name='OnTick', pattern='48 89 6C 24 18 56 48 83 EC 30 48 8B 0D ? ? ? ?', expected=1)
         ]),
-        Group(name='PlayerSystem', functions=[
-            Item(name='OnPlayerSpawned', pattern='48 8B C4 4C 89 48 20 55 56 57 48 8B EC 48 81 EC 80 00 00 00', expected=1)
+        Group(name='GameSession', functions=[
+            Item(name='Initialize', pattern='48 89 5C 24 10 55 56 57 41 54 41 55 41 56 41 57 48 8D 6C 24 90 48 81 EC 70 01 00 00 4C 8B F2 4C 8B F9 49 8B D0 48 8D 4D 88', expected=1)
         ]),
+        Group(name='CJob', functions=[
+            Item(name='InitializeGame', pattern='48 89 5C 24 10 48 89 74 24 18 48 89 7C 24 20 41 56 48 83 EC 20 4C 8B F1 0F B6 4A 32 E8 ? ? ? ? 49 8B 06 49 8B 7E 08 48 8B 58 10', expected=1)
+        ])
     ]
 
