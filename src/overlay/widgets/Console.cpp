@@ -6,7 +6,7 @@
 #include <Utils.h>
 
 Console::Console(Options& aOptions, PersistentState& aPersistentState, LuaVM& aVm)
-    : Widget("Console", "scripting")
+    : Widget("Console")
     , m_options(aOptions)
     , m_persistentState(aPersistentState)
     , m_vm(aVm)

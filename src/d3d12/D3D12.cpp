@@ -1,8 +1,8 @@
 #include <stdafx.h>
 
 #include "D3D12.h"
-#include "CET.h"
 
+#include <CET.h>
 #include <imgui_impl/dx12.h>
 #include <imgui_impl/win32.h>
 #include <scripting/GameHooks.h>
@@ -28,16 +28,17 @@ LRESULT D3D12::OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam)
 {
     auto& d3d12 = CET::Get().GetD3D12();
 
-    if (!d3d12.IsInitialized())
-        return 0;
-
-    if (const auto res = ImGui_ImplWin32_WndProcHandler(ahWnd, auMsg, awParam, alParam))
-        return res;
-
-    if (d3d12.m_delayedTrapInput)
     {
-        d3d12.SetTrapInputInImGui(m_delayedTrapInputState);
-        d3d12.m_delayedTrapInput = false;
+        std::lock_guard stateGameLock(d3d12.m_stateGameMutex);
+
+        if (const auto res = ImGui_ImplWin32_WndProcHandler(ahWnd, auMsg, awParam, alParam))
+            return res;
+
+        if (d3d12.m_delayedTrapInput)
+        {
+            d3d12.SetTrapInputInImGui(m_delayedTrapInputState);
+            d3d12.m_delayedTrapInput = false;
+        }
     }
 
     if (d3d12.m_trapInputInImGui) // TODO: look into io.WantCaptureMouse and io.WantCaptureKeyboard
@@ -65,12 +66,12 @@ D3D12::D3D12(Window& aWindow, Paths& aPaths, Options& aOptions)
     // add repeated task which prepares next ImGui frame for update
     GameMainThread::Get().AddGenericTask([this]{ PrepareUpdate(); return false; });
 
-    GameMainThread::Get().AddShutdownTask([this]{ ResetState(true); return true; });
+    GameMainThread::Get().AddShutdownTask([this]{ Shutdown(); return true; });
 }
 
 D3D12::~D3D12()
 {
-    assert(!m_initialized);
+    assert(!m_initialized && m_shutdown);
     if (m_initialized)
-        ResetState(true);
+        Shutdown();
 }

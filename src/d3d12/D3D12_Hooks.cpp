@@ -1,67 +1,74 @@
-#include "CET.h"
-
 #include <stdafx.h>
 
 #include "D3D12.h"
-#include "reverse/Addresses.h"
-#include "reverse/RenderContext.h"
+
+#include <CET.h>
+#include <reverse/Addresses.h>
+#include <reverse/RenderContext.h>
 
 void D3D12::CRenderNode_Present_InternalPresent(uint32_t* apSwapChainDataId, uint8_t a2, uint32_t a3)
 {
+    // apSwapChainDataId is never expected to be nullptr or invalid id!
+    assert(apSwapChainDataId && *apSwapChainDataId);
+
     auto& d3d12 = CET::Get().GetD3D12();
 
-    // D3D12 should always be initialized before getting here from CRenderGlobal_Resize hook
-    assert(d3d12.m_initialized);
-    if (!d3d12.m_initialized)
-        d3d12.Initialize(*apSwapChainDataId);
+    {
+        std::lock_guard statePresentLock(d3d12.m_statePresentMutex);
 
-    // something really wrong is going on - dont update!
-    if (!d3d12.m_initialized)
-        return;
+        if (!d3d12.m_shutdown)
+        {
+            if (!d3d12.m_initialized)
+                d3d12.Initialize(*apSwapChainDataId);
 
-    d3d12.Update();
+            d3d12.Update(*apSwapChainDataId);
+        }
+    }
 
     d3d12.m_realInternalPresent(apSwapChainDataId, a2, a3);
 }
 
 void D3D12::CRenderGlobal_Resize(uint32_t aWidth, uint32_t aHeight, uint32_t a3, uint8_t a4, uint32_t* apSwapChainDataId)
 {
+    // apSwapChainDataId is never expected to be nullptr or invalid id!
+    assert(apSwapChainDataId && *apSwapChainDataId);
+
     auto& d3d12 = CET::Get().GetD3D12();
 
-    auto* renderContext = RenderContext::GetInstance();
-    assert(renderContext);
-    if (!renderContext)
-        return d3d12.m_realInternalResize(aWidth, aHeight, a3, a4, apSwapChainDataId);
-
-    if (*apSwapChainDataId == 0 || (d3d12.m_initialized && d3d12.m_swapChainDataId != *apSwapChainDataId))
-        return d3d12.m_realInternalResize(aWidth, aHeight, a3, a4, apSwapChainDataId);
-
-    // save original back buffer resource pointers, they will change after real resize here
-    auto& pSwapChainBackBuffers = renderContext->pSwapChainData[*apSwapChainDataId - 1].backBuffers;
-    ID3D12Resource* pOriginalBackBuffers[SwapChainData_BackBufferCount];
-    for (size_t i = 0; i < SwapChainData_BackBufferCount; ++i)
-        pOriginalBackBuffers[i] = pSwapChainBackBuffers[i].Get();
-
-    // resize back buffers if they need it
     d3d12.m_realInternalResize(aWidth, aHeight, a3, a4, apSwapChainDataId);
 
-    // check if back buffers changed
-    auto backBuffersChanged = false;
-    for (size_t i = 0; i < SwapChainData_BackBufferCount; ++i)
-        backBuffersChanged |= pOriginalBackBuffers[i] != pSwapChainBackBuffers[i].Get();
+    std::lock_guard statePresentLock(d3d12.m_statePresentMutex);
 
-    // return if back buffers did not change (may happen)
-    if (!backBuffersChanged)
+    if (!d3d12.m_initialized)
         return;
 
-    if (d3d12.m_initialized)
-    {
-        Log::Info("CRenderGlobal::Resize() called for our swapchain and backbuffers resized, reinitializing D3D12 resources.");
+    if (d3d12.m_swapChainDataId != *apSwapChainDataId)
+        return;
 
-        d3d12.ResetState();
+    // we need valid render context
+    auto* pRenderContext = RenderContext::GetInstance();
+    if (pRenderContext == nullptr)
+        return;
+
+    // if any back buffer is nullptr, don't continue initialization
+    auto swapChainData = pRenderContext->pSwapChainData[*apSwapChainDataId - 1];
+    for (auto& pBackBuffer : swapChainData.backBuffers)
+    {
+        if (pBackBuffer == nullptr)
+            return;
     }
 
-    d3d12.Initialize(*apSwapChainDataId);
+    auto backBufferDesc = swapChainData.backBuffers[0]->GetDesc();
+
+    std::lock_guard stateGameLock(d3d12.m_stateGameMutex);
+
+    d3d12.m_resolution = ImVec2(static_cast<float>(backBufferDesc.Width), static_cast<float>(backBufferDesc.Height));
+
+    std::lock_guard imguiLock(d3d12.m_imguiMutex);
+
+    ImGui::GetIO().DisplaySize = d3d12.GetResolution();
+
+    d3d12.ReloadFonts();
 }
 
 std::tuple<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> D3D12::CreateTextureDescriptor()
@@ -104,4 +111,3 @@ void D3D12::Hook()
     else
         Log::Info("CRenderGlobal_Resize function hook complete!");
 }
-

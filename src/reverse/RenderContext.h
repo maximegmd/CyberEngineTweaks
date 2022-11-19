@@ -7,9 +7,9 @@ struct RenderContext
     struct SwapChainData
     {
         Microsoft::WRL::ComPtr<IDXGISwapChain4> pSwapChain;
-        uint8_t pad8[0x24];
+        uint8_t unk8[0x24];
         uint32_t backBufferIndex;
-        uint8_t pad30[0x8];
+        uint8_t unk30[0x8];
         HWND pWindow;
         void* unk40; // some pointer, looks to be ComPtr
         uint64_t bufferFrameNum[SwapChainData_BackBufferCount]; // seems to correspond to number of last rendered frame to each buffer
@@ -17,7 +17,7 @@ struct RenderContext
         Microsoft::WRL::ComPtr<ID3D12Resource> backBuffers[SwapChainData_BackBufferCount];
         D3D12_CPU_DESCRIPTOR_HANDLE renderTargetViews[SwapChainData_BackBufferCount];
         void* unk98; // some pointer
-        uint8_t padA0[0x10];
+        uint8_t unkA0[0x10];
     };
 
     RenderContext() = delete;

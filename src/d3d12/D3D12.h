@@ -30,12 +30,13 @@ protected:
 
     void Hook();
 
-    bool ResetState(const bool acDestroyContext = false);
-    bool Initialize(uint32_t aSwapChainDataId);
+    void Shutdown();
+
+    void Initialize(uint32_t aSwapChainDataId);
     bool InitializeImGui();
 
     void PrepareUpdate();
-    void Update();
+    void Update(uint32_t aSwapChainDataId);
 
     static void CRenderNode_Present_InternalPresent(uint32_t* aSwapChainDataId, uint8_t a2, uint32_t a3);
     static void CRenderGlobal_Resize(uint32_t aWidth, uint32_t aHeight, uint32_t a3, uint8_t a4, uint32_t* aSwapChainDataId);
@@ -61,7 +62,11 @@ private:
 
     uint32_t m_swapChainDataId;
 
-    std::recursive_mutex m_imguiLock;
+    std::recursive_mutex m_statePresentMutex;
+    std::recursive_mutex m_stateGameMutex;
+
+    std::recursive_mutex m_imguiMutex;
+
     std::array<ImDrawData, 3> m_imguiDrawDataBuffers;
     ImGuiStyle m_imguiStyleReference{ };
 
@@ -72,4 +77,5 @@ private:
     std::atomic<ImVec2> m_resolution;
 
     std::atomic_bool m_initialized{ false };
+    std::atomic_bool m_shutdown{ false };
 };

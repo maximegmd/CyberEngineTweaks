@@ -194,7 +194,8 @@ void LuaVM::PostInitializeTweakDB()
 
 void LuaVM::PostInitializeMods()
 {
-    assert(!m_initialized);
+    if (m_initialized)
+        return;
 
     m_scripting.PostInitializeMods();
 

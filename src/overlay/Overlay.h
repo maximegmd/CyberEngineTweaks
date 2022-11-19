@@ -46,7 +46,7 @@ private:
 
     std::atomic_bool m_enabled{ false };
     std::atomic_bool m_toggled{ false };
-    bool m_initialized{ false };
+    std::atomic_bool m_initialized{ false };
 
     Options& m_options;
     PersistentState& m_persistentState;

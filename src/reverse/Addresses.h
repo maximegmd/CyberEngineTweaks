@@ -29,10 +29,6 @@ constexpr uintptr_t CGameApplication_Run = 0x140A712D0 - ImageBase; // 48 89 5C 
 constexpr uintptr_t CInitializationState_OnTick = 0x140A72EA0 - ImageBase; // 48 83 EC 28 48 8B 05 ? ? ? ? 4C 8B C2 8B 88 F8 00 00 00 85 C9 74 3D 83 E9 02 74 25 83 E9 01, expected: 1, index: 0
 #pragma endregion
 
-#pragma region CJob
-constexpr uintptr_t CJob_InitializeGame = 0x1413A0AC0 - ImageBase; // 48 89 5C 24 10 48 89 74 24 18 48 89 7C 24 20 41 56 48 83 EC 20 4C 8B F1 0F B6 4A 32 E8 ? ? ? ? 49 8B 06 49 8B 7E 08 48 8B 58 10, expected: 1, index: 0
-#pragma endregion
-
 #pragma region CPatches
 constexpr uintptr_t CPatches_BoundaryTeleport = 0x141B2BE80 - ImageBase; // 48 8B C4 55 53 41 54 48  8D A8 ? ? ? ? 48 81 EC ? ? ? ? 48 89 70 10 48 8D 59 48, expected: 1, index: 0
 constexpr uintptr_t CPatches_IntroMovie = 0x1401FF080 - ImageBase; // 48 89 5C 24 08 57 48 83 EC 20 48 8B 44 24 50 48 8B D9 48 89 41 08, expected: 1, index: 0
@@ -86,9 +82,5 @@ constexpr uintptr_t gameIGameSystem_UnInitialize = 0x142DC1350 - ImageBase; // 4
 constexpr uintptr_t gameIGameSystem_Spawn = 0x142DC38E0 - ImageBase; // 48 89 5C 24 18 55 56 41 54 41 56 41 57 48 8D 6C 24 90 48 81 EC 70 01 00 00 48 83 79 50 00 49 8B, expected: 1, index: 0
 constexpr uintptr_t gameIGameSystem_Despawn = 0x142DC1380 - ImageBase; // 48 89 5C 24 10 48 89 6C  24 18 56 57 41 54 41 56 41 57 48 83 EC 50 4C 8B F9 0F 57 C0 48 83 C1 41, expected: 1, index: 0
 constexpr uintptr_t gameIGameSystem_SpawnCallback = 0x1410F1E70 - ImageBase; // 48 89 5C 24 18 48 89 6C  24 20 56 57 41 56 48 83 EC 70 48 8B F1 48 8B EA  48 83 C1 48 E8, expected: 1, index: 0
-#pragma endregion
-
-#pragma region GameSession
-constexpr uintptr_t GameSession_Initialize = 0x14139F9E0 - ImageBase; // 48 89 5C 24 10 55 56 57 41 54 41 55 41 56 41 57 48 8D 6C 24 90 48 81 EC 70 01 00 00 4C 8B F2 4C 8B F9 49 8B D0 48 8D 4D 88, expected: 1, index: 0
 #pragma endregion
 } // namespace CyberEngineTweaks::Addresses
