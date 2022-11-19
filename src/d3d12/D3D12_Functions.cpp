@@ -443,15 +443,20 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         m_styleReference.TabRounding = 6.0f;
     }
 
+    // set display size each init to have correct render resolution
+    ImGui::GetIO().DisplaySize = ImVec2(
+        static_cast<float>(m_outSize.cx),
+        static_cast<float>(m_outSize.cy)
+    );
+
     if (!ImGui_ImplWin32_Init(m_window.GetWindow()))
     {
         Log::Error("D3D12::InitializeImGui() - ImGui_ImplWin32_Init call failed!");
         return false;
     }
 
-    ImGui_ImplWin32_EnableDpiAwareness();
-
-    if (!ImGui_ImplDX12_Init(m_pd3d12Device.Get(), static_cast<int>(aBuffersCounts),
+    if (!ImGui_ImplDX12_Init(m_pd3d12Device.Get(),
+        m_pCommandQueue->GetDesc().NodeMask, static_cast<uint32_t>(aBuffersCounts),
         DXGI_FORMAT_R8G8B8A8_UNORM, m_pd3dSrvDescHeap.Get(),
         m_pd3dSrvDescHeap->GetCPUDescriptorHandleForHeapStart(),
         m_pd3dSrvDescHeap->GetGPUDescriptorHandleForHeapStart()))
@@ -470,7 +475,6 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         ImGui_ImplWin32_Shutdown();
         return false;
     }
-
 
     return true;
 }
@@ -519,7 +523,9 @@ void D3D12::Update()
     // swap staging ImGui buffer with render ImGui buffer
     {
         std::lock_guard _(m_imguiLock);
+
         ImGui_ImplDX12_NewFrame();
+
         if (m_imguiDrawDataBuffers[1].Valid)
         {
             std::swap(m_imguiDrawDataBuffers[0], m_imguiDrawDataBuffers[1]);
