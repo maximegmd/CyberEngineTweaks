@@ -13,6 +13,11 @@
 // If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
 // Read online: https://github.com/ocornut/imgui/tree/master/docs
 
+#include <stdafx.h>
+
+#include <CET.h>
+#include <Utils.h>
+
 #include "imgui.h"
 #include "imgui_impl_win32.h"
 #ifndef WIN32_LEAN_AND_MEAN
@@ -96,6 +101,7 @@ struct ImGui_ImplWin32_Data
     INT64                       TicksPerSecond;
     ImGuiMouseCursor            LastMouseCursor;
     bool                        WantUpdateMonitors;
+    std::string                 Layout;
 
 #ifndef IMGUI_IMPL_WIN32_DISABLE_GAMEPAD
     bool                        HasGamepad;
@@ -143,6 +149,9 @@ bool    ImGui_ImplWin32_Init(void* hwnd)
     bd->TicksPerSecond = perf_frequency;
     bd->Time = perf_counter;
     bd->LastMouseCursor = ImGuiMouseCursor_COUNT;
+
+    bd->Layout = UTF16ToUTF8((CET::Get().GetPaths().CETRoot() / L"layout.ini").native());
+    io.IniFilename = bd->Layout.c_str();
 
     // Our mouse update function expect PlatformHandle to be filled for the main viewport
     ImGuiViewport* main_viewport = ImGui::GetMainViewport();
@@ -278,11 +287,17 @@ static void ImGui_ImplWin32_UpdateMouseData()
     const bool is_app_focused = (focused_window && (focused_window == bd->hWnd || ::IsChild(focused_window, bd->hWnd) || ImGui::FindViewportByPlatformHandle((void*)focused_window)));
     if (is_app_focused)
     {
+        // scale, just to make sure coords are correct (fixes issues with fullscreen and DSR)
+        RECT client_rect;
+        ::GetClientRect(focused_window, &client_rect);
+        auto x_scale = io.DisplaySize.x / (client_rect.right - client_rect.left);
+        auto y_scale = io.DisplaySize.y / (client_rect.bottom - client_rect.top);
+
         // (Optional) Set OS mouse position from Dear ImGui if requested (rarely used, only when ImGuiConfigFlags_NavEnableSetMousePos is enabled by user)
         // When multi-viewports are enabled, all Dear ImGui positions are same as OS positions.
         if (io.WantSetMousePos)
         {
-            POINT pos = { (int)io.MousePos.x, (int)io.MousePos.y };
+            POINT pos = { (int)(io.MousePos.x / x_scale), (int)(io.MousePos.y / y_scale) };
             if ((io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) == 0)
                 ::ClientToScreen(focused_window, &pos);
             ::SetCursorPos(pos.x, pos.y);
@@ -297,8 +312,8 @@ static void ImGui_ImplWin32_UpdateMouseData()
             // (This is the position you can get with ::GetCursorPos() or WM_MOUSEMOVE + ::ClientToScreen(). In theory adding viewport->Pos to a client position would also be the same.)
             POINT mouse_pos = mouse_screen_pos;
             if (!(io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable))
-                ::ScreenToClient(bd->hWnd, &mouse_pos);
-            io.AddMousePosEvent((float)mouse_pos.x, (float)mouse_pos.y);
+                ::ScreenToClient(focused_window, &mouse_pos);
+            io.AddMousePosEvent(x_scale * mouse_pos.x, y_scale * mouse_pos.y);
         }
     }
 
@@ -408,10 +423,6 @@ void    ImGui_ImplWin32_NewFrame()
     ImGui_ImplWin32_Data* bd = ImGui_ImplWin32_GetBackendData();
     IM_ASSERT(bd != nullptr && "Did you call ImGui_ImplWin32_Init()?");
 
-    // Setup display size (every frame to accommodate for window resizing)
-    RECT rect = { 0, 0, 0, 0 };
-    ::GetClientRect(bd->hWnd, &rect);
-    io.DisplaySize = ImVec2((float)(rect.right - rect.left), (float)(rect.bottom - rect.top));
     if (bd->WantUpdateMonitors)
         ImGui_ImplWin32_UpdateMonitors();
 
@@ -595,10 +606,17 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARA
             ::TrackMouseEvent(&tme);
             bd->MouseTracked = true;
         }
+
+        // scale, just to make sure coords are correct (fixes issues with fullscreen and DSR)
+        RECT client_rect;
+        ::GetClientRect(hwnd, &client_rect);
+        auto x_scale = io.DisplaySize.x / (client_rect.right - client_rect.left);
+        auto y_scale = io.DisplaySize.y / (client_rect.bottom - client_rect.top);
+
         POINT mouse_pos = { (LONG)GET_X_LPARAM(lParam), (LONG)GET_Y_LPARAM(lParam) };
         if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
             ::ClientToScreen(hwnd, &mouse_pos);
-        io.AddMousePosEvent((float)mouse_pos.x, (float)mouse_pos.y);
+        io.AddMousePosEvent(x_scale * mouse_pos.x, y_scale * mouse_pos.y);
         break;
     }
     case WM_MOUSELEAVE:

@@ -146,6 +146,8 @@ void D3D12::ReloadFonts()
     ImGui::GetStyle() = m_imguiStyleReference;
     ImGui::GetStyle().ScaleAllSizes(cFontScaleFromReference);
 
+    ImGui_ImplDX12_InvalidateDeviceObjects();
+
     auto& io = ImGui::GetIO();
     io.Fonts->Clear();
 
@@ -272,17 +274,6 @@ void D3D12::ReloadFonts()
     else
         io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(cCustomFontPath.native()).c_str(), config.SizePixels, &config, cpGlyphRanges);
 
-
-    // we need valid render context
-    const auto* cpRenderContext = RenderContext::GetInstance();
-    if (cpRenderContext == nullptr)
-        return;
-
-    // we need to have valid command queue
-    const auto cpCommandQueue = cpRenderContext->pDirectCommandQueue;
-    if (cpCommandQueue == nullptr)
-        return;
-
     if (!ImGui_ImplDX12_CreateDeviceObjects())
         Log::Error("D3D12::InitializeImGui() - ImGui_ImplDX12_CreateDeviceObjects call failed!");
 }
@@ -314,6 +305,14 @@ bool D3D12::InitializeImGui()
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
 
+    auto& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
+    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
+    //io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
+    //io.ConfigViewportsNoAutoMerge = true;
+    //io.ConfigViewportsNoTaskBarIcon = true;
+
     // TODO - make this configurable eventually and overridable by mods for themselves easily
     // setup CET default style
     ImGui::StyleColorsDark(&m_imguiStyleReference);
@@ -326,7 +325,7 @@ bool D3D12::InitializeImGui()
     m_imguiStyleReference.GrabRounding = 12.0f;
     m_imguiStyleReference.TabRounding = 6.0f;
 
-    ImGui::GetIO().DisplaySize = GetResolution();
+    io.DisplaySize = GetResolution();
 
 	  if (!ImGui_ImplWin32_Init(m_window.GetWindow()))
 	  {
@@ -334,7 +333,8 @@ bool D3D12::InitializeImGui()
 	      return false;
 	  }
 
-	  if (!ImGui_ImplDX12_Init(cpDevice.Get(), SwapChainData_BackBufferCount,
+	  if (!ImGui_ImplDX12_Init(cpDevice.Get(), cpCommandQueue->GetDesc().NodeMask,
+          static_cast<uint32_t>(SwapChainData_BackBufferCount),
 	      DXGI_FORMAT_R8G8B8A8_UNORM, m_pd3dSrvDescHeap.Get(),
 	      m_pd3dSrvDescHeap->GetCPUDescriptorHandleForHeapStart(),
 	      m_pd3dSrvDescHeap->GetGPUDescriptorHandleForHeapStart()))
