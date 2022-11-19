@@ -120,7 +120,7 @@ void Scripting::Initialize()
     globals["GetDisplayResolution"] = [this]() -> std::tuple<float, float>
     {
         const auto resolution = m_d3d12.GetResolution();
-        return {static_cast<float>(resolution.cx), static_cast<float>(resolution.cy)};
+        return {resolution.x, resolution.y};
     };
 
     globals["ModArchiveExists"] = [this](const std::string& acArchiveName) -> bool

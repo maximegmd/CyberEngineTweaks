@@ -11,13 +11,13 @@
 
 bool D3D12::ResetState(const bool acDestroyContext)
 {
+    std::lock_guard _(m_imguiLock);
+
+    if (acDestroyContext && m_window.GetWindow())
+        m_window.Hook(nullptr);
+
     if (m_initialized)
     {
-        std::lock_guard _(m_imguiLock);
-
-        if (acDestroyContext)
-            m_window.Hook(nullptr);
-
         for (auto& drawData : m_imguiDrawDataBuffers)
         {
             for (auto i = 0; i < drawData.CmdListsCount; ++i)
@@ -29,16 +29,18 @@ bool D3D12::ResetState(const bool acDestroyContext)
 
         ImGui_ImplDX12_Shutdown();
         ImGui_ImplWin32_Shutdown();
-
-        if (acDestroyContext)
-            ImGui::DestroyContext();
     }
+
+    if (acDestroyContext && ImGui::GetCurrentContext())
+        ImGui::DestroyContext();
 
     for (auto& frameContext : m_frameContexts)
     {
         frameContext.CommandAllocator.Reset();
         frameContext.CommandList.Reset();
     }
+
+    m_resolution = ImVec2();
 
     m_pd3dSrvDescHeap.Reset();
 
@@ -52,20 +54,43 @@ bool D3D12::Initialize(uint32_t aSwapChainDataId)
     if (m_initialized)
         return true;
 
-    if (aSwapChainDataId == 0)
+    m_swapChainDataId = aSwapChainDataId;
+
+    // we need valid swap chain data ID (this must be set even on Win7)
+    if (m_swapChainDataId == 0)
         return false;
 
-    m_swapChainDataId = aSwapChainDataId;
+    // we need valid render context
     auto* pRenderContext = RenderContext::GetInstance();
-    auto device = pRenderContext->pDevice;
-    auto swapChainData = pRenderContext->pSwapChainData[aSwapChainDataId - 1];
-    auto window = swapChainData.window;
+    if (pRenderContext == nullptr)
+        return false;
+
+    // we need to have valid device
+    auto pDevice = pRenderContext->pDevice;
+    if (pDevice == nullptr)
+        return false;
+
+    // if any back buffer is nullptr, don't continue initialization
+    auto swapChainData = pRenderContext->pSwapChainData[m_swapChainDataId - 1];
+    for (auto& pBackBuffer : swapChainData.backBuffers)
+    {
+        if (pBackBuffer == nullptr)
+            return false;
+    }
+
+    auto backBufferDesc = swapChainData.backBuffers[0]->GetDesc();
+    m_resolution = ImVec2(static_cast<float>(backBufferDesc.Width), static_cast<float>(backBufferDesc.Height));
+
+    // we need valid window
+    auto pWindow = swapChainData.pWindow;
+    if (pWindow == nullptr)
+        return false;
 
     D3D12_DESCRIPTOR_HEAP_DESC srvdesc = {};
     srvdesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     srvdesc.NumDescriptors = SwapChainData_BackBufferCount;
     srvdesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-    if (FAILED(device->CreateDescriptorHeap(&srvdesc, IID_PPV_ARGS(&m_pd3dSrvDescHeap))))
+    if (FAILED(pDevice->CreateDescriptorHeap(&srvdesc, IID_PPV_ARGS(&m_pd3dSrvDescHeap))))
     {
         Log::Error("D3D12::Initialize() - failed to create SRV descriptor heap!");
         return ResetState();
@@ -73,13 +98,13 @@ bool D3D12::Initialize(uint32_t aSwapChainDataId)
 
     for (auto& frameContext : m_frameContexts)
     {
-        if (FAILED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&frameContext.CommandAllocator))))
+        if (FAILED(pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&frameContext.CommandAllocator))))
         {
             Log::Error("D3D12::Initialize() - failed to create command allocator!");
             return ResetState();
         }
 
-        if (FAILED(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, frameContext.CommandAllocator.Get(), nullptr, IID_PPV_ARGS(&frameContext.CommandList))) ||
+        if (FAILED(pDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, frameContext.CommandAllocator.Get(), nullptr, IID_PPV_ARGS(&frameContext.CommandList))) ||
             FAILED(frameContext.CommandList->Close()))
         {
             Log::Error("D3D12::Initialize() - failed to create command list!");
@@ -87,7 +112,7 @@ bool D3D12::Initialize(uint32_t aSwapChainDataId)
         }
     }
 
-    m_window.Hook(window);
+    m_window.Hook(pWindow);
 
     if (!InitializeImGui())
     {
@@ -109,15 +134,14 @@ void D3D12::ReloadFonts()
 
     const auto& fontSettings = m_options.Font;
 
-    const auto [resx, resy] = m_window.GetClientSize();
-
     const auto dpiScale = 1.0f; // TODO - will be replaced in another PR
-    const auto resolutionScaleFromReference = std::min(static_cast<float>(resx) / 1920.0f, static_cast<float>(resy) / 1080.0f);
+    const auto resolution = GetResolution();
+    const auto resolutionScaleFromReference = std::min(resolution.x / 1920.0f, resolution.y / 1080.0f);
 
     const auto fontSize = std::floorf(fontSettings.BaseSize * dpiScale * resolutionScaleFromReference);
     const auto fontScaleFromReference = fontSize / 18.0f;
 
-    ImGui::GetStyle() = m_styleReference;
+    ImGui::GetStyle() = m_imguiStyleReference;
     ImGui::GetStyle().ScaleAllSizes(fontScaleFromReference);
 
     auto& io = ImGui::GetIO();
@@ -249,12 +273,24 @@ void D3D12::ReloadFonts()
 
 bool D3D12::InitializeImGui()
 {
+    // we need valid swap chain data ID (this must be set even on Win7)
     if (m_swapChainDataId == 0)
         return false;
 
+    // we need valid render context
     auto* pRenderContext = RenderContext::GetInstance();
-    auto device = pRenderContext->pDevice;
-    auto commandQueue = pRenderContext->pDirectCommandQueue;
+    if (pRenderContext == nullptr)
+        return false;
+
+    // we need to have valid device
+    auto pDevice = pRenderContext->pDevice;
+    if (pDevice == nullptr)
+        return false;
+
+    // we need to have valid command queue
+    auto pCommandQueue = pRenderContext->pDirectCommandQueue;
+    if (pCommandQueue == nullptr)
+        return false;
 
     std::lock_guard _(m_imguiLock);
 
@@ -266,15 +302,15 @@ bool D3D12::InitializeImGui()
 
         // TODO - make this configurable eventually and overridable by mods for themselves easily
         // setup CET default style
-        ImGui::StyleColorsDark(&m_styleReference);
-        m_styleReference.WindowRounding = 6.0f;
-        m_styleReference.WindowTitleAlign.x = 0.5f;
-        m_styleReference.ChildRounding = 6.0f;
-        m_styleReference.PopupRounding = 6.0f;
-        m_styleReference.FrameRounding = 6.0f;
-        m_styleReference.ScrollbarRounding = 12.0f;
-        m_styleReference.GrabRounding = 12.0f;
-        m_styleReference.TabRounding = 6.0f;
+        ImGui::StyleColorsDark(&m_imguiStyleReference);
+        m_imguiStyleReference.WindowRounding = 6.0f;
+        m_imguiStyleReference.WindowTitleAlign.x = 0.5f;
+        m_imguiStyleReference.ChildRounding = 6.0f;
+        m_imguiStyleReference.PopupRounding = 6.0f;
+        m_imguiStyleReference.FrameRounding = 6.0f;
+        m_imguiStyleReference.ScrollbarRounding = 12.0f;
+        m_imguiStyleReference.GrabRounding = 12.0f;
+        m_imguiStyleReference.TabRounding = 6.0f;
     }
 
     if (!ImGui_ImplWin32_Init(m_window.GetWindow()))
@@ -283,7 +319,7 @@ bool D3D12::InitializeImGui()
         return false;
     }
 
-    if (!ImGui_ImplDX12_Init(device.Get(), SwapChainData_BackBufferCount,
+    if (!ImGui_ImplDX12_Init(pDevice.Get(), SwapChainData_BackBufferCount,
         DXGI_FORMAT_R8G8B8A8_UNORM, m_pd3dSrvDescHeap.Get(),
         m_pd3dSrvDescHeap->GetCPUDescriptorHandleForHeapStart(),
         m_pd3dSrvDescHeap->GetGPUDescriptorHandleForHeapStart()))
@@ -295,7 +331,7 @@ bool D3D12::InitializeImGui()
 
     ReloadFonts();
 
-    if (!ImGui_ImplDX12_CreateDeviceObjects(commandQueue.Get()))
+    if (!ImGui_ImplDX12_CreateDeviceObjects(pCommandQueue.Get()))
     {
         Log::Error("D3D12::InitializeImGui() - ImGui_ImplDX12_CreateDeviceObjects call failed!");
         ImGui_ImplDX12_Shutdown();
@@ -313,7 +349,11 @@ void D3D12::PrepareUpdate()
 
     std::lock_guard _(m_imguiLock);
 
-    ImGui_ImplWin32_NewFrame(m_window.GetClientSize());
+    const auto resolution = GetResolution();
+    ImGui_ImplWin32_NewFrame({
+        static_cast<LONG>(resolution.x),
+        static_cast<LONG>(resolution.y)
+    });
     ImGui::NewFrame();
 
     CET::Get().GetOverlay().Update();
@@ -345,18 +385,40 @@ void D3D12::Update()
     if (!m_initialized)
         return;
 
+    // we need valid swap chain data ID (this must be set even on Win7)
+    if (m_swapChainDataId == 0)
+        return;
+
+    // we need valid render context
     auto* pRenderContext = RenderContext::GetInstance();
-    auto& swapChainData = pRenderContext->pSwapChainData[m_swapChainDataId - 1];
+    if (pRenderContext == nullptr)
+        return;
+
+    // if any back buffer is nullptr, don't continue initialization
+    auto swapChainData = pRenderContext->pSwapChainData[m_swapChainDataId - 1];
+    for (auto& pBackBuffer : swapChainData.backBuffers)
+    {
+        if (pBackBuffer == nullptr)
+            return;
+    }
+
+    // we need to have valid command queue
+    auto pCommandQueue = pRenderContext->pDirectCommandQueue;
+    if (pCommandQueue == nullptr)
+        return;
+
     const auto backBufferIndex = swapChainData.backBufferIndex;
-    auto backBuffer = swapChainData.backBuffers[backBufferIndex];
+    auto pBackBuffer = swapChainData.backBuffers[backBufferIndex];
+    auto pRenderTargetView = swapChainData.renderTargetViews[backBufferIndex];
+
     auto& frameContext = m_frameContexts[backBufferIndex];
-    auto renderTargetView = swapChainData.renderTargetViews[backBufferIndex];
-    auto commandQueue = pRenderContext->pDirectCommandQueue;
 
     // swap staging ImGui buffer with render ImGui buffer
     {
         std::lock_guard _(m_imguiLock);
-        ImGui_ImplDX12_NewFrame(commandQueue.Get());
+
+        ImGui_ImplDX12_NewFrame(pCommandQueue.Get());
+
         if (m_imguiDrawDataBuffers[1].Valid)
         {
             std::swap(m_imguiDrawDataBuffers[0], m_imguiDrawDataBuffers[1]);
@@ -367,12 +429,17 @@ void D3D12::Update()
     if (!m_imguiDrawDataBuffers[0].Valid)
         return;
 
+    const auto resolution = GetResolution();
+    const auto drawDataResolution = m_imguiDrawDataBuffers[0].DisplaySize;
+    if (drawDataResolution.x != resolution.x || drawDataResolution.y != resolution.y)
+        return;
+
     frameContext.CommandAllocator->Reset();
 
     D3D12_RESOURCE_BARRIER barrier;
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    barrier.Transition.pResource = backBuffer.Get();
+    barrier.Transition.pResource = pBackBuffer.Get();
     barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
     barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
@@ -382,7 +449,7 @@ void D3D12::Update()
     frameContext.CommandList->Reset(frameContext.CommandAllocator.Get(), nullptr);
     frameContext.CommandList->ResourceBarrier(1, &barrier);
     frameContext.CommandList->SetDescriptorHeaps(1, heaps);
-    frameContext.CommandList->OMSetRenderTargets(1, &renderTargetView, FALSE, nullptr);
+    frameContext.CommandList->OMSetRenderTargets(1, &pRenderTargetView, FALSE, nullptr);
 
     ImGui_ImplDX12_RenderDrawData(&m_imguiDrawDataBuffers[0], frameContext.CommandList.Get());
 
@@ -392,6 +459,6 @@ void D3D12::Update()
     frameContext.CommandList->Close();
 
     ID3D12CommandList* commandLists[] = { frameContext.CommandList.Get() };
-    commandQueue->ExecuteCommandLists(1, commandLists);
+    pCommandQueue->ExecuteCommandLists(1, commandLists);
 }
 

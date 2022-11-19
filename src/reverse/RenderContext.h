@@ -10,7 +10,7 @@ struct RenderContext
         uint8_t pad8[0x24];
         uint32_t backBufferIndex;
         uint8_t pad30[0x8];
-        HWND window;
+        HWND pWindow;
         void* unk40; // some pointer, looks to be ComPtr
         uint64_t bufferFrameNum[SwapChainData_BackBufferCount]; // seems to correspond to number of last rendered frame to each buffer
         uint64_t currentFrameNum; // looks to be current frame number

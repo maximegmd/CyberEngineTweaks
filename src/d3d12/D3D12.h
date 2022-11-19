@@ -18,7 +18,7 @@ struct D3D12
     void DelayedSetTrapInputInImGui(const bool acEnabled);
     [[nodiscard]] bool IsTrapInputInImGui() const noexcept { return m_trapInputInImGui; }
     [[nodiscard]] bool IsInitialized() const noexcept { return m_initialized; }
-    [[nodiscard]] SIZE GetResolution() const noexcept { return m_window.GetClientSize(); }
+    [[nodiscard]] ImVec2 GetResolution() const noexcept { return m_resolution; }
 
     LRESULT OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam) const;
 
@@ -42,32 +42,34 @@ protected:
 
 private:
 
+    Paths& m_paths;
+    Window& m_window;
+    Options& m_options;
+
+    TCRenderNode_Present_InternalPresent* m_realInternalPresent{ nullptr };
+    TCRenderGlobal_Resize* m_realInternalResize{ nullptr };
+
+    Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_pd3dSrvDescHeap{ };
+
     struct FrameContext
     {
         Microsoft::WRL::ComPtr<ID3D12CommandAllocator> CommandAllocator;
         Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> CommandList;
     };
 
-    TCRenderNode_Present_InternalPresent* m_realInternalPresent{ nullptr };
-    TCRenderGlobal_Resize* m_realInternalResize{ nullptr };
-
-    std::atomic_bool m_initialized{ false };
-
-    Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_pd3dSrvDescHeap{ };
-
     std::array<FrameContext, SwapChainData_BackBufferCount> m_frameContexts;
 
     uint32_t m_swapChainDataId;
 
-    std::atomic_bool m_trapInputInImGui{ false };
-    ImGuiStyle m_styleReference{ };
-
-    Paths& m_paths;
-    Window& m_window;
-    Options& m_options;
-
     std::recursive_mutex m_imguiLock;
     std::array<ImDrawData, 3> m_imguiDrawDataBuffers;
+    ImGuiStyle m_imguiStyleReference{ };
+
     std::atomic_bool m_delayedTrapInput{ false };
     std::atomic_bool m_delayedTrapInputState{ false };
+    std::atomic_bool m_trapInputInImGui{ false };
+
+    std::atomic<ImVec2> m_resolution;
+
+    std::atomic_bool m_initialized{ false };
 };
