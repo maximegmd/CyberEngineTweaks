@@ -110,7 +110,18 @@ void Settings::OnUpdate()
 
 void Settings::Load()
 {
+    const auto previousFontSettings = m_options.Font;
+
     m_options.Load();
+
+    if (previousFontSettings != m_options.Font)
+    {
+        GameMainThread::Get().AddGenericTask([]{
+            CET::Get().GetD3D12().ReloadFonts();
+
+            return true;
+        });
+    }
 
     m_patches = m_options.Patches;
     m_developer = m_options.Developer;

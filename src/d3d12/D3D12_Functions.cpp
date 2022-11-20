@@ -405,12 +405,12 @@ void D3D12::Update(uint32_t aSwapChainDataId)
         return;
 
     // we need valid render context
-    auto* pRenderContext = RenderContext::GetInstance();
-    if (pRenderContext == nullptr)
+    const auto* cpRenderContext = RenderContext::GetInstance();
+    if (cpRenderContext == nullptr)
         return;
 
     // if any back buffer is nullptr, don't continue update
-    auto swapChainData = pRenderContext->pSwapChainData[aSwapChainDataId - 1];
+    auto swapChainData = cpRenderContext->pSwapChainData[aSwapChainDataId - 1];
     for (auto& pBackBuffer : swapChainData.backBuffers)
     {
         if (pBackBuffer == nullptr)
@@ -418,15 +418,15 @@ void D3D12::Update(uint32_t aSwapChainDataId)
     }
 
     // we need to have valid command queue
-    auto pCommandQueue = pRenderContext->pDirectCommandQueue;
-    if (pCommandQueue == nullptr)
+    const auto cpCommandQueue = cpRenderContext->pDirectCommandQueue;
+    if (cpCommandQueue == nullptr)
         return;
 
-    const auto backBufferIndex = swapChainData.backBufferIndex;
-    auto pBackBuffer = swapChainData.backBuffers[backBufferIndex];
-    auto pRenderTargetView = swapChainData.renderTargetViews[backBufferIndex];
+    const auto cBackBufferIndex = swapChainData.backBufferIndex;
+    const auto cpBackBuffer = swapChainData.backBuffers[cBackBufferIndex];
+    const auto cpRenderTargetView = swapChainData.renderTargetViews[cBackBufferIndex];
 
-    auto& frameContext = m_frameContexts[backBufferIndex];
+    const auto& cFrameContext = m_frameContexts[cBackBufferIndex];
 
     // swap staging ImGui buffer with render ImGui buffer
     {
@@ -442,37 +442,36 @@ void D3D12::Update(uint32_t aSwapChainDataId)
     if (!m_imguiDrawDataBuffers[0].Valid)
         return;
 
-    const auto resolution = GetResolution();
-    const auto drawDataResolution = m_imguiDrawDataBuffers[0].DisplaySize;
-    if (drawDataResolution.x != resolution.x || drawDataResolution.y != resolution.y)
+    const auto cResolution = GetResolution();
+    const auto cDrawDataResolution = m_imguiDrawDataBuffers[0].DisplaySize;
+    if (cDrawDataResolution.x != cResolution.x || cDrawDataResolution.y != cResolution.y)
         return;
 
-    frameContext.CommandAllocator->Reset();
+    cFrameContext.CommandAllocator->Reset();
 
     D3D12_RESOURCE_BARRIER barrier;
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    barrier.Transition.pResource = pBackBuffer.Get();
+    barrier.Transition.pResource = cpBackBuffer.Get();
     barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
     barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
     ID3D12DescriptorHeap* heaps[] = { m_pd3dSrvDescHeap.Get() };
 
-    frameContext.CommandList->Reset(frameContext.CommandAllocator.Get(), nullptr);
-    frameContext.CommandList->ResourceBarrier(1, &barrier);
-    frameContext.CommandList->SetDescriptorHeaps(1, heaps);
-    frameContext.CommandList->OMSetRenderTargets(1, &pRenderTargetView, FALSE, nullptr);
+    cFrameContext.CommandList->Reset(cFrameContext.CommandAllocator.Get(), nullptr);
+    cFrameContext.CommandList->ResourceBarrier(1, &barrier);
+    cFrameContext.CommandList->SetDescriptorHeaps(1, heaps);
+    cFrameContext.CommandList->OMSetRenderTargets(1, &cpRenderTargetView, FALSE, nullptr);
 
-    ImGui_ImplDX12_NewFrame(pCommandQueue.Get());
-    ImGui_ImplDX12_RenderDrawData(&m_imguiDrawDataBuffers[0], frameContext.CommandList.Get());
+    ImGui_ImplDX12_NewFrame(cpCommandQueue.Get());
+    ImGui_ImplDX12_RenderDrawData(&m_imguiDrawDataBuffers[0], cFrameContext.CommandList.Get());
 
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
     barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-    frameContext.CommandList->ResourceBarrier(1, &barrier);
-    frameContext.CommandList->Close();
+    cFrameContext.CommandList->ResourceBarrier(1, &barrier);
+    cFrameContext.CommandList->Close();
 
-    ID3D12CommandList* commandLists[] = { frameContext.CommandList.Get() };
-    pCommandQueue->ExecuteCommandLists(1, commandLists);
+    ID3D12CommandList* commandLists[] = { cFrameContext.CommandList.Get() };
+    cpCommandQueue->ExecuteCommandLists(1, commandLists);
 }
-
