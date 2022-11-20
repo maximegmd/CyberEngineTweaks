@@ -338,7 +338,7 @@ bool LuaVM::HookTranslateBytecode(uintptr_t aBinder, uintptr_t aData)
 
 void LuaVM::HookPlayerSpawned(RED4ext::IScriptable* a1, RED4ext::CStackFrame* a2, void* a3, void* a4)
 {
-    // call PostInitializeTweakDB following main thread tick
+    // call PostInitializeMods following main thread tick
     // as this function is called from worker thread
     GameMainThread::Get().AddGenericTask([]{
         s_vm->PostInitializeMods();

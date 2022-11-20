@@ -63,17 +63,17 @@ void D3D12::Initialize(uint32_t aSwapChainDataId)
         return;
 
     // we need valid render context
-    auto* pRenderContext = RenderContext::GetInstance();
-    if (pRenderContext == nullptr)
+    const auto* cpRenderContext = RenderContext::GetInstance();
+    if (cpRenderContext == nullptr)
         return;
 
     // we need to have valid device
-    auto pDevice = pRenderContext->pDevice;
-    if (pDevice == nullptr)
+    const auto cpDevice = cpRenderContext->pDevice;
+    if (cpDevice == nullptr)
         return;
 
     // if any back buffer is nullptr, don't continue initialization
-    auto swapChainData = pRenderContext->pSwapChainData[aSwapChainDataId - 1];
+    auto swapChainData = cpRenderContext->pSwapChainData[aSwapChainDataId - 1];
     for (auto& pBackBuffer : swapChainData.backBuffers)
     {
         if (pBackBuffer == nullptr)
@@ -81,20 +81,20 @@ void D3D12::Initialize(uint32_t aSwapChainDataId)
     }
 
     // we need valid window
-    auto pWindow = swapChainData.pWindow;
-    if (pWindow == nullptr)
+    const auto cpWindow = swapChainData.pWindow;
+    if (cpWindow == nullptr)
         return;
 
     m_swapChainDataId = aSwapChainDataId;
 
-    auto backBufferDesc = swapChainData.backBuffers[0]->GetDesc();
-    m_resolution = ImVec2(static_cast<float>(backBufferDesc.Width), static_cast<float>(backBufferDesc.Height));
+    const auto cBackBufferDesc = swapChainData.backBuffers[0]->GetDesc();
+    m_resolution = ImVec2(static_cast<float>(cBackBufferDesc.Width), static_cast<float>(cBackBufferDesc.Height));
 
     D3D12_DESCRIPTOR_HEAP_DESC srvdesc = {};
     srvdesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     srvdesc.NumDescriptors = SwapChainData_BackBufferCount;
     srvdesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-    if (FAILED(pDevice->CreateDescriptorHeap(&srvdesc, IID_PPV_ARGS(&m_pd3dSrvDescHeap))))
+    if (FAILED(cpDevice->CreateDescriptorHeap(&srvdesc, IID_PPV_ARGS(&m_pd3dSrvDescHeap))))
     {
         Log::Error("D3D12::Initialize() - failed to create SRV descriptor heap!");
         return Shutdown();
@@ -102,13 +102,13 @@ void D3D12::Initialize(uint32_t aSwapChainDataId)
 
     for (auto& frameContext : m_frameContexts)
     {
-        if (FAILED(pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&frameContext.CommandAllocator))))
+        if (FAILED(cpDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&frameContext.CommandAllocator))))
         {
             Log::Error("D3D12::Initialize() - failed to create command allocator!");
             return Shutdown();
         }
 
-        if (FAILED(pDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, frameContext.CommandAllocator.Get(), nullptr, IID_PPV_ARGS(&frameContext.CommandList))) ||
+        if (FAILED(cpDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, frameContext.CommandAllocator.Get(), nullptr, IID_PPV_ARGS(&frameContext.CommandList))) ||
             FAILED(frameContext.CommandList->Close()))
         {
             Log::Error("D3D12::Initialize() - failed to create command list!");
@@ -116,7 +116,7 @@ void D3D12::Initialize(uint32_t aSwapChainDataId)
         }
     }
 
-    m_window.Hook(pWindow);
+    m_window.Hook(cpWindow);
 
     if (!InitializeImGui())
     {
@@ -134,36 +134,36 @@ void D3D12::ReloadFonts()
     std::lock_guard stateGameLock(m_stateGameMutex);
     std::lock_guard imguiLock(m_imguiMutex);
 
-    const auto& fontSettings = m_options.Font;
+    const auto& cFontSettings = m_options.Font;
 
-    const auto dpiScale = 1.0f; // TODO - will be replaced in another PR
-    const auto resolution = GetResolution();
-    const auto resolutionScaleFromReference = std::min(resolution.x / 1920.0f, resolution.y / 1080.0f);
+    const auto cDPIScale = 1.0f; // TODO - will be replaced in another PR
+    const auto cResolution = GetResolution();
+    const auto cResolutionScaleFromReference = std::min(cResolution.x / 1920.0f, cResolution.y / 1080.0f);
 
-    const auto fontSize = std::floorf(fontSettings.BaseSize * dpiScale * resolutionScaleFromReference);
-    const auto fontScaleFromReference = fontSize / 18.0f;
+    const auto cFontSize = std::floorf(cFontSettings.BaseSize * cDPIScale * cResolutionScaleFromReference);
+    const auto cFontScaleFromReference = cFontSize / 18.0f;
 
     ImGui::GetStyle() = m_imguiStyleReference;
-    ImGui::GetStyle().ScaleAllSizes(fontScaleFromReference);
+    ImGui::GetStyle().ScaleAllSizes(cFontScaleFromReference);
 
     auto& io = ImGui::GetIO();
     io.Fonts->Clear();
 
     ImFontConfig config;
-    config.SizePixels = fontSize;
-    config.OversampleH = fontSettings.OversampleHorizontal;
-    config.OversampleV = fontSettings.OversampleVertical;
+    config.SizePixels = cFontSize;
+    config.OversampleH = cFontSettings.OversampleHorizontal;
+    config.OversampleV = cFontSettings.OversampleVertical;
     if (config.OversampleH == 1 && config.OversampleV == 1)
         config.PixelSnapH = true;
     config.MergeMode = false;
 
     // add default font
-    const auto customFontPath = fontSettings.Path.empty() ? std::filesystem::path{} : GetAbsolutePath(UTF8ToUTF16(fontSettings.Path), m_paths.Fonts(), false);
+    const auto cCustomFontPath = cFontSettings.Path.empty() ? std::filesystem::path{} : GetAbsolutePath(UTF8ToUTF16(cFontSettings.Path), m_paths.Fonts(), false);
     auto cetFontPath = GetAbsolutePath(L"NotoSans-Regular.ttf", m_paths.Fonts(), false);
     const auto* cpGlyphRanges = io.Fonts->GetGlyphRangesDefault();
-    if (customFontPath.empty())
+    if (cCustomFontPath.empty())
     {
-        if (!fontSettings.Path.empty())
+        if (!cFontSettings.Path.empty())
             Log::Warn("D3D12::ReloadFonts() - Custom font path is invalid! Using default CET font.");
 
         if (cetFontPath.empty())
@@ -175,39 +175,39 @@ void D3D12::ReloadFonts()
             io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(cetFontPath.native()).c_str(), config.SizePixels, &config, cpGlyphRanges);
     }
     else
-        io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(customFontPath.native()).c_str(), config.SizePixels, &config, cpGlyphRanges);
+        io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(cCustomFontPath.native()).c_str(), config.SizePixels, &config, cpGlyphRanges);
 
-    if (fontSettings.Language == "ChineseFull")
+    if (cFontSettings.Language == "ChineseFull")
     {
         cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansTC-Regular.otf", m_paths.Fonts(), false);
         cpGlyphRanges = io.Fonts->GetGlyphRangesChineseFull();
     }
-    else if (fontSettings.Language == "ChineseSimplifiedCommon")
+    else if (cFontSettings.Language == "ChineseSimplifiedCommon")
     {
         cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansSC-Regular.otf", m_paths.Fonts(), false);
         cpGlyphRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
     }
-    else if (fontSettings.Language == "Japanese")
+    else if (cFontSettings.Language == "Japanese")
     {
         cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansJP-Regular.otf", m_paths.Fonts(), false);
         cpGlyphRanges = io.Fonts->GetGlyphRangesJapanese();
     }
-    else if (fontSettings.Language == "Korean")
+    else if (cFontSettings.Language == "Korean")
     {
         cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansKR-Regular.otf", m_paths.Fonts(), false);
         cpGlyphRanges = io.Fonts->GetGlyphRangesKorean();
     }
-    else if (fontSettings.Language == "Cyrillic")
+    else if (cFontSettings.Language == "Cyrillic")
     {
         cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSans-Regular.ttf", m_paths.Fonts(), false);
         cpGlyphRanges = io.Fonts->GetGlyphRangesCyrillic();
     }
-    else if (fontSettings.Language == "Thai")
+    else if (cFontSettings.Language == "Thai")
     {
         cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansThai-Regular.ttf", m_paths.Fonts(), false);
         cpGlyphRanges = io.Fonts->GetGlyphRangesThai();
     }
-    else if (fontSettings.Language == "Vietnamese")
+    else if (cFontSettings.Language == "Vietnamese")
     {
         cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSans-Regular.ttf", m_paths.Fonts(), false);
         cpGlyphRanges = io.Fonts->GetGlyphRangesVietnamese();
@@ -256,9 +256,9 @@ void D3D12::ReloadFonts()
 
     // add extra glyphs from language font
     config.MergeMode = true;
-    if (customFontPath.empty())
+    if (cCustomFontPath.empty())
     {
-        if (!fontSettings.Path.empty())
+        if (!cFontSettings.Path.empty())
             Log::Warn("D3D12::ReloadFonts() - Custom font path is invalid! Using default CET font.");
 
         if (cetFontPath.empty())
@@ -270,20 +270,20 @@ void D3D12::ReloadFonts()
             io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(cetFontPath.native()).c_str(), config.SizePixels, &config, cpGlyphRanges);
     }
     else
-        io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(customFontPath.native()).c_str(), config.SizePixels, &config, cpGlyphRanges);
+        io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(cCustomFontPath.native()).c_str(), config.SizePixels, &config, cpGlyphRanges);
 
 
     // we need valid render context
-    auto* pRenderContext = RenderContext::GetInstance();
-    if (pRenderContext == nullptr)
+    const auto* cpRenderContext = RenderContext::GetInstance();
+    if (cpRenderContext == nullptr)
         return;
 
     // we need to have valid command queue
-    auto pCommandQueue = pRenderContext->pDirectCommandQueue;
-    if (pCommandQueue == nullptr)
+    const auto cpCommandQueue = cpRenderContext->pDirectCommandQueue;
+    if (cpCommandQueue == nullptr)
         return;
 
-    if (!ImGui_ImplDX12_CreateDeviceObjects(pCommandQueue.Get()))
+    if (!ImGui_ImplDX12_CreateDeviceObjects(cpCommandQueue.Get()))
         Log::Error("D3D12::InitializeImGui() - ImGui_ImplDX12_CreateDeviceObjects call failed!");
 }
 
@@ -296,18 +296,18 @@ bool D3D12::InitializeImGui()
         return false;
 
     // we need valid render context
-    auto* pRenderContext = RenderContext::GetInstance();
-    if (pRenderContext == nullptr)
+    const auto* cpRenderContext = RenderContext::GetInstance();
+    if (cpRenderContext == nullptr)
         return false;
 
     // we need to have valid device
-    auto pDevice = pRenderContext->pDevice;
-    if (pDevice == nullptr)
+    const auto cpDevice = cpRenderContext->pDevice;
+    if (cpDevice == nullptr)
         return false;
 
     // we need to have valid command queue
-    auto pCommandQueue = pRenderContext->pDirectCommandQueue;
-    if (pCommandQueue == nullptr)
+    const auto cpCommandQueue = cpRenderContext->pDirectCommandQueue;
+    if (cpCommandQueue == nullptr)
         return false;
 
     // do this once, do not repeat context creation!
@@ -334,7 +334,7 @@ bool D3D12::InitializeImGui()
 	      return false;
 	  }
 
-	  if (!ImGui_ImplDX12_Init(pDevice.Get(), SwapChainData_BackBufferCount,
+	  if (!ImGui_ImplDX12_Init(cpDevice.Get(), SwapChainData_BackBufferCount,
 	      DXGI_FORMAT_R8G8B8A8_UNORM, m_pd3dSrvDescHeap.Get(),
 	      m_pd3dSrvDescHeap->GetCPUDescriptorHandleForHeapStart(),
 	      m_pd3dSrvDescHeap->GetGPUDescriptorHandleForHeapStart()))
@@ -356,11 +356,7 @@ void D3D12::PrepareUpdate()
     if (!m_initialized || m_shutdown)
         return;
 
-    const auto resolution = GetResolution();
-    ImGui_ImplWin32_NewFrame({
-	    static_cast<LONG>(resolution.x),
-	    static_cast<LONG>(resolution.y)
-    });
+    ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
 
     ImGui::PushStyleColor(ImGuiCol_WindowBg, {0.0f, 0.0f, 0.0f, 0.0f});

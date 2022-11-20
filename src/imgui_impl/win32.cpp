@@ -137,14 +137,21 @@ static bool ImGui_ImplWin32_UpdateMouseCursor()
     return true;
 }
 
-static void ImGui_ImplWin32_UpdateMousePos(SIZE aOutSize)
+static void ImGui_ImplWin32_UpdateMousePos()
 {
     ImGuiIO& io = ImGui::GetIO();
+
+    RECT clientRect;
+    ::GetClientRect(g_hWnd, &clientRect);
+
+    // scale, just to make sure coords are correct (fixes issues in fullscreen and with DSR)
+    const auto x_scale = io.DisplaySize.x / (clientRect.right - clientRect.left);
+    const auto y_scale = io.DisplaySize.y / (clientRect.bottom - clientRect.top);
 
     // Set OS mouse position if requested (rarely used, only when ImGuiConfigFlags_NavEnableSetMousePos is enabled by user)
     if (io.WantSetMousePos)
     {
-        POINT pos = { (int)io.MousePos.x, (int)io.MousePos.y };
+        POINT pos = { (int)(io.MousePos.x / x_scale), (int)(io.MousePos.y / y_scale) };
         if (::ClientToScreen(g_hWnd, &pos))
             ::SetCursorPos(pos.x, pos.y);
     }
@@ -155,27 +162,15 @@ static void ImGui_ImplWin32_UpdateMousePos(SIZE aOutSize)
     if (HWND active_window = ::GetForegroundWindow())
         if (active_window == g_hWnd || ::IsChild(active_window, g_hWnd))
             if (::GetCursorPos(&pos) && ::ScreenToClient(g_hWnd, &pos))
-                if (!aOutSize.cx || !aOutSize.cy)
-                    io.MousePos = ImVec2((float)pos.x, (float)pos.y);
-                else
                 {
-                    RECT clientRect;
-                    ::GetClientRect(g_hWnd, &clientRect);
-
-                    // scale, just to make sure coords are correct (fixes issues in fullscreen)
-                    auto xScale = static_cast<float>(aOutSize.cx) / (clientRect.right - clientRect.left);
-                    auto yScale = static_cast<float>(aOutSize.cy) / (clientRect.bottom - clientRect.top);
-                    io.MousePos = ImVec2(pos.x * xScale, pos.y * yScale);
+                    io.MousePos = ImVec2(pos.x * x_scale, pos.y * y_scale);
                 }
 }
 
-void ImGui_ImplWin32_NewFrame(SIZE aOutSize)
+void ImGui_ImplWin32_NewFrame()
 {
     ImGuiIO& io = ImGui::GetIO();
     IM_ASSERT(io.Fonts->IsBuilt() && "Font atlas not built! It is generally built by the renderer backend. Missing call to renderer _NewFrame() function? e.g. ImGui_ImplOpenGL3_NewFrame().");
-
-    // Setup display size (every frame to accommodate for window resizing)
-    io.DisplaySize = { static_cast<float>(aOutSize.cx), static_cast<float>(aOutSize.cy) };
 
     // Setup time step
     INT64 current_time = 0;
@@ -191,7 +186,7 @@ void ImGui_ImplWin32_NewFrame(SIZE aOutSize)
     // io.KeysDown[], io.MousePos, io.MouseDown[], io.MouseWheel: filled by the WndProc handler below.
 
     // Update OS mouse position
-    ImGui_ImplWin32_UpdateMousePos(aOutSize);
+    ImGui_ImplWin32_UpdateMousePos();
 
     // Update OS mouse cursor with the cursor requested by imgui
     ImGuiMouseCursor mouse_cursor = io.MouseDrawCursor ? ImGuiMouseCursor_None : ImGui::GetMouseCursor();

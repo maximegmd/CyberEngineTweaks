@@ -46,27 +46,32 @@ void D3D12::CRenderGlobal_Resize(uint32_t aWidth, uint32_t aHeight, uint32_t a3,
         return;
 
     // we need valid render context
-    auto* pRenderContext = RenderContext::GetInstance();
-    if (pRenderContext == nullptr)
+    const auto* cpRenderContext = RenderContext::GetInstance();
+    if (cpRenderContext == nullptr)
         return;
 
     // if any back buffer is nullptr, don't continue initialization
-    auto swapChainData = pRenderContext->pSwapChainData[*apSwapChainDataId - 1];
+    auto swapChainData = cpRenderContext->pSwapChainData[*apSwapChainDataId - 1];
     for (auto& pBackBuffer : swapChainData.backBuffers)
     {
         if (pBackBuffer == nullptr)
             return;
     }
 
-    auto backBufferDesc = swapChainData.backBuffers[0]->GetDesc();
+    const auto cBackBufferDesc = swapChainData.backBuffers[0]->GetDesc();
+    const auto cNewResolution = ImVec2(static_cast<float>(cBackBufferDesc.Width), static_cast<float>(cBackBufferDesc.Height));
 
     std::lock_guard stateGameLock(d3d12.m_stateGameMutex);
 
-    d3d12.m_resolution = ImVec2(static_cast<float>(backBufferDesc.Width), static_cast<float>(backBufferDesc.Height));
+    const auto cCurrentResolution = d3d12.GetResolution();
+    if (cNewResolution.x == cCurrentResolution.x && cNewResolution.y == cCurrentResolution.y)
+        return;
+
+    d3d12.m_resolution = cNewResolution;
 
     std::lock_guard imguiLock(d3d12.m_imguiMutex);
 
-    ImGui::GetIO().DisplaySize = d3d12.GetResolution();
+    ImGui::GetIO().DisplaySize = cNewResolution;
 
     d3d12.ReloadFonts();
 }
