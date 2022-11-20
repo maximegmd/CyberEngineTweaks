@@ -11,6 +11,7 @@ using TSetMousePosition = BOOL(void*, HWND, long, long);
 using TTDBIDCtorDerive = TDBID*(const TDBID*, TDBID*, const char*);
 using TTweakDBLoad = uint64_t(uintptr_t, uintptr_t);
 using TTranslateBytecode = bool(uintptr_t, uintptr_t);
+using TPlayerSpawned = void(RED4ext::IScriptable*, RED4ext::CStackFrame*, void*, void*);
 
 struct TDBIDLookupEntry
 {
@@ -67,6 +68,7 @@ protected:
     static TDBID* HookTDBIDCtorDerive(TDBID* apBase, TDBID* apThis, const char* acpName);
     static uint64_t HookTweakDBLoad(uintptr_t aThis, uintptr_t aParam);
     static bool HookTranslateBytecode(uintptr_t aBinder, uintptr_t aData);
+    static void HookPlayerSpawned(RED4ext::IScriptable* a1, RED4ext::CStackFrame* a2, void* a3, void* a4);
 
 private:
 
@@ -81,6 +83,7 @@ private:
     TTDBIDCtorDerive* m_realTDBIDCtorDerive{ nullptr };
     TTweakDBLoad* m_realTweakDBLoad{ nullptr };
     TTranslateBytecode* m_realTranslateBytecode{ nullptr };
+    TPlayerSpawned* m_realPlayerSpawned{ nullptr };
 
     Scripting m_scripting;
 

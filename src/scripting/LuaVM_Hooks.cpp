@@ -281,12 +281,6 @@ LuaVM::LuaVM(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12)
     }).detach();
 
     GameMainThread::Get().AddRunningTask([this]{
-        PostInitializeMods();
-
-        return m_initialized;
-    });
-
-    GameMainThread::Get().AddRunningTask([this]{
         const auto cNow = std::chrono::high_resolution_clock::now();
         const auto cDelta = cNow - m_lastframe;
         const auto cSeconds = std::chrono::duration_cast<std::chrono::duration<float>>(cDelta);
@@ -342,13 +336,30 @@ bool LuaVM::HookTranslateBytecode(uintptr_t aBinder, uintptr_t aData)
     return ret;
 }
 
+void LuaVM::HookPlayerSpawned(RED4ext::IScriptable* a1, RED4ext::CStackFrame* a2, void* a3, void* a4)
+{
+    // call PostInitializeTweakDB following main thread tick
+    // as this function is called from worker thread
+    GameMainThread::Get().AddGenericTask([]{
+        s_vm->PostInitializeMods();
+
+        return true;
+    });
+
+    s_vm->m_realPlayerSpawned(a1, a2, a3, a4);
+}
+
 uint64_t LuaVM::HookTweakDBLoad(uintptr_t aThis, uintptr_t aParam)
 {
-    const auto ret = s_vm->m_realTweakDBLoad(aThis, aParam);
+    // call PostInitializeTweakDB following main thread tick
+    // as this function is called from worker thread
+    GameMainThread::Get().AddGenericTask([]{
+        s_vm->PostInitializeTweakDB();
 
-    s_vm->PostInitializeTweakDB();
+        return true;
+    });
 
-    return ret;
+    return s_vm->m_realTweakDBLoad(aThis, aParam);
 }
 
 void LuaVM::Hook()
@@ -439,6 +450,22 @@ void LuaVM::Hook()
             else
             {
                 Log::Info("CScript::TweakDBLoad function hook complete!");
+            }
+        }
+    }
+
+    {
+        const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::PlayerSystem_OnPlayerSpawned);
+        uint8_t* pLocation = func.GetAddr();
+
+        if (pLocation)
+        {
+            if (MH_CreateHook(pLocation, reinterpret_cast<LPVOID>(HookPlayerSpawned), reinterpret_cast<void**>(&m_realPlayerSpawned)) != MH_OK ||
+                MH_EnableHook(pLocation) != MH_OK)
+                Log::Error("Could not hook PlayerSystem::OnPlayerSpawned function!");
+            else
+            {
+                Log::Info("PlayerSystem::OnPlayerSpawned function hook complete!");
             }
         }
     }

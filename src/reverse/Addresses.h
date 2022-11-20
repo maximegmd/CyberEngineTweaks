@@ -83,4 +83,8 @@ constexpr uintptr_t gameIGameSystem_Spawn = 0x142DC38E0 - ImageBase; // 48 89 5C
 constexpr uintptr_t gameIGameSystem_Despawn = 0x142DC1380 - ImageBase; // 48 89 5C 24 10 48 89 6C  24 18 56 57 41 54 41 56 41 57 48 83 EC 50 4C 8B F9 0F 57 C0 48 83 C1 41, expected: 1, index: 0
 constexpr uintptr_t gameIGameSystem_SpawnCallback = 0x1410F1E70 - ImageBase; // 48 89 5C 24 18 48 89 6C  24 20 56 57 41 56 48 83 EC 70 48 8B F1 48 8B EA  48 83 C1 48 E8, expected: 1, index: 0
 #pragma endregion
+
+#pragma region PlayerSystem
+constexpr uintptr_t PlayerSystem_OnPlayerSpawned = 0x14271DB50 - ImageBase; // 48 8B C4 4C 89 48 20 55 56 57 48 8B EC 48 81 EC 80 00 00 00, expected: 1, index: 0
+#pragma endregion
 } // namespace CyberEngineTweaks::Addresses
