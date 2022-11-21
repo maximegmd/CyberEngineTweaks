@@ -2,7 +2,6 @@
 
 #include "Widget.h"
 
-struct Options;
 struct LogWindow : Widget
 {
     LogWindow(const Options& acOptions, const std::string& acpWindowTitle, const std::string& acpLoggerName);

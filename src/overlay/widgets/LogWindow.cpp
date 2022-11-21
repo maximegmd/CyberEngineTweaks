@@ -2,8 +2,7 @@
 
 #include "LogWindow.h"
 
-#include "CET.h"
-
+#include <CET.h>
 #include <Utils.h>
 
 LogWindow::LogWindow(const Options& acOptions, const std::string& acpWindowTitle, const std::string& acpLoggerName)
