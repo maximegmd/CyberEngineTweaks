@@ -2,6 +2,7 @@
 
 constexpr size_t SwapChainData_BackBufferCount = 3;
 
+struct ID3D12CommandQueueDownlevel;
 struct RenderContext
 {
     struct SwapChainData

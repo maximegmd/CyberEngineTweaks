@@ -64,7 +64,6 @@
 #include <vector>
 
 #include "CETVersion.h"
-#include "common/D3D12Downlevel.h"
 #include "common/Logging.h"
 #include "Options.h"
 #include "Paths.h"
