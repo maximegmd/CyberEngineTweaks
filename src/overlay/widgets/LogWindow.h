@@ -1,6 +1,5 @@
 #pragma once
 
-struct D3D12;
 struct LogWindow
 {
     LogWindow(const std::string& acpLoggerName);

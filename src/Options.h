@@ -10,6 +10,8 @@ struct PatchesSettings
     nlohmann::json Save() const;
     void ResetToDefaults();
 
+    [[nodiscard]] auto operator<=>(const PatchesSettings&) const = default;
+
     bool RemovePedestrians{ false };
     bool AsyncCompute{ false };
     bool Antialiasing{ false };
@@ -28,6 +30,8 @@ struct FontSettings
     nlohmann::json Save() const;
     void ResetToDefaults();
 
+    [[nodiscard]] auto operator<=>(const FontSettings&) const = default;
+
     std::string Path{ };
     std::string Language{"Default"};
     float BaseSize{ 18.0f };
@@ -40,6 +44,8 @@ struct DeveloperSettings
     void Load(const nlohmann::json& aConfig);
     nlohmann::json Save() const;
     void ResetToDefaults();
+
+    [[nodiscard]] auto operator<=>(const DeveloperSettings&) const = default;
 
     bool RemoveDeadBindings{ true };
     bool EnableImGuiAssertions{ false };

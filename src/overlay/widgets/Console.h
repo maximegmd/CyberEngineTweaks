@@ -3,8 +3,6 @@
 #include "Widget.h"
 #include "LogWindow.h"
 
-struct Options;
-struct PersistentState;
 struct LuaVM;
 struct Console : Widget
 {
@@ -24,7 +22,7 @@ private:
     Options& m_options;
     PersistentState& m_persistentState;
     LuaVM& m_vm;
-    
+
     LogWindow m_logWindow;
 
     size_t m_historyIndex{ 0 };

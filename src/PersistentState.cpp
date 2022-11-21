@@ -84,10 +84,6 @@ PersistentState::PersistentState(Paths& aPaths, Options& aOptions)
 {
     Load();
     Save();
-}
 
-PersistentState::~PersistentState()
-{
-    // save on exit to make sure persistent state is preserved
-    Save();
+    GameMainThread::Get().AddShutdownTask([this]{ Save(); return true; });
 }
