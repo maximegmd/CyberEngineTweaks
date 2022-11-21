@@ -128,13 +128,16 @@ void D3D12::Initialize(uint32_t aSwapChainDataId)
     m_initialized = true;
 }
 
-void D3D12::ReloadFonts()
+void D3D12::ReloadFonts(bool aForce)
 {
     std::lock_guard statePresentLock(m_statePresentMutex);
     std::lock_guard stateGameLock(m_stateGameMutex);
     std::lock_guard imguiLock(m_imguiMutex);
 
     const auto& cFontSettings = m_options.Font;
+
+    if (!aForce && cFontSettings == m_fontSettings)
+        return;
 
     const auto cDPIScale = ImGui_ImplWin32_GetDpiScaleForHwnd(m_window.GetWindow());
     const auto cResolution = GetResolution();
@@ -274,6 +277,8 @@ void D3D12::ReloadFonts()
     else
         io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(cCustomFontPath.native()).c_str(), config.SizePixels, &config, cpGlyphRanges);
 
+    m_fontSettings = cFontSettings;
+
     if (!ImGui_ImplDX12_CreateDeviceObjects())
         Log::Error("D3D12::InitializeImGui() - ImGui_ImplDX12_CreateDeviceObjects call failed!");
 }
@@ -344,7 +349,7 @@ bool D3D12::InitializeImGui()
 	      return false;
 	  }
 
-    ReloadFonts();
+    ReloadFonts(true);
 
     return true;
 }

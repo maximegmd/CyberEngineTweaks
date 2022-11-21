@@ -12,7 +12,7 @@ struct D3D12
     D3D12(Window& aWindow, Paths& aPaths, Options& aOptions);
     ~D3D12();
 
-    void ReloadFonts();
+    void ReloadFonts(bool aForce = false);
 
     void SetTrapInputInImGui(const bool acEnabled);
     void DelayedSetTrapInputInImGui(const bool acEnabled);
@@ -70,6 +70,7 @@ private:
     std::array<ImDrawData, 3> m_imguiDrawDataBuffers;
     ImGuiStyle m_imguiStyleReference{ };
 
+    FontSettings m_fontSettings;
     std::atomic_bool m_delayedTrapInput{ false };
     std::atomic_bool m_delayedTrapInputState{ false };
     std::atomic_bool m_trapInputInImGui{ false };

@@ -63,11 +63,16 @@ D3D12::D3D12(Window& aWindow, Paths& aPaths, Options& aOptions)
     , m_window(aWindow)
     , m_options(aOptions)
 {
+    m_fontSettings = m_options.Font;
+
     Hook();
 
-    // add repeated task which prepares next ImGui frame for update
-    GameMainThread::Get().AddGenericTask([this]{ PrepareUpdate(); return false; });
+    // add repeated task called in all stages excluding shutdown which prepares ImGui frame for next present
+    GameMainThread::Get().AddBaseInitializationTask([this]{ PrepareUpdate(); return false; });
+    GameMainThread::Get().AddInitializationTask([this]{ PrepareUpdate(); return false; });
+    GameMainThread::Get().AddRunningTask([this]{ PrepareUpdate(); return false; });
 
+    // add shutdown task which frees acquired resources
     GameMainThread::Get().AddShutdownTask([this]{ Shutdown(); return true; });
 }
 

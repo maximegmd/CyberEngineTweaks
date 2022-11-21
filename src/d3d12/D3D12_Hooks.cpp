@@ -73,26 +73,33 @@ void D3D12::CRenderGlobal_Resize(uint32_t aWidth, uint32_t aHeight, uint32_t a3,
 
     ImGui::GetIO().DisplaySize = cNewResolution;
 
-    d3d12.ReloadFonts();
+    d3d12.ReloadFonts(true);
 }
 
 std::tuple<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> D3D12::CreateTextureDescriptor()
 {
-    auto* pRenderContext = RenderContext::GetInstance();
-    auto device = pRenderContext->pDevice;
+    // we need valid render context
+    const auto* cpRenderContext = RenderContext::GetInstance();
+    if (cpRenderContext == nullptr)
+        return {{}, {}};
 
-    const UINT handle_increment = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-    static std::atomic descriptor_index = 1;
+    // we need valid device
+    const auto cpDevice = cpRenderContext->pDevice;
+    if (cpDevice == nullptr)
+        return {{}, {}};
 
-    const auto index = descriptor_index++;
+    const UINT cHandleIncrement = cpDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    static std::atomic_uint32_t sDescriptorIndex = 1;
+
+    const auto index = sDescriptorIndex++;
 
     if (index >= 200)
         return {{}, {}};
 
     D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = m_pd3dSrvDescHeap->GetCPUDescriptorHandleForHeapStart();
-    cpuHandle.ptr += handle_increment * index;
+    cpuHandle.ptr += cHandleIncrement * index;
     D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = m_pd3dSrvDescHeap->GetGPUDescriptorHandleForHeapStart();
-    gpuHandle.ptr += handle_increment * index;
+    gpuHandle.ptr += cHandleIncrement * index;
 
     return {cpuHandle, gpuHandle};
 }
