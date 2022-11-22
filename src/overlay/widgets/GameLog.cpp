@@ -2,9 +2,9 @@
 
 #include "GameLog.h"
 
-GameLog::GameLog(D3D12& aD3D12)
+GameLog::GameLog()
     : Widget("Game Log")
-    , m_logWindow(aD3D12, "gamelog")
+    , m_logWindow("gamelog")
 {
 }
 

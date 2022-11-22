@@ -62,7 +62,7 @@ void Overlay::Update()
         if (m_bindings.FirstTimeSetup())
             return;
 
-        const auto& persistentState = m_options.PersistentState.Overlay;
+        const auto& persistentState = m_persistentState.Overlay;
 
         auto drawPopup = false;
         WidgetResult disableResult;
@@ -260,30 +260,28 @@ void Overlay::Hook()
     }
 }
 
-Overlay::Overlay(D3D12& aD3D12, VKBindings& aBindings, Options& aOptions, LuaVM& aVm)
-    : m_console(aD3D12, aVm)
+Overlay::Overlay(VKBindings& aBindings, Options& aOptions, PersistentState& aPersistentState, LuaVM& aVm)
+    : m_console(aOptions, aPersistentState, aVm)
     , m_bindings(aBindings, aVm)
     , m_settings(aOptions, aVm)
     , m_tweakDBEditor(aVm)
-    , m_gameLog(aD3D12)
-    , m_d3d12(aD3D12)
     , m_options(aOptions)
+    , m_persistentState(aPersistentState)
     , m_vm(aVm)
 {
     Hook();
 
-    m_connectInitialized = aD3D12.OnInitialized.Connect([this]{ PostInitialize(); });
+    GameMainThread::Get().AddBaseInitializationTask([this]{ PostInitialize(); return true; });
 }
 
 Overlay::~Overlay()
 {
-    m_d3d12.OnInitialized.Disconnect(m_connectInitialized);
 }
 
 void Overlay::DrawToolbar()
 {
     const auto itemWidth = GetAlignedItemWidth(7);
-    auto& persistentState = m_options.PersistentState.Overlay;
+    auto& persistentState = m_persistentState.Overlay;
 
     ImGui::PushStyleColor(ImGuiCol_Button, persistentState.ConsoleToggled ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive) : ImGui::GetStyleColorVec4(ImGuiCol_Button));
     if (ImGui::Button("Console", ImVec2(itemWidth, 0)))

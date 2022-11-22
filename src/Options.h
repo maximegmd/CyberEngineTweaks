@@ -10,6 +10,8 @@ struct PatchesSettings
     nlohmann::json Save() const;
     void ResetToDefaults();
 
+    [[nodiscard]] auto operator<=>(const PatchesSettings&) const = default;
+
     bool RemovePedestrians{ false };
     bool AsyncCompute{ false };
     bool Antialiasing{ false };
@@ -28,6 +30,8 @@ struct FontSettings
     nlohmann::json Save() const;
     void ResetToDefaults();
 
+    [[nodiscard]] auto operator<=>(const FontSettings&) const = default;
+
     std::string Path{ };
     std::string Language{"Default"};
     float BaseSize{ 18.0f };
@@ -41,39 +45,22 @@ struct DeveloperSettings
     nlohmann::json Save() const;
     void ResetToDefaults();
 
+    [[nodiscard]] auto operator<=>(const DeveloperSettings&) const = default;
+
     bool RemoveDeadBindings{ true };
     bool EnableImGuiAssertions{ false };
     bool EnableDebug{ false };
     bool DumpGameOptions{ false };
-};
-
-struct OverlayPersistentState
-{
-    void Load(const nlohmann::json& aConfig);
-    nlohmann::json Save() const;
-
-    bool ConsoleToggled = false;
-    bool BindingsToggled = false;
-    bool SettingsToggled = false;
-    bool TweakDBEditorToggled = false;
-    bool GameLogToggled = false;
-    bool ImGuiDebugToggled = false;
-};
-
-struct PersistentState
-{
-    void Load(const nlohmann::json& aConfig);
-    nlohmann::json Save() const;
-
-    OverlayPersistentState Overlay{ };
+    uint64_t MaxLinesConsoleHistory{ 1000 };
+    bool PersistentConsole{ true };
 };
 
 struct Options
 {
     Options(Paths& aPaths);
-    ~Options();
+    ~Options() = default;
 
-    void Load(const bool acPersistentStateReload = false);
+    void Load();
     void Save() const;
     void ResetToDefaults();
 
@@ -83,7 +70,6 @@ struct Options
     PatchesSettings Patches{ };
     FontSettings Font{ };
     DeveloperSettings Developer{ };
-    PersistentState PersistentState{ };
 
 private:
 

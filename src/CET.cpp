@@ -35,6 +35,11 @@ const Options& CET::GetOptions() const noexcept
     return m_options;
 }
 
+const PersistentState& CET::GetPersistentState() const noexcept
+{
+    return m_persistentState;
+}
+
 D3D12& CET::GetD3D12() noexcept
 {
     return m_d3d12;
@@ -62,11 +67,12 @@ bool CET::IsRunning() noexcept
 
 CET::CET()
     : m_options(m_paths)
+    , m_persistentState(m_paths, m_options)
     , m_bindings(m_paths, m_options)
     , m_window(&m_bindings, &m_d3d12)
     , m_d3d12(m_window, m_paths, m_options)
     , m_vm(m_paths, m_bindings, m_d3d12)
-    , m_overlay(m_d3d12, m_bindings, m_options, m_vm)
+    , m_overlay(m_bindings, m_options, m_persistentState, m_vm)
 {
     m_vm.Initialize();
 }

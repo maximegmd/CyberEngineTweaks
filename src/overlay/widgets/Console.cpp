@@ -5,12 +5,15 @@
 #include <scripting/LuaVM.h>
 #include <Utils.h>
 
-Console::Console(D3D12& aD3D12, LuaVM& aVm)
-    : Widget("Console")
+Console::Console(Options& aOptions, PersistentState& aPersistentState, LuaVM& aVm)
+    : Widget("Console", "scripting")
+    , m_options(aOptions)
+    , m_persistentState(aPersistentState)
     , m_vm(aVm)
-    , m_logWindow(aD3D12, "scripting")
+    , m_logWindow("scripting")
 {
     m_command.resize(255);
+    m_historyIndex = m_persistentState.Console.History.empty() ? 0 : m_persistentState.Console.History.size() - 1;
 }
 
 WidgetResult Console::OnDisable()
@@ -24,28 +27,30 @@ WidgetResult Console::OnDisable()
 int Console::HandleConsoleHistory(ImGuiInputTextCallbackData* apData)
 {
     auto* pConsole = static_cast<Console*>(apData->UserData);
+    auto& pHistory = pConsole->m_persistentState.Console.History;
 
-    const std::string* pStr = nullptr;
+    std::string_view pHistoryStr;
 
     if (pConsole->m_newHistory)
     {
-        pStr = &pConsole->m_history[pConsole->m_historyIndex];
+        if (!pHistory.empty())
+            pHistoryStr = pHistory[pConsole->m_historyIndex];
     }
     else if (apData->EventKey == ImGuiKey_UpArrow && pConsole->m_historyIndex > 0)
     {
-        pStr = &pConsole->m_history[--pConsole->m_historyIndex];
+        pHistoryStr = pHistory[--pConsole->m_historyIndex];
     }
-    else if (apData->EventKey == ImGuiKey_DownArrow && pConsole->m_historyIndex + 1 < pConsole->m_history.size())
+    else if (apData->EventKey == ImGuiKey_DownArrow && pConsole->m_historyIndex + 1 < pHistory.size())
     {
-        pStr = &pConsole->m_history[++pConsole->m_historyIndex];
+        pHistoryStr = pHistory[++pConsole->m_historyIndex];
     }
 
     pConsole->m_newHistory = false;
 
-    if (pStr)
+    if (!pHistoryStr.empty())
     {
         apData->DeleteChars(0, apData->BufTextLen);
-        apData->InsertChars(0, pStr->c_str());
+        apData->InsertChars(0, pHistoryStr.data());
         apData->SelectAll();
     }
 
@@ -104,9 +109,15 @@ void Console::OnUpdate()
                 consoleLogger->info("Command failed to execute!");
 
             m_command.shrink_to_fit();
-            m_historyIndex = m_history.size();
-            auto& history = m_history.emplace_back();
-            history.swap(m_command);
+
+            auto& history = m_persistentState.Console.History;
+
+            if (history.size() >= m_options.Developer.MaxLinesConsoleHistory)
+                history.erase(history.begin(), history.begin() + history.size() - m_options.Developer.MaxLinesConsoleHistory + 1);
+
+            auto& newHistoryEntry = history.emplace_back();
+            newHistoryEntry.swap(m_command);
+            m_historyIndex = history.size();
             m_newHistory = true;
 
             m_command.resize(255);

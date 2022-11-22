@@ -66,6 +66,7 @@
 #include "common/Logging.h"
 #include "Options.h"
 #include "Paths.h"
+#include "PersistentState.h"
 #include "reverse/Addresses.h"
 #include "scripting/GameHooks.h"
 #include "VKBindings.h"

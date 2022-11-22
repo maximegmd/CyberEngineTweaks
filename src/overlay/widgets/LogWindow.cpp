@@ -2,12 +2,10 @@
 
 #include "LogWindow.h"
 
-#include <d3d12/D3D12.h>
 #include <Utils.h>
 
-LogWindow::LogWindow(D3D12& aD3D12, const std::string& acpLoggerName)
-    : m_d3d12(aD3D12)
-    , m_loggerName(acpLoggerName)
+LogWindow::LogWindow(const std::string& acpLoggerName)
+    : m_loggerName(acpLoggerName)
 {
     auto logSink = CreateCustomSinkMT([this](const std::string& msg){ Log(msg); });
     logSink->set_pattern("%L;%v");
