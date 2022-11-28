@@ -270,6 +270,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
                 auto* pTypeAllocator = pType->GetAllocator();
 
                 auto* pInstance = pTypeAllocator->AllocAligned(pType->GetSize(), pType->GetAlignment()).memory;
+                std::memset(pInstance, 0, pType->GetSize());
                 pType->Construct(pInstance);
 
                 const bool isScriptRef = pArg->type->GetType() == RED4ext::ERTTIType::ScriptReference;

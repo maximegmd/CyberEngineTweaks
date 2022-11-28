@@ -6,7 +6,7 @@
 #include <Utils.h>
 
 Console::Console(Options& aOptions, PersistentState& aPersistentState, LuaVM& aVm)
-    : Widget("Console", "scripting")
+    : Widget("Console")
     , m_options(aOptions)
     , m_persistentState(aPersistentState)
     , m_vm(aVm)
@@ -34,7 +34,7 @@ int Console::HandleConsoleHistory(ImGuiInputTextCallbackData* apData)
     if (pConsole->m_newHistory)
     {
         if (!pHistory.empty())
-            pHistoryStr = pHistory[pConsole->m_historyIndex];
+            pHistoryStr = pHistory.back();
     }
     else if (apData->EventKey == ImGuiKey_UpArrow && pConsole->m_historyIndex > 0)
     {
