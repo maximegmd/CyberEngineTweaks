@@ -10,11 +10,19 @@
 #include <scripting/Scripting.h>
 #include <Utils.h>
 
-static constexpr bool s_cEnableOverloads = true;
-static constexpr bool s_cLogAllOverloadVariants = true;
-static constexpr bool s_cThrowLuaErrors = true;
+namespace
+{
+constexpr bool s_cEnableOverloads = true;
+constexpr bool s_cLogAllOverloadVariants = true;
+constexpr bool s_cThrowLuaErrors = true;
 
-static std::unique_ptr<RTTIHelper> s_pInstance{ nullptr };
+std::unique_ptr<RTTIHelper> s_pInstance{ nullptr };
+
+using TCallScriptFunction = bool (*)(RED4ext::IFunction* apFunction, RED4ext::IScriptable* apContext,
+                                     RED4ext::CStackFrame* apFrame, void* apResult, void* apResultType);
+
+RED4ext::RelocFunc<TCallScriptFunction> CallScriptFunction(RED4ext::Addresses::CBaseFunction_InternalExecute);
+}
 
 void RTTIHelper::Initialize(const LockableState& acLua, LuaSandbox& apSandbox)
 {
@@ -69,7 +77,7 @@ void RTTIHelper::InitializeRuntime()
     m_pGameInstance = static_cast<ScriptGameInstance*>(m_pGameInstanceType->CreateInstance());
     m_pGameInstance->gameInstance = cpGameInstance;
 
-    m_pPlayerSystem = reinterpret_cast<RED4ext::ScriptInstance>(cpGameInstance->GetInstance(cpPlayerSystemType));
+    m_pPlayerSystem = cpGameInstance->GetInstance(cpPlayerSystemType);
 }
 
 void RTTIHelper::ParseGlobalStatics()
@@ -428,7 +436,7 @@ sol::function RTTIHelper::MakeInvokableFunction(RED4ext::CBaseFunction* apFunc)
 
     return MakeSolFunction(luaState, [this, apFunc, cAllowNull](sol::variadic_args aArgs, sol::this_state aState, sol::this_environment aEnv) -> sol::variadic_results {
         uint64_t argOffset = 0;
-        const RED4ext::ScriptInstance pHandle = ResolveHandle(apFunc, aArgs, argOffset);
+        const auto pHandle = ResolveHandle(apFunc, aArgs, argOffset);
 
         std::string errorMessage;
         auto result = ExecuteFunction(apFunc, pHandle, aArgs, argOffset, errorMessage, cAllowNull);
@@ -467,7 +475,7 @@ sol::function RTTIHelper::MakeInvokableOverload(std::map<uint64_t, RED4ext::CBas
             variant->lastError.clear();
 
             uint64_t argOffset = 0;
-            const RED4ext::ScriptInstance pHandle = ResolveHandle(variant->func, aArgs, argOffset);
+            const auto pHandle = ResolveHandle(variant->func, aArgs, argOffset);
 
             auto result = ExecuteFunction(variant->func, pHandle, aArgs, argOffset, variant->lastError);
 
@@ -518,8 +526,8 @@ sol::function RTTIHelper::MakeInvokableOverload(std::map<uint64_t, RED4ext::CBas
     });
 }
 
-RED4ext::ScriptInstance RTTIHelper::ResolveHandle(RED4ext::CBaseFunction* apFunc, sol::variadic_args& aArgs,
-                                                  uint64_t& aArgOffset) const
+RED4ext::IScriptable* RTTIHelper::ResolveHandle(RED4ext::CBaseFunction* apFunc, sol::variadic_args& aArgs,
+                                                uint64_t& aArgOffset) const
 {
     // Case 1: obj:Member() -- Skip the first arg and pass it as a handle
     // Case 2: obj:Static() -- Pass args as is, including the implicit self
@@ -529,7 +537,7 @@ RED4ext::ScriptInstance RTTIHelper::ResolveHandle(RED4ext::CBaseFunction* apFunc
     // Case 6: GetSingleton("Type"):Static() -- Skip the first arg as it's a dummy
     // Case 7: GetSingleton("Type"):Member() -- Skip the first arg as it's a dummy
 
-    RED4ext::ScriptInstance pHandle = nullptr;
+    RED4ext::IScriptable* pHandle = nullptr;
 
     if (aArgs.size() > aArgOffset)
     {
@@ -554,13 +562,13 @@ RED4ext::ScriptInstance RTTIHelper::ResolveHandle(RED4ext::CBaseFunction* apFunc
 
             if (cArg.is<Type>())
             {
-                pHandle = cArg.as<Type*>()->GetHandle();
+                pHandle = reinterpret_cast<RED4ext::IScriptable*>(cArg.as<Type*>()->GetHandle());
 
                 if (cArg.is<StrongReference>() || cArg.is<WeakReference>())
                 {
                     ++aArgOffset;
 
-                    if (pHandle && !reinterpret_cast<RED4ext::IScriptable*>(pHandle)->GetType()->IsA(apFunc->GetParent()))
+                    if (pHandle && !pHandle->GetType()->IsA(apFunc->GetParent()))
                         pHandle = nullptr;
                 }
                 else if (cArg.is<SingletonReference>())
@@ -574,7 +582,7 @@ RED4ext::ScriptInstance RTTIHelper::ResolveHandle(RED4ext::CBaseFunction* apFunc
     return pHandle;
 }
 
-sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc, RED4ext::ScriptInstance apHandle,
+sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc, RED4ext::IScriptable* apContext,
                                                   sol::variadic_args aLuaArgs, uint64_t aLuaArgOffset,
                                                   std::string& aErrorMessage, bool aAllowNull) const
 {
@@ -595,7 +603,7 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
     // args is implemented (should check if a compatible arg is actually
     // passed at the expected position + same for optionals).
 
-    if (!apFunc->flags.isStatic && !apHandle && !aAllowNull)
+    if (!apFunc->flags.isStatic && !apContext && !aAllowNull)
     {
         aErrorMessage = fmt::format("Function '{}' context must be '{}'.",
                                     apFunc->shortName.ToString(),
@@ -690,8 +698,7 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
             if (!callArgs[callArgOffset].value)
             {
                 callArgs[callArgOffset].type = cpParam->type;
-                callArgs[callArgOffset].value = NewPlaceholder(cpParam->type, &s_scratchMemory);
-                argNeedsFree[callArgOffset] = true;
+                callArgs[callArgOffset].value = nullptr;
             }
             else
             {
@@ -705,7 +712,7 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
             ++aLuaArgOffset;
         }
 
-        if (!callArgs[callArgOffset].value)
+        if (!callArgs[callArgOffset].value && !cpParam->flags.isOptional)
         {
             const auto typeName = cpParam->type->GetName();
             aErrorMessage = fmt::format("Function '{}' parameter {} must be {}.", apFunc->shortName.ToString(), i + 1, typeName.ToString());
@@ -728,13 +735,7 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
         result.type = apFunc->returnType->type;
     }
 
-    // Needs more investigation, but if you do something like GetSingleton('inkMenuScenario'):GetSystemRequestsHandler()
-    // which actually does not need the 'this' object, you can trick it into calling it as long as you pass something for the handle
-
-    RED4ext::ScriptInstance pContext = apHandle ? apHandle : m_pPlayerSystem;
-    RED4ext::CStack stack(pContext, callArgs.data(), callArgOffset, hasReturnType ? &result : nullptr, 0);
-
-    const auto success = apFunc->Execute(&stack);
+    const auto success = ExecuteFunction(apFunc, apContext, callArgs, result);
 
     if (!success)
     {
@@ -768,6 +769,53 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
     }
 
     return results;
+}
+
+bool RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc, RED4ext::IScriptable* apContext,
+                                 TiltedPhoques::Vector<RED4ext::CStackType>& aArgs, RED4ext::CStackType& aResult) const
+{
+    constexpr auto NopOp = 0;
+    constexpr auto ParamOp = 27;
+    constexpr auto ParamEndOp = 38;
+    constexpr auto MaxCodeSize = 264;
+    constexpr auto PointerSize = sizeof(void*);
+
+    char code[MaxCodeSize];
+    RED4ext::CStackFrame frame(nullptr, code);
+
+    for (uint32_t i = 0; i < apFunc->params.size; ++i)
+    {
+        const auto& param = apFunc->params[i];
+        const auto& arg = aArgs[i];
+
+        if (param->flags.isOptional && !arg.value)
+        {
+            *frame.code = NopOp;
+            ++frame.code;
+        }
+        else
+        {
+            *frame.code = ParamOp;
+            ++frame.code;
+
+            *reinterpret_cast<void**>(frame.code) = arg.type;
+            frame.code += PointerSize;
+
+            *reinterpret_cast<void**>(frame.code) = arg.value;
+            frame.code += PointerSize;
+        }
+    }
+
+    *frame.code = ParamEndOp;
+    frame.code = code; // Rewind
+
+    // This is not intended use, but a trick.
+    // The frame we create is the parent of the current call,
+    // but we set it to apFunc itself just to make sure it's not null,
+    // because there are some functions that expect a non-empty call stack.
+    frame.func = apFunc;
+
+    return CallScriptFunction(apFunc, apContext ? apContext : m_pPlayerSystem, &frame, aResult.value, aResult.type);
 }
 
 RED4ext::ScriptInstance RTTIHelper::NewPlaceholder(RED4ext::CBaseRTTIType* apType,
