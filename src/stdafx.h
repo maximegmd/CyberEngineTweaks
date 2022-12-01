@@ -8,6 +8,8 @@
 #include <mem/pattern.h>
 #include <nlohmann/json.hpp>
 
+#include <IconsFontAwesome4.h>
+
 #include <RED4ext/CName.hpp>
 #include <RED4ext/CString.hpp>
 #include <RED4ext/DynArray.hpp>

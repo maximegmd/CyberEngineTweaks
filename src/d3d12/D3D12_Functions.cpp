@@ -405,8 +405,8 @@ void D3D12::ReloadFonts()
 
     // add icons from fontawesome4
     config.GlyphMinAdvanceX = config.SizePixels;
-    static const ImWchar icon_ranges[] = {0xf000, 0xf2e0, 0};
-    auto cetIconPath = GetAbsolutePath(L"fontawesome-webfont.ttf", m_paths.Fonts(), false);
+    static const ImWchar icon_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
+    auto cetIconPath = GetAbsolutePath(L"FontAwesome.otf", m_paths.Fonts(), false);
     io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(cetIconPath.native()).c_str(), config.SizePixels, &config, icon_ranges);
 }
 
