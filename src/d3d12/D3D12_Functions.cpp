@@ -402,6 +402,12 @@ void D3D12::ReloadFonts()
     }
     else
         io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(customFontPath.native()).c_str(), config.SizePixels, &config, cpGlyphRanges);
+
+    // add icons from fontawesome4
+    config.GlyphMinAdvanceX = config.SizePixels;
+    static const ImWchar icon_ranges[] = {0xf000, 0xf2e0, 0};
+    auto cetIconPath = GetAbsolutePath(L"fontawesome-webfont.ttf", m_paths.Fonts(), false);
+    io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(cetIconPath.native()).c_str(), config.SizePixels, &config, icon_ranges);
 }
 
 bool D3D12::InitializeImGui(size_t aBuffersCounts)

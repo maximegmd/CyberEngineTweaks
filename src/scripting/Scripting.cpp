@@ -59,6 +59,7 @@ void Scripting::Initialize()
     const auto previousCurrentPath = std::filesystem::current_path();
     current_path(m_paths.CETRoot() / "scripts");
     luaVm.script("json = require 'json/json'", sol:: detail::default_chunk_name(), sol::load_mode::text);
+    luaVm.script("FA = require 'fontawesome/icons'", sol:: detail::default_chunk_name(), sol::load_mode::text);
     current_path(previousCurrentPath);
 
     // initialize sandbox
