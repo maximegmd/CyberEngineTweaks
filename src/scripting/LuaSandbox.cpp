@@ -39,6 +39,7 @@ static constexpr const char* s_cVMGlobalObjectsWhitelist[] =
     "math",
     "bit32",
     "json",
+    "IconGlyphs",
 };
 
 static constexpr const char* s_cGlobalObjectsWhitelist[] =
