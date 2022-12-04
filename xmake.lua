@@ -48,7 +48,7 @@ add_requires("xbyak")
 add_requires("stb")
 add_requires("sol2", { configs = { includes_lua = false } })
 add_requires("openrestry-luajit", { configs = { gc64 = true } })
-add_requires("imgui v1.88-docking", { configs = { wchar32 = true, freetype = true, user_config = imguiUserConfig } })
+add_requires("imgui v1.88-docking", { configs = { wchar32 = true, user_config = imguiUserConfig } })
 
 target("RED4ext.SDK")
     set_kind("static")
