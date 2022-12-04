@@ -8,8 +8,6 @@
 #include <mem/pattern.h>
 #include <nlohmann/json.hpp>
 
-#include <IconsFontAwesome4.h>
-
 #include <RED4ext/CName.hpp>
 #include <RED4ext/CString.hpp>
 #include <RED4ext/DynArray.hpp>
@@ -66,6 +64,7 @@
 
 #include "CETVersion.h"
 #include "common/Logging.h"
+#include "common/FontMaterialDesignIcons.h"
 #include "Options.h"
 #include "Paths.h"
 #include "PersistentState.h"
