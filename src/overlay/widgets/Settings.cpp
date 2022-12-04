@@ -7,7 +7,7 @@
 #include <Utils.h>
 
 Settings::Settings(Options& aOptions, LuaVM& aVm)
-    : Widget("Settings")
+    : Widget(ICON_MD_COG " Settings")
     , m_options(aOptions)
     , m_vm(aVm)
 {
