@@ -91,7 +91,7 @@ void Console::OnUpdate()
 
     ImGui::SetNextItemWidth(-FLT_MIN);
     constexpr auto flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackResize;
-    ImGui::PushFont(CET::Get().GetFonts().MonoSpace);
+    ImGui::PushFont(CET::Get().GetFonts().MonospaceFont);
     const auto execute = ImGui::InputText("##InputCommand", m_command.data(), m_command.capacity(), flags, &HandleConsole, this);
     ImGui::PopFont();
     ImGui::SetItemDefaultFocus();

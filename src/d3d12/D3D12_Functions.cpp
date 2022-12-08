@@ -279,207 +279,6 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
     return true;
 }
 
-void D3D12::ReloadFonts()
-{
-    std::lock_guard _(m_imguiLock);
-
-    // TODO - scale also by DPI
-    const auto [resx, resy] = m_outSize;
-    const auto scaleFromReference = std::min(static_cast<float>(resx) / 1920.0f, static_cast<float>(resy) / 1080.0f);
-
-    auto& io = ImGui::GetIO();
-    io.Fonts->Clear();
-
-    const auto& fontSettings = m_options.Font;
-    const float fontSize = std::floorf(fontSettings.BaseSize * scaleFromReference);
-    const float emojiSize = fontSize * 0.8f; // scale fontsize by 0.8 to make the glyphs roughly the same size as the main font. not sure about other font, don't really have a good solution.
-
-    // fontpaths
-    auto mainFontPath = GetAbsolutePath(L"NotoSans-Regular.ttf", m_paths.Fonts(), false);
-    auto monoSpaceFontPath = GetAbsolutePath(L"NotoSansMono-Regular.ttf", m_paths.Fonts(), false);
-    auto iconFontPath = GetAbsolutePath(L"materialdesignicons.ttf", m_paths.Fonts(), false);
-    std::filesystem::path emojiFontPath = L"C:\\Windows\\Fonts\\seguiemj.ttf"; // tried to use noto color emoji but it wont render. only this one works
-
-    // create config for each font
-    static ImFontConfig mainFontConfig;
-    mainFontConfig.OversampleH = fontSettings.OversampleHorizontal;
-    mainFontConfig.OversampleV = fontSettings.OversampleVertical;
-
-    static ImFontConfig iconFontConfig;
-    iconFontConfig.OversampleH = iconFontConfig.OversampleV = 1;
-    iconFontConfig.GlyphMinAdvanceX = fontSize;
-    static const ImWchar iconFontRange[] = {ICON_MIN_MD, ICON_MAX_MD, 0};
-
-    static ImFontConfig emojiFontConfig;
-    emojiFontConfig.OversampleH = emojiFontConfig.OversampleV = 1;
-    emojiFontConfig.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
-    static const ImWchar emojiFontRanges[] = { 0x1, 0x1FFFF, 0 };
-
-    // load fonts without merging first, so we can calculate the offset to align the fonts.
-    auto mainFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(mainFontPath.native()).c_str(), fontSize, &mainFontConfig);
-    auto monoSpaceFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(monoSpaceFontPath.native()).c_str(), fontSize, &mainFontConfig);
-    auto iconFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(iconFontPath.native()).c_str(), fontSize, &iconFontConfig, iconFontRange);
-
-    io.Fonts->Build(); // Build atlas, retrieve pixel data.
-    
-    // calculate font baseline differences
-    const float mainFontBaselineDifference = iconFont->Ascent - mainFont->Ascent;
-    const float monoSpaceFontBaselineDifference = iconFont->Ascent - monoSpaceFont->Ascent;
-
-    // clear fonts then merge
-    io.Fonts->Clear();
-
-    // reconfig fonts for merge
-    iconFontConfig.MergeMode = true;
-    emojiFontConfig.MergeMode = true;
-    
-    // add main font
-    mainFontConfig.GlyphOffset.y = std::floorf(mainFontBaselineDifference * -0.5f);
-    iconFontConfig.GlyphOffset.y = std::ceilf(mainFontBaselineDifference * 0.5f);
-
-    m_fonts.Main = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(mainFontPath.native()).c_str(), fontSize, &mainFontConfig);
-    io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(iconFontPath.native()).c_str(), fontSize, &iconFontConfig, iconFontRange);
-    if (exists(emojiFontPath)) {
-        io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(emojiFontPath.native()).c_str(), emojiSize, &emojiFontConfig, emojiFontRanges);
-    }
-
-    // add monospace font
-    mainFontConfig.GlyphOffset.y = std::floorf(monoSpaceFontBaselineDifference * -0.5f);
-    iconFontConfig.GlyphOffset.y = std::ceilf(monoSpaceFontBaselineDifference * 0.5f);
-
-    m_fonts.MonoSpace = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(monoSpaceFontPath.native()).c_str(), fontSize, &mainFontConfig);
-    io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(iconFontPath.native()).c_str(), fontSize, &iconFontConfig, iconFontRange);
-    if (exists(emojiFontPath)) {
-        io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(emojiFontPath.native()).c_str(), emojiSize, &emojiFontConfig, emojiFontRanges);
-    }
-
-    // TODO reimplement custom font and auto glyph range 
-
-    // ImFontConfig config;
-    // config.SizePixels = fontSize;
-    // config.OversampleH = fontSettings.OversampleHorizontal;
-    // config.OversampleV = fontSettings.OversampleVertical;
-    // if (config.OversampleH == 1 && config.OversampleV == 1)
-    //     config.PixelSnapH = true;
-    // config.MergeMode = false;
-
-    // // add default font
-    // const auto customFontPath = fontSettings.Path.empty() ? std::filesystem::path{} : GetAbsolutePath(UTF8ToUTF16(fontSettings.Path), m_paths.Fonts(), false);
-    // auto cetFontPath = GetAbsolutePath(L"NotoSans-Regular.ttf", m_paths.Fonts(), false);
-    // const auto* cpGlyphRanges = io.Fonts->GetGlyphRangesDefault();
-    // if (customFontPath.empty())
-    // {
-    //     if (!fontSettings.Path.empty())
-    //         Log::Warn("D3D12::ReloadFonts() - Custom font path is invalid! Using default CET font.");
-
-    //     if (cetFontPath.empty())
-    //     {
-    //         Log::Warn("D3D12::ReloadFonts() - Missing default fonts!");
-    //         io.Fonts->AddFontDefault(&config);
-    //     }
-    //     else
-    //         io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(cetFontPath.native()).c_str(), fontSize, &config, cpGlyphRanges);
-    // }
-    // else
-    //     io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(customFontPath.native()).c_str(), fontSize, &config, cpGlyphRanges);
-
-    // if (fontSettings.Language == "ChineseFull")
-    // {
-    //     cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansTC-Regular.otf", m_paths.Fonts(), false);
-    //     cpGlyphRanges = io.Fonts->GetGlyphRangesChineseFull();
-    // }
-    // else if (fontSettings.Language == "ChineseSimplifiedCommon")
-    // {
-    //     cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansSC-Regular.otf", m_paths.Fonts(), false);
-    //     cpGlyphRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
-    // }
-    // else if (fontSettings.Language == "Japanese")
-    // {
-    //     cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansJP-Regular.otf", m_paths.Fonts(), false);
-    //     cpGlyphRanges = io.Fonts->GetGlyphRangesJapanese();
-    // }
-    // else if (fontSettings.Language == "Korean")
-    // {
-    //     cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansKR-Regular.otf", m_paths.Fonts(), false);
-    //     cpGlyphRanges = io.Fonts->GetGlyphRangesKorean();
-    // }
-    // else if (fontSettings.Language == "Cyrillic")
-    // {
-    //     cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSans-Regular.ttf", m_paths.Fonts(), false);
-    //     cpGlyphRanges = io.Fonts->GetGlyphRangesCyrillic();
-    // }
-    // else if (fontSettings.Language == "Thai")
-    // {
-    //     cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansThai-Regular.ttf", m_paths.Fonts(), false);
-    //     cpGlyphRanges = io.Fonts->GetGlyphRangesThai();
-    // }
-    // else if (fontSettings.Language == "Vietnamese")
-    // {
-    //     cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSans-Regular.ttf", m_paths.Fonts(), false);
-    //     cpGlyphRanges = io.Fonts->GetGlyphRangesVietnamese();
-    // }
-    // else
-    // {
-    //     switch (GetSystemDefaultLangID())
-    //     {
-    //     case MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_TRADITIONAL):
-    //         cetFontPath = GetAbsolutePath(L"NotoSansTC-Regular.otf", m_paths.Fonts(), false);
-    //         cpGlyphRanges = io.Fonts->GetGlyphRangesChineseFull();
-    //         break;
-
-    //     case MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED):
-    //         cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansSC-Regular.otf", m_paths.Fonts(), false);
-    //         cpGlyphRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
-    //         break;
-
-    //     case MAKELANGID(LANG_JAPANESE, SUBLANG_DEFAULT):
-    //         cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansJP-Regular.otf", m_paths.Fonts(), false);
-    //         cpGlyphRanges = io.Fonts->GetGlyphRangesJapanese();
-    //         break;
-
-    //     case MAKELANGID(LANG_KOREAN, SUBLANG_DEFAULT):
-    //         cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansKR-Regular.otf", m_paths.Fonts(), false);
-    //         cpGlyphRanges = io.Fonts->GetGlyphRangesKorean();
-    //         break;
-
-    //     case MAKELANGID(LANG_BELARUSIAN, SUBLANG_DEFAULT):
-    //     case MAKELANGID(LANG_RUSSIAN, SUBLANG_DEFAULT):
-    //         cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSans-Regular.ttf", m_paths.Fonts(), false);
-    //         cpGlyphRanges = io.Fonts->GetGlyphRangesCyrillic();
-    //         break;
-
-    //     case MAKELANGID(LANG_THAI, SUBLANG_DEFAULT):
-    //         cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansThai-Regular.ttf", m_paths.Fonts(), false);
-    //         cpGlyphRanges = io.Fonts->GetGlyphRangesThai();
-    //         break;
-
-    //     case MAKELANGID(LANG_VIETNAMESE, SUBLANG_DEFAULT):
-    //         cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSans-Regular.ttf", m_paths.Fonts(), false);
-    //         cpGlyphRanges = io.Fonts->GetGlyphRangesVietnamese();
-    //         break;
-    //     }
-    // }
-
-    // // add extra glyphs from language font
-    // // config.MergeMode = true;
-    // if (customFontPath.empty())
-    // {
-    //     if (!fontSettings.Path.empty())
-    //         Log::Warn("D3D12::ReloadFonts() - Custom font path is invalid! Using default CET font.");
-
-    //     if (cetFontPath.empty())
-    //     {
-    //         Log::Warn("D3D12::ReloadFonts() - Missing fonts for extra language glyphs!");
-    //         io.Fonts->AddFontDefault(&config);
-    //     }
-    //     else
-    //         io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(cetFontPath.native()).c_str(), fontSize, &config, cpGlyphRanges);
-    // }
-    // else
-    //     io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(customFontPath.native()).c_str(), fontSize, &config, cpGlyphRanges);
-
-}
-
 bool D3D12::InitializeImGui(size_t aBuffersCounts)
 {
     std::lock_guard _(m_imguiLock);
@@ -525,7 +324,7 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         return false;
     }
 
-    ReloadFonts();
+    m_fonts.BuildFonts(m_outSize);
 
     if (!ImGui_ImplDX12_CreateDeviceObjects(m_pCommandQueue.Get()))
     {
@@ -544,6 +343,8 @@ void D3D12::PrepareUpdate()
         return;
 
     std::lock_guard _(m_imguiLock);
+
+    m_fonts.RebuildFonts(m_pCommandQueue.Get(), m_outSize);
 
     ImGui_ImplWin32_NewFrame(m_outSize);
     ImGui::NewFrame();

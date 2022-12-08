@@ -33,6 +33,7 @@ struct FontSettings
     [[nodiscard]] auto operator<=>(const FontSettings&) const = default;
 
     std::string Path{};
+    std::string MonospacePath{};
     std::string Language{"Default"};
     float BaseSize{18.0f};
     int32_t OversampleHorizontal{3};

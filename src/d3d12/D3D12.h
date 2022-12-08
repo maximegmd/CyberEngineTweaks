@@ -18,8 +18,6 @@ struct D3D12
     D3D12(Window& aWindow, Paths& aPaths, Options& aOptions, Fonts& aFonts);
     ~D3D12();
 
-    void ReloadFonts();
-
     void SetTrapInputInImGui(const bool acEnabled);
     void DelayedSetTrapInputInImGui(const bool acEnabled);
     [[nodiscard]] bool IsTrapInputInImGui() const noexcept { return m_trapInputInImGui; }

@@ -38,3 +38,6 @@ IMGUI_IMPL_API void ImGui_ImplDX12_RenderDrawData(ImDrawData* apDrawData, ID3D12
 // Use if you want to reset your rendering device without losing Dear ImGui state.
 IMGUI_IMPL_API void ImGui_ImplDX12_InvalidateDeviceObjects();
 IMGUI_IMPL_API bool ImGui_ImplDX12_CreateDeviceObjects(ID3D12CommandQueue* apCommandQueue);
+
+// Use to recreate font texture during runtime. Call before NewFrame().Should switch to https://github.com/ocornut/imgui/pull/3761 once it's implemented.
+IMGUI_IMPL_API void ImGui_ImplDX12_RecreateFontsTexture(ID3D12CommandQueue* apCommandQueue);
