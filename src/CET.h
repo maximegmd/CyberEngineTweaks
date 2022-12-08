@@ -8,6 +8,7 @@
 #include "overlay/Overlay.h"
 #include "scripting/LuaVM.h"
 #include "common/CETTasks.h"
+#include "Fonts.h"
 
 struct CET
 {
@@ -24,6 +25,7 @@ struct CET
     VKBindings& GetBindings() noexcept;
     Overlay& GetOverlay() noexcept;
     LuaVM& GetVM() noexcept;
+    Fonts& GetFonts() noexcept;
 
     static bool IsRunning() noexcept;
 
@@ -39,4 +41,5 @@ private:
     LuaVM m_vm;
     Overlay m_overlay;
     CETTasks m_tasks;
+    Fonts m_fonts;
 };

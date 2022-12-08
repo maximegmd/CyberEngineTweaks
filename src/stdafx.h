@@ -67,6 +67,7 @@
 #include "common/FontMaterialDesignIcons.h"
 #include "Options.h"
 #include "Paths.h"
+#include "Fonts.h"
 #include "PersistentState.h"
 #include "reverse/Addresses.h"
 #include "scripting/GameHooks.h"
