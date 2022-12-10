@@ -3,8 +3,7 @@
 #include "common/Meta.h"
 #include "Utils.h"
 
-template<class T, FixedString REDName>
-struct LuaRED
+template <class T, FixedString REDName> struct LuaRED
 {
     static constexpr char const* Name = REDName;
 
@@ -12,8 +11,8 @@ struct LuaRED
     {
         if constexpr (std::is_integral_v<T> && sizeof(T) == sizeof(uint64_t))
         {
-            constexpr auto format { std::is_signed_v<T> ? "return {}ll" : "return {}ull" };
-            auto res { aLua.Get().script(fmt::format(format, *static_cast<T*>(aResult.value))) };
+            constexpr auto format{std::is_signed_v<T> ? "return {}ll" : "return {}ull"};
+            auto res{aLua.Get().script(fmt::format(format, *static_cast<T*>(aResult.value)))};
             assert(res.valid());
             return res.get<sol::object>();
         }
@@ -123,10 +122,7 @@ struct LuaRED
         }
     }
 
-    size_t Size() const noexcept
-    {
-        return sizeof(T);
-    }
+    size_t Size() const noexcept { return sizeof(T); }
 
     bool Is(RED4ext::CBaseRTTIType* apRtti) const
     {
@@ -137,7 +133,6 @@ struct LuaRED
     }
 
 protected:
-
     bool Resolve() const
     {
         if (m_pRtti)

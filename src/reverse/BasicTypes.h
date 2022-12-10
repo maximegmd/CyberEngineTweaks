@@ -3,8 +3,11 @@
 struct Vector3
 {
     Vector3(float aX = 0.f, float aY = 0.f, float aZ = 0.f)
-        : x(aX), y(aY), z(aZ)
-    {}
+        : x(aX)
+        , y(aY)
+        , z(aZ)
+    {
+    }
 
     float x;
     float y;
@@ -12,14 +15,18 @@ struct Vector3
 
     std::string ToString() const noexcept;
 
-	bool operator==(const Vector3& acRhs) const noexcept;
+    bool operator==(const Vector3& acRhs) const noexcept;
 };
 
 struct Vector4
 {
     Vector4(float aX = 0.f, float aY = 0.f, float aZ = 0.f, float aW = 0.f)
-        : x(aX), y(aY), z(aZ), w(aW)
-    {}
+        : x(aX)
+        , y(aY)
+        , z(aZ)
+        , w(aW)
+    {
+    }
 
     float x;
     float y;
@@ -28,14 +35,17 @@ struct Vector4
 
     std::string ToString() const noexcept;
 
-	bool operator==(const Vector4& acRhs) const noexcept;
+    bool operator==(const Vector4& acRhs) const noexcept;
 };
 
 struct EulerAngles
 {
     EulerAngles(float aRoll = 0.f, float aPitch = 0.f, float aYaw = 0.f)
-        : roll(aRoll), pitch(aPitch), yaw(aYaw)
-    {}
+        : roll(aRoll)
+        , pitch(aPitch)
+        , yaw(aYaw)
+    {
+    }
 
     float roll;
     float pitch;
@@ -43,14 +53,18 @@ struct EulerAngles
 
     std::string ToString() const noexcept;
 
-	bool operator==(const EulerAngles& acRhs) const noexcept;
+    bool operator==(const EulerAngles& acRhs) const noexcept;
 };
 
 struct Quaternion
 {
     Quaternion(float aI = 0.f, float aJ = 0.f, float aK = 0.f, float aR = 0.f)
-        : i(aI), j(aJ), k(aK), r(aR)
-    {}
+        : i(aI)
+        , j(aJ)
+        , k(aK)
+        , r(aR)
+    {
+    }
 
     float i;
     float j;
@@ -59,14 +73,21 @@ struct Quaternion
 
     std::string ToString() const noexcept;
 
-	bool operator==(const Quaternion& acRhs) const noexcept;
+    bool operator==(const Quaternion& acRhs) const noexcept;
 };
 
 struct CName
 {
-    CName(uint64_t aHash = 0) : hash(aHash){}
+    CName(uint64_t aHash = 0)
+        : hash(aHash)
+    {
+    }
 
-    CName(uint32_t aHashLo, uint32_t aHashHi) : hash_lo(aHashLo), hash_hi(aHashHi) {}
+    CName(uint32_t aHashLo, uint32_t aHashHi)
+        : hash_lo(aHashLo)
+        , hash_hi(aHashHi)
+    {
+    }
 
     CName(const std::string& aName)
     {
@@ -78,7 +99,7 @@ struct CName
 
     union
     {
-        uint64_t hash{ 0 };
+        uint64_t hash{0};
         struct
         {
             uint32_t hash_lo;
@@ -89,7 +110,7 @@ struct CName
     std::string AsString() const noexcept;
     std::string ToString() const noexcept;
 
-	bool operator==(const CName& acRhs) const noexcept;
+    bool operator==(const CName& acRhs) const noexcept;
 
     static void Add(const std::string& aName);
 };
@@ -107,10 +128,7 @@ struct TweakDBID
         this->unk7 = 0;
     }
 
-    TweakDBID(uint64_t aValue)
-    {
-        this->value = aValue;
-    }
+    TweakDBID(uint64_t aValue) { this->value = aValue; }
 
     TweakDBID(const std::string_view aName)
     {
@@ -129,8 +147,8 @@ struct TweakDBID
     std::string AsString() const noexcept;
     std::string ToString() const noexcept;
 
-	bool operator==(const TweakDBID& acRhs) const noexcept;
-	TweakDBID operator+(const std::string_view acName) const noexcept;
+    bool operator==(const TweakDBID& acRhs) const noexcept;
+    TweakDBID operator+(const std::string_view acName) const noexcept;
 
     union
     {
@@ -151,17 +169,23 @@ struct ItemID
 {
     ItemID() = default;
     ItemID(const TweakDBID& aId, uint32_t aRngSeed = 2, uint16_t aUnknown = 0, uint8_t aMaybeType = 0)
-        : id(aId), rng_seed(aRngSeed), unknown(aUnknown), maybe_type(aMaybeType), pad(0) {}
+        : id(aId)
+        , rng_seed(aRngSeed)
+        , unknown(aUnknown)
+        , maybe_type(aMaybeType)
+        , pad(0)
+    {
+    }
 
     std::string ToString() const noexcept;
 
-	bool operator==(const ItemID& acRhs) const noexcept;
+    bool operator==(const ItemID& acRhs) const noexcept;
 
     TweakDBID id;
-    uint32_t rng_seed{ 2 };
-    uint16_t unknown{ 0 };
-    uint8_t maybe_type{ 0 };
-    uint8_t pad{ 0 };
+    uint32_t rng_seed{2};
+    uint16_t unknown{0};
+    uint8_t maybe_type{0};
+    uint8_t pad{0};
 };
 
 static_assert(sizeof(ItemID) == 0x10);
@@ -201,10 +225,10 @@ struct Variant
         kTypeMask = ~kInlineFlag,
     };
 
-    const RED4ext::CBaseRTTIType* type{ nullptr };
+    const RED4ext::CBaseRTTIType* type{nullptr};
     union
     {
-        mutable uint8_t inlined[kInlineSize]{ 0 };
+        mutable uint8_t inlined[kInlineSize]{0};
         RED4ext::ScriptInstance instance;
     };
 };
@@ -213,26 +237,32 @@ static_assert(sizeof(Variant) == 0x18);
 
 struct CRUID
 {
-    CRUID(uint64_t aHash = 0) : hash(aHash) {}
+    CRUID(uint64_t aHash = 0)
+        : hash(aHash)
+    {
+    }
 
     uint64_t hash;
 
     std::string ToString() const noexcept;
 
-	bool operator==(const CRUID& acRhs) const noexcept;
+    bool operator==(const CRUID& acRhs) const noexcept;
 };
 
 static_assert(sizeof(CRUID) == 0x8);
 
 struct gamedataLocKeyWrapper
 {
-    gamedataLocKeyWrapper(uint64_t aHash = 0) : hash(aHash) {}
+    gamedataLocKeyWrapper(uint64_t aHash = 0)
+        : hash(aHash)
+    {
+    }
 
     uint64_t hash;
 
     std::string ToString() const noexcept;
 
-	bool operator==(const gamedataLocKeyWrapper& acRhs) const noexcept;
+    bool operator==(const gamedataLocKeyWrapper& acRhs) const noexcept;
 };
 
 static_assert(sizeof(gamedataLocKeyWrapper) == 0x8);

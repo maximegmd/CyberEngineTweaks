@@ -11,7 +11,9 @@ std::wstring UTF8ToUTF16(std::string_view utf8);
 
 spdlog::sink_ptr CreateCustomSinkST(const std::function<void(const std::string&)>& acpSinkItHandler, const std::function<void()>& acpFlushHandler = nullptr);
 spdlog::sink_ptr CreateCustomSinkMT(const std::function<void(const std::string&)>& acpSinkItHandler, const std::function<void()>& acpFlushHandler = nullptr);
-std::shared_ptr<spdlog::logger> CreateLogger(const std::filesystem::path& acpPath, const std::string& acpID, const spdlog::sink_ptr& acpExtraSink = nullptr, const std::string& acpPattern = "[%Y-%m-%d %H:%M:%S UTC%z] [%t] %v", const size_t acMaxFileSize = 5 * 1024 * 1024, const size_t acMaxFileCount = 3);
+std::shared_ptr<spdlog::logger> CreateLogger(
+    const std::filesystem::path& acpPath, const std::string& acpID, const spdlog::sink_ptr& acpExtraSink = nullptr,
+    const std::string& acpPattern = "[%Y-%m-%d %H:%M:%S UTC%z] [%t] %v", const size_t acMaxFileSize = 5 * 1024 * 1024, const size_t acMaxFileCount = 3);
 
 // deep copies sol object (doesnt take into account potential duplicates)
 sol::object DeepCopySolObject(const sol::object& acpObj, const sol::state_view& acpStateView);
@@ -20,8 +22,7 @@ sol::object DeepCopySolObject(const sol::object& acpObj, const sol::state_view& 
 void MakeSolUsertypeImmutable(const sol::object& acpObj, const sol::state_view& acpStateView);
 
 // Add unnamed function to the Lua registry
-template<typename F>
-sol::function MakeSolFunction(sol::state& aState, F aFunc)
+template <typename F> sol::function MakeSolFunction(sol::state& aState, F aFunc)
 {
     // This is slightly better than wrapping lambdas in sol::object:
     // 1. When the lambda is wrapped in an object sol registers additional usertype for the lambda type.
@@ -44,10 +45,13 @@ float GetAlignedItemWidth(const int64_t acItemsCount);
 
 float GetCenteredOffsetForText(const char* acpText);
 
-TChangedCBResult UnsavedChangesPopup(const std::string& acpOwnerName, bool& aFirstTime, const bool acMadeChanges, const TWidgetCB& acpSaveCB, const TWidgetCB& acpLoadCB, const TWidgetCB& acpCancelCB = nullptr);
+TChangedCBResult UnsavedChangesPopup(
+    const std::string& acpOwnerName, bool& aFirstTime, const bool acMadeChanges, const TWidgetCB& acpSaveCB, const TWidgetCB& acpLoadCB, const TWidgetCB& acpCancelCB = nullptr);
 
-[[nodiscard]] std::filesystem::path GetAbsolutePath(const std::string& acFilePath, const std::filesystem::path& acRootPath, const bool acAllowNonExisting, const bool acAllowSymlink = true);
-[[nodiscard]] std::filesystem::path GetAbsolutePath(std::filesystem::path aFilePath, const std::filesystem::path& acRootPath, const bool acAllowNonExisting, const bool acAllowSymlink = true);
+[[nodiscard]] std::filesystem::path
+GetAbsolutePath(const std::string& acFilePath, const std::filesystem::path& acRootPath, const bool acAllowNonExisting, const bool acAllowSymlink = true);
+[[nodiscard]] std::filesystem::path
+GetAbsolutePath(std::filesystem::path aFilePath, const std::filesystem::path& acRootPath, const bool acAllowNonExisting, const bool acAllowSymlink = true);
 
 [[nodiscard]] std::filesystem::path GetLuaPath(const std::string& acFilePath, const std::filesystem::path& acRootPath, const bool acAllowNonExisting);
 [[nodiscard]] std::filesystem::path GetLuaPath(std::filesystem::path aFilePath, const std::filesystem::path& acRootPath, const bool acAllowNonExisting);

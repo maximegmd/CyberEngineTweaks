@@ -20,16 +20,16 @@ void PatchesSettings::Load(const nlohmann::json& aConfig)
 nlohmann::json PatchesSettings::Save() const
 {
     return {
-      {"remove_pedestrians", RemovePedestrians},
-      {"disable_async_compute", AsyncCompute},
-      {"disable_antialiasing", Antialiasing},
-      {"skip_start_menu", SkipStartMenu},
-      {"amd_smt", AmdSmt},
-      {"disable_intro_movies", DisableIntroMovies},
-      {"disable_vignette", DisableVignette},
-      {"disable_boundary_teleport", DisableBoundaryTeleport},
-      {"disable_win7_vsync", DisableWin7Vsync},
-      {"minimap_flicker", MinimapFlicker},
+        {"remove_pedestrians", RemovePedestrians},
+        {"disable_async_compute", AsyncCompute},
+        {"disable_antialiasing", Antialiasing},
+        {"skip_start_menu", SkipStartMenu},
+        {"amd_smt", AmdSmt},
+        {"disable_intro_movies", DisableIntroMovies},
+        {"disable_vignette", DisableVignette},
+        {"disable_boundary_teleport", DisableBoundaryTeleport},
+        {"disable_win7_vsync", DisableWin7Vsync},
+        {"minimap_flicker", MinimapFlicker},
     };
 }
 
@@ -49,13 +49,7 @@ void FontSettings::Load(const nlohmann::json& aConfig)
 
 nlohmann::json FontSettings::Save() const
 {
-    return {
-      {"path", Path},
-      {"language", Language},
-      {"base_size", BaseSize},
-      {"oversample_horizontal", OversampleHorizontal},
-      {"oversample_vertical", OversampleVertical}
-    };
+    return {{"path", Path}, {"language", Language}, {"base_size", BaseSize}, {"oversample_horizontal", OversampleHorizontal}, {"oversample_vertical", OversampleVertical}};
 }
 
 void FontSettings::ResetToDefaults()
@@ -81,14 +75,8 @@ nlohmann::json DeveloperSettings::Save() const
     // set global "Enable ImGui Assertions"
     g_ImGuiAssertionsEnabled = EnableImGuiAssertions;
 
-    return {
-      {"remove_dead_bindings", RemoveDeadBindings},
-      {"enable_imgui_assertions", EnableImGuiAssertions},
-      {"enable_debug", EnableDebug},
-      {"dump_game_options", DumpGameOptions},
-      {"max_lines_console_history", MaxLinesConsoleHistory},
-      {"persistent_console", PersistentConsole}
-    };
+    return {{"remove_dead_bindings", RemoveDeadBindings}, {"enable_imgui_assertions", EnableImGuiAssertions},    {"enable_debug", EnableDebug},
+            {"dump_game_options", DumpGameOptions},       {"max_lines_console_history", MaxLinesConsoleHistory}, {"persistent_console", PersistentConsole}};
 }
 
 void DeveloperSettings::ResetToDefaults()
@@ -106,7 +94,7 @@ void Options::Load()
         return;
 
     std::ifstream configFile(path);
-    if(!configFile)
+    if (!configFile)
         return;
 
     auto config = nlohmann::json::parse(configFile);
@@ -129,11 +117,7 @@ void Options::Load()
 
 void Options::Save() const
 {
-    nlohmann::json config = {
-      {"patches", Patches.Save()},
-      {"font", Font.Save()},
-      {"developer", Developer.Save()}
-    };
+    nlohmann::json config = {{"patches", Patches.Save()}, {"font", Font.Save()}, {"developer", Developer.Save()}};
 
     const auto path = GetAbsolutePath(m_paths.Config(), "", true);
     std::ofstream o(path);
@@ -154,27 +138,27 @@ Options::Options(Paths& aPaths)
 {
     const auto* exePathStr = aPaths.Executable().native().c_str();
     const auto verInfoSz = GetFileVersionInfoSize(exePathStr, nullptr);
-    if(verInfoSz)
+    if (verInfoSz)
     {
         const auto verInfo = std::make_unique<BYTE[]>(verInfoSz);
-        if(GetFileVersionInfo(exePathStr, 0, verInfoSz, verInfo.get()))
+        if (GetFileVersionInfo(exePathStr, 0, verInfoSz, verInfo.get()))
         {
             struct
             {
                 WORD Language;
                 WORD CodePage;
-            } *pTranslations;
+            }* pTranslations;
 
             UINT transBytes = 0;
-            if(VerQueryValue(verInfo.get(), _T("\\VarFileInfo\\Translation"), reinterpret_cast<void**>(&pTranslations), &transBytes))
+            if (VerQueryValue(verInfo.get(), _T("\\VarFileInfo\\Translation"), reinterpret_cast<void**>(&pTranslations), &transBytes))
             {
                 UINT dummy;
                 TCHAR* productName = nullptr;
                 TCHAR subBlock[64];
-                for(UINT i = 0; i < (transBytes / sizeof(*pTranslations)); i++)
+                for (UINT i = 0; i < (transBytes / sizeof(*pTranslations)); i++)
                 {
                     _stprintf(subBlock, _T("\\StringFileInfo\\%04x%04x\\ProductName"), pTranslations[i].Language, pTranslations[i].CodePage);
-                    if(VerQueryValue(verInfo.get(), subBlock, reinterpret_cast<void**>(&productName), &dummy))
+                    if (VerQueryValue(verInfo.get(), subBlock, reinterpret_cast<void**>(&productName), &dummy))
                         if (_tcscmp(productName, _T("Cyberpunk 2077")) == 0)
                         {
                             ExeValid = true;
@@ -211,7 +195,6 @@ Options::Options(Paths& aPaths)
             Log::Error("Unsupported game version! Only {}.{:02d} is supported.", smajor, sminor);
             throw std::runtime_error("Unsupported version");
         }
-
     }
     else
     {

@@ -36,11 +36,11 @@ std::string GameOption::GetString()
     {
         ret << std::to_string(Float.Value);
     }
-    else if(GetType() == kString)
+    else if (GetType() == kString)
     {
         ret << "\"" << String.c_str() << "\"";
     }
-    else if(GetType() == kColor)
+    else if (GetType() == kColor)
     {
         ret << "0x" << std::hex << Integer.Value << std::dec;
     }
@@ -132,11 +132,8 @@ bool GameOption::Toggle()
 
 GameOption* GameOptions::Find(const std::string& category, const std::string& name)
 {
-    const auto option = std::ranges::find_if(s_gameOptions,
-                                             [&category, &name](const GameOption* x)
-                                             {
-                                                 return _stricmp(x->pCategory, category.c_str()) == 0 && _stricmp(x->pName, name.c_str()) == 0;
-                                             });
+    const auto option = std::ranges::find_if(
+        s_gameOptions, [&category, &name](const GameOption* x) { return _stricmp(x->pCategory, category.c_str()) == 0 && _stricmp(x->pName, name.c_str()) == 0; });
 
     if (option == s_gameOptions.end())
     {

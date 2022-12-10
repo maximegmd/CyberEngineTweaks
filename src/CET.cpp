@@ -5,7 +5,7 @@
 
 using namespace std::chrono_literals;
 
-static std::unique_ptr<CET> s_pInstance{ nullptr };
+static std::unique_ptr<CET> s_pInstance{nullptr};
 static bool s_isRunning{true};
 
 void CET::Initialize()

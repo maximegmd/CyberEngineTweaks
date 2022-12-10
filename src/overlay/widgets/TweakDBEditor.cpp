@@ -24,8 +24,7 @@ constexpr float c_searchDelay = 0.25f;
 
 namespace ImGui
 {
-std::pair<bool, std::string*> InputTextCStr(const char* acpLabel, const char* acpBuf, size_t aBufSize,
-                                            ImGuiInputTextFlags aFlags = 0)
+std::pair<bool, std::string*> InputTextCStr(const char* acpLabel, const char* acpBuf, size_t aBufSize, ImGuiInputTextFlags aFlags = 0)
 {
     if ((aFlags & ImGuiInputTextFlags_ReadOnly) == 0)
     {
@@ -35,17 +34,18 @@ std::pair<bool, std::string*> InputTextCStr(const char* acpLabel, const char* ac
         isModified = false;
         tempStr.clear();
         aFlags |= ImGuiInputTextFlags_CallbackResize;
-        const bool ret = InputText(acpLabel, const_cast<char*>(acpBuf), aBufSize + 1, aFlags,
-                                   [](ImGuiInputTextCallbackData* apData)
-                                   {
-                                       if (apData->EventFlag == ImGuiInputTextFlags_CallbackResize)
-                                       {
-                                           tempStr.resize(apData->BufTextLen);
-                                           apData->Buf = tempStr.data();
-                                           isModified = true;
-                                       }
-                                       return 0;
-                                   });
+        const bool ret = InputText(
+            acpLabel, const_cast<char*>(acpBuf), aBufSize + 1, aFlags,
+            [](ImGuiInputTextCallbackData* apData)
+            {
+                if (apData->EventFlag == ImGuiInputTextFlags_CallbackResize)
+                {
+                    tempStr.resize(apData->BufTextLen);
+                    apData->Buf = tempStr.data();
+                    isModified = true;
+                }
+                return 0;
+            });
         return {ret && isModified, &tempStr};
     }
 
@@ -71,7 +71,7 @@ bool NextItemVisible(const ImVec2& aSize = ImVec2(1, 1), bool aClaimSpaceIfInvis
     }
     return visible;
 }
-}
+} // namespace ImGui
 
 bool SortString(const std::string& acLeft, const std::string& acRight)
 {
@@ -116,9 +116,7 @@ bool StringContains(const std::string_view& acString, const std::string_view& ac
         }
     }
 
-
-    const auto it = std::ranges::search(acString, acSearch,
-                                        [](char a, char b) { return std::tolower(a) == std::tolower(b); }).begin();
+    const auto it = std::ranges::search(acString, acSearch, [](char a, char b) { return std::tolower(a) == std::tolower(b); }).begin();
     return it != acString.end();
 }
 
@@ -197,8 +195,7 @@ void TweakDBEditor::RefreshRecords()
     m_cachedRecords.reserve(pTDB->recordsByType.size);
 
     pTDB->recordsByType.for_each(
-        [this](const RED4ext::CBaseRTTIType* acpRTTIType,
-                                    const RED4ext::DynArray<RED4ext::Handle<RED4ext::IScriptable>>& aRecords)
+        [this](const RED4ext::CBaseRTTIType* acpRTTIType, const RED4ext::DynArray<RED4ext::Handle<RED4ext::IScriptable>>& aRecords)
         {
             const auto typeName = acpRTTIType->GetName();
             auto& groupRecords = m_cachedRecords.emplace_back(typeName).m_records;
@@ -216,12 +213,7 @@ void TweakDBEditor::RefreshRecords()
             }
         });
 
-    std::ranges::sort(
-        m_cachedRecords,
-        [](const CachedRecordGroup& acLeft, const CachedRecordGroup& acRight)
-        {
-            return SortString(acLeft.m_name, acRight.m_name);
-        });
+    std::ranges::sort(m_cachedRecords, [](const CachedRecordGroup& acLeft, const CachedRecordGroup& acRight) { return SortString(acLeft.m_name, acRight.m_name); });
 }
 
 void TweakDBEditor::RefreshFlats()
@@ -234,7 +226,8 @@ void TweakDBEditor::RefreshFlats()
     std::shared_lock _2(pTDB->mutex01);
 
     TiltedPhoques::Map<uint64_t, size_t> cachedFlatGroupsMap;
-    auto cacheFlat = [&](uint64_t groupHash, const char* groupName, std::string&& name, RED4ext::TweakDBID dbid) {
+    auto cacheFlat = [&](uint64_t groupHash, const char* groupName, std::string&& name, RED4ext::TweakDBID dbid)
+    {
         size_t index = 0;
 
         if (const auto it = cachedFlatGroupsMap.find(groupHash); it != cachedFlatGroupsMap.cend())
@@ -252,41 +245,43 @@ void TweakDBEditor::RefreshFlats()
 
     m_cachedFlatGroups.clear();
 
-    std::ranges::for_each(pTDB->flats, [&](RED4ext::TweakDBID dbid)
-    {
-        const uint64_t dbidBase = m_vm.GetTDBIDBase(dbid);
-        if (dbidBase != 0 && pTDB->recordsByID.Get(dbidBase) != nullptr)
-            return; // that's a record flat, ignoring that.
-
-        std::string flatName;
-        const bool unknownFlatName = !GetTweakDBIDStringFlat(dbid, flatName);
-        if (unknownFlatName)
-            cacheFlat(unknownGroupHash, "!Unknown!", std::move(flatName), dbid);
-        else
+    std::ranges::for_each(
+        pTDB->flats,
+        [&](RED4ext::TweakDBID dbid)
         {
-            size_t idx = flatName.find('.');
-            if (idx == std::string::npos)
-                cacheFlat(badGroupHash, "!BadName!", std::move(flatName), dbid);
+            const uint64_t dbidBase = m_vm.GetTDBIDBase(dbid);
+            if (dbidBase != 0 && pTDB->recordsByID.Get(dbidBase) != nullptr)
+                return; // that's a record flat, ignoring that.
+
+            std::string flatName;
+            const bool unknownFlatName = !GetTweakDBIDStringFlat(dbid, flatName);
+            if (unknownFlatName)
+                cacheFlat(unknownGroupHash, "!Unknown!", std::move(flatName), dbid);
             else
             {
-                // < 1 || > size = group as much as possible
-                for (int32_t i = 1; i != m_flatGroupNameDepth; ++i)
+                size_t idx = flatName.find('.');
+                if (idx == std::string::npos)
+                    cacheFlat(badGroupHash, "!BadName!", std::move(flatName), dbid);
+                else
                 {
-                    if (idx + 1 == flatName.size())
-                        break;
+                    // < 1 || > size = group as much as possible
+                    for (int32_t i = 1; i != m_flatGroupNameDepth; ++i)
+                    {
+                        if (idx + 1 == flatName.size())
+                            break;
 
-                    const size_t idx2 = flatName.find('.', idx + 1);
-                    if (idx2 == std::string::npos)
-                        break;
+                        const size_t idx2 = flatName.find('.', idx + 1);
+                        if (idx2 == std::string::npos)
+                            break;
 
-                    idx = idx2;
+                        idx = idx2;
+                    }
+
+                    const auto cGroupName = flatName.substr(0, idx);
+                    cacheFlat(RED4ext::FNV1a64(cGroupName.c_str()), cGroupName.c_str(), flatName.c_str(), dbid);
                 }
-
-                const auto cGroupName = flatName.substr(0, idx);
-                cacheFlat(RED4ext::FNV1a64(cGroupName.c_str()), cGroupName.c_str(), flatName.c_str(), dbid);
             }
-        }
-    });
+        });
 
     if (const auto it = cachedFlatGroupsMap.find(unknownGroupHash); it != cachedFlatGroupsMap.cend())
     {
@@ -300,12 +295,7 @@ void TweakDBEditor::RefreshFlats()
         group.m_name = fmt::format("{} - {} flats!", group.m_name, group.m_flats.size());
     }
 
-    std::ranges::sort(
-        m_cachedFlatGroups,
-        [](const CachedFlatGroup& acLeft, const CachedFlatGroup& acRight)
-        {
-            return SortString(acLeft.m_name, acRight.m_name);
-        });
+    std::ranges::sort(m_cachedFlatGroups, [](const CachedFlatGroup& acLeft, const CachedFlatGroup& acRight) { return SortString(acLeft.m_name, acRight.m_name); });
 }
 
 void TweakDBEditor::FilterAll()
@@ -336,52 +326,50 @@ void TweakDBEditor::FilterRecords(bool aFilterTab, bool aFilterDropdown)
     for (auto& group : m_cachedRecords)
     {
         bool anyRecordsVisible = false;
-        std::for_each(std::execution::par_unseq, group.m_records.begin(), group.m_records.end(),
-          [&](CachedRecord& record)
-          {
-              if (aFilterTab)
-              {
-                  bool isFiltered = false;
-                  if (s_recordsFilterBuffer[0] != '\0' && record.m_dbid != dbid &&
-                      !StringContains(record.m_name, s_recordsFilterBuffer, s_recordsFilterIsRegex))
-                  {
-                      isFiltered = true;
+        std::for_each(
+            std::execution::par_unseq, group.m_records.begin(), group.m_records.end(),
+            [&](CachedRecord& record)
+            {
+                if (aFilterTab)
+                {
+                    bool isFiltered = false;
+                    if (s_recordsFilterBuffer[0] != '\0' && record.m_dbid != dbid && !StringContains(record.m_name, s_recordsFilterBuffer, s_recordsFilterIsRegex))
+                    {
+                        isFiltered = true;
 
-                      for (CachedFlat& flat : record.m_flats)
-                      {
-                          if (flat.m_dbid == dbid ||
-                              StringContains(flat.m_name, s_recordsFilterBuffer, s_recordsFilterIsRegex))
-                          {
-                              isFiltered = false;
-                              break;
-                          }
-                      }
-                  }
+                        for (CachedFlat& flat : record.m_flats)
+                        {
+                            if (flat.m_dbid == dbid || StringContains(flat.m_name, s_recordsFilterBuffer, s_recordsFilterIsRegex))
+                            {
+                                isFiltered = false;
+                                break;
+                            }
+                        }
+                    }
 
-                  if (isFiltered)
-                  {
-                      record.m_isFiltered = true;
-                  }
-                  else
-                  {
-                      record.m_isFiltered = false;
-                      anyRecordsVisible = true;
-                  }
-              }
+                    if (isFiltered)
+                    {
+                        record.m_isFiltered = true;
+                    }
+                    else
+                    {
+                        record.m_isFiltered = false;
+                        anyRecordsVisible = true;
+                    }
+                }
 
-              if (aFilterDropdown)
-              {
-                  if (s_tweakdbidFilterBuffer[0] != '\0' && record.m_dbid != dbidDropdown &&
-                      !StringContains(record.m_name, s_tweakdbidFilterBuffer))
-                  {
-                      record.m_isDropdownFiltered = true;
-                  }
-                  else
-                  {
-                      record.m_isDropdownFiltered = false;
-                  }
-              }
-          });
+                if (aFilterDropdown)
+                {
+                    if (s_tweakdbidFilterBuffer[0] != '\0' && record.m_dbid != dbidDropdown && !StringContains(record.m_name, s_tweakdbidFilterBuffer))
+                    {
+                        record.m_isDropdownFiltered = true;
+                    }
+                    else
+                    {
+                        record.m_isDropdownFiltered = false;
+                    }
+                }
+            });
 
         if (aFilterTab)
         {
@@ -411,8 +399,7 @@ void TweakDBEditor::FilterFlats()
             bool anyFlatsVisible = false;
             for (auto& flat : group.m_flats)
             {
-                if (flat.m_dbid != dbid &&
-                    !StringContains(flat.m_name, s_flatsFilterBuffer, s_flatsFilterIsRegex))
+                if (flat.m_dbid != dbid && !StringContains(flat.m_name, s_flatsFilterBuffer, s_flatsFilterIsRegex))
                 {
                     flat.m_isFiltered = true;
                 }
@@ -452,8 +439,7 @@ bool TweakDBEditor::DrawRecordDropdown(const char* acpLabel, RED4ext::TweakDBID&
     {
         static float searchTimer = 0.0f;
         ImGui::SetNextItemWidth(-FLT_MIN);
-        if (ImGui::InputTextWithHint("##dropdownSearch", "Search", s_tweakdbidFilterBuffer,
-                                     sizeof(s_tweakdbidFilterBuffer)))
+        if (ImGui::InputTextWithHint("##dropdownSearch", "Search", s_tweakdbidFilterBuffer, sizeof(s_tweakdbidFilterBuffer)))
         {
             searchTimer = c_searchDelay;
         }
@@ -478,8 +464,7 @@ bool TweakDBEditor::DrawRecordDropdown(const char* acpLabel, RED4ext::TweakDBID&
                         continue;
 
                     const bool isSelected = record.m_dbid == aDBID;
-                    if (ImGui::NextItemVisible(ImVec2(1.0f, ImGui::GetTextLineHeight())) &&
-                        ImGui::Selectable(record.m_name.c_str(), isSelected))
+                    if (ImGui::NextItemVisible(ImVec2(1.0f, ImGui::GetTextLineHeight())) && ImGui::Selectable(record.m_name.c_str(), isSelected))
                     {
                         aDBID = record.m_dbid;
                         valueChanged = true;
@@ -621,8 +606,7 @@ bool TweakDBEditor::DrawFlat(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aSta
 }
 
 // Needs a refactor
-bool TweakDBEditor::DrawFlatArray(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly,
-                                  bool aCollapsable)
+bool TweakDBEditor::DrawFlatArray(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly, bool aCollapsable)
 {
     static TiltedPhoques::Map<uint64_t, RED4ext::ScriptInstance> editedArrays;
 
@@ -706,8 +690,7 @@ bool TweakDBEditor::DrawFlatArray(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
             }
         }
 
-        static constexpr ImGuiTableFlags tableFlags = ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders |
-                                                      ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg;
+        static constexpr ImGuiTableFlags tableFlags = ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg;
 
         if (isCached)
         {
@@ -804,8 +787,7 @@ bool TweakDBEditor::DrawFlatTweakDBID(RED4ext::TweakDBID aDBID, RED4ext::CStackT
         }
 
         ImGui::SetNextItemWidth(-FLT_MIN);
-        ImGui::InputScalar("##raw", ImGuiDataType_U64, aStackType.value, nullptr, nullptr, "%016llX",
-                           ImGuiInputTextFlags_ReadOnly);
+        ImGui::InputScalar("##raw", ImGuiDataType_U64, aStackType.value, nullptr, nullptr, "%016llX", ImGuiInputTextFlags_ReadOnly);
     }
     else
     {
@@ -1125,21 +1107,21 @@ bool TweakDBEditor::DrawFlatResourceAsyncRef(RED4ext::TweakDBID aDBID, RED4ext::
                 if (searchTimer <= 0.0f)
                 {
                     auto& resources = ResourcesList::Get()->GetResources();
-                    resourcesCount = static_cast<int>(std::count_if(std::execution::par_unseq, resources.begin(), resources.end(),
-                       [](ResourcesList::Resource& resource)
-                       {
-                           if (comboSearchStr[0] == '\0' ||
-                               StringContains(resource.m_name, comboSearchStr))
-                           {
-                               resource.m_isFiltered = false;
-                           }
-                           else
-                           {
-                               resource.m_isFiltered = true;
-                           }
+                    resourcesCount = static_cast<int>(std::count_if(
+                        std::execution::par_unseq, resources.begin(), resources.end(),
+                        [](ResourcesList::Resource& resource)
+                        {
+                            if (comboSearchStr[0] == '\0' || StringContains(resource.m_name, comboSearchStr))
+                            {
+                                resource.m_isFiltered = false;
+                            }
+                            else
+                            {
+                                resource.m_isFiltered = true;
+                            }
 
-                           return !resource.m_isFiltered;
-                       }));
+                            return !resource.m_isFiltered;
+                        }));
 
                     searchTimer = 0.0f;
                 }
@@ -1246,8 +1228,7 @@ bool TweakDBEditor::DrawFlatCName(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
 
     uint64_t hash = pCName->hash;
     ImGui::SetNextItemWidth(-FLT_MIN);
-    const bool rawChanged = ImGui::InputScalar("##raw", ImGuiDataType_U64, &hash, nullptr, nullptr, "%016llX",
-                                               flags | ImGuiInputTextFlags_CharsHexadecimal);
+    const bool rawChanged = ImGui::InputScalar("##raw", ImGuiDataType_U64, &hash, nullptr, nullptr, "%016llX", flags | ImGuiInputTextFlags_CharsHexadecimal);
     if (rawChanged)
     {
         newCName.hash = hash;
@@ -1326,8 +1307,7 @@ bool TweakDBEditor::DrawFlatFloat(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
 
     float val = *pFloat;
     ImGui::SetNextItemWidth(-FLT_MIN);
-    const bool valueChanged = ImGui::InputFloat(
-        "", &val, 0, 0, "%f", aReadOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_EnterReturnsTrue);
+    const bool valueChanged = ImGui::InputFloat("", &val, 0, 0, "%f", aReadOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_EnterReturnsTrue);
     if (valueChanged)
     {
         if (aDBID.IsValid())
@@ -1349,8 +1329,7 @@ bool TweakDBEditor::DrawFlatInt32(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
 
     int32_t val = *pInt;
     ImGui::SetNextItemWidth(-FLT_MIN);
-    const bool valueChanged = ImGui::InputInt(
-        "", &val, 0, 0, aReadOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_EnterReturnsTrue);
+    const bool valueChanged = ImGui::InputInt("", &val, 0, 0, aReadOnly ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_EnterReturnsTrue);
     if (valueChanged)
     {
         if (aDBID.IsValid())
@@ -1371,7 +1350,8 @@ bool TweakDBEditor::DrawFlatInt32(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
 void TweakDBEditor::DrawRecordsTab()
 {
     static float searchTimer = 0.0f;
-    ImGui::SetNextItemWidth(-(ImGui::GetFrameHeight() + ImGui::CalcTextSize("Regex").x + ImGui::GetStyle().ItemSpacing.x + ImGui::GetStyle().ItemInnerSpacing.x + ImGui::GetStyle().FramePadding.x));
+    ImGui::SetNextItemWidth(
+        -(ImGui::GetFrameHeight() + ImGui::CalcTextSize("Regex").x + ImGui::GetStyle().ItemSpacing.x + ImGui::GetStyle().ItemInnerSpacing.x + ImGui::GetStyle().FramePadding.x));
     if (ImGui::InputTextWithHint("##search", "Search", s_recordsFilterBuffer, sizeof(s_recordsFilterBuffer)))
     {
         searchTimer = c_searchDelay;
@@ -1415,9 +1395,7 @@ void TweakDBEditor::DrawRecordsTab()
 
                 if (ImGui::TreeNode(record.m_name.c_str()))
                 {
-                    static constexpr ImGuiTableFlags tableFlags = ImGuiTableFlags_NoSavedSettings |
-                                                                  ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable |
-                                                                  ImGuiTableFlags_RowBg;
+                    static constexpr ImGuiTableFlags tableFlags = ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg;
 
                     record.Initialize();
 
@@ -1477,27 +1455,29 @@ void TweakDBEditor::DrawQueriesTab()
     auto* pTDB = RED4ext::TweakDB::Get();
 
     std::shared_lock _(pTDB->mutex01);
-    pTDB->queries.ForEach([this](const RED4ext::TweakDBID& queryID, RED4ext::DynArray<RED4ext::TweakDBID>& recordIDs)
-    {
-        const auto queryName = GetTweakDBIDStringQuery(queryID.value);
-
-        ImGui::PushID(queryID.name.hash);
-        ImGui::PushID(queryID.name.length);
-        if (ImGui::CollapsingHeader(queryName.c_str()))
+    pTDB->queries.ForEach(
+        [this](const RED4ext::TweakDBID& queryID, RED4ext::DynArray<RED4ext::TweakDBID>& recordIDs)
         {
-            static RED4ext::CStackType stackType(RED4ext::CRTTISystem::Get()->GetType("array:TweakDBID"));
-            stackType.value = &recordIDs;
-            DrawFlatArray({}, stackType, false, false);
-        }
-        ImGui::PopID();
-        ImGui::PopID();
-    });
+            const auto queryName = GetTweakDBIDStringQuery(queryID.value);
+
+            ImGui::PushID(queryID.name.hash);
+            ImGui::PushID(queryID.name.length);
+            if (ImGui::CollapsingHeader(queryName.c_str()))
+            {
+                static RED4ext::CStackType stackType(RED4ext::CRTTISystem::Get()->GetType("array:TweakDBID"));
+                stackType.value = &recordIDs;
+                DrawFlatArray({}, stackType, false, false);
+            }
+            ImGui::PopID();
+            ImGui::PopID();
+        });
 }
 
 void TweakDBEditor::DrawFlatsTab()
 {
     static float searchTimer = 0.0f;
-    ImGui::SetNextItemWidth(-(ImGui::GetFrameHeight() + ImGui::CalcTextSize("Regex").x + ImGui::GetStyle().ItemSpacing.x + ImGui::GetStyle().ItemInnerSpacing.x + ImGui::GetStyle().FramePadding.x));
+    ImGui::SetNextItemWidth(
+        -(ImGui::GetFrameHeight() + ImGui::CalcTextSize("Regex").x + ImGui::GetStyle().ItemSpacing.x + ImGui::GetStyle().ItemInnerSpacing.x + ImGui::GetStyle().FramePadding.x));
     if (ImGui::InputTextWithHint("##search", "Search", s_flatsFilterBuffer, sizeof(s_flatsFilterBuffer)))
     {
         searchTimer = c_searchDelay;
@@ -1530,8 +1510,7 @@ void TweakDBEditor::DrawFlatsTab()
 
         if (ImGui::CollapsingHeader(group.m_name.c_str()))
         {
-            static constexpr ImGuiTableFlags tableFlags = ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders |
-                                                          ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg;
+            static constexpr ImGuiTableFlags tableFlags = ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg;
 
             group.Initialize();
 
@@ -1583,8 +1562,7 @@ void TweakDBEditor::DrawFlatsTab()
 void TweakDBEditor::DrawAdvancedTab()
 {
 
-    if (ImGui::InputScalar("'Flats' Grouping depth", ImGuiDataType_S8, &m_flatGroupNameDepth, nullptr, nullptr, nullptr,
-                           ImGuiInputTextFlags_EnterReturnsTrue))
+    if (ImGui::InputScalar("'Flats' Grouping depth", ImGuiDataType_S8, &m_flatGroupNameDepth, nullptr, nullptr, nullptr, ImGuiInputTextFlags_EnterReturnsTrue))
     {
         RefreshFlats();
         FilterFlats();
@@ -1607,7 +1585,8 @@ void TweakDBEditor::DrawAdvancedTab()
         static RED4ext::TweakDBID clonedRecordDBID;
         static RED4ext::CName recordTypeName;
 
-        constexpr auto SetStatus = [](const char* acpStatus) {
+        constexpr auto SetStatus = [](const char* acpStatus)
+        {
             status = acpStatus;
             statusTimer = 2.5f;
         };
@@ -1630,15 +1609,13 @@ void TweakDBEditor::DrawAdvancedTab()
             {
                 for (const auto& recordGroup : m_cachedRecords)
                 {
-                    if (comboSearchBuffer[0] != '\0' &&
-                        !StringContains(recordGroup.m_name, comboSearchBuffer))
+                    if (comboSearchBuffer[0] != '\0' && !StringContains(recordGroup.m_name, comboSearchBuffer))
                     {
                         continue;
                     }
 
                     const bool isSelected = recordTypeName == recordGroup.m_typeName;
-                    if (ImGui::NextItemVisible(ImVec2(1.0f, ImGui::GetTextLineHeight())) &&
-                        ImGui::Selectable(recordGroup.m_name.c_str(), isSelected))
+                    if (ImGui::NextItemVisible(ImVec2(1.0f, ImGui::GetTextLineHeight())) && ImGui::Selectable(recordGroup.m_name.c_str(), isSelected))
                     {
                         recordTypeName = recordGroup.m_typeName;
                         ImGui::CloseCurrentPopup();
@@ -1727,10 +1704,7 @@ void TweakDBEditor::CachedFlatGroup::Initialize()
         return;
 
     // order flats inside group
-    std::ranges::sort(m_flats, [](const CachedFlat& aLeft, const CachedFlat& aRight)
-    {
-        return SortTweakDBIDString(aLeft.m_name, aRight.m_name);
-    });
+    std::ranges::sort(m_flats, [](const CachedFlat& aLeft, const CachedFlat& aRight) { return SortTweakDBIDString(aLeft.m_name, aRight.m_name); });
 
     m_isInitialized = true;
 }
@@ -1748,10 +1722,7 @@ void TweakDBEditor::CachedRecord::Initialize()
 
     InitializeFlats();
 
-    std::ranges::sort(m_flats, [](const CachedFlat& aLeft, const CachedFlat& aRight)
-    {
-        return SortTweakDBIDString(aLeft.m_name, aRight.m_name);
-    });
+    std::ranges::sort(m_flats, [](const CachedFlat& aLeft, const CachedFlat& aRight) { return SortTweakDBIDString(aLeft.m_name, aRight.m_name); });
 
     m_isInitialized = true;
 }
@@ -1790,10 +1761,7 @@ void TweakDBEditor::CachedRecordGroup::Initialize()
     if (m_isInitialized)
         return;
 
-    std::ranges::sort(m_records, [](const CachedRecord& aLeft, const CachedRecord& aRight)
-    {
-        return SortTweakDBIDString(aLeft.m_name, aRight.m_name);
-    });
+    std::ranges::sort(m_records, [](const CachedRecord& aLeft, const CachedRecord& aRight) { return SortTweakDBIDString(aLeft.m_name, aRight.m_name); });
 
     m_isInitialized = true;
 }

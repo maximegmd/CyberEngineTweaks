@@ -238,7 +238,7 @@ BOOL Overlay::ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis)
         return ClipCursor(&rect);
     }
 
-    if(apThis->isClipped)
+    if (apThis->isClipped)
     {
         apThis->isClipped = false;
         return ClipCursor(nullptr);
@@ -271,7 +271,12 @@ Overlay::Overlay(VKBindings& aBindings, Options& aOptions, PersistentState& aPer
 {
     Hook();
 
-    GameMainThread::Get().AddBaseInitializationTask([this]{ PostInitialize(); return true; });
+    GameMainThread::Get().AddBaseInitializationTask(
+        [this]
+        {
+            PostInitialize();
+            return true;
+        });
 }
 
 Overlay::~Overlay()

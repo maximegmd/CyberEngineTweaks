@@ -27,10 +27,10 @@ private:
         uintptr_t offset;
     };
 
-    using FlatValueMap = TiltedPhoques::Map<uint64_t, int32_t>; // ValueHash -> Offset
+    using FlatValueMap = TiltedPhoques::Map<uint64_t, int32_t>;           // ValueHash -> Offset
     using FlatPoolMap = TiltedPhoques::Map<RED4ext::CName, FlatValueMap>; // TypeName -> Pool
-    using FlatDefaultMap = TiltedPhoques::Map<RED4ext::CName, int32_t>; // TypeName -> Offset
-    using FlatTypeMap = TiltedPhoques::Map<uintptr_t, FlatTypeInfo>; // VFT -> TypeInfo
+    using FlatDefaultMap = TiltedPhoques::Map<RED4ext::CName, int32_t>;   // TypeName -> Offset
+    using FlatTypeMap = TiltedPhoques::Map<uintptr_t, FlatTypeInfo>;      // VFT -> TypeInfo
 
     void Initialize();
     void SyncBuffer();

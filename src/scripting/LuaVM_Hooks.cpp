@@ -11,9 +11,10 @@
 namespace
 {
 
-LuaVM* s_vm{ nullptr };
+LuaVM* s_vm{nullptr};
 
-using TOodleLZ_Decompress = size_t(*)(char *in, int insz, char *out, int outsz, int wantsFuzzSafety, int b, int c, void *d, void *e, void *f, void *g, void *workBuffer, size_t workBufferSize, int j);
+using TOodleLZ_Decompress =
+    size_t (*)(char* in, int insz, char* out, int outsz, int wantsFuzzSafety, int b, int c, void* d, void* e, void* f, void* g, void* workBuffer, size_t workBufferSize, int j);
 
 struct Header
 {
@@ -122,8 +123,9 @@ bool InitializeTweakDBMetadata(TiltedPhoques::Map<uint64_t, TDBIDLookupEntry>& l
             decodedBytes.resize(reinterpret_cast<uint32_t*>(encodedBytes.data())[1]);
 
             char workingMemory[0x80000];
-            auto size = OodleLZ_Decompress(encodedBytes.data() + headerSize, static_cast<int>(encodedBytes.size() - headerSize), decodedBytes.data(),
-                                           static_cast<int>(decodedBytes.size()), 1, 1, 0, nullptr, nullptr, nullptr, nullptr, workingMemory, std::size(workingMemory), 3);
+            auto size = OodleLZ_Decompress(
+                encodedBytes.data() + headerSize, static_cast<int>(encodedBytes.size() - headerSize), decodedBytes.data(), static_cast<int>(decodedBytes.size()), 1, 1, 0, nullptr,
+                nullptr, nullptr, nullptr, workingMemory, std::size(workingMemory), 3);
 
             assert(size == decodedBytes.size());
             if (size != decodedBytes.size())
@@ -132,10 +134,9 @@ bool InitializeTweakDBMetadata(TiltedPhoques::Map<uint64_t, TDBIDLookupEntry>& l
                 return false;
             }
 
-            struct inline_buffer: std::streambuf {
-                inline_buffer(char* base, std::ptrdiff_t n) {
-                    this->setg(base, base, base + n);
-                }
+            struct inline_buffer : std::streambuf
+            {
+                inline_buffer(char* base, std::ptrdiff_t n) { this->setg(base, base, base + n); }
             } tdbstrDecodedBuffer(decodedBytes.data(), decodedBytes.size());
             std::istream tdbstrDecodedFile(&tdbstrDecodedBuffer);
             tdbstrDecodedFile.exceptions(std::ios::badbit | std::ios::failbit | std::ios::eofbit);
@@ -186,7 +187,7 @@ bool InitializeTweakDBMetadata(TiltedPhoques::Map<uint64_t, TDBIDLookupEntry>& l
     return true;
 }
 
-}
+} // namespace
 
 void LuaVM::HookLog(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*, void*)
 {
@@ -268,15 +269,17 @@ LuaVM::LuaVM(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12)
     // before trying to access it or TweakDBID lookup
     // TweakDBID lookup is on top locked for the duration of the initialization so accessing it should not
     // be possible until it finishes
-    std::thread([this]
-    {
+    std::thread(
+        [this]
         {
-            std::lock_guard _{ m_tdbidLock };
-            InitializeTweakDBMetadata(m_tdbidLookup);
-        }
+            {
+                std::lock_guard _{m_tdbidLock};
+                InitializeTweakDBMetadata(m_tdbidLookup);
+            }
 
-        ResourcesList::Get()->Initialize();
-    }).detach();
+            ResourcesList::Get()->Initialize();
+        })
+        .detach();
 
     aBindings.SetVM(this);
 }
@@ -312,10 +315,7 @@ uintptr_t LuaVM::HookSetLoadingState(uintptr_t aThis, int aState)
 
     if (aState == 2)
     {
-        std::call_once(s_initBarrier, []
-        {
-            s_vm->PostInitializeMods();
-        });
+        std::call_once(s_initBarrier, [] { s_vm->PostInitializeMods(); });
     }
 
     return s_vm->m_realSetLoadingState(aThis, aState);
@@ -362,8 +362,7 @@ void LuaVM::Hook()
 
         if (pLocation)
         {
-            if (MH_CreateHook(pLocation, reinterpret_cast<void*>(&HookLog), reinterpret_cast<void**>(&m_realLog)) != MH_OK ||
-                MH_EnableHook(pLocation) != MH_OK)
+            if (MH_CreateHook(pLocation, reinterpret_cast<void*>(&HookLog), reinterpret_cast<void**>(&m_realLog)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
                 Log::Error("Could not hook CScript::Log function!");
             else
                 Log::Info("CScript::Log function hook complete!");
@@ -376,8 +375,7 @@ void LuaVM::Hook()
 
         if (pLocation)
         {
-            if (MH_CreateHook(pLocation, reinterpret_cast<void*>(&HookLogChannel), reinterpret_cast<void**>(&m_realLogChannel)) != MH_OK ||
-                MH_EnableHook(pLocation) != MH_OK)
+            if (MH_CreateHook(pLocation, reinterpret_cast<void*>(&HookLogChannel), reinterpret_cast<void**>(&m_realLogChannel)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
                 Log::Error("Could not hook CScript::LogChannel function!");
             else
                 Log::Info("CScript::LogChannel function hook complete!");
@@ -436,8 +434,7 @@ void LuaVM::Hook()
 
         if (pLocation)
         {
-            if (MH_CreateHook(pLocation, reinterpret_cast<LPVOID>(HookTweakDBLoad), reinterpret_cast<void**>(&m_realTweakDBLoad)) != MH_OK ||
-                MH_EnableHook(pLocation) != MH_OK)
+            if (MH_CreateHook(pLocation, reinterpret_cast<LPVOID>(HookTweakDBLoad), reinterpret_cast<void**>(&m_realTweakDBLoad)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
                 Log::Error("Could not hook CScript::TweakDBLoad function!");
             else
             {
@@ -452,8 +449,7 @@ void LuaVM::Hook()
 
         if (pLocation)
         {
-            if (MH_CreateHook(pLocation, reinterpret_cast<LPVOID>(HookPlayerSpawned), reinterpret_cast<void**>(&m_realPlayerSpawned)) != MH_OK ||
-                MH_EnableHook(pLocation) != MH_OK)
+            if (MH_CreateHook(pLocation, reinterpret_cast<LPVOID>(HookPlayerSpawned), reinterpret_cast<void**>(&m_realPlayerSpawned)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
                 Log::Error("Could not hook PlayerSystem::OnPlayerSpawned function!");
             else
             {
@@ -462,22 +458,25 @@ void LuaVM::Hook()
         }
     }
 
-    GameMainThread::Get().AddRunningTask([this]{
-        const auto cNow = std::chrono::high_resolution_clock::now();
-        const auto cDelta = cNow - s_vm->m_lastframe;
-        const auto cSeconds = std::chrono::duration_cast<std::chrono::duration<float>>(cDelta);
+    GameMainThread::Get().AddRunningTask(
+        [this]
+        {
+            const auto cNow = std::chrono::high_resolution_clock::now();
+            const auto cDelta = cNow - s_vm->m_lastframe;
+            const auto cSeconds = std::chrono::duration_cast<std::chrono::duration<float>>(cDelta);
 
-        s_vm->Update(cSeconds.count());
+            s_vm->Update(cSeconds.count());
 
-        s_vm->m_lastframe = cNow;
+            s_vm->m_lastframe = cNow;
 
-        return false;
-    });
+            return false;
+        });
 
-    GameMainThread::Get().AddShutdownTask([this]{
-        s_vm->m_scripting.UnloadAllMods();
+    GameMainThread::Get().AddShutdownTask(
+        [this]
+        {
+            s_vm->m_scripting.UnloadAllMods();
 
-        return true;
-    });
-
+            return true;
+        });
 }

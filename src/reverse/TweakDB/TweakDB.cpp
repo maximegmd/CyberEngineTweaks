@@ -199,17 +199,14 @@ bool TweakDB::SetTypedFlat(TweakDBID aDBID, sol::object aObject, const std::stri
     return SetOrCreateFlat(aDBID, aObject, "", acTypeName, logger);
 }
 
-bool TweakDB::SetOrCreateFlat(TweakDBID aDBID, sol::object aObject, const std::string& acFlatName,
-                              const std::string& acTypeName, const std::shared_ptr<spdlog::logger>& aLogger) const
+bool TweakDB::SetOrCreateFlat(
+    TweakDBID aDBID, sol::object aObject, const std::string& acFlatName, const std::string& acTypeName, const std::shared_ptr<spdlog::logger>& aLogger) const
 {
     auto* pTDB = RED4ext::TweakDB::Get();
     static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 22);
     struct ResetAllocator
     {
-        ~ResetAllocator()
-        {
-            s_scratchMemory.Reset();
-        }
+        ~ResetAllocator() { s_scratchMemory.Reset(); }
     };
     ResetAllocator ___allocatorReset;
 
@@ -232,8 +229,7 @@ bool TweakDB::SetOrCreateFlat(TweakDBID aDBID, sol::object aObject, const std::s
             if (aLogger)
             {
                 const std::string& flatName = !acFlatName.empty() ? acFlatName : GetTDBIDString(aDBID.value);
-                aLogger->info("[TweakDB::SetFlat] Failed to convert value for {}. Expecting: {}",
-                              flatName, data.type->GetName().ToString());
+                aLogger->info("[TweakDB::SetFlat] Failed to convert value for {}. Expecting: {}", flatName, data.type->GetName().ToString());
             }
 
             return false;
@@ -285,8 +281,7 @@ bool TweakDB::SetOrCreateFlat(TweakDBID aDBID, sol::object aObject, const std::s
             if (aLogger)
             {
                 const std::string& flatName = !acFlatName.empty() ? acFlatName : GetTDBIDString(aDBID.value);
-                aLogger->info("[TweakDB::SetFlat] Type for {} is ambiguous, use third parameter to specify the type",
-                              flatName);
+                aLogger->info("[TweakDB::SetFlat] Type for {} is ambiguous, use third parameter to specify the type", flatName);
             }
 
             return false;
@@ -316,8 +311,7 @@ bool TweakDB::SetOrCreateFlat(TweakDBID aDBID, sol::object aObject, const std::s
         if (aLogger)
         {
             const std::string& flatName = !acFlatName.empty() ? acFlatName : GetTDBIDString(aDBID.value);
-            aLogger->info("[TweakDB::SetFlat] Failed to convert value for {}. Expecting: {}",
-                          flatName, data.type->GetName().ToString());
+            aLogger->info("[TweakDB::SetFlat] Failed to convert value for {}. Expecting: {}", flatName, data.type->GetName().ToString());
         }
         return false;
     }
@@ -475,8 +469,7 @@ int32_t TweakDB::InternalSetFlat(RED4ext::TweakDBID aDBID, const RED4ext::CStack
     return newTDBOffset;
 }
 
-bool TweakDB::InternalCreateRecord(const std::string& acRecordName, const std::string& acRecordTypeName,
-                                   const std::shared_ptr<spdlog::logger>& acpLogger)
+bool TweakDB::InternalCreateRecord(const std::string& acRecordName, const std::string& acRecordTypeName, const std::shared_ptr<spdlog::logger>& acpLogger)
 {
     auto* pTDB = RED4ext::TweakDB::Get();
 
@@ -500,8 +493,7 @@ bool TweakDB::InternalCreateRecord(const std::string& acRecordName, const std::s
     return InternalCloneRecord(acRecordName, pTweakRecord, false, acpLogger);
 }
 
-bool TweakDB::InternalCreateRecord(TweakDBID aDBID, const std::string& acRecordTypeName,
-                                   const std::shared_ptr<spdlog::logger>& acpLogger)
+bool TweakDB::InternalCreateRecord(TweakDBID aDBID, const std::string& acRecordTypeName, const std::shared_ptr<spdlog::logger>& acpLogger)
 {
     auto* pTDB = RED4ext::TweakDB::Get();
 
@@ -542,8 +534,7 @@ bool TweakDB::InternalCloneRecord(const std::string& acRecordName, RED4ext::Twea
     return InternalCloneRecord(acRecordName, pTweakRecord, true, acpLogger);
 }
 
-bool TweakDB::InternalCloneRecord(TweakDBID aDBID, RED4ext::TweakDBID aClonedRecordDBID,
-                                  const std::shared_ptr<spdlog::logger>& acpLogger)
+bool TweakDB::InternalCloneRecord(TweakDBID aDBID, RED4ext::TweakDBID aClonedRecordDBID, const std::shared_ptr<spdlog::logger>& acpLogger)
 {
     auto* pTDB = RED4ext::TweakDB::Get();
 
@@ -560,8 +551,8 @@ bool TweakDB::InternalCloneRecord(TweakDBID aDBID, RED4ext::TweakDBID aClonedRec
     return InternalCloneRecord(aDBID, pTweakRecord, true, acpLogger);
 }
 
-bool TweakDB::InternalCloneRecord(const std::string& acRecordName, const RED4ext::gamedataTweakDBRecord* acClonedRecord,
-                                  bool cloneValues, const std::shared_ptr<spdlog::logger>& acpLogger)
+bool TweakDB::InternalCloneRecord(
+    const std::string& acRecordName, const RED4ext::gamedataTweakDBRecord* acClonedRecord, bool cloneValues, const std::shared_ptr<spdlog::logger>& acpLogger)
 {
     auto* pTDB = RED4ext::TweakDB::Get();
     const RED4ext::TweakDBID recordDBID(acRecordName);
@@ -580,8 +571,7 @@ bool TweakDB::InternalCloneRecord(const std::string& acRecordName, const RED4ext
     return InternalCloneFlats(recordDBID, acClonedRecord, cloneValues, acpLogger);
 }
 
-bool TweakDB::InternalCloneRecord(TweakDBID aDBID, const RED4ext::gamedataTweakDBRecord* acClonedRecord,
-                                  bool cloneValues, const std::shared_ptr<spdlog::logger>& acpLogger)
+bool TweakDB::InternalCloneRecord(TweakDBID aDBID, const RED4ext::gamedataTweakDBRecord* acClonedRecord, bool cloneValues, const std::shared_ptr<spdlog::logger>& acpLogger)
 {
     auto* pTDB = RED4ext::TweakDB::Get();
     const RED4ext::TweakDBID recordDBID(aDBID.name_hash, aDBID.name_length);
@@ -597,8 +587,7 @@ bool TweakDB::InternalCloneRecord(TweakDBID aDBID, const RED4ext::gamedataTweakD
     return InternalCloneFlats(recordDBID, acClonedRecord, cloneValues, acpLogger);
 }
 
-bool TweakDB::InternalCloneFlats(RED4ext::TweakDBID aDBID, const RED4ext::gamedataTweakDBRecord* acClonedRecord,
-                                 bool cloneValues, const std::shared_ptr<spdlog::logger>& acpLogger)
+bool TweakDB::InternalCloneFlats(RED4ext::TweakDBID aDBID, const RED4ext::gamedataTweakDBRecord* acClonedRecord, bool cloneValues, const std::shared_ptr<spdlog::logger>& acpLogger)
 {
     auto* pTDB = RED4ext::TweakDB::Get();
     auto& vm = CET::Get().GetVM();

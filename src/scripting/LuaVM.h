@@ -62,7 +62,6 @@ struct LuaVM
     void PostInitializeMods();
 
 protected:
-
     void Hook();
 
     static void HookLog(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*, void*);
@@ -75,27 +74,26 @@ protected:
     static uint64_t HookPlayerSpawned(uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4);
 
 private:
-
-    std::mutex m_tdbidLock{ };
-    TiltedPhoques::Map<uint64_t, TDBIDLookupEntry> m_tdbidLookup{ };
+    std::mutex m_tdbidLock{};
+    TiltedPhoques::Map<uint64_t, TDBIDLookupEntry> m_tdbidLookup{};
     // Used by TweakDB to get the flats associated with a record
-    TiltedPhoques::Map<uint64_t, std::set<uint64_t>> m_tdbidDerivedLookup{ };
+    TiltedPhoques::Map<uint64_t, std::set<uint64_t>> m_tdbidDerivedLookup{};
 
-    RED4ext::OpcodeHandlers::Handler_t m_realLog{ nullptr };
+    RED4ext::OpcodeHandlers::Handler_t m_realLog{nullptr};
     RED4ext::OpcodeHandlers::Handler_t m_realLogChannel{nullptr};
     RED4ext::OpcodeHandlers::Handler_t m_realTDBIDToStringDEBUG{nullptr};
-    TTDBIDCtorDerive* m_realTDBIDCtorDerive{ nullptr };
-    TSetLoadingState* m_realSetLoadingState{ nullptr };
-    TTweakDBLoad* m_realTweakDBLoad{ nullptr };
-    TTranslateBytecode* m_realTranslateBytecode{ nullptr };
-    TPlayerSpawned* m_realPlayerSpawned{ nullptr };
+    TTDBIDCtorDerive* m_realTDBIDCtorDerive{nullptr};
+    TSetLoadingState* m_realSetLoadingState{nullptr};
+    TTweakDBLoad* m_realTweakDBLoad{nullptr};
+    TTranslateBytecode* m_realTranslateBytecode{nullptr};
+    TPlayerSpawned* m_realPlayerSpawned{nullptr};
 
     Scripting m_scripting;
 
-    bool m_initialized{ false };
-    bool m_drawBlocked{ false };
-    bool m_reload{ false };
+    bool m_initialized{false};
+    bool m_drawBlocked{false};
+    bool m_reload{false};
 
     D3D12& m_d3d12;
-    std::chrono::time_point<std::chrono::high_resolution_clock> m_lastframe{ std::chrono::high_resolution_clock::now() };
+    std::chrono::time_point<std::chrono::high_resolution_clock> m_lastframe{std::chrono::high_resolution_clock::now()};
 };

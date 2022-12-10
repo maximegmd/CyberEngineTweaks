@@ -36,11 +36,10 @@ struct PersistentState
     void Load();
     void Save() const;
 
-    OverlayPersistentState Overlay{ };
-    ConsolePersistentState Console{ };
+    OverlayPersistentState Overlay{};
+    ConsolePersistentState Console{};
 
 private:
-
     Paths& m_paths;
     Options& m_options;
 };

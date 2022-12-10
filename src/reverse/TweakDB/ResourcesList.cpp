@@ -5,7 +5,8 @@
 #include <CET.h>
 #include <Utils.h>
 
-using TOodleLZ_Decompress = size_t(*)(char *in, int insz, char *out, int outsz, int wantsFuzzSafety, int b, int c, void *d, void *e, void *f, void *g, void *workBuffer, size_t workBufferSize, int j);
+using TOodleLZ_Decompress =
+    size_t (*)(char* in, int insz, char* out, int outsz, int wantsFuzzSafety, int b, int c, void* d, void* e, void* f, void* g, void* workBuffer, size_t workBufferSize, int j);
 
 ResourcesList::Resource::Resource(std::string aName) noexcept
     : m_isFiltered(false)
@@ -58,8 +59,9 @@ bool ResourcesList::Initialize()
         buffer.resize(*reinterpret_cast<uint32_t*>(content.data() + 4));
 
         char workingMemory[0x80000];
-        auto size = OodleLZ_Decompress(content.data() + headerSize, static_cast<int>(content.size() - headerSize), buffer.data(),
-                                       static_cast<int>(buffer.size()), 1, 1, 0, nullptr, nullptr, nullptr, nullptr, workingMemory, std::size(workingMemory), 3);
+        auto size = OodleLZ_Decompress(
+            content.data() + headerSize, static_cast<int>(content.size() - headerSize), buffer.data(), static_cast<int>(buffer.size()), 1, 1, 0, nullptr, nullptr, nullptr, nullptr,
+            workingMemory, std::size(workingMemory), 3);
 
         assert(size == buffer.size());
         if (size != buffer.size())

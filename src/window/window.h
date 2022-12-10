@@ -19,21 +19,18 @@ struct Window
     bool IsInitialized() const { return m_initialized; }
 
 protected:
-
     static LRESULT APIENTRY WndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam);
 
 private:
+    bool m_initialized{false};
 
+    HWND m_hWnd{nullptr};
+    WNDPROC m_wndProc{nullptr};
 
-    bool m_initialized{ false };
-
-    HWND m_hWnd{ nullptr };
-    WNDPROC	m_wndProc{ nullptr };
-
-    POINT m_wndPos{ };
-    SIZE m_wndSize{ };
-    POINT m_clientPos{ };
-    SIZE m_clientSize{ };
+    POINT m_wndPos{};
+    SIZE m_wndSize{};
+    POINT m_clientPos{};
+    SIZE m_clientSize{};
 
     VKBindings* m_pBindings;
     D3D12* m_pD3D12;

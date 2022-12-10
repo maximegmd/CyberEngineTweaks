@@ -16,13 +16,12 @@ constexpr bool s_cEnableOverloads = true;
 constexpr bool s_cLogAllOverloadVariants = true;
 constexpr bool s_cThrowLuaErrors = true;
 
-std::unique_ptr<RTTIHelper> s_pInstance{ nullptr };
+std::unique_ptr<RTTIHelper> s_pInstance{nullptr};
 
-using TCallScriptFunction = bool (*)(RED4ext::IFunction* apFunction, RED4ext::IScriptable* apContext,
-                                     RED4ext::CStackFrame* apFrame, void* apResult, void* apResultType);
+using TCallScriptFunction = bool (*)(RED4ext::IFunction* apFunction, RED4ext::IScriptable* apContext, RED4ext::CStackFrame* apFrame, void* apResult, void* apResultType);
 
 RED4ext::RelocFunc<TCallScriptFunction> CallScriptFunction(RED4ext::Addresses::CBaseFunction_InternalExecute);
-}
+} // namespace
 
 void RTTIHelper::Initialize(const LockableState& acLua, LuaSandbox& apSandbox)
 {
@@ -65,7 +64,6 @@ void RTTIHelper::InitializeRTTI()
 {
     m_pRtti = RED4ext::CRTTISystem::Get();
     m_pGameInstanceType = m_pRtti->GetClass(RED4ext::FNV1a64("ScriptGameInstance"));
-
 }
 
 void RTTIHelper::InitializeRuntime()
@@ -82,23 +80,25 @@ void RTTIHelper::InitializeRuntime()
 
 void RTTIHelper::ParseGlobalStatics()
 {
-    m_pRtti->funcs.for_each([this](RED4ext::CName aOrigName, RED4ext::CGlobalFunction* apFunc) {
-        const std::string cOrigName = aOrigName.ToString();
-        const auto cClassSep = cOrigName.find("::");
-
-        if (cClassSep != std::string::npos)
+    m_pRtti->funcs.for_each(
+        [this](RED4ext::CName aOrigName, RED4ext::CGlobalFunction* apFunc)
         {
-            const auto cClassName = cOrigName.substr(0, cClassSep);
-            const auto cFullName = cOrigName.substr(cClassSep + 2);
+            const std::string cOrigName = aOrigName.ToString();
+            const auto cClassSep = cOrigName.find("::");
 
-            const auto cClassHash = RED4ext::FNV1a64(cClassName.c_str());
-            const auto cFullHash = RED4ext::FNV1a64(cFullName.c_str());
+            if (cClassSep != std::string::npos)
+            {
+                const auto cClassName = cOrigName.substr(0, cClassSep);
+                const auto cFullName = cOrigName.substr(cClassSep + 2);
 
-            if (!m_extendedFunctions.contains(cClassHash))
-                m_extendedFunctions.emplace(cClassHash, 0);
+                const auto cClassHash = RED4ext::FNV1a64(cClassName.c_str());
+                const auto cFullHash = RED4ext::FNV1a64(cFullName.c_str());
 
-            m_extendedFunctions.at(cClassHash).emplace(cFullHash, apFunc);
-        }
+                if (!m_extendedFunctions.contains(cClassHash))
+                    m_extendedFunctions.emplace(cClassHash, 0);
+
+                m_extendedFunctions.at(cClassHash).emplace(cFullHash, apFunc);
+            }
         });
 }
 
@@ -119,8 +119,7 @@ void RTTIHelper::AddFunctionAlias(const std::string&, const std::string& acOrigC
     }
 }
 
-void RTTIHelper::AddFunctionAlias(const std::string& acAliasClassName, const std::string&,
-                                  const std::string& acOrigClassName, const std::string& acOrigFuncName)
+void RTTIHelper::AddFunctionAlias(const std::string& acAliasClassName, const std::string&, const std::string& acOrigClassName, const std::string& acOrigFuncName)
 {
     auto* pClass = m_pRtti->GetClass(RED4ext::FNV1a64(acOrigClassName.c_str()));
     if (pClass)
@@ -260,11 +259,13 @@ RED4ext::CBaseFunction* RTTIHelper::FindFunction(RED4ext::CClass* apClass, const
 // Find all global functions matching short name
 std::map<uint64_t, RED4ext::CBaseFunction*> RTTIHelper::FindFunctions(const uint64_t acShortNameHash) const
 {
-    std::map<uint64_t, RED4ext::CBaseFunction*> results{ };
+    std::map<uint64_t, RED4ext::CBaseFunction*> results{};
 
-    m_pRtti->funcs.for_each([&results, &acShortNameHash](RED4ext::CName aFullName, RED4ext::CGlobalFunction* apFunction) {
-        if (apFunction->shortName.hash == acShortNameHash)
-            results.emplace(aFullName.hash, apFunction);
+    m_pRtti->funcs.for_each(
+        [&results, &acShortNameHash](RED4ext::CName aFullName, RED4ext::CGlobalFunction* apFunction)
+        {
+            if (apFunction->shortName.hash == acShortNameHash)
+                results.emplace(aFullName.hash, apFunction);
         });
 
     if (m_extendedFunctions.contains(kGlobalHash))
@@ -284,7 +285,7 @@ std::map<uint64_t, RED4ext::CBaseFunction*> RTTIHelper::FindFunctions(const uint
 // Find all class functions matching short name
 std::map<uint64_t, RED4ext::CBaseFunction*> RTTIHelper::FindFunctions(RED4ext::CClass* apClass, const uint64_t acShortNameHash, bool aIsMember) const
 {
-    std::map<uint64_t, RED4ext::CBaseFunction*> results{ };
+    std::map<uint64_t, RED4ext::CBaseFunction*> results{};
 
     while (apClass != nullptr)
     {
@@ -434,29 +435,32 @@ sol::function RTTIHelper::MakeInvokableFunction(RED4ext::CBaseFunction* apFunc)
 
     const bool cAllowNull = IsFunctionAlias(apFunc);
 
-    return MakeSolFunction(luaState, [this, apFunc, cAllowNull](sol::variadic_args aArgs, sol::this_state aState, sol::this_environment aEnv) -> sol::variadic_results {
-        uint64_t argOffset = 0;
-        const auto pHandle = ResolveHandle(apFunc, aArgs, argOffset);
-
-        std::string errorMessage;
-        auto result = ExecuteFunction(apFunc, pHandle, aArgs, argOffset, errorMessage, cAllowNull);
-
-        if (!errorMessage.empty())
+    return MakeSolFunction(
+        luaState,
+        [this, apFunc, cAllowNull](sol::variadic_args aArgs, sol::this_state aState, sol::this_environment aEnv) -> sol::variadic_results
         {
-            if constexpr (s_cThrowLuaErrors)
-            {
-                luaL_error(aState, errorMessage.c_str());
-            }
-            else
-            {
-                const sol::environment cEnv = aEnv;
-                auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
-                logger->error("Error: {}", errorMessage);
-            }
-        }
+            uint64_t argOffset = 0;
+            const auto pHandle = ResolveHandle(apFunc, aArgs, argOffset);
 
-        return result;
-    });
+            std::string errorMessage;
+            auto result = ExecuteFunction(apFunc, pHandle, aArgs, argOffset, errorMessage, cAllowNull);
+
+            if (!errorMessage.empty())
+            {
+                if constexpr (s_cThrowLuaErrors)
+                {
+                    luaL_error(aState, errorMessage.c_str());
+                }
+                else
+                {
+                    const sol::environment cEnv = aEnv;
+                    auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+                    logger->error("Error: {}", errorMessage);
+                }
+            }
+
+            return result;
+        });
 }
 
 sol::function RTTIHelper::MakeInvokableOverload(std::map<uint64_t, RED4ext::CBaseFunction*> aOverloadedFuncs) const
@@ -469,65 +473,67 @@ sol::function RTTIHelper::MakeInvokableOverload(std::map<uint64_t, RED4ext::CBas
     for (const auto& func : aOverloadedFuncs | std::views::values)
         variants.emplace_back(func);
 
-    return MakeSolFunction(luaState, [this, variants](sol::variadic_args aArgs, sol::this_state aState, sol::this_environment aEnv) mutable -> sol::variadic_results {
-        for (auto variant = variants.begin(); variant != variants.end(); ++variant)
+    return MakeSolFunction(
+        luaState,
+        [this, variants](sol::variadic_args aArgs, sol::this_state aState, sol::this_environment aEnv) mutable -> sol::variadic_results
         {
-            variant->lastError.clear();
-
-            uint64_t argOffset = 0;
-            const auto pHandle = ResolveHandle(variant->func, aArgs, argOffset);
-
-            auto result = ExecuteFunction(variant->func, pHandle, aArgs, argOffset, variant->lastError);
-
-            if (variant->lastError.empty())
+            for (auto variant = variants.begin(); variant != variants.end(); ++variant)
             {
-                if (variant->totalCalls < kTrackedOverloadCalls)
+                variant->lastError.clear();
+
+                uint64_t argOffset = 0;
+                const auto pHandle = ResolveHandle(variant->func, aArgs, argOffset);
+
+                auto result = ExecuteFunction(variant->func, pHandle, aArgs, argOffset, variant->lastError);
+
+                if (variant->lastError.empty())
                 {
-                    ++variant->totalCalls;
-
-                    if (variant != variants.begin())
+                    if (variant->totalCalls < kTrackedOverloadCalls)
                     {
-                        const auto previous = variant - 1;
+                        ++variant->totalCalls;
 
-                        if (variant->totalCalls > previous->totalCalls)
-                            std::iter_swap(previous, variant);
+                        if (variant != variants.begin())
+                        {
+                            const auto previous = variant - 1;
+
+                            if (variant->totalCalls > previous->totalCalls)
+                                std::iter_swap(previous, variant);
+                        }
                     }
+
+                    return result;
                 }
-
-                return result;
             }
-        }
 
-        if constexpr (s_cLogAllOverloadVariants)
-        {
-            const sol::environment cEnv = aEnv;
-            const auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+            if constexpr (s_cLogAllOverloadVariants)
+            {
+                const sol::environment cEnv = aEnv;
+                const auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
 
-            for (auto& variant : variants)
-                logger->info("{}: {}", variant.func->fullName.ToString(), variant.lastError);
+                for (auto& variant : variants)
+                    logger->info("{}: {}", variant.func->fullName.ToString(), variant.lastError);
 
-            logger->flush();
-        }
+                logger->flush();
+            }
 
-        std::string errorMessage = fmt::format("No matching overload of '{}' function.", variants.begin()->func->shortName.ToString());
+            std::string errorMessage = fmt::format("No matching overload of '{}' function.", variants.begin()->func->shortName.ToString());
 
-        if constexpr (s_cThrowLuaErrors)
-        {
-            luaL_error(aState, errorMessage.c_str());
-        }
-        else
-        {
-            const sol::environment cEnv = aEnv;
-            auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
-            logger->error("Error: {}", errorMessage);
-        }
+            if constexpr (s_cThrowLuaErrors)
+            {
+                luaL_error(aState, errorMessage.c_str());
+            }
+            else
+            {
+                const sol::environment cEnv = aEnv;
+                auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+                logger->error("Error: {}", errorMessage);
+            }
 
-        return {};
-    });
+            return {};
+        });
 }
 
-RED4ext::IScriptable* RTTIHelper::ResolveHandle(RED4ext::CBaseFunction* apFunc, sol::variadic_args& aArgs,
-                                                uint64_t& aArgOffset) const
+RED4ext::IScriptable* RTTIHelper::ResolveHandle(RED4ext::CBaseFunction* apFunc, sol::variadic_args& aArgs, uint64_t& aArgOffset) const
 {
     // Case 1: obj:Member() -- Skip the first arg and pass it as a handle
     // Case 2: obj:Static() -- Pass args as is, including the implicit self
@@ -582,9 +588,8 @@ RED4ext::IScriptable* RTTIHelper::ResolveHandle(RED4ext::CBaseFunction* apFunc, 
     return pHandle;
 }
 
-sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc, RED4ext::IScriptable* apContext,
-                                                  sol::variadic_args aLuaArgs, uint64_t aLuaArgOffset,
-                                                  std::string& aErrorMessage, bool aAllowNull) const
+sol::variadic_results RTTIHelper::ExecuteFunction(
+    RED4ext::CBaseFunction* apFunc, RED4ext::IScriptable* apContext, sol::variadic_args aLuaArgs, uint64_t aLuaArgOffset, std::string& aErrorMessage, bool aAllowNull) const
 {
     static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 14);
     static thread_local uint32_t s_callDepth = 0u;
@@ -605,9 +610,7 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
 
     if (!apFunc->flags.isStatic && !apContext && !aAllowNull)
     {
-        aErrorMessage = fmt::format("Function '{}' context must be '{}'.",
-                                    apFunc->shortName.ToString(),
-                                    apFunc->GetParent()->name.ToString());
+        aErrorMessage = fmt::format("Function '{}' context must be '{}'.", apFunc->shortName.ToString(), apFunc->GetParent()->name.ToString());
         return {};
     }
 
@@ -641,12 +644,14 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
     // Allocator management
     ++s_callDepth;
 
-    ScopeGuard allocatorGuard([&]{
-        --s_callDepth;
+    ScopeGuard allocatorGuard(
+        [&]
+        {
+            --s_callDepth;
 
-        if (s_callDepth == 0u)
-            s_scratchMemory.Reset();
-    });
+            if (s_callDepth == 0u)
+                s_scratchMemory.Reset();
+        });
 
     auto pAllocator = TiltedPhoques::Allocator::Get();
     TiltedPhoques::Allocator::Set(&s_scratchMemory);
@@ -657,14 +662,16 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
 
     uint32_t callArgOffset = 0u;
 
-    ScopeGuard argsGuard([&]{
-        for (auto j = 0u; j < callArgOffset; ++j)
+    ScopeGuard argsGuard(
+        [&]
         {
-            const bool isNew = argNeedsFree[j];
+            for (auto j = 0u; j < callArgOffset; ++j)
+            {
+                const bool isNew = argNeedsFree[j];
 
-            FreeInstance(callArgs[j], !isNew, isNew, &s_scratchMemory);
-        }
-    });
+                FreeInstance(callArgs[j], !isNew, isNew, &s_scratchMemory);
+            }
+        });
 
     for (auto i = 0u; i < apFunc->params.size; ++i)
     {
@@ -684,7 +691,7 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
             argNeedsFree[callArgOffset] = true;
 
             // But ToRED conversion is necessary for implementing required out params.
-            //callArgs[callArgOffset] = Scripting::ToRED(sol::nil, cpParam->type, &s_scratchMemory);
+            // callArgs[callArgOffset] = Scripting::ToRED(sol::nil, cpParam->type, &s_scratchMemory);
         }
         else if (cpParam->flags.isOptional)
         {
@@ -726,7 +733,7 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
 
     const bool hasReturnType = apFunc->returnType != nullptr && apFunc->returnType->type != nullptr;
 
-    uint8_t buffer[1000]{ 0 };
+    uint8_t buffer[1000]{0};
     RED4ext::CStackType result;
 
     if (hasReturnType)
@@ -750,11 +757,12 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
 
     if (hasReturnType)
     {
-        // There is a special case when a non-native function returns a specific class or something that holds that class,
-        // which leads to another memory leak. So far the only known class that is causing the issue is gameTargetSearchFilter.
-        // When it returned by a non-native function it is wrapped in the Variant or similar structure. To prevent the leak
-        // the underlying value must be unwrapped and the wrapper explicitly destroyed. The workaround has been proven to work,
-        // but it seems too much for only one known case, so it is not included for now.
+        // There is a special case when a non-native function returns a specific class or something that holds that
+        // class, which leads to another memory leak. So far the only known class that is causing the issue is
+        // gameTargetSearchFilter. When it returned by a non-native function it is wrapped in the Variant or similar
+        // structure. To prevent the leak the underlying value must be unwrapped and the wrapper explicitly destroyed.
+        // The workaround has been proven to work, but it seems too much for only one known case, so it is not included
+        // for now.
 
         results.emplace_back(Scripting::ToLua(lockedState, result));
         FreeInstance(result, false, false, &s_scratchMemory);
@@ -771,8 +779,8 @@ sol::variadic_results RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc
     return results;
 }
 
-bool RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc, RED4ext::IScriptable* apContext,
-                                 TiltedPhoques::Vector<RED4ext::CStackType>& aArgs, RED4ext::CStackType& aResult) const
+bool RTTIHelper::ExecuteFunction(
+    RED4ext::CBaseFunction* apFunc, RED4ext::IScriptable* apContext, TiltedPhoques::Vector<RED4ext::CStackType>& aArgs, RED4ext::CStackType& aResult) const
 {
     constexpr auto NopOp = 0;
     constexpr auto ParamOp = 27;
@@ -818,8 +826,7 @@ bool RTTIHelper::ExecuteFunction(RED4ext::CBaseFunction* apFunc, RED4ext::IScrip
     return CallScriptFunction(apFunc, apContext ? apContext : m_pPlayerSystem, &frame, aResult.value, aResult.type);
 }
 
-RED4ext::ScriptInstance RTTIHelper::NewPlaceholder(RED4ext::CBaseRTTIType* apType,
-                                                   TiltedPhoques::Allocator* apAllocator) const
+RED4ext::ScriptInstance RTTIHelper::NewPlaceholder(RED4ext::CBaseRTTIType* apType, TiltedPhoques::Allocator* apAllocator) const
 {
     auto* pMemory = apAllocator->Allocate(apType->GetSize());
     memset(pMemory, 0, apType->GetSize());
@@ -828,8 +835,7 @@ RED4ext::ScriptInstance RTTIHelper::NewPlaceholder(RED4ext::CBaseRTTIType* apTyp
     return pMemory;
 }
 
-RED4ext::ScriptInstance RTTIHelper::NewInstance(RED4ext::CBaseRTTIType* apType, sol::optional<sol::table> aProps,
-                                                TiltedPhoques::Allocator* apAllocator) const
+RED4ext::ScriptInstance RTTIHelper::NewInstance(RED4ext::CBaseRTTIType* apType, sol::optional<sol::table> aProps, TiltedPhoques::Allocator* apAllocator) const
 {
     if (!m_pRtti)
         return nullptr;
@@ -968,10 +974,7 @@ void RTTIHelper::SetProperty(RED4ext::CClass* apClass, RED4ext::ScriptInstance a
     static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 13);
     struct ResetAllocator
     {
-        ~ResetAllocator()
-        {
-            s_scratchMemory.Reset();
-        }
+        ~ResetAllocator() { s_scratchMemory.Reset(); }
     };
     ResetAllocator ___allocatorReset;
 
@@ -1003,8 +1006,7 @@ bool RTTIHelper::IsClassReferenceType(RED4ext::CClass* apClass) const
     static constexpr auto s_cHashQuaternion = RED4ext::FNV1a64("Quaternion");
     static constexpr auto s_cHashItemID = RED4ext::FNV1a64("gameItemID");
 
-    return apClass->name.hash != s_cHashVector3 && apClass->name.hash != s_cHashVector4 &&
-           apClass->name.hash != s_cHashEulerAngles && apClass->name.hash != s_cHashQuaternion &&
+    return apClass->name.hash != s_cHashVector3 && apClass->name.hash != s_cHashVector4 && apClass->name.hash != s_cHashEulerAngles && apClass->name.hash != s_cHashQuaternion &&
            apClass->name.hash != s_cHashItemID;
 }
 

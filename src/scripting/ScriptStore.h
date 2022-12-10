@@ -26,9 +26,8 @@ struct ScriptStore
     [[nodiscard]] sol::object GetMod(const std::string& acName) const;
 
 private:
-
-    TiltedPhoques::Map<std::string, ScriptContext> m_contexts{ };
-    TiltedPhoques::Map<std::string, std::reference_wrapper<const TiltedPhoques::Vector<VKBind>>> m_vkBinds{ };
+    TiltedPhoques::Map<std::string, ScriptContext> m_contexts{};
+    TiltedPhoques::Map<std::string, std::reference_wrapper<const TiltedPhoques::Vector<VKBind>>> m_vkBinds{};
     LuaSandbox& m_sandbox;
     const Paths& m_paths;
     VKBindings& m_bindings;

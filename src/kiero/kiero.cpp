@@ -50,11 +50,7 @@ kiero::Status::Enum kiero::init()
 
     if ((libD3D12 = ::GetModuleHandle(_T("d3d12.dll"))) == nullptr)
     {
-        const TCHAR* localD3d12on7Paths[] =
-        {
-            _T(".\\d3d12on7\\d3d12.dll"),
-            _T(".\\12on7\\d3d12.dll")
-        };
+        const TCHAR* localD3d12on7Paths[] = {_T(".\\d3d12on7\\d3d12.dll"), _T(".\\12on7\\d3d12.dll")};
 
         for (uint32_t i = 0; i < std::size(localD3d12on7Paths); i++)
         {
@@ -83,7 +79,7 @@ kiero::Status::Enum kiero::init()
     }
 
     Microsoft::WRL::ComPtr<IDXGIFactory> factory;
-    if (reinterpret_cast<long(*)(const IID&, void**)>(CreateDXGIFactory)(IID_PPV_ARGS(&factory)) < 0)
+    if (reinterpret_cast<long (*)(const IID&, void**)>(CreateDXGIFactory)(IID_PPV_ARGS(&factory)) < 0)
     {
         DestroyWindow(window);
         UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
@@ -107,7 +103,7 @@ kiero::Status::Enum kiero::init()
     }
 
     Microsoft::WRL::ComPtr<ID3D12Device> device;
-    if (reinterpret_cast<long(*)(IUnknown*, D3D_FEATURE_LEVEL, const IID&, void**)>(D3D12CreateDevice)(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&device)) < 0)
+    if (reinterpret_cast<long (*)(IUnknown*, D3D_FEATURE_LEVEL, const IID&, void**)>(D3D12CreateDevice)(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&device)) < 0)
     {
         DestroyWindow(window);
         UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);

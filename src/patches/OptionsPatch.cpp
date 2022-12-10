@@ -44,9 +44,7 @@ void OptionsInitHook()
 
     if (pLocation)
     {
-        MH_CreateHook(pLocation,
-                      reinterpret_cast<void*>(&HookGameOptionInit),
-                      reinterpret_cast<void**>(&RealGameOptionInit));
+        MH_CreateHook(pLocation, reinterpret_cast<void*>(&HookGameOptionInit), reinterpret_cast<void**>(&RealGameOptionInit));
         MH_EnableHook(pLocation);
 
         Log::Info("Hidden options hook: success");

@@ -27,10 +27,10 @@ protected:
     virtual void OnToggle();
 
     std::string m_name;
-    bool m_ownerDraw{ false };
-    bool m_enabled{ false };
-    bool m_toggle{ false };
-    bool m_drawPopup{ false };
+    bool m_ownerDraw{false};
+    bool m_enabled{false};
+    bool m_toggle{false};
+    bool m_drawPopup{false};
 };
 
 using TWidgetCB = std::function<void()>;

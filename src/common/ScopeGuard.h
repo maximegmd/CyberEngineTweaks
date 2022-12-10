@@ -4,8 +4,7 @@
 class ScopeGuard
 {
 public:
-    template<class Callable>
-    ScopeGuard(Callable&& undo_func)
+    template <class Callable> ScopeGuard(Callable&& undo_func)
     try : f(std::forward<Callable>(undo_func))
     {
     }
@@ -27,10 +26,7 @@ public:
             f(); // must not throw
     }
 
-    void dismiss() noexcept
-    {
-        f = nullptr;
-    }
+    void dismiss() noexcept { f = nullptr; }
 
     ScopeGuard(const ScopeGuard&) = delete;
     void operator=(const ScopeGuard&) = delete;

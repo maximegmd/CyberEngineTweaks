@@ -32,10 +32,10 @@ struct VKBind
     [[nodiscard]] bool operator==(const std::string& acpId) const;
 };
 
-constexpr USHORT VKBC_MWHEELUP    { RI_MOUSE_WHEEL  | 1 };
-constexpr USHORT VKBC_MWHEELDOWN  { RI_MOUSE_WHEEL  | 0 };
-constexpr USHORT VKBC_MWHEELRIGHT { RI_MOUSE_HWHEEL | 1 };
-constexpr USHORT VKBC_MWHEELLEFT  { RI_MOUSE_HWHEEL | 0 };
+constexpr USHORT VKBC_MWHEELUP{RI_MOUSE_WHEEL | 1};
+constexpr USHORT VKBC_MWHEELDOWN{RI_MOUSE_WHEEL | 0};
+constexpr USHORT VKBC_MWHEELRIGHT{RI_MOUSE_HWHEEL | 1};
+constexpr USHORT VKBC_MWHEELLEFT{RI_MOUSE_HWHEEL | 0};
 
 struct Options;
 struct Overlay;
@@ -84,7 +84,6 @@ struct VKBindings
     void SetVM(const LuaVM* acpVm);
 
 private:
-
     [[nodiscard]] LRESULT HandleRAWInput(HRAWINPUT achRAWInput);
 
     LRESULT RecordKeyDown(const USHORT acVKCode);
@@ -94,23 +93,23 @@ private:
     void ExecuteRecording();
     void ClearRecording(const bool acClearBind);
 
-    std::map<uint64_t, VKModBind> m_binds{ }; // this map needs to be ordered!
-    TiltedPhoques::Map<std::string, TiltedPhoques::Map<std::string, uint64_t>> m_modIdToBinds{ };
-    TiltedPhoques::TaskQueue m_queuedCallbacks{ };
+    std::map<uint64_t, VKModBind> m_binds{}; // this map needs to be ordered!
+    TiltedPhoques::Map<std::string, TiltedPhoques::Map<std::string, uint64_t>> m_modIdToBinds{};
+    TiltedPhoques::TaskQueue m_queuedCallbacks{};
 
-    std::bitset<1 << 16> m_keyStates{ };
+    std::bitset<1 << 16> m_keyStates{};
 
-    VKCodeBindDecoded m_recording{ };
-    uint64_t m_recordingResult{ 0 };
-    size_t m_recordingLength{ 0 };
-    bool m_recordingWasKeyPressed{ false };
+    VKCodeBindDecoded m_recording{};
+    uint64_t m_recordingResult{0};
+    size_t m_recordingLength{0};
+    bool m_recordingWasKeyPressed{false};
 
-    VKModBind m_recordingModBind{ };
-    bool m_isBindRecording{ false };
+    VKModBind m_recordingModBind{};
+    bool m_isBindRecording{false};
 
-    bool m_initialized{ false };
+    bool m_initialized{false};
 
-    const LuaVM* m_cpVm{ nullptr };
+    const LuaVM* m_cpVm{nullptr};
     Paths& m_paths;
     const Options& m_cOptions;
 };

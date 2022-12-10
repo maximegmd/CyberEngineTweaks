@@ -64,8 +64,9 @@ static void Initialize()
 
         MH_EnableHook(nullptr);
     }
-    catch(...)
-    {}
+    catch (...)
+    {
+    }
 }
 
 static void Shutdown()
@@ -96,16 +97,11 @@ BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID)
 {
     DisableThreadLibraryCalls(mod);
 
-    switch(ul_reason_for_call)
+    switch (ul_reason_for_call)
     {
-        case DLL_PROCESS_ATTACH:
-            Initialize();
-            break;
-        case DLL_PROCESS_DETACH:
-            Shutdown();
-            break;
-        default:
-            break;
+    case DLL_PROCESS_ATTACH: Initialize(); break;
+    case DLL_PROCESS_DETACH: Shutdown(); break;
+    default: break;
     }
 
     return TRUE;

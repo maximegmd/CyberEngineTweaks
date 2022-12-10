@@ -7,8 +7,7 @@
 #include <CET.h>
 #include <Utils.h>
 
-static constexpr const char* s_cVMGlobalObjectsWhitelist[] =
-{
+static constexpr const char* s_cVMGlobalObjectsWhitelist[] = {
     "_VERSION",
     "assert",
     "error",
@@ -32,7 +31,8 @@ static constexpr const char* s_cVMGlobalObjectsWhitelist[] =
     "unpack",
     "xpcall",
 
-    "collectgarbage", //< Good for testing memory leaks and ref counters: `collectgarbage("collect")`, also used for forcing the release of some refs
+    "collectgarbage", //< Good for testing memory leaks and ref counters: `collectgarbage("collect")`, also used for
+                      // forcing the release of some refs
 
     "string",
     "table",
@@ -42,8 +42,7 @@ static constexpr const char* s_cVMGlobalObjectsWhitelist[] =
     "IconGlyphs",
 };
 
-static constexpr const char* s_cGlobalObjectsWhitelist[] =
-{
+static constexpr const char* s_cGlobalObjectsWhitelist[] = {
     "print",
     "GetVersion",
     "GetDisplayResolution",
@@ -74,80 +73,40 @@ static constexpr const char* s_cGlobalObjectsWhitelist[] =
     "ImGuiCol",
     "ImGuiDir",
     "ImVec2",
-    "ImVec4"
-};
+    "ImVec4"};
 
-static constexpr const char* s_cPostInitializeScriptingProtectedList[] =
-{
+static constexpr const char* s_cPostInitializeScriptingProtectedList[] = {
     // initialized by Scripting
-    "Descriptor",
-    "StrongReference",
-    "WeakReference",
-    "SingletonReference",
-    "ClassReference",
-    "ResourceAsyncReference",
-    "Unknown",
-    "IsDefined",
-    "Enum",
-    "EnumInt",
-    "Vector3",
-    "ToVector3",
-    "Vector4",
-    "ToVector4",
-    "EulerAngles",
-    "ToEulerAngles",
-    "Quaternion",
-    "ToQuaternion",
-    "CName",
-    "ToCName",
-    "TweakDBID",
-    "ToTweakDBID",
-    "ItemID",
-    "ToItemID",
-    "CRUID",
-    "LocKey",
-    "GameOptions",
-    "Override",
-    "ObserveBefore",
-    "ObserveAfter",
+    "Descriptor",     "StrongReference",
+    "WeakReference",  "SingletonReference",
+    "ClassReference", "ResourceAsyncReference",
+    "Unknown",        "IsDefined",
+    "Enum",           "EnumInt",
+    "Vector3",        "ToVector3",
+    "Vector4",        "ToVector4",
+    "EulerAngles",    "ToEulerAngles",
+    "Quaternion",     "ToQuaternion",
+    "CName",          "ToCName",
+    "TweakDBID",      "ToTweakDBID",
+    "ItemID",         "ToItemID",
+    "CRUID",          "LocKey",
+    "GameOptions",    "Override",
+    "ObserveBefore",  "ObserveAfter",
     "Observe",
 };
 
-static constexpr const char* s_cPostInitializeTweakDBProtectedList[] =
-{
+static constexpr const char* s_cPostInitializeTweakDBProtectedList[] = {
     // initialized by Scripting
-    "TweakDB"
-};
+    "TweakDB"};
 
-static constexpr const char* s_cPostInitializeModsProtectedList[] =
-{
+static constexpr const char* s_cPostInitializeModsProtectedList[] = {
     // initialized by Scripting
-    "NewObject",
-    "GetSingleton",
-    "GetMod",
-    "GameDump",
-    "Dump",
-    "DumpType",
-    "DumpAllTypeNames",
-    "DumpVtables",
-    "DumpReflection",
-    "Game",
+    "NewObject", "GetSingleton", "GetMod", "GameDump", "Dump", "DumpType", "DumpAllTypeNames", "DumpVtables", "DumpReflection", "Game",
 
     // initialized by RTTIMapper
-    "Vector3",
-    "ToVector3",
-    "Vector4",
-    "ToVector4",
-    "EulerAngles",
-    "ToEulerAngles",
-    "Quaternion",
-    "ToQuaternion",
-    "ItemID",
-    "ToItemID"
-};
+    "Vector3", "ToVector3", "Vector4", "ToVector4", "EulerAngles", "ToEulerAngles", "Quaternion", "ToQuaternion", "ItemID", "ToItemID"};
 
-static constexpr const char* s_cGlobalExtraLibsWhitelist[] =
-{
+static constexpr const char* s_cGlobalExtraLibsWhitelist[] = {
     "ImGui",
 };
 
@@ -315,9 +274,10 @@ void LuaSandbox::InitializeExtraLibsForSandbox(Sandbox& aSandbox, const sol::sta
 
     sol::table imgui = sbEnv["ImGui"];
 
-    imgui["LoadTexture"] = [this, cSBRootPath, stateView](const std::string& acPath) -> std::tuple<std::shared_ptr<Texture>, sol::object> {
+    imgui["LoadTexture"] = [this, cSBRootPath, stateView](const std::string& acPath) -> std::tuple<std::shared_ptr<Texture>, sol::object>
+    {
         if (!GetImGuiAvailable())
-            return std::make_tuple(nullptr, make_object(stateView,"Tried to use ImGui outside of allowed events!"));
+            return std::make_tuple(nullptr, make_object(stateView, "Tried to use ImGui outside of allowed events!"));
 
         const auto previousCurrentPath = std::filesystem::current_path();
         current_path(cSBRootPath);
@@ -349,7 +309,8 @@ void LuaSandbox::InitializeDBForSandbox(Sandbox& aSandbox, const sol::state& acp
             sqlite3Copy[cKV.first] = DeepCopySolObject(cKV.second, acpState);
     }
     const auto dbOpen = acpState["sqlite3"]["open"].get<sol::function>();
-    sqlite3Copy["reopen"] = [this, sbId, dbOpen]{
+    sqlite3Copy["reopen"] = [this, sbId, dbOpen]
+    {
         auto& sandbox = m_sandboxes[sbId];
 
         const auto previousCurrentPath = std::filesystem::current_path();
@@ -379,7 +340,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
     const auto cSBEnv = sbEnv;
     sol::state_view stateView = acpState;
 
-    const auto cLoadString = [stateView, cSBEnv](const std::string& acStr, const std::string &acChunkName) -> std::tuple<sol::object, sol::object>
+    const auto cLoadString = [stateView, cSBEnv](const std::string& acStr, const std::string& acChunkName) -> std::tuple<sol::object, sol::object>
     {
         if (!acStr.empty() && acStr[0] == LUA_SIGNATURE[0])
             return std::make_tuple(sol::nil, make_object(stateView, "Bytecode prohibited!"));
@@ -435,7 +396,8 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
         return func().get<sol::object>(); // is OK, dofile should throw if there is an error, we try to copy it...
     };
 
-    // TODO - add _LOADED table and fill in when module loads some value, react in these functions when the key is sol::nil
+    // TODO - add _LOADED table and fill in when module loads some value, react in these functions when the key is
+    // sol::nil
     sbEnv["require"] = [this, cLoadString, cSBRootPath, stateView, cSBEnv](const std::string& acPath) -> std::tuple<sol::object, sol::object>
     {
         const auto previousCurrentPath = std::filesystem::current_path();
@@ -480,12 +442,12 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
         if (func != sol::nil)
         {
             // TODO: proper exception handling!
-            sol::protected_function_result result{ };
+            sol::protected_function_result result{};
             try
             {
                 result = func();
             }
-            catch(std::exception& e)
+            catch (std::exception& e)
             {
                 current_path(previousCurrentPath);
 
@@ -567,7 +529,6 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
             current_path(previousCurrentPath);
 
             return result;
-
         };
         const auto cOpenWithMode = [cIO, cSBRootPath](const std::string& acPath, const std::string& acMode)
         {
@@ -608,7 +569,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
             }
 
             const auto newPath = GetLuaPath(acOldPath, cSBRootPath, true);
-            if (newPath.empty() || exists(newPath)|| acNewPath == "db.sqlite3")
+            if (newPath.empty() || exists(newPath) || acNewPath == "db.sqlite3")
             {
                 current_path(previousCurrentPath);
 
@@ -658,12 +619,30 @@ void LuaSandbox::InitializeLoggerForSandbox(Sandbox& aSandbox, const sol::state&
 
     // assign logger to mod so it can be used from within it too
     sol::table spdlog(acpState, sol::create);
-    spdlog["trace"]    = [logger](const std::string& message) { logger->trace("{}", message);    };
-    spdlog["debug"]    = [logger](const std::string& message) { logger->debug("{}", message);    };
-    spdlog["info"]     = [logger](const std::string& message) { logger->info("{}", message);     };
-    spdlog["warning"]  = [logger](const std::string& message) { logger->warn("{}", message);     };
-    spdlog["error"]    = [logger](const std::string& message) { logger->error("{}", message);    };
-    spdlog["critical"] = [logger](const std::string& message) { logger->critical("{}", message); };
+    spdlog["trace"] = [logger](const std::string& message)
+    {
+        logger->trace("{}", message);
+    };
+    spdlog["debug"] = [logger](const std::string& message)
+    {
+        logger->debug("{}", message);
+    };
+    spdlog["info"] = [logger](const std::string& message)
+    {
+        logger->info("{}", message);
+    };
+    spdlog["warning"] = [logger](const std::string& message)
+    {
+        logger->warn("{}", message);
+    };
+    spdlog["error"] = [logger](const std::string& message)
+    {
+        logger->error("{}", message);
+    };
+    spdlog["critical"] = [logger](const std::string& message)
+    {
+        logger->critical("{}", message);
+    };
     sbEnv["spdlog"] = spdlog;
 
     // assign logger to special var so we can access it from our functions

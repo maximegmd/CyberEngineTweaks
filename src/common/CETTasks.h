@@ -6,6 +6,5 @@ struct CETTasks
     ~CETTasks();
 
 private:
-
     std::atomic<bool> m_running;
 };

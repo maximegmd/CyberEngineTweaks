@@ -14,7 +14,7 @@ static BOOL CALLBACK EnumWindowsProcCP77(HWND ahWnd, LPARAM alParam)
     GetWindowThreadProcessId(ahWnd, &lpdwProcessId);
     if (lpdwProcessId == GetCurrentProcessId())
     {
-        TCHAR name[512] = { 0 };
+        TCHAR name[512] = {0};
         GetWindowText(ahWnd, name, 511);
         if (_tcscmp(_T("Cyberpunk 2077 (C) 2020 by CD Projekt RED"), name) == 0)
         {
@@ -63,22 +63,22 @@ Window::Window(VKBindings* apBindings, D3D12* apD3D12)
 {
     s_pWindow = this;
 
-    std::thread t([this]
-    {
-        while (m_hWnd == nullptr)
+    std::thread t(
+        [this]
         {
-            if (EnumWindows(EnumWindowsProcCP77, reinterpret_cast<LPARAM>(&m_hWnd)))
-                std::this_thread::sleep_for(50ms);
-            else
+            while (m_hWnd == nullptr)
             {
-                m_wndProc = reinterpret_cast<WNDPROC>(
-                    SetWindowLongPtr(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(WndProc)));
-                Log::Info("Window::Initialize() - window hook complete.");
+                if (EnumWindows(EnumWindowsProcCP77, reinterpret_cast<LPARAM>(&m_hWnd)))
+                    std::this_thread::sleep_for(50ms);
+                else
+                {
+                    m_wndProc = reinterpret_cast<WNDPROC>(SetWindowLongPtr(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(WndProc)));
+                    Log::Info("Window::Initialize() - window hook complete.");
+                }
             }
-        }
 
-        m_initialized = true;
-    });
+            m_initialized = true;
+        });
 
     t.detach();
 }

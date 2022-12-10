@@ -40,12 +40,11 @@ private:
         RepeatedTaskQueue Tasks;
     };
 
-    std::array<StateTickOverride, 4> m_stateTickOverrides {
+    std::array<StateTickOverride, 4> m_stateTickOverrides{
         StateTickOverride(CyberEngineTweaks::Addresses::CBaseInitializationState_OnTick, "CBaseInitializationState::OnTick"),
         StateTickOverride(CyberEngineTweaks::Addresses::CInitializationState_OnTick, "CInitializationState::OnTick"),
         StateTickOverride(CyberEngineTweaks::Addresses::CRunningState_OnTick, "CRunningState::OnTick"),
-        StateTickOverride(CyberEngineTweaks::Addresses::CShutdownState_OnTick, "CShutdownState::OnTick")
-    };
+        StateTickOverride(CyberEngineTweaks::Addresses::CShutdownState_OnTick, "CShutdownState::OnTick")};
 
     RepeatedTaskQueue m_genericQueue;
 };

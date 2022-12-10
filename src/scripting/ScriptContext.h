@@ -25,24 +25,23 @@ struct ScriptContext
     [[nodiscard]] sol::object GetRootObject() const;
 
 private:
-
     void TriggerOnShutdown() const;
 
     ScriptContext(const ScriptContext&) = default;
 
     LuaSandbox& m_sandbox;
     uint64_t m_sandboxID;
-    sol::object m_object{ };
-    sol::function m_onHook{ };
-    sol::function m_onTweak{ };
-    sol::function m_onInit{ };
-    sol::function m_onShutdown{ };
-    sol::function m_onUpdate{ };
-    sol::function m_onDraw{ };
-    sol::function m_onOverlayOpen{ };
-    sol::function m_onOverlayClose{ };
-    TiltedPhoques::Vector<VKBind> m_vkBinds{ };
-    std::string m_name{ };
-    std::shared_ptr<spdlog::logger> m_logger{ nullptr };
-    bool m_initialized{ false };
+    sol::object m_object{};
+    sol::function m_onHook{};
+    sol::function m_onTweak{};
+    sol::function m_onInit{};
+    sol::function m_onShutdown{};
+    sol::function m_onUpdate{};
+    sol::function m_onDraw{};
+    sol::function m_onOverlayOpen{};
+    sol::function m_onOverlayClose{};
+    TiltedPhoques::Vector<VKBind> m_vkBinds{};
+    std::string m_name{};
+    std::shared_ptr<spdlog::logger> m_logger{nullptr};
+    bool m_initialized{false};
 };

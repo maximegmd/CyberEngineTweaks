@@ -52,7 +52,7 @@ const std::filesystem::path& Paths::TweakDB() const
 
 Paths::Paths()
 {
-    TCHAR exePathBuf[MAX_PATH] = { 0 };
+    TCHAR exePathBuf[MAX_PATH] = {0};
     GetModuleFileName(GetModuleHandle(nullptr), exePathBuf, static_cast<DWORD>(std::size(exePathBuf)));
     m_exe = exePathBuf;
 

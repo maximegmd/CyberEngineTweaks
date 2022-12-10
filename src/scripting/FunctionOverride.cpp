@@ -14,23 +14,19 @@ FunctionOverride* s_pOverride = nullptr;
 
 using TRunPureScriptFunction = bool (*)(RED4ext::CBaseFunction* apFunction, RED4ext::CScriptStack*, void*);
 using TCreateFunction = void* (*)(void* apMemoryPool, size_t aSize);
-using TCallScriptFunction = bool (*)(RED4ext::IFunction* apFunction, RED4ext::IScriptable* apContext,
-                                     RED4ext::CStackFrame* apFrame, void* apOut, void* a4);
+using TCallScriptFunction = bool (*)(RED4ext::IFunction* apFunction, RED4ext::IScriptable* apContext, RED4ext::CStackFrame* apFrame, void* apOut, void* a4);
 
 TRunPureScriptFunction RealRunPureScriptFunction = nullptr;
 TCreateFunction RealCreateFunction = nullptr;
 RED4ext::RelocFunc<TCallScriptFunction> CallScriptFunction(RED4ext::Addresses::CBaseFunction_InternalExecute);
 
-constexpr size_t s_cMaxFunctionSize =
-    std::max({sizeof(RED4ext::CClassFunction), sizeof(RED4ext::CClassStaticFunction), sizeof(RED4ext::CGlobalFunction)});
+constexpr size_t s_cMaxFunctionSize = std::max({sizeof(RED4ext::CClassFunction), sizeof(RED4ext::CClassStaticFunction), sizeof(RED4ext::CGlobalFunction)});
 
 size_t GetFunctionSize(RED4ext::CBaseFunction* apFunction)
 {
     if (apFunction->flags.isStatic)
     {
-        return apFunction->flags.isNative
-            ? sizeof(RED4ext::CClassStaticFunction)
-            : sizeof(RED4ext::CGlobalFunction);
+        return apFunction->flags.isNative ? sizeof(RED4ext::CClassStaticFunction) : sizeof(RED4ext::CGlobalFunction);
     }
 
     return sizeof(RED4ext::CClassFunction);
@@ -50,7 +46,7 @@ struct OverrideCodegen : Xbyak::CodeGenerator
     }
 };
 
-}
+} // namespace
 
 FunctionOverride::FunctionOverride(Scripting* apScripting)
     : m_pScripting(apScripting)
@@ -348,11 +344,10 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
     CallScriptFunction(pRealFunction, apContext, apFrame, apOut, a4);
 }
 
-bool FunctionOverride::ExecuteChain(const CallChain& aChain, std::shared_lock<std::shared_mutex>& aLock,
-                                    RED4ext::IScriptable* apContext, TiltedPhoques::Vector<sol::object>* apOrigArgs,
-                                    RED4ext::CStackType* apResult, TiltedPhoques::Vector<RED4ext::CStackType>* apOutArgs,
-                                    RED4ext::CScriptStack* apStack, RED4ext::CStackFrame* apFrame,
-                                    char* apCode, uint8_t aParam)
+bool FunctionOverride::ExecuteChain(
+    const CallChain& aChain, std::shared_lock<std::shared_mutex>& aLock, RED4ext::IScriptable* apContext, TiltedPhoques::Vector<sol::object>* apOrigArgs,
+    RED4ext::CStackType* apResult, TiltedPhoques::Vector<RED4ext::CStackType>* apOutArgs, RED4ext::CScriptStack* apStack, RED4ext::CStackFrame* apFrame, char* apCode,
+    uint8_t aParam)
 {
     if (!aChain.Before.empty())
     {
@@ -379,8 +374,7 @@ bool FunctionOverride::ExecuteChain(const CallChain& aChain, std::shared_lock<st
         auto& luaState = lockedState.Get();
 
         sol::object luaContext = pRealFunction->flags.isStatic ? sol::nil : apOrigArgs->at(0);
-        TiltedPhoques::Vector<sol::object> luaArgs(apOrigArgs->begin() + (pRealFunction->flags.isStatic ? 0 : 1),
-                                                   apOrigArgs->end());
+        TiltedPhoques::Vector<sol::object> luaArgs(apOrigArgs->begin() + (pRealFunction->flags.isStatic ? 0 : 1), apOrigArgs->end());
 
         const auto luaWrapped = WrapNextOverride(aChain, 0, luaState, luaContext, luaArgs, pRealFunction, apContext, aLock);
         const auto luaResult = luaWrapped(as_args(luaArgs));
@@ -450,15 +444,16 @@ bool FunctionOverride::ExecuteChain(const CallChain& aChain, std::shared_lock<st
     return realRetValue;
 }
 
-sol::function FunctionOverride::WrapNextOverride(const CallChain& aChain, int aStep,
-    sol::state& aLuaState, sol::object& aLuaContext, TiltedPhoques::Vector<sol::object>& aLuaArgs,
-    RED4ext::CBaseFunction* apRealFunction, RED4ext::IScriptable* apRealContext,
-    std::shared_lock<std::shared_mutex>& aLock)
+sol::function FunctionOverride::WrapNextOverride(
+    const CallChain& aChain, int aStep, sol::state& aLuaState, sol::object& aLuaContext, TiltedPhoques::Vector<sol::object>& aLuaArgs, RED4ext::CBaseFunction* apRealFunction,
+    RED4ext::IScriptable* apRealContext, std::shared_lock<std::shared_mutex>& aLock)
 {
     if (aStep == static_cast<int>(aChain.Overrides.size()))
     {
-        return MakeSolFunction(aLuaState,
-            [&](sol::variadic_args aWrapArgs, sol::this_state aState, sol::this_environment aEnv) -> sol::variadic_results {
+        return MakeSolFunction(
+            aLuaState,
+            [&](sol::variadic_args aWrapArgs, sol::this_state aState, sol::this_environment aEnv) -> sol::variadic_results
+            {
                 std::string errorMessage;
                 sol::variadic_results results = RTTIHelper::Get().ExecuteFunction(apRealFunction, apRealContext, aWrapArgs, 0, errorMessage);
 
@@ -478,8 +473,10 @@ sol::function FunctionOverride::WrapNextOverride(const CallChain& aChain, int aS
             });
     }
 
-    return MakeSolFunction(aLuaState,
-        [&, aStep](sol::variadic_args aWrapArgs, sol::this_state aState) -> sol::variadic_results {
+    return MakeSolFunction(
+        aLuaState,
+        [&, aStep](sol::variadic_args aWrapArgs, sol::this_state aState) -> sol::variadic_results
+        {
             const auto call = (aChain.Overrides.rbegin() + aStep)->get();
 
             for (uint32_t i = 0; i < apRealFunction->params.size; ++i)
@@ -491,9 +488,7 @@ sol::function FunctionOverride::WrapNextOverride(const CallChain& aChain, int aS
             }
 
             auto next = WrapNextOverride(aChain, aStep + 1, aLuaState, aLuaContext, aLuaArgs, apRealFunction, apRealContext, aLock);
-            auto result = aLuaContext == sol::nil
-                ? call->ScriptFunction(as_args(aLuaArgs), next)
-                : call->ScriptFunction(aLuaContext, as_args(aLuaArgs), next);
+            auto result = aLuaContext == sol::nil ? call->ScriptFunction(as_args(aLuaArgs), next) : call->ScriptFunction(aLuaContext, as_args(aLuaArgs), next);
 
             if (!result.valid())
             {
@@ -525,8 +520,8 @@ void FunctionOverride::Hook() const
         else
         {
             auto* pLocation = RealRunPureScriptFunction;
-            if (MH_CreateHook(reinterpret_cast<LPVOID>(pLocation), reinterpret_cast<LPVOID>(HookRunPureScriptFunction),
-                              reinterpret_cast<void**>(&RealRunPureScriptFunction)) != MH_OK ||
+            if (MH_CreateHook(reinterpret_cast<LPVOID>(pLocation), reinterpret_cast<LPVOID>(HookRunPureScriptFunction), reinterpret_cast<void**>(&RealRunPureScriptFunction)) !=
+                    MH_OK ||
                 MH_EnableHook(reinterpret_cast<LPVOID>(pLocation)) != MH_OK)
                 Log::Error("Could not hook RealRunScriptFunction function!");
             else
@@ -538,23 +533,22 @@ void FunctionOverride::Hook() const
         const RED4ext::RelocPtr<void> func(CyberEngineTweaks::Addresses::CScript_AllocateFunction);
         RealCreateFunction = reinterpret_cast<TCreateFunction>(func.GetAddr());
         if (!RealCreateFunction)
-             Log::Error("Could not find create function!");
+            Log::Error("Could not find create function!");
         else
         {
             auto* pLocation = RealCreateFunction;
-             if (MH_CreateHook(reinterpret_cast<LPVOID>(pLocation), reinterpret_cast<LPVOID>(HookCreateFunction),
-                              reinterpret_cast<void**>(&RealCreateFunction)) != MH_OK ||
-                 MH_EnableHook(reinterpret_cast<LPVOID>(pLocation)) != MH_OK)
-                 Log::Error("Could not hook RealCreateFunction function!");
-             else
-                 Log::Info("RealCreateFunction function hook complete!");
+            if (MH_CreateHook(reinterpret_cast<LPVOID>(pLocation), reinterpret_cast<LPVOID>(HookCreateFunction), reinterpret_cast<void**>(&RealCreateFunction)) != MH_OK ||
+                MH_EnableHook(reinterpret_cast<LPVOID>(pLocation)) != MH_OK)
+                Log::Error("Could not hook RealCreateFunction function!");
+            else
+                Log::Info("RealCreateFunction function hook complete!");
         }
     }
 }
 
-void FunctionOverride::Override(const std::string& acTypeName, const std::string& acFullName,
-                                sol::protected_function aFunction, sol::environment aEnvironment,
-                                bool aAbsolute, bool aAfter, bool aCollectGarbage)
+void FunctionOverride::Override(
+    const std::string& acTypeName, const std::string& acFullName, sol::protected_function aFunction, sol::environment aEnvironment, bool aAbsolute, bool aAfter,
+    bool aCollectGarbage)
 {
     auto* pRtti = RED4ext::CRTTISystem::Get();
     auto* pClassType = pRtti->GetClass(acTypeName.c_str());
@@ -612,8 +606,7 @@ void FunctionOverride::Override(const std::string& acTypeName, const std::string
             {
                 if (pRealFunction->flags.isNative)
                 {
-                    pFunc = RED4ext::CClassStaticFunction::Create(pClassType, acFullName.c_str(), acFullName.c_str(),
-                                                                  pExecutablePayload, pRealFunction->flags);
+                    pFunc = RED4ext::CClassStaticFunction::Create(pClassType, acFullName.c_str(), acFullName.c_str(), pExecutablePayload, pRealFunction->flags);
                     reinterpret_cast<RED4ext::CClassStaticFunction*>(pFunc)->parent = pRealFunction->parent;
                 }
                 else
@@ -623,8 +616,7 @@ void FunctionOverride::Override(const std::string& acTypeName, const std::string
             }
             else
             {
-                pFunc = RED4ext::CClassFunction::Create(pClassType, acFullName.c_str(), acFullName.c_str(),
-                                                        pExecutablePayload, pRealFunction->flags);
+                pFunc = RED4ext::CClassFunction::Create(pClassType, acFullName.c_str(), acFullName.c_str(), pExecutablePayload, pRealFunction->flags);
                 reinterpret_cast<RED4ext::CClassFunction*>(pFunc)->parent = pRealFunction->parent;
             }
 

@@ -84,7 +84,7 @@ void Widget::Draw()
         OnToggle();
 
     if (!m_enabled)
-      return;
+        return;
 
     bool newEnabled = m_enabled;
 

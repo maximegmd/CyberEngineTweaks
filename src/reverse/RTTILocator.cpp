@@ -2,13 +2,12 @@
 
 #include "RTTILocator.h"
 
-
 RTTILocator::RTTILocator(RED4ext::CName aName)
     : m_name(aName)
 {
 }
 
-RTTILocator::operator RED4ext::CBaseRTTIType *()
+RTTILocator::operator RED4ext::CBaseRTTIType*()
 {
     if (m_pRtti)
         return m_pRtti;

@@ -7,6 +7,4 @@ extern bool g_ImGuiAssertionsEnabled;
 void ImGuiAssert(wchar_t const* acpMessage, wchar_t const* acpFile, unsigned aLine);
 
 // custom assertion function macro for ImGui
-#define IM_ASSERT(expression) (void)(                                                      \
-    (g_ImGuiAssertionsEnabled && ((!!(expression)) ||                                      \
-    (ImGuiAssert(_CRT_WIDE(#expression), _CRT_WIDE(__FILE__), (unsigned)(__LINE__)), 0))))
+#define IM_ASSERT(expression) (void)((g_ImGuiAssertionsEnabled && ((!!(expression)) || (ImGuiAssert(_CRT_WIDE(#expression), _CRT_WIDE(__FILE__), (unsigned)(__LINE__)), 0))))

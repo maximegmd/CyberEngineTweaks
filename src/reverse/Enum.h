@@ -23,7 +23,7 @@ struct Enum
 
     std::string ToString() const;
 
-	bool operator==(const Enum& acRhs) const noexcept;
+    bool operator==(const Enum& acRhs) const noexcept;
 
     const RED4ext::CEnum* GetType() const;
     const void* GetValuePtr() const;
@@ -31,6 +31,6 @@ struct Enum
 protected:
     friend struct Scripting;
 
-    const RED4ext::CEnum*   m_cpType{ nullptr };
-    uint64_t                m_value{ 0 };
+    const RED4ext::CEnum* m_cpType{nullptr};
+    uint64_t m_value{0};
 };

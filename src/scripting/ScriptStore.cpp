@@ -55,7 +55,6 @@ void ScriptStore::LoadAll()
             continue;
         }
 
-
         if (!exists(path / L"init.lua"))
         {
             consoleLogger->warn("Ignoring mod which does not contain init.lua! ('{}')", pathStr);

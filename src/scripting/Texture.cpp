@@ -8,20 +8,16 @@
 
 void Texture::BindTexture(sol::table& aTable)
 {
-    aTable.new_usertype<Texture>("ImguiTexture", sol::no_constructor,
-        "size", sol::property(&Texture::GetSize),
-        "Release", &Texture::Release);
+    aTable.new_usertype<Texture>("ImguiTexture", sol::no_constructor, "size", sol::property(&Texture::GetSize), "Release", &Texture::Release);
 
-    aTable.set_function("Image", sol::overload(
-        &Texture::ImGuiImage,
-       [](const Texture& acTexture, ImVec2 aSize, const ImVec2& aUv0, const ImVec2& aUv1,
-          const ImVec4& aTintCol) { ImGuiImage(acTexture, aSize, aUv0, aUv1, aTintCol); },
-       [](const Texture& acTexture, ImVec2 aSize, const ImVec2& aUv0, const ImVec2& aUv1) {
-           ImGuiImage(acTexture, aSize, aUv0, aUv1); },
-       [](const Texture& acTexture, ImVec2 aSize, const ImVec2& aUv0 ) { ImGuiImage(acTexture, aSize, aUv0); },
-       [](const Texture& acTexture, ImVec2 aSize) { ImGuiImage(acTexture, aSize); },
-       [](const Texture& acTexture ){ ImGuiImage(acTexture); }
-    ));
+    aTable.set_function(
+        "Image",
+        sol::overload(
+            &Texture::ImGuiImage,
+            [](const Texture& acTexture, ImVec2 aSize, const ImVec2& aUv0, const ImVec2& aUv1, const ImVec4& aTintCol) { ImGuiImage(acTexture, aSize, aUv0, aUv1, aTintCol); },
+            [](const Texture& acTexture, ImVec2 aSize, const ImVec2& aUv0, const ImVec2& aUv1) { ImGuiImage(acTexture, aSize, aUv0, aUv1); },
+            [](const Texture& acTexture, ImVec2 aSize, const ImVec2& aUv0) { ImGuiImage(acTexture, aSize, aUv0); },
+            [](const Texture& acTexture, ImVec2 aSize) { ImGuiImage(acTexture, aSize); }, [](const Texture& acTexture) { ImGuiImage(acTexture); }));
 }
 
 std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
@@ -88,8 +84,7 @@ std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
     props.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
 
     Microsoft::WRL::ComPtr<ID3D12Resource> uploadBuffer = nullptr;
-    HRESULT hr = d3d_device->CreateCommittedResource(
-        &props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadBuffer));
+    HRESULT hr = d3d_device->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadBuffer));
     IM_ASSERT(SUCCEEDED(hr));
 
     // Write pixels into the upload resource
@@ -156,7 +151,7 @@ std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
     IM_ASSERT(SUCCEEDED(hr));
 
     // Execute the copy
-    ID3D12CommandList* commandLists[] = { cmdList.Get() };
+    ID3D12CommandList* commandLists[] = {cmdList.Get()};
     cmdQueue->ExecuteCommandLists(1, commandLists);
     hr = cmdQueue->Signal(fence.Get(), 1);
     IM_ASSERT(SUCCEEDED(hr));
@@ -194,8 +189,7 @@ std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
     return texture;
 }
 
-void Texture::ImGuiImage(const Texture& acTexture, ImVec2 aSize, const ImVec2& aUv0, const ImVec2& aUv1,
-                         const ImVec4& aTintCol, const ImVec4& aBorderCol)
+void Texture::ImGuiImage(const Texture& acTexture, ImVec2 aSize, const ImVec2& aUv0, const ImVec2& aUv1, const ImVec4& aTintCol, const ImVec4& aBorderCol)
 {
     if (aSize.x == 0 && aSize.y == 0)
         aSize = acTexture.m_size;

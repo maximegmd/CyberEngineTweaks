@@ -11,9 +11,15 @@ void D3D12::SetTrapInputInImGui(const bool acEnabled)
 {
     int showCursorState;
     if (acEnabled)
-        do { showCursorState = ShowCursor(TRUE); } while (showCursorState < 0);
+        do
+        {
+            showCursorState = ShowCursor(TRUE);
+        } while (showCursorState < 0);
     else
-        do { showCursorState = ShowCursor(FALSE); } while (showCursorState >= 0);
+        do
+        {
+            showCursorState = ShowCursor(FALSE);
+        } while (showCursorState >= 0);
 
     m_trapInputInImGui = acEnabled;
 }
@@ -42,8 +48,7 @@ LRESULT D3D12::OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam)
         if (d3d12.m_trapInputInImGui) // TODO: look into io.WantCaptureMouse and io.WantCaptureKeyboard
         {
             // ignore mouse & keyboard events
-            if ((auMsg >= WM_MOUSEFIRST && auMsg <= WM_MOUSELAST) ||
-                (auMsg >= WM_KEYFIRST && auMsg <= WM_KEYLAST))
+            if ((auMsg >= WM_MOUSEFIRST && auMsg <= WM_MOUSELAST) || (auMsg >= WM_KEYFIRST && auMsg <= WM_KEYLAST))
                 return 1;
 
             // ignore input messages
@@ -63,7 +68,12 @@ D3D12::D3D12(Window& aWindow, Paths& aPaths, Options& aOptions)
     HookGame();
 
     // add repeated task which prepares next ImGui frame for update
-    GameMainThread::Get().AddGenericTask([this]{ PrepareUpdate(); return false; });
+    GameMainThread::Get().AddGenericTask(
+        [this]
+        {
+            PrepareUpdate();
+            return false;
+        });
 }
 
 D3D12::~D3D12()

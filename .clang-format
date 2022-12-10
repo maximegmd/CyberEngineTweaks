@@ -1,31 +1,21 @@
 ---
-BasedOnStyle: Microsoft
----
-Language: Cpp
-
+BasedOnStyle: LLVM
 AccessModifierOffset: -4
-AlwaysBreakTemplateDeclarations: Yes
-BreakConstructorInitializers: BeforeComma
-BreakInheritanceList: BeforeComma
-KeepEmptyLinesAtTheStartOfBlocks: false
-NamespaceIndentation: Inner
-PointerAlignment: Left
-SpaceAfterTemplateKeyword: false
-
-BreakBeforeBraces: Custom
+AlignAfterOpenBracket: AlwaysBreak
+AlignEscapedNewlines: Left
+AlignOperands: true
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: InlineOnly
+AllowShortLambdasOnASingleLine: Inline
 BraceWrapping:
-    AfterCaseLabel: true
-    AfterClass: true
-    AfterControlStatement: Always
-    AfterEnum: true
-    AfterFunction: true
-    AfterNamespace: true
-    AfterStruct: true
-    AfterUnion: true
-    AfterExternBlock: true
-    BeforeCatch: true
-    BeforeElse: true
-    IndentBraces: false
-    SplitEmptyFunction: true
-    SplitEmptyRecord: true
-    SplitEmptyNamespace: true
+  AfterCaseLabel: true
+  IndentBraces: true
+BreakBeforeBraces: Allman
+BreakConstructorInitializers: BeforeComma
+ColumnLimit: 180
+IndentWidth: 4
+PenaltyBreakFirstLessLess: 180
+PointerAlignment: Left
+SortIncludes: Never
+SpaceBeforeParensOptions:
+  AfterControlStatements: false

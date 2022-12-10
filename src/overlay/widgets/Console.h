@@ -25,9 +25,9 @@ private:
 
     LogWindow m_logWindow;
 
-    size_t m_historyIndex{ 0 };
-    bool m_newHistory{ true };
+    size_t m_historyIndex{0};
+    bool m_newHistory{true};
 
     std::string m_command;
-    int m_commandLength{ 0 };
+    int m_commandLength{0};
 };

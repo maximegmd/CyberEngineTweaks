@@ -18,7 +18,7 @@ sol::protected_function_result Sandbox::ExecuteFile(const std::string& acPath) c
 
 sol::protected_function_result Sandbox::ExecuteString(const std::string& acString) const
 {
-    return m_pScripting->GetLockedState().Get().script(acString, m_env, sol:: detail::default_chunk_name(), sol::load_mode::text);
+    return m_pScripting->GetLockedState().Get().script(acString, m_env, sol::detail::default_chunk_name(), sol::load_mode::text);
 }
 
 uint64_t Sandbox::GetId() const

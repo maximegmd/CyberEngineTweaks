@@ -48,8 +48,7 @@ std::wstring UTF8ToUTF16(std::string_view utf8)
     return utf16;
 }
 
-template<typename Mutex>
-class CustomSink final : public spdlog::sinks::base_sink<Mutex>
+template <typename Mutex> class CustomSink final : public spdlog::sinks::base_sink<Mutex>
 {
 public:
     CustomSink(const std::function<void(const std::string&)>& acpSinkItHandler, const std::function<void()>& acpFlushHandler)
@@ -81,28 +80,24 @@ private:
     std::function<void()> m_flushHandler{nullptr};
 };
 
-template<typename Mutex>
-spdlog::sink_ptr CreateCustomSink(const std::function<void(const std::string&)>& acpSinkItHandler,
-                                  const std::function<void()>& acpFlushHandler)
+template <typename Mutex> spdlog::sink_ptr CreateCustomSink(const std::function<void(const std::string&)>& acpSinkItHandler, const std::function<void()>& acpFlushHandler)
 {
     return std::make_shared<CustomSink<Mutex>>(acpSinkItHandler, acpFlushHandler);
 }
 
-spdlog::sink_ptr CreateCustomSinkST(const std::function<void(const std::string&)>& acpSinkItHandler,
-                                    const std::function<void()>& acpFlushHandler)
+spdlog::sink_ptr CreateCustomSinkST(const std::function<void(const std::string&)>& acpSinkItHandler, const std::function<void()>& acpFlushHandler)
 {
     return CreateCustomSink<spdlog::details::null_mutex>(acpSinkItHandler, acpFlushHandler);
 }
 
-spdlog::sink_ptr CreateCustomSinkMT(const std::function<void(const std::string&)>& acpSinkItHandler,
-                                    const std::function<void()>& acpFlushHandler)
+spdlog::sink_ptr CreateCustomSinkMT(const std::function<void(const std::string&)>& acpSinkItHandler, const std::function<void()>& acpFlushHandler)
 {
     return CreateCustomSink<std::mutex>(acpSinkItHandler, acpFlushHandler);
 }
 
-std::shared_ptr<spdlog::logger> CreateLogger(const std::filesystem::path& acpPath, const std::string& acpID,
-                                             const spdlog::sink_ptr& acpExtraSink, const std::string& acpPattern,
-                                             const size_t acMaxFileSize, const size_t acMaxFileCount)
+std::shared_ptr<spdlog::logger> CreateLogger(
+    const std::filesystem::path& acpPath, const std::string& acpID, const spdlog::sink_ptr& acpExtraSink, const std::string& acpPattern, const size_t acMaxFileSize,
+    const size_t acMaxFileCount)
 {
     if (auto existingLogger = spdlog::get(acpID))
         return existingLogger;
@@ -160,10 +155,14 @@ void MakeSolUsertypeImmutable(const sol::object& acpObj, const sol::state_view& 
     }
 
     // prevent adding new properties
-    metatable[sol::meta_function::new_index] = [] {};
+    metatable[sol::meta_function::new_index] = [] {
+    };
 
     // prevent overriding metatable
-    metatable[sol::meta_function::metatable] = [] { return sol::nil; };
+    metatable[sol::meta_function::metatable] = []
+    {
+        return sol::nil;
+    };
 }
 
 // Check if Lua object is of cdata type
@@ -186,7 +185,8 @@ float GetCenteredOffsetForText(const char* acpText)
     return (ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(acpText).x) / 2.0f;
 }
 
-TChangedCBResult UnsavedChangesPopup(const std::string& acpOwnerName, bool& aFirstTime, const bool acMadeChanges, const TWidgetCB& acpSaveCB, const TWidgetCB& acpLoadCB, const TWidgetCB& acpCancelCB)
+TChangedCBResult UnsavedChangesPopup(
+    const std::string& acpOwnerName, bool& aFirstTime, const bool acMadeChanges, const TWidgetCB& acpSaveCB, const TWidgetCB& acpLoadCB, const TWidgetCB& acpCancelCB)
 {
     auto popupTitle = acpOwnerName.empty() ? "Unsaved changes" : fmt::format("{} - Unsaved changes", acpOwnerName);
 
@@ -202,9 +202,9 @@ TChangedCBResult UnsavedChangesPopup(const std::string& acpOwnerName, bool& aFir
 
         if (ImGui::BeginPopupModal(popupTitle.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize))
         {
-            const auto shorterTextSz { ImGui::CalcTextSize("You have some unsaved changes.").x };
-            const auto longerTextSz { ImGui::CalcTextSize("Do you wish to apply them or discard them?").x };
-            const auto diffTextSz { longerTextSz - shorterTextSz };
+            const auto shorterTextSz{ImGui::CalcTextSize("You have some unsaved changes.").x};
+            const auto longerTextSz{ImGui::CalcTextSize("Do you wish to apply them or discard them?").x};
+            const auto diffTextSz{longerTextSz - shorterTextSz};
 
             ImGui::SetCursorPosX(diffTextSz / 2);
             ImGui::TextUnformatted("You have some unsaved changes.");
@@ -268,7 +268,6 @@ std::filesystem::path GetAbsolutePath(std::filesystem::path aFilePath, const std
 
         aFilePath = absolute(aFilePath);
     }
-
 
     if (is_symlink(aFilePath))
     {

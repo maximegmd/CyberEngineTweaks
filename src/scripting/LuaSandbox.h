@@ -14,7 +14,9 @@ struct LuaSandbox
 
     void ResetState();
 
-    uint64_t CreateSandbox(const std::filesystem::path& acPath = "", const std::string& acName = "", bool aEnableExtraLibs = true, bool aEnableDB = true, bool aEnableIO = true, bool aEnableLogger = true);
+    uint64_t CreateSandbox(
+        const std::filesystem::path& acPath = "", const std::string& acName = "", bool aEnableExtraLibs = true, bool aEnableDB = true, bool aEnableIO = true,
+        bool aEnableLogger = true);
 
     Sandbox& operator[](uint64_t aID);
     const Sandbox& operator[](uint64_t aID) const;
@@ -27,7 +29,6 @@ struct LuaSandbox
     sol::table& GetGlobals();
 
 private:
-
     void InitializeExtraLibsForSandbox(Sandbox& aSandbox, const sol::state& acpState) const;
     void InitializeDBForSandbox(Sandbox& aSandbox, const sol::state& acpState);
     void InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acpState, const std::string& acName);
@@ -41,5 +42,5 @@ private:
     TiltedPhoques::Vector<Sandbox> m_sandboxes{};
     TiltedPhoques::Map<std::string, sol::object> m_modules{};
 
-    bool m_imguiAvailable{ false };
+    bool m_imguiAvailable{false};
 };

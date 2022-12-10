@@ -28,7 +28,6 @@ struct CET
     static bool IsRunning() noexcept;
 
 private:
-
     CET();
 
     Paths m_paths;
