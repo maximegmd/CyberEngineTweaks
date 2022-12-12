@@ -21,15 +21,28 @@ protected:
     WidgetResult OnPopup() override;
 
 private:
-    void UpdateAndDrawSetting(const std::string& acLabel, const std::string& acTooltip, bool& aCurrent, const bool& acSaved);
+    void SettingItemTemplate(const char* acIcon, const std::string& acLabel, const std::string& acTooltip, const bool& aValueChanged, std::function<void()>& aImGuiFunction);
+    bool SettingItemCheckBox(const char* acIcon, const std::string& acLabel, const std::string& acTooltip, bool& aCurrent, const bool& acSaved);
+    bool SettingItemSliderFloat(
+        const char* acIcon, const std::string& acLabel, const std::string& acTooltip, float& aCurrent, const float& acSaved, float aValueMin, float aValueMax,
+        const char* aFormat = "%.1f");
+    bool SettingItemSliderInt(
+        const char* acIcon, const std::string& acLabel, const std::string& acTooltip, int& aCurrent, const int& acSaved, int aValueMin, int aValueMax, const char* aFormat = "%d");
+    bool SettingItemCombo(
+        const char* acIcon, const std::string& acLabel, const std::string& acTooltip, std::string& aCurrent, const std::string& acSaved, const std::vector<std::string>& acItems);
+    bool SettingItemFontPath(const char* acIcon, const std::string& acLabel, const std::string& acTooltip, std::string& aCurrent, const std::string& acSaved);
+    bool SettingItemFontSelection(
+        const char* acIcon, const std::string& acLabel, const std::string& acTooltip, std::string& aCurrent, const std::string& acSaved, const std::vector<std::string>& acItems);
 
     PatchesSettings m_patches;
     DeveloperSettings m_developer;
+    FontSettings m_font;
 
     Options& m_options;
     LuaVM& m_vm;
 
     TChangedCBResult m_popupResult{TChangedCBResult::APPLY};
     bool m_madeChanges{false};
+    bool m_madeFontChanges{false};
     bool m_openChangesModal{true};
 };
