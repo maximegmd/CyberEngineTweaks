@@ -2,9 +2,29 @@
 
 #include "GameHooks.h"
 
-#include "RED4ext/GameStates.hpp"
-
 static std::unique_ptr<GameMainThread> s_pGameMainThread;
+
+#if GAME_CYBERPUNK
+
+#include <RED4ext/GameStates.hpp>
+
+enum class EGameStateType : uint32_t
+{
+    Initialization = 0,
+    Activate,
+    Running,
+    Shutdown
+};
+#else
+enum class EGameStateType : int32_t
+{
+    Initialization = 0,
+    Activate = 1,
+    Running = 3,
+    Shutdown = 4
+};
+#endif
+
 
 void GameMainThread::RepeatedTaskQueue::AddTask(const std::function<bool()>& aFunction)
 {
@@ -23,9 +43,10 @@ void GameMainThread::RepeatedTaskQueue::Drain()
             ++taskIt;
     }
 }
+
 GameMainThread::StateTickOverride::StateTickOverride(const uintptr_t acOffset, const char* acpRealFunctionName)
 {
-    const RED4ext::RelocPtr<uint8_t> func(acOffset);
+    const RelocPtr<uint8_t> func(acOffset);
     Location = func.GetAddr();
 
     if (Location)
@@ -47,7 +68,7 @@ GameMainThread::StateTickOverride::~StateTickOverride()
     RealFunction = nullptr;
 }
 
-bool GameMainThread::StateTickOverride::OnTick(RED4ext::IGameState* apThisState, RED4ext::CGameApplication* apGameApplication)
+bool GameMainThread::StateTickOverride::OnTick(IGameState* apThisState, CGameApplication* apGameApplication)
 {
     Tasks.Drain();
 
@@ -63,25 +84,25 @@ GameMainThread& GameMainThread::Get()
 
 void GameMainThread::AddBaseInitializationTask(const std::function<bool()>& aFunction)
 {
-    constexpr auto cStateIndex = static_cast<size_t>(RED4ext::EGameStateType::BaseInitialization);
+    constexpr auto cStateIndex = static_cast<size_t>(EGameStateType::Activate);
     return m_stateTickOverrides[cStateIndex].Tasks.AddTask(aFunction);
 }
 
 void GameMainThread::AddInitializationTask(const std::function<bool()>& aFunction)
 {
-    constexpr auto cStateIndex = static_cast<size_t>(RED4ext::EGameStateType::Initialization);
+    constexpr auto cStateIndex = static_cast<size_t>(EGameStateType::Initialization);
     return m_stateTickOverrides[cStateIndex].Tasks.AddTask(aFunction);
 }
 
 void GameMainThread::AddRunningTask(const std::function<bool()>& aFunction)
 {
-    constexpr auto cStateIndex = static_cast<size_t>(RED4ext::EGameStateType::Running);
+    constexpr auto cStateIndex = static_cast<size_t>(EGameStateType::Running);
     return m_stateTickOverrides[cStateIndex].Tasks.AddTask(aFunction);
 }
 
 void GameMainThread::AddShutdownTask(const std::function<bool()>& aFunction)
 {
-    constexpr auto cStateIndex = static_cast<size_t>(RED4ext::EGameStateType::Shutdown);
+    constexpr auto cStateIndex = static_cast<size_t>(EGameStateType::Shutdown);
     return m_stateTickOverrides[cStateIndex].Tasks.AddTask(aFunction);
 }
 
@@ -90,7 +111,7 @@ void GameMainThread::AddGenericTask(const std::function<bool()>& aFunction)
     m_genericQueue.AddTask(aFunction);
 }
 
-bool GameMainThread::HookStateTick(RED4ext::IGameState* apThisState, RED4ext::CGameApplication* apGameApplication)
+bool GameMainThread::HookStateTick(IGameState* apThisState, CGameApplication* apGameApplication)
 {
     auto& gmt = Get();
 
@@ -98,6 +119,12 @@ bool GameMainThread::HookStateTick(RED4ext::IGameState* apThisState, RED4ext::CG
     gmt.m_genericQueue.Drain();
 
     // execute specific state tasks, including original function
+#if GAME_CYBERPUNK
     const auto cStateIndex = static_cast<size_t>(apThisState->GetType());
+#else
+    const auto cStateIndex = 0;
+    assert(false, "Please implement GetType");
+#endif
+
     return gmt.m_stateTickOverrides[cStateIndex].OnTick(apThisState, apGameApplication);
 }

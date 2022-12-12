@@ -6,7 +6,7 @@
 #include "GameOptions.h"
 #include "Texture.h"
 
-#include <CET.h>
+#include "EngineTweaks.h"
 #include <lsqlite3/lsqlite3.h>
 #include <reverse/Type.h>
 #include <reverse/SingletonReference.h>
@@ -506,7 +506,7 @@ void Scripting::PostInitializeMods()
     m_sandbox.PostInitializeMods();
 
     TriggerOnInit();
-    if (CET::Get().GetOverlay().IsEnabled())
+    if (EngineTweaks::Get().GetOverlay().IsEnabled())
         TriggerOnOverlayOpen();
 }
 
@@ -601,7 +601,7 @@ void Scripting::ReloadAllMods()
     TriggerOnTweak();
     TriggerOnInit();
 
-    if (CET::Get().GetOverlay().IsEnabled())
+    if (EngineTweaks::Get().GetOverlay().IsEnabled())
         TriggerOnOverlayOpen();
 
     spdlog::get("scripting")->info("LuaVM: Reloaded all mods!");

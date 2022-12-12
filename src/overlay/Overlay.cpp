@@ -2,7 +2,7 @@
 
 #include "Overlay.h"
 
-#include <CET.h>
+#include "EngineTweaks.h"
 
 #include <d3d12/D3D12.h>
 #include <scripting/LuaVM.h>
@@ -16,7 +16,7 @@ void Overlay::PostInitialize()
         {
             Toggle();
 
-            auto& d3d12 = CET::Get().GetD3D12();
+            auto& d3d12 = EngineTweaks::Get().GetD3D12();
             d3d12.DelayedSetTrapInputInImGui(true);
             ClipToCenter(RED4ext::CGameEngine::Get()->unkC0);
         }
@@ -187,7 +187,7 @@ void Overlay::Update()
                 m_vm.OnOverlayOpen();
             m_enabled = !m_enabled;
 
-            auto& d3d12 = CET::Get().GetD3D12();
+            auto& d3d12 = EngineTweaks::Get().GetD3D12();
             d3d12.DelayedSetTrapInputInImGui(m_enabled);
             ClipToCenter(RED4ext::CGameEngine::Get()->unkC0);
             m_toggled = false;
@@ -197,7 +197,7 @@ void Overlay::Update()
     if (!m_enabled)
         return;
 
-    const auto [width, height] = CET::Get().GetD3D12().GetResolution();
+    const auto [width, height] = EngineTweaks::Get().GetD3D12().GetResolution();
     const auto heightLimit = 2 * ImGui::GetFrameHeight() + 2 * ImGui::GetStyle().WindowPadding.y;
     ImGui::SetNextWindowPos({width * 0.25f, height * 0.05f}, ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSizeConstraints({width * 0.5f, heightLimit}, {FLT_MAX, heightLimit});
@@ -223,7 +223,7 @@ BOOL Overlay::ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis)
     const auto wnd = static_cast<HWND>(apThis->hWnd);
     const HWND foreground = GetForegroundWindow();
 
-    if (wnd == foreground && apThis->unk164 && !apThis->unk154 && !CET::Get().GetOverlay().IsEnabled())
+    if (wnd == foreground && apThis->unk164 && !apThis->unk154 && !EngineTweaks::Get().GetOverlay().IsEnabled())
     {
         RECT rect;
         GetClientRect(wnd, &rect);
@@ -249,7 +249,7 @@ BOOL Overlay::ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis)
 
 void Overlay::Hook()
 {
-    const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CWinapi_ClipToCenter);
+    const RelocPtr<uint8_t> func(Game::Addresses::CWinapi_ClipToCenter);
 
     if (auto* pLocation = func.GetAddr())
     {

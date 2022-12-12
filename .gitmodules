@@ -4,3 +4,6 @@
 [submodule "vendor/luasocket"]
 	path = vendor/luasocket
 	url = https://github.com/diegonehab/luasocket.git
+[submodule "vendor/RED3lib"]
+	path = vendor/RED3lib
+	url = https://github.com/yamashi/RED3lib.git

@@ -1,6 +1,6 @@
 #include <stdafx.h>
 
-#include "CET.h"
+#include "EngineTweaks.h"
 
 #include "Options.h"
 
@@ -26,9 +26,9 @@ static void Initialize()
     {
         MH_Initialize();
 
-        CET::Initialize();
+        EngineTweaks::Initialize();
 
-        const auto& options = CET::Get().GetOptions();
+        const auto& options = EngineTweaks::Get().GetOptions();
 
         // single instance check
         s_modInstanceMutex = CreateMutex(nullptr, TRUE, _T("Cyber Engine Tweaks Module Instance"));
@@ -75,12 +75,12 @@ static void Shutdown()
 
     if (s_modInstanceMutex)
     {
-        inGameProcess = CET::Get().GetOptions().ExeValid;
+        inGameProcess = EngineTweaks::Get().GetOptions().ExeValid;
 
         MH_DisableHook(nullptr);
         MH_Uninitialize();
 
-        CET::Shutdown();
+        EngineTweaks::Shutdown();
 
         ReleaseMutex(s_modInstanceMutex);
     }

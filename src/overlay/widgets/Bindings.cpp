@@ -2,7 +2,7 @@
 
 #include "Bindings.h"
 
-#include <CET.h>
+#include "EngineTweaks.h"
 #include <Utils.h>
 
 namespace
@@ -11,8 +11,8 @@ VKBind s_overlayToggleBind{
     "overlay_key", "Overlay Key", "Use this hotkey to toggle overlay on and off.",
     []
     {
-        if (!CET::Get().GetBindings().IsRecordingBind())
-            CET::Get().GetOverlay().Toggle();
+        if (!EngineTweaks::Get().GetBindings().IsRecordingBind())
+            EngineTweaks::Get().GetOverlay().Toggle();
     }};
 VKBindInfo s_overlayToggleBindInfo{s_overlayToggleBind, 0, 0, false};
 VKModBind s_overlayToggleModBind{"cet", s_overlayToggleBind.ID};
@@ -149,7 +149,7 @@ bool Bindings::IsFirstTimeSetup()
 {
     if (s_overlayToggleBindInfo.SavedCodeBind == 0)
     {
-        s_overlayToggleBindInfo.CodeBind = CET::Get().GetBindings().GetBindCodeForModBind(s_overlayToggleModBind);
+        s_overlayToggleBindInfo.CodeBind = EngineTweaks::Get().GetBindings().GetBindCodeForModBind(s_overlayToggleModBind);
         s_overlayToggleBindInfo.SavedCodeBind = s_overlayToggleBindInfo.CodeBind;
     }
     return s_overlayToggleBindInfo.SavedCodeBind == 0;

@@ -2,7 +2,7 @@
 
 #include "LuaVM.h"
 
-#include <CET.h>
+#include "EngineTweaks.h"
 #include <Utils.h>
 
 #include <reverse/RTTILocator.h>
@@ -84,7 +84,7 @@ bool InitializeTweakDBMetadata(TiltedPhoques::Map<uint64_t, TDBIDLookupEntry>& l
         return false;
     }
 
-    const auto tdbstrPathRAW = GetAbsolutePath(L"tweakdb.str", CET::Get().GetPaths().TweakDB(), false, true);
+    const auto tdbstrPathRAW = GetAbsolutePath(L"tweakdb.str", EngineTweaks::Get().GetPaths().TweakDB(), false, true);
     if (!tdbstrPathRAW.empty())
     {
         try
@@ -107,7 +107,7 @@ bool InitializeTweakDBMetadata(TiltedPhoques::Map<uint64_t, TDBIDLookupEntry>& l
     }
     else
     {
-        const auto tdbstrPath = GetAbsolutePath(L"tweakdbstr.kark", CET::Get().GetPaths().TweakDB(), false, true);
+        const auto tdbstrPath = GetAbsolutePath(L"tweakdbstr.kark", EngineTweaks::Get().GetPaths().TweakDB(), false, true);
         if (tdbstrPath.empty())
         {
             Log::Error("CDPRTweakDBMetadata::Initalize() - Missing tweakdbstr.kark!");
@@ -159,7 +159,7 @@ bool InitializeTweakDBMetadata(TiltedPhoques::Map<uint64_t, TDBIDLookupEntry>& l
     }
 
     // check if we have a tweakdb that was changed by REDmod
-    const auto moddedTweakDbFilePath = GetAbsolutePath(L"tweakdb.str", CET::Get().GetPaths().R6CacheModdedRoot(), false, true);
+    const auto moddedTweakDbFilePath = GetAbsolutePath(L"tweakdb.str", EngineTweaks::Get().GetPaths().R6CacheModdedRoot(), false, true);
     if (moddedTweakDbFilePath.empty())
         return true;
 
@@ -357,7 +357,7 @@ void LuaVM::Hook()
     s_vm = this;
 
     {
-        const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_Log);
+        const RelocPtr<uint8_t> func(Game::Addresses::CScript_Log);
         uint8_t* pLocation = func.GetAddr();
 
         if (pLocation)
@@ -370,7 +370,7 @@ void LuaVM::Hook()
     }
 
     {
-        const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_LogChannel);
+        const RelocPtr<uint8_t> func(Game::Addresses::CScript_LogChannel);
         uint8_t* pLocation = func.GetAddr();
 
         if (pLocation)
@@ -383,7 +383,7 @@ void LuaVM::Hook()
     }
 
     {
-        const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_TDBIDConstructorDerive);
+        const RelocPtr<uint8_t> func(Game::Addresses::CScript_TDBIDConstructorDerive);
         uint8_t* pLocation = func.GetAddr();
 
         if (pLocation)
@@ -397,7 +397,7 @@ void LuaVM::Hook()
     }
 
     {
-        const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_ToStringDEBUG);
+        const RelocPtr<uint8_t> func(Game::Addresses::CScript_ToStringDEBUG);
         uint8_t* pLocation = func.GetAddr();
 
         if (pLocation)
@@ -413,7 +413,7 @@ void LuaVM::Hook()
     }
 
     {
-        const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_TranslateBytecode);
+        const RelocPtr<uint8_t> func(Game::Addresses::CScript_TranslateBytecode);
         uint8_t* pLocation = func.GetAddr();
 
         if (pLocation)
@@ -429,7 +429,7 @@ void LuaVM::Hook()
     }
 
     {
-        const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_TweakDBLoad);
+        const RelocPtr<uint8_t> func(Game::Addresses::CScript_TweakDBLoad);
         uint8_t* pLocation = func.GetAddr();
 
         if (pLocation)
@@ -444,7 +444,7 @@ void LuaVM::Hook()
     }
 
     {
-        const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::PlayerSystem_OnPlayerSpawned);
+        const RelocPtr<uint8_t> func(Game::Addresses::PlayerSystem_OnPlayerSpawned);
         uint8_t* pLocation = func.GetAddr();
 
         if (pLocation)

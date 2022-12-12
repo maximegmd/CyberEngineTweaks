@@ -2,8 +2,14 @@
 
 #include "FunctionOverride.h"
 #include "ScriptStore.h"
-#include "reverse/RTTIMapper.h"
-#include "reverse/SingletonReference.h"
+
+#if GAME_CYBERPUNK
+#include "cyberpunk/reverse/RTTIMapper.h"
+#include "cyberpunk/reverse/SingletonReference.h"
+#else
+#include "witcher3/reverse/RTTIMapper.h"
+#include "witcher3/reverse/SingletonReference.h"
+#endif
 
 struct D3D12;
 

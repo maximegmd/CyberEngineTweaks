@@ -4,7 +4,7 @@
 
 #include "Texture.h"
 
-#include <CET.h>
+#include "EngineTweaks.h"
 #include <Utils.h>
 
 static constexpr const char* s_cVMGlobalObjectsWhitelist[] = {

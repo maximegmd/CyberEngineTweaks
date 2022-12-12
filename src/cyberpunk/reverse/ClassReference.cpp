@@ -1,7 +1,7 @@
 #include <stdafx.h>
 
 #include "ClassReference.h"
-#include "CET.h"
+#include "EngineTweaks.h"
 
 ClassReference::ClassReference(const TiltedPhoques::Locked<sol::state, std::recursive_mutex>& aView, RED4ext::CBaseRTTIType* apClass, RED4ext::ScriptInstance apInstance)
     : ClassType(aView, apClass)
@@ -20,7 +20,7 @@ ClassReference::ClassReference(ClassReference&& aOther) noexcept
 
 ClassReference::~ClassReference()
 {
-    if (m_pInstance && CET::IsRunning())
+    if (m_pInstance && EngineTweaks::IsRunning())
     {
         m_pType->Destruct(m_pInstance);
         m_pType->GetAllocator()->Free(m_pInstance);

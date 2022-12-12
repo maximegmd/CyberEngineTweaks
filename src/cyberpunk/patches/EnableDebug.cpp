@@ -57,8 +57,8 @@ void HookRegisterScriptMemberFunction(void* a, void* parentClass, uint64_t hash,
 
 void EnableDebugPatch()
 {
-    const RED4ext::RelocPtr<uint8_t> registerFunction(RED4ext::Addresses::CBaseFunction_Register);
-    const RED4ext::RelocPtr<uint8_t> registerMemberFunction(CyberEngineTweaks::Addresses::CScript_RegisterMemberFunction);
+    const RelocPtr<uint8_t> registerFunction(RED4ext::Addresses::CBaseFunction_Register);
+    const RelocPtr<uint8_t> registerMemberFunction(Game::Addresses::CScript_RegisterMemberFunction);
 
     RealRegisterScriptFunction = reinterpret_cast<TRegisterScriptFunction*>(registerFunction.GetAddr());
     MH_CreateHook(reinterpret_cast<void*>(RealRegisterScriptFunction), reinterpret_cast<void*>(&HookRegisterScriptFunction), reinterpret_cast<void**>(&RealRegisterScriptFunction));

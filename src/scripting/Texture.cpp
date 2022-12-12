@@ -4,7 +4,7 @@
 #include "stb_image.h"
 #include "Texture.h"
 
-#include "CET.h"
+#include "EngineTweaks.h"
 
 void Texture::BindTexture(sol::table& aTable)
 {
@@ -22,11 +22,11 @@ void Texture::BindTexture(sol::table& aTable)
 
 std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
 {
-    auto d3d_device = CET::Get().GetD3D12().GetDevice();
+    auto d3d_device = EngineTweaks::Get().GetD3D12().GetDevice();
     if (d3d_device == nullptr)
         return {};
 
-    auto [srvCpuHandle, srvGpuHandle] = CET::Get().GetD3D12().CreateTextureDescriptor();
+    auto [srvCpuHandle, srvGpuHandle] = EngineTweaks::Get().GetD3D12().CreateTextureDescriptor();
 
     if (srvCpuHandle.ptr == 0 || srvGpuHandle.ptr == 0)
     {

@@ -2,7 +2,7 @@
 
 void SmtAmdPatch()
 {
-    const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CPatches_AmdSMT);
+    const RelocPtr<uint8_t> func(Game::Addresses::CPatches_AmdSMT);
     uint8_t* pLocation = func.GetAddr();
 
     if (pLocation == nullptr)

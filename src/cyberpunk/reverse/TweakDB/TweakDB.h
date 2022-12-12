@@ -1,7 +1,7 @@
 #pragma once
 
-#include <reverse/BasicTypes.h>
-#include <reverse/TweakDB/FlatPool.h>
+#include <cyberpunk/reverse/BasicTypes.h>
+#include <cyberpunk/reverse/TweakDB/FlatPool.h>
 
 namespace RED4ext
 {

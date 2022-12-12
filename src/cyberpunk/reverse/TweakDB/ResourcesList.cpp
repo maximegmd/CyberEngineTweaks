@@ -2,7 +2,7 @@
 
 #include "ResourcesList.h"
 
-#include <CET.h>
+#include "EngineTweaks.h"
 #include <Utils.h>
 
 using TOodleLZ_Decompress =
@@ -41,7 +41,7 @@ bool ResourcesList::Initialize()
         return false;
     }
 
-    auto filepath = GetAbsolutePath(c_defaultFilename, CET::Get().GetPaths().TweakDB(), false, true);
+    auto filepath = GetAbsolutePath(c_defaultFilename, EngineTweaks::Get().GetPaths().TweakDB(), false, true);
     if (!exists(filepath))
         return false;
 

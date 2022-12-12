@@ -9,13 +9,13 @@
 #include "scripting/LuaVM.h"
 #include "common/CETTasks.h"
 
-struct CET
+struct EngineTweaks
 {
-    ~CET();
+    ~EngineTweaks();
 
     static void Initialize();
     static void Shutdown();
-    static CET& Get();
+    static EngineTweaks& Get();
 
     const Paths& GetPaths() const noexcept;
     const Options& GetOptions() const noexcept;
@@ -28,7 +28,7 @@ struct CET
     static bool IsRunning() noexcept;
 
 private:
-    CET();
+    EngineTweaks();
 
     Paths m_paths;
     Options m_options;

@@ -16,7 +16,7 @@ struct Paths
     const std::filesystem::path& TweakDB() const;
 
 private:
-    friend struct CET;
+    friend struct EngineTweaks;
 
     Paths();
 

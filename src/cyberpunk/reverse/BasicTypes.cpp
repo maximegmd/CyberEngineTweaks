@@ -2,7 +2,7 @@
 
 #include "BasicTypes.h"
 
-#include <CET.h>
+#include "EngineTweaks.h"
 
 #include <spdlog/fmt/fmt.h>
 
@@ -73,12 +73,12 @@ void CName::Add(const std::string& aName)
 
 std::string TweakDBID::AsString() const noexcept
 {
-    return CET::Get().GetVM().GetTDBIDString(value);
+    return EngineTweaks::Get().GetVM().GetTDBIDString(value);
 }
 
 std::string TweakDBID::ToString() const noexcept
 {
-    const auto resolved = CET::Get().GetVM().GetTDBIDString(value, true);
+    const auto resolved = EngineTweaks::Get().GetVM().GetTDBIDString(value, true);
     if (!resolved.empty())
         return fmt::format("ToTweakDBID{{ hash = 0x{:08X}, length = {:d} }}", name_hash, name_length);
     return fmt::format("ToTweakDBID{{ hash = 0x{:08X}, length = {:d} --[[ {} --]] }}", name_hash, name_length, resolved);

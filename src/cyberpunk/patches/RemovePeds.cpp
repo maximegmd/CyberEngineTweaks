@@ -2,7 +2,7 @@
 
 void RemovePedsPatch()
 {
-    /* RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CPatches_);
+    /* RelocPtr<uint8_t> func(Game::Addresses::CPatches_);
     uint8_t* pLocation = func.GetAddr();
 
     if(pLocation == nullptr)

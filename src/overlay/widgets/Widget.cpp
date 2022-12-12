@@ -2,7 +2,7 @@
 
 #include "Widget.h"
 
-#include <CET.h>
+#include "EngineTweaks.h"
 
 Widget::Widget(const std::string& acpName, bool aOwnerDraw)
     : m_name(acpName)
@@ -71,11 +71,11 @@ void Widget::Draw()
 {
     if (m_drawPopup)
     {
-        CET::Get().GetVM().BlockDraw(true);
+        EngineTweaks::Get().GetVM().BlockDraw(true);
         m_drawPopup = OnPopup() == WidgetResult::ENABLED;
         if (!m_drawPopup)
         {
-            CET::Get().GetVM().BlockDraw(false);
+            EngineTweaks::Get().GetVM().BlockDraw(false);
             ImGui::CloseCurrentPopup();
         }
     }
@@ -92,7 +92,7 @@ void Widget::Draw()
         OnUpdate();
     else
     {
-        const auto [width, height] = CET::Get().GetD3D12().GetResolution();
+        const auto [width, height] = EngineTweaks::Get().GetD3D12().GetResolution();
         ImGui::SetNextWindowPos(ImVec2(width * 0.2f, height * 0.2f), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(width * 0.6f, height * 0.6f), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSizeConstraints(ImVec2(420, 315), ImVec2(FLT_MAX, FLT_MAX));

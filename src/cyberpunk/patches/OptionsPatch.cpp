@@ -1,6 +1,6 @@
 #include <stdafx.h>
 
-#include <CET.h>
+#include "EngineTweaks.h"
 #include <scripting/GameOptions.h>
 
 using TGameOptionInit = void*(void*);
@@ -9,7 +9,7 @@ TGameOptionInit* RealGameOptionInit = nullptr;
 void* HookGameOptionInit(GameOption* apThis)
 {
     auto& gameOptions = GameOptions::GetList();
-    auto& options = CET::Get().GetOptions();
+    auto& options = EngineTweaks::Get().GetOptions();
 
     if (std::ranges::find(gameOptions, apThis) == gameOptions.end())
     {
@@ -39,7 +39,7 @@ void* HookGameOptionInit(GameOption* apThis)
 
 void OptionsInitHook()
 {
-    const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CPatches_OptionsInit);
+    const RelocPtr<uint8_t> func(Game::Addresses::CPatches_OptionsInit);
     uint8_t* pLocation = func.GetAddr();
 
     if (pLocation)

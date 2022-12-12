@@ -5,7 +5,7 @@ void DisableBoundaryTeleportPatch()
     // Disarm the WorldBoundarySystem/Tick function
     // Going out of bounds will still play the glitchy-screen effect that normally happens when game teleports you, but
     // the actual teleport won't happen
-    const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CPatches_BoundaryTeleport);
+    const RelocPtr<uint8_t> func(Game::Addresses::CPatches_BoundaryTeleport);
     const auto pLocation = func.GetAddr();
 
     if (pLocation == nullptr)

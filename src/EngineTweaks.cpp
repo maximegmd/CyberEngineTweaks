@@ -1,71 +1,71 @@
 #include <stdafx.h>
 
-#include "CET.h"
+#include "EngineTweaks.h"
 #include "Options.h"
 
 using namespace std::chrono_literals;
 
-static std::unique_ptr<CET> s_pInstance{nullptr};
+static std::unique_ptr<EngineTweaks> s_pInstance{nullptr};
 static bool s_isRunning{true};
 
-void CET::Initialize()
+void EngineTweaks::Initialize()
 {
-    s_pInstance.reset(new CET);
+    s_pInstance.reset(new EngineTweaks);
 }
 
-void CET::Shutdown()
+void EngineTweaks::Shutdown()
 {
     s_pInstance.reset(nullptr);
 }
 
-CET& CET::Get()
+EngineTweaks& EngineTweaks::Get()
 {
     // we should always call this after initialization, never before!
     assert(s_pInstance);
     return *s_pInstance;
 }
 
-const Paths& CET::GetPaths() const noexcept
+const Paths& EngineTweaks::GetPaths() const noexcept
 {
     return m_paths;
 }
 
-const Options& CET::GetOptions() const noexcept
+const Options& EngineTweaks::GetOptions() const noexcept
 {
     return m_options;
 }
 
-const PersistentState& CET::GetPersistentState() const noexcept
+const PersistentState& EngineTweaks::GetPersistentState() const noexcept
 {
     return m_persistentState;
 }
 
-D3D12& CET::GetD3D12() noexcept
+D3D12& EngineTweaks::GetD3D12() noexcept
 {
     return m_d3d12;
 }
 
-VKBindings& CET::GetBindings() noexcept
+VKBindings& EngineTweaks::GetBindings() noexcept
 {
     return m_bindings;
 }
 
-Overlay& CET::GetOverlay() noexcept
+Overlay& EngineTweaks::GetOverlay() noexcept
 {
     return m_overlay;
 }
 
-LuaVM& CET::GetVM() noexcept
+LuaVM& EngineTweaks::GetVM() noexcept
 {
     return m_vm;
 }
 
-bool CET::IsRunning() noexcept
+bool EngineTweaks::IsRunning() noexcept
 {
     return s_isRunning;
 }
 
-CET::CET()
+EngineTweaks::EngineTweaks()
     : m_options(m_paths)
     , m_persistentState(m_paths, m_options)
     , m_bindings(m_paths, m_options)
@@ -77,7 +77,7 @@ CET::CET()
     m_vm.Initialize();
 }
 
-CET::~CET()
+EngineTweaks::~EngineTweaks()
 {
     s_isRunning = false;
 }

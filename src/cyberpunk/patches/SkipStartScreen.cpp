@@ -2,7 +2,7 @@
 
 void StartScreenPatch()
 {
-    const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CPatches_SkipStartScreen);
+    const RelocPtr<uint8_t> func(Game::Addresses::CPatches_SkipStartScreen);
     uint8_t* pLocation = func.GetAddr();
 
     if (pLocation == nullptr)

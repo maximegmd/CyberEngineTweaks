@@ -27,7 +27,7 @@ void* HookInitScriptMemberVariable(void* a1, void* a2, uint64_t a3, uint64_t nam
 
 void DisableIntroMoviesPatch()
 {
-    const RED4ext::RelocPtr<void> func(CyberEngineTweaks::Addresses::CPatches_IntroMovie);
+    const RelocPtr<void> func(Game::Addresses::CPatches_IntroMovie);
     RealInitScriptMemberVariable = reinterpret_cast<TInitScriptMemberVariable*>(func.GetAddr());
 
     if (RealInitScriptMemberVariable == nullptr)

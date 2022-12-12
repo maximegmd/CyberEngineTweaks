@@ -2,7 +2,7 @@
 
 void MinimapFlickerPatch()
 {
-    const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CPatches_MinimapFlicker);
+    const RelocPtr<uint8_t> func(Game::Addresses::CPatches_MinimapFlicker);
     uint8_t* pLocation = func.GetAddr();
 
     if (pLocation == nullptr)

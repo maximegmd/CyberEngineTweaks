@@ -4,7 +4,7 @@
 #include "Options.h"
 #include "Utils.h"
 
-#include <CET.h>
+#include "EngineTweaks.h"
 #include <imgui_impl/dx12.h>
 #include <imgui_impl/win32.h>
 #include <window/window.h>
@@ -487,9 +487,9 @@ void D3D12::PrepareUpdate()
     ImGui_ImplWin32_NewFrame(m_outSize);
     ImGui::NewFrame();
 
-    CET::Get().GetOverlay().Update();
+    EngineTweaks::Get().GetOverlay().Update();
 
-    CET::Get().GetVM().Draw();
+    EngineTweaks::Get().GetVM().Draw();
 
     ImGui::Render();
 

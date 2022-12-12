@@ -513,7 +513,7 @@ sol::function FunctionOverride::WrapNextOverride(
 void FunctionOverride::Hook() const
 {
     {
-        const RED4ext::RelocPtr<void> func(CyberEngineTweaks::Addresses::CScript_RunPureScript);
+        const RelocPtr<void> func(Game::Addresses::CScript_RunPureScript);
         RealRunPureScriptFunction = reinterpret_cast<TRunPureScriptFunction>(func.GetAddr());
         if (!RealRunPureScriptFunction)
             Log::Error("Could not find pure run script function!");
@@ -530,7 +530,7 @@ void FunctionOverride::Hook() const
     }
 
     {
-        const RED4ext::RelocPtr<void> func(CyberEngineTweaks::Addresses::CScript_AllocateFunction);
+        const RelocPtr<void> func(Game::Addresses::CScript_AllocateFunction);
         RealCreateFunction = reinterpret_cast<TCreateFunction>(func.GetAddr());
         if (!RealCreateFunction)
             Log::Error("Could not find create function!");

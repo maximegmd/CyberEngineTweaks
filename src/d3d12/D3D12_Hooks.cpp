@@ -1,4 +1,4 @@
-#include "CET.h"
+#include "EngineTweaks.h"
 
 #include <stdafx.h>
 
@@ -14,10 +14,10 @@ HRESULT D3D12::PresentDownlevel(
     ID3D12CommandQueueDownlevel* apCommandQueueDownlevel, ID3D12GraphicsCommandList* apOpenCommandList, ID3D12Resource* apSourceTex2D, HWND ahWindow,
     D3D12_DOWNLEVEL_PRESENT_FLAGS aFlags)
 {
-    if (CET::Get().GetOptions().Patches.DisableWin7Vsync)
+    if (EngineTweaks::Get().GetOptions().Patches.DisableWin7Vsync)
         aFlags &= ~D3D12_DOWNLEVEL_PRESENT_FLAG_WAIT_FOR_VBLANK;
 
-    auto& d3d12 = CET::Get().GetD3D12();
+    auto& d3d12 = EngineTweaks::Get().GetD3D12();
 
     // On Windows 7 there is no swap chain to query the current backbuffer index. Instead do a reverse lookup in the
     // known backbuffer list
@@ -55,7 +55,7 @@ HRESULT D3D12::CreateCommittedResource(
     ID3D12Device* apDevice, const D3D12_HEAP_PROPERTIES* acpHeapProperties, D3D12_HEAP_FLAGS aHeapFlags, const D3D12_RESOURCE_DESC* acpDesc,
     D3D12_RESOURCE_STATES aInitialResourceState, const D3D12_CLEAR_VALUE* acpOptimizedClearValue, const IID* acpRIID, void** appvResource)
 {
-    auto& d3d12 = CET::Get().GetD3D12();
+    auto& d3d12 = EngineTweaks::Get().GetD3D12();
 
     // Check if this is a backbuffer resource being created
     bool isBackBuffer = false;
@@ -87,7 +87,7 @@ HRESULT D3D12::CreateCommittedResource(
 
 void D3D12::ExecuteCommandLists(ID3D12CommandQueue* apCommandQueue, UINT aNumCommandLists, ID3D12CommandList* const* apcpCommandLists)
 {
-    auto& d3d12 = CET::Get().GetD3D12();
+    auto& d3d12 = EngineTweaks::Get().GetD3D12();
     if (d3d12.m_pCommandQueue == nullptr)
     {
         const auto desc = apCommandQueue->GetDesc();
@@ -118,7 +118,7 @@ void* D3D12::CRenderNode_Present_InternalPresent(int32_t* apDeviceIndex, uint8_t
 {
     static std::once_flag s_kieroOnce;
 
-    auto& d3d12 = CET::Get().GetD3D12();
+    auto& d3d12 = EngineTweaks::Get().GetD3D12();
 
     const auto* pContext = RenderContext::GetInstance();
     auto* pSwapChain = pContext->devices[*apDeviceIndex - 1].pSwapChain;
@@ -148,7 +148,7 @@ void* D3D12::CRenderNode_Present_InternalPresent(int32_t* apDeviceIndex, uint8_t
                         std::string_view d3d12type = kiero::isDownLevelDevice() ? "D3D12on7" : "D3D12";
                         Log::Info("Kiero initialized for {}", d3d12type);
 
-                        CET::Get().GetD3D12().Hook();
+                        EngineTweaks::Get().GetD3D12().Hook();
                     }
                 });
         }
@@ -159,7 +159,7 @@ void* D3D12::CRenderNode_Present_InternalPresent(int32_t* apDeviceIndex, uint8_t
 
 void* D3D12::CRenderGlobal_Resize(uint32_t aWidth, uint32_t aHeight, uint32_t a3, uint8_t a4, int* apDeviceIndex)
 {
-    auto& d3d12 = CET::Get().GetD3D12();
+    auto& d3d12 = EngineTweaks::Get().GetD3D12();
 
     // TODO - ideally find a way to not call this on each minimize/maximize/etc. which causes this to be called
     //        it can get called multiple times even when there was no resolution change or swapchain invalidation
@@ -175,7 +175,7 @@ void* D3D12::CRenderGlobal_Resize(uint32_t aWidth, uint32_t aHeight, uint32_t a3
 // NOTE - this is called 32 times, as it seems to be called for each device object in RendererContext
 void* D3D12::CRenderGlobal_Shutdown(uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4)
 {
-    auto& d3d12 = CET::Get().GetD3D12();
+    auto& d3d12 = EngineTweaks::Get().GetD3D12();
 
     d3d12.ResetState(true, true);
 
@@ -256,9 +256,9 @@ void D3D12::Hook()
 
 void D3D12::HookGame()
 {
-    const RED4ext::RelocPtr<void> presentInternal(CyberEngineTweaks::Addresses::CRenderNode_Present_DoInternal);
-    const RED4ext::RelocPtr<void> resizeInternal(CyberEngineTweaks::Addresses::CRenderGlobal_Resize);
-    const RED4ext::RelocPtr<void> shutdownInternal(CyberEngineTweaks::Addresses::CRenderGlobal_Shutdown);
+    const RelocPtr<void> presentInternal(Game::Addresses::CRenderNode_Present_DoInternal);
+    const RelocPtr<void> resizeInternal(Game::Addresses::CRenderGlobal_Resize);
+    const RelocPtr<void> shutdownInternal(Game::Addresses::CRenderGlobal_Shutdown);
 
     if (MH_CreateHook(presentInternal.GetAddr(), reinterpret_cast<void*>(&CRenderNode_Present_InternalPresent), reinterpret_cast<void**>(&m_realInternalPresent)) != MH_OK ||
         MH_EnableHook(presentInternal.GetAddr()) != MH_OK)

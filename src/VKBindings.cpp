@@ -1,6 +1,6 @@
 #include <stdafx.h>
 
-#include "CET.h"
+#include "EngineTweaks.h"
 #include "Utils.h"
 
 std::function<void()> VKBind::DelayedCall(const bool acIsDown) const
@@ -626,7 +626,7 @@ void VKBindings::ExecuteSingleInput(const USHORT acVKCode, const bool acKeyDown)
             // binding state! only exception allowed is any CET bind
             const auto& overlayToggleModBind = Bindings::GetOverlayToggleModBind();
             const auto cetModBind = modBind.ModName == overlayToggleModBind.ModName;
-            if (!cetModBind && (!m_cpVm->IsInitialized() || CET::Get().GetOverlay().IsEnabled()))
+            if (!cetModBind && (!m_cpVm->IsInitialized() || EngineTweaks::Get().GetOverlay().IsEnabled()))
                 return;
 
             // this handler is not for hotkeys!
@@ -662,7 +662,7 @@ void VKBindings::ExecuteRecording()
             // binding state! only exception allowed is any CET bind
             const auto& overlayToggleModBind = Bindings::GetOverlayToggleModBind();
             const auto cetModBind = modBind.ModName == overlayToggleModBind.ModName;
-            if (!cetModBind && (!m_cpVm->IsInitialized() || CET::Get().GetOverlay().IsEnabled()))
+            if (!cetModBind && (!m_cpVm->IsInitialized() || EngineTweaks::Get().GetOverlay().IsEnabled()))
                 return;
 
             // this handler is not for inputs! it should be used only on key up event for hotkeys!
