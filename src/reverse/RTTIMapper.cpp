@@ -50,12 +50,12 @@ void RTTIMapper::Refresh()
 
 void RTTIMapper::RegisterSimpleTypes(sol::state& aLuaState, sol::table& aLuaGlobal) const
 {
-    aLuaGlobal.new_usertype<Variant>("Variant",
-        sol::meta_function::construct, sol::no_constructor);
+    aLuaGlobal.new_usertype<Variant>("Variant", sol::meta_function::construct, sol::no_constructor);
     MakeSolUsertypeImmutable(aLuaGlobal["Variant"], aLuaState);
 
     aLuaGlobal["ToVariant"] = sol::overload(
-        [](const Type& aInstance, sol::this_state aState) -> sol::object {
+        [](const Type& aInstance, sol::this_state aState) -> sol::object
+        {
             const auto* pType = aInstance.GetType();
             auto* pValue = aInstance.GetValuePtr();
 
@@ -67,14 +67,16 @@ void RTTIMapper::RegisterSimpleTypes(sol::state& aLuaState, sol::table& aLuaGlob
 
             return {aState, sol::in_place, Variant(pType, pValue)};
         },
-        [](const Enum& aEnum, sol::this_state aState) -> sol::object {
+        [](const Enum& aEnum, sol::this_state aState) -> sol::object
+        {
             RED4ext::CStackType data;
             data.type = const_cast<RED4ext::CEnum*>(aEnum.GetType());
             data.value = const_cast<void*>(aEnum.GetValuePtr());
 
             return {aState, sol::in_place, Variant(data)};
         },
-        [](sol::object aValue, const std::string& aTypeName, sol::this_state aState) -> sol::object {
+        [](sol::object aValue, const std::string& aTypeName, sol::this_state aState) -> sol::object
+        {
             auto* pType = RED4ext::CRTTISystem::Get()->GetType(aTypeName.c_str());
 
             if (!pType)
@@ -90,7 +92,8 @@ void RTTIMapper::RegisterSimpleTypes(sol::state& aLuaState, sol::table& aLuaGlob
 
             return {aState, sol::in_place, std::move(variant)};
         },
-        [](sol::object aValue, sol::this_state aState) -> sol::object {
+        [](sol::object aValue, sol::this_state aState) -> sol::object
+        {
             const RED4ext::CName typeName = TryResolveTypeName(aValue);
 
             if (typeName.IsNone())
@@ -113,10 +116,10 @@ void RTTIMapper::RegisterSimpleTypes(sol::state& aLuaState, sol::table& aLuaGlob
             Scripting::ToRED(aValue, data);
 
             return {aState, sol::in_place, std::move(variant)};
-        }
-    );
+        });
 
-    aLuaGlobal["FromVariant"] = [this](const Variant& aVariant) -> sol::object {
+    aLuaGlobal["FromVariant"] = [this](const Variant& aVariant) -> sol::object
+    {
         if (aVariant.IsEmpty())
             return sol::nil;
 
@@ -136,77 +139,75 @@ void RTTIMapper::RegisterDirectTypes(sol::state& aLuaState, sol::table& aLuaGlob
 
     if (!reinit)
     {
-        aLuaGlobal.new_usertype<EnumStatic>("EnumStatic",
-            sol::meta_function::construct, sol::no_constructor,
-            sol::base_classes, sol::bases<Type>(),
-            sol::meta_function::index, &EnumStatic::Index,
+        aLuaGlobal.new_usertype<EnumStatic>(
+            "EnumStatic", sol::meta_function::construct, sol::no_constructor, sol::base_classes, sol::bases<Type>(), sol::meta_function::index, &EnumStatic::Index,
             sol::meta_function::new_index, &EnumStatic::NewIndex);
         MakeSolUsertypeImmutable(aLuaGlobal["EnumStatic"], aLuaState);
 
-        aLuaGlobal.new_usertype<ClassStatic>("ClassStatic",
-            sol::meta_function::construct, sol::no_constructor,
-            sol::base_classes, sol::bases<Type>(),
-            sol::meta_function::index, &ClassStatic::Index,
-            sol::meta_function::new_index, &ClassStatic::NewIndex,
-            "new", property(&ClassStatic::GetFactory));
+        aLuaGlobal.new_usertype<ClassStatic>(
+            "ClassStatic", sol::meta_function::construct, sol::no_constructor, sol::base_classes, sol::bases<Type>(), sol::meta_function::index, &ClassStatic::Index,
+            sol::meta_function::new_index, &ClassStatic::NewIndex, "new", property(&ClassStatic::GetFactory));
         MakeSolUsertypeImmutable(aLuaGlobal["ClassStatic"], aLuaState);
     }
 
-    apRtti->types.for_each([&](RED4ext::CName aTypeName, RED4ext::CBaseRTTIType* apType) {
-        std::string typeName = aTypeName.ToString();
-        SanitizeName(typeName);
-
-        if (reinit && aLuaGlobal[typeName] != sol::nil)
-            return;
-
-        switch (apType->GetType())
+    apRtti->types.for_each(
+        [&](RED4ext::CName aTypeName, RED4ext::CBaseRTTIType* apType)
         {
-        case RED4ext::ERTTIType::Enum:
-        {
-            auto luaEnum = make_object(aLuaState, EnumStatic(m_lua, apType));
+            std::string typeName = aTypeName.ToString();
+            SanitizeName(typeName);
 
-            MakeSolUsertypeImmutable(luaEnum, aLuaState);
+            if (reinit && aLuaGlobal[typeName] != sol::nil)
+                return;
 
-            aLuaGlobal[typeName] = luaEnum;
-            break;
-        }
-        case RED4ext::ERTTIType::Class:
-        {
-            auto luaClass = make_object(aLuaState, ClassStatic(m_lua, apType));
+            switch (apType->GetType())
+            {
+            case RED4ext::ERTTIType::Enum:
+            {
+                auto luaEnum = make_object(aLuaState, EnumStatic(m_lua, apType));
 
-            MakeSolUsertypeImmutable(luaClass, aLuaState);
+                MakeSolUsertypeImmutable(luaEnum, aLuaState);
 
-            aLuaGlobal[typeName] = luaClass;
-            break;
-        }
-        }
+                aLuaGlobal[typeName] = luaEnum;
+                break;
+            }
+            case RED4ext::ERTTIType::Class:
+            {
+                auto luaClass = make_object(aLuaState, ClassStatic(m_lua, apType));
+
+                MakeSolUsertypeImmutable(luaClass, aLuaState);
+
+                aLuaGlobal[typeName] = luaClass;
+                break;
+            }
+            }
         });
 }
 
 void RTTIMapper::RegisterDirectGlobals(sol::table& aLuaGlobal, RED4ext::CRTTISystem* apRtti)
 {
-    apRtti->funcs.for_each([&aLuaGlobal](RED4ext::CName, RED4ext::CGlobalFunction* apFunc) {
-        const std::string cShortName = apFunc->shortName.ToString();
-
-        if (aLuaGlobal[cShortName] == sol::nil && !apFunc->flags.isExec)
+    apRtti->funcs.for_each(
+        [&aLuaGlobal](RED4ext::CName, RED4ext::CGlobalFunction* apFunc)
         {
-            const std::string cFullName = apFunc->fullName.ToString();
-            const auto cIsClassFunc = cFullName.find("::") != std::string::npos;
-            const auto cIsOperatorFunc = cShortName.find(';') != std::string::npos;
+            const std::string cShortName = apFunc->shortName.ToString();
 
-            if (!cIsClassFunc && !cIsOperatorFunc)
+            if (aLuaGlobal[cShortName] == sol::nil && !apFunc->flags.isExec)
             {
-                aLuaGlobal[cShortName] = RTTIHelper::Get().ResolveFunction(cShortName);
+                const std::string cFullName = apFunc->fullName.ToString();
+                const auto cIsClassFunc = cFullName.find("::") != std::string::npos;
+                const auto cIsOperatorFunc = cShortName.find(';') != std::string::npos;
+
+                if (!cIsClassFunc && !cIsOperatorFunc)
+                {
+                    aLuaGlobal[cShortName] = RTTIHelper::Get().ResolveFunction(cShortName);
+                }
             }
-        }
         });
 }
 
 void RTTIMapper::RegisterScriptAliases(sol::table& aLuaGlobal, RED4ext::CRTTISystem* apRtti)
 {
-    apRtti->scriptToNative.for_each([&aLuaGlobal](RED4ext::CName aScriptName, RED4ext::CName aNativeName) {
-        aLuaGlobal[aScriptName.ToString()] = aLuaGlobal[aNativeName.ToString()];
-        });
+    apRtti->scriptToNative.for_each([&aLuaGlobal](RED4ext::CName aScriptName, RED4ext::CName aNativeName)
+                                    { aLuaGlobal[aScriptName.ToString()] = aLuaGlobal[aNativeName.ToString()]; });
 }
 
 void RTTIMapper::RegisterSpecialAccessors(sol::state& aLuaState, sol::table& aLuaGlobal) const
@@ -226,11 +227,11 @@ void RTTIMapper::RegisterSpecialAccessors(sol::state& aLuaState, sol::table& aLu
     aLuaGlobal["Vector3"] = aLuaState["Vector3"];
 }
 
-template <class T>
-void RTTIMapper::ExtendUsertype(const std::string acTypeName, sol::state& aLuaState, sol::table& aLuaGlobal) const
+template <class T> void RTTIMapper::ExtendUsertype(const std::string acTypeName, sol::state& aLuaState, sol::table& aLuaGlobal) const
 {
     auto& classStatic = aLuaGlobal.get<ClassStatic>(acTypeName);
-    auto classIndexer = [&classStatic](const sol::object&, const std::string& acName, sol::this_environment aEnv) {
+    auto classIndexer = [&classStatic](const sol::object&, const std::string& acName, sol::this_environment aEnv)
+    {
         return classStatic.Index(acName, aEnv);
     };
 
@@ -254,11 +255,9 @@ RED4ext::CName RTTIMapper::TryResolveTypeName(sol::object aValue)
 
     switch (aValue.get_type())
     {
-    case sol::type::string:
-        return "String";
+    case sol::type::string: return "String";
 
-    case sol::type::boolean:
-        return "Bool";
+    case sol::type::boolean: return "Bool";
 
     case sol::type::userdata:
     {

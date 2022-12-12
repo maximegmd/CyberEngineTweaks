@@ -7,8 +7,7 @@
 
 static RTTILocator s_sIScriptableType{RED4ext::FNV1a64("IScriptable")};
 
-StrongReference::StrongReference(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView,
-                                 RED4ext::Handle<RED4ext::IScriptable> aStrongHandle)
+StrongReference::StrongReference(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::Handle<RED4ext::IScriptable> aStrongHandle)
     : ClassType(aView, nullptr)
     , m_strongHandle(std::move(aStrongHandle))
 {
@@ -18,9 +17,8 @@ StrongReference::StrongReference(const TiltedPhoques::Lockable<sol::state, std::
     }
 }
 
-StrongReference::StrongReference(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView,
-                                 RED4ext::Handle<RED4ext::IScriptable> aStrongHandle,
-                                 RED4ext::CRTTIHandleType* apStrongHandleType)
+StrongReference::StrongReference(
+    const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::Handle<RED4ext::IScriptable> aStrongHandle, RED4ext::CRTTIHandleType* apStrongHandleType)
     : ClassType(aView, nullptr)
     , m_strongHandle(std::move(aStrongHandle))
 {
@@ -41,7 +39,6 @@ StrongReference::~StrongReference()
         m_strongHandle.refCount = nullptr;
     }
 }
-
 
 RED4ext::ScriptInstance StrongReference::GetHandle() const
 {

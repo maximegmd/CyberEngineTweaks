@@ -6,8 +6,7 @@
 #include <RED4ext/Scripting/Natives/Generated/ent/Entity.hpp>
 #include <RED4ext/Scripting/Natives/Generated/ent/EntityID.hpp>
 
-template<typename T>
-struct GameCall
+template <typename T> struct GameCall
 {
     GameCall(uintptr_t aAddress, const int32_t acOffset = 0)
     {
@@ -30,8 +29,7 @@ private:
 
 // what? why not Handle? what to call this?
 // T must have AddRef and DecRef
-template<typename T>
-struct REDSmartPtr
+template <typename T> struct REDSmartPtr
 {
     REDSmartPtr(T* aData = nullptr)
         : data(aData)
@@ -51,10 +49,7 @@ struct REDSmartPtr
         aOther.data = nullptr;
     }
 
-    ~REDSmartPtr()
-    {
-        Reset();
-    }
+    ~REDSmartPtr() { Reset(); }
 
     void Reset()
     {
@@ -89,20 +84,11 @@ struct REDSmartPtr
         return *this;
     }
 
-    [[nodiscard]] T* operator->()
-    {
-        return data;
-    }
+    [[nodiscard]] T* operator->() { return data; }
 
-    [[nodiscard]] const T* operator->() const
-    {
-        return data;
-    }
+    [[nodiscard]] const T* operator->() const { return data; }
 
-    explicit operator bool() const noexcept
-    {
-        return data != nullptr;
-    }
+    explicit operator bool() const noexcept { return data != nullptr; }
 
 private:
     void AddRef()
@@ -134,8 +120,8 @@ struct gameIGameSystem : IUpdatableSystem
         func(apAddress); // gameIGameSystem::ctor()
     }
 
-    virtual void OnInitialize() = 0;                    // 118
-    virtual void OnShutdown() = 0;                      // 120
+    virtual void OnInitialize() = 0; // 118
+    virtual void OnShutdown() = 0;   // 120
     virtual void sub_128() = 0;
     virtual void sub_130() = 0;
     virtual void sub_138() = 0;
@@ -150,8 +136,8 @@ struct gameIGameSystem : IUpdatableSystem
     virtual void sub_180() = 0;
     virtual void sub_188() = 0;
     virtual void sub_190() = 0;
-    virtual void OnSystemInitializeAsync(void*) = 0;    // 198
-    virtual void OnSystemUnInitializeAsync(void*) = 0;  // 1A0
+    virtual void OnSystemInitializeAsync(void*) = 0;   // 198
+    virtual void OnSystemUnInitializeAsync(void*) = 0; // 1A0
 };
 RED4EXT_ASSERT_OFFSET(gameIGameSystem, gameInstance, 0x40);
 
@@ -190,8 +176,8 @@ struct TEMP_SpawnSettings
     uintptr_t unk00 = 0;
     uintptr_t unk08 = 0;
     RED4ext::Transform transform{};
-    //uint8_t unk30[0x38]{};
-    //uintptr_t unk68 = 0;
+    // uint8_t unk30[0x38]{};
+    // uintptr_t unk68 = 0;
     std::function<void(TEMP_PendingEntity::Unk00&)> callback;
     uint8_t unk70[0x18]{};
     uintptr_t unk88 = 0;
@@ -221,10 +207,9 @@ struct TEMP_SpawnSettings
         // ------------------------------
 
         // Normalize Quats
-        const float quatLength = sqrtf(acWorldTransform.Orientation.i * acWorldTransform.Orientation.i +
-                                       acWorldTransform.Orientation.j * acWorldTransform.Orientation.j +
-                                       acWorldTransform.Orientation.k * acWorldTransform.Orientation.k +
-                                       acWorldTransform.Orientation.r * acWorldTransform.Orientation.r);
+        const float quatLength = sqrtf(
+            acWorldTransform.Orientation.i * acWorldTransform.Orientation.i + acWorldTransform.Orientation.j * acWorldTransform.Orientation.j +
+            acWorldTransform.Orientation.k * acWorldTransform.Orientation.k + acWorldTransform.Orientation.r * acWorldTransform.Orientation.r);
         if (quatLength != 0.0f)
         {
             transform.orientation.i = acWorldTransform.Orientation.i / quatLength;
@@ -254,8 +239,8 @@ struct TEMP_Spawner
     RED4ext::DynArray<RED4ext::Handle<RED4ext::IScriptable>> spawnedEntities;
     RED4ext::DynArray<TEMP_PendingEntity> pendingEntities;
     RED4ext::DynArray<void*> unk30;
-    uint8_t unk40 = 0; // most likely a mutex
-    RED4ext::SharedMutex entitiesMtx; // used in DespawnEntity
+    uint8_t unk40 = 0;                       // most likely a mutex
+    RED4ext::SharedMutex entitiesMtx;        // used in DespawnEntity
     RED4ext::SharedMutex pendingEntitiesMtx; // used in SpawnEntity
     uintptr_t unk48 = 0;
     uintptr_t unk50 = 0;
@@ -312,8 +297,7 @@ struct TEMP_Spawner
 
         // if not set by user, use the default one from TweakDB
         RED4ext::CName defaultAppearance;
-        if (pTDB->TryGetValue(RED4ext::TweakDBID(acRecordDBID, ".appearanceName"), defaultAppearance)
-            && aSettings.appearance == "default")
+        if (pTDB->TryGetValue(RED4ext::TweakDBID(acRecordDBID, ".appearanceName"), defaultAppearance) && aSettings.appearance == "default")
         {
             // ... as long as it's not empty.
             if (!defaultAppearance.IsNone() && defaultAppearance != "")
@@ -328,7 +312,7 @@ struct TEMP_Spawner
 
     void Despawn(const RED4ext::Handle<RED4ext::IScriptable>& aEntity)
     {
-        using TFunc = void(*)(TEMP_Spawner*, RED4ext::IScriptable*);
+        using TFunc = void (*)(TEMP_Spawner*, RED4ext::IScriptable*);
         static GameCall<TFunc> func(CyberEngineTweaks::Addresses::gameIGameSystem_Despawn);
         func(this, aEntity.GetPtr());
     }
@@ -419,8 +403,7 @@ void CreateSingleton(const RED4ext::CName acTypeName)
 // This is kept for backward compatibility.
 // Use exEntitySpawner
 
-void WorldFunctionalTests_SpawnEntity(RED4ext::IScriptable*, RED4ext::CStackFrame* apFrame,
-                                      RED4ext::ent::EntityID* apOut, int64_t)
+void WorldFunctionalTests_SpawnEntity(RED4ext::IScriptable*, RED4ext::CStackFrame* apFrame, RED4ext::ent::EntityID* apOut, int64_t)
 {
     struct FunctionalTestsGameSystem
     {
@@ -443,8 +426,7 @@ void WorldFunctionalTests_SpawnEntity(RED4ext::IScriptable*, RED4ext::CStackFram
     auto* pFunctionalSystem = reinterpret_cast<FunctionalTestsGameSystem*>(pGameInstance->GetInstance(pFunctionalType));
     uint32_t oldSize = pFunctionalSystem->spawner.pendingEntities.size;
 
-    ExecuteFunction("WorldFunctionalTests", "Internal_SpawnEntity", nullptr, entityPath, worldTransform,
-        unknown);
+    ExecuteFunction("WorldFunctionalTests", "Internal_SpawnEntity", nullptr, entityPath, worldTransform, unknown);
 
     // if any entity was spawned
     uint32_t newSize = pFunctionalSystem->spawner.pendingEntities.size;
@@ -509,19 +491,13 @@ private:
         return pRTTI->GetClass(NATIVE_TYPE_STR);
     }
 
-    static void HOOK_OnInitialize(exEntitySpawnerSystem* apThis)
-    {
-        exEntitySpawner_Spawner.Initialize(apThis->gameInstance);
-    }
+    static void HOOK_OnInitialize(exEntitySpawnerSystem* apThis) { exEntitySpawner_Spawner.Initialize(apThis->gameInstance); }
 
-    static void HOOK_OnShutdown(exEntitySpawnerSystem*)
-    {
-        exEntitySpawner_Spawner.UnInitialize();
-    }
+    static void HOOK_OnShutdown(exEntitySpawnerSystem*) { exEntitySpawner_Spawner.UnInitialize(); }
 
     static void SpawnCallback(TEMP_PendingEntity::Unk00& aUnk)
     {
-        using TFunc = void(*)(IScriptable*, RED4ext::ent::Entity*);
+        using TFunc = void (*)(IScriptable*, RED4ext::ent::Entity*);
         static GameCall<TFunc> func(CyberEngineTweaks::Addresses::gameIGameSystem_SpawnCallback);
 
         struct GameInstance_78_Unk
@@ -671,8 +647,7 @@ void RTTIExtender::AddFunctionalTests()
 
             RED4ext::CBaseFunction::Flags flags{};
             flags.isNative = true;
-            pFunction = RED4ext::CClassStaticFunction::Create(pClass, "SpawnEntity", "SpawnEntity",
-                                                              WorldFunctionalTests_SpawnEntity, flags);
+            pFunction = RED4ext::CClassStaticFunction::Create(pClass, "SpawnEntity", "SpawnEntity", WorldFunctionalTests_SpawnEntity, flags);
             pFunction->AddParam("String", "entityPath");
             pFunction->AddParam("WorldTransform", "worldTransform");
             pFunction->AddParam("String", "unknown");
@@ -689,8 +664,7 @@ void RTTIExtender::AddFunctionalTests()
 
             RED4ext::CBaseFunction::Flags flags{};
             flags.isNative = true;
-            pFunction = RED4ext::CClassStaticFunction::Create(pClass, "DespawnEntity", "DespawnEntity",
-                                                              WorldFunctionalTests_DespawnEntity, flags);
+            pFunction = RED4ext::CClassStaticFunction::Create(pClass, "DespawnEntity", "DespawnEntity", WorldFunctionalTests_DespawnEntity, flags);
             pFunction->AddParam("handle:entEntity", "entity");
             pClass->RegisterFunction(pFunction);
         }
@@ -711,8 +685,7 @@ void RTTIExtender::AddEntitySpawner()
 
         // -------------
 
-        pFunction = RED4ext::CClassStaticFunction::Create(pClass, "Spawn", "Spawn",
-                                                          exEntitySpawnerSystem::Spawn, flags);
+        pFunction = RED4ext::CClassStaticFunction::Create(pClass, "Spawn", "Spawn", exEntitySpawnerSystem::Spawn, flags);
         pFunction->AddParam("raRef:CResource", "entityPath");
         pFunction->AddParam("WorldTransform", "worldTransform");
         pFunction->AddParam("CName", "appearance", false, true);
@@ -722,8 +695,7 @@ void RTTIExtender::AddEntitySpawner()
 
         // -------------
 
-        pFunction = RED4ext::CClassStaticFunction::Create(pClass, "SpawnRecord", "SpawnRecord",
-                                                          exEntitySpawnerSystem::SpawnRecord, flags);
+        pFunction = RED4ext::CClassStaticFunction::Create(pClass, "SpawnRecord", "SpawnRecord", exEntitySpawnerSystem::SpawnRecord, flags);
         pFunction->AddParam("TweakDBID", "recordID");
         pFunction->AddParam("WorldTransform", "worldTransform");
         pFunction->AddParam("CName", "appearance", false, true);
@@ -732,8 +704,7 @@ void RTTIExtender::AddEntitySpawner()
 
         // -------------
 
-        pFunction = RED4ext::CClassStaticFunction::Create(pClass, "Despawn", "Despawn",
-                                                          exEntitySpawnerSystem::Despawn, flags);
+        pFunction = RED4ext::CClassStaticFunction::Create(pClass, "Despawn", "Despawn", exEntitySpawnerSystem::Despawn, flags);
         pFunction->AddParam("handle:entEntity", "entity");
         pClass->RegisterFunction(pFunction);
     }

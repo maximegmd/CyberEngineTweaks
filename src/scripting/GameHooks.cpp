@@ -30,8 +30,7 @@ GameMainThread::StateTickOverride::StateTickOverride(const uintptr_t acOffset, c
 
     if (Location)
     {
-        if (MH_CreateHook(Location, reinterpret_cast<void*>(&GameMainThread::HookStateTick), reinterpret_cast<void**>(&RealFunction)) != MH_OK ||
-            MH_EnableHook(Location) != MH_OK)
+        if (MH_CreateHook(Location, reinterpret_cast<void*>(&GameMainThread::HookStateTick), reinterpret_cast<void**>(&RealFunction)) != MH_OK || MH_EnableHook(Location) != MH_OK)
             Log::Error("Could not hook main thread function {}! Main thread is not completely hooked!", acpRealFunctionName);
         else
             Log::Info("Main thread function {} hook complete!", acpRealFunctionName);

@@ -32,7 +32,7 @@ bool D3D12::ResetState(const bool acClearDownlevelBackbuffers, const bool acDest
     }
 
     m_frameContexts.clear();
-    m_outSize = { 0, 0 };
+    m_outSize = {0, 0};
 
     if (acClearDownlevelBackbuffers)
         m_downlevelBackbuffers.clear();
@@ -76,9 +76,12 @@ bool D3D12::Initialize()
     m_pdxgiSwapChain->GetDesc(&sdesc);
 
     if (hWnd != sdesc.OutputWindow)
-        Log::Warn("D3D12::Initialize() - output window of current swap chain does not match hooked window! Currently hooked to {} while swap chain output window is {}.", reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(sdesc.OutputWindow));
+        Log::Warn(
+            "D3D12::Initialize() - output window of current swap chain does not match hooked window! Currently hooked "
+            "to {} while swap chain output window is {}.",
+            reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(sdesc.OutputWindow));
 
-    m_outSize = { static_cast<LONG>(sdesc.BufferDesc.Width), static_cast<LONG>(sdesc.BufferDesc.Height) };
+    m_outSize = {static_cast<LONG>(sdesc.BufferDesc.Width), static_cast<LONG>(sdesc.BufferDesc.Height)};
 
     const auto buffersCounts = std::min(sdesc.BufferCount, 3u);
     m_frameContexts.resize(buffersCounts);
@@ -158,13 +161,16 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
     if (m_initialized)
     {
         if (hWnd != ahWindow)
-            Log::Warn("D3D12::InitializeDownlevel() - current output window does not match hooked window! Currently hooked to {} while current output window is {}.", reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(ahWindow));
+            Log::Warn(
+                "D3D12::InitializeDownlevel() - current output window does not match hooked window! Currently hooked "
+                "to {} while current output window is {}.",
+                reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(ahWindow));
 
         return true;
     }
 
     const auto cmdQueueDesc = apCommandQueue->GetDesc();
-    if(cmdQueueDesc.Type != D3D12_COMMAND_LIST_TYPE_DIRECT)
+    if (cmdQueueDesc.Type != D3D12_COMMAND_LIST_TYPE_DIRECT)
     {
         Log::Warn("D3D12::InitializeDownlevel() - ignoring command queue - invalid type of command list!");
         return false;
@@ -173,10 +179,13 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
     m_pCommandQueue = apCommandQueue;
 
     const auto st2DDesc = apSourceTex2D->GetDesc();
-    m_outSize = { static_cast<LONG>(st2DDesc.Width), static_cast<LONG>(st2DDesc.Height) };
+    m_outSize = {static_cast<LONG>(st2DDesc.Width), static_cast<LONG>(st2DDesc.Height)};
 
     if (hWnd != ahWindow)
-        Log::Warn("D3D12::InitializeDownlevel() - current output window does not match hooked window! Currently hooked to {} while current output window is {}.", reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(ahWindow));
+        Log::Warn(
+            "D3D12::InitializeDownlevel() - current output window does not match hooked window! Currently hooked to {} "
+            "while current output window is {}.",
+            reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(ahWindow));
 
     if (FAILED(apSourceTex2D->GetDevice(IID_PPV_ARGS(&m_pd3d12Device))))
     {
@@ -446,10 +455,9 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         return false;
     }
 
-    if (!ImGui_ImplDX12_Init(m_pd3d12Device.Get(), static_cast<int>(aBuffersCounts),
-        DXGI_FORMAT_R8G8B8A8_UNORM, m_pd3dSrvDescHeap.Get(),
-        m_pd3dSrvDescHeap->GetCPUDescriptorHandleForHeapStart(),
-        m_pd3dSrvDescHeap->GetGPUDescriptorHandleForHeapStart()))
+    if (!ImGui_ImplDX12_Init(
+            m_pd3d12Device.Get(), static_cast<int>(aBuffersCounts), DXGI_FORMAT_R8G8B8A8_UNORM, m_pd3dSrvDescHeap.Get(), m_pd3dSrvDescHeap->GetCPUDescriptorHandleForHeapStart(),
+            m_pd3dSrvDescHeap->GetGPUDescriptorHandleForHeapStart()))
     {
         Log::Error("D3D12::InitializeImGui() - ImGui_ImplDX12_Init call failed!");
         ImGui_ImplWin32_Shutdown();
@@ -531,7 +539,7 @@ void D3D12::Update()
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
     barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
-    ID3D12DescriptorHeap* heaps[] = { m_pd3dSrvDescHeap.Get() };
+    ID3D12DescriptorHeap* heaps[] = {m_pd3dSrvDescHeap.Get()};
 
     m_pd3dCommandList->Reset(frameContext.CommandAllocator.Get(), nullptr);
     m_pd3dCommandList->ResourceBarrier(1, &barrier);
@@ -545,7 +553,6 @@ void D3D12::Update()
     m_pd3dCommandList->ResourceBarrier(1, &barrier);
     m_pd3dCommandList->Close();
 
-    ID3D12CommandList* commandLists[] = { m_pd3dCommandList.Get() };
+    ID3D12CommandList* commandLists[] = {m_pd3dCommandList.Get()};
     m_pCommandQueue->ExecuteCommandLists(1, commandLists);
 }
-

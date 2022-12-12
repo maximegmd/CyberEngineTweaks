@@ -4,7 +4,7 @@ struct Type
 {
     struct Descriptor
     {
-        std::string name{ "Unknown" };
+        std::string name{"Unknown"};
         TiltedPhoques::Vector<std::string> functions;
         TiltedPhoques::Vector<std::string> staticFunctions;
         TiltedPhoques::Vector<std::string> properties;
@@ -43,8 +43,7 @@ protected:
 
 struct ClassType : Type
 {
-    ClassType(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView,
-              RED4ext::CBaseRTTIType* apClass);
+    ClassType(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::CBaseRTTIType* apClass);
     ~ClassType() override = default;
 
     Descriptor Dump(bool aWithHashes) const override;
@@ -56,9 +55,7 @@ struct ClassType : Type
 
 struct UnknownType : Type
 {
-    UnknownType(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView,
-                RED4ext::CBaseRTTIType* apClass,
-                RED4ext::ScriptInstance apInstance);
+    UnknownType(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::CBaseRTTIType* apClass, RED4ext::ScriptInstance apInstance);
 
     Descriptor Dump(bool aWithHashes) const override;
     RED4ext::ScriptInstance GetHandle() const override { return m_pInstance.get(); }

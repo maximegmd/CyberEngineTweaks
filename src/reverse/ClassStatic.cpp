@@ -20,9 +20,7 @@ sol::function ClassStatic::GetFactory()
         auto lockedState = m_lua.Lock();
         auto& luaState = lockedState.Get();
 
-        m_factory = MakeSolFunction(luaState, [this](sol::optional<sol::table> aProps) {
-            return RTTIHelper::Get().NewHandle(m_pType, aProps);
-        });
+        m_factory = MakeSolFunction(luaState, [this](sol::optional<sol::table> aProps) { return RTTIHelper::Get().NewHandle(m_pType, aProps); });
     }
 
     return m_factory;

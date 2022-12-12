@@ -12,7 +12,10 @@ std::function<void()> VKBind::DelayedCall(const bool acIsDown) const
     }
 
     if (const auto* fn = std::get_if<std::function<TVKBindInputCallback>>(&Handler))
-        return [cb = *fn, acIsDown]{ cb(acIsDown); };
+        return [cb = *fn, acIsDown]
+        {
+            cb(acIsDown);
+        };
 
     assert(acIsDown); // nullptr should ever return only for key down events, in case binding is a hotkey
     return nullptr;
@@ -20,7 +23,7 @@ std::function<void()> VKBind::DelayedCall(const bool acIsDown) const
 
 void VKBind::Call(const bool acIsDown) const
 {
-    if (const auto fn { DelayedCall(acIsDown) })
+    if (const auto fn{DelayedCall(acIsDown)})
         fn();
 }
 
@@ -237,7 +240,8 @@ bool VKBindings::Bind(const uint64_t acVKCodeBind, const VKModBind& acVKModBind)
         if (FirstKeyMatches(bind->first, acVKCodeBind))
         {
             // first char matches! lets check that both binds are hotkey in this case
-            const auto isHotkey = [vm = m_cpVm](const VKModBind& vkModBind) {
+            const auto isHotkey = [vm = m_cpVm](const VKModBind& vkModBind)
+            {
                 if (!vm)
                 {
                     // this should never happen!
@@ -349,7 +353,7 @@ std::string VKBindings::GetBindString(const VKModBind& acVKModBind) const
 uint64_t VKBindings::GetBindCodeForModBind(const VKModBind& acVKModBind, const bool acIncludeDead) const
 {
     assert(!acVKModBind.ModName.empty()); // we never really want acModName to be empty here... but leave some fallback for release!
-    assert(!acVKModBind.ID.empty());   // we never really want acID to be empty here... but leave some fallback for release!
+    assert(!acVKModBind.ID.empty());      // we never really want acID to be empty here... but leave some fallback for release!
     if (acVKModBind.ModName.empty() || acVKModBind.ID.empty())
         return 0;
 
@@ -453,124 +457,65 @@ const char* VKBindings::GetSpecialKeyName(const USHORT acVKCode)
 {
     switch (acVKCode)
     {
-    case VK_LBUTTON:
-        return "Mouse LB";
-    case VK_RBUTTON:
-        return "Mouse RB";
-    case VK_MBUTTON:
-        return "Mouse MB";
-    case VK_XBUTTON1:
-        return "Mouse X1";
-    case VK_XBUTTON2:
-        return "Mouse X2";
-    case VK_BACK:
-        return "Backspace";
-    case VK_TAB:
-        return "Tab";
-    case VK_CLEAR:
-        return "Clear";
-    case VK_RETURN:
-        return "Enter";
-    case VK_SHIFT:
-        return "Shift";
-    case VK_CONTROL:
-        return "Ctrl";
-    case VK_MENU:
-        return "Alt";
-    case VK_PAUSE:
-        return "Pause";
-    case VK_CAPITAL:
-        return "Caps Lock";
-    case VK_ESCAPE:
-        return "Esc";
-    case VK_SPACE:
-        return "Space";
-    case VK_PRIOR:
-        return "Page Up";
-    case VK_NEXT:
-        return "Page Down";
-    case VK_END:
-        return "End";
-    case VK_HOME:
-        return "Home";
-    case VK_LEFT:
-        return "Left Arrow";
-    case VK_UP:
-        return "Up Arrow";
-    case VK_RIGHT:
-        return "Right Arrow";
-    case VK_DOWN:
-        return "Down Arrow";
-    case VK_SELECT:
-        return "Select";
-    case VK_PRINT:
-        return "Print";
-    case VK_EXECUTE:
-        return "Execute";
-    case VK_INSERT:
-        return "Insert";
-    case VK_DELETE:
-        return "Delete";
-    case VK_HELP:
-        return "Help";
-    case VK_NUMPAD0:
-        return "Numpad 0";
-    case VK_NUMPAD1:
-        return "Numpad 1";
-    case VK_NUMPAD2:
-        return "Numpad 2";
-    case VK_NUMPAD3:
-        return "Numpad 3";
-    case VK_NUMPAD4:
-        return "Numpad 4";
-    case VK_NUMPAD5:
-        return "Numpad 5";
-    case VK_NUMPAD6:
-        return "Numpad 6";
-    case VK_NUMPAD7:
-        return "Numpad 7";
-    case VK_NUMPAD8:
-        return "Numpad 8";
-    case VK_NUMPAD9:
-        return "Numpad 9";
-    case VK_F1:
-        return "F1";
-    case VK_F2:
-        return "F2";
-    case VK_F3:
-        return "F3";
-    case VK_F4:
-        return "F4";
-    case VK_F5:
-        return "F5";
-    case VK_F6:
-        return "F6";
-    case VK_F7:
-        return "F7";
-    case VK_F8:
-        return "F8";
-    case VK_F9:
-        return "F9";
-    case VK_F10:
-        return "F10";
-    case VK_F11:
-        return "F11";
-    case VK_F12:
-        return "F12";
-    case VK_NUMLOCK:
-        return "Num Lock";
-    case VK_SCROLL:
-        return "Scroll Lock";
-    case VKBC_MWHEELUP:
-        return "Mouse Wheel Up";
-    case VKBC_MWHEELDOWN:
-        return "Mouse Wheel Down";
-    case VKBC_MWHEELLEFT:
-        return "Mouse Wheel Left";
-    case VKBC_MWHEELRIGHT:
-        return "Mouse Wheel Right";
-    default:
-        return nullptr;
+    case VK_LBUTTON: return "Mouse LB";
+    case VK_RBUTTON: return "Mouse RB";
+    case VK_MBUTTON: return "Mouse MB";
+    case VK_XBUTTON1: return "Mouse X1";
+    case VK_XBUTTON2: return "Mouse X2";
+    case VK_BACK: return "Backspace";
+    case VK_TAB: return "Tab";
+    case VK_CLEAR: return "Clear";
+    case VK_RETURN: return "Enter";
+    case VK_SHIFT: return "Shift";
+    case VK_CONTROL: return "Ctrl";
+    case VK_MENU: return "Alt";
+    case VK_PAUSE: return "Pause";
+    case VK_CAPITAL: return "Caps Lock";
+    case VK_ESCAPE: return "Esc";
+    case VK_SPACE: return "Space";
+    case VK_PRIOR: return "Page Up";
+    case VK_NEXT: return "Page Down";
+    case VK_END: return "End";
+    case VK_HOME: return "Home";
+    case VK_LEFT: return "Left Arrow";
+    case VK_UP: return "Up Arrow";
+    case VK_RIGHT: return "Right Arrow";
+    case VK_DOWN: return "Down Arrow";
+    case VK_SELECT: return "Select";
+    case VK_PRINT: return "Print";
+    case VK_EXECUTE: return "Execute";
+    case VK_INSERT: return "Insert";
+    case VK_DELETE: return "Delete";
+    case VK_HELP: return "Help";
+    case VK_NUMPAD0: return "Numpad 0";
+    case VK_NUMPAD1: return "Numpad 1";
+    case VK_NUMPAD2: return "Numpad 2";
+    case VK_NUMPAD3: return "Numpad 3";
+    case VK_NUMPAD4: return "Numpad 4";
+    case VK_NUMPAD5: return "Numpad 5";
+    case VK_NUMPAD6: return "Numpad 6";
+    case VK_NUMPAD7: return "Numpad 7";
+    case VK_NUMPAD8: return "Numpad 8";
+    case VK_NUMPAD9: return "Numpad 9";
+    case VK_F1: return "F1";
+    case VK_F2: return "F2";
+    case VK_F3: return "F3";
+    case VK_F4: return "F4";
+    case VK_F5: return "F5";
+    case VK_F6: return "F6";
+    case VK_F7: return "F7";
+    case VK_F8: return "F8";
+    case VK_F9: return "F9";
+    case VK_F10: return "F10";
+    case VK_F11: return "F11";
+    case VK_F12: return "F12";
+    case VK_NUMLOCK: return "Num Lock";
+    case VK_SCROLL: return "Scroll Lock";
+    case VKBC_MWHEELUP: return "Mouse Wheel Up";
+    case VKBC_MWHEELDOWN: return "Mouse Wheel Down";
+    case VKBC_MWHEELLEFT: return "Mouse Wheel Left";
+    case VKBC_MWHEELRIGHT: return "Mouse Wheel Right";
+    default: return nullptr;
     }
 }
 
@@ -581,8 +526,7 @@ LRESULT VKBindings::OnWndProc(HWND, UINT auMsg, WPARAM, LPARAM alParam)
 
     switch (auMsg)
     {
-    case WM_INPUT:
-        return HandleRAWInput(reinterpret_cast<HRAWINPUT>(alParam));
+    case WM_INPUT: return HandleRAWInput(reinterpret_cast<HRAWINPUT>(alParam));
     case WM_KILLFOCUS:
         // reset key states on focus loss, as otherwise, we end up with broken recording state
         m_keyStates.reset();
@@ -678,8 +622,8 @@ void VKBindings::ExecuteSingleInput(const USHORT acVKCode, const bool acKeyDown)
         const auto& modBind = bindIt->second;
         if (const auto vkBind = m_cpVm->GetBind(modBind))
         {
-            // we dont want to handle bindings when vm is not initialized or when overlay is open and we are not in binding state!
-            // only exception allowed is any CET bind
+            // we dont want to handle bindings when vm is not initialized or when overlay is open and we are not in
+            // binding state! only exception allowed is any CET bind
             const auto& overlayToggleModBind = Bindings::GetOverlayToggleModBind();
             const auto cetModBind = modBind.ModName == overlayToggleModBind.ModName;
             if (!cetModBind && (!m_cpVm->IsInitialized() || CET::Get().GetOverlay().IsEnabled()))
@@ -714,8 +658,8 @@ void VKBindings::ExecuteRecording()
         const auto& modBind = bindIt->second;
         if (const auto vkBind = m_cpVm->GetBind(modBind))
         {
-            // we dont want to handle bindings when vm is not initialized or when overlay is open and we are not in binding state!
-            // only exception allowed is any CET bind
+            // we dont want to handle bindings when vm is not initialized or when overlay is open and we are not in
+            // binding state! only exception allowed is any CET bind
             const auto& overlayToggleModBind = Bindings::GetOverlayToggleModBind();
             const auto cetModBind = modBind.ModName == overlayToggleModBind.ModName;
             if (!cetModBind && (!m_cpVm->IsInitialized() || CET::Get().GetOverlay().IsEnabled()))
@@ -750,11 +694,9 @@ LRESULT VKBindings::HandleRAWInput(const HRAWINPUT achRAWInput)
         switch (kb.Message)
         {
         case WM_KEYDOWN:
-        case WM_SYSKEYDOWN:
-            return RecordKeyDown(kb.VKey);
+        case WM_SYSKEYDOWN: return RecordKeyDown(kb.VKey);
         case WM_KEYUP:
-        case WM_SYSKEYUP:
-            return RecordKeyUp(kb.VKey);
+        case WM_SYSKEYUP: return RecordKeyUp(kb.VKey);
         }
     }
     else if (raw->header.dwType == RIM_TYPEMOUSE)
@@ -765,26 +707,16 @@ LRESULT VKBindings::HandleRAWInput(const HRAWINPUT achRAWInput)
         const auto& m = raw->data.mouse;
         switch (m.usButtonFlags)
         {
-        case RI_MOUSE_LEFT_BUTTON_DOWN:
-            return RecordKeyDown(VK_LBUTTON);
-        case RI_MOUSE_LEFT_BUTTON_UP:
-            return RecordKeyUp(VK_LBUTTON);
-        case RI_MOUSE_RIGHT_BUTTON_DOWN:
-            return RecordKeyDown(VK_RBUTTON);
-        case RI_MOUSE_RIGHT_BUTTON_UP:
-            return RecordKeyUp(VK_RBUTTON);
-        case RI_MOUSE_MIDDLE_BUTTON_DOWN:
-            return RecordKeyDown(VK_MBUTTON);
-        case RI_MOUSE_MIDDLE_BUTTON_UP:
-            return RecordKeyUp(VK_MBUTTON);
-        case RI_MOUSE_BUTTON_4_DOWN:
-            return RecordKeyDown(VK_XBUTTON1);
-        case RI_MOUSE_BUTTON_4_UP:
-            return RecordKeyUp(VK_XBUTTON1);
-        case RI_MOUSE_BUTTON_5_DOWN:
-            return RecordKeyDown(VK_XBUTTON2);
-        case RI_MOUSE_BUTTON_5_UP:
-            return RecordKeyUp(VK_XBUTTON2);
+        case RI_MOUSE_LEFT_BUTTON_DOWN: return RecordKeyDown(VK_LBUTTON);
+        case RI_MOUSE_LEFT_BUTTON_UP: return RecordKeyUp(VK_LBUTTON);
+        case RI_MOUSE_RIGHT_BUTTON_DOWN: return RecordKeyDown(VK_RBUTTON);
+        case RI_MOUSE_RIGHT_BUTTON_UP: return RecordKeyUp(VK_RBUTTON);
+        case RI_MOUSE_MIDDLE_BUTTON_DOWN: return RecordKeyDown(VK_MBUTTON);
+        case RI_MOUSE_MIDDLE_BUTTON_UP: return RecordKeyUp(VK_MBUTTON);
+        case RI_MOUSE_BUTTON_4_DOWN: return RecordKeyDown(VK_XBUTTON1);
+        case RI_MOUSE_BUTTON_4_UP: return RecordKeyUp(VK_XBUTTON1);
+        case RI_MOUSE_BUTTON_5_DOWN: return RecordKeyDown(VK_XBUTTON2);
+        case RI_MOUSE_BUTTON_5_UP: return RecordKeyUp(VK_XBUTTON2);
         case RI_MOUSE_WHEEL:
         {
             const USHORT key{static_cast<USHORT>(RI_MOUSE_WHEEL | ((m.usButtonData & 0x8000) ? 0 : 1))};

@@ -61,13 +61,10 @@ void EnableDebugPatch()
     const RED4ext::RelocPtr<uint8_t> registerMemberFunction(CyberEngineTweaks::Addresses::CScript_RegisterMemberFunction);
 
     RealRegisterScriptFunction = reinterpret_cast<TRegisterScriptFunction*>(registerFunction.GetAddr());
-    MH_CreateHook(reinterpret_cast<void*>(RealRegisterScriptFunction),
-                  reinterpret_cast<void*>(&HookRegisterScriptFunction),
-                  reinterpret_cast<void**>(&RealRegisterScriptFunction));
+    MH_CreateHook(reinterpret_cast<void*>(RealRegisterScriptFunction), reinterpret_cast<void*>(&HookRegisterScriptFunction), reinterpret_cast<void**>(&RealRegisterScriptFunction));
 
     RealRegisterScriptMemberFunction = reinterpret_cast<TRegisterScriptMemberFunction*>(registerMemberFunction.GetAddr());
-    MH_CreateHook(reinterpret_cast<void*>(RealRegisterScriptMemberFunction),
-                  reinterpret_cast<void*>(&HookRegisterScriptMemberFunction),
-                  reinterpret_cast<void**>(&RealRegisterScriptMemberFunction));
-
+    MH_CreateHook(
+        reinterpret_cast<void*>(RealRegisterScriptMemberFunction), reinterpret_cast<void*>(&HookRegisterScriptMemberFunction),
+        reinterpret_cast<void**>(&RealRegisterScriptMemberFunction));
 }

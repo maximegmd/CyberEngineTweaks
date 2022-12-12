@@ -11,8 +11,7 @@ bool DumpVTablesTask::Run()
     auto ModuleBase = GetModuleHandle(nullptr);
     auto begin = reinterpret_cast<uintptr_t>(ModuleBase);
     const auto* dosHeader = reinterpret_cast<const IMAGE_DOS_HEADER*>(ModuleBase);
-    const auto* ntHeader = reinterpret_cast<const IMAGE_NT_HEADERS*>(
-        reinterpret_cast<const std::uint8_t*>(dosHeader) + dosHeader->e_lfanew);
+    const auto* ntHeader = reinterpret_cast<const IMAGE_NT_HEADERS*>(reinterpret_cast<const std::uint8_t*>(dosHeader) + dosHeader->e_lfanew);
     uintptr_t end = begin + ntHeader->OptionalHeader.SizeOfCode + ntHeader->OptionalHeader.SizeOfInitializedData;
 
     const auto* pRttiSystem = RED4ext::CRTTISystem::Get();
@@ -56,27 +55,28 @@ bool DumpVTablesTask::Run()
         }
     };
 
-    pRttiSystem->types.for_each([&dumpClass, &vtableMap](RED4ext::CName aName, RED4ext::CBaseRTTIType*& apType)
-    {
-        TP_UNUSED(aName);
-
-        dumpClass(vtableMap, apType);
-
-        if (apType->GetType() == RED4ext::ERTTIType::Class)
+    pRttiSystem->types.for_each(
+        [&dumpClass, &vtableMap](RED4ext::CName aName, RED4ext::CBaseRTTIType*& apType)
         {
-            auto* pParent = static_cast<RED4ext::CClass*>(apType)->parent;
-            while (pParent)
-            {
-                dumpClass(vtableMap, pParent);
+            TP_UNUSED(aName);
 
-                pParent = pParent->parent;
-                if (!pParent || pParent->GetType() != RED4ext::ERTTIType::Class)
+            dumpClass(vtableMap, apType);
+
+            if (apType->GetType() == RED4ext::ERTTIType::Class)
+            {
+                auto* pParent = static_cast<RED4ext::CClass*>(apType)->parent;
+                while (pParent)
                 {
-                    break;
+                    dumpClass(vtableMap, pParent);
+
+                    pParent = pParent->parent;
+                    if (!pParent || pParent->GetType() != RED4ext::ERTTIType::Class)
+                    {
+                        break;
+                    }
                 }
             }
-        }
-    });
+        });
 
     for (auto& [key, value] : vtableMap)
     {

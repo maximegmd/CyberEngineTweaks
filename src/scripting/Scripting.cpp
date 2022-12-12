@@ -47,8 +47,7 @@ void Scripting::Initialize()
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
 
-    luaVm.open_libraries(sol::lib::base, sol::lib::string, sol::lib::io, sol::lib::math, sol::lib::package,
-                         sol::lib::os, sol::lib::table, sol::lib::bit32);
+    luaVm.open_libraries(sol::lib::base, sol::lib::string, sol::lib::io, sol::lib::math, sol::lib::package, sol::lib::os, sol::lib::table, sol::lib::bit32);
     luaVm.require("sqlite3", luaopen_lsqlite3);
 
     // make sure to set package path to current directory scope
@@ -58,8 +57,8 @@ void Scripting::Initialize()
     // execute autoexec.lua inside our default script directory
     const auto previousCurrentPath = std::filesystem::current_path();
     current_path(m_paths.CETRoot() / "scripts");
-    luaVm.script("json = require 'json/json'", sol:: detail::default_chunk_name(), sol::load_mode::text);
-    luaVm.script("IconGlyphs = require 'IconGlyphs/icons'", sol:: detail::default_chunk_name(), sol::load_mode::text);
+    luaVm.script("json = require 'json/json'", sol::detail::default_chunk_name(), sol::load_mode::text);
+    luaVm.script("IconGlyphs = require 'IconGlyphs/icons'", sol::detail::default_chunk_name(), sol::load_mode::text);
     current_path(previousCurrentPath);
 
     // initialize sandbox
@@ -77,17 +76,20 @@ void Scripting::Initialize()
             continue;
 
         sol::function original = value;
-        imgui[key] = make_object(luaVm, [this, original](sol::variadic_args aVariadicArgs, sol::this_environment aThisEnv) -> sol::variadic_results {
-            const sol::environment cEnv = aThisEnv;
-            const auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
-            if (!m_sandbox.GetImGuiAvailable())
+        imgui[key] = make_object(
+            luaVm,
+            [this, original](sol::variadic_args aVariadicArgs, sol::this_environment aThisEnv) -> sol::variadic_results
             {
-                logger->error("Tried to call ImGui from invalid event!");
-                throw "Tried to call ImGui from invalid event!";
-            }
+                const sol::environment cEnv = aThisEnv;
+                const auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+                if (!m_sandbox.GetImGuiAvailable())
+                {
+                    logger->error("Tried to call ImGui from invalid event!");
+                    throw "Tried to call ImGui from invalid event!";
+                }
 
-            return original(as_args(aVariadicArgs));
-        });
+                return original(as_args(aVariadicArgs));
+            });
     }
 
     // setup logger for console sandbox
@@ -161,85 +163,52 @@ void Scripting::PostInitializeScripting()
         return;
     }
 
-    luaVm.new_usertype<Scripting>("__Game",
-        sol::meta_function::construct, sol::no_constructor,
-        sol::meta_function::index, &Scripting::Index);
+    luaVm.new_usertype<Scripting>("__Game", sol::meta_function::construct, sol::no_constructor, sol::meta_function::index, &Scripting::Index);
 
-    luaVm.new_usertype<Type>("__Type",
-        sol::meta_function::construct, sol::no_constructor,
-        sol::meta_function::index, &Type::Index,
-        sol::meta_function::new_index, &Type::NewIndex);
+    luaVm.new_usertype<Type>("__Type", sol::meta_function::construct, sol::no_constructor, sol::meta_function::index, &Type::Index, sol::meta_function::new_index, &Type::NewIndex);
 
-    luaVm.new_usertype<ClassType>("__ClassType",
-        sol::meta_function::construct, sol::no_constructor,
-        sol::base_classes, sol::bases<Type>(),
-        sol::meta_function::index, &ClassType::Index,
+    luaVm.new_usertype<ClassType>(
+        "__ClassType", sol::meta_function::construct, sol::no_constructor, sol::base_classes, sol::bases<Type>(), sol::meta_function::index, &ClassType::Index,
         sol::meta_function::new_index, &ClassType::NewIndex);
 
-    globals.new_usertype<Type::Descriptor>("Descriptor",
-        sol::meta_function::to_string, &Type::Descriptor::ToString);
+    globals.new_usertype<Type::Descriptor>("Descriptor", sol::meta_function::to_string, &Type::Descriptor::ToString);
 
-    globals.new_usertype<StrongReference>("StrongReference",
-        sol::meta_function::construct, sol::no_constructor,
-        sol::base_classes, sol::bases<Type, ClassType>(),
-        sol::meta_function::index, &StrongReference::Index,
+    globals.new_usertype<StrongReference>(
+        "StrongReference", sol::meta_function::construct, sol::no_constructor, sol::base_classes, sol::bases<Type, ClassType>(), sol::meta_function::index, &StrongReference::Index,
         sol::meta_function::new_index, &StrongReference::NewIndex);
 
-    globals.new_usertype<WeakReference>("WeakReference",
-        sol::meta_function::construct, sol::no_constructor,
-        sol::base_classes, sol::bases<Type, ClassType>(),
-        sol::meta_function::index, &WeakReference::Index,
+    globals.new_usertype<WeakReference>(
+        "WeakReference", sol::meta_function::construct, sol::no_constructor, sol::base_classes, sol::bases<Type, ClassType>(), sol::meta_function::index, &WeakReference::Index,
         sol::meta_function::new_index, &WeakReference::NewIndex);
 
-    globals.new_usertype<SingletonReference>("SingletonReference",
-        sol::meta_function::construct, sol::no_constructor,
-        sol::base_classes, sol::bases<Type, ClassType>(),
-        sol::meta_function::index, &SingletonReference::Index,
-        sol::meta_function::new_index, &SingletonReference::NewIndex);
+    globals.new_usertype<SingletonReference>(
+        "SingletonReference", sol::meta_function::construct, sol::no_constructor, sol::base_classes, sol::bases<Type, ClassType>(), sol::meta_function::index,
+        &SingletonReference::Index, sol::meta_function::new_index, &SingletonReference::NewIndex);
 
-    globals.new_usertype<ClassReference>("ClassReference",
-        sol::meta_function::construct, sol::no_constructor,
-        sol::base_classes, sol::bases<Type, ClassType>(),
-        sol::meta_function::index, &ClassReference::Index,
+    globals.new_usertype<ClassReference>(
+        "ClassReference", sol::meta_function::construct, sol::no_constructor, sol::base_classes, sol::bases<Type, ClassType>(), sol::meta_function::index, &ClassReference::Index,
         sol::meta_function::new_index, &ClassReference::NewIndex);
 
-    globals.new_usertype<ResourceAsyncReference>("ResourceAsyncReference",
-        sol::meta_function::construct, sol::no_constructor,
-        sol::base_classes, sol::bases<Type, ClassType>(),
-        sol::meta_function::index, &ResourceAsyncReference::Index,
-        sol::meta_function::new_index, &ResourceAsyncReference::NewIndex,
-        "hash", property(&ResourceAsyncReference::GetLuaHash));
+    globals.new_usertype<ResourceAsyncReference>(
+        "ResourceAsyncReference", sol::meta_function::construct, sol::no_constructor, sol::base_classes, sol::bases<Type, ClassType>(), sol::meta_function::index,
+        &ResourceAsyncReference::Index, sol::meta_function::new_index, &ResourceAsyncReference::NewIndex, "hash", property(&ResourceAsyncReference::GetLuaHash));
 
-    globals.new_usertype<UnknownType>("Unknown",
-        sol::meta_function::construct, sol::no_constructor,
-        sol::base_classes, sol::bases<Type>(),
-        sol::meta_function::index, &UnknownType::Index,
+    globals.new_usertype<UnknownType>(
+        "Unknown", sol::meta_function::construct, sol::no_constructor, sol::base_classes, sol::bases<Type>(), sol::meta_function::index, &UnknownType::Index,
         sol::meta_function::new_index, &UnknownType::NewIndex);
 
-    globals["IsDefined"] =  sol::overload(
+    globals["IsDefined"] = sol::overload(
         // Check if weak reference is still valid
-        [](const WeakReference& aRef) -> bool
-        {
-            return !aRef.m_weakHandle.Expired();
-        },
+        [](const WeakReference& aRef) -> bool { return !aRef.m_weakHandle.Expired(); },
         // To make it callable for strong reference
         // although it's always valid unless it's null
-        [](const StrongReference&) -> bool
-        {
-            return true;
-        },
+        [](const StrongReference&) -> bool { return true; },
         // To make it callable on any value
-        [](const sol::object&) -> bool
-        {
-            return false;
-        });
+        [](const sol::object&) -> bool { return false; });
 
-    globals.new_usertype<Enum>("Enum",
-        sol::constructors<Enum(const std::string&, const std::string&),
-                          Enum(const std::string&, uint32_t), Enum(const Enum&)>(),
-        sol::meta_function::to_string, &Enum::ToString,
-        sol::meta_function::equal_to, &Enum::operator==,
-        "value", sol::property(&Enum::GetValueName, &Enum::SetValueByName));
+    globals.new_usertype<Enum>(
+        "Enum", sol::constructors<Enum(const std::string&, const std::string&), Enum(const std::string&, uint32_t), Enum(const Enum&)>(), sol::meta_function::to_string,
+        &Enum::ToString, sol::meta_function::equal_to, &Enum::operator==, "value", sol::property(&Enum::GetValueName, &Enum::SetValueByName));
 
     globals["EnumInt"] = [this](Enum& aEnum) -> sol::object
     {
@@ -254,120 +223,68 @@ void Scripting::PostInitializeScripting()
         return Converter::ToLua(stackType, lockedState);
     };
 
-    luaVm.new_usertype<Vector3>("Vector3",
-        sol::constructors<Vector3(float, float, float), Vector3(float, float), Vector3(float), Vector3(const Vector3&), Vector3()>(),
-        sol::meta_function::to_string, &Vector3::ToString,
-        sol::meta_function::equal_to, &Vector3::operator==,
-        "x", &Vector3::x,
-        "y", &Vector3::y,
-        "z", &Vector3::z);
+    luaVm.new_usertype<Vector3>(
+        "Vector3", sol::constructors<Vector3(float, float, float), Vector3(float, float), Vector3(float), Vector3(const Vector3&), Vector3()>(), sol::meta_function::to_string,
+        &Vector3::ToString, sol::meta_function::equal_to, &Vector3::operator==, "x", &Vector3::x, "y", &Vector3::y, "z", &Vector3::z);
     globals["Vector3"] = luaVm["Vector3"];
 
     globals["ToVector3"] = [](sol::table table) -> Vector3
     {
-        return Vector3
-        {
-            table["x"].get_or(0.f),
-            table["y"].get_or(0.f),
-            table["z"].get_or(0.f)
-        };
+        return Vector3{table["x"].get_or(0.f), table["y"].get_or(0.f), table["z"].get_or(0.f)};
     };
 
-    luaVm.new_usertype<Vector4>("Vector4",
-        sol::constructors<Vector4(float, float, float, float), Vector4(float, float, float), Vector4(float, float),
-                          Vector4(float), Vector4(const Vector4&), Vector4()>(),
-        sol::meta_function::to_string, &Vector4::ToString,
-        sol::meta_function::equal_to, &Vector4::operator==,
-        "x", &Vector4::x,
-        "y", &Vector4::y,
-        "z", &Vector4::z,
-        "w", &Vector4::w);
+    luaVm.new_usertype<Vector4>(
+        "Vector4",
+        sol::constructors<Vector4(float, float, float, float), Vector4(float, float, float), Vector4(float, float), Vector4(float), Vector4(const Vector4&), Vector4()>(),
+        sol::meta_function::to_string, &Vector4::ToString, sol::meta_function::equal_to, &Vector4::operator==, "x", &Vector4::x, "y", &Vector4::y, "z", &Vector4::z, "w",
+        &Vector4::w);
     globals["Vector4"] = luaVm["Vector4"];
 
     globals["ToVector4"] = [](sol::table table) -> Vector4
     {
-        return Vector4
-        {
-            table["x"].get_or(0.f),
-            table["y"].get_or(0.f),
-            table["z"].get_or(0.f),
-            table["w"].get_or(0.f)
-        };
+        return Vector4{table["x"].get_or(0.f), table["y"].get_or(0.f), table["z"].get_or(0.f), table["w"].get_or(0.f)};
     };
 
-    luaVm.new_usertype<EulerAngles>("EulerAngles",
-        sol::constructors<EulerAngles(float, float, float), EulerAngles(float, float), EulerAngles(float),
-                          EulerAngles(const EulerAngles&), EulerAngles()>(),
-        sol::meta_function::to_string, &EulerAngles::ToString,
-        sol::meta_function::equal_to, &EulerAngles::operator==,
-        "roll", &EulerAngles::roll,
-        "pitch", &EulerAngles::pitch,
+    luaVm.new_usertype<EulerAngles>(
+        "EulerAngles", sol::constructors<EulerAngles(float, float, float), EulerAngles(float, float), EulerAngles(float), EulerAngles(const EulerAngles&), EulerAngles()>(),
+        sol::meta_function::to_string, &EulerAngles::ToString, sol::meta_function::equal_to, &EulerAngles::operator==, "roll", &EulerAngles::roll, "pitch", &EulerAngles::pitch,
         "yaw", &EulerAngles::yaw);
     globals["EulerAngles"] = luaVm["EulerAngles"];
 
     globals["ToEulerAngles"] = [](sol::table table) -> EulerAngles
     {
-        return EulerAngles
-        {
-            table["roll"].get_or(0.f),
-            table["pitch"].get_or(0.f),
-            table["yaw"].get_or(0.f)
-        };
+        return EulerAngles{table["roll"].get_or(0.f), table["pitch"].get_or(0.f), table["yaw"].get_or(0.f)};
     };
 
-    luaVm.new_usertype<Quaternion>("Quaternion",
-        sol::constructors<Quaternion(float, float, float, float), Quaternion(float, float, float),
-                          Quaternion(float, float), Quaternion(float), Quaternion(const Quaternion&), Quaternion()>(),
-        sol::meta_function::to_string, &Quaternion::ToString,
-        sol::meta_function::equal_to, &Quaternion::operator==,
-        "i", &Quaternion::i,
-        "j", &Quaternion::j,
-        "k", &Quaternion::k,
+    luaVm.new_usertype<Quaternion>(
+        "Quaternion",
+        sol::constructors<
+            Quaternion(float, float, float, float), Quaternion(float, float, float), Quaternion(float, float), Quaternion(float), Quaternion(const Quaternion&), Quaternion()>(),
+        sol::meta_function::to_string, &Quaternion::ToString, sol::meta_function::equal_to, &Quaternion::operator==, "i", &Quaternion::i, "j", &Quaternion::j, "k", &Quaternion::k,
         "r", &Quaternion::r);
     globals["Quaternion"] = luaVm["Quaternion"];
 
     globals["ToQuaternion"] = [](sol::table table) -> Quaternion
     {
-        return Quaternion
-        {
-            table["i"].get_or(0.f),
-            table["j"].get_or(0.f),
-            table["k"].get_or(0.f),
-            table["r"].get_or(0.f)
-        };
+        return Quaternion{table["i"].get_or(0.f), table["j"].get_or(0.f), table["k"].get_or(0.f), table["r"].get_or(0.f)};
     };
 
-    globals.new_usertype<CName>("CName",
-        sol::constructors<CName(const std::string&), CName(uint64_t), CName(uint32_t, uint32_t),
-                          CName(const CName&), CName()>(),
-        sol::call_constructor, sol::constructors<CName(const std::string&), CName(uint64_t)>(),
-        sol::meta_function::to_string, &CName::ToString,
-        sol::meta_function::equal_to, &CName::operator==,
-        "hash_lo", &CName::hash_lo,
-        "hash_hi", &CName::hash_hi,
-        "value", sol::property(&CName::AsString),
-        "add", &CName::Add);
+    globals.new_usertype<CName>(
+        "CName", sol::constructors<CName(const std::string&), CName(uint64_t), CName(uint32_t, uint32_t), CName(const CName&), CName()>(), sol::call_constructor,
+        sol::constructors<CName(const std::string&), CName(uint64_t)>(), sol::meta_function::to_string, &CName::ToString, sol::meta_function::equal_to, &CName::operator==,
+        "hash_lo", &CName::hash_lo, "hash_hi", &CName::hash_hi, "value", sol::property(&CName::AsString), "add", &CName::Add);
 
     globals["ToCName"] = [](sol::table table) -> CName
     {
-        return CName
-        {
-            table["hash_lo"].get_or<uint32_t>(0),
-            table["hash_hi"].get_or<uint32_t>(0)
-        };
+        return CName{table["hash_lo"].get_or<uint32_t>(0), table["hash_hi"].get_or<uint32_t>(0)};
     };
 
-    globals.new_usertype<TweakDBID>("TweakDBID",
-        sol::constructors<TweakDBID(const std::string&), TweakDBID(const TweakDBID&, const std::string&),
-                          TweakDBID(uint32_t, uint8_t), TweakDBID(const TweakDBID&), TweakDBID()>(),
-        sol::call_constructor, sol::constructors<TweakDBID(const std::string&)>(),
-        sol::meta_function::to_string, &TweakDBID::ToString,
-        sol::meta_function::equal_to, &TweakDBID::operator==,
-        sol::meta_function::addition, &TweakDBID::operator+,
-        sol::meta_function::concatenation, &TweakDBID::operator+,
-        "hash", &TweakDBID::name_hash,
-        "length", &TweakDBID::name_length,
-        "value", sol::property(&TweakDBID::AsString));
+    globals.new_usertype<TweakDBID>(
+        "TweakDBID",
+        sol::constructors<TweakDBID(const std::string&), TweakDBID(const TweakDBID&, const std::string&), TweakDBID(uint32_t, uint8_t), TweakDBID(const TweakDBID&), TweakDBID()>(),
+        sol::call_constructor, sol::constructors<TweakDBID(const std::string&)>(), sol::meta_function::to_string, &TweakDBID::ToString, sol::meta_function::equal_to,
+        &TweakDBID::operator==, sol::meta_function::addition, &TweakDBID::operator+, sol::meta_function::concatenation, &TweakDBID::operator+, "hash", &TweakDBID::name_hash,
+        "length", &TweakDBID::name_length, "value", sol::property(&TweakDBID::AsString));
 
     globals["ToTweakDBID"] = [](sol::table table) -> TweakDBID
     {
@@ -377,30 +294,21 @@ void Scripting::PostInitializeScripting()
             return TweakDBID(name);
 
         // if conversion from name failed, look for old hash + length
-        return TweakDBID
-        {
-            table["hash"].get_or<uint32_t>(0),
-            table["length"].get_or<uint8_t>(0)
-        };
+        return TweakDBID{table["hash"].get_or<uint32_t>(0), table["length"].get_or<uint8_t>(0)};
     };
 
-    luaVm.new_usertype<ItemID>("ItemID",
-        sol::constructors<ItemID(const TweakDBID&, uint32_t, uint16_t, uint8_t),
-                          ItemID(const TweakDBID&, uint32_t, uint16_t), ItemID(const TweakDBID&, uint32_t),
-                          ItemID(const TweakDBID&), ItemID(const ItemID&), ItemID()>(),
-        sol::meta_function::to_string, &ItemID::ToString,
-        sol::meta_function::equal_to, &ItemID::operator==,
-        "id", &ItemID::id,
-        "tdbid", &ItemID::id,
-        "rng_seed", &ItemID::rng_seed,
-        "unknown", &ItemID::unknown,
-        "maybe_type", &ItemID::maybe_type);
+    luaVm.new_usertype<ItemID>(
+        "ItemID",
+        sol::constructors<
+            ItemID(const TweakDBID&, uint32_t, uint16_t, uint8_t), ItemID(const TweakDBID&, uint32_t, uint16_t), ItemID(const TweakDBID&, uint32_t), ItemID(const TweakDBID&),
+            ItemID(const ItemID&), ItemID()>(),
+        sol::meta_function::to_string, &ItemID::ToString, sol::meta_function::equal_to, &ItemID::operator==, "id", &ItemID::id, "tdbid", &ItemID::id, "rng_seed", &ItemID::rng_seed,
+        "unknown", &ItemID::unknown, "maybe_type", &ItemID::maybe_type);
     globals["ItemID"] = luaVm["ItemID"];
 
     globals["ToItemID"] = [](sol::table table) -> ItemID
     {
-        return ItemID
-        {
+        return ItemID{
             table["id"].get_or<TweakDBID>(0),
             table["rng_seed"].get_or<uint32_t>(2),
             table["unknown"].get_or<uint16_t>(0),
@@ -408,73 +316,64 @@ void Scripting::PostInitializeScripting()
         };
     };
 
-    globals.new_usertype<CRUID>("CRUID",
-        sol::constructors<CRUID(uint64_t)>(),
-        sol::call_constructor, sol::constructors<CRUID(uint64_t)>(),
-        sol::meta_function::to_string, &CRUID::ToString,
-        sol::meta_function::equal_to, &CRUID::operator==,
-        "hash", &CRUID::hash);
+    globals.new_usertype<CRUID>(
+        "CRUID", sol::constructors<CRUID(uint64_t)>(), sol::call_constructor, sol::constructors<CRUID(uint64_t)>(), sol::meta_function::to_string, &CRUID::ToString,
+        sol::meta_function::equal_to, &CRUID::operator==, "hash", &CRUID::hash);
 
-    globals.new_usertype<gamedataLocKeyWrapper>("LocKey",
-        sol::constructors<gamedataLocKeyWrapper(uint64_t)>(),
-        sol::meta_function::to_string, &gamedataLocKeyWrapper::ToString,
-        sol::meta_function::equal_to, &gamedataLocKeyWrapper::operator==,
-        sol::call_constructor, sol::factories([](sol::object aValue, sol::this_state aState) -> sol::object {
-            sol::state_view lua(aState);
-            gamedataLocKeyWrapper result(0);
-
-            if (aValue != sol::nil)
+    globals.new_usertype<gamedataLocKeyWrapper>(
+        "LocKey", sol::constructors<gamedataLocKeyWrapper(uint64_t)>(), sol::meta_function::to_string, &gamedataLocKeyWrapper::ToString, sol::meta_function::equal_to,
+        &gamedataLocKeyWrapper::operator==, sol::call_constructor,
+        sol::factories(
+            [](sol::object aValue, sol::this_state aState) -> sol::object
             {
-                if (aValue.get_type() == sol::type::number)
-                {
-                    result.hash = aValue.as<uint64_t>();
-                }
-                else if (IsLuaCData(aValue))
-                {
-                    const std::string str = lua["tostring"](aValue);
-                    result.hash = std::stoull(str);
-                }
-                else if (aValue.get_type() == sol::type::string)
-                {
-                    result.hash = RED4ext::FNV1a64(aValue.as<const char*>());
-                }
-            }
+                sol::state_view lua(aState);
+                gamedataLocKeyWrapper result(0);
 
-            return sol::object(lua, sol::in_place, std::move(result));
-        }),
-        "hash", sol::property([](gamedataLocKeyWrapper& aThis, sol::this_state aState) -> sol::object {
-            sol::state_view lua(aState);
-            const auto converted = lua.script(fmt::format("return {}ull", aThis.hash));
-            return converted.get<sol::object>();
-        }));
+                if (aValue != sol::nil)
+                {
+                    if (aValue.get_type() == sol::type::number)
+                    {
+                        result.hash = aValue.as<uint64_t>();
+                    }
+                    else if (IsLuaCData(aValue))
+                    {
+                        const std::string str = lua["tostring"](aValue);
+                        result.hash = std::stoull(str);
+                    }
+                    else if (aValue.get_type() == sol::type::string)
+                    {
+                        result.hash = RED4ext::FNV1a64(aValue.as<const char*>());
+                    }
+                }
 
-    globals.new_usertype<GameOptions>("GameOptions",
-        sol::meta_function::construct, sol::no_constructor,
-        "Print", &GameOptions::Print,
-        "Get", &GameOptions::Get,
-        "GetBool", &GameOptions::GetBool,
-        "GetInt", &GameOptions::GetInt,
-        "GetFloat", &GameOptions::GetFloat,
-        "Set", &GameOptions::Set,
-        "SetBool", &GameOptions::SetBool,
-        "SetInt", &GameOptions::SetInt,
-        "SetFloat", &GameOptions::SetFloat,
-        "Toggle", &GameOptions::Toggle,
-        "Dump", &GameOptions::Dump,
-        "List", &GameOptions::List);
+                return sol::object(lua, sol::in_place, std::move(result));
+            }),
+        "hash",
+        sol::property(
+            [](gamedataLocKeyWrapper& aThis, sol::this_state aState) -> sol::object
+            {
+                sol::state_view lua(aState);
+                const auto converted = lua.script(fmt::format("return {}ull", aThis.hash));
+                return converted.get<sol::object>();
+            }));
 
-    globals["Override"] = [this](const std::string& acTypeName, const std::string& acFullName,
-                                 sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
+    globals.new_usertype<GameOptions>(
+        "GameOptions", sol::meta_function::construct, sol::no_constructor, "Print", &GameOptions::Print, "Get", &GameOptions::Get, "GetBool", &GameOptions::GetBool, "GetInt",
+        &GameOptions::GetInt, "GetFloat", &GameOptions::GetFloat, "Set", &GameOptions::Set, "SetBool", &GameOptions::SetBool, "SetInt", &GameOptions::SetInt, "SetFloat",
+        &GameOptions::SetFloat, "Toggle", &GameOptions::Toggle, "Dump", &GameOptions::Dump, "List", &GameOptions::List);
+
+    globals["Override"] = [this](const std::string& acTypeName, const std::string& acFullName, sol::protected_function aFunction, sol::this_environment aThisEnv) -> void
+    {
         m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, true);
     };
 
-    globals["ObserveBefore"] = [this](const std::string& acTypeName, const std::string& acFullName,
-                                      sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
+    globals["ObserveBefore"] = [this](const std::string& acTypeName, const std::string& acFullName, sol::protected_function aFunction, sol::this_environment aThisEnv) -> void
+    {
         m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, false, false);
     };
 
-    globals["ObserveAfter"] = [this](const std::string& acTypeName, const std::string& acFullName,
-                                     sol::protected_function aFunction, sol::this_environment aThisEnv) -> void {
+    globals["ObserveAfter"] = [this](const std::string& acTypeName, const std::string& acFullName, sol::protected_function aFunction, sol::this_environment aThisEnv) -> void
+    {
         m_override.Override(acTypeName, acFullName, aFunction, aThisEnv, false, true);
     };
 
@@ -493,19 +392,13 @@ void Scripting::PostInitializeTweakDB()
     auto& luaVm = lua.Get();
     auto& globals = m_sandbox.GetGlobals();
 
-    luaVm.new_usertype<TweakDB>("__TweakDB",
-        sol::meta_function::construct, sol::no_constructor,
-        "DebugStats", &TweakDB::DebugStats,
-        "GetRecords", &TweakDB::GetRecords,
-        "GetRecord", overload(&TweakDB::GetRecordByName, &TweakDB::GetRecord),
-        "Query", overload(&TweakDB::QueryByName, &TweakDB::Query),
-        "GetFlat", overload(&TweakDB::GetFlatByName, &TweakDB::GetFlat),
-        "SetFlats", overload(&TweakDB::SetFlatsByName, &TweakDB::SetFlats),
-        "SetFlat", overload(&TweakDB::SetFlatByNameAutoUpdate, &TweakDB::SetFlatAutoUpdate, &TweakDB::SetTypedFlat, &TweakDB::SetTypedFlatByName),
-        "SetFlatNoUpdate", overload(&TweakDB::SetFlatByName, &TweakDB::SetFlat),
-        "Update", overload(&TweakDB::UpdateRecordByName, &TweakDB::UpdateRecordByID, &TweakDB::UpdateRecord),
-        "CreateRecord", overload(&TweakDB::CreateRecordToID, &TweakDB::CreateRecord),
-        "CloneRecord", overload(&TweakDB::CloneRecordByName, &TweakDB::CloneRecordToID, &TweakDB::CloneRecord),
+    luaVm.new_usertype<TweakDB>(
+        "__TweakDB", sol::meta_function::construct, sol::no_constructor, "DebugStats", &TweakDB::DebugStats, "GetRecords", &TweakDB::GetRecords, "GetRecord",
+        overload(&TweakDB::GetRecordByName, &TweakDB::GetRecord), "Query", overload(&TweakDB::QueryByName, &TweakDB::Query), "GetFlat",
+        overload(&TweakDB::GetFlatByName, &TweakDB::GetFlat), "SetFlats", overload(&TweakDB::SetFlatsByName, &TweakDB::SetFlats), "SetFlat",
+        overload(&TweakDB::SetFlatByNameAutoUpdate, &TweakDB::SetFlatAutoUpdate, &TweakDB::SetTypedFlat, &TweakDB::SetTypedFlatByName), "SetFlatNoUpdate",
+        overload(&TweakDB::SetFlatByName, &TweakDB::SetFlat), "Update", overload(&TweakDB::UpdateRecordByName, &TweakDB::UpdateRecordByID, &TweakDB::UpdateRecord), "CreateRecord",
+        overload(&TweakDB::CreateRecordToID, &TweakDB::CreateRecord), "CloneRecord", overload(&TweakDB::CloneRecordByName, &TweakDB::CloneRecordToID, &TweakDB::CloneRecord),
         "DeleteRecord", overload(&TweakDB::DeleteRecordByID, &TweakDB::DeleteRecord));
 
     globals["TweakDB"] = TweakDB(m_lua.AsRef());
@@ -575,11 +468,12 @@ void Scripting::PostInitializeMods()
         const auto* pRtti = RED4ext::CRTTISystem::Get();
 
         uint32_t count = 0;
-        pRtti->types.for_each([&count](RED4ext::CName name, RED4ext::CBaseRTTIType*&)
-        {
-            Log::Info(name.ToString());
-            count++;
-        });
+        pRtti->types.for_each(
+            [&count](RED4ext::CName name, RED4ext::CBaseRTTIType*&)
+            {
+                Log::Info(name.ToString());
+                count++;
+            });
         const sol::environment cEnv = aThisEnv;
         const auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
         logger->info("Dumped {} types", count);
@@ -588,11 +482,11 @@ void Scripting::PostInitializeMods()
 #ifdef CET_DEBUG
     globals["DumpVtables"] = [this]
     {
-        // Hacky RTTI dump, this should technically only dump IScriptable instances and RTTI types as they are guaranteed to have a vtable
-        // but there can occasionally be Class types that are not IScriptable derived that still have a vtable
-        // some hierarchies may also not be accurately reflected due to hash ordering
-        // technically this table is flattened and contains all hierarchy, but traversing the hierarchy first reduces
-        // error when there are classes that instantiate a parent class but don't actually have a subclass instance
+        // Hacky RTTI dump, this should technically only dump IScriptable instances and RTTI types as they are
+        // guaranteed to have a vtable but there can occasionally be Class types that are not IScriptable derived that
+        // still have a vtable some hierarchies may also not be accurately reflected due to hash ordering technically
+        // this table is flattened and contains all hierarchy, but traversing the hierarchy first reduces error when
+        // there are classes that instantiate a parent class but don't actually have a subclass instance
         GameMainThread::Get().AddRunningTask(&GameDump::DumpVTablesTask::Run);
     };
     globals["DumpReflection"] = [this](bool aVerbose, bool aExtendedPath, bool aPropertyHolders)
@@ -621,7 +515,8 @@ void Scripting::RegisterOverrides()
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
 
-    luaVm["RegisterGlobalInputListener"] = [](WeakReference& aSelf, sol::this_environment aThisEnv) {
+    luaVm["RegisterGlobalInputListener"] = [](WeakReference& aSelf, sol::this_environment aThisEnv)
+    {
         const sol::protected_function unregisterInputListener = aSelf.Index("UnregisterInputListener", aThisEnv);
         const sol::protected_function registerInputListener = aSelf.Index("RegisterInputListener", aThisEnv);
 
@@ -724,7 +619,7 @@ bool Scripting::ExecuteLua(const std::string& acCommand) const
         const sol::error cError = cResult;
         spdlog::get("scripting")->error(cError.what());
     }
-    catch(std::exception& e)
+    catch (std::exception& e)
     {
         spdlog::get("scripting")->error(e.what());
     }
@@ -906,8 +801,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
                 const auto* pType = static_cast<RED4ext::CClass*>(aObject.as<StrongReference*>()->m_pType);
                 if (pType && pType->IsA(pSubType))
                 {
-                    result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>(
-                        aObject.as<StrongReference>().m_strongHandle);
+                    result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>(aObject.as<StrongReference>().m_strongHandle);
                 }
             }
             else if (aObject.is<WeakReference>())
@@ -916,8 +810,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
                 const auto* pType = static_cast<RED4ext::CClass*>(aObject.as<WeakReference*>()->m_pType);
                 if (pType && pType->IsA(pSubType))
                 {
-                    result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>(
-                        aObject.as<WeakReference>().m_weakHandle);
+                    result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>(aObject.as<WeakReference>().m_weakHandle);
                 }
             }
             else if (!hasData)
@@ -933,8 +826,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
                 const auto* pType = static_cast<RED4ext::CClass*>(aObject.as<WeakReference*>()->m_pType);
                 if (pType && pType->IsA(pSubType))
                 {
-                    result.value = apAllocator->New<RED4ext::WeakHandle<RED4ext::IScriptable>>(
-                        aObject.as<WeakReference>().m_weakHandle);
+                    result.value = apAllocator->New<RED4ext::WeakHandle<RED4ext::IScriptable>>(aObject.as<WeakReference>().m_weakHandle);
                 }
             }
             else if (aObject.is<StrongReference>()) // Handle Implicit Cast
@@ -943,8 +835,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
                 const auto* pType = static_cast<RED4ext::CClass*>(aObject.as<StrongReference*>()->m_pType);
                 if (pType && pType->IsA(pSubType))
                 {
-                    result.value = apAllocator->New<RED4ext::WeakHandle<RED4ext::IScriptable>>(
-                        aObject.as<StrongReference>().m_strongHandle);
+                    result.value = apAllocator->New<RED4ext::WeakHandle<RED4ext::IScriptable>>(aObject.as<StrongReference>().m_strongHandle);
                 }
             }
             else if (!hasData)

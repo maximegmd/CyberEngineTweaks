@@ -7,13 +7,16 @@
 
 namespace
 {
-    VKBind s_overlayToggleBind{ "overlay_key", "Overlay Key", "Use this hotkey to toggle overlay on and off.", [] {
+VKBind s_overlayToggleBind{
+    "overlay_key", "Overlay Key", "Use this hotkey to toggle overlay on and off.",
+    []
+    {
         if (!CET::Get().GetBindings().IsRecordingBind())
             CET::Get().GetOverlay().Toggle();
     }};
-    VKBindInfo s_overlayToggleBindInfo{s_overlayToggleBind, 0, 0, false};
-    VKModBind s_overlayToggleModBind{"cet", s_overlayToggleBind.ID};
-}
+VKBindInfo s_overlayToggleBindInfo{s_overlayToggleBind, 0, 0, false};
+VKModBind s_overlayToggleModBind{"cet", s_overlayToggleBind.ID};
+} // namespace
 
 bool VKBindInfo::operator==(const std::string& id) const
 {
@@ -41,11 +44,7 @@ WidgetResult Bindings::OnEnable()
 WidgetResult Bindings::OnPopup()
 {
     const auto ret = UnsavedChangesPopup(
-        "Bindings",
-        m_openChangesModal,
-        m_madeChanges,
-        [this]{ Save(); },
-        [this]{ ResetChanges(); });
+        "Bindings", m_openChangesModal, m_madeChanges, [this] { Save(); }, [this] { ResetChanges(); });
     m_madeChanges = ret == TChangedCBResult::CHANGED;
     m_popupResult = ret;
 
@@ -170,9 +169,9 @@ bool Bindings::FirstTimeSetup()
 
     if (ImGui::BeginPopupModal("CET First Time Setup", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        const auto shorterTextSz { ImGui::CalcTextSize("Combo can be composed from up to 4 keys.").x };
-        const auto longerTextSz { ImGui::CalcTextSize("Please, bind some key combination for toggling overlay!").x };
-        const auto diffTextSz { longerTextSz - shorterTextSz };
+        const auto shorterTextSz{ImGui::CalcTextSize("Combo can be composed from up to 4 keys.").x};
+        const auto longerTextSz{ImGui::CalcTextSize("Please, bind some key combination for toggling overlay!").x};
+        const auto diffTextSz{longerTextSz - shorterTextSz};
 
         ImGui::TextUnformatted("Please, bind some key combination for toggling overlay!");
         ImGui::SetCursorPosX(diffTextSz / 2);
@@ -282,7 +281,8 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
             if (m_bindings.IsFirstKeyUsed(codeBind))
             {
                 // note - creating copy so we are not destroying reference to modBind when we unbind
-                const auto checkModBind = [this, &aVKBindInfo, codeBind](const VKModBind modBind) {
+                const auto checkModBind = [this, &aVKBindInfo, codeBind](const VKModBind modBind)
+                {
                     const auto cetBind = modBind == s_overlayToggleModBind;
                     if (!cetBind || aVKBindInfo.Bind.IsHotkey())
                     {
@@ -332,7 +332,7 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
     const bool unbindable = bound && acModBind != s_overlayToggleModBind;
     const bool modified = aVKBindInfo.CodeBind != aVKBindInfo.SavedCodeBind;
 
-    ImVec4 curTextColor { ImGui::GetStyleColorVec4(ImGuiCol_Text) };
+    ImVec4 curTextColor{ImGui::GetStyleColorVec4(ImGuiCol_Text)};
     if (!bound)
         curTextColor = ImVec4(1.0f, modified ? 0.5f : 0.0f, 0.0f, 1.0f);
     else if (modified)
@@ -374,8 +374,8 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
     const auto currentBindState = aVKBindInfo.IsBinding ? m_bindings.GetLastRecordingResult() : aVKBindInfo.CodeBind;
     ImGui::PushID(&aVKBindInfo.CodeBind);
     if (ImGui::Button(
-        aVKBindInfo.IsBinding && currentBindState == 0 ? "Binding..." : VKBindings::GetBindString(currentBindState).c_str(),
-        ImVec2(unbindable ? -(ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.x) : -FLT_MIN, 0)))
+            aVKBindInfo.IsBinding && currentBindState == 0 ? "Binding..." : VKBindings::GetBindString(currentBindState).c_str(),
+            ImVec2(unbindable ? -(ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.x) : -FLT_MIN, 0)))
     {
         if (!aVKBindInfo.IsBinding && !isRecording)
         {
@@ -441,21 +441,24 @@ void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoq
     // transform mod name to nicer format until modinfo is in
     std::string activeModName = acModName == s_overlayToggleModBind.ModName ? "Cyber Engine Tweaks" : acModName;
     bool capitalize = true;
-    std::ranges::transform(std::as_const(activeModName), activeModName.begin(), [&capitalize](char c) {
-        if (!std::isalnum(c))
+    std::ranges::transform(
+        std::as_const(activeModName), activeModName.begin(),
+        [&capitalize](char c)
         {
-            capitalize = true;
-            return ' ';
-        }
-        if (capitalize)
-        {
-            capitalize = false;
-            return static_cast<char>(std::toupper(c));
-        }
-        return c;
-    });
+            if (!std::isalnum(c))
+            {
+                capitalize = true;
+                return ' ';
+            }
+            if (capitalize)
+            {
+                capitalize = false;
+                return static_cast<char>(std::toupper(c));
+            }
+            return c;
+        });
 
-    auto headerOpen =  aSimplified;
+    auto headerOpen = aSimplified;
     if (!headerOpen)
         headerOpen = ImGui::CollapsingHeader(activeModName.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
 
@@ -471,7 +474,8 @@ void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoq
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + GetCenteredOffsetForText("Hotkeys"));
             ImGui::TextUnformatted("Hotkeys");
             if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-                ImGui::SetTooltip("Hotkeys react after assigned key combination has been pressed and subsequently released. You can bind up to 4 key combination to them.");
+                ImGui::SetTooltip("Hotkeys react after assigned key combination has been pressed and subsequently "
+                                  "released. You can bind up to 4 key combination to them.");
             ImGui::Separator();
         }
 

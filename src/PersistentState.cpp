@@ -15,14 +15,8 @@ void OverlayPersistentState::Load(const nlohmann::json& aConfig)
 
 nlohmann::json OverlayPersistentState::Save() const
 {
-    return {
-      {"console_toggled", ConsoleToggled},
-      {"bindings_toggled", BindingsToggled},
-      {"settings_toggled", SettingsToggled},
-      {"tweakdbeditor_toggled", TweakDBEditorToggled},
-      {"gamelog_toggled", GameLogToggled},
-      {"imguidebug_toggled", ImGuiDebugToggled}
-    };
+    return {{"console_toggled", ConsoleToggled}, {"bindings_toggled", BindingsToggled},    {"settings_toggled", SettingsToggled}, {"tweakdbeditor_toggled", TweakDBEditorToggled},
+            {"gamelog_toggled", GameLogToggled}, {"imguidebug_toggled", ImGuiDebugToggled}};
 }
 
 void ConsolePersistentState::Load(Options& aOptions, const nlohmann::json& aConfig)
@@ -35,9 +29,7 @@ void ConsolePersistentState::Load(Options& aOptions, const nlohmann::json& aConf
 
 nlohmann::json ConsolePersistentState::Save() const
 {
-    return {
-      {"history", History}
-    };
+    return {{"history", History}};
 }
 
 void PersistentState::Load()
@@ -47,7 +39,7 @@ void PersistentState::Load()
         return;
 
     std::ifstream configFile(path);
-    if(!configFile)
+    if (!configFile)
         return;
 
     auto state = nlohmann::json::parse(configFile);
@@ -66,9 +58,7 @@ void PersistentState::Load()
 
 void PersistentState::Save() const
 {
-    nlohmann::json state = {
-      {"overlay", Overlay.Save()}
-    };
+    nlohmann::json state = {{"overlay", Overlay.Save()}};
 
     if (m_options.Developer.PersistentConsole)
         state["console"] = Console.Save();
@@ -85,5 +75,10 @@ PersistentState::PersistentState(Paths& aPaths, Options& aOptions)
     Load();
     Save();
 
-    GameMainThread::Get().AddShutdownTask([this]{ Save(); return true; });
+    GameMainThread::Get().AddShutdownTask(
+        [this]
+        {
+            Save();
+            return true;
+        });
 }

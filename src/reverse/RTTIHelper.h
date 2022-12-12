@@ -12,19 +12,17 @@ struct RTTIHelper
     ~RTTIHelper() = default;
 
     void AddFunctionAlias(const std::string& acAliasFuncName, const std::string& acOrigClassName, const std::string& acOrigFuncName);
-    void AddFunctionAlias(const std::string& acAliasClassName, const std::string& acAliasFuncName,
-                          const std::string& acOrigClassName, const std::string& acOrigFuncName);
+    void AddFunctionAlias(const std::string& acAliasClassName, const std::string& acAliasFuncName, const std::string& acOrigClassName, const std::string& acOrigFuncName);
 
     sol::function ResolveFunction(const std::string& acFuncName);
     sol::function ResolveFunction(RED4ext::CClass* apClass, const std::string& acFuncName, bool aIsMember);
 
     RED4ext::IScriptable* ResolveHandle(RED4ext::CBaseFunction* apFunc, sol::variadic_args& aArgs, uint64_t& aArgOffset) const;
-    sol::variadic_results ExecuteFunction(RED4ext::CBaseFunction* apFunc, RED4ext::IScriptable* apContext,
-                                          sol::variadic_args aLuaArgs, uint64_t aLuaArgOffset,
-                                          std::string& aErrorMessage, bool aAllowNull = false) const;
+    sol::variadic_results ExecuteFunction(
+        RED4ext::CBaseFunction* apFunc, RED4ext::IScriptable* apContext, sol::variadic_args aLuaArgs, uint64_t aLuaArgOffset, std::string& aErrorMessage,
+        bool aAllowNull = false) const;
 
-    RED4ext::ScriptInstance NewInstance(RED4ext::CBaseRTTIType* apType, sol::optional<sol::table> aProps,
-                                        TiltedPhoques::Allocator* apAllocator) const;
+    RED4ext::ScriptInstance NewInstance(RED4ext::CBaseRTTIType* apType, sol::optional<sol::table> aProps, TiltedPhoques::Allocator* apAllocator) const;
     sol::object NewInstance(RED4ext::CBaseRTTIType* apType, sol::optional<sol::table> aProps) const;
     sol::object NewHandle(RED4ext::CBaseRTTIType* apType, sol::optional<sol::table> aProps) const;
 
@@ -43,7 +41,6 @@ struct RTTIHelper
     static RTTIHelper& Get();
 
 private:
-
     RTTIHelper(const LockableState& acLua, LuaSandbox& apSandbox);
 
     void InitializeRTTI();
@@ -63,11 +60,9 @@ private:
     RED4ext::ScriptInstance NewPlaceholder(RED4ext::CBaseRTTIType* apType, TiltedPhoques::Allocator* apAllocator) const;
     bool IsClassReferenceType(RED4ext::CClass* apClass) const;
     void FreeInstance(RED4ext::CStackType& aStackType, bool aOwnValue, bool aNewValue, TiltedPhoques::Allocator* apAllocator) const;
-    void FreeInstance(RED4ext::CBaseRTTIType* apType, void* apValue, bool aOwnValue, bool aNewValue,
-                      TiltedPhoques::Allocator* apAllocator) const;
+    void FreeInstance(RED4ext::CBaseRTTIType* apType, void* apValue, bool aOwnValue, bool aNewValue, TiltedPhoques::Allocator* apAllocator) const;
 
-    bool ExecuteFunction(RED4ext::CBaseFunction* apFunc, RED4ext::IScriptable* apContext,
-                         TiltedPhoques::Vector<RED4ext::CStackType>& aArgs, RED4ext::CStackType& aResult) const;
+    bool ExecuteFunction(RED4ext::CBaseFunction* apFunc, RED4ext::IScriptable* apContext, TiltedPhoques::Vector<RED4ext::CStackType>& aArgs, RED4ext::CStackType& aResult) const;
 
     enum
     {
@@ -85,10 +80,10 @@ private:
     };
 
     LockableState m_lua;
-    RED4ext::CRTTISystem* m_pRtti{ nullptr };
-    RED4ext::CClass* m_pGameInstanceType{ nullptr };
-    ScriptGameInstance* m_pGameInstance{ nullptr };
-    RED4ext::IScriptable* m_pPlayerSystem{ nullptr };
+    RED4ext::CRTTISystem* m_pRtti{nullptr};
+    RED4ext::CClass* m_pGameInstanceType{nullptr};
+    ScriptGameInstance* m_pGameInstance{nullptr};
+    RED4ext::IScriptable* m_pPlayerSystem{nullptr};
     RedFunctionMap m_extendedFunctions;
     LuaFunctionMap m_resolvedFunctions[2];
     LuaSandbox& m_sandbox;

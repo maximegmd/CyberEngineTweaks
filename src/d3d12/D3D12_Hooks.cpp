@@ -10,18 +10,20 @@
 
 #include <VersionHelpers.h>
 
-HRESULT D3D12::PresentDownlevel(ID3D12CommandQueueDownlevel* apCommandQueueDownlevel, ID3D12GraphicsCommandList* apOpenCommandList, ID3D12Resource* apSourceTex2D, HWND ahWindow, D3D12_DOWNLEVEL_PRESENT_FLAGS aFlags)
+HRESULT D3D12::PresentDownlevel(
+    ID3D12CommandQueueDownlevel* apCommandQueueDownlevel, ID3D12GraphicsCommandList* apOpenCommandList, ID3D12Resource* apSourceTex2D, HWND ahWindow,
+    D3D12_DOWNLEVEL_PRESENT_FLAGS aFlags)
 {
     if (CET::Get().GetOptions().Patches.DisableWin7Vsync)
         aFlags &= ~D3D12_DOWNLEVEL_PRESENT_FLAG_WAIT_FOR_VBLANK;
 
     auto& d3d12 = CET::Get().GetD3D12();
 
-    // On Windows 7 there is no swap chain to query the current backbuffer index. Instead do a reverse lookup in the known backbuffer list
-    const auto cbegin = d3d12.m_downlevelBackbuffers.size() >= g_numDownlevelBackbuffersRequired
-        ? d3d12.m_downlevelBackbuffers.cend() - g_numDownlevelBackbuffersRequired
-        : d3d12.m_downlevelBackbuffers.cbegin();
-    auto it = std::find_if(cbegin, d3d12.m_downlevelBackbuffers.cend(), [apSourceTex2D](const auto& downlevelBackbuffer){ return downlevelBackbuffer.Get() == apSourceTex2D; });
+    // On Windows 7 there is no swap chain to query the current backbuffer index. Instead do a reverse lookup in the
+    // known backbuffer list
+    const auto cbegin = d3d12.m_downlevelBackbuffers.size() >= g_numDownlevelBackbuffersRequired ? d3d12.m_downlevelBackbuffers.cend() - g_numDownlevelBackbuffersRequired
+                                                                                                 : d3d12.m_downlevelBackbuffers.cbegin();
+    auto it = std::find_if(cbegin, d3d12.m_downlevelBackbuffers.cend(), [apSourceTex2D](const auto& downlevelBackbuffer) { return downlevelBackbuffer.Get() == apSourceTex2D; });
     if (it == d3d12.m_downlevelBackbuffers.cend())
     {
         if (d3d12.m_initialized)
@@ -49,16 +51,17 @@ HRESULT D3D12::PresentDownlevel(ID3D12CommandQueueDownlevel* apCommandQueueDownl
     return d3d12.m_realPresentD3D12Downlevel(apCommandQueueDownlevel, apOpenCommandList, apSourceTex2D, ahWindow, aFlags);
 }
 
-HRESULT D3D12::CreateCommittedResource(ID3D12Device* apDevice, const D3D12_HEAP_PROPERTIES* acpHeapProperties, D3D12_HEAP_FLAGS aHeapFlags, const D3D12_RESOURCE_DESC* acpDesc,
+HRESULT D3D12::CreateCommittedResource(
+    ID3D12Device* apDevice, const D3D12_HEAP_PROPERTIES* acpHeapProperties, D3D12_HEAP_FLAGS aHeapFlags, const D3D12_RESOURCE_DESC* acpDesc,
     D3D12_RESOURCE_STATES aInitialResourceState, const D3D12_CLEAR_VALUE* acpOptimizedClearValue, const IID* acpRIID, void** appvResource)
 {
     auto& d3d12 = CET::Get().GetD3D12();
 
     // Check if this is a backbuffer resource being created
     bool isBackBuffer = false;
-    if (acpHeapProperties != nullptr && acpHeapProperties->Type == D3D12_HEAP_TYPE_DEFAULT && aHeapFlags == D3D12_HEAP_FLAG_NONE &&
-        acpDesc != nullptr && acpDesc->Flags == D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET && aInitialResourceState == D3D12_RESOURCE_STATE_COMMON &&
-        acpOptimizedClearValue == nullptr && acpRIID != nullptr && IsEqualGUID(*acpRIID, __uuidof(ID3D12Resource)))
+    if (acpHeapProperties != nullptr && acpHeapProperties->Type == D3D12_HEAP_TYPE_DEFAULT && aHeapFlags == D3D12_HEAP_FLAG_NONE && acpDesc != nullptr &&
+        acpDesc->Flags == D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET && aInitialResourceState == D3D12_RESOURCE_STATE_COMMON && acpOptimizedClearValue == nullptr &&
+        acpRIID != nullptr && IsEqualGUID(*acpRIID, __uuidof(ID3D12Resource)))
     {
         isBackBuffer = true;
     }
@@ -73,7 +76,8 @@ HRESULT D3D12::CreateCommittedResource(ID3D12Device* apDevice, const D3D12_HEAP_
 
         if (d3d12.m_initialized)
         {
-            // Reset state (a resize may have happened), but don't touch the backbuffer list. The downlevel Present hook will take care of this
+            // Reset state (a resize may have happened), but don't touch the backbuffer list. The downlevel Present hook
+            // will take care of this
             d3d12.ResetState(false);
         }
     }
@@ -81,8 +85,7 @@ HRESULT D3D12::CreateCommittedResource(ID3D12Device* apDevice, const D3D12_HEAP_
     return result;
 }
 
-void D3D12::ExecuteCommandLists(ID3D12CommandQueue* apCommandQueue, UINT aNumCommandLists,
-                                ID3D12CommandList* const* apcpCommandLists)
+void D3D12::ExecuteCommandLists(ID3D12CommandQueue* apCommandQueue, UINT aNumCommandLists, ID3D12CommandList* const* apcpCommandLists)
 {
     auto& d3d12 = CET::Get().GetD3D12();
     if (d3d12.m_pCommandQueue == nullptr)
@@ -123,7 +126,8 @@ void* D3D12::CRenderNode_Present_InternalPresent(int32_t* apDeviceIndex, uint8_t
         d3d12.Update();
     else
     {
-        // NOTE: checking against Windows 8 as Windows 10 requires specific compatibility manifest to be detected by these
+        // NOTE: checking against Windows 8 as Windows 10 requires specific compatibility manifest to be detected by
+        // these
         //       DX12 does not work on Windows 8 and 8.1 so we should be safe with this check
         if (IsWindows8OrGreater())
         {
@@ -133,17 +137,20 @@ void* D3D12::CRenderNode_Present_InternalPresent(int32_t* apDeviceIndex, uint8_t
         }
         else
         {
-            std::call_once(s_kieroOnce, [] {
-                if (kiero::init() != kiero::Status::Success)
-                    Log::Error("Kiero failed!");
-                else
+            std::call_once(
+                s_kieroOnce,
+                []
                 {
-                    std::string_view d3d12type = kiero::isDownLevelDevice() ? "D3D12on7" : "D3D12";
-                    Log::Info("Kiero initialized for {}", d3d12type);
+                    if (kiero::init() != kiero::Status::Success)
+                        Log::Error("Kiero failed!");
+                    else
+                    {
+                        std::string_view d3d12type = kiero::isDownLevelDevice() ? "D3D12on7" : "D3D12";
+                        Log::Info("Kiero initialized for {}", d3d12type);
 
-                    CET::Get().GetD3D12().Hook();
-                }
-            });
+                        CET::Get().GetD3D12().Hook();
+                    }
+                });
         }
     }
 
@@ -205,8 +212,7 @@ void D3D12::Hook()
         int d3d12FailedHooksCount = 0;
         int d3d12CompleteHooksCount = 0;
 
-        if (kiero::bind(175, reinterpret_cast<void**>(&m_realPresentD3D12Downlevel), reinterpret_cast<void*>(&PresentDownlevel)) !=
-            kiero::Status::Success)
+        if (kiero::bind(175, reinterpret_cast<void**>(&m_realPresentD3D12Downlevel), reinterpret_cast<void*>(&PresentDownlevel)) != kiero::Status::Success)
         {
             Log::Error("D3D12on7: Downlevel Present hook failed!");
             ++d3d12FailedHooksCount;
@@ -217,8 +223,7 @@ void D3D12::Hook()
             ++d3d12CompleteHooksCount;
         }
 
-        if (kiero::bind(27, reinterpret_cast<void**>(&m_realCreateCommittedResource), reinterpret_cast<void*>(&CreateCommittedResource)) !=
-            kiero::Status::Success)
+        if (kiero::bind(27, reinterpret_cast<void**>(&m_realCreateCommittedResource), reinterpret_cast<void*>(&CreateCommittedResource)) != kiero::Status::Success)
         {
             Log::Error("D3D12on7: CreateCommittedResource Hook failed!");
             ++d3d12FailedHooksCount;
@@ -229,8 +234,7 @@ void D3D12::Hook()
             ++d3d12CompleteHooksCount;
         }
 
-        if (kiero::bind(54, reinterpret_cast<void**>(&m_realExecuteCommandLists), reinterpret_cast<void*>(&ExecuteCommandLists)) !=
-            kiero::Status::Success)
+        if (kiero::bind(54, reinterpret_cast<void**>(&m_realExecuteCommandLists), reinterpret_cast<void*>(&ExecuteCommandLists)) != kiero::Status::Success)
         {
             Log::Error("D3D12on7: ExecuteCommandLists hook failed!");
             ++d3d12FailedHooksCount;
@@ -242,11 +246,9 @@ void D3D12::Hook()
         }
 
         if (d3d12FailedHooksCount == 0)
-            Log::Info("D3D12on7: hook complete. ({}/{})", d3d12CompleteHooksCount,
-                         d3d12CompleteHooksCount + d3d12FailedHooksCount);
+            Log::Info("D3D12on7: hook complete. ({}/{})", d3d12CompleteHooksCount, d3d12CompleteHooksCount + d3d12FailedHooksCount);
         else
-            Log::Error("D3D12on7: hook failed! ({}/{})", d3d12CompleteHooksCount,
-                          d3d12CompleteHooksCount + d3d12FailedHooksCount);
+            Log::Error("D3D12on7: hook failed! ({}/{})", d3d12CompleteHooksCount, d3d12CompleteHooksCount + d3d12FailedHooksCount);
     }
     else
         Log::Info("Skipping internal d3d12 hook, using game method");
@@ -258,25 +260,21 @@ void D3D12::HookGame()
     const RED4ext::RelocPtr<void> resizeInternal(CyberEngineTweaks::Addresses::CRenderGlobal_Resize);
     const RED4ext::RelocPtr<void> shutdownInternal(CyberEngineTweaks::Addresses::CRenderGlobal_Shutdown);
 
-    if (MH_CreateHook(presentInternal.GetAddr(), reinterpret_cast<void*>(&CRenderNode_Present_InternalPresent),
-                      reinterpret_cast<void**>(&m_realInternalPresent)) != MH_OK ||
+    if (MH_CreateHook(presentInternal.GetAddr(), reinterpret_cast<void*>(&CRenderNode_Present_InternalPresent), reinterpret_cast<void**>(&m_realInternalPresent)) != MH_OK ||
         MH_EnableHook(presentInternal.GetAddr()) != MH_OK)
         Log::Error("Could not hook CRenderNode_Present_InternalPresent function!");
     else
         Log::Info("CRenderNode_Present_InternalPresent function hook complete!");
 
-    if (MH_CreateHook(resizeInternal.GetAddr(), reinterpret_cast<void*>(&CRenderGlobal_Resize),
-                      reinterpret_cast<void**>(&m_realInternalResize)) != MH_OK ||
+    if (MH_CreateHook(resizeInternal.GetAddr(), reinterpret_cast<void*>(&CRenderGlobal_Resize), reinterpret_cast<void**>(&m_realInternalResize)) != MH_OK ||
         MH_EnableHook(resizeInternal.GetAddr()) != MH_OK)
         Log::Error("Could not hook CRenderGlobal_Resize function!");
     else
         Log::Info("CRenderGlobal_Resize function hook complete!");
 
-    if (MH_CreateHook(shutdownInternal.GetAddr(), reinterpret_cast<void*>(&CRenderGlobal_Shutdown),
-                      reinterpret_cast<void**>(&m_realInternalShutdown)) != MH_OK ||
+    if (MH_CreateHook(shutdownInternal.GetAddr(), reinterpret_cast<void*>(&CRenderGlobal_Shutdown), reinterpret_cast<void**>(&m_realInternalShutdown)) != MH_OK ||
         MH_EnableHook(shutdownInternal.GetAddr()) != MH_OK)
         Log::Error("Could not hook CRenderGlobal_Shutdown function!");
     else
         Log::Info("CRenderGlobal_Shutdown function hook complete!");
 }
-

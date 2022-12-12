@@ -5,23 +5,23 @@
 #include "LuaRED.h"
 #include "RTTIHelper.h"
 
-namespace TiltedPhoques {
-    struct Allocator;
+namespace TiltedPhoques
+{
+struct Allocator;
 }
 
 namespace Converter
 {
-    size_t Size(RED4ext::CBaseRTTIType* apRtti);
-    sol::object ToLua(RED4ext::CStackType& aResult, TiltedPhoques::Locked<sol::state, std::recursive_mutex>& aLua);
-    RED4ext::CStackType ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator);
-    void ToRED(sol::object aObject, RED4ext::CStackType* apType);
-}
+size_t Size(RED4ext::CBaseRTTIType* apRtti);
+sol::object ToLua(RED4ext::CStackType& aResult, TiltedPhoques::Locked<sol::state, std::recursive_mutex>& aLua);
+RED4ext::CStackType ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator);
+void ToRED(sol::object aObject, RED4ext::CStackType* apType);
+} // namespace Converter
 
 // Specialization manages special case implicit casting
 struct CNameConverter : LuaRED<CName, "CName">
 {
-    RED4ext::CStackType ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRtti,
-                              TiltedPhoques::Allocator* apAllocator)
+    RED4ext::CStackType ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator)
     {
         RED4ext::CStackType result;
         if (aObject != sol::nil && aObject.get_type() == sol::type::string) // CName from String implicit cast
@@ -39,7 +39,7 @@ struct CNameConverter : LuaRED<CName, "CName">
         return result;
     }
 
-	void ToRED(sol::object aObject, RED4ext::CStackType* apType)
+    void ToRED(sol::object aObject, RED4ext::CStackType* apType)
     {
         if (aObject != sol::nil && aObject.get_type() == sol::type::string) // CName from String implicit cast
         {
@@ -57,8 +57,7 @@ struct CNameConverter : LuaRED<CName, "CName">
 // Specialization manages special case implicit casting for TweakDBID
 struct TweakDBIDConverter : LuaRED<TweakDBID, "TweakDBID">
 {
-    RED4ext::CStackType ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRtti,
-                              TiltedPhoques::Allocator* apAllocator)
+    RED4ext::CStackType ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator)
     {
         RED4ext::CStackType result;
         if (aObject != sol::nil && aObject.get_type() == sol::type::string)
@@ -74,7 +73,7 @@ struct TweakDBIDConverter : LuaRED<TweakDBID, "TweakDBID">
         return result;
     }
 
-	void ToRED(sol::object aObject, RED4ext::CStackType* apType)
+    void ToRED(sol::object aObject, RED4ext::CStackType* apType)
     {
         if (aObject != sol::nil && aObject.get_type() == sol::type::string)
         {
@@ -90,12 +89,9 @@ struct TweakDBIDConverter : LuaRED<TweakDBID, "TweakDBID">
 // Specialization manages wrapping and converting RT_Enum
 struct EnumConverter : LuaRED<Enum, "Enum">
 {
-    sol::object ToLua(RED4ext::CStackType& aResult, TiltedPhoques::Locked<sol::state, std::recursive_mutex>& aLua)
-	{
-		return make_object(aLua.Get(), Enum(aResult));
-	}
+    sol::object ToLua(RED4ext::CStackType& aResult, TiltedPhoques::Locked<sol::state, std::recursive_mutex>& aLua) { return make_object(aLua.Get(), Enum(aResult)); }
 
-	RED4ext::CStackType ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator)
+    RED4ext::CStackType ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator)
     {
         RED4ext::CStackType result;
         if (aObject.is<Enum>())
@@ -141,7 +137,7 @@ struct EnumConverter : LuaRED<Enum, "Enum">
         return result;
     }
 
-	void ToRED(sol::object aObject, RED4ext::CStackType* apType)
+    void ToRED(sol::object aObject, RED4ext::CStackType* apType)
     {
         if (aObject.is<Enum>())
         {
@@ -173,33 +169,29 @@ struct EnumConverter : LuaRED<Enum, "Enum">
         }
     }
 
-	size_t Size() const noexcept
-	{
-		return m_pRtti ? m_pRtti->GetSize() : 0;
-	}
+    size_t Size() const noexcept { return m_pRtti ? m_pRtti->GetSize() : 0; }
 
-	bool Is(RED4ext::CBaseRTTIType* apRtti) const
-	{
-		if (apRtti->GetType() == RED4ext::ERTTIType::Enum)
-		{
-			m_pRtti = apRtti;
-			return true;
-		}
+    bool Is(RED4ext::CBaseRTTIType* apRtti) const
+    {
+        if (apRtti->GetType() == RED4ext::ERTTIType::Enum)
+        {
+            m_pRtti = apRtti;
+            return true;
+        }
 
-		return false;
-	}
+        return false;
+    }
 };
 
 // Specialization manages wrapping RT_Class
 struct ClassConverter : LuaRED<ClassReference, "ClassReference">
 {
     sol::object ToLua(RED4ext::CStackType& aResult, TiltedPhoques::Locked<sol::state, std::recursive_mutex>& aLua)
-	{
-		return make_object(aLua.Get(), ClassReference(aLua, aResult.type, aResult.value));
-	}
+    {
+        return make_object(aLua.Get(), ClassReference(aLua, aResult.type, aResult.value));
+    }
 
-	RED4ext::CStackType ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRtti,
-                              TiltedPhoques::Allocator* apAllocator)
+    RED4ext::CStackType ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator)
     {
         RED4ext::CStackType result;
         result.type = apRtti;
@@ -213,7 +205,7 @@ struct ClassConverter : LuaRED<ClassReference, "ClassReference">
         }
         // Disabled until new allocator is implemented
         // Current implementation can leak
-        //else if (aObject.get_type() == sol::type::table)
+        // else if (aObject.get_type() == sol::type::table)
         //{
         //    // The implicit table to instance conversion `Game.FindEntityByID({ hash = 1 })` has potential issue:
         //    // When the overloaded function takes an array and an object for the same arg the implicit conversion
@@ -248,32 +240,29 @@ struct ClassConverter : LuaRED<ClassReference, "ClassReference">
         }
     }
 
-	size_t Size() const noexcept
-	{
-		return m_pRtti ? m_pRtti->GetSize() : 0;
-	}
+    size_t Size() const noexcept { return m_pRtti ? m_pRtti->GetSize() : 0; }
 
-	bool Is(RED4ext::CBaseRTTIType* apRtti) const
-	{
-		if (apRtti->GetType() == RED4ext::ERTTIType::Class)
-		{
-			m_pRtti = apRtti;
-			return true;
-		}
+    bool Is(RED4ext::CBaseRTTIType* apRtti) const
+    {
+        if (apRtti->GetType() == RED4ext::ERTTIType::Class)
+        {
+            m_pRtti = apRtti;
+            return true;
+        }
 
-		return false;
-	}
+        return false;
+    }
 };
 
 // Specialization manages wrapping RT_***
 struct RawConverter : LuaRED<UnknownType, "UnknownType">
 {
     sol::object ToLua(RED4ext::CStackType& aResult, TiltedPhoques::Locked<sol::state, std::recursive_mutex>& aLua)
-	{
-		return make_object(aLua.Get(), UnknownType(aLua, aResult.type, aResult.value));
-	}
+    {
+        return make_object(aLua.Get(), UnknownType(aLua, aResult.type, aResult.value));
+    }
 
-	RED4ext::CStackType ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRtti, TiltedPhoques::Allocator*)
+    RED4ext::CStackType ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRtti, TiltedPhoques::Allocator*)
     {
         RED4ext::CStackType result;
         result.type = apRtti;
@@ -301,14 +290,11 @@ struct RawConverter : LuaRED<UnknownType, "UnknownType">
         }
     }
 
-	size_t Size() const noexcept
-	{
-		return m_pRtti ? m_pRtti->GetSize() : 0;
-	}
+    size_t Size() const noexcept { return m_pRtti ? m_pRtti->GetSize() : 0; }
 
-	bool Is(RED4ext::CBaseRTTIType* apRtti) const
-	{
-		m_pRtti = apRtti;
-		return true;
-	}
+    bool Is(RED4ext::CBaseRTTIType* apRtti) const
+    {
+        m_pRtti = apRtti;
+        return true;
+    }
 };

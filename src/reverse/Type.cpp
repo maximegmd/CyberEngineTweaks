@@ -6,7 +6,6 @@
 
 #include <spdlog/fmt/fmt.h>
 
-
 std::string Type::Descriptor::ToString() const
 {
     std::string result;
@@ -102,8 +101,7 @@ std::string Type::FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithH
             continue;
         }
         typeName = param->type->GetName();
-        params.emplace_back(fmt::format("{}{}: {}", param->flags.isOptional ? "[opt] " : "",
-                                    param->name.ToString(), typeName.ToString()));
+        params.emplace_back(fmt::format("{}{}: {}", param->flags.isOptional ? "[opt] " : "", param->name.ToString(), typeName.ToString()));
     }
 
     if (!params.empty())
@@ -140,7 +138,6 @@ std::string Type::FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithH
             typeName = param->type->GetName();
             params.emplace_back(fmt::format("{}: {}", param->name.ToString(), typeName.ToString()));
         }
-
     }
 
     if (!params.empty())
@@ -152,7 +149,6 @@ std::string Type::FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithH
 
         ret << ")";
     }
-
 
     if (aWithHashes)
     {
@@ -193,11 +189,9 @@ std::string Type::GameDump() const
     return str.c_str();
 }
 
-ClassType::ClassType(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView,
-                     RED4ext::CBaseRTTIType* apClass)
+ClassType::ClassType(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::CBaseRTTIType* apClass)
     : Type(aView, apClass)
 {
-
 }
 
 Type::Descriptor ClassType::Dump(bool aWithHashes) const
@@ -284,9 +278,7 @@ sol::object ClassType::NewIndex_Impl(const std::string& acName, sol::object aPar
     return Type::NewIndex_Impl(acName, aParam);
 }
 
-UnknownType::UnknownType(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView,
-                         RED4ext::CBaseRTTIType* apClass,
-                         RED4ext::ScriptInstance apInstance)
+UnknownType::UnknownType(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::CBaseRTTIType* apClass, RED4ext::ScriptInstance apInstance)
     : Type(aView, apClass)
 {
     // Hack for now until we use their allocators

@@ -5,9 +5,9 @@
 struct VKBindInfo
 {
     const VKBind& Bind;
-    uint64_t CodeBind{ 0 };
-    uint64_t SavedCodeBind{ 0 };
-    bool IsBinding{ false };
+    uint64_t CodeBind{0};
+    uint64_t SavedCodeBind{0};
+    bool IsBinding{false};
 
     bool operator==(const std::string& id) const;
 };
@@ -39,11 +39,11 @@ private:
     void UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKBindInfo);
     void UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoques::Vector<VKBindInfo>& aVKBindInfos, size_t aHotkeyCount, bool aSimplified = false);
 
-    TiltedPhoques::Map<std::string, std::pair<TiltedPhoques::Vector<VKBindInfo>, size_t>> m_vkBindInfos{ };
+    TiltedPhoques::Map<std::string, std::pair<TiltedPhoques::Vector<VKBindInfo>, size_t>> m_vkBindInfos{};
     VKBindings& m_bindings;
     LuaVM& m_vm;
 
-    TChangedCBResult m_popupResult{ TChangedCBResult::APPLY };
-    bool m_madeChanges{ false };
-    bool m_openChangesModal{ true };
+    TChangedCBResult m_popupResult{TChangedCBResult::APPLY};
+    bool m_madeChanges{false};
+    bool m_openChangesModal{true};
 };

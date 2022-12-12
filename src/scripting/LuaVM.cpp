@@ -91,7 +91,7 @@ void LuaVM::BlockDraw(bool aBlockDraw)
 
 void LuaVM::RemoveTDBIDDerivedFrom(uint64_t aDBID)
 {
-    std::lock_guard _{ m_tdbidLock };
+    std::lock_guard _{m_tdbidLock};
 
     const auto it = m_tdbidDerivedLookup.find(aDBID);
     if (it != m_tdbidDerivedLookup.end())
@@ -107,7 +107,7 @@ void LuaVM::RemoveTDBIDDerivedFrom(uint64_t aDBID)
 
 bool LuaVM::GetTDBIDDerivedFrom(uint64_t aDBID, TiltedPhoques::Vector<uint64_t>& aDerivedList)
 {
-    std::lock_guard _{ m_tdbidLock };
+    std::lock_guard _{m_tdbidLock};
 
     const auto it = m_tdbidDerivedLookup.find(aDBID & 0xFFFFFFFFFF);
     if (it == m_tdbidDerivedLookup.end())
@@ -120,7 +120,7 @@ bool LuaVM::GetTDBIDDerivedFrom(uint64_t aDBID, TiltedPhoques::Vector<uint64_t>&
 
 uint64_t LuaVM::GetTDBIDBase(uint64_t aDBID)
 {
-    std::lock_guard _{ m_tdbidLock };
+    std::lock_guard _{m_tdbidLock};
 
     const auto it = m_tdbidLookup.find(aDBID & 0xFFFFFFFFFF);
     if (it == m_tdbidLookup.end())
@@ -130,11 +130,11 @@ uint64_t LuaVM::GetTDBIDBase(uint64_t aDBID)
 
 TDBIDLookupEntry LuaVM::GetTDBIDLookupEntry(uint64_t aDBID)
 {
-    std::lock_guard _{ m_tdbidLock };
+    std::lock_guard _{m_tdbidLock};
 
     const auto it = m_tdbidLookup.find(aDBID & 0xFFFFFFFFFF);
     if (it == m_tdbidLookup.end())
-        return { 0, "<unknown>" };
+        return {0, "<unknown>"};
 
     return it->second;
 }
@@ -142,18 +142,17 @@ TDBIDLookupEntry LuaVM::GetTDBIDLookupEntry(uint64_t aDBID)
 std::string LuaVM::GetTDBDIDDebugString(TDBID aDBID) const
 {
     RED4ext::TweakDBID internal(aDBID.value);
-    return internal.HasTDBOffset()
-        ? fmt::format("<TDBID:{:08X}:{:02X}:{:06X}>", internal.name.hash, internal.name.length, internal.ToTDBOffset())
-        : fmt::format("<TDBID:{:08X}:{:02X}>", internal.name.hash, internal.name.length);
+    return internal.HasTDBOffset() ? fmt::format("<TDBID:{:08X}:{:02X}:{:06X}>", internal.name.hash, internal.name.length, internal.ToTDBOffset())
+                                   : fmt::format("<TDBID:{:08X}:{:02X}>", internal.name.hash, internal.name.length);
 }
 
 std::string LuaVM::GetTDBIDString(uint64_t aDBID, bool aOnlyRegistered)
 {
-    std::lock_guard _{ m_tdbidLock };
+    std::lock_guard _{m_tdbidLock};
 
     auto it = m_tdbidLookup.find(aDBID & 0xFFFFFFFFFF);
     if (it == m_tdbidLookup.end())
-        return aOnlyRegistered ? "" : GetTDBDIDDebugString(TDBID{ aDBID });
+        return aOnlyRegistered ? "" : GetTDBDIDDebugString(TDBID{aDBID});
 
     std::string string = it->second.name;
     uint64_t base = it->second.base;
@@ -162,7 +161,7 @@ std::string LuaVM::GetTDBIDString(uint64_t aDBID, bool aOnlyRegistered)
         it = m_tdbidLookup.find(it->second.base);
         if (it == m_tdbidLookup.end())
         {
-            string.insert(0, GetTDBDIDDebugString(TDBID{ base }));
+            string.insert(0, GetTDBDIDDebugString(TDBID{base}));
             break;
         }
         string.insert(0, it->second.name);
@@ -174,10 +173,11 @@ std::string LuaVM::GetTDBIDString(uint64_t aDBID, bool aOnlyRegistered)
 
 void LuaVM::RegisterTDBIDString(uint64_t aValue, uint64_t aBase, const std::string& acString)
 {
-    if (aValue == 0) return;
-    std::lock_guard _{ m_tdbidLock };
+    if (aValue == 0)
+        return;
+    std::lock_guard _{m_tdbidLock};
 
-    m_tdbidLookup[aValue] = { aBase, acString };
+    m_tdbidLookup[aValue] = {aBase, acString};
     if (aBase != 0)
         m_tdbidDerivedLookup[aBase].insert(aValue);
 }

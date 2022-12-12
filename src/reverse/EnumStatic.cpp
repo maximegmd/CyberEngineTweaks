@@ -5,8 +5,7 @@
 
 #include "scripting/Scripting.h"
 
-EnumStatic::EnumStatic(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView,
-                                       RED4ext::CBaseRTTIType* apClass)
+EnumStatic::EnumStatic(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::CBaseRTTIType* apClass)
     : ClassType(aView, apClass)
 {
 }

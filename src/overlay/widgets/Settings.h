@@ -29,7 +29,7 @@ private:
     Options& m_options;
     LuaVM& m_vm;
 
-    TChangedCBResult m_popupResult{ TChangedCBResult::APPLY };
-    bool m_madeChanges{ false };
-    bool m_openChangesModal{ true };
+    TChangedCBResult m_popupResult{TChangedCBResult::APPLY};
+    bool m_madeChanges{false};
+    bool m_openChangesModal{true};
 };

@@ -69,7 +69,7 @@ int32_t FlatPool::AllocateValue(const RED4ext::CBaseRTTIType* aType, RED4ext::Sc
 
     if (offsetIt == pool.end())
     {
-        offset = m_tweakDb->CreateFlatValue({ const_cast<RED4ext::CBaseRTTIType*>(aType), aValue });
+        offset = m_tweakDb->CreateFlatValue({const_cast<RED4ext::CBaseRTTIType*>(aType), aValue});
 
         if (offset != InvalidOffset)
             pool.emplace(hash, offset);
@@ -162,7 +162,7 @@ void FlatPool::Initialize()
         // If there's zero instead, that means the next value is 16-byte aligned,
         // and we need to skip the 8-byte padding to get to the flat.
         if (*reinterpret_cast<uint64_t*>(m_tweakDb->flatDataBuffer + offset) == 0ull)
-             offset += 8u;
+            offset += 8u;
 
         const auto data = GetFlatData(static_cast<int32_t>(offset));
         const auto poolKey = data.type->GetName();
@@ -182,8 +182,7 @@ void FlatPool::Initialize()
             pool.emplace(hash, offset);
 
         // Step {vft + data_size} aligned by {max(data_align, 8)}
-        offset += RED4ext::AlignUp(FlatVFTSize + data.type->GetSize(),
-                                   std::max(FlatAlignment, data.type->GetAlignment()));
+        offset += RED4ext::AlignUp(FlatVFTSize + data.type->GetSize(), std::max(FlatAlignment, data.type->GetAlignment()));
     }
 
     SyncBuffer();
@@ -200,7 +199,7 @@ RED4ext::CStackType FlatPool::GetFlatData(int32_t aOffset)
 
     // For a known VFT we can immediately get RTTI type and data pointer.
     if (it != m_vfts.end())
-        return { it->second.type, reinterpret_cast<void*>(addr + it->second.offset) };
+        return {it->second.type, reinterpret_cast<void*>(addr + it->second.offset)};
 
     // For an unknown VFT, we call the virtual GetValue() once to get the type.
     const auto data = reinterpret_cast<RED4ext::TweakDB::FlatValue*>(addr)->GetValue();
@@ -209,7 +208,7 @@ RED4ext::CStackType FlatPool::GetFlatData(int32_t aOffset)
     // In addition to the RTTI type, we also store the data offset considering alignment.
     // Quaternion is 16-byte aligned, so there is 8-byte padding between the VFT and the data:
     // [ 8B VFT ][ 8B PAD ][ 16B QUATERNION ]
-    m_vfts.insert({ vft, { data.type, std::max(data.type->GetAlignment(), 8u) } });
+    m_vfts.insert({vft, {data.type, std::max(data.type->GetAlignment(), 8u)}});
 
     return data;
 }

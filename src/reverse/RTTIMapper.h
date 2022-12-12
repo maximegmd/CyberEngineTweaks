@@ -15,7 +15,6 @@ struct RTTIMapper
     static RED4ext::CName TryResolveTypeName(sol::object aValue);
 
 private:
-
     struct FuncFlags
     {
         uint32_t isNative : 1;        // 00
@@ -44,8 +43,7 @@ private:
     void RegisterScriptAliases(sol::table& aLuaGlobal, RED4ext::CRTTISystem* apRtti);
     void RegisterSpecialAccessors(sol::state& aLuaState, sol::table& aLuaGlobal) const;
 
-    template <class T>
-    void ExtendUsertype(const std::string acTypeName, sol::state& aLuaState, sol::table& aLuaGlobal) const;
+    template <class T> void ExtendUsertype(const std::string acTypeName, sol::state& aLuaState, sol::table& aLuaGlobal) const;
 
     LockableState m_lua;
     LuaSandbox& m_sandbox;

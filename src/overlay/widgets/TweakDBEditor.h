@@ -28,16 +28,14 @@ protected:
 
     bool DrawFlat(RED4ext::TweakDBID aDBID);
     bool DrawFlat(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
-    bool DrawFlatArray(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false,
-                       bool aCollapsable = true);
+    bool DrawFlatArray(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false, bool aCollapsable = true);
     bool DrawFlatTweakDBID(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
     static bool DrawFlatQuaternion(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
     static bool DrawFlatEulerAngles(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
     static bool DrawFlatVector3(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
     static bool DrawFlatVector2(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
     static bool DrawFlatColor(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
-    static bool DrawFlatLocKeyWrapper(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType,
-                                      bool aReadOnly = false);
+    static bool DrawFlatLocKeyWrapper(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
     static bool DrawFlatResourceAsyncRef(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
     static bool DrawFlatCName(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
     static bool DrawFlatBool(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly = false);
@@ -59,8 +57,8 @@ private:
         void End();
 
     private:
-        ImVec2 m_itemSize{ 0.0f, 0.0f };
-        float m_beginCursorY{ 0.0f };
+        ImVec2 m_itemSize{0.0f, 0.0f};
+        float m_beginCursorY{0.0f};
     };
 
     struct CachedFlat

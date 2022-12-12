@@ -7,18 +7,17 @@ void* HookInitScriptMemberVariable(void* a1, void* a2, uint64_t a3, uint64_t nam
 {
     // Break the nameHash of some SplashScreenLoadingScreenLogicController variables
     // Should prevent the intro screen scripts from finding the intro bink, which makes it show a loading screen instead
-    // (intro movie audio still plays though - this can be stopped by disabling more script vars, but unfortunately that'll also make it load infinitely)
-    // For me the loading screen takes almost as much time as the intro movie itself did, but the audio shows that a few seconds are saved with this, maybe faster machines can save even more time.
+    // (intro movie audio still plays though - this can be stopped by disabling more script vars, but unfortunately
+    // that'll also make it load infinitely) For me the loading screen takes almost as much time as the intro movie
+    // itself did, but the audio shows that a few seconds are saved with this, maybe faster machines can save even more
+    // time.
 
-    // Ideally I think the real solution is to change GameFramework/InitialState INI variable from "Initialization" to "PreGameSession" or "MainMenu" instead
-    // Unfortunately that causes a black screen on launch though, likely only works properly on non-shipping builds
+    // Ideally I think the real solution is to change GameFramework/InitialState INI variable from "Initialization" to
+    // "PreGameSession" or "MainMenu" instead Unfortunately that causes a black screen on launch though, likely only
+    // works properly on non-shipping builds
 
-    if (nameHash == RED4ext::FNV1a64("logoTrainWBBink") ||
-        nameHash == RED4ext::FNV1a64("logoTrainNamcoBink") ||
-        nameHash == RED4ext::FNV1a64("logoTrainStadiaBink") ||
-        nameHash == RED4ext::FNV1a64("logoTrainNoRTXBink") ||
-        nameHash == RED4ext::FNV1a64("logoTrainRTXBink") ||
-        nameHash == RED4ext::FNV1a64("introMessageBink"))
+    if (nameHash == RED4ext::FNV1a64("logoTrainWBBink") || nameHash == RED4ext::FNV1a64("logoTrainNamcoBink") || nameHash == RED4ext::FNV1a64("logoTrainStadiaBink") ||
+        nameHash == RED4ext::FNV1a64("logoTrainNoRTXBink") || nameHash == RED4ext::FNV1a64("logoTrainRTXBink") || nameHash == RED4ext::FNV1a64("introMessageBink"))
     {
         nameHash = ~nameHash;
     }
@@ -37,8 +36,7 @@ void DisableIntroMoviesPatch()
         return;
     }
 
-    MH_CreateHook(reinterpret_cast<void*>(RealInitScriptMemberVariable),
-                  reinterpret_cast<void*>(&HookInitScriptMemberVariable),
-                  reinterpret_cast<void**>(&RealInitScriptMemberVariable));
+    MH_CreateHook(
+        reinterpret_cast<void*>(RealInitScriptMemberVariable), reinterpret_cast<void*>(&HookInitScriptMemberVariable), reinterpret_cast<void**>(&RealInitScriptMemberVariable));
     Log::Info("Disable intro movies patch: success");
 }
