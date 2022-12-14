@@ -1,7 +1,5 @@
 #include <stdafx.h>
 
-#include <imgui_freetype.h>
-
 #include "D3D12.h"
 #include "Options.h"
 #include "Utils.h"
