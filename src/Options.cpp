@@ -40,8 +40,8 @@ void PatchesSettings::ResetToDefaults()
 
 void FontSettings::Load(const nlohmann::json& aConfig)
 {
-    Path = aConfig.value("path", Path);
-    MonospacePath = aConfig.value("monospace_path", MonospacePath);
+    FontMain = aConfig.value("path", FontMain);
+    FontMonospace = aConfig.value("monospace_path", FontMonospace);
     Language = aConfig.value("language", Language);
     BaseSize = aConfig.value("base_size", BaseSize);
     OversampleHorizontal = aConfig.value("oversample_horizontal", OversampleHorizontal);
@@ -50,7 +50,13 @@ void FontSettings::Load(const nlohmann::json& aConfig)
 
 nlohmann::json FontSettings::Save() const
 {
-    return {{"path", Path}, {"monospace_path", MonospacePath}, {"language", Language}, {"base_size", BaseSize}, {"oversample_horizontal", OversampleHorizontal}, {"oversample_vertical", OversampleVertical}};
+    return {
+        {"font_main", FontMain},
+        {"font_monospace", FontMonospace},
+        {"language", Language},
+        {"base_size", BaseSize},
+        {"oversample_horizontal", OversampleHorizontal},
+        {"oversample_vertical", OversampleVertical}};
 }
 
 void FontSettings::ResetToDefaults()

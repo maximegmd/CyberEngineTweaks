@@ -30,9 +30,6 @@ private:
         const char* acIcon, const std::string& acLabel, const std::string& acTooltip, int& aCurrent, const int& acSaved, int aValueMin, int aValueMax, const char* aFormat = "%d");
     bool SettingItemCombo(
         const char* acIcon, const std::string& acLabel, const std::string& acTooltip, std::string& aCurrent, const std::string& acSaved, const std::vector<std::string>& acItems);
-    bool SettingItemFontPath(const char* acIcon, const std::string& acLabel, const std::string& acTooltip, std::string& aCurrent, const std::string& acSaved);
-    bool SettingItemFontSelection(
-        const char* acIcon, const std::string& acLabel, const std::string& acTooltip, std::string& aCurrent, const std::string& acSaved, const std::vector<std::string>& acItems);
 
     PatchesSettings m_patches;
     DeveloperSettings m_developer;

@@ -15,6 +15,12 @@ struct Fonts
   const std::vector<std::string>& GetLanguages();
   const std::filesystem::path& GetDefaultLanguageFontPath(const std::string& acLanguage);
 
+  void EnumerateSystemFonts();
+  
+  const std::vector<std::string>& GetSystemFonts();
+  const std::filesystem::path& GetSystemFontPath(const std::string& acFontName);
+  std::filesystem::path GetFontPathFromOption(const std::string& acFontOption);
+
   ImFont* MainFont;
   ImFont* MonospaceFont;
 
@@ -27,6 +33,8 @@ private:
 
   bool m_rebuildFonts{ false };
   bool m_useEmojiFont{ false };
+  std::vector<std::string> m_systemFonts { "Default" };
+  std::unordered_map<std::string, std::filesystem::path> m_systemFontPaths { };
 
   std::filesystem::path m_defaultMainFontPath{ L"NotoSans-Regular.ttf" };
   std::filesystem::path m_defaultMonospaceFontPath{ L"NotoSansMono-Regular.ttf" };

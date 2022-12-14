@@ -52,6 +52,7 @@ void Settings::OnUpdate()
     if (ImGui::BeginChild(ImGui::GetID("Settings"), frameSize))
     {
         m_madeChanges = false;
+        m_madeFontChanges = false;
         if (ImGui::CollapsingHeader("Patches", ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::TreePush();
@@ -122,10 +123,11 @@ void Settings::OnUpdate()
             if (ImGui::BeginTable("SETTINGS", 2, ImGuiTableFlags_NoSavedSettings, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
             {
                 const auto& fontSettings = m_options.Font;
-                m_madeFontChanges |= SettingItemFontPath("🔡", "Main Font", "Main display font for CET.", m_font.Path, fontSettings.Path);
-                m_madeFontChanges |= SettingItemFontPath(
-                    "🔠", "Monospace Font", "Monospacee font, which is used for displaying texts in Console and Game Log, for CET.", m_font.MonospacePath,
-                    fontSettings.MonospacePath);
+                m_madeFontChanges |=
+                    SettingItemCombo("🦄", "Main Font", "Main display font for CET.", m_font.FontMain, fontSettings.FontMain, CET::Get().GetFonts().GetSystemFonts());
+                m_madeFontChanges |= SettingItemCombo(
+                    "🪲", "Monospace Font", "Monospacee font, which is used for displaying texts in Console and Game Log, for CET.", m_font.FontMonospace,
+                    fontSettings.FontMonospace, CET::Get().GetFonts().GetSystemFonts());
                 m_madeFontChanges |= SettingItemSliderFloat(
                     "📏", "Font Size", "Changees the size of the font, default value is 18px.", m_font.BaseSize, fontSettings.BaseSize, 10.0f, 72.0f, "%.0fpx");
 
@@ -287,43 +289,6 @@ bool Settings::SettingItemSliderInt(
     std::function<void()> imguiWidget = [&]()
     {
         ImGui::SliderInt(("##" + acLabel).c_str(), &aCurrent, aValueMin, aValueMax, aFormat);
-    };
-
-    const bool valueChanged = aCurrent != acSaved;
-
-    SettingItemTemplate(acIcon, acLabel, acTooltip, valueChanged, imguiWidget);
-
-    m_madeChanges |= aCurrent != acSaved;
-
-    return aCurrent != acSaved;
-}
-
-bool Settings::SettingItemFontPath(const char* acIcon, const std::string& acLabel, const std::string& acTooltip, std::string& aCurrent, const std::string& acSaved)
-{
-    std::function<void()> imguiWidget = [&]()
-    {
-        if (ImGui::BeginTable("SettingItemFontPath", 2, ImGuiTableFlags_NoSavedSettings))
-        {
-            ImGui::TableSetupColumn("Col1", ImGuiTableColumnFlags_WidthStretch);
-            ImGui::TableSetupColumn("Col2", ImGuiTableColumnFlags_WidthFixed);
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            const auto currentFont = aCurrent.empty() ? "Default" : aCurrent.c_str();
-            ImGui::AlignTextToFramePadding();
-            ImGui::TextUnformatted(currentFont);
-            if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-                ImGui::SetTooltip("%s", currentFont);
-
-            ImGui::TableSetColumnIndex(1);
-
-            ImGui::Button(ICON_MD_FORMAT_FONT, ImVec2(ImGui::GetFrameHeight(), 0));
-            if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-                ImGui::SetTooltip("%s", "Open Font Seletion.");
-
-            ImGui::EndTable();
-        }
-        ImGui::SameLine();
-        ImGui::Dummy(ImVec2(0, 0));
     };
 
     const bool valueChanged = aCurrent != acSaved;
