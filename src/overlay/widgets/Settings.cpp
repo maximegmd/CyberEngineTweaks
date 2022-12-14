@@ -186,7 +186,7 @@ void Settings::Save() const
     m_options.Developer = m_developer;
     m_options.Font = m_font;
     if (m_madeFontChanges)
-        CET::Get().GetFonts().TriggerFontRebuild();
+        CET::Get().GetFonts().RebuildFontNextFrame();
 
     m_options.Save();
 }
@@ -198,7 +198,7 @@ void Settings::ResetToDefaults()
     m_patches = m_options.Patches;
     m_developer = m_options.Developer;
     m_font = m_options.Font;
-    CET::Get().GetFonts().TriggerFontRebuild();
+    CET::Get().GetFonts().RebuildFontNextFrame();
 }
 
 void Settings::SettingItemTemplate(const char* acIcon, const std::string& acLabel, const std::string& acTooltip, const bool& aValueChanged, std::function<void()>& aImGuiFunction)
