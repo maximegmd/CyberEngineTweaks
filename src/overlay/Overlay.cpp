@@ -8,6 +8,18 @@
 #include <scripting/LuaVM.h>
 #include <Utils.h>
 
+#if GAME_CYBERPUNK
+CWindow* GetGameWindow()
+{
+    return RED4ext::CGameEngine::Get()->unkC0;
+}
+#else
+CWindow* GetGameWindow()
+{
+    return nullptr;
+}
+#endif
+
 void Overlay::PostInitialize()
 {
     if (!m_initialized)
@@ -18,7 +30,7 @@ void Overlay::PostInitialize()
 
             auto& d3d12 = EngineTweaks::Get().GetD3D12();
             d3d12.DelayedSetTrapInputInImGui(true);
-            ClipToCenter(RED4ext::CGameEngine::Get()->unkC0);
+            ClipToCenter(GetGameWindow());
         }
 
         m_initialized = true;
@@ -95,6 +107,7 @@ void Overlay::Update()
                     drawPopup = true;
             }
 
+#if GAME_CYBERPUNK
             if (m_toggled && !drawPopup && persistentState.TweakDBEditorToggled)
             {
                 disableResult = m_tweakDBEditor.OnDisable();
@@ -103,6 +116,7 @@ void Overlay::Update()
                 if (disableResult == WidgetResult::ENABLED)
                     drawPopup = true;
             }
+#endif
 
             if (m_toggled && !drawPopup && persistentState.GameLogToggled)
             {
@@ -150,7 +164,7 @@ void Overlay::Update()
                 if (disableResult == WidgetResult::DISABLED)
                     drawPopup = true;
             }
-
+#if GAME_CYBERPUNK
             if (m_toggled && !drawPopup && persistentState.TweakDBEditorToggled)
             {
                 disableResult = m_tweakDBEditor.OnEnable();
@@ -159,6 +173,7 @@ void Overlay::Update()
                 if (disableResult == WidgetResult::DISABLED)
                     drawPopup = true;
             }
+#endif
 
             if (m_toggled && !drawPopup && persistentState.GameLogToggled)
             {
@@ -189,7 +204,7 @@ void Overlay::Update()
 
             auto& d3d12 = EngineTweaks::Get().GetD3D12();
             d3d12.DelayedSetTrapInputInImGui(m_enabled);
-            ClipToCenter(RED4ext::CGameEngine::Get()->unkC0);
+            ClipToCenter(GetGameWindow());
             m_toggled = false;
         }
     }
@@ -208,7 +223,9 @@ void Overlay::Update()
     m_console.Draw();
     m_bindings.Draw();
     m_settings.Draw();
+#if GAME_CYBERPUNK
     m_tweakDBEditor.Draw();
+#endif
     m_gameLog.Draw();
     m_imguiDebug.Draw();
 }
@@ -218,8 +235,9 @@ bool Overlay::IsInitialized() const noexcept
     return m_initialized;
 }
 
-BOOL Overlay::ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis)
+BOOL Overlay::ClipToCenter(CWindow* apThis)
 {
+#if GAME_CYBERPUNK
     const auto wnd = static_cast<HWND>(apThis->hWnd);
     const HWND foreground = GetForegroundWindow();
 
@@ -243,6 +261,7 @@ BOOL Overlay::ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis)
         apThis->isClipped = false;
         return ClipCursor(nullptr);
     }
+#endif
 
     return 1;
 }
@@ -264,7 +283,9 @@ Overlay::Overlay(VKBindings& aBindings, Options& aOptions, PersistentState& aPer
     : m_console(aOptions, aPersistentState, aVm)
     , m_bindings(aBindings, aVm)
     , m_settings(aOptions, aVm)
+#if GAME_CYBERPUNK
     , m_tweakDBEditor(aVm)
+#endif
     , m_options(aOptions)
     , m_persistentState(aPersistentState)
     , m_vm(aVm)
@@ -313,6 +334,7 @@ void Overlay::DrawToolbar()
         persistentState.SettingsToggled = m_settings.IsEnabled();
     ImGui::PopStyleColor();
 
+#if GAME_CYBERPUNK
     ImGui::SameLine();
 
     ImGui::PushStyleColor(ImGuiCol_Button, persistentState.TweakDBEditorToggled ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive) : ImGui::GetStyleColorVec4(ImGuiCol_Button));
@@ -321,6 +343,7 @@ void Overlay::DrawToolbar()
     if (!m_toggled)
         persistentState.TweakDBEditorToggled = m_tweakDBEditor.IsEnabled();
     ImGui::PopStyleColor();
+#endif
 
     ImGui::SameLine();
 

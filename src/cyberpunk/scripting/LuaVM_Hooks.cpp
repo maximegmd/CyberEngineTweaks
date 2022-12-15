@@ -1,6 +1,6 @@
 #include <stdafx.h>
 
-#include "LuaVM.h"
+#include "scripting/LuaVM.h"
 
 #include "EngineTweaks.h"
 #include <Utils.h>

@@ -1,5 +1,7 @@
 #pragma once
 
+#if GAME_CYBERPUNK
+
 struct GameOption
 {
     enum Type : uint8_t
@@ -106,3 +108,5 @@ public:
 
     static TiltedPhoques::Vector<GameOption*>& GetList();
 };
+
+#endif

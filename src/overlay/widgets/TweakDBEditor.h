@@ -1,5 +1,7 @@
 #pragma once
 
+#if GAME_CYBERPUNK
+
 #include "Widget.h"
 
 struct LuaVM;
@@ -133,3 +135,5 @@ private:
     static char s_flatsFilterBuffer[256];
     static char s_tweakdbidFilterBuffer[256];
 };
+
+#endif

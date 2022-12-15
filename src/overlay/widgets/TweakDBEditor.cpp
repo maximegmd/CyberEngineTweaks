@@ -1,5 +1,7 @@
 #include <stdafx.h>
 
+#if GAME_CYBERPUNK
+
 #include "TweakDBEditor.h"
 
 #include "EngineTweaks.h"
@@ -1789,3 +1791,5 @@ void TweakDBEditor::ImGuiVisibilityChecker::End()
         m_itemSize.y -= ImGui::GetStyle().ItemSpacing.y;
     }
 }
+
+#endif

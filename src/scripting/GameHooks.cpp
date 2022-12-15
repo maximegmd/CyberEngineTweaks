@@ -123,7 +123,7 @@ bool GameMainThread::HookStateTick(IGameState* apThisState, CGameApplication* ap
     const auto cStateIndex = static_cast<size_t>(apThisState->GetType());
 #else
     const auto cStateIndex = 0;
-    assert(false, "Please implement GetType");
+    assert(false);
 #endif
 
     return gmt.m_stateTickOverrides[cStateIndex].OnTick(apThisState, apGameApplication);

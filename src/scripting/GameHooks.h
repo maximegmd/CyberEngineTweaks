@@ -4,6 +4,8 @@
 using IGameState = RED4ext::IGameState;
 using CGameApplication = RED4ext::CGameApplication;
 #else
+struct CGameApplication;
+
 struct IGameState
 {
     virtual const char* GetName() = 0;                 // 00
@@ -12,7 +14,6 @@ struct IGameState
     virtual bool OnUpdate(CGameApplication* aApp) = 0; // 18
     virtual bool OnExit(CGameApplication* aApp) = 0;   // 20
 };
-struct CGameApplication;
 #endif
 
 struct GameMainThread

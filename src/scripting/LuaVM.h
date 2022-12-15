@@ -10,7 +10,6 @@ using TTDBIDCtorDerive = TDBID*(const TDBID*, TDBID*, const char*);
 using TTweakDBLoad = uint64_t(uintptr_t, uintptr_t);
 #endif
 
-using TSetMousePosition = BOOL(void*, HWND, long, long);
 using TRunningStateRun = bool(uintptr_t, uintptr_t);
 using TShutdownStateRun = bool(uintptr_t, uintptr_t);
 using TSetLoadingState = uintptr_t(uintptr_t, int);
@@ -70,10 +69,10 @@ struct LuaVM
 protected:
     void Hook();
 
+#if GAME_CYBERPUNK
+
     static void HookLog(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*, void*);
     static void HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void*, void*);
-
-#if GAME_CYBERPUNK
 
     static void HookTDBIDToStringDEBUG(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void* apResult, void*);
     static TDBID* HookTDBIDCtorDerive(TDBID* apBase, TDBID* apThis, const char* acpName);

@@ -1,5 +1,7 @@
 #pragma once
 
+#if GAME_CYBERPUNK
+
 struct Scripting;
 
 struct FunctionOverride
@@ -62,3 +64,5 @@ private:
     Scripting* m_pScripting;
     std::shared_mutex m_lock;
 };
+
+#endif

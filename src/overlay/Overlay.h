@@ -7,7 +7,13 @@
 #include "widgets/GameLog.h"
 #include "widgets/ImGuiDebug.h"
 
-using TClipToCenter = HWND(RED4ext::CGameEngine::UnkC0*);
+#if GAME_CYBERPUNK
+using CWindow = RED4ext::CGameEngine::UnkC0;
+#else
+struct CWindow;
+#endif
+
+using TClipToCenter = HWND(CWindow*);
 
 struct Overlay
 {
@@ -30,7 +36,7 @@ struct Overlay
 protected:
     void Hook();
 
-    static BOOL ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis);
+    static BOOL ClipToCenter(CWindow* apThis);
 
 private:
     void DrawToolbar();
@@ -38,7 +44,9 @@ private:
     Console m_console;
     Bindings m_bindings;
     Settings m_settings;
+#if GAME_CYBERPUNK
     TweakDBEditor m_tweakDBEditor;
+#endif
     GameLog m_gameLog;
     ImGuiDebug m_imguiDebug;
 

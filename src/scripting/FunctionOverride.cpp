@@ -1,5 +1,7 @@
 #include <stdafx.h>
 
+#if GAME_CYBERPUNK
+
 #include "FunctionOverride.h"
 #include "Scripting.h"
 #include "Utils.h"
@@ -694,3 +696,5 @@ void FunctionOverride::CopyFunctionDescription(RED4ext::CBaseFunction* aFunc, RE
     aFunc->flags = aRealFunc->flags;
     aFunc->flags.isNative = aForceNative;
 }
+
+#endif

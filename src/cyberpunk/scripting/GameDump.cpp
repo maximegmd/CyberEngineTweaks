@@ -1,6 +1,6 @@
 #include <stdafx.h>
 
-#include "GameDump.h"
+#include <scripting/GameDump.h>
 
 namespace GameDump
 {

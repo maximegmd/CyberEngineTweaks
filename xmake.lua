@@ -118,6 +118,7 @@ target("witcher_engine_tweaks")
     add_includedirs("src/", "src/witcher3", "build/")
     add_syslinks("User32", "Version", "d3d11")
     add_packages("spdlog", "nlohmann_json", "minhook", "hopscotch-map", "imgui", "mem", "sol2", "tiltedcore", "sqlite3", "openrestry-luajit", "xbyak", "stb")
+    add_deps("RED3lib")
 
     add_configfiles("src/EngineTweaksVersion.h.in")
 

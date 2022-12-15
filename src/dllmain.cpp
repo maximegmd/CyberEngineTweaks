@@ -35,6 +35,7 @@ static void Initialize()
         if (s_modInstanceMutex == nullptr)
             return;
 
+#if GAME_CYBERPUNK
         // initialize patches
         if (options.Developer.EnableDebug)
             EnableDebugPatch();
@@ -61,6 +62,7 @@ static void Initialize()
             MinimapFlickerPatch();
 
         OptionsInitHook();
+#endif
 
         MH_EnableHook(nullptr);
     }
@@ -95,6 +97,7 @@ static void Shutdown()
 
 BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID)
 {
+#if GAME_CYBERPUNK
     DisableThreadLibraryCalls(mod);
 
     switch (ul_reason_for_call)
@@ -103,6 +106,39 @@ BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID)
     case DLL_PROCESS_DETACH: Shutdown(); break;
     default: break;
     }
+#endif
 
     return TRUE;
 }
+
+#if GAME_WITCHER
+enum class EMainReason : std::uint8_t
+{
+    Load = 0,
+    Unload
+};
+
+extern "C" __declspec(dllexport) bool Main(HMODULE aHandle, EMainReason aReason)
+{
+    switch (aReason)
+    {
+    case EMainReason::Load:
+    {
+        Initialize();
+        break;
+    }
+    case EMainReason::Unload:
+    {
+        Shutdown();
+        break;
+    }
+    }
+
+    return true;
+}
+
+extern "C" __declspec(dllexport) const char* Supports()
+{
+    return "4.0.0.65171";
+}
+#endif

@@ -1,5 +1,7 @@
 #include <stdafx.h>
 
+#if GAME_CYBERPUNK
+
 #include "GameOptions.h"
 
 static TiltedPhoques::Vector<GameOption*> s_gameOptions;
@@ -344,3 +346,5 @@ TiltedPhoques::Vector<GameOption*>& GameOptions::GetList()
 {
     return s_gameOptions;
 }
+
+#endif
