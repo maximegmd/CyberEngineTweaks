@@ -8,19 +8,28 @@ using namespace std::chrono_literals;
 
 static Window* s_pWindow = nullptr;
 
-static BOOL CALLBACK EnumWindowsProcCP77(HWND ahWnd, LPARAM alParam)
+static BOOL CALLBACK EnumWindowsProcGame(HWND ahWnd, LPARAM alParam)
 {
     DWORD lpdwProcessId;
     GetWindowThreadProcessId(ahWnd, &lpdwProcessId);
     if (lpdwProcessId == GetCurrentProcessId())
     {
         TCHAR name[512] = {0};
+#if GAME_CYBERPUNK
         GetWindowText(ahWnd, name, 511);
         if (_tcscmp(_T("Cyberpunk 2077 (C) 2020 by CD Projekt RED"), name) == 0)
         {
             *reinterpret_cast<HWND*>(alParam) = ahWnd;
             return FALSE;
         }
+#else
+        GetClassName(ahWnd, name, 511);
+        if (_tcscmp(_T("W2ViewportClass"), name) == 0)
+        {
+            *reinterpret_cast<HWND*>(alParam) = ahWnd;
+            return FALSE;
+        }
+#endif
     }
     return TRUE;
 }
@@ -68,7 +77,7 @@ Window::Window(VKBindings* apBindings, D3D12* apD3D12)
         {
             while (m_hWnd == nullptr)
             {
-                if (EnumWindows(EnumWindowsProcCP77, reinterpret_cast<LPARAM>(&m_hWnd)))
+                if (EnumWindows(EnumWindowsProcGame, reinterpret_cast<LPARAM>(&m_hWnd)))
                     std::this_thread::sleep_for(50ms);
                 else
                 {
