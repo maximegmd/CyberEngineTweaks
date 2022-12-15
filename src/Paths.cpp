@@ -59,8 +59,13 @@ Paths::Paths()
     m_gameRoot = m_exe.parent_path();
 
     m_cetRoot = m_gameRoot;
+#if GAME_CYBERPUNK
     m_cetRoot /= L"plugins";
     m_cetRoot /= L"cyber_engine_tweaks";
+#else
+    m_cetRoot /= L"red3ext";
+    m_cetRoot /= L"cyber_engine_tweaks";
+#endif
     create_directories(m_cetRoot);
 
     m_config = m_cetRoot / L"config.json";
