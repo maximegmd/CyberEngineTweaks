@@ -45,6 +45,11 @@ const std::filesystem::path& Paths::Fonts() const
     return m_fonts;
 }
 
+const std::filesystem::path& Paths::Theme() const
+{
+    return m_theme;
+}
+
 const std::filesystem::path& Paths::TweakDB() const
 {
     return m_tweakdb;
@@ -89,6 +94,10 @@ Paths::Paths()
     m_r6CacheModdedRoot /= L"modded";
 
     m_fonts = m_cetRoot / L"fonts";
+
+    m_theme = m_cetRoot / L"theme.json";
+    if (exists(m_theme) && !file_size(m_theme))
+        std::filesystem::remove(m_theme);
 
     m_tweakdb = m_cetRoot / L"tweakdb";
 }

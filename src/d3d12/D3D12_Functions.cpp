@@ -1,8 +1,9 @@
-#include <stdafx.h>
+#include "../stdafx.h"
 
 #include "D3D12.h"
 #include "Options.h"
 #include "Utils.h"
+#include "Theme.h"
 
 #include <CET.h>
 #include <imgui_impl/dx12.h>
@@ -433,9 +434,10 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
 
-        // TODO - make this configurable eventually and overridable by mods for themselves easily
-        // setup CET default style
+        // ImGui defaults
         ImGui::StyleColorsDark(&m_styleReference);
+
+        // CET defaults
         m_styleReference.WindowRounding = 6.0f;
         m_styleReference.WindowTitleAlign.x = 0.5f;
         m_styleReference.ChildRounding = 6.0f;
@@ -444,6 +446,15 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         m_styleReference.ScrollbarRounding = 12.0f;
         m_styleReference.GrabRounding = 12.0f;
         m_styleReference.TabRounding = 6.0f;
+
+        // Got an override?
+        bool loadedTheme = LoadStyleFromThemeJson(m_paths.Theme(), m_styleReference);
+
+        if (!loadedTheme)
+            Log::Info("Theme: no theme loaded, using defaults!");
+
+        Log::Info("Theme: ImGui style in effect: {}", DumpStyleToThemeJson(m_styleReference));
+        Log::Info("Theme: Global UI scale factor: {}x", scaleFromReference);
     }
 
     ImGui::GetStyle() = m_styleReference;
