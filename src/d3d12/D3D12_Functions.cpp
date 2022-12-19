@@ -1,4 +1,4 @@
-#include <stdafx.h>
+#include "../stdafx.h"
 
 #include "D3D12.h"
 #include "Options.h"
@@ -403,6 +403,77 @@ void D3D12::ReloadFonts()
         io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(customFontPath.native()).c_str(), config.SizePixels, &config, cpGlyphRanges);
 }
 
+bool StyleFromThemeJson(ImGuiStyle& aOutTheme, const nlohmann::json& aThemeJson)
+{
+    auto schemaVersion = aThemeJson.value("cetThemeSchemaVersion", "");
+
+    if (schemaVersion != "1.0.0") {
+        Log::Error("Theme file schema version {} is not supported, using defaults!", schemaVersion);
+        return false;
+    }
+
+    Log::Info("Theme file loaded, using it to override defaults: {}", aThemeJson.dump(4));
+
+    auto styleParameters = aThemeJson.value("style", nlohmann::json::object());
+
+    aOutTheme.Alpha = styleParameters.value("Alpha", aOutTheme.Alpha);
+    aOutTheme.AntiAliasedLines = styleParameters.value("AntiAliasedLines", aOutTheme.AntiAliasedLines);
+    aOutTheme.AntiAliasedFill = styleParameters.value("AntiAliasedFill", aOutTheme.AntiAliasedFill);
+    auto windowPadding = styleParameters.value("WindowPadding", nlohmann::json::array({aOutTheme.WindowPadding.x, aOutTheme.WindowPadding.y}));
+    aOutTheme.WindowPadding = ImVec2(windowPadding[0], windowPadding[1]);
+
+    return true;
+}
+
+bool StyleToThemeJson(nlohmann::json& aOutJson, const ImGuiStyle& aStyle)
+{
+    aOutJson = nlohmann::json {
+        {"cetThemeSchemaVersion", "1.0.0"},
+        {"cetThemeName", "<final merged theme in effect>"},
+        {"style",
+            {
+                {"Alpha", aStyle.Alpha},
+                {"AntiAliasedLines", aStyle.AntiAliasedLines},
+                {"AntiAliasedFill", aStyle.AntiAliasedFill},
+                {"DisplayWindowPadding", {aStyle.DisplayWindowPadding.x, aStyle.DisplayWindowPadding.y}},
+                {"DisplaySafeAreaPadding", {aStyle.DisplaySafeAreaPadding.x, aStyle.DisplaySafeAreaPadding.y}},
+                {"FramePadding", {aStyle.FramePadding.x, aStyle.FramePadding.y}},
+                {"FrameRounding", aStyle.FrameRounding},
+                {"FrameBorderSize", aStyle.FrameBorderSize},
+                {"WindowTitleAlign", {aStyle.WindowTitleAlign.x, aStyle.WindowTitleAlign.y}},
+                {"WindowPadding", {aStyle.WindowPadding.x, aStyle.WindowPadding.y}},
+                {"WindowRounding", aStyle.WindowRounding},
+                {"WindowBorderSize", aStyle.WindowBorderSize},
+                {"WindowMinSize", {aStyle.WindowMinSize.x, aStyle.WindowMinSize.y}},
+                {"ChildBorderSize", aStyle.ChildBorderSize},
+                {"ChildRounding", aStyle.ChildRounding},
+                {"PopupRounding", aStyle.PopupRounding},
+                {"PopupBorderSize", aStyle.PopupBorderSize},
+                {"TabRounding", aStyle.TabRounding},
+                {"TabBorderSize", aStyle.TabBorderSize},
+                {"TabMinWidthForCloseButton", aStyle.TabMinWidthForCloseButton},
+                {"ColumnsMinSpacing", aStyle.ColumnsMinSpacing},
+                {"CellPadding", {aStyle.CellPadding.x, aStyle.CellPadding.y}},
+                {"ItemSpacing", {aStyle.ItemSpacing.x, aStyle.ItemSpacing.y}},
+                {"ItemInnerSpacing", {aStyle.ItemInnerSpacing.x, aStyle.ItemInnerSpacing.y}},
+                {"TouchExtraPadding", {aStyle.TouchExtraPadding.x, aStyle.TouchExtraPadding.y}},
+                {"ScrollbarSize", aStyle.ScrollbarSize},
+                {"ScrollbarRounding", aStyle.ScrollbarRounding},
+                {"GrabRounding", aStyle.GrabRounding},
+                {"GrabMinSize", aStyle.GrabMinSize},
+                {"ColorButtonPosition", aStyle.ColorButtonPosition},
+                {"IndentSpacing", aStyle.IndentSpacing},
+                {"ButtonTextAlign", {aStyle.ButtonTextAlign.x, aStyle.ButtonTextAlign.y}},
+                {"SelectableTextAlign", {aStyle.SelectableTextAlign.x, aStyle.SelectableTextAlign.y}},
+                {"MouseCursorScale", aStyle.MouseCursorScale},
+                {"CurveTessellationTol", aStyle.CurveTessellationTol},
+            }
+        }
+    };
+
+    return true;
+}
+
 bool D3D12::InitializeImGui(size_t aBuffersCounts)
 {
     std::lock_guard _(m_imguiLock);
@@ -413,13 +484,16 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
 
     if (ImGui::GetCurrentContext() == nullptr)
     {
+        Log::Info("Setting up the ImGui Theme...");
+
         // do this once, do not repeat context creation!
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
 
-        // TODO - make this configurable eventually and overridable by mods for themselves easily
-        // setup CET default style
+        // ImGui defaults
         ImGui::StyleColorsDark(&m_styleReference);
+
+        // CET defaults
         m_styleReference.WindowRounding = 6.0f;
         m_styleReference.WindowTitleAlign.x = 0.5f;
         m_styleReference.ChildRounding = 6.0f;
@@ -428,6 +502,39 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         m_styleReference.ScrollbarRounding = 12.0f;
         m_styleReference.GrabRounding = 12.0f;
         m_styleReference.TabRounding = 6.0f;
+
+        const auto cThemeJsonPath = GetAbsolutePath(m_paths.Theme(), "", false);
+
+        // Which we will try to override...
+        if (!cThemeJsonPath.empty())
+        {
+            std::ifstream themeJsonFile(cThemeJsonPath);
+            if(!themeJsonFile)
+            {
+                Log::Info("No theme file found, using default CET theme!");
+            }
+            else
+            {
+                const nlohmann::json cThemeJson = nlohmann::json::parse(themeJsonFile, nullptr, false, true);
+
+                if (cThemeJson.is_discarded())
+                {
+                    Log::Error("Theme file found but invalid! Falling back to defaults.");
+                }
+                else
+                {
+                    StyleFromThemeJson(m_styleReference, cThemeJson);
+                }
+            }
+
+            themeJsonFile.close();
+        }
+
+        nlohmann::json effectiveThemeJson;
+        StyleToThemeJson(effectiveThemeJson, m_styleReference);
+
+        Log::Info("ImGui style in effect: {}", effectiveThemeJson.dump(4));
+        Log::Info("Global UI scale factor: {}x", scaleFromReference);
     }
 
     ImGui::GetStyle() = m_styleReference;
