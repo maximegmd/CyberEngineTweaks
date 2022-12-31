@@ -1,4 +1,4 @@
-#include <stdafx.h>
+#include "stdafx.h"
 
 const std::filesystem::path& Paths::Executable() const
 {

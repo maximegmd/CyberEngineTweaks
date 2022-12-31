@@ -1,4 +1,4 @@
-#include <stdafx.h>
+#include "stdafx.h"
 
 #include "EnumStatic.h"
 #include "Enum.h"

@@ -1,6 +1,7 @@
+#include "stdafx.h"
+
 #include "CET.h"
 
-#include <stdafx.h>
 
 #include "D3D12.h"
 #include "reverse/Addresses.h"

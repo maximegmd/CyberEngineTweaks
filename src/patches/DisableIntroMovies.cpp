@@ -1,4 +1,4 @@
-#include <stdafx.h>
+#include "stdafx.h"
 
 using TInitScriptMemberVariable = void*(void* a1, void* a2, uint64_t a3, uint64_t nameHash, void* a5, void* a6, void* a7);
 TInitScriptMemberVariable* RealInitScriptMemberVariable = nullptr;

@@ -30,7 +30,7 @@
 //  rectangle (to ease support for future multi-viewport). 2018-02-22: Merged into master with all Win32 code
 //  synchronized to other examples.
 
-#include <stdafx.h>
+#include "stdafx.h"
 
 #include "dx12.h"
 
