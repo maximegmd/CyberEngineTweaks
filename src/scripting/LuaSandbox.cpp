@@ -46,6 +46,7 @@ static constexpr const char* s_cGlobalObjectsWhitelist[] = {
     "print",
     "GetVersion",
     "GetDisplayResolution",
+    "GetScaleFactor",
     "ModArchiveExists",
 
     "ImGuiListClipper",

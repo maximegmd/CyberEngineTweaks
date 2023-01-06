@@ -126,6 +126,11 @@ void Scripting::Initialize()
         return {static_cast<float>(resolution.cx), static_cast<float>(resolution.cy)};
     };
 
+    globals["GetScaleFactor"] = [this]() -> float
+    {
+        return m_d3d12.GetScaleFactor();
+    };
+
     globals["ModArchiveExists"] = [this](const std::string& acArchiveName) -> bool
     {
         const auto resourceDepot = RED4ext::ResourceDepot::Get();
