@@ -8,19 +8,44 @@
 #include "Theme.h"
 
 
+using nlohmann::json;
+
+
 // Helpers
 
 
-static ImVec2 XyFromJson(const nlohmann::json& aJson)
+static json XyToObject(const ImVec2& aXy)
 {
-    return ImVec2(aJson[0], aJson[1]);
+    return json::object({ {"x", aXy.x}, {"y", aXy.y} });
 }
 
-static nlohmann::json XyToJson(const ImVec2& aXy)
+static ImVec2 XyFromObject(const json& aJson, const ImVec2& aDefaults)
 {
-    return nlohmann::json::array({aXy.x, aXy.y});
+    return ImVec2(aJson.value("x", aDefaults.x), aJson.value("y", aDefaults.y));
 }
 
+static json DirectionToLabel(const ImGuiDir& aDirection)
+{
+    switch (aDirection) {
+    case ImGuiDir_None: return "None";
+    case ImGuiDir_Left: return "Left";
+    case ImGuiDir_Right: return "Right";
+    case ImGuiDir_Up: return "Up";
+    case ImGuiDir_Down: return "Down";
+    default: return "Unknown";
+    }
+}
+
+static ImGuiDir DirectionFromLabel(const std::string& aDirectionLabel, const ImGuiDir& aDefaultDirection)
+{
+    if (aDirectionLabel == "None") return ImGuiDir_None;
+    if (aDirectionLabel == "Left") return ImGuiDir_Left;
+    if (aDirectionLabel == "Right") return ImGuiDir_Right;
+    if (aDirectionLabel == "Up") return ImGuiDir_Up;
+    if (aDirectionLabel == "Down") return ImGuiDir_Down;
+
+    return aDefaultDirection;
+}
 
 static std::string ColorToHex(const ImVec4& aColor)
 {
@@ -32,22 +57,24 @@ static std::string ColorToHex(const ImVec4& aColor)
                        static_cast<int>(aColor.w * 255));
 }
 
-static std::optional<ImVec4> HexToColor(const std::string& aHex)
+static ImVec4 ColorFromHex(const std::string& aHex, const ImVec4& aDefaultColor)
 {
-    Log::Info("HTC: got {}", aHex);
+    if (aHex.empty()) {
+        return aDefaultColor;
+    }
+
     int r, g, b = 0;
 
     auto foundRGB = scn::scan(aHex, "#{:2x}{:2x}{:2x}", r, g, b);
 
     if (!foundRGB) {
-        Log::Info("HTC: failed to parse");
-        return std::nullopt;
+        Log::Warn("Failed to parse color, must be hex with optional alpha (\"#00ff00\", \"#00ff00ff\"): {}", aHex);
+        return aDefaultColor;
     }
 
     int a = 255;
     auto alphaResult = scn::scan(foundRGB.range(), "{:2x}", a);
 
-    Log::Info("HTC: parsed {} {} {} {}", r, g, b, a);
     ImVec4 outColor {
         r / 255.0f,
         g / 255.0f,
@@ -55,147 +82,293 @@ static std::optional<ImVec4> HexToColor(const std::string& aHex)
         a / 255.0f
     };
 
-    Log::Info("HTC: returning {}", ColorToHex(outColor));
     return outColor;
 }
 
+//
+// Codec
+//
 
-static bool ThemeJsonFromStyle(nlohmann::json& aOutJson, const ImGuiStyle& aStyle)
-{
-    aOutJson = nlohmann::ordered_json {
-        {"cetThemeSchemaVersion", "1.0.0"},
-        {"cetThemeName", "<final merged theme in effect>"},
-        {"style", {
-            {"Alpha", aStyle.Alpha},
-            {"AntiAliasedLines", aStyle.AntiAliasedLines},
-            {"AntiAliasedFill", aStyle.AntiAliasedFill},
-            {"DisplayWindowPadding", XyToJson(aStyle.DisplayWindowPadding)},
-            {"DisplaySafeAreaPadding", XyToJson(aStyle.DisplaySafeAreaPadding)},
-            {"WindowRounding", aStyle.WindowRounding},
-            {"WindowBorderSize", aStyle.WindowBorderSize},
-            {"WindowMinSize", XyToJson(aStyle.WindowMinSize)},
-            {"WindowTitleAlign", XyToJson(aStyle.WindowTitleAlign)},
-            {"ChildRounding", aStyle.ChildRounding},
-            {"ChildBorderSize", aStyle.ChildBorderSize},
-            {"PopupRounding", aStyle.PopupRounding},
-            {"PopupBorderSize", aStyle.PopupBorderSize},
-            {"FramePadding", XyToJson(aStyle.FramePadding)},
-            {"FrameRounding", aStyle.FrameRounding},
-            {"FrameBorderSize", aStyle.FrameBorderSize},
-            {"ItemSpacing", XyToJson(aStyle.ItemSpacing)},
-            {"ItemInnerSpacing", XyToJson(aStyle.ItemInnerSpacing)},
-            {"TouchExtraPadding", XyToJson(aStyle.TouchExtraPadding)},
-            {"IndentSpacing", aStyle.IndentSpacing},
-            {"ColumnsMinSpacing", aStyle.ColumnsMinSpacing},
-            {"ScrollbarSize", aStyle.ScrollbarSize},
-            {"ScrollbarRounding", aStyle.ScrollbarRounding},
-            {"GrabMinSize", aStyle.GrabMinSize},
-            {"GrabRounding", aStyle.GrabRounding},
-            {"TabRounding", aStyle.TabRounding},
-            {"TabBorderSize", aStyle.TabBorderSize},
-            {"TabMinWidthForCloseButton", aStyle.TabMinWidthForCloseButton},
-            {"ColorButtonPosition", aStyle.ColorButtonPosition},
-            {"ButtonTextAlign", XyToJson(aStyle.ButtonTextAlign)},
-            {"SelectableTextAlign", XyToJson(aStyle.SelectableTextAlign)},
-            {"DisplayWindowPadding", XyToJson(aStyle.DisplayWindowPadding)},
-            {"DisplaySafeAreaPadding", XyToJson(aStyle.DisplaySafeAreaPadding)},
-            {"MouseCursorScale", aStyle.MouseCursorScale},
-            {"CurveTessellationTol", aStyle.CurveTessellationTol}
-        }},
-        {"colors", {
-            {"Text", ColorToHex(aStyle.Colors[ImGuiCol_Text])},
-            {"TextDisabled", ColorToHex(aStyle.Colors[ImGuiCol_TextDisabled])},
-            {"WindowBg", ColorToHex(aStyle.Colors[ImGuiCol_WindowBg])},
-            {"ChildBg", ColorToHex(aStyle.Colors[ImGuiCol_ChildBg])},
-            {"PopupBg", ColorToHex(aStyle.Colors[ImGuiCol_PopupBg])},
-            {"Border", ColorToHex(aStyle.Colors[ImGuiCol_Border])},
-            {"BorderShadow", ColorToHex(aStyle.Colors[ImGuiCol_BorderShadow])},
-            {"FrameBg", ColorToHex(aStyle.Colors[ImGuiCol_FrameBg])},
-            {"FrameBgHovered", ColorToHex(aStyle.Colors[ImGuiCol_FrameBgHovered])},
-            {"FrameBgActive", ColorToHex(aStyle.Colors[ImGuiCol_FrameBgActive])},
-            {"TitleBg", ColorToHex(aStyle.Colors[ImGuiCol_TitleBg])},
-            {"TitleBgActive", ColorToHex(aStyle.Colors[ImGuiCol_TitleBgActive])},
-            {"TitleBgCollapsed", ColorToHex(aStyle.Colors[ImGuiCol_TitleBgCollapsed])},
-            {"MenuBarBg", ColorToHex(aStyle.Colors[ImGuiCol_MenuBarBg])},
-            {"ScrollbarBg", ColorToHex(aStyle.Colors[ImGuiCol_ScrollbarBg])},
-            {"ScrollbarGrab", ColorToHex(aStyle.Colors[ImGuiCol_ScrollbarGrab])},
-            {"ScrollbarGrabHovered", ColorToHex(aStyle.Colors[ImGuiCol_ScrollbarGrabHovered])},
-            {"ScrollbarGrabActive", ColorToHex(aStyle.Colors[ImGuiCol_ScrollbarGrabActive])},
-            {"CheckMark", ColorToHex(aStyle.Colors[ImGuiCol_CheckMark])},
-            {"SliderGrab", ColorToHex(aStyle.Colors[ImGuiCol_SliderGrab])},
-            {"SliderGrabActive", ColorToHex(aStyle.Colors[ImGuiCol_SliderGrabActive])},
-            {"Button", ColorToHex(aStyle.Colors[ImGuiCol_Button])},
-            {"ButtonHovered", ColorToHex(aStyle.Colors[ImGuiCol_ButtonHovered])},
-            {"ButtonActive", ColorToHex(aStyle.Colors[ImGuiCol_ButtonActive])},
-            {"Header", ColorToHex(aStyle.Colors[ImGuiCol_Header])},
-            {"HeaderHovered", ColorToHex(aStyle.Colors[ImGuiCol_HeaderHovered])},
-            {"HeaderActive", ColorToHex(aStyle.Colors[ImGuiCol_HeaderActive])},
-            {"Separator", ColorToHex(aStyle.Colors[ImGuiCol_Separator])},
-            {"SeparatorHovered", ColorToHex(aStyle.Colors[ImGuiCol_SeparatorHovered])},
-            {"SeparatorActive", ColorToHex(aStyle.Colors[ImGuiCol_SeparatorActive])},
-            {"ResizeGrip", ColorToHex(aStyle.Colors[ImGuiCol_ResizeGrip])},
-            {"ResizeGripHovered", ColorToHex(aStyle.Colors[ImGuiCol_ResizeGripHovered])},
-            {"ResizeGripActive", ColorToHex(aStyle.Colors[ImGuiCol_ResizeGripActive])},
-            {"Tab", ColorToHex(aStyle.Colors[ImGuiCol_Tab])},
-            {"TabHovered", ColorToHex(aStyle.Colors[ImGuiCol_TabHovered])},
-            {"TabActive", ColorToHex(aStyle.Colors[ImGuiCol_TabActive])},
-            {"TabUnfocused", ColorToHex(aStyle.Colors[ImGuiCol_TabUnfocused])},
-            {"TabUnfocusedActive", ColorToHex(aStyle.Colors[ImGuiCol_TabUnfocusedActive])},
-            {"PlotLines", ColorToHex(aStyle.Colors[ImGuiCol_PlotLines])},
-            {"PlotLinesHovered", ColorToHex(aStyle.Colors[ImGuiCol_PlotLinesHovered])},
-            {"PlotHistogram", ColorToHex(aStyle.Colors[ImGuiCol_PlotHistogram])},
-            {"PlotHistogramHovered", ColorToHex(aStyle.Colors[ImGuiCol_PlotHistogramHovered])},
-            {"TextSelectedBg", ColorToHex(aStyle.Colors[ImGuiCol_TextSelectedBg])},
-            {"DragDropTarget", ColorToHex(aStyle.Colors[ImGuiCol_DragDropTarget])},
-            {"NavHighlight", ColorToHex(aStyle.Colors[ImGuiCol_NavHighlight])},
-            {"NavWindowingHighlight", ColorToHex(aStyle.Colors[ImGuiCol_NavWindowingHighlight])},
-            {"NavWindowingDimBg", ColorToHex(aStyle.Colors[ImGuiCol_NavWindowingDimBg])},
-            {"ModalWindowDimBg", ColorToHex(aStyle.Colors[ImGuiCol_ModalWindowDimBg])},
-            {"DockingPreview", ColorToHex(aStyle.Colors[ImGuiCol_DockingPreview])}
-        }}
+// Encoders
+using EncodeValueFunc = std::function<void(const ImGuiStyle&, json& aOutJson)>;
+
+// Decoders
+using DecodeValueFunc = std::function<void(ImGuiStyle& aOutStyle, const json& aJson)>;
+
+
+struct Codec {
+    std::string valueName;
+    EncodeValueFunc encodeFrom;
+    DecodeValueFunc decodeInto;
+};
+
+//
+// Simple scalar types
+//
+
+template <typename TAccessor> static EncodeValueFunc EncodeScalar(std::string aValueName, TAccessor aValueAccessor) {
+    return [=](const ImGuiStyle& aStyle, json& aOutJson) -> void {
+        aOutJson[aValueName] = aStyle.*aValueAccessor;
     };
+}
+
+template <typename TAccessor> static DecodeValueFunc DecodeScalar(std::string aValueName, TAccessor aValueAccessor) {
+    return [=](ImGuiStyle& aOutStyle, const json& aJson) -> void {
+        aOutStyle.*aValueAccessor = aJson.value(aValueName, aOutStyle.*aValueAccessor);
+    };
+}
+
+template<typename TAccessor> static Codec Scalar(std::string aValueName, TAccessor aValueAccessor)
+{
+    return Codec{ aValueName, EncodeScalar(aValueName, aValueAccessor), DecodeScalar(aValueName, aValueAccessor) };
+}
+
+//
+// ImVec2 'XY' types
+//
+
+template <typename TAccessor> static EncodeValueFunc EncodeXY(std::string aValueName, TAccessor aValueAccessor) {
+    return [=](const ImGuiStyle& aStyle, json& aOutJson) -> void {
+        aOutJson[aValueName] = XyToObject(aStyle.*aValueAccessor);
+    };
+}
+
+template <typename TAccessor> static DecodeValueFunc DecodeXY(std::string aValueName, TAccessor aValueAccessor) {
+    return [=](ImGuiStyle& aOutStyle, const json& aJson) -> void {
+        aOutStyle.*aValueAccessor = XyFromObject(aJson.value(aValueName, json::object()), aOutStyle.*aValueAccessor);
+    };
+}
+
+template<typename TAccessor> static Codec XY(std::string aValueName, TAccessor aValueAccessor)
+{
+    return Codec{ aValueName, EncodeXY(aValueName, aValueAccessor), DecodeXY(aValueName, aValueAccessor) };
+}
+
+//
+// ImGuiDir[ection] types
+//
+
+template <typename TAccessor> static EncodeValueFunc EncodeDirection(std::string aValueName, TAccessor aValueAccessor) {
+    return [=](const ImGuiStyle& aStyle, json& aOutJson) -> void {
+        aOutJson[aValueName] = DirectionToLabel(aStyle.*aValueAccessor);
+    };
+}
+
+template <typename TAccessor> static DecodeValueFunc DecodeDirection(std::string aValueName, TAccessor aValueAccessor) {
+    return [=](ImGuiStyle& aOutStyle, const json& aJson) -> void {
+        aOutStyle.*aValueAccessor = DirectionFromLabel(aJson.value(aValueName, ""), aOutStyle.*aValueAccessor);
+    };
+}
+
+template<typename TAccessor> static Codec Direction(std::string aValueName, TAccessor aValueAccessor)
+{
+    return Codec{ aValueName, EncodeDirection(aValueName, aValueAccessor), DecodeDirection(aValueName, aValueAccessor) };
+}
+
+
+//
+// Colors
+//
+
+static EncodeValueFunc EncodeColor(std::string aValueName, const ImGuiCol_ aColorableIndex) {
+    return [=](const ImGuiStyle& aStyle, json& aOutJson) -> void {
+        aOutJson[aValueName] = ColorToHex(aStyle.Colors[aColorableIndex]);
+    };
+}
+
+static DecodeValueFunc DecodeColor(std::string aValueName, const ImGuiCol_ aColorableIndex) {
+    return [=](ImGuiStyle& aOutStyle, const json& aJson) -> void {
+        aOutStyle.Colors[aColorableIndex] = ColorFromHex(aJson.value(aValueName, ""), aOutStyle.Colors[aColorableIndex]);
+    };
+}
+
+static Codec Color(std::string aValueName, ImGuiCol_ aColorableIndex)
+{
+    return Codec{ aValueName, EncodeColor(aValueName, aColorableIndex), DecodeColor(aValueName, aColorableIndex) };
+}
+
+
+//
+// Full codecs
+//
+
+
+static const auto StyleCodecs = std::forward_list{
+    Scalar("Alpha", &ImGuiStyle::Alpha),
+    Scalar("DisabledAlpha", &ImGuiStyle::DisabledAlpha),
+    XY("WindowPadding", &ImGuiStyle::WindowPadding),
+    Scalar("WindowRounding", &ImGuiStyle::WindowRounding),
+    Scalar("WindowBorderSize", &ImGuiStyle::WindowBorderSize),
+    XY("WindowMinSize", &ImGuiStyle::WindowMinSize),
+    XY("WindowTitleAlign", &ImGuiStyle::WindowTitleAlign),
+    Direction("WindowMenuButtonPosition", &ImGuiStyle::WindowMenuButtonPosition),
+    Scalar("ChildRounding", &ImGuiStyle::ChildRounding),
+    Scalar("ChildBorderSize", &ImGuiStyle::ChildBorderSize),
+    Scalar("PopupRounding", &ImGuiStyle::PopupRounding),
+    Scalar("PopupBorderSize", &ImGuiStyle::PopupBorderSize),
+    XY("FramePadding", &ImGuiStyle::FramePadding),
+    Scalar("FrameRounding", &ImGuiStyle::FrameRounding),
+    Scalar("FrameBorderSize", &ImGuiStyle::FrameBorderSize),
+    XY("ItemSpacing", &ImGuiStyle::ItemSpacing),
+    XY("ItemInnerSpacing", &ImGuiStyle::ItemInnerSpacing),
+    XY("CellPadding", &ImGuiStyle::CellPadding),
+    XY("TouchExtraPadding", &ImGuiStyle::TouchExtraPadding),
+    Scalar("IndentSpacing", &ImGuiStyle::IndentSpacing),
+    Scalar("ColumnsMinSpacing", &ImGuiStyle::ColumnsMinSpacing),
+    Scalar("ScrollbarSize", &ImGuiStyle::ScrollbarSize),
+    Scalar("ScrollbarRounding", &ImGuiStyle::ScrollbarRounding),
+    Scalar("GrabMinSize", &ImGuiStyle::GrabMinSize),
+    Scalar("GrabRounding", &ImGuiStyle::GrabRounding),
+    Scalar("LogSliderDeadzone", &ImGuiStyle::LogSliderDeadzone),
+    Scalar("TabRounding", &ImGuiStyle::TabRounding),
+    Scalar("TabBorderSize", &ImGuiStyle::TabBorderSize),
+    Scalar("TabMinWidthForCloseButton", &ImGuiStyle::TabMinWidthForCloseButton),
+    Direction("ColorButtonPosition", &ImGuiStyle::ColorButtonPosition),
+    XY("ButtonTextAlign", &ImGuiStyle::ButtonTextAlign),
+    XY("SelectableTextAlign", &ImGuiStyle::SelectableTextAlign),
+    XY("DisplayWindowPadding", &ImGuiStyle::DisplayWindowPadding),
+    XY("DisplaySafeAreaPadding", &ImGuiStyle::DisplaySafeAreaPadding),
+    Scalar("MouseCursorScale", &ImGuiStyle::MouseCursorScale),
+    Scalar("AntiAliasedLines", &ImGuiStyle::AntiAliasedLines),
+    Scalar("AntiAliasedLinesUseTex", &ImGuiStyle::AntiAliasedLinesUseTex),
+    Scalar("AntiAliasedFill", &ImGuiStyle::AntiAliasedFill),
+    Scalar("CurveTessellationTol", &ImGuiStyle::CurveTessellationTol),
+    Scalar("CircleTessellationMaxError", &ImGuiStyle::CircleTessellationMaxError),
+};
+
+static const auto ColorCodecs = std::forward_list{
+    Color("Text", ImGuiCol_Text),
+    Color("TextDisabled", ImGuiCol_TextDisabled),
+    Color("WindowBg", ImGuiCol_WindowBg),
+    Color("ChildBg", ImGuiCol_ChildBg),
+    Color("PopupBg", ImGuiCol_PopupBg),
+    Color("Border", ImGuiCol_Border),
+    Color("BorderShadow", ImGuiCol_BorderShadow),
+    Color("FrameBg", ImGuiCol_FrameBg),
+    Color("FrameBgHovered", ImGuiCol_FrameBgHovered),
+    Color("FrameBgActive", ImGuiCol_FrameBgActive),
+    Color("TitleBg", ImGuiCol_TitleBg),
+    Color("TitleBgActive", ImGuiCol_TitleBgActive),
+    Color("TitleBgCollapsed", ImGuiCol_TitleBgCollapsed),
+    Color("MenuBarBg", ImGuiCol_MenuBarBg),
+    Color("ScrollbarBg", ImGuiCol_ScrollbarBg),
+    Color("ScrollbarGrab", ImGuiCol_ScrollbarGrab),
+    Color("ScrollbarGrabHovered", ImGuiCol_ScrollbarGrabHovered),
+    Color("ScrollbarGrabActive", ImGuiCol_ScrollbarGrabActive),
+    Color("CheckMark", ImGuiCol_CheckMark),
+    Color("SliderGrab", ImGuiCol_SliderGrab),
+    Color("SliderGrabActive", ImGuiCol_SliderGrabActive),
+    Color("Button", ImGuiCol_Button),
+    Color("ButtonHovered", ImGuiCol_ButtonHovered),
+    Color("ButtonActive", ImGuiCol_ButtonActive),
+    Color("Header", ImGuiCol_Header),
+    Color("HeaderHovered", ImGuiCol_HeaderHovered),
+    Color("HeaderActive", ImGuiCol_HeaderActive),
+    Color("Separator", ImGuiCol_Separator),
+    Color("SeparatorHovered", ImGuiCol_SeparatorHovered),
+    Color("SeparatorActive", ImGuiCol_SeparatorActive),
+    Color("ResizeGrip", ImGuiCol_ResizeGrip),
+    Color("ResizeGripHovered", ImGuiCol_ResizeGripHovered),
+    Color("ResizeGripActive", ImGuiCol_ResizeGripActive),
+    Color("Tab", ImGuiCol_Tab),
+    Color("TabHovered", ImGuiCol_TabHovered),
+    Color("TabActive", ImGuiCol_TabActive),
+    Color("TabUnfocused", ImGuiCol_TabUnfocused),
+    Color("TabUnfocusedActive", ImGuiCol_TabUnfocusedActive),
+    Color("DockingPreview", ImGuiCol_DockingPreview),
+    Color("DockingEmptyBg", ImGuiCol_DockingEmptyBg),
+    Color("PlotLines", ImGuiCol_PlotLines),
+    Color("PlotLinesHovered", ImGuiCol_PlotLinesHovered),
+    Color("PlotHistogram", ImGuiCol_PlotHistogram),
+    Color("PlotHistogramHovered", ImGuiCol_PlotHistogramHovered),
+    Color("TableHeaderBg", ImGuiCol_TableHeaderBg),
+    Color("TableBorderStrong", ImGuiCol_TableBorderStrong),
+    Color("TableBorderLight", ImGuiCol_TableBorderLight),
+    Color("TableRowBg", ImGuiCol_TableRowBg),
+    Color("TableRowBgAlt", ImGuiCol_TableRowBgAlt),
+    Color("TextSelectedBg", ImGuiCol_TextSelectedBg),
+    Color("DragDropTarget", ImGuiCol_DragDropTarget),
+    Color("NavHighlight", ImGuiCol_NavHighlight),
+    Color("NavWindowingHighlight", ImGuiCol_NavWindowingHighlight),
+    Color("NavWindowingDimBg", ImGuiCol_NavWindowingDimBg),
+    Color("ModalWindowDimBg", ImGuiCol_ModalWindowDimBg),
+};
+
+
+// Internal Load/Dump functions
+
+
+static const std::string SchemaVersionLabel = "ImGuiThemeVersion";
+static const std::string SchemaVersionValue = "1.0.0";
+
+static const std::string ThemeNameLabel = "ThemeName";
+static const std::string StyleSectionLabel = "style";
+static const std::string ColorsSectionLabel = "colors";
+
+
+static bool ThemeJsonFromStyle(json& aOutJson, const ImGuiStyle& aStyle)
+{
+    aOutJson = json{
+        {SchemaVersionLabel, SchemaVersionValue},
+        {ThemeNameLabel, "<final merged theme in effect>"},
+        {StyleSectionLabel, { }},
+        {ColorsSectionLabel, { }}
+    };
+
+    json& styleJson = aOutJson[StyleSectionLabel];
+
+    for (const auto& valueEncoder : StyleCodecs) {
+        valueEncoder.encodeFrom(aStyle, styleJson);
+    }
+
+    json& colorJson = aOutJson[ColorsSectionLabel];
+
+    for (const auto& valueEncoder : ColorCodecs) {
+        valueEncoder.encodeFrom(aStyle, colorJson);
+    }
 
     return true;
 }
 
 
-
-static bool StyleFromThemeJson(ImGuiStyle& aOutTheme, std::ifstream& aMaybeTheme)
+static bool StyleFromThemeJson(ImGuiStyle& aOutStyle, std::ifstream& aMaybeTheme)
 {
-    const nlohmann::json themeJson = nlohmann::json::parse(aMaybeTheme, nullptr, false, true);
+    const json themeJson = json::parse(aMaybeTheme, nullptr, false, true);
 
     if (themeJson.is_discarded()) {
         Log::Error("Failed to parse theme json");
         return false;
     }
 
-    auto schemaVersion = themeJson.value("cetThemeSchemaVersion", "");
+    std::string schemaVersion = themeJson.value(SchemaVersionLabel, "");
 
-    if (schemaVersion != "1.0.0") {
+    if (schemaVersion != SchemaVersionValue) {
         Log::Error("Theme schema version {} is not supported, may be invalid", schemaVersion);
         return false;
     }
 
-    Log::Info("Successfully loaded theme: {}", themeJson.dump(4));
+    Log::Info("Successfully parsed theme: {}", themeJson.value(ThemeNameLabel, "<unnamed theme>"));
+    Log::Info("Theme: {}", themeJson.dump(4));
 
-    auto styleParameters = themeJson.value("style", nlohmann::json::object());
+    json styleParameters = themeJson.value(StyleSectionLabel, json::object());
 
-    aOutTheme.Alpha = styleParameters.value("Alpha", aOutTheme.Alpha);
-    aOutTheme.AntiAliasedLines = styleParameters.value("AntiAliasedLines", aOutTheme.AntiAliasedLines);
-    aOutTheme.AntiAliasedFill = styleParameters.value("AntiAliasedFill", aOutTheme.AntiAliasedFill);
-    auto windowPadding = styleParameters.value("WindowPadding", nlohmann::json::array({aOutTheme.WindowPadding.x, aOutTheme.WindowPadding.y}));
-    aOutTheme.WindowPadding = ImVec2(windowPadding[0], windowPadding[1]);
+    for (const auto& valueDecoder : StyleCodecs) {
+        valueDecoder.decodeInto(aOutStyle, styleParameters);
+    }
 
-    auto colorParameters = themeJson.value("colors", nlohmann::json::object());
+    json colorParameters = themeJson.value(ColorsSectionLabel, json::object());
 
-    aOutTheme.Colors[ImGuiCol_Text] = HexToColor(colorParameters.value("Text", "")).value_or(aOutTheme.Colors[ImGuiCol_Text]);
-    aOutTheme.Colors[ImGuiCol_WindowBg] = HexToColor(colorParameters.value("WindowBg", "")).value_or(aOutTheme.Colors[ImGuiCol_WindowBg]);
+    for (const auto& valueDecoder : ColorCodecs) {
+        valueDecoder.decodeInto(aOutStyle, colorParameters);
+    }
 
     return true;
 }
 
 
+//
 // API
+//
 
 
 bool LoadStyleFromThemeJson(const std::filesystem::path& aThemePath, ImGuiStyle& aOutStyle)
@@ -229,7 +402,7 @@ bool LoadStyleFromThemeJson(const std::filesystem::path& aThemePath, ImGuiStyle&
 
 const std::string DumpStyleToThemeJson(const ImGuiStyle& aStyle)
 {
-    nlohmann::json themeJson;
+    json themeJson;
     ThemeJsonFromStyle(themeJson, aStyle);
 
     return themeJson.dump(4);
