@@ -971,7 +971,7 @@ void RTTIHelper::SetProperty(RED4ext::CClass* apClass, RED4ext::ScriptInstance a
     if (!pProp)
         return;
 
-    static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 13);
+    static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 14);
     struct ResetAllocator
     {
         ~ResetAllocator() { s_scratchMemory.Reset(); }

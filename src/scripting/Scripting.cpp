@@ -949,13 +949,13 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
 
 void Scripting::ToRED(sol::object aObject, RED4ext::CStackType& aRet)
 {
-    static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 13);
+    static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 14);
 
     const auto result = ToRED(aObject, aRet.type, &s_scratchMemory);
 
     aRet.type->Assign(aRet.value, result.value);
 
-    if (aRet.type->GetType() != RED4ext::ERTTIType::Class)
+    if (aRet.type->GetType() != RED4ext::ERTTIType::Class && result.value)
         aRet.type->Destruct(result.value);
 
     s_scratchMemory.Reset();
