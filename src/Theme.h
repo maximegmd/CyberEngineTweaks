@@ -5,7 +5,6 @@
 // NB: this is not a serialization of ImGuiStyle, it's a
 //     serializable representation of styling parameters.
 
-
 // Load ImGui style directly from JSON. Parses the format used by DumpStyleToThemeJson.
 bool LoadStyleFromThemeJson(const std::filesystem::path& aThemePath, ImGuiStyle& aOutStyle);
 

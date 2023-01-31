@@ -15,7 +15,7 @@ struct D3D12
 {
     inline static const uint32_t g_numDownlevelBackbuffersRequired = 3; // Windows 7 only: number of buffers needed before we start rendering
 
-    inline static const SIZE g_designResolution = { 1920, 1080 };
+    inline static const SIZE g_designResolution = {1920, 1080};
 
     D3D12(Window& aWindow, Paths& aPaths, Options& aOptions);
     ~D3D12();
@@ -29,10 +29,10 @@ struct D3D12
     [[nodiscard]] SIZE GetResolution() const noexcept { return m_outSize; }
 
     // TODO - scale also by DPI
-    [[nodiscard]] float GetScaleFactor() const noexcept {
+    [[nodiscard]] float GetScaleFactor() const noexcept
+    {
         return std::min(static_cast<float>(m_outSize.cx) / g_designResolution.cx, static_cast<float>(m_outSize.cy) / g_designResolution.cy);
     }
-
 
     LRESULT OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam) const;
 

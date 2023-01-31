@@ -7,16 +7,13 @@
 
 #include "Theme.h"
 
-
 using nlohmann::json;
-
 
 // Helpers
 
-
 static json XyToObject(const ImVec2& aXy)
 {
-    return json::object({ {"x", aXy.x}, {"y", aXy.y} });
+    return json::object({{"x", aXy.x}, {"y", aXy.y}});
 }
 
 static ImVec2 XyFromObject(const json& aJson, const ImVec2& aDefaults)
@@ -26,7 +23,8 @@ static ImVec2 XyFromObject(const json& aJson, const ImVec2& aDefaults)
 
 static json DirectionToLabel(const ImGuiDir& aDirection)
 {
-    switch (aDirection) {
+    switch (aDirection)
+    {
     case ImGuiDir_None: return "None";
     case ImGuiDir_Left: return "Left";
     case ImGuiDir_Right: return "Right";
@@ -38,28 +36,31 @@ static json DirectionToLabel(const ImGuiDir& aDirection)
 
 static ImGuiDir DirectionFromLabel(const std::string& aDirectionLabel, const ImGuiDir& aDefaultDirection)
 {
-    if (aDirectionLabel == "None") return ImGuiDir_None;
-    if (aDirectionLabel == "Left") return ImGuiDir_Left;
-    if (aDirectionLabel == "Right") return ImGuiDir_Right;
-    if (aDirectionLabel == "Up") return ImGuiDir_Up;
-    if (aDirectionLabel == "Down") return ImGuiDir_Down;
+    if (aDirectionLabel == "None")
+        return ImGuiDir_None;
+    if (aDirectionLabel == "Left")
+        return ImGuiDir_Left;
+    if (aDirectionLabel == "Right")
+        return ImGuiDir_Right;
+    if (aDirectionLabel == "Up")
+        return ImGuiDir_Up;
+    if (aDirectionLabel == "Down")
+        return ImGuiDir_Down;
 
     return aDefaultDirection;
 }
 
 static std::string ColorToHex(const ImVec4& aColor)
 {
-    //                      R     G     B     A
-    return fmt::format("#{:02x}{:02x}{:02x}{:02x}",
-                       static_cast<int>(aColor.x * 255),
-                       static_cast<int>(aColor.y * 255),
-                       static_cast<int>(aColor.z * 255),
-                       static_cast<int>(aColor.w * 255));
+    return fmt::format(
+        //    R     G     B     A
+        "#{:02x}{:02x}{:02x}{:02x}", static_cast<int>(aColor.x * 255), static_cast<int>(aColor.y * 255), static_cast<int>(aColor.z * 255), static_cast<int>(aColor.w * 255));
 }
 
 static ImVec4 ColorFromHex(const std::string& aHex, const ImVec4& aDefaultColor)
 {
-    if (aHex.empty()) {
+    if (aHex.empty())
+    {
         return aDefaultColor;
     }
 
@@ -67,7 +68,8 @@ static ImVec4 ColorFromHex(const std::string& aHex, const ImVec4& aDefaultColor)
 
     auto foundRGB = scn::scan(aHex, "#{:2x}{:2x}{:2x}", r, g, b);
 
-    if (!foundRGB) {
+    if (!foundRGB)
+    {
         Log::Warn("Failed to parse color, must be hex with optional alpha (\"#00ff00\", \"#00ff00ff\"): {}", aHex);
         return aDefaultColor;
     }
@@ -75,12 +77,7 @@ static ImVec4 ColorFromHex(const std::string& aHex, const ImVec4& aDefaultColor)
     int a = 255;
     auto alphaResult = scn::scan(foundRGB.range(), "{:2x}", a);
 
-    ImVec4 outColor {
-        r / 255.0f,
-        g / 255.0f,
-        b / 255.0f,
-        a / 255.0f
-    };
+    ImVec4 outColor{r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f};
 
     return outColor;
 }
@@ -95,8 +92,8 @@ using EncodeValueFunc = std::function<void(const ImGuiStyle&, json& aOutJson)>;
 // Decoders
 using DecodeValueFunc = std::function<void(ImGuiStyle& aOutStyle, const json& aJson)>;
 
-
-struct Codec {
+struct Codec
+{
     std::string valueName;
     EncodeValueFunc encodeFrom;
     DecodeValueFunc decodeInto;
@@ -106,92 +103,105 @@ struct Codec {
 // Simple scalar types
 //
 
-template <typename TAccessor> static EncodeValueFunc EncodeScalar(std::string aValueName, TAccessor aValueAccessor) {
-    return [=](const ImGuiStyle& aStyle, json& aOutJson) -> void {
+template <typename TAccessor> static EncodeValueFunc EncodeScalar(std::string aValueName, TAccessor aValueAccessor)
+{
+    return [=](const ImGuiStyle& aStyle, json& aOutJson) -> void
+    {
         aOutJson[aValueName] = aStyle.*aValueAccessor;
     };
 }
 
-template <typename TAccessor> static DecodeValueFunc DecodeScalar(std::string aValueName, TAccessor aValueAccessor) {
-    return [=](ImGuiStyle& aOutStyle, const json& aJson) -> void {
+template <typename TAccessor> static DecodeValueFunc DecodeScalar(std::string aValueName, TAccessor aValueAccessor)
+{
+    return [=](ImGuiStyle& aOutStyle, const json& aJson) -> void
+    {
         aOutStyle.*aValueAccessor = aJson.value(aValueName, aOutStyle.*aValueAccessor);
     };
 }
 
-template<typename TAccessor> static Codec Scalar(std::string aValueName, TAccessor aValueAccessor)
+template <typename TAccessor> static Codec Scalar(std::string aValueName, TAccessor aValueAccessor)
 {
-    return Codec{ aValueName, EncodeScalar(aValueName, aValueAccessor), DecodeScalar(aValueName, aValueAccessor) };
+    return Codec{aValueName, EncodeScalar(aValueName, aValueAccessor), DecodeScalar(aValueName, aValueAccessor)};
 }
 
 //
 // ImVec2 'XY' types
 //
 
-template <typename TAccessor> static EncodeValueFunc EncodeXY(std::string aValueName, TAccessor aValueAccessor) {
-    return [=](const ImGuiStyle& aStyle, json& aOutJson) -> void {
+template <typename TAccessor> static EncodeValueFunc EncodeXY(std::string aValueName, TAccessor aValueAccessor)
+{
+    return [=](const ImGuiStyle& aStyle, json& aOutJson) -> void
+    {
         aOutJson[aValueName] = XyToObject(aStyle.*aValueAccessor);
     };
 }
 
-template <typename TAccessor> static DecodeValueFunc DecodeXY(std::string aValueName, TAccessor aValueAccessor) {
-    return [=](ImGuiStyle& aOutStyle, const json& aJson) -> void {
+template <typename TAccessor> static DecodeValueFunc DecodeXY(std::string aValueName, TAccessor aValueAccessor)
+{
+    return [=](ImGuiStyle& aOutStyle, const json& aJson) -> void
+    {
         aOutStyle.*aValueAccessor = XyFromObject(aJson.value(aValueName, json::object()), aOutStyle.*aValueAccessor);
     };
 }
 
-template<typename TAccessor> static Codec XY(std::string aValueName, TAccessor aValueAccessor)
+template <typename TAccessor> static Codec XY(std::string aValueName, TAccessor aValueAccessor)
 {
-    return Codec{ aValueName, EncodeXY(aValueName, aValueAccessor), DecodeXY(aValueName, aValueAccessor) };
+    return Codec{aValueName, EncodeXY(aValueName, aValueAccessor), DecodeXY(aValueName, aValueAccessor)};
 }
 
 //
 // ImGuiDir[ection] types
 //
 
-template <typename TAccessor> static EncodeValueFunc EncodeDirection(std::string aValueName, TAccessor aValueAccessor) {
-    return [=](const ImGuiStyle& aStyle, json& aOutJson) -> void {
+template <typename TAccessor> static EncodeValueFunc EncodeDirection(std::string aValueName, TAccessor aValueAccessor)
+{
+    return [=](const ImGuiStyle& aStyle, json& aOutJson) -> void
+    {
         aOutJson[aValueName] = DirectionToLabel(aStyle.*aValueAccessor);
     };
 }
 
-template <typename TAccessor> static DecodeValueFunc DecodeDirection(std::string aValueName, TAccessor aValueAccessor) {
-    return [=](ImGuiStyle& aOutStyle, const json& aJson) -> void {
+template <typename TAccessor> static DecodeValueFunc DecodeDirection(std::string aValueName, TAccessor aValueAccessor)
+{
+    return [=](ImGuiStyle& aOutStyle, const json& aJson) -> void
+    {
         aOutStyle.*aValueAccessor = DirectionFromLabel(aJson.value(aValueName, ""), aOutStyle.*aValueAccessor);
     };
 }
 
-template<typename TAccessor> static Codec Direction(std::string aValueName, TAccessor aValueAccessor)
+template <typename TAccessor> static Codec Direction(std::string aValueName, TAccessor aValueAccessor)
 {
-    return Codec{ aValueName, EncodeDirection(aValueName, aValueAccessor), DecodeDirection(aValueName, aValueAccessor) };
+    return Codec{aValueName, EncodeDirection(aValueName, aValueAccessor), DecodeDirection(aValueName, aValueAccessor)};
 }
-
 
 //
 // Colors
 //
 
-static EncodeValueFunc EncodeColor(std::string aValueName, const ImGuiCol_ aColorableIndex) {
-    return [=](const ImGuiStyle& aStyle, json& aOutJson) -> void {
+static EncodeValueFunc EncodeColor(std::string aValueName, const ImGuiCol_ aColorableIndex)
+{
+    return [=](const ImGuiStyle& aStyle, json& aOutJson) -> void
+    {
         aOutJson[aValueName] = ColorToHex(aStyle.Colors[aColorableIndex]);
     };
 }
 
-static DecodeValueFunc DecodeColor(std::string aValueName, const ImGuiCol_ aColorableIndex) {
-    return [=](ImGuiStyle& aOutStyle, const json& aJson) -> void {
+static DecodeValueFunc DecodeColor(std::string aValueName, const ImGuiCol_ aColorableIndex)
+{
+    return [=](ImGuiStyle& aOutStyle, const json& aJson) -> void
+    {
         aOutStyle.Colors[aColorableIndex] = ColorFromHex(aJson.value(aValueName, ""), aOutStyle.Colors[aColorableIndex]);
     };
 }
 
 static Codec Color(std::string aValueName, ImGuiCol_ aColorableIndex)
 {
-    return Codec{ aValueName, EncodeColor(aValueName, aColorableIndex), DecodeColor(aValueName, aColorableIndex) };
+    return Codec{aValueName, EncodeColor(aValueName, aColorableIndex), DecodeColor(aValueName, aColorableIndex)};
 }
-
 
 //
 // Full codecs
 //
-
 
 static const auto StyleCodecs = std::forward_list{
     Scalar("Alpha", &ImGuiStyle::Alpha),
@@ -294,9 +304,7 @@ static const auto ColorCodecs = std::forward_list{
     Color("ModalWindowDimBg", ImGuiCol_ModalWindowDimBg),
 };
 
-
 // Internal Load/Dump functions
-
 
 static const std::string SchemaVersionLabel = "ImGuiThemeVersion";
 static const std::string SchemaVersionValue = "1.0.0";
@@ -305,44 +313,41 @@ static const std::string ThemeNameLabel = "ThemeName";
 static const std::string StyleSectionLabel = "style";
 static const std::string ColorsSectionLabel = "colors";
 
-
 static bool ThemeJsonFromStyle(json& aOutJson, const ImGuiStyle& aStyle)
 {
-    aOutJson = json{
-        {SchemaVersionLabel, SchemaVersionValue},
-        {ThemeNameLabel, "<final merged theme in effect>"},
-        {StyleSectionLabel, { }},
-        {ColorsSectionLabel, { }}
-    };
+    aOutJson = json{{SchemaVersionLabel, SchemaVersionValue}, {ThemeNameLabel, "<final merged theme in effect>"}, {StyleSectionLabel, {}}, {ColorsSectionLabel, {}}};
 
     json& styleJson = aOutJson[StyleSectionLabel];
 
-    for (const auto& valueEncoder : StyleCodecs) {
+    for (const auto& valueEncoder : StyleCodecs)
+    {
         valueEncoder.encodeFrom(aStyle, styleJson);
     }
 
     json& colorJson = aOutJson[ColorsSectionLabel];
 
-    for (const auto& valueEncoder : ColorCodecs) {
+    for (const auto& valueEncoder : ColorCodecs)
+    {
         valueEncoder.encodeFrom(aStyle, colorJson);
     }
 
     return true;
 }
 
-
 static bool StyleFromThemeJson(ImGuiStyle& aOutStyle, std::ifstream& aMaybeTheme)
 {
     const json themeJson = json::parse(aMaybeTheme, nullptr, false, true);
 
-    if (themeJson.is_discarded()) {
+    if (themeJson.is_discarded())
+    {
         Log::Error("Failed to parse theme json");
         return false;
     }
 
     std::string schemaVersion = themeJson.value(SchemaVersionLabel, "");
 
-    if (schemaVersion != SchemaVersionValue) {
+    if (schemaVersion != SchemaVersionValue)
+    {
         Log::Error("Theme schema version {} is not supported, may be invalid", schemaVersion);
         return false;
     }
@@ -352,24 +357,24 @@ static bool StyleFromThemeJson(ImGuiStyle& aOutStyle, std::ifstream& aMaybeTheme
 
     json styleParameters = themeJson.value(StyleSectionLabel, json::object());
 
-    for (const auto& valueDecoder : StyleCodecs) {
+    for (const auto& valueDecoder : StyleCodecs)
+    {
         valueDecoder.decodeInto(aOutStyle, styleParameters);
     }
 
     json colorParameters = themeJson.value(ColorsSectionLabel, json::object());
 
-    for (const auto& valueDecoder : ColorCodecs) {
+    for (const auto& valueDecoder : ColorCodecs)
+    {
         valueDecoder.decodeInto(aOutStyle, colorParameters);
     }
 
     return true;
 }
 
-
 //
 // API
 //
-
 
 bool LoadStyleFromThemeJson(const std::filesystem::path& aThemePath, ImGuiStyle& aOutStyle)
 {
@@ -382,7 +387,7 @@ bool LoadStyleFromThemeJson(const std::filesystem::path& aThemePath, ImGuiStyle&
     if (!cThemeJsonPath.empty())
     {
         std::ifstream themeJson(cThemeJsonPath);
-        if(!themeJson)
+        if (!themeJson)
         {
             Log::Info("No theme file found!");
         }
@@ -398,7 +403,6 @@ bool LoadStyleFromThemeJson(const std::filesystem::path& aThemePath, ImGuiStyle&
 
     return loaded;
 }
-
 
 const std::string DumpStyleToThemeJson(const ImGuiStyle& aStyle)
 {
