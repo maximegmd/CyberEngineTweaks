@@ -11,12 +11,12 @@ using nlohmann::json;
 
 // Helpers
 
-static json XyToObject(const ImVec2& aXy)
+static json XyDimensionsToObject(const ImVec2& aXy)
 {
     return json::object({{"x", aXy.x}, {"y", aXy.y}});
 }
 
-static ImVec2 XyFromObject(const json& aJson, const ImVec2& aDefaults)
+static ImVec2 XyDimensionsFromObject(const json& aJson, const ImVec2& aDefaults)
 {
     return ImVec2(aJson.value("x", aDefaults.x), aJson.value("y", aDefaults.y));
 }
@@ -125,28 +125,28 @@ template <typename TAccessor> static Codec Scalar(std::string aValueName, TAcces
 }
 
 //
-// ImVec2 'XY' types
+// ImVec2 dimension types with X and Y values
 //
 
-template <typename TAccessor> static EncodeValueFunc EncodeXY(std::string aValueName, TAccessor aValueAccessor)
+template <typename TAccessor> static EncodeValueFunc EncodeXyDimensions(std::string aValueName, TAccessor aValueAccessor)
 {
     return [=](const ImGuiStyle& aStyle, json& aOutJson) -> void
     {
-        aOutJson[aValueName] = XyToObject(aStyle.*aValueAccessor);
+        aOutJson[aValueName] = XyDimensionsToObject(aStyle.*aValueAccessor);
     };
 }
 
-template <typename TAccessor> static DecodeValueFunc DecodeXY(std::string aValueName, TAccessor aValueAccessor)
+template <typename TAccessor> static DecodeValueFunc DecodeXyDimensions(std::string aValueName, TAccessor aValueAccessor)
 {
     return [=](ImGuiStyle& aOutStyle, const json& aJson) -> void
     {
-        aOutStyle.*aValueAccessor = XyFromObject(aJson.value(aValueName, json::object()), aOutStyle.*aValueAccessor);
+        aOutStyle.*aValueAccessor = XyDimensionsFromObject(aJson.value(aValueName, json::object()), aOutStyle.*aValueAccessor);
     };
 }
 
-template <typename TAccessor> static Codec XY(std::string aValueName, TAccessor aValueAccessor)
+template <typename TAccessor> static Codec XyDimensions(std::string aValueName, TAccessor aValueAccessor)
 {
-    return Codec{aValueName, EncodeXY(aValueName, aValueAccessor), DecodeXY(aValueName, aValueAccessor)};
+    return Codec{aValueName, EncodeXyDimensions(aValueName, aValueAccessor), DecodeXyDimensions(aValueName, aValueAccessor)};
 }
 
 //
@@ -206,23 +206,23 @@ static Codec Color(std::string aValueName, ImGuiCol_ aColorableIndex)
 static const auto StyleCodecs = std::forward_list{
     Scalar("Alpha", &ImGuiStyle::Alpha),
     Scalar("DisabledAlpha", &ImGuiStyle::DisabledAlpha),
-    XY("WindowPadding", &ImGuiStyle::WindowPadding),
+    XyDimensions("WindowPadding", &ImGuiStyle::WindowPadding),
     Scalar("WindowRounding", &ImGuiStyle::WindowRounding),
     Scalar("WindowBorderSize", &ImGuiStyle::WindowBorderSize),
-    XY("WindowMinSize", &ImGuiStyle::WindowMinSize),
-    XY("WindowTitleAlign", &ImGuiStyle::WindowTitleAlign),
+    XyDimensions("WindowMinSize", &ImGuiStyle::WindowMinSize),
+    XyDimensions("WindowTitleAlign", &ImGuiStyle::WindowTitleAlign),
     Direction("WindowMenuButtonPosition", &ImGuiStyle::WindowMenuButtonPosition),
     Scalar("ChildRounding", &ImGuiStyle::ChildRounding),
     Scalar("ChildBorderSize", &ImGuiStyle::ChildBorderSize),
     Scalar("PopupRounding", &ImGuiStyle::PopupRounding),
     Scalar("PopupBorderSize", &ImGuiStyle::PopupBorderSize),
-    XY("FramePadding", &ImGuiStyle::FramePadding),
+    XyDimensions("FramePadding", &ImGuiStyle::FramePadding),
     Scalar("FrameRounding", &ImGuiStyle::FrameRounding),
     Scalar("FrameBorderSize", &ImGuiStyle::FrameBorderSize),
-    XY("ItemSpacing", &ImGuiStyle::ItemSpacing),
-    XY("ItemInnerSpacing", &ImGuiStyle::ItemInnerSpacing),
-    XY("CellPadding", &ImGuiStyle::CellPadding),
-    XY("TouchExtraPadding", &ImGuiStyle::TouchExtraPadding),
+    XyDimensions("ItemSpacing", &ImGuiStyle::ItemSpacing),
+    XyDimensions("ItemInnerSpacing", &ImGuiStyle::ItemInnerSpacing),
+    XyDimensions("CellPadding", &ImGuiStyle::CellPadding),
+    XyDimensions("TouchExtraPadding", &ImGuiStyle::TouchExtraPadding),
     Scalar("IndentSpacing", &ImGuiStyle::IndentSpacing),
     Scalar("ColumnsMinSpacing", &ImGuiStyle::ColumnsMinSpacing),
     Scalar("ScrollbarSize", &ImGuiStyle::ScrollbarSize),
@@ -234,10 +234,10 @@ static const auto StyleCodecs = std::forward_list{
     Scalar("TabBorderSize", &ImGuiStyle::TabBorderSize),
     Scalar("TabMinWidthForCloseButton", &ImGuiStyle::TabMinWidthForCloseButton),
     Direction("ColorButtonPosition", &ImGuiStyle::ColorButtonPosition),
-    XY("ButtonTextAlign", &ImGuiStyle::ButtonTextAlign),
-    XY("SelectableTextAlign", &ImGuiStyle::SelectableTextAlign),
-    XY("DisplayWindowPadding", &ImGuiStyle::DisplayWindowPadding),
-    XY("DisplaySafeAreaPadding", &ImGuiStyle::DisplaySafeAreaPadding),
+    XyDimensions("ButtonTextAlign", &ImGuiStyle::ButtonTextAlign),
+    XyDimensions("SelectableTextAlign", &ImGuiStyle::SelectableTextAlign),
+    XyDimensions("DisplayWindowPadding", &ImGuiStyle::DisplayWindowPadding),
+    XyDimensions("DisplaySafeAreaPadding", &ImGuiStyle::DisplaySafeAreaPadding),
     Scalar("MouseCursorScale", &ImGuiStyle::MouseCursorScale),
     Scalar("AntiAliasedLines", &ImGuiStyle::AntiAliasedLines),
     Scalar("AntiAliasedLinesUseTex", &ImGuiStyle::AntiAliasedLinesUseTex),
