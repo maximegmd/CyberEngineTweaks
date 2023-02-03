@@ -435,7 +435,8 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         // ImGui defaults
         ImGui::StyleColorsDark(&m_styleReference);
 
-        // CET defaults
+        // CET fallback defaults (the real default theme
+        // should be defined in assets/theme.json)
         m_styleReference.WindowRounding = 6.0f;
         m_styleReference.WindowTitleAlign.x = 0.5f;
         m_styleReference.ChildRounding = 6.0f;
@@ -449,7 +450,7 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         bool loadedTheme = LoadStyleFromThemeJson(m_paths.Theme(), m_styleReference);
 
         if (!loadedTheme)
-            Log::Info("Theme: no theme loaded, using defaults!");
+            Log::Info("Theme: no theme loaded, using basic CET defaults!");
 
         Log::Info("Theme: ImGui style in effect: {}", DumpStyleToThemeJson(m_styleReference));
         Log::Info("Theme: Global UI scale factor: {}x", scaleFromReference);

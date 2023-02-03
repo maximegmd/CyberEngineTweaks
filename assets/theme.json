@@ -1,0 +1,22 @@
+{
+    "ImGuiThemeVersion": "1.0.0",
+    "ThemeName": "CET Default Theme",
+    "ThemeVersion": "1.0.0",
+    "style": {
+        "Alpha": 0.95,
+        "WindowRounding": 6.0,
+        "WindowTitleAlign": {
+            "x": 0.5,
+            "y": 0.0
+        },
+        "ChildRounding": 6.0,
+        "PopupRounding": 6.0,
+        "FrameRounding": 0.5,
+        "ScrollbarRounding": 12.0,
+        "GrabRounding": 12.0,
+        "TabRounding": 6.0
+    },
+    "colors": {
+        "WindowBg": "#0f0f0fef"
+    }
+}
