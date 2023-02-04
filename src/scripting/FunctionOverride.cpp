@@ -235,24 +235,19 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
 
             if (!apFunction->flags.isStatic)
             {
-                RED4ext::CStackType self;
+                args.reserve(apFunction->params.size + 1);
 
-                if (apContext->valueHolder)
+                const auto pContext = apContext ? apContext : apFrame->context;
+                if (pContext)
                 {
-                    self.type = apContext->unk30;
-                    self.value = apContext;
+                    const auto ref = reinterpret_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(&pContext->ref);
+                    const auto weak = RED4ext::WeakHandle(*ref);
+                    args.emplace_back(make_object(luaState, WeakReference(lockedState, weak)));
                 }
                 else
                 {
-                    self.type = apFrame->context->unk30;
-                    self.value = apFrame->context;
+                    args.emplace_back(sol::nil);
                 }
-
-                args.reserve(apFunction->params.size + 1);
-
-                const auto ref = reinterpret_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(&static_cast<RED4ext::IScriptable*>(self.value)->ref);
-                const auto weak = RED4ext::WeakHandle(*ref);
-                args.emplace_back(make_object(luaState, WeakReference(lockedState, weak)));
             }
             else
             {
