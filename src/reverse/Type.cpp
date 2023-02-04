@@ -40,9 +40,9 @@ sol::object Type::Index(const std::string& acName, sol::this_environment aThisEn
     return Index_Impl(acName, aThisEnv);
 }
 
-sol::object Type::NewIndex(const std::string& acName, sol::object aParam)
+sol::object Type::NewIndex(const std::string& acName, sol::optional<sol::object> aParam)
 {
-    return NewIndex_Impl(acName, aParam);
+    return NewIndex_Impl(acName, aParam.has_value() ? aParam.value() : sol::nil);
 }
 
 sol::object Type::Index_Impl(const std::string& acName, sol::this_environment aThisEnv)
@@ -254,7 +254,7 @@ sol::object ClassType::Index_Impl(const std::string& acName, sol::this_environme
     if (!func)
         return sol::nil;
 
-    return NewIndex(acName, func);
+    return Type::NewIndex_Impl(acName, func);
 }
 
 sol::object ClassType::NewIndex_Impl(const std::string& acName, sol::object aParam)

@@ -22,12 +22,12 @@ struct TweakDB
     sol::object GetFlat(TweakDBID aDBID) const;
     bool SetFlatsByName(const std::string& acRecordName, sol::table aTable, sol::this_environment aThisEnv);
     bool SetFlats(TweakDBID aDBID, sol::table aTable, sol::this_environment aThisEnv);
-    bool SetFlatByName(const std::string& acFlatName, sol::object aObject, sol::this_environment aThisEnv) const;
-    bool SetFlat(TweakDBID aDBID, sol::object aObject, sol::this_environment aThisEnv) const;
-    bool SetFlatByNameAutoUpdate(const std::string& acFlatName, sol::object aObject, sol::this_environment aThisEnv);
-    bool SetFlatAutoUpdate(TweakDBID aDBID, sol::object aObject, sol::this_environment aThisEnv);
-    bool SetTypedFlatByName(const std::string& acFlatName, sol::object aObject, const std::string& acTypeName, sol::this_environment aThisEnv) const;
-    bool SetTypedFlat(TweakDBID aDBID, sol::object aObject, const std::string& acTypeName, sol::this_environment aThisEnv) const;
+    bool SetFlatByName(const std::string& acFlatName, sol::optional<sol::object> aObject, sol::this_environment aThisEnv) const;
+    bool SetFlat(TweakDBID aDBID, sol::optional<sol::object> aObject, sol::this_environment aThisEnv) const;
+    bool SetFlatByNameAutoUpdate(const std::string& acFlatName, sol::optional<sol::object> aObject, sol::this_environment aThisEnv);
+    bool SetFlatAutoUpdate(TweakDBID aDBID, sol::optional<sol::object> aObject, sol::this_environment aThisEnv);
+    bool SetTypedFlatByName(const std::string& acFlatName, sol::optional<sol::object> aObject, const std::string& acTypeName, sol::this_environment aThisEnv) const;
+    bool SetTypedFlat(TweakDBID aDBID, sol::optional<sol::object> aObject, const std::string& acTypeName, sol::this_environment aThisEnv) const;
     bool UpdateRecordByName(const std::string& acRecordName);
     bool UpdateRecordByID(TweakDBID aDBID);
     bool UpdateRecord(sol::object aValue, sol::this_environment aThisEnv);
