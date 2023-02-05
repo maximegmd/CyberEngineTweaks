@@ -1,5 +1,8 @@
 #include <stdafx.h>
 
+#include <string>
+#include <sstream>
+
 #include "Image.h"
 
 struct PdbInfo
@@ -80,8 +83,14 @@ void Image::Initialize()
 
             if (version == 0)
             {
+                Log::Error("Unrecognized game version:");
+
+                std::stringstream stream;
                 for (const auto c : pdb_info->Guid)
-                    Log::Error("{:X}", static_cast<uint32_t>(c));
+                    stream << std::hex << static_cast<uint32_t>(c) << " ";
+
+                Log::Error(stream.str());
+                Log::Error("CyberEngineTweaks requires an update, aborting loading:");
 
                 throw std::runtime_error("Abort loading");
             }
