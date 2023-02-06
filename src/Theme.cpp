@@ -378,7 +378,7 @@ static bool StyleFromThemeJson(ImGuiStyle& aOutStyle, std::ifstream& aMaybeTheme
 
 bool LoadStyleFromThemeJson(const std::filesystem::path& aThemePath, ImGuiStyle& aOutStyle)
 {
-    bool loaded = false;
+    bool loadedSuccessfully = false;
 
     const auto cThemeJsonPath = GetAbsolutePath(aThemePath, "", false);
 
@@ -393,15 +393,13 @@ bool LoadStyleFromThemeJson(const std::filesystem::path& aThemePath, ImGuiStyle&
         }
         else
         {
-            loaded = StyleFromThemeJson(aOutStyle, themeJson);
-            if (!loaded)
+            loadedSuccessfully = StyleFromThemeJson(aOutStyle, themeJson);
+            if (!loadedSuccessfully)
                 Log::Warn("Loading theme failed!");
         }
-
-        themeJson.close();
     }
 
-    return loaded;
+    return loadedSuccessfully;
 }
 
 const std::string DumpStyleToThemeJson(const ImGuiStyle& aStyle)
