@@ -145,6 +145,10 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
             TiltedPhoques::Vector<RED4ext::CStackType> outArgs;
             TiltedPhoques::Allocator::Set(pAllocator);
 
+            RED4ext::CStackType ret;
+            ret.value = apStack->GetResultAddr();
+            ret.type = apStack->GetResultType();
+
             const auto pContext = apStack->GetContext();
 
             {
@@ -163,24 +167,31 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
                     args.reserve(apFunction->params.size);
                 }
 
-                for (const auto* p : apFunction->params)
+                // There are at least two different implementations of CScriptStack.
+                // They have different structures for args and return value.
+                // The correct way to retieve args is to use a virtual method,
+                // but it's inefficient because it allocates another stack.
+                // This simple check allows us to avoid copying and read the args directly.
+                const bool isArrayArgs = apStack->value != ret.value;
+
+                for (uint32_t i = 0; i < apFunction->params.size; ++i)
                 {
-                    auto* pOffset = p->valueOffset + apStack->args;
+                    const auto& pParam = apFunction->params[i];
 
                     RED4ext::CStackType arg;
-                    arg.type = p->type;
-                    arg.value = pOffset;
+                    arg.type = pParam->type;
+
+                    if (isArrayArgs)
+                        arg.value = reinterpret_cast<RED4ext::CStackType*>(apStack->args)[i].value;
+                    else
+                        arg.value = apStack->args + pParam->valueOffset;
 
                     args.emplace_back(Scripting::ToLua(lockedState, arg));
 
-                    if (p->flags.isOut)
+                    if (pParam->flags.isOut)
                         outArgs.emplace_back(arg);
                 }
             }
-
-            RED4ext::CStackType ret;
-            ret.value = apStack->GetResultAddr();
-            ret.type = apStack->GetResultType();
 
             return ExecuteChain(chain, lock, pContext, &args, &ret, &outArgs, apStack, a3, nullptr, 0);
         }
