@@ -135,7 +135,7 @@ void RTTIMapper::RegisterSimpleTypes(sol::state& aLuaState, sol::table& aLuaGlob
 
 void RTTIMapper::RegisterDirectTypes(sol::state& aLuaState, sol::table& aLuaGlobal, RED4ext::CRTTISystem* apRtti)
 {
-    const bool reinit = aLuaGlobal["EnumStatic"] != sol::nil;
+    const bool reinit = aLuaState["RegisterGlobalInputListener"] != sol::nil;
 
     if (!reinit)
     {
