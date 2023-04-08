@@ -310,7 +310,7 @@ RED4ext::CName NativeProxyType::AddSignature(NativeProxyType* apProxy, const std
     apProxy->RegisterFunction(pFunc);
 
     using FlagsIntType = uint32_t;
-    constexpr auto CustomFlag = 1 << (sizeof(FlagsIntType) - 1);
+    constexpr auto CustomFlag = 1 << (8 * sizeof(FlagsIntType) - 1);
     static_assert(sizeof(RED4ext::CBaseFunction::Flags) == sizeof(FlagsIntType));
 
     // Tell Hot Reload to not touch this quasi-scripted function
