@@ -13,6 +13,7 @@
 #include <reverse/StrongReference.h>
 #include <reverse/WeakReference.h>
 #include <reverse/ResourceAsyncReference.h>
+#include <reverse/NativeProxy.h>
 #include <reverse/RTTILocator.h>
 #include <reverse/RTTIExtender.h>
 #include <reverse/Converter.h>
@@ -379,6 +380,24 @@ void Scripting::PostInitializeScripting()
     };
 
     globals["Observe"] = globals["ObserveBefore"];
+
+    globals.new_usertype<NativeProxy>("NativeProxy",
+        sol::meta_function::construct, sol::no_constructor,
+        "Target", &NativeProxy::GetTarget,
+        "Function", sol::overload(&NativeProxy::GetFunction, &NativeProxy::GetDefaultFunction));
+
+    globals["NewProxy"] = sol::overload(
+        [this](const sol::object& aSpec, sol::this_state aState, sol::this_environment aEnv) -> sol::object
+        {
+            auto locledState = m_lua.Lock();
+            return {aState, sol::in_place, NativeProxy(m_lua.AsRef(), aEnv, aSpec)};
+        },
+        [this](const std::string& aInterface, const sol::object& aSpec, sol::this_state aState,
+               sol::this_environment aEnv) -> sol::object
+        {
+            auto locledState = m_lua.Lock();
+            return {aState, sol::in_place, NativeProxy(m_lua.AsRef(), aEnv, aInterface, aSpec)};
+        });
 
     m_sandbox.PostInitializeScripting();
 
