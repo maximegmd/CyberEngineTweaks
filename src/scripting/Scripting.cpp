@@ -29,6 +29,7 @@
 static constexpr bool s_cThrowLuaErrors = true;
 
 static RTTILocator s_stringType{RED4ext::FNV1a64("String")};
+static RTTILocator s_resRefType{RED4ext::FNV1a64("redResourceReferenceScriptToken")};
 
 Scripting::Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12)
     : m_sandbox(this, aBindings)
@@ -900,7 +901,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
                 result.value = pScriptRef;
             }
         }
-        else if (apRttiType->GetType() == RED4ext::ERTTIType::ResourceAsyncReference)
+        else if (apRttiType->GetType() == RED4ext::ERTTIType::ResourceAsyncReference || apRttiType == s_resRefType)
         {
             if (hasData)
             {
@@ -914,13 +915,21 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
                 {
                     hash = ResourceAsyncReference::Hash(aObject.as<std::string>());
                 }
+                else if (aObject.get_type() == sol::type::number)
+                {
+                    hash = aObject.as<uint64_t>();
+                }
                 else if (aObject.is<CName>())
                 {
                     hash = aObject.as<CName*>()->hash;
                 }
-                else if (aObject.get_type() == sol::type::number)
+                else if (aObject.is<ClassReference>())
                 {
-                    hash = aObject.as<uint64_t>();
+                    auto& ref = aObject.as<ClassReference>();
+                    if (ref.GetType() == s_resRefType)
+                    {
+                        hash = *reinterpret_cast<uint64_t*>(ref.GetValuePtr());
+                    }
                 }
                 else if (IsLuaCData(aObject))
                 {
