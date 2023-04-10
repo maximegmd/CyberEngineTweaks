@@ -13,6 +13,7 @@
 #include <reverse/StrongReference.h>
 #include <reverse/WeakReference.h>
 #include <reverse/ResourceAsyncReference.h>
+#include <reverse/NativeProxy.h>
 #include <reverse/RTTILocator.h>
 #include <reverse/RTTIExtender.h>
 #include <reverse/Converter.h>
@@ -29,6 +30,7 @@
 static constexpr bool s_cThrowLuaErrors = true;
 
 static RTTILocator s_stringType{RED4ext::FNV1a64("String")};
+static RTTILocator s_resRefType{RED4ext::FNV1a64("redResourceReferenceScriptToken")};
 
 Scripting::Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12)
     : m_sandbox(this, aBindings)
@@ -378,6 +380,24 @@ void Scripting::PostInitializeScripting()
     };
 
     globals["Observe"] = globals["ObserveBefore"];
+
+    globals.new_usertype<NativeProxy>("NativeProxy",
+        sol::meta_function::construct, sol::no_constructor,
+        "Target", &NativeProxy::GetTarget,
+        "Function", sol::overload(&NativeProxy::GetFunction, &NativeProxy::GetDefaultFunction));
+
+    globals["NewProxy"] = sol::overload(
+        [this](const sol::object& aSpec, sol::this_state aState, sol::this_environment aEnv) -> sol::object
+        {
+            auto locledState = m_lua.Lock();
+            return {aState, sol::in_place, NativeProxy(m_lua.AsRef(), aEnv, aSpec)};
+        },
+        [this](const std::string& aInterface, const sol::object& aSpec, sol::this_state aState,
+               sol::this_environment aEnv) -> sol::object
+        {
+            auto locledState = m_lua.Lock();
+            return {aState, sol::in_place, NativeProxy(m_lua.AsRef(), aEnv, aInterface, aSpec)};
+        });
 
     m_sandbox.PostInitializeScripting();
 
@@ -900,7 +920,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
                 result.value = pScriptRef;
             }
         }
-        else if (apRttiType->GetType() == RED4ext::ERTTIType::ResourceAsyncReference)
+        else if (apRttiType->GetType() == RED4ext::ERTTIType::ResourceAsyncReference || apRttiType == s_resRefType)
         {
             if (hasData)
             {
@@ -914,13 +934,21 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
                 {
                     hash = ResourceAsyncReference::Hash(aObject.as<std::string>());
                 }
+                else if (aObject.get_type() == sol::type::number)
+                {
+                    hash = aObject.as<uint64_t>();
+                }
                 else if (aObject.is<CName>())
                 {
                     hash = aObject.as<CName*>()->hash;
                 }
-                else if (aObject.get_type() == sol::type::number)
+                else if (aObject.is<ClassReference>())
                 {
-                    hash = aObject.as<uint64_t>();
+                    auto& ref = aObject.as<ClassReference>();
+                    if (ref.GetType() == s_resRefType)
+                    {
+                        hash = *reinterpret_cast<uint64_t*>(ref.GetValuePtr());
+                    }
                 }
                 else if (IsLuaCData(aObject))
                 {
