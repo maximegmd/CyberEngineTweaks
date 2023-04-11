@@ -171,7 +171,7 @@ void NativeProxy::Callback(RED4ext::IScriptable* apSelf, RED4ext::CStackFrame* a
     {
         RED4ext::CStackType arg;
         arg.type = param->type;
-        arg.value = param->GetValuePtr<void>(reinterpret_cast<void*>(apFrame->unk18));
+        arg.value = param->GetValuePtr<void>(apFrame->params);
 
         args.emplace_back(Scripting::ToLua(lockedState, arg));
     }

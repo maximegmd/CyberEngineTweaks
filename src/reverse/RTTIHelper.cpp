@@ -75,7 +75,7 @@ void RTTIHelper::InitializeRuntime()
     m_pGameInstance = static_cast<ScriptGameInstance*>(m_pGameInstanceType->CreateInstance());
     m_pGameInstance->gameInstance = cpGameInstance;
 
-    m_pPlayerSystem = cpGameInstance->GetInstance(cpPlayerSystemType);
+    m_pPlayerSystem = cpGameInstance->GetSystem(cpPlayerSystemType);
 }
 
 void RTTIHelper::ParseGlobalStatics()
