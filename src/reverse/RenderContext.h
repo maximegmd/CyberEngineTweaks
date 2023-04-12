@@ -6,6 +6,7 @@ struct RenderContext
     {
         IDXGISwapChain4* pSwapChain;
         uint8_t pad8[0xB0 - 0x8];
+    };
 
     RenderContext() = delete;
     ~RenderContext() = delete;
