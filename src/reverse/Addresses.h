@@ -60,7 +60,7 @@ constexpr uintptr_t CRunningState_OnTick = 0x140A82170 - ImageBase; // 40 53 48 
 
 #pragma region CScript
 constexpr uintptr_t CScript_RunPureScript = 0x140215940 - ImageBase; // 40 55 48 81 EC D0 00 00 00 48 8D 6C 24 40 8B, expected: 1, index: 0
-constexpr uintptr_t CScript_AllocateFunction = 0x140284642 - ImageBase; // BA B8 00 00 00 48 8D 4D D7 E8, expected: 3, index: 0
+constexpr uintptr_t CScript_AllocateFunction = 0x1401B6070 - ImageBase; // BA B8 00 00 00 48 8D 4D D7 E8, expected: 3, index: 0
 constexpr uintptr_t CScript_Log = 0x1401F7BC0 - ImageBase; // 40 53 48 83 EC ? 48 8D 4C 24 20 48 8B DA E8 ? ? ? ? 33 D2 48 8D 4C  24 40 E8, expected: 1, index: 0
 constexpr uintptr_t CScript_ToStringDEBUG = 0x140BE7000 - ImageBase; // 48 89 5C 24 08 57 48 83  EC 20 FE 42 62 4C 8D 15 ? ? ? ? 33 C9 33 C0, expected: 4, index: 2
 constexpr uintptr_t CScript_LogChannel = 0x1401F7C60 - ImageBase; // 4C 8B DC 49 89 5B 08 49  89 73 18 57 48 83 EC 70 48 8B 02 ? ? ? ? ? ? ? FE 42 62 4D 8D 43 10 33 FF 45 33 C9 49 89  7B 10 48 8B DA 48 89 7A, expected: 1, index: 0
