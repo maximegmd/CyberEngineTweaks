@@ -248,8 +248,11 @@ void RTTIMapper::SanitizeName(std::string& aName)
     std::ranges::replace(aName, '.', '_');
 }
 
-RED4ext::CName RTTIMapper::TryResolveTypeName(sol::object aValue)
+RED4ext::CName RTTIMapper::TryResolveTypeName(const sol::object& aValue)
 {
+    if (aValue == sol::nil)
+        return {};
+
     if (IsLuaCData(aValue))
         return "Uint64";
 
