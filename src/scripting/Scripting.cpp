@@ -416,7 +416,7 @@ void Scripting::PostInitializeTweakDB()
         "__TweakDB", sol::meta_function::construct, sol::no_constructor, "DebugStats", &TweakDB::DebugStats, "GetRecords", &TweakDB::GetRecords, "GetRecord",
         overload(&TweakDB::GetRecordByName, &TweakDB::GetRecord), "Query", overload(&TweakDB::QueryByName, &TweakDB::Query), "GetFlat",
         overload(&TweakDB::GetFlatByName, &TweakDB::GetFlat), "SetFlats", overload(&TweakDB::SetFlatsByName, &TweakDB::SetFlats), "SetFlat",
-        overload(&TweakDB::SetFlatByNameAutoUpdate, &TweakDB::SetFlatAutoUpdate, &TweakDB::SetTypedFlat, &TweakDB::SetTypedFlatByName), "SetFlatNoUpdate",
+        overload(&TweakDB::SetTypedFlat, &TweakDB::SetTypedFlatByName, &TweakDB::SetFlatByNameAutoUpdate, &TweakDB::SetFlatAutoUpdate), "SetFlatNoUpdate",
         overload(&TweakDB::SetFlatByName, &TweakDB::SetFlat), "Update", overload(&TweakDB::UpdateRecordByName, &TweakDB::UpdateRecordByID, &TweakDB::UpdateRecord), "CreateRecord",
         overload(&TweakDB::CreateRecordToID, &TweakDB::CreateRecord), "CloneRecord", overload(&TweakDB::CloneRecordByName, &TweakDB::CloneRecordToID, &TweakDB::CloneRecord),
         "DeleteRecord", overload(&TweakDB::DeleteRecordByID, &TweakDB::DeleteRecord));
@@ -508,10 +508,6 @@ void Scripting::PostInitializeMods()
         // this table is flattened and contains all hierarchy, but traversing the hierarchy first reduces error when
         // there are classes that instantiate a parent class but don't actually have a subclass instance
         GameMainThread::Get().AddRunningTask(&GameDump::DumpVTablesTask::Run);
-    };
-    globals["DumpReflection"] = [this](bool aVerbose, bool aExtendedPath, bool aPropertyHolders)
-    {
-        RED4ext::GameReflection::Dump(m_paths.CETRoot() / "dumps", aVerbose, aExtendedPath, aPropertyHolders);
     };
 #endif
 

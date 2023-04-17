@@ -12,7 +12,7 @@ struct RTTIMapper
     void Refresh();
 
     static void SanitizeName(std::string& aName);
-    static RED4ext::CName TryResolveTypeName(sol::object aValue);
+    static RED4ext::CName TryResolveTypeName(const sol::object& aValue);
 
 private:
     struct FuncFlags
