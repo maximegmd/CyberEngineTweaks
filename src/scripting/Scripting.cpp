@@ -921,22 +921,27 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
             if (hasData)
             {
                 uint64_t hash = 0;
+                bool valid = false;
 
                 if (aObject.is<ResourceAsyncReference>())
                 {
                     hash = aObject.as<ResourceAsyncReference*>()->GetHash();
+                    valid = true;
                 }
                 else if (aObject.get_type() == sol::type::string)
                 {
                     hash = ResourceAsyncReference::Hash(aObject.as<std::string>());
+                    valid = true;
                 }
                 else if (aObject.get_type() == sol::type::number)
                 {
                     hash = aObject.as<uint64_t>();
+                    valid = true;
                 }
                 else if (aObject.is<CName>())
                 {
                     hash = aObject.as<CName*>()->hash;
+                    valid = true;
                 }
                 else if (aObject.is<ClassReference>())
                 {
@@ -944,6 +949,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
                     if (ref.GetType() == s_resRefType)
                     {
                         hash = *reinterpret_cast<uint64_t*>(ref.GetValuePtr());
+                        valid = true;
                     }
                 }
                 else if (IsLuaCData(aObject))
@@ -951,9 +957,10 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
                     sol::state_view v(aObject.lua_state());
                     const std::string str = v["tostring"](aObject);
                     hash = std::stoull(str);
+                    valid = true;
                 }
 
-                if (hash != 0)
+                if (valid)
                 {
                     auto* pRaRef = apAllocator->New<RED4ext::ResourceAsyncReference<void>>();
                     pRaRef->path.hash = hash;
