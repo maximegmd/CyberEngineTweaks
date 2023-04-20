@@ -3,10 +3,7 @@
 #include <reverse/BasicTypes.h>
 #include <reverse/TweakDB/FlatPool.h>
 
-namespace RED4ext
-{
-struct gamedataTweakDBRecord;
-}
+#include <RED4ext/Scripting/Natives/gamedataTweakDBRecord.hpp>
 
 struct TweakDB
 {
