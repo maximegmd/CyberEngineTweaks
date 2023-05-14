@@ -613,29 +613,10 @@ TEMP_Spawner exEntitySpawnerSystem::exEntitySpawner_Spawner;
 
 void RTTIExtender::AddFunctionalTests()
 {
-    CreateSingleton("WorldFunctionalTests");
-    CreateSingleton("FunctionalTestsGameSystem");
-
     auto* pRTTI = RED4ext::CRTTISystem::Get();
     auto* pClass = pRTTI->GetClass("WorldFunctionalTests");
     if (pClass != nullptr)
     {
-        {
-            struct WorldFunctionalTests
-            {
-                uint8_t unk00[0x40];
-                RED4ext::Handle<RED4ext::ISerializable> unk40;
-            };
-            RED4EXT_ASSERT_OFFSET(WorldFunctionalTests, unk40, 0x40);
-
-            auto* pGameInstance = RED4ext::CGameEngine::Get()->framework->gameInstance;
-            auto* pWorld = reinterpret_cast<WorldFunctionalTests*>(pGameInstance->GetSystem(pClass));
-
-            // whatever this is, it's only used to get gameInstance
-            // passing cpPlayerSystem (or any system) will work
-            pWorld->unk40 = pGameInstance->GetSystem(pRTTI->GetType("cpPlayerSystem"))->ref.Lock();
-        }
-
         auto* pFunction = pClass->GetFunction("SpawnEntity");
         if (pFunction != nullptr && pFunction->params.size == 0)
         {
@@ -673,8 +654,6 @@ void RTTIExtender::AddFunctionalTests()
 
 void RTTIExtender::AddEntitySpawner()
 {
-    exEntitySpawnerSystem::InitializeSingleton();
-
     auto* pRTTI = RED4ext::CRTTISystem::Get();
     auto* pClass = pRTTI->GetClass(exEntitySpawnerSystem::NATIVE_TYPE);
     if (pClass)
@@ -710,8 +689,35 @@ void RTTIExtender::AddEntitySpawner()
     }
 }
 
-void RTTIExtender::Initialize()
+void RTTIExtender::InitializeTypes()
 {
     AddFunctionalTests(); // This is kept for backward compatibility with mods
     AddEntitySpawner();
+}
+
+void RTTIExtender::InitializeSingletons()
+{
+    CreateSingleton("WorldFunctionalTests");
+    CreateSingleton("FunctionalTestsGameSystem");
+
+    {
+        auto* pRTTI = RED4ext::CRTTISystem::Get();
+        auto* pClass = pRTTI->GetClass("WorldFunctionalTests");
+
+        struct WorldFunctionalTests
+        {
+            uint8_t unk00[0x40];
+            RED4ext::Handle<RED4ext::ISerializable> unk40;
+        };
+        RED4EXT_ASSERT_OFFSET(WorldFunctionalTests, unk40, 0x40);
+
+        auto* pGameInstance = RED4ext::CGameEngine::Get()->framework->gameInstance;
+        auto* pWorld = reinterpret_cast<WorldFunctionalTests*>(pGameInstance->GetSystem(pClass));
+
+        // whatever this is, it's only used to get gameInstance
+        // passing cpPlayerSystem (or any system) will work
+        pWorld->unk40 = pGameInstance->GetSystem(pRTTI->GetType("cpPlayerSystem"))->ref.Lock();
+    }
+
+    exEntitySpawnerSystem::InitializeSingleton();
 }

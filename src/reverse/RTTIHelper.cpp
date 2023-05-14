@@ -31,14 +31,6 @@ void RTTIHelper::Initialize(const LockableState& acLua, LuaSandbox& apSandbox)
     }
 }
 
-void RTTIHelper::PostInitialize()
-{
-    if (s_pInstance)
-    {
-        s_pInstance->InitializeRuntime();
-    }
-}
-
 void RTTIHelper::Shutdown()
 {
     // Since m_resolvedFunctions contains references to Lua state
@@ -64,18 +56,6 @@ void RTTIHelper::InitializeRTTI()
 {
     m_pRtti = RED4ext::CRTTISystem::Get();
     m_pGameInstanceType = m_pRtti->GetClass(RED4ext::FNV1a64("ScriptGameInstance"));
-}
-
-void RTTIHelper::InitializeRuntime()
-{
-    const auto cpEngine = RED4ext::CGameEngine::Get();
-    const auto cpGameInstance = cpEngine->framework->gameInstance;
-    const auto cpPlayerSystemType = m_pRtti->GetType(RED4ext::FNV1a64("cpPlayerSystem"));
-
-    m_pGameInstance = static_cast<ScriptGameInstance*>(m_pGameInstanceType->CreateInstance());
-    m_pGameInstance->gameInstance = cpGameInstance;
-
-    m_pPlayerSystem = cpGameInstance->GetSystem(cpPlayerSystemType);
 }
 
 void RTTIHelper::ParseGlobalStatics()
@@ -597,11 +577,6 @@ sol::variadic_results RTTIHelper::ExecuteFunction(
     if (!m_pRtti)
         return {};
 
-    const auto* cpEngine = RED4ext::CGameEngine::Get();
-
-    if (!cpEngine || !cpEngine->framework)
-        return {};
-
     // Out params
     // There are cases when out param must be passed to the function.
     // These functions cannot be used until more complex logic for input
@@ -679,8 +654,19 @@ sol::variadic_results RTTIHelper::ExecuteFunction(
 
         if (cpParam->type == m_pGameInstanceType)
         {
+            const auto* cpEngine = RED4ext::CGameEngine::Get();
+
+            if (!cpEngine || !cpEngine->framework)
+            {
+                aErrorMessage = fmt::format("Function '{}' can't be used yet because game instance is not ready.", apFunc->shortName.ToString());
+
+                return {};
+            }
+
+            static RED4ext::ScriptGameInstance s_gameInstance;
+
             callArgs[callArgOffset].type = m_pGameInstanceType;
-            callArgs[callArgOffset].value = m_pGameInstance;
+            callArgs[callArgOffset].value = &s_gameInstance;
         }
         else if (cpParam->flags.isOut)
         {
@@ -779,6 +765,11 @@ sol::variadic_results RTTIHelper::ExecuteFunction(
     return results;
 }
 
+void LuaDummyFunction(RED4ext::IScriptable*, RED4ext::CStackFrame* apFrame, void*, int64_t)
+{
+    ++apFrame->code; // Skip ParamEnd
+}
+
 bool RTTIHelper::ExecuteFunction(
     RED4ext::CBaseFunction* apFunc, RED4ext::IScriptable* apContext, TiltedPhoques::Vector<RED4ext::CStackType>& aArgs, RED4ext::CStackType& aResult) const
 {
@@ -817,13 +808,13 @@ bool RTTIHelper::ExecuteFunction(
     *frame.code = ParamEndOp;
     frame.code = code; // Rewind
 
-    // This is not intended use, but a trick.
-    // The frame we create is the parent of the current call,
-    // but we set it to apFunc itself just to make sure it's not null,
-    // because there are some functions that expect a non-empty call stack.
-    frame.func = apFunc;
+    static auto* s_dummyContext = reinterpret_cast<RED4ext::IScriptable*>(m_pRtti->GetClass("entEntity")->CreateInstance());
+    static auto* s_dummyFunction = RED4ext::CGlobalFunction::Create("$Lua", "$Lua", &LuaDummyFunction);
 
-    return CallScriptFunction(apFunc, apContext ? apContext : m_pPlayerSystem, &frame, aResult.value, aResult.type);
+    // Some functions expect a non-empty call stack so we set the caller to a dummy function
+    frame.func = s_dummyFunction;
+
+    return CallScriptFunction(apFunc, apContext ? apContext : s_dummyContext, &frame, aResult.value, aResult.type);
 }
 
 RED4ext::ScriptInstance RTTIHelper::NewPlaceholder(RED4ext::CBaseRTTIType* apType, TiltedPhoques::Allocator* apAllocator) const
