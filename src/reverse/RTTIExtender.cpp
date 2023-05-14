@@ -518,16 +518,54 @@ private:
     }
 
 public:
-    static void InitializeSingleton()
+    static void InitializeType()
     {
-        // should only be called once
-        assert(Singleton == nullptr);
         auto* pRTTI = RED4ext::CRTTISystem::Get();
 
         RED4ext::CClass::Flags classFlags{};
         classFlags.isNative = 1;
         RED4ext::CNamePool::Add(NATIVE_TYPE_STR);
         pRTTI->CreateScriptedClass(NATIVE_TYPE, classFlags, pRTTI->GetClass(PARENT_TYPE));
+
+        auto* pClass = pRTTI->GetClass(NATIVE_TYPE);
+        if (pClass)
+        {
+            RED4ext::CBaseFunction::Flags flags{};
+            flags.isNative = true;
+            RED4ext::CClassStaticFunction* pFunction;
+
+            // -------------
+
+            pFunction = RED4ext::CClassStaticFunction::Create(pClass, "Spawn", "Spawn", exEntitySpawnerSystem::Spawn, flags);
+            pFunction->AddParam("raRef:CResource", "entityPath");
+            pFunction->AddParam("WorldTransform", "worldTransform");
+            pFunction->AddParam("CName", "appearance", false, true);
+            pFunction->AddParam("TweakDBID", "recordID", false, true);
+            pFunction->SetReturnType("entEntityID");
+            pClass->RegisterFunction(pFunction);
+
+            // -------------
+
+            pFunction = RED4ext::CClassStaticFunction::Create(pClass, "SpawnRecord", "SpawnRecord", exEntitySpawnerSystem::SpawnRecord, flags);
+            pFunction->AddParam("TweakDBID", "recordID");
+            pFunction->AddParam("WorldTransform", "worldTransform");
+            pFunction->AddParam("CName", "appearance", false, true);
+            pFunction->SetReturnType("entEntityID");
+            pClass->RegisterFunction(pFunction);
+
+            // -------------
+
+            pFunction = RED4ext::CClassStaticFunction::Create(pClass, "Despawn", "Despawn", exEntitySpawnerSystem::Despawn, flags);
+            pFunction->AddParam("handle:entEntity", "entity");
+            pClass->RegisterFunction(pFunction);
+        }
+    }
+
+    static void InitializeSingleton()
+    {
+        // should only be called once
+        assert(Singleton == nullptr);
+        auto* pRTTI = RED4ext::CRTTISystem::Get();
 
         auto* pAllocator = pRTTI->GetClass(PARENT_TYPE)->GetAllocator();
         Singleton = CreateNew(pAllocator->AllocAligned(sizeof(exEntitySpawnerSystem), alignof(exEntitySpawnerSystem)).memory);
@@ -652,51 +690,17 @@ void RTTIExtender::AddFunctionalTests()
     }
 }
 
-void RTTIExtender::AddEntitySpawner()
-{
-    auto* pRTTI = RED4ext::CRTTISystem::Get();
-    auto* pClass = pRTTI->GetClass(exEntitySpawnerSystem::NATIVE_TYPE);
-    if (pClass)
-    {
-        RED4ext::CBaseFunction::Flags flags{};
-        flags.isNative = true;
-        RED4ext::CClassStaticFunction* pFunction;
-
-        // -------------
-
-        pFunction = RED4ext::CClassStaticFunction::Create(pClass, "Spawn", "Spawn", exEntitySpawnerSystem::Spawn, flags);
-        pFunction->AddParam("raRef:CResource", "entityPath");
-        pFunction->AddParam("WorldTransform", "worldTransform");
-        pFunction->AddParam("CName", "appearance", false, true);
-        pFunction->AddParam("TweakDBID", "recordID", false, true);
-        pFunction->SetReturnType("entEntityID");
-        pClass->RegisterFunction(pFunction);
-
-        // -------------
-
-        pFunction = RED4ext::CClassStaticFunction::Create(pClass, "SpawnRecord", "SpawnRecord", exEntitySpawnerSystem::SpawnRecord, flags);
-        pFunction->AddParam("TweakDBID", "recordID");
-        pFunction->AddParam("WorldTransform", "worldTransform");
-        pFunction->AddParam("CName", "appearance", false, true);
-        pFunction->SetReturnType("entEntityID");
-        pClass->RegisterFunction(pFunction);
-
-        // -------------
-
-        pFunction = RED4ext::CClassStaticFunction::Create(pClass, "Despawn", "Despawn", exEntitySpawnerSystem::Despawn, flags);
-        pFunction->AddParam("handle:entEntity", "entity");
-        pClass->RegisterFunction(pFunction);
-    }
-}
-
 void RTTIExtender::InitializeTypes()
 {
+    exEntitySpawnerSystem::InitializeType();
+
     AddFunctionalTests(); // This is kept for backward compatibility with mods
-    AddEntitySpawner();
 }
 
 void RTTIExtender::InitializeSingletons()
 {
+    exEntitySpawnerSystem::InitializeSingleton();
+
     CreateSingleton("WorldFunctionalTests");
     CreateSingleton("FunctionalTestsGameSystem");
 
@@ -718,6 +722,4 @@ void RTTIExtender::InitializeSingletons()
         // passing cpPlayerSystem (or any system) will work
         pWorld->unk40 = pGameInstance->GetSystem(pRTTI->GetType("cpPlayerSystem"))->ref.Lock();
     }
-
-    exEntitySpawnerSystem::InitializeSingleton();
 }
