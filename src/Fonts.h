@@ -4,15 +4,15 @@ struct Fonts
 {
     ~Fonts() = default;
 
-    const std::tuple<const ImWchar*, std::filesystem::path> GetGlyphRange(std::string aLanguage);
+    const std::tuple<const ImWchar*, std::filesystem::path> GetGlyphRange(std::string aGlyphRangeName);
     void BuildFonts(SIZE aOutSize);
     void RebuildFonts(ID3D12CommandQueue* apCommandQueue, SIZE aOutSize);
     void RebuildFontNextFrame();
 
     const bool UseEmojiFont();
 
-    const std::vector<std::string>& GetLanguages();
-    std::filesystem::path GetDefaultLanguageFontPath(const std::string& acLanguage);
+    const std::vector<std::string>& GetGlyphRanges();
+    std::filesystem::path GetDefaultFontByGlyphRange(const std::string& acGlyphRange);
 
     void EnumerateSystemFonts();
 
@@ -40,6 +40,6 @@ private:
     std::filesystem::path m_defaultIconFontPath{L"materialdesignicons.ttf"};
     std::filesystem::path m_defaultEmojiFontPath{L"C:\\Windows\\Fonts\\seguiemj.ttf"}; // tried to use noto color emoji but it wont render. only this one works
 
-    std::vector<std::string> m_languages{};
-    std::unordered_map<std::string, std::filesystem::path> m_defaultLanguageFontPaths{};
+    std::vector<std::string> m_glyphranges{};
+    std::unordered_map<std::string, std::filesystem::path> m_defaultFonts{};
 };

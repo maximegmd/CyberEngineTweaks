@@ -34,7 +34,7 @@ struct FontSettings
 
     std::string FontMain{"Default"};
     std::string FontMonospace{"Default"};
-    std::string Language{"Default"};
+    std::string GlyphRange{"Default"};
     float BaseSize{18.0f};
     int32_t OversampleHorizontal{3};
     int32_t OversampleVertical{1};

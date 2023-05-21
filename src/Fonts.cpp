@@ -8,72 +8,72 @@
 
 #include <imgui_impl/dx12.h>
 
-// Returns the glyph ranges for a given language and its default font.
-// When aLanguage == "Full", returns full range of unicode plane 0.
-// When aLanguage == "System", returns range according to windows language setting
-const std::tuple<const ImWchar*, std::filesystem::path> Fonts::GetGlyphRange(std::string aLanguage)
+// Returns the glyph ranges for a given range name and its default font.
+// When aGlyphRangeName == "Full", returns full range of unicode plane 0.
+// When aGlyphRangeName == "System", returns range according to windows language setting
+const std::tuple<const ImWchar*, std::filesystem::path> Fonts::GetGlyphRange(std::string aGlyphRangeName)
 {
     auto& io = ImGui::GetIO();
 
-    if (aLanguage == "System")
+    if (aGlyphRangeName == "System")
     {
         switch (GetSystemDefaultLangID())
         {
-        case MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_TRADITIONAL): aLanguage = "Traditional Chinese"; break;
-        case MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED): aLanguage = "Simplified Chinese"; break;
-        case MAKELANGID(LANG_JAPANESE, SUBLANG_DEFAULT): aLanguage = "Japanese"; break;
-        case MAKELANGID(LANG_KOREAN, SUBLANG_DEFAULT): aLanguage = "Korean"; break;
+        case MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_TRADITIONAL): aGlyphRangeName = "Traditional Chinese"; break;
+        case MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED): aGlyphRangeName = "Simplified Chinese"; break;
+        case MAKELANGID(LANG_JAPANESE, SUBLANG_DEFAULT): aGlyphRangeName = "Japanese"; break;
+        case MAKELANGID(LANG_KOREAN, SUBLANG_DEFAULT): aGlyphRangeName = "Korean"; break;
         case MAKELANGID(LANG_BELARUSIAN, SUBLANG_DEFAULT):
-        case MAKELANGID(LANG_RUSSIAN, SUBLANG_DEFAULT): aLanguage = "Cyrillic"; break;
-        case MAKELANGID(LANG_THAI, SUBLANG_DEFAULT): aLanguage = "Thai"; break;
-        case MAKELANGID(LANG_VIETNAMESE, SUBLANG_DEFAULT): aLanguage = "Vietnamese"; break;
+        case MAKELANGID(LANG_RUSSIAN, SUBLANG_DEFAULT): aGlyphRangeName = "Cyrillic"; break;
+        case MAKELANGID(LANG_THAI, SUBLANG_DEFAULT): aGlyphRangeName = "Thai"; break;
+        case MAKELANGID(LANG_VIETNAMESE, SUBLANG_DEFAULT): aGlyphRangeName = "Vietnamese"; break;
         }
     }
 
-    if (aLanguage == "Traditional Chinese")
-        return std::make_tuple(io.Fonts->GetGlyphRangesChineseFull(), GetAbsolutePath(GetDefaultLanguageFontPath(aLanguage), m_paths.Fonts(), false));
+    if (aGlyphRangeName == "Traditional Chinese")
+        return std::make_tuple(io.Fonts->GetGlyphRangesChineseFull(), GetAbsolutePath(GetDefaultFontByGlyphRange(aGlyphRangeName), m_paths.Fonts(), false));
 
     // Using GetGlyphRangesChineseFull() instead of GetGlyphRangesChineseSimplifiedCommon(), because the range is not comeplete.
-    if (aLanguage == "Simplified Chinese")
-        return std::make_tuple(io.Fonts->GetGlyphRangesChineseFull(), GetAbsolutePath(GetDefaultLanguageFontPath(aLanguage), m_paths.Fonts(), false));
+    if (aGlyphRangeName == "Simplified Chinese")
+        return std::make_tuple(io.Fonts->GetGlyphRangesChineseFull(), GetAbsolutePath(GetDefaultFontByGlyphRange(aGlyphRangeName), m_paths.Fonts(), false));
 
-    if (aLanguage == "Japanese")
-        return std::make_tuple(io.Fonts->GetGlyphRangesJapanese(), GetAbsolutePath(GetDefaultLanguageFontPath(aLanguage), m_paths.Fonts(), false));
+    if (aGlyphRangeName == "Japanese")
+        return std::make_tuple(io.Fonts->GetGlyphRangesJapanese(), GetAbsolutePath(GetDefaultFontByGlyphRange(aGlyphRangeName), m_paths.Fonts(), false));
 
-    if (aLanguage == "Korean")
-        return std::make_tuple(io.Fonts->GetGlyphRangesKorean(), GetAbsolutePath(GetDefaultLanguageFontPath(aLanguage), m_paths.Fonts(), false));
+    if (aGlyphRangeName == "Korean")
+        return std::make_tuple(io.Fonts->GetGlyphRangesKorean(), GetAbsolutePath(GetDefaultFontByGlyphRange(aGlyphRangeName), m_paths.Fonts(), false));
 
-    if (aLanguage == "Cyrillic")
-        return std::make_tuple(io.Fonts->GetGlyphRangesCyrillic(), GetAbsolutePath(GetDefaultLanguageFontPath(aLanguage), m_paths.Fonts(), false));
+    if (aGlyphRangeName == "Cyrillic")
+        return std::make_tuple(io.Fonts->GetGlyphRangesCyrillic(), GetAbsolutePath(GetDefaultFontByGlyphRange(aGlyphRangeName), m_paths.Fonts(), false));
 
-    if (aLanguage == "Thai")
-        return std::make_tuple(io.Fonts->GetGlyphRangesThai(), GetAbsolutePath(GetDefaultLanguageFontPath(aLanguage), m_paths.Fonts(), false));
+    if (aGlyphRangeName == "Thai")
+        return std::make_tuple(io.Fonts->GetGlyphRangesThai(), GetAbsolutePath(GetDefaultFontByGlyphRange(aGlyphRangeName), m_paths.Fonts(), false));
 
-    if (aLanguage == "Vietnamese")
-        return std::make_tuple(io.Fonts->GetGlyphRangesVietnamese(), GetAbsolutePath(GetDefaultLanguageFontPath(aLanguage), m_paths.Fonts(), false));
+    if (aGlyphRangeName == "Vietnamese")
+        return std::make_tuple(io.Fonts->GetGlyphRangesVietnamese(), GetAbsolutePath(GetDefaultFontByGlyphRange(aGlyphRangeName), m_paths.Fonts(), false));
 
     // add all glyphs from the font
-    if (aLanguage == "Full")
+    if (aGlyphRangeName == "Full")
     {
         static const ImWchar range[] = {0x1, 0xFFFF, 0};
-        return std::make_tuple(range, GetAbsolutePath(GetDefaultLanguageFontPath(aLanguage), m_paths.Fonts(), false));
+        return std::make_tuple(range, GetAbsolutePath(GetDefaultFontByGlyphRange(aGlyphRangeName), m_paths.Fonts(), false));
     }
 
-    return std::make_tuple(io.Fonts->GetGlyphRangesDefault(), GetAbsolutePath(GetDefaultLanguageFontPath("Default"), m_paths.Fonts(), false));
+    return std::make_tuple(io.Fonts->GetGlyphRangesDefault(), GetAbsolutePath(GetDefaultFontByGlyphRange("Default"), m_paths.Fonts(), false));
 }
 
 // Build Fonts
-// if custom font and language both not set:
+// if custom font and glyphrange both not set:
 //     we use default range with default fonts (e.g. RangeDefault(), NotoSans-Regular.ttf).
 //
-// if custom font not set but language is set:
-//     we use the language range and its corresponding noto sans language fonts (e.g. RangeJapanese(), NotoSansJP-Regular.otf).
+// if custom font not set but glyphrange is set:
+//     we use the glyphrange range and its corresponding noto sans glyphrange fonts (e.g. RangeJapanese(), NotoSansJP-Regular.otf).
 //
-// if custom font is set but language not set:
+// if custom font is set but glyphrange not set:
 //     we use the default range with the custom font (e.g. RnageDefault(), c:/windows/fonts/Comic.ttf).
 //
-// if custom font and language are both set:
-//     we use the custom font with the language range (e.g. RangeChineseFull(), c:/windows/fonts/simhei.ttf).
+// if custom font and glyphrange are both set:
+//     we use the custom font with the glyphrange range (e.g. RangeChineseFull(), c:/windows/fonts/simhei.ttf).
 //
 void Fonts::BuildFonts(SIZE aOutSize)
 {
@@ -86,20 +86,20 @@ void Fonts::BuildFonts(SIZE aOutSize)
 
     const auto& fontSettings = m_options.Font;
     const float fontSize = std::floorf(fontSettings.BaseSize * scaleFromReference);
-    // scale fontsize by 0.8 to make the glyphs roughly the same size as the main font. not sure about other font, don't really have a good solution.
+    // scale emoji's fontsize by 0.8 to make the glyphs roughly the same size as the main font. not sure about other font, don't really have a good solution.
     const float emojiSize = fontSize * 0.8f;
 
     // handle fontpaths and glyph ranges
     // Get custom font paths from options
-    const auto customPath = GetFontPathFromOption(fontSettings.FontMain);
-    const auto customMonospacePath = GetFontPathFromOption(fontSettings.FontMonospace);
-    const bool useCustomMainFont = !customPath.empty();
-    const bool useCustomMonospaceFont = !customMonospacePath.empty();
+    const auto customMainFontPath = GetFontPathFromOption(fontSettings.FontMain);
+    const auto customMonospaceFontPath = GetFontPathFromOption(fontSettings.FontMonospace);
+    const bool useCustomMainFont = !customMainFontPath.empty();
+    const bool useCustomMonospaceFont = !customMonospaceFontPath.empty();
 
-    // Set main font path to default if customPath is empty or doesnt exist.
-    auto mainFontPath = useCustomMainFont ? customPath : GetAbsolutePath(m_defaultMainFontPath, m_paths.Fonts(), false);
-    // Set monospace font path to default if customMonospacePath is empty or doesnt exist.
-    const auto monospaceFontPath = useCustomMonospaceFont ? customMonospacePath : GetAbsolutePath(m_defaultMonospaceFontPath, m_paths.Fonts(), false);
+    // Set main font path to default if customMainFontPath is empty or doesnt exist.
+    auto mainFontPath = useCustomMainFont ? customMainFontPath : GetAbsolutePath(m_defaultMainFontPath, m_paths.Fonts(), false);
+    // Set monospace font path to default if customMonospaceFontPath is empty or doesnt exist.
+    const auto monospaceFontPath = useCustomMonospaceFont ? customMonospaceFontPath : GetAbsolutePath(m_defaultMonospaceFontPath, m_paths.Fonts(), false);
 
     const auto iconFontPath = GetAbsolutePath(m_defaultIconFontPath, m_paths.Fonts(), false);
     const auto emojiFontPath = GetAbsolutePath(m_defaultEmojiFontPath, m_paths.Fonts(), false);
@@ -108,11 +108,11 @@ void Fonts::BuildFonts(SIZE aOutSize)
     const ImWchar* mainFontRange;
 
     if (useCustomMainFont)
-        mainFontRange = std::get<0>(GetGlyphRange(fontSettings.Language));
+        mainFontRange = std::get<0>(GetGlyphRange(fontSettings.GlyphRange));
 
     if (!useCustomMainFont)
     {
-        std::tie(mainFontRange, mainFontPath) = GetGlyphRange(fontSettings.Language);
+        std::tie(mainFontRange, mainFontPath) = GetGlyphRange(fontSettings.GlyphRange);
     }
 
     // create config for each font
@@ -224,23 +224,23 @@ Fonts::Fonts(Options& aOptions, Paths& aPaths)
     };
     for (const auto& range : ranges)
     {
-        m_languages.emplace_back(range.first);
-        m_defaultLanguageFontPaths.emplace(range.first, range.second);
+        m_glyphranges.emplace_back(range.first);
+        m_defaultFonts.emplace(range.first, range.second);
     }
 
     EnumerateSystemFonts();
 }
 
-const std::vector<std::string>& Fonts::GetLanguages()
+const std::vector<std::string>& Fonts::GetGlyphRanges()
 {
-    return m_languages;
+    return m_glyphranges;
 }
 
-std::filesystem::path Fonts::GetDefaultLanguageFontPath(const std::string& acLanguages)
+std::filesystem::path Fonts::GetDefaultFontByGlyphRange(const std::string& acGlyphRange)
 {
     try
     {
-        return m_defaultLanguageFontPaths.at(acLanguages);
+        return m_defaultFonts.at(acGlyphRange);
     }
     catch (...)
     {

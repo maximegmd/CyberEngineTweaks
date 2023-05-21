@@ -92,31 +92,6 @@ void Settings::OnUpdate()
             }
             ImGui::TreePop();
         }
-        if (ImGui::CollapsingHeader("CET Development Settings", ImGuiTreeNodeFlags_DefaultOpen))
-        {
-            ImGui::TreePush();
-            if (ImGui::BeginTable("SETTINGS", 2, ImGuiTableFlags_NoSavedSettings, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
-            {
-                const auto& developerSettings = m_options.Developer;
-                SettingItemCheckBox(
-                    "🗑", "Remove Dead Bindings", "Removes all bindings which are no longer valid (disabling this could be useful when debugging mod issues).",
-                    m_developer.RemoveDeadBindings, developerSettings.RemoveDeadBindings);
-                SettingItemCheckBox(
-                    "💣", "Enable ImGui Assertions",
-                    "Enables all ImGui assertions, assertions will get logged into log file of whoever triggered the assertion (useful when debugging ImGui issues, should also be "
-                    "used to check mods before shipping!).",
-                    m_developer.EnableImGuiAssertions, developerSettings.EnableImGuiAssertions);
-                SettingItemCheckBox(
-                    "🔨", "Enable Debug Build", "Sets internal flags to disguise as debug build (requires restart to take effect).", m_developer.EnableDebug,
-                    developerSettings.EnableDebug);
-                SettingItemCheckBox(
-                    "🖨", "Dump Game Options", "Dumps all game options into main log file (requires restart to take effect).", m_developer.DumpGameOptions,
-                    developerSettings.DumpGameOptions);
-
-                ImGui::EndTable();
-            }
-            ImGui::TreePop();
-        }
         if (ImGui::CollapsingHeader("CET Font Settings", ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::TreePush();
@@ -141,7 +116,7 @@ void Settings::OnUpdate()
                 {
                     ImGui::Indent(ImGui::GetFrameHeight());
                     m_madeFontChanges |= SettingItemCombo(
-                        "🌐", "Glyph Range", "What glyphs should we load from the font.", m_font.Language, fontSettings.Language, CET::Get().GetFonts().GetLanguages());
+                        "🌐", "Glyph Range", "What glyphs should we load from the font.", m_font.GlyphRange, fontSettings.GlyphRange, CET::Get().GetFonts().GetGlyphRanges());
                     m_madeFontChanges |= SettingItemSliderInt(
                         "↔", "Oversample Horizontal", "Oversamples font horizontally, default value is 3x. (May increase font clearity, at the cost of increasing memory usage.)",
                         m_font.OversampleHorizontal, fontSettings.OversampleHorizontal, 1, 10, "%dx");
@@ -150,6 +125,31 @@ void Settings::OnUpdate()
                         m_font.OversampleVertical, fontSettings.OversampleVertical, 1, 10, "%dx");
                     ImGui::Unindent(ImGui::GetFrameHeight());
                 }
+
+                ImGui::EndTable();
+            }
+            ImGui::TreePop();
+        }
+        if (ImGui::CollapsingHeader("CET Development Settings", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            ImGui::TreePush();
+            if (ImGui::BeginTable("SETTINGS", 2, ImGuiTableFlags_NoSavedSettings, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
+            {
+                const auto& developerSettings = m_options.Developer;
+                SettingItemCheckBox(
+                    "🗑", "Remove Dead Bindings", "Removes all bindings which are no longer valid (disabling this could be useful when debugging mod issues).",
+                    m_developer.RemoveDeadBindings, developerSettings.RemoveDeadBindings);
+                SettingItemCheckBox(
+                    "💣", "Enable ImGui Assertions",
+                    "Enables all ImGui assertions, assertions will get logged into log file of whoever triggered the assertion (useful when debugging ImGui issues, should also be "
+                    "used to check mods before shipping!).",
+                    m_developer.EnableImGuiAssertions, developerSettings.EnableImGuiAssertions);
+                SettingItemCheckBox(
+                    "🔨", "Enable Debug Build", "Sets internal flags to disguise as debug build (requires restart to take effect).", m_developer.EnableDebug,
+                    developerSettings.EnableDebug);
+                SettingItemCheckBox(
+                    "🖨", "Dump Game Options", "Dumps all game options into main log file (requires restart to take effect).", m_developer.DumpGameOptions,
+                    developerSettings.DumpGameOptions);
 
                 ImGui::EndTable();
             }
