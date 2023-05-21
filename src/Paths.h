@@ -14,6 +14,7 @@ struct Paths
     const std::filesystem::path& R6CacheModdedRoot() const;
     const std::filesystem::path& Fonts() const;
     const std::filesystem::path& TweakDB() const;
+    const std::filesystem::path& Languages() const;
 
 private:
     friend struct CET;
@@ -30,4 +31,5 @@ private:
     std::filesystem::path m_r6CacheModdedRoot{};
     std::filesystem::path m_fonts{};
     std::filesystem::path m_tweakdb{};
+    std::filesystem::path m_languages{};
 };

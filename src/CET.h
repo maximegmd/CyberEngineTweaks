@@ -10,6 +10,11 @@
 #include "common/CETTasks.h"
 #include "Fonts.h"
 
+#define _t     CET::Get().GetI18n().Translate
+#define _tn    CET::Get().GetI18n().TranslatePlural
+#define _tc    CET::Get().GetI18n().TranslateWithContext
+#define _tcn   CET::Get().GetI18n().TranslatePluralWithContext
+
 struct CET
 {
     ~CET();
@@ -26,6 +31,7 @@ struct CET
     Overlay& GetOverlay() noexcept;
     LuaVM& GetVM() noexcept;
     Fonts& GetFonts() noexcept;
+    I18n& GetI18n() noexcept;
 
     static bool IsRunning() noexcept;
 
@@ -40,6 +46,7 @@ private:
     Fonts m_fonts;
     D3D12 m_d3d12;
     LuaVM m_vm;
+    I18n m_i18n;
     Overlay m_overlay;
     CETTasks m_tasks;
 };
