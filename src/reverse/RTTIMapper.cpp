@@ -135,7 +135,7 @@ void RTTIMapper::RegisterSimpleTypes(sol::state& aLuaState, sol::table& aLuaGlob
 
 void RTTIMapper::RegisterDirectTypes(sol::state& aLuaState, sol::table& aLuaGlobal, RED4ext::CRTTISystem* apRtti)
 {
-    const bool reinit = aLuaGlobal["EnumStatic"] != sol::nil;
+    const bool reinit = aLuaState["RegisterGlobalInputListener"] != sol::nil;
 
     if (!reinit)
     {
@@ -248,8 +248,11 @@ void RTTIMapper::SanitizeName(std::string& aName)
     std::ranges::replace(aName, '.', '_');
 }
 
-RED4ext::CName RTTIMapper::TryResolveTypeName(sol::object aValue)
+RED4ext::CName RTTIMapper::TryResolveTypeName(const sol::object& aValue)
 {
+    if (aValue == sol::nil)
+        return {};
+
     if (IsLuaCData(aValue))
         return "Uint64";
 

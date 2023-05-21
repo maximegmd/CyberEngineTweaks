@@ -13,6 +13,7 @@
 #include <reverse/StrongReference.h>
 #include <reverse/WeakReference.h>
 #include <reverse/ResourceAsyncReference.h>
+#include <reverse/NativeProxy.h>
 #include <reverse/RTTILocator.h>
 #include <reverse/RTTIExtender.h>
 #include <reverse/Converter.h>
@@ -29,6 +30,7 @@
 static constexpr bool s_cThrowLuaErrors = true;
 
 static RTTILocator s_stringType{RED4ext::FNV1a64("String")};
+static RTTILocator s_resRefType{RED4ext::FNV1a64("redResourceReferenceScriptToken")};
 
 Scripting::Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12)
     : m_sandbox(this, aBindings)
@@ -379,6 +381,24 @@ void Scripting::PostInitializeScripting()
 
     globals["Observe"] = globals["ObserveBefore"];
 
+    globals.new_usertype<NativeProxy>("NativeProxy",
+        sol::meta_function::construct, sol::no_constructor,
+        "Target", &NativeProxy::GetTarget,
+        "Function", sol::overload(&NativeProxy::GetFunction, &NativeProxy::GetDefaultFunction));
+
+    globals["NewProxy"] = sol::overload(
+        [this](const sol::object& aSpec, sol::this_state aState, sol::this_environment aEnv) -> sol::object
+        {
+            auto locledState = m_lua.Lock();
+            return {aState, sol::in_place, NativeProxy(m_lua.AsRef(), aEnv, aSpec)};
+        },
+        [this](const std::string& aInterface, const sol::object& aSpec, sol::this_state aState,
+               sol::this_environment aEnv) -> sol::object
+        {
+            auto locledState = m_lua.Lock();
+            return {aState, sol::in_place, NativeProxy(m_lua.AsRef(), aEnv, aInterface, aSpec)};
+        });
+
     m_sandbox.PostInitializeScripting();
 
     RTTIHelper::Initialize(m_lua.AsRef(), m_sandbox);
@@ -396,7 +416,7 @@ void Scripting::PostInitializeTweakDB()
         "__TweakDB", sol::meta_function::construct, sol::no_constructor, "DebugStats", &TweakDB::DebugStats, "GetRecords", &TweakDB::GetRecords, "GetRecord",
         overload(&TweakDB::GetRecordByName, &TweakDB::GetRecord), "Query", overload(&TweakDB::QueryByName, &TweakDB::Query), "GetFlat",
         overload(&TweakDB::GetFlatByName, &TweakDB::GetFlat), "SetFlats", overload(&TweakDB::SetFlatsByName, &TweakDB::SetFlats), "SetFlat",
-        overload(&TweakDB::SetFlatByNameAutoUpdate, &TweakDB::SetFlatAutoUpdate, &TweakDB::SetTypedFlat, &TweakDB::SetTypedFlatByName), "SetFlatNoUpdate",
+        overload(&TweakDB::SetTypedFlat, &TweakDB::SetTypedFlatByName, &TweakDB::SetFlatByNameAutoUpdate, &TweakDB::SetFlatAutoUpdate), "SetFlatNoUpdate",
         overload(&TweakDB::SetFlatByName, &TweakDB::SetFlat), "Update", overload(&TweakDB::UpdateRecordByName, &TweakDB::UpdateRecordByID, &TweakDB::UpdateRecord), "CreateRecord",
         overload(&TweakDB::CreateRecordToID, &TweakDB::CreateRecord), "CloneRecord", overload(&TweakDB::CloneRecordByName, &TweakDB::CloneRecordToID, &TweakDB::CloneRecord),
         "DeleteRecord", overload(&TweakDB::DeleteRecordByID, &TweakDB::DeleteRecord));
@@ -488,10 +508,6 @@ void Scripting::PostInitializeMods()
         // this table is flattened and contains all hierarchy, but traversing the hierarchy first reduces error when
         // there are classes that instantiate a parent class but don't actually have a subclass instance
         GameMainThread::Get().AddRunningTask(&GameDump::DumpVTablesTask::Run);
-    };
-    globals["DumpReflection"] = [this](bool aVerbose, bool aExtendedPath, bool aPropertyHolders)
-    {
-        RED4ext::GameReflection::Dump(m_paths.CETRoot() / "dumps", aVerbose, aExtendedPath, aPropertyHolders);
     };
 #endif
 
@@ -900,36 +916,51 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
                 result.value = pScriptRef;
             }
         }
-        else if (apRttiType->GetType() == RED4ext::ERTTIType::ResourceAsyncReference)
+        else if (apRttiType->GetType() == RED4ext::ERTTIType::ResourceAsyncReference || apRttiType == s_resRefType)
         {
             if (hasData)
             {
                 uint64_t hash = 0;
+                bool valid = false;
 
                 if (aObject.is<ResourceAsyncReference>())
                 {
                     hash = aObject.as<ResourceAsyncReference*>()->GetHash();
+                    valid = true;
                 }
                 else if (aObject.get_type() == sol::type::string)
                 {
                     hash = ResourceAsyncReference::Hash(aObject.as<std::string>());
-                }
-                else if (aObject.is<CName>())
-                {
-                    hash = aObject.as<CName*>()->hash;
+                    valid = true;
                 }
                 else if (aObject.get_type() == sol::type::number)
                 {
                     hash = aObject.as<uint64_t>();
+                    valid = true;
+                }
+                else if (aObject.is<CName>())
+                {
+                    hash = aObject.as<CName*>()->hash;
+                    valid = true;
+                }
+                else if (aObject.is<ClassReference>())
+                {
+                    auto& ref = aObject.as<ClassReference>();
+                    if (ref.GetType() == s_resRefType)
+                    {
+                        hash = *reinterpret_cast<uint64_t*>(ref.GetValuePtr());
+                        valid = true;
+                    }
                 }
                 else if (IsLuaCData(aObject))
                 {
                     sol::state_view v(aObject.lua_state());
                     const std::string str = v["tostring"](aObject);
                     hash = std::stoull(str);
+                    valid = true;
                 }
 
-                if (hash != 0)
+                if (valid)
                 {
                     auto* pRaRef = apAllocator->New<RED4ext::ResourceAsyncReference<void>>();
                     pRaRef->path.hash = hash;
@@ -949,13 +980,13 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
 
 void Scripting::ToRED(sol::object aObject, RED4ext::CStackType& aRet)
 {
-    static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 13);
+    static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 14);
 
     const auto result = ToRED(aObject, aRet.type, &s_scratchMemory);
 
     aRet.type->Assign(aRet.value, result.value);
 
-    if (aRet.type->GetType() != RED4ext::ERTTIType::Class)
+    if (aRet.type->GetType() != RED4ext::ERTTIType::Class && result.value)
         aRet.type->Destruct(result.value);
 
     s_scratchMemory.Reset();

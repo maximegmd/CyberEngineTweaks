@@ -189,7 +189,7 @@ struct TEMP_SpawnSettings
     uintptr_t unkC8 = 0;
     uintptr_t unkD0 = 0;
     uintptr_t unkD8 = 0;
-    RED4ext::TweakDBID DONOTUSE_recordDBID = 0;
+    RED4ext::TweakDBID DONOTUSE_recordDBID{};
     uint32_t unkE8 = 0x10101FF;
 
     void SetTransform(const RED4ext::WorldTransform& acWorldTransform)
@@ -327,7 +327,7 @@ void CreateSingleton(const RED4ext::Handle<RED4ext::IScriptable>& apClassInstanc
     auto* pRTTI = RED4ext::CRTTISystem::Get();
     auto* pType = apClassInstance->GetNativeType();
     auto* pGameInstance = RED4ext::CGameEngine::Get()->framework->gameInstance;
-    if (pGameInstance->GetInstance(pType) != nullptr)
+    if (pGameInstance->GetSystem(pType) != nullptr)
         return; // already init
 
     auto* pGameSystemType = pRTTI->GetType("gameIGameSystem");
@@ -365,22 +365,22 @@ void CreateSingleton(const RED4ext::Handle<RED4ext::IScriptable>& apClassInstanc
         }
 
         auto* pParentType = apClassInstance->GetType();
-        pGameInstance->unk08.Insert(pParentType, apClassInstance);
-        pGameInstance->unk38.PushBack(apClassInstance);
+        pGameInstance->systemMap.Insert(pParentType, apClassInstance);
+        pGameInstance->systemInstances.PushBack(apClassInstance);
 
         pParentType = pParentType->parent;
         auto* pReplicatedGameSystemType = pRTTI->GetType("gameIReplicatedGameSystem");
         while (pParentType && pParentType != pGameSystemType && pParentType != pReplicatedGameSystemType)
         {
-            pGameInstance->unk48.Insert(pParentType, pType);
+            pGameInstance->systemImplementations.Insert(pParentType, pType);
             pParentType = pParentType->parent;
         }
     }
     else
     {
         auto* pParentType = apClassInstance->GetType();
-        pGameInstance->unk08.Insert(pParentType, apClassInstance);
-        pGameInstance->unk48.Insert(pParentType, pType);
+        pGameInstance->systemMap.Insert(pParentType, apClassInstance);
+        pGameInstance->systemImplementations.Insert(pParentType, pType);
     }
 }
 
@@ -389,7 +389,7 @@ void CreateSingleton(const RED4ext::CName acTypeName)
     auto* pRTTI = RED4ext::CRTTISystem::Get();
     auto* pType = pRTTI->GetClass(acTypeName);
     auto* pGameInstance = RED4ext::CGameEngine::Get()->framework->gameInstance;
-    if (pGameInstance->GetInstance(pType) != nullptr)
+    if (pGameInstance->GetSystem(pType) != nullptr)
         return; // already init
 
     auto* pClassInstance = static_cast<RED4ext::IScriptable*>(pType->CreateInstance());
@@ -423,7 +423,7 @@ void WorldFunctionalTests_SpawnEntity(RED4ext::IScriptable*, RED4ext::CStackFram
     auto* pRTTI = RED4ext::CRTTISystem::Get();
     auto* pGameInstance = RED4ext::CGameEngine::Get()->framework->gameInstance;
     auto* pFunctionalType = pRTTI->GetType("FunctionalTestsGameSystem");
-    auto* pFunctionalSystem = reinterpret_cast<FunctionalTestsGameSystem*>(pGameInstance->GetInstance(pFunctionalType));
+    auto* pFunctionalSystem = reinterpret_cast<FunctionalTestsGameSystem*>(pGameInstance->GetSystem(pFunctionalType));
     uint32_t oldSize = pFunctionalSystem->spawner.pendingEntities.size;
 
     ExecuteFunction("WorldFunctionalTests", "Internal_SpawnEntity", nullptr, entityPath, worldTransform, unknown);
@@ -539,7 +539,7 @@ public:
         RED4ext::CName entityPath; // <- raRef
         RED4ext::WorldTransform worldTransform{};
         RED4ext::CName appearance = "default";
-        RED4ext::TweakDBID recordDBID = 0;
+        RED4ext::TweakDBID recordDBID{};
 
         GetParameter(apFrame, &entityPath);
         GetParameter(apFrame, &worldTransform);
@@ -569,7 +569,7 @@ public:
 
     static void SpawnRecord(IScriptable*, RED4ext::CStackFrame* apFrame, RED4ext::ent::EntityID* apOut, int64_t)
     {
-        RED4ext::TweakDBID recordDBID = 0;
+        RED4ext::TweakDBID recordDBID{};
         RED4ext::WorldTransform worldTransform{};
         RED4ext::CName appearance = "default";
         GetParameter(apFrame, &recordDBID);
@@ -629,11 +629,11 @@ void RTTIExtender::AddFunctionalTests()
             RED4EXT_ASSERT_OFFSET(WorldFunctionalTests, unk40, 0x40);
 
             auto* pGameInstance = RED4ext::CGameEngine::Get()->framework->gameInstance;
-            auto* pWorld = reinterpret_cast<WorldFunctionalTests*>(pGameInstance->GetInstance(pClass));
+            auto* pWorld = reinterpret_cast<WorldFunctionalTests*>(pGameInstance->GetSystem(pClass));
 
             // whatever this is, it's only used to get gameInstance
             // passing cpPlayerSystem (or any system) will work
-            pWorld->unk40 = pGameInstance->GetInstance(pRTTI->GetType("cpPlayerSystem"))->ref.Lock();
+            pWorld->unk40 = pGameInstance->GetSystem(pRTTI->GetType("cpPlayerSystem"))->ref.Lock();
         }
 
         auto* pFunction = pClass->GetFunction("SpawnEntity");

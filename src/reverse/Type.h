@@ -20,7 +20,7 @@ struct Type
     virtual RED4ext::ScriptInstance GetValuePtr() const { return nullptr; }
 
     sol::object Index(const std::string& acName, sol::this_environment aThisEnv);
-    sol::object NewIndex(const std::string& acName, sol::object aParam);
+    sol::object NewIndex(const std::string& acName, sol::optional<sol::object> aParam);
 
     virtual sol::object Index_Impl(const std::string& acName, sol::this_environment aThisEnv);
     virtual sol::object NewIndex_Impl(const std::string& acName, sol::object aParam);

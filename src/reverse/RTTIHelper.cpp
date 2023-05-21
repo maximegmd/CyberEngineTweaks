@@ -75,7 +75,7 @@ void RTTIHelper::InitializeRuntime()
     m_pGameInstance = static_cast<ScriptGameInstance*>(m_pGameInstanceType->CreateInstance());
     m_pGameInstance->gameInstance = cpGameInstance;
 
-    m_pPlayerSystem = cpGameInstance->GetInstance(cpPlayerSystemType);
+    m_pPlayerSystem = cpGameInstance->GetSystem(cpPlayerSystemType);
 }
 
 void RTTIHelper::ParseGlobalStatics()
@@ -971,7 +971,7 @@ void RTTIHelper::SetProperty(RED4ext::CClass* apClass, RED4ext::ScriptInstance a
     if (!pProp)
         return;
 
-    static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 13);
+    static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 14);
     struct ResetAllocator
     {
         ~ResetAllocator() { s_scratchMemory.Reset(); }

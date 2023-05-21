@@ -26,7 +26,7 @@ StrongReference::StrongReference(
     {
         auto const cpClass = reinterpret_cast<RED4ext::CClass*>(apStrongHandleType->GetInnerType());
 
-        m_pType = cpClass->IsA(s_sIScriptableType) ? m_strongHandle->GetType() : cpClass;
+        m_pType = cpClass->IsA(s_sIScriptableType) ? m_strongHandle->GetType() : m_strongHandle->GetNativeType();
     }
 }
 

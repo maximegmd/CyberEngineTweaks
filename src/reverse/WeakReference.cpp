@@ -29,7 +29,7 @@ WeakReference::WeakReference(
     {
         auto const cpClass = reinterpret_cast<RED4ext::CClass*>(apWeakHandleType->GetInnerType());
 
-        m_pType = cpClass->IsA(s_sIScriptableType) ? ref->GetType() : cpClass;
+        m_pType = cpClass->IsA(s_sIScriptableType) ? ref->GetType() : ref->GetNativeType();
     }
 }
 

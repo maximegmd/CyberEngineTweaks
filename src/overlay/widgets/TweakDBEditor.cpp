@@ -307,9 +307,9 @@ void TweakDBEditor::FilterAll()
 RED4ext::TweakDBID ExtractTweakDBIDFromString(const char* acString)
 {
     if (acString[0] == '\0')
-        return 0;
+        return {};
 
-    RED4ext::TweakDBID dbid = 0;
+    RED4ext::TweakDBID dbid;
     if (sscanf(acString, "%llX", &dbid.value) != 1)
     {
         if (sscanf(acString, "<TDBID:%X:%hhX", &dbid.name.hash, &dbid.name.length) != 2)

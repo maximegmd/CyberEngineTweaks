@@ -115,6 +115,9 @@ bool TweakDB::SetFlatsByName(const std::string& acRecordName, sol::table aTable,
 
 bool TweakDB::SetFlats(TweakDBID aDBID, sol::table aTable, sol::this_environment aThisEnv)
 {
+    const sol::environment cEnv = aThisEnv;
+    const auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+
     bool success = true;
     const TweakDBID prepDBID(aDBID, ".");
 
@@ -124,7 +127,7 @@ bool TweakDB::SetFlats(TweakDBID aDBID, sol::table aTable, sol::this_environment
             continue;
 
         const TweakDBID flatDBID(prepDBID, key.as<std::string>());
-        success &= SetFlat(flatDBID, value, aThisEnv);
+        success &= SetOrCreateFlat(flatDBID, value, "", "", logger);
     }
 
     UpdateRecordByID(aDBID);
@@ -132,29 +135,29 @@ bool TweakDB::SetFlats(TweakDBID aDBID, sol::table aTable, sol::this_environment
     return success;
 }
 
-bool TweakDB::SetFlatByName(const std::string& acFlatName, sol::object aObject, sol::this_environment aThisEnv) const
+bool TweakDB::SetFlatByName(const std::string& acFlatName, sol::optional<sol::object> aObject, sol::this_environment aThisEnv) const
 {
     const sol::environment cEnv = aThisEnv;
     const auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
 
-    return SetOrCreateFlat(TweakDBID(acFlatName), std::move(aObject), acFlatName, "", logger);
+    return SetOrCreateFlat(TweakDBID(acFlatName), aObject.value_or(sol::nil), acFlatName, "", logger);
 }
 
-bool TweakDB::SetFlat(TweakDBID aDBID, sol::object aObject, sol::this_environment aThisEnv) const
+bool TweakDB::SetFlat(TweakDBID aDBID, sol::optional<sol::object> aObject, sol::this_environment aThisEnv) const
 {
     const sol::environment cEnv = aThisEnv;
     const auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
 
-    return SetOrCreateFlat(aDBID, std::move(aObject), "", "", logger);
+    return SetOrCreateFlat(aDBID, aObject.value_or(sol::nil), "", "", logger);
 }
 
-bool TweakDB::SetFlatByNameAutoUpdate(const std::string& acFlatName, sol::object aObject, sol::this_environment aThisEnv)
+bool TweakDB::SetFlatByNameAutoUpdate(const std::string& acFlatName, sol::optional<sol::object> aObject, sol::this_environment aThisEnv)
 {
     const sol::environment cEnv = aThisEnv;
     const auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
 
     const TweakDBID dbid(acFlatName);
-    if (SetOrCreateFlat(dbid, std::move(aObject), acFlatName, "", logger))
+    if (SetOrCreateFlat(dbid, aObject.value_or(sol::nil), acFlatName, "", logger))
     {
         const uint64_t recordDBID = CET::Get().GetVM().GetTDBIDBase(dbid.value);
         if (recordDBID != 0)
@@ -166,12 +169,12 @@ bool TweakDB::SetFlatByNameAutoUpdate(const std::string& acFlatName, sol::object
     return false;
 }
 
-bool TweakDB::SetFlatAutoUpdate(TweakDBID aDBID, sol::object aObject, sol::this_environment aThisEnv)
+bool TweakDB::SetFlatAutoUpdate(TweakDBID aDBID, sol::optional<sol::object> aObject, sol::this_environment aThisEnv)
 {
     const sol::environment cEnv = aThisEnv;
     const auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
 
-    if (SetOrCreateFlat(aDBID, std::move(aObject), "", "", logger))
+    if (SetOrCreateFlat(aDBID, aObject.value_or(sol::nil), "", "", logger))
     {
         const uint64_t recordDBID = CET::Get().GetVM().GetTDBIDBase(aDBID.value);
         if (recordDBID != 0)
@@ -183,20 +186,20 @@ bool TweakDB::SetFlatAutoUpdate(TweakDBID aDBID, sol::object aObject, sol::this_
     return false;
 }
 
-bool TweakDB::SetTypedFlatByName(const std::string& acFlatName, sol::object aObject, const std::string& acTypeName, sol::this_environment aThisEnv) const
+bool TweakDB::SetTypedFlatByName(const std::string& acFlatName, sol::optional<sol::object> aObject, const std::string& acTypeName, sol::this_environment aThisEnv) const
 {
     const sol::environment cEnv = aThisEnv;
     const auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
 
-    return SetOrCreateFlat(TweakDBID(acFlatName), aObject, acFlatName, acTypeName, logger);
+    return SetOrCreateFlat(TweakDBID(acFlatName), aObject.value_or(sol::nil), acFlatName, acTypeName, logger);
 }
 
-bool TweakDB::SetTypedFlat(TweakDBID aDBID, sol::object aObject, const std::string& acTypeName, sol::this_environment aThisEnv) const
+bool TweakDB::SetTypedFlat(TweakDBID aDBID, sol::optional<sol::object> aObject, const std::string& acTypeName, sol::this_environment aThisEnv) const
 {
     const sol::environment cEnv = aThisEnv;
     const auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
 
-    return SetOrCreateFlat(aDBID, aObject, "", acTypeName, logger);
+    return SetOrCreateFlat(aDBID, aObject.value_or(sol::nil), "", acTypeName, logger);
 }
 
 bool TweakDB::SetOrCreateFlat(
