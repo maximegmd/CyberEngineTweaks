@@ -399,41 +399,6 @@ void Scripting::PostInitializeScripting()
             return {aState, sol::in_place, NativeProxy(m_lua.AsRef(), aEnv, aInterface, aSpec)};
         });
 
-    m_sandbox.PostInitializeScripting();
-
-    RTTIHelper::Initialize(m_lua.AsRef(), m_sandbox);
-
-    TriggerOnHook();
-}
-
-void Scripting::PostInitializeTweakDB()
-{
-    auto lua = m_lua.Lock();
-    auto& luaVm = lua.Get();
-    auto& globals = m_sandbox.GetGlobals();
-
-    luaVm.new_usertype<TweakDB>(
-        "__TweakDB", sol::meta_function::construct, sol::no_constructor, "DebugStats", &TweakDB::DebugStats, "GetRecords", &TweakDB::GetRecords, "GetRecord",
-        overload(&TweakDB::GetRecordByName, &TweakDB::GetRecord), "Query", overload(&TweakDB::QueryByName, &TweakDB::Query), "GetFlat",
-        overload(&TweakDB::GetFlatByName, &TweakDB::GetFlat), "SetFlats", overload(&TweakDB::SetFlatsByName, &TweakDB::SetFlats), "SetFlat",
-        overload(&TweakDB::SetTypedFlat, &TweakDB::SetTypedFlatByName, &TweakDB::SetFlatByNameAutoUpdate, &TweakDB::SetFlatAutoUpdate), "SetFlatNoUpdate",
-        overload(&TweakDB::SetFlatByName, &TweakDB::SetFlat), "Update", overload(&TweakDB::UpdateRecordByName, &TweakDB::UpdateRecordByID, &TweakDB::UpdateRecord), "CreateRecord",
-        overload(&TweakDB::CreateRecordToID, &TweakDB::CreateRecord), "CloneRecord", overload(&TweakDB::CloneRecordByName, &TweakDB::CloneRecordToID, &TweakDB::CloneRecord),
-        "DeleteRecord", overload(&TweakDB::DeleteRecordByID, &TweakDB::DeleteRecord));
-
-    globals["TweakDB"] = TweakDB(m_lua.AsRef());
-
-    m_sandbox.PostInitializeTweakDB();
-
-    TriggerOnTweak();
-}
-
-void Scripting::PostInitializeMods()
-{
-    auto lua = m_lua.Lock();
-    auto& luaVm = lua.Get();
-    auto& globals = m_sandbox.GetGlobals();
-
     globals["NewObject"] = [this](const std::string& acName, sol::this_environment aEnv) -> sol::object
     {
         auto* pRtti = RED4ext::CRTTISystem::Get();
@@ -513,13 +478,47 @@ void Scripting::PostInitializeMods()
 
     globals["Game"] = this;
 
-    RTTIExtender::Initialize();
-    RTTIHelper::PostInitialize();
+    RTTIHelper::Initialize(m_lua.AsRef(), m_sandbox);
+    RTTIExtender::InitializeTypes();
+
     m_mapper.Register();
 
-    RegisterOverrides();
-
+    m_sandbox.PostInitializeScripting();
     m_sandbox.PostInitializeMods();
+
+    TriggerOnHook();
+}
+
+void Scripting::PostInitializeTweakDB()
+{
+    auto lua = m_lua.Lock();
+    auto& luaVm = lua.Get();
+    auto& globals = m_sandbox.GetGlobals();
+
+    luaVm.new_usertype<TweakDB>(
+        "__TweakDB", sol::meta_function::construct, sol::no_constructor, "DebugStats", &TweakDB::DebugStats, "GetRecords", &TweakDB::GetRecords, "GetRecord",
+        overload(&TweakDB::GetRecordByName, &TweakDB::GetRecord), "Query", overload(&TweakDB::QueryByName, &TweakDB::Query), "GetFlat",
+        overload(&TweakDB::GetFlatByName, &TweakDB::GetFlat), "SetFlats", overload(&TweakDB::SetFlatsByName, &TweakDB::SetFlats), "SetFlat",
+        overload(&TweakDB::SetTypedFlat, &TweakDB::SetTypedFlatByName, &TweakDB::SetFlatByNameAutoUpdate, &TweakDB::SetFlatAutoUpdate), "SetFlatNoUpdate",
+        overload(&TweakDB::SetFlatByName, &TweakDB::SetFlat), "Update", overload(&TweakDB::UpdateRecordByName, &TweakDB::UpdateRecordByID, &TweakDB::UpdateRecord), "CreateRecord",
+        overload(&TweakDB::CreateRecordToID, &TweakDB::CreateRecord), "CloneRecord", overload(&TweakDB::CloneRecordByName, &TweakDB::CloneRecordToID, &TweakDB::CloneRecord),
+        "DeleteRecord", overload(&TweakDB::DeleteRecordByID, &TweakDB::DeleteRecord));
+
+    globals["TweakDB"] = TweakDB(m_lua.AsRef());
+
+    m_sandbox.PostInitializeTweakDB();
+
+    TriggerOnTweak();
+}
+
+void Scripting::PostInitializeMods()
+{
+    auto lua = m_lua.Lock();
+    auto& luaVm = lua.Get();
+
+    RTTIExtender::InitializeSingletons();
+
+    RegisterOverrides();
 
     TriggerOnInit();
     if (CET::Get().GetOverlay().IsEnabled())

@@ -6,5 +6,6 @@ class RTTIExtender
     static void AddEntitySpawner();
 
 public:
-    static void Initialize();
+    static void InitializeTypes();
+    static void InitializeSingletons();
 };

@@ -36,7 +36,6 @@ struct RTTIHelper
     std::map<uint64_t, RED4ext::CBaseFunction*> FindFunctions(RED4ext::CClass* apClass, const uint64_t acShortNameHash, bool aIsMember) const;
 
     static void Initialize(const LockableState& acpLua, LuaSandbox& apSandbox);
-    static void PostInitialize();
     static void Shutdown();
     static RTTIHelper& Get();
 
@@ -44,7 +43,6 @@ private:
     RTTIHelper(const LockableState& acLua, LuaSandbox& apSandbox);
 
     void InitializeRTTI();
-    void InitializeRuntime();
     void ParseGlobalStatics();
 
     bool IsFunctionAlias(RED4ext::CBaseFunction* apFunc);
@@ -82,8 +80,6 @@ private:
     LockableState m_lua;
     RED4ext::CRTTISystem* m_pRtti{nullptr};
     RED4ext::CClass* m_pGameInstanceType{nullptr};
-    ScriptGameInstance* m_pGameInstance{nullptr};
-    RED4ext::IScriptable* m_pPlayerSystem{nullptr};
     RedFunctionMap m_extendedFunctions;
     LuaFunctionMap m_resolvedFunctions[2];
     LuaSandbox& m_sandbox;

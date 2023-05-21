@@ -23,6 +23,7 @@
 #include <RED4ext/Scripting/Functions.hpp>
 #include <RED4ext/Scripting/OpcodeHandlers.hpp>
 #include <RED4ext/Scripting/Stack.hpp>
+#include <RED4ext/Scripting/Natives/ScriptGameInstance.hpp>
 #include <RED4ext/TweakDB.hpp>
 
 #include <TiltedCore/Allocator.hpp>
