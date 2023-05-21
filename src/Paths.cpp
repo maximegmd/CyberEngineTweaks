@@ -50,6 +50,11 @@ const std::filesystem::path& Paths::TweakDB() const
     return m_tweakdb;
 }
 
+const std::filesystem::path& Paths::Languages() const
+{
+    return m_languages;
+}
+
 Paths::Paths()
 {
     TCHAR exePathBuf[MAX_PATH] = {0};
@@ -91,4 +96,6 @@ Paths::Paths()
     m_fonts = m_cetRoot / L"fonts";
 
     m_tweakdb = m_cetRoot / L"tweakdb";
+
+    m_languages = m_cetRoot / L"languages";
 }

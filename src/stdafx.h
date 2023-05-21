@@ -36,6 +36,8 @@
 #include <TiltedCore/StackAllocator.hpp>
 #include <TiltedCore/TaskQueue.hpp>
 
+#include <tinygettext/tinygettext.hpp>
+
 #include <tchar.h>
 #include <d3d12.h>
 #include <d3d11.h>
@@ -77,6 +79,7 @@
 #include "reverse/Addresses.h"
 #include "scripting/GameHooks.h"
 #include "VKBindings.h"
+#include "I18n.h"
 
 template <> struct std::hash<RED4ext::CName>
 {

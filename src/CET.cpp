@@ -2,6 +2,7 @@
 
 #include "CET.h"
 #include "Options.h"
+#include "I18n.h"
 
 using namespace std::chrono_literals;
 
@@ -65,6 +66,11 @@ Fonts& CET::GetFonts() noexcept
     return m_fonts;
 }
 
+I18n& CET::GetI18n() noexcept
+{
+    return m_i18n;
+}
+
 bool CET::IsRunning() noexcept
 {
     return s_isRunning;
@@ -78,6 +84,7 @@ CET::CET()
     , m_fonts(m_options, m_paths)
     , m_d3d12(m_window, m_paths, m_options, m_fonts)
     , m_vm(m_paths, m_bindings, m_d3d12, m_fonts)
+    , m_i18n(m_options, m_paths)
     , m_overlay(m_bindings, m_options, m_persistentState, m_vm)
 {
     m_vm.Initialize();
