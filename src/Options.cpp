@@ -40,8 +40,8 @@ void PatchesSettings::ResetToDefaults()
 
 void FontSettings::Load(const nlohmann::json& aConfig)
 {
-    FontMain = aConfig.value("path", FontMain);
-    FontMonospace = aConfig.value("monospace_path", FontMonospace);
+    FontMain = aConfig.value("font_main", FontMain);
+    FontMonospace = aConfig.value("font_monospace", FontMonospace);
     GlyphRange = aConfig.value("glyphrange", GlyphRange);
     BaseSize = aConfig.value("base_size", BaseSize);
     OversampleHorizontal = aConfig.value("oversample_horizontal", OversampleHorizontal);
