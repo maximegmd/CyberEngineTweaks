@@ -16,10 +16,10 @@
 // if custom font is set:
 //     we use the custom font (e.g. c:/windows/fonts/Comic.ttf).
 //
-void Fonts::BuildFonts(const SIZE& aOutSize)
+void Fonts::BuildFonts(const SIZE& acOutSize)
 {
     // TODO - scale also by DPI
-    const auto [resx, resy] = aOutSize;
+    const auto [resx, resy] = acOutSize;
     const auto scaleFromReference = std::min(static_cast<float>(resx) / 1920.0f, static_cast<float>(resy) / 1080.0f);
 
     auto& io = ImGui::GetIO();
@@ -38,12 +38,12 @@ void Fonts::BuildFonts(const SIZE& aOutSize)
     const bool useCustomMonospaceFont = !customMonospaceFontPath.empty();
 
     // Set main font path to default if customMainFontPath is empty or doesnt exist.
-    const auto mainFontPath = useCustomMainFont ? customMainFontPath : GetAbsolutePath(m_defaultPrimaryFont, m_paths.Fonts(), false);
+    const auto mainFontPath = useCustomMainFont ? customMainFontPath : GetAbsolutePath(m_defaultMainFont, m_paths.Fonts(), false);
     // Set monospace font path to default if customMonospaceFontPath is empty or doesnt exist.
-    const auto monospaceFontPath = useCustomMonospaceFont ? customMonospaceFontPath : GetAbsolutePath(m_defaultMonospaceFontPath, m_paths.Fonts(), false);
+    const auto monospaceFontPath = useCustomMonospaceFont ? customMonospaceFontPath : GetAbsolutePath(m_defaultMonospaceFont, m_paths.Fonts(), false);
 
-    const auto iconFontPath = GetAbsolutePath(m_defaultIconFontPath, m_paths.Fonts(), false);
-    const auto emojiFontPath = GetAbsolutePath(m_defaultEmojiFontPath, m_paths.Fonts(), false);
+    const auto iconFontPath = GetAbsolutePath(m_defaultIconFont, m_paths.Fonts(), false);
+    const auto emojiFontPath = GetAbsolutePath(m_defaultEmojiFont, m_paths.Fonts(), false);
     m_useEmojiFont = !emojiFontPath.empty();
 
 
@@ -92,7 +92,7 @@ void Fonts::BuildFonts(const SIZE& aOutSize)
         if (!useCustomMainFont)
         {
             fontConfig.MergeMode = true;
-            for(const auto& font : m_defaultFonts)
+            for(const auto& font : m_defaultCJKFonts)
             {
                 io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(GetAbsolutePath(font, m_paths.Fonts(), false).native()).c_str(), fontSize, &fontConfig, fontRange);
             }
@@ -118,7 +118,7 @@ void Fonts::BuildFonts(const SIZE& aOutSize)
 
         if (!useCustomMainFont)
         {
-            for(const auto& font : m_defaultFonts)
+            for(const auto& font : m_defaultCJKFonts)
             {
                 io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(GetAbsolutePath(font, m_paths.Fonts(), false).native()).c_str(), fontSize, &fontConfig, fontRange);
             }
@@ -133,12 +133,12 @@ void Fonts::BuildFonts(const SIZE& aOutSize)
 
 // Rebuild font texture during runtime.
 // Call before ImGui_ImplXXXX_NewFrame()
-void Fonts::RebuildFonts(ID3D12CommandQueue* apCommandQueue, SIZE aOutSize)
+void Fonts::RebuildFonts(ID3D12CommandQueue* apCommandQueue, const SIZE& acOutSize)
 {
     if (!m_rebuildFonts)
         return;
 
-    BuildFonts(aOutSize);
+    BuildFonts(acOutSize);
     ImGui_ImplDX12_RecreateFontsTexture(apCommandQueue);
 
     m_rebuildFonts = false;

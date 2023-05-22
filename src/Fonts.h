@@ -4,8 +4,8 @@ struct Fonts
 {
     ~Fonts() = default;
 
-    void BuildFonts(const SIZE& aOutSize);
-    void RebuildFonts(ID3D12CommandQueue* apCommandQueue, SIZE aOutSize);
+    void BuildFonts(const SIZE& acOutSize);
+    void RebuildFonts(ID3D12CommandQueue* apCommandQueue, const SIZE& acOutSize);
     void RebuildFontNextFrame();
 
     const bool UseEmojiFont();
@@ -30,16 +30,15 @@ private:
     std::vector<std::string> m_systemFonts{"Default"};
     std::unordered_map<std::string, std::filesystem::path> m_systemFontPaths{};
 
-    std::filesystem::path m_defaultPrimaryFont{L"NotoSans-Regular.ttf"};
-    std::vector<std::filesystem::path> m_defaultFonts{
+    std::filesystem::path m_defaultMainFont{L"NotoSans-Regular.ttf"};
+    std::vector<std::filesystem::path> m_defaultCJKFonts{
         L"NotoSansJP-Regular.otf",
         L"NotoSansKR-Regular.otf",
         L"NotoSansSC-Regular.otf",
         L"NotoSansTC-Regular.otf",
         L"NotoSansThai-Regular.ttf"
     };
-
-    std::filesystem::path m_defaultMonospaceFontPath{L"NotoSansMono-Regular.ttf"};
-    std::filesystem::path m_defaultIconFontPath{L"materialdesignicons.ttf"};
-    std::filesystem::path m_defaultEmojiFontPath{L"C:\\Windows\\Fonts\\seguiemj.ttf"}; // tried to use noto color emoji but it wont render. only this one works
+    std::filesystem::path m_defaultMonospaceFont{L"NotoSansMono-Regular.ttf"};
+    std::filesystem::path m_defaultIconFont{L"materialdesignicons.ttf"};
+    std::filesystem::path m_defaultEmojiFont{L"C:\\Windows\\Fonts\\seguiemj.ttf"}; // tried to use noto color emoji but it wont render. only this one works
 };
