@@ -42,7 +42,6 @@ void FontSettings::Load(const nlohmann::json& aConfig)
 {
     FontMain = aConfig.value("font_main", FontMain);
     FontMonospace = aConfig.value("font_monospace", FontMonospace);
-    GlyphRange = aConfig.value("glyphrange", GlyphRange);
     BaseSize = aConfig.value("base_size", BaseSize);
     OversampleHorizontal = aConfig.value("oversample_horizontal", OversampleHorizontal);
     OversampleVertical = aConfig.value("oversample_vertical", OversampleVertical);
@@ -53,7 +52,6 @@ nlohmann::json FontSettings::Save() const
     return {
         {"font_main", FontMain},
         {"font_monospace", FontMonospace},
-        {"glyphrange", GlyphRange},
         {"base_size", BaseSize},
         {"oversample_horizontal", OversampleHorizontal},
         {"oversample_vertical", OversampleVertical}};

@@ -8,74 +8,15 @@
 
 #include <imgui_impl/dx12.h>
 
-// Returns the glyph ranges for a given range name and its default font.
-// When aGlyphRangeName == "Full", returns full range of unicode plane 0.
-// When aGlyphRangeName == "System", returns range according to windows language setting
-const std::tuple<const ImWchar*, std::filesystem::path> Fonts::GetGlyphRange(std::string aGlyphRangeName)
-{
-    auto& io = ImGui::GetIO();
-
-    if (aGlyphRangeName == "System")
-    {
-        switch (GetSystemDefaultLangID())
-        {
-        case MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_TRADITIONAL): aGlyphRangeName = "Traditional Chinese"; break;
-        case MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED): aGlyphRangeName = "Simplified Chinese"; break;
-        case MAKELANGID(LANG_JAPANESE, SUBLANG_DEFAULT): aGlyphRangeName = "Japanese"; break;
-        case MAKELANGID(LANG_KOREAN, SUBLANG_DEFAULT): aGlyphRangeName = "Korean"; break;
-        case MAKELANGID(LANG_BELARUSIAN, SUBLANG_DEFAULT):
-        case MAKELANGID(LANG_RUSSIAN, SUBLANG_DEFAULT): aGlyphRangeName = "Cyrillic"; break;
-        case MAKELANGID(LANG_THAI, SUBLANG_DEFAULT): aGlyphRangeName = "Thai"; break;
-        case MAKELANGID(LANG_VIETNAMESE, SUBLANG_DEFAULT): aGlyphRangeName = "Vietnamese"; break;
-        }
-    }
-
-    if (aGlyphRangeName == "Traditional Chinese")
-        return std::make_tuple(io.Fonts->GetGlyphRangesChineseFull(), GetAbsolutePath(GetDefaultFontByGlyphRange(aGlyphRangeName), m_paths.Fonts(), false));
-
-    // Using GetGlyphRangesChineseFull() instead of GetGlyphRangesChineseSimplifiedCommon(), because the range is not comeplete.
-    if (aGlyphRangeName == "Simplified Chinese")
-        return std::make_tuple(io.Fonts->GetGlyphRangesChineseFull(), GetAbsolutePath(GetDefaultFontByGlyphRange(aGlyphRangeName), m_paths.Fonts(), false));
-
-    if (aGlyphRangeName == "Japanese")
-        return std::make_tuple(io.Fonts->GetGlyphRangesJapanese(), GetAbsolutePath(GetDefaultFontByGlyphRange(aGlyphRangeName), m_paths.Fonts(), false));
-
-    if (aGlyphRangeName == "Korean")
-        return std::make_tuple(io.Fonts->GetGlyphRangesKorean(), GetAbsolutePath(GetDefaultFontByGlyphRange(aGlyphRangeName), m_paths.Fonts(), false));
-
-    if (aGlyphRangeName == "Cyrillic")
-        return std::make_tuple(io.Fonts->GetGlyphRangesCyrillic(), GetAbsolutePath(GetDefaultFontByGlyphRange(aGlyphRangeName), m_paths.Fonts(), false));
-
-    if (aGlyphRangeName == "Thai")
-        return std::make_tuple(io.Fonts->GetGlyphRangesThai(), GetAbsolutePath(GetDefaultFontByGlyphRange(aGlyphRangeName), m_paths.Fonts(), false));
-
-    if (aGlyphRangeName == "Vietnamese")
-        return std::make_tuple(io.Fonts->GetGlyphRangesVietnamese(), GetAbsolutePath(GetDefaultFontByGlyphRange(aGlyphRangeName), m_paths.Fonts(), false));
-
-    // add all glyphs from the font
-    if (aGlyphRangeName == "Full")
-    {
-        static const ImWchar range[] = {0x1, 0xFFFF, 0};
-        return std::make_tuple(range, GetAbsolutePath(GetDefaultFontByGlyphRange(aGlyphRangeName), m_paths.Fonts(), false));
-    }
-
-    return std::make_tuple(io.Fonts->GetGlyphRangesDefault(), GetAbsolutePath(GetDefaultFontByGlyphRange("Default"), m_paths.Fonts(), false));
-}
-
 // Build Fonts
-// if custom font and glyphrange both not set:
-//     we use default range with default fonts (e.g. RangeDefault(), NotoSans-Regular.ttf).
+// if custom font not set:
+//     we merge and use all the notosans fonts
+//     (e.g. NotoSans-Regular.ttf + NotoSansJP-Regular.otf + ...).
 //
-// if custom font not set but glyphrange is set:
-//     we use the glyphrange range and its corresponding noto sans glyphrange fonts (e.g. RangeJapanese(), NotoSansJP-Regular.otf).
+// if custom font is set:
+//     we use the custom font (e.g. c:/windows/fonts/Comic.ttf).
 //
-// if custom font is set but glyphrange not set:
-//     we use the default range with the custom font (e.g. RnageDefault(), c:/windows/fonts/Comic.ttf).
-//
-// if custom font and glyphrange are both set:
-//     we use the custom font with the glyphrange range (e.g. RangeChineseFull(), c:/windows/fonts/simhei.ttf).
-//
-void Fonts::BuildFonts(SIZE aOutSize)
+void Fonts::BuildFonts(const SIZE& aOutSize)
 {
     // TODO - scale also by DPI
     const auto [resx, resy] = aOutSize;
@@ -89,7 +30,7 @@ void Fonts::BuildFonts(SIZE aOutSize)
     // scale emoji's fontsize by 0.8 to make the glyphs roughly the same size as the main font. not sure about other font, don't really have a good solution.
     const float emojiSize = fontSize * 0.8f;
 
-    // handle fontpaths and glyph ranges
+    // get fontpaths
     // Get custom font paths from options
     const auto customMainFontPath = GetFontPathFromOption(fontSettings.FontMain);
     const auto customMonospaceFontPath = GetFontPathFromOption(fontSettings.FontMonospace);
@@ -97,7 +38,7 @@ void Fonts::BuildFonts(SIZE aOutSize)
     const bool useCustomMonospaceFont = !customMonospaceFontPath.empty();
 
     // Set main font path to default if customMainFontPath is empty or doesnt exist.
-    auto mainFontPath = useCustomMainFont ? customMainFontPath : GetAbsolutePath(m_defaultMainFontPath, m_paths.Fonts(), false);
+    const auto mainFontPath = useCustomMainFont ? customMainFontPath : GetAbsolutePath(m_defaultPrimaryFont, m_paths.Fonts(), false);
     // Set monospace font path to default if customMonospaceFontPath is empty or doesnt exist.
     const auto monospaceFontPath = useCustomMonospaceFont ? customMonospaceFontPath : GetAbsolutePath(m_defaultMonospaceFontPath, m_paths.Fonts(), false);
 
@@ -105,20 +46,12 @@ void Fonts::BuildFonts(SIZE aOutSize)
     const auto emojiFontPath = GetAbsolutePath(m_defaultEmojiFontPath, m_paths.Fonts(), false);
     m_useEmojiFont = !emojiFontPath.empty();
 
-    const ImWchar* mainFontRange;
-
-    if (useCustomMainFont)
-        mainFontRange = std::get<0>(GetGlyphRange(fontSettings.GlyphRange));
-
-    if (!useCustomMainFont)
-    {
-        std::tie(mainFontRange, mainFontPath) = GetGlyphRange(fontSettings.GlyphRange);
-    }
 
     // create config for each font
-    ImFontConfig mainFontConfig;
-    mainFontConfig.OversampleH = fontSettings.OversampleHorizontal;
-    mainFontConfig.OversampleV = fontSettings.OversampleVertical;
+    ImFontConfig fontConfig;
+    fontConfig.OversampleH = fontSettings.OversampleHorizontal;
+    fontConfig.OversampleV = fontSettings.OversampleVertical;
+    static const ImWchar fontRange[] = {0x1, 0xFFFF, 0};
 
     ImFontConfig iconFontConfig;
     iconFontConfig.OversampleH = iconFontConfig.OversampleV = 1;
@@ -131,8 +64,8 @@ void Fonts::BuildFonts(SIZE aOutSize)
     static const ImWchar emojiFontRanges[] = {0x1, 0x1FFFF, 0};
 
     // load fonts without merging first, so we can calculate the offset to align the fonts.
-    auto mainFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(mainFontPath.native()).c_str(), fontSize, &mainFontConfig);
-    auto monospaceFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(monospaceFontPath.native()).c_str(), fontSize, &mainFontConfig);
+    auto mainFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(mainFontPath.native()).c_str(), fontSize, &fontConfig);
+    auto monospaceFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(monospaceFontPath.native()).c_str(), fontSize, &fontConfig);
     auto iconFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(iconFontPath.native()).c_str(), fontSize, &iconFontConfig, iconFontRange);
 
     io.Fonts->Build(); // Build atlas, retrieve pixel data.
@@ -150,10 +83,21 @@ void Fonts::BuildFonts(SIZE aOutSize)
 
     // add main font
     {
-        mainFontConfig.GlyphOffset.y = std::floorf(mainFontBaselineDifference * -0.5f);
+        fontConfig.GlyphOffset.y = std::floorf(mainFontBaselineDifference * -0.5f);
         iconFontConfig.GlyphOffset.y = std::ceilf(mainFontBaselineDifference * 0.5f);
 
-        MainFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(mainFontPath.native()).c_str(), fontSize, &mainFontConfig, mainFontRange);
+        MainFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(mainFontPath.native()).c_str(), fontSize, &fontConfig, fontRange);
+
+        // merge the default notosans fonts
+        if (!useCustomMainFont)
+        {
+            fontConfig.MergeMode = true;
+            for(const auto& font : m_defaultFonts)
+            {
+                io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(GetAbsolutePath(font, m_paths.Fonts(), false).native()).c_str(), fontSize, &fontConfig, fontRange);
+            }
+            fontConfig.MergeMode = false;
+        }
 
         io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(iconFontPath.native()).c_str(), fontSize, &iconFontConfig, iconFontRange);
 
@@ -163,16 +107,21 @@ void Fonts::BuildFonts(SIZE aOutSize)
 
     // add monospace font
     {
-        mainFontConfig.GlyphOffset.y = std::floorf(monospaceFontBaselineDifference * -0.5f);
+        fontConfig.GlyphOffset.y = std::floorf(monospaceFontBaselineDifference * -0.5f);
         iconFontConfig.GlyphOffset.y = std::ceilf(monospaceFontBaselineDifference * 0.5f);
 
-        MonospaceFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(monospaceFontPath.native()).c_str(), fontSize, &mainFontConfig, io.Fonts->GetGlyphRangesDefault());
+        MonospaceFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(monospaceFontPath.native()).c_str(), fontSize, &fontConfig, fontRange);
 
-        // merge custom main font with monospace font
-        if (useCustomMainFont)
+        // merge main font with monospace font
+        fontConfig.MergeMode = true;
+        io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(mainFontPath.native()).c_str(), fontSize, &fontConfig, fontRange);
+
+        if (!useCustomMainFont)
         {
-            mainFontConfig.MergeMode = true;
-            io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(mainFontPath.native()).c_str(), fontSize, &mainFontConfig, mainFontRange);
+            for(const auto& font : m_defaultFonts)
+            {
+                io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(GetAbsolutePath(font, m_paths.Fonts(), false).native()).c_str(), fontSize, &fontConfig, fontRange);
+            }
         }
 
         io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(iconFontPath.native()).c_str(), fontSize, &iconFontConfig, iconFontRange);
@@ -210,42 +159,7 @@ Fonts::Fonts(Options& aOptions, Paths& aPaths)
     : m_options(aOptions)
     , m_paths(aPaths)
 {
-    std::vector<std::pair<std::string, std::filesystem::path>> ranges = {
-        {"Default", L"NotoSans-Regular.ttf"},
-        {"System", ""},
-        {"Full", L"NotoSans-Regular.ttf"},
-        {"Cyrillic", L"NotoSans-Regular.ttf"},
-        {"Japanese", L"NotoSansJP-Regular.otf"},
-        {"Korean", L"NotoSansKR-Regular.otf"},
-        {"Simplified Chinese", L"NotoSansSC-Regular.otf"},
-        {"Traditional Chinese", L"NotoSansTC-Regular.otf"},
-        {"Thai", L"NotoSansThai-Regular.ttf"},
-        {"Vietnamese", L"NotoSans-Regular.ttf"},
-    };
-    for (const auto& range : ranges)
-    {
-        m_glyphranges.emplace_back(range.first);
-        m_defaultFonts.emplace(range.first, range.second);
-    }
-
     EnumerateSystemFonts();
-}
-
-const std::vector<std::string>& Fonts::GetGlyphRanges()
-{
-    return m_glyphranges;
-}
-
-std::filesystem::path Fonts::GetDefaultFontByGlyphRange(const std::string& acGlyphRange)
-{
-    try
-    {
-        return m_defaultFonts.at(acGlyphRange);
-    }
-    catch (...)
-    {
-        return {};
-    }
 }
 
 void Fonts::EnumerateSystemFonts()

@@ -115,8 +115,6 @@ void Settings::OnUpdate()
                 if (openFontAdvSettings)
                 {
                     ImGui::Indent(ImGui::GetFrameHeight());
-                    m_madeFontChanges |= SettingItemCombo(
-                        "🌐", "Glyph Range", "What glyphs should we load from the font.", m_font.GlyphRange, fontSettings.GlyphRange, CET::Get().GetFonts().GetGlyphRanges());
                     m_madeFontChanges |= SettingItemSliderInt(
                         "↔", "Oversample Horizontal", "Oversamples font horizontally, default value is 3x. (May increase font clearity, at the cost of increasing memory usage.)",
                         m_font.OversampleHorizontal, fontSettings.OversampleHorizontal, 1, 10, "%dx");
