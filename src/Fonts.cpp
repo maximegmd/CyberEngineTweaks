@@ -33,19 +33,35 @@ void Fonts::BuildFonts(const SIZE& acOutSize)
     // get fontpaths
     // Get custom font paths from options
     const auto customMainFontPath = GetFontPathFromOption(fontSettings.FontMain);
+    if (customMainFontPath.empty() && !fontSettings.FontMain.empty() && fontSettings.FontMain != "Default")
+        Log::Error("Can't find custom main font at path: {}", GetAbsolutePath(fontSettings.FontMain, m_paths.Fonts(), true).string());
+
     const auto customMonospaceFontPath = GetFontPathFromOption(fontSettings.FontMonospace);
+    if (customMonospaceFontPath.empty() && !fontSettings.FontMonospace.empty() && fontSettings.FontMonospace != "Default")
+        Log::Error("Can't find custom main font at path: {}", GetAbsolutePath(fontSettings.FontMonospace, m_paths.Fonts(), true).string());
+
     const bool useCustomMainFont = !customMainFontPath.empty();
     const bool useCustomMonospaceFont = !customMonospaceFontPath.empty();
 
     // Set main font path to default if customMainFontPath is empty or doesnt exist.
     const auto mainFontPath = useCustomMainFont ? customMainFontPath : GetAbsolutePath(m_defaultMainFont, m_paths.Fonts(), false);
+    if (mainFontPath.empty())
+        Log::Error("Can't find default main font at path: {}, will use built-in font.", GetAbsolutePath(m_defaultMainFont, m_paths.Fonts(), true).string());
+
     // Set monospace font path to default if customMonospaceFontPath is empty or doesnt exist.
     const auto monospaceFontPath = useCustomMonospaceFont ? customMonospaceFontPath : GetAbsolutePath(m_defaultMonospaceFont, m_paths.Fonts(), false);
+    if (monospaceFontPath.empty())
+        Log::Error("Can't find default monospacee font at path: {}, will use built-in font.", GetAbsolutePath(m_defaultMonospaceFont, m_paths.Fonts(), true).string());
 
     const auto iconFontPath = GetAbsolutePath(m_defaultIconFont, m_paths.Fonts(), false);
-    const auto emojiFontPath = GetAbsolutePath(m_defaultEmojiFont, m_paths.Fonts(), false);
-    m_useEmojiFont = !emojiFontPath.empty();
+    if (iconFontPath.empty())
+        Log::Error("Can't find icon font at path: {}", GetAbsolutePath(m_defaultIconFont, m_paths.Fonts(), true).string());
 
+    const auto emojiFontPath = GetAbsolutePath(m_defaultEmojiFont, m_paths.Fonts(), false);
+    if (emojiFontPath.empty())
+        Log::Error("Can't find emoji font at path: {}", GetAbsolutePath(m_defaultEmojiFont, m_paths.Fonts(), true).string());
+
+    m_useEmojiFont = !emojiFontPath.empty();
 
     // create config for each font
     ImFontConfig fontConfig;
@@ -64,18 +80,22 @@ void Fonts::BuildFonts(const SIZE& acOutSize)
     static const ImWchar emojiFontRanges[] = {0x1, 0x1FFFF, 0};
 
     // load fonts without merging first, so we can calculate the offset to align the fonts.
-    auto mainFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(mainFontPath.native()).c_str(), fontSize, &fontConfig);
-    auto monospaceFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(monospaceFontPath.native()).c_str(), fontSize, &fontConfig);
-    auto iconFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(iconFontPath.native()).c_str(), fontSize, &iconFontConfig, iconFontRange);
+    float mainFontBaselineDifference = 0.0f;
+    float monospaceFontBaselineDifference = 0.0f;
+    if (!mainFontPath.empty() && !monospaceFontPath.empty() && !iconFontPath.empty()) {
+        auto mainFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(mainFontPath.native()).c_str(), fontSize, &fontConfig);
+        auto monospaceFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(monospaceFontPath.native()).c_str(), fontSize, &fontConfig);
+        auto iconFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(iconFontPath.native()).c_str(), fontSize, &iconFontConfig, iconFontRange);
 
-    io.Fonts->Build(); // Build atlas, retrieve pixel data.
+        io.Fonts->Build(); // Build atlas, retrieve pixel data.
 
-    // calculate font baseline differences
-    const float mainFontBaselineDifference = iconFont->Ascent - mainFont->Ascent;
-    const float monospaceFontBaselineDifference = iconFont->Ascent - monospaceFont->Ascent;
+        // calculate font baseline differences
+        mainFontBaselineDifference = iconFont->Ascent - mainFont->Ascent;
+        monospaceFontBaselineDifference = iconFont->Ascent - monospaceFont->Ascent;
 
-    // clear fonts then merge
-    io.Fonts->Clear();
+        // clear fonts then merge
+        io.Fonts->Clear();
+    }
 
     // reconfig fonts for merge
     iconFontConfig.MergeMode = true;
@@ -86,20 +106,31 @@ void Fonts::BuildFonts(const SIZE& acOutSize)
         fontConfig.GlyphOffset.y = std::floorf(mainFontBaselineDifference * -0.5f);
         iconFontConfig.GlyphOffset.y = std::ceilf(mainFontBaselineDifference * 0.5f);
 
-        MainFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(mainFontPath.native()).c_str(), fontSize, &fontConfig, fontRange);
+        if (!mainFontPath.empty())
+            MainFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(mainFontPath.native()).c_str(), fontSize, &fontConfig, fontRange);
+        else
+            MainFont = io.Fonts->AddFontDefault();
 
-        // merge the default notosans fonts
+        // merge the default CJK fonts
         if (!useCustomMainFont)
         {
             fontConfig.MergeMode = true;
             for(const auto& font : m_defaultCJKFonts)
             {
-                io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(GetAbsolutePath(font, m_paths.Fonts(), false).native()).c_str(), fontSize, &fontConfig, fontRange);
+                const std::filesystem::path fontPath = GetAbsolutePath(font, m_paths.Fonts(), false);
+                if (fontPath.empty())
+                {
+                    Log::Error("Can't find font {}.", GetAbsolutePath(font, m_paths.Fonts(), true).string());
+                    continue;
+                }
+                io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(fontPath.native()).c_str(), fontSize, &fontConfig, fontRange);
             }
             fontConfig.MergeMode = false;
         }
 
-        io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(iconFontPath.native()).c_str(), fontSize, &iconFontConfig, iconFontRange);
+        // merge the icon font and emoji font
+        if (!iconFontPath.empty())
+            io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(iconFontPath.native()).c_str(), fontSize, &iconFontConfig, iconFontRange);
 
         if (m_useEmojiFont)
             io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(emojiFontPath.native()).c_str(), emojiSize, &emojiFontConfig, emojiFontRanges);
@@ -110,21 +141,31 @@ void Fonts::BuildFonts(const SIZE& acOutSize)
         fontConfig.GlyphOffset.y = std::floorf(monospaceFontBaselineDifference * -0.5f);
         iconFontConfig.GlyphOffset.y = std::ceilf(monospaceFontBaselineDifference * 0.5f);
 
-        MonospaceFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(monospaceFontPath.native()).c_str(), fontSize, &fontConfig, fontRange);
+        if (!monospaceFontPath.empty())
+            MonospaceFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(monospaceFontPath.native()).c_str(), fontSize, &fontConfig, fontRange);
+        else
+            MonospaceFont = io.Fonts->AddFontDefault();
 
         // merge main font with monospace font
         fontConfig.MergeMode = true;
-        io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(mainFontPath.native()).c_str(), fontSize, &fontConfig, fontRange);
 
+        if (!mainFontPath.empty())
+            io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(mainFontPath.native()).c_str(), fontSize, &fontConfig, fontRange);
+
+        // merge the default CJK fonts
         if (!useCustomMainFont)
         {
             for(const auto& font : m_defaultCJKFonts)
             {
-                io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(GetAbsolutePath(font, m_paths.Fonts(), false).native()).c_str(), fontSize, &fontConfig, fontRange);
+                const std::filesystem::path fontPath = GetAbsolutePath(font, m_paths.Fonts(), false);
+                if (fontPath.empty())
+                    continue;
+                io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(fontPath.native()).c_str(), fontSize, &fontConfig, fontRange);
             }
         }
 
-        io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(iconFontPath.native()).c_str(), fontSize, &iconFontConfig, iconFontRange);
+        if (!iconFontPath.empty())
+            io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(iconFontPath.native()).c_str(), fontSize, &iconFontConfig, iconFontRange);
 
         if (m_useEmojiFont)
             io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(emojiFontPath.native()).c_str(), emojiSize, &emojiFontConfig, emojiFontRanges);
@@ -144,12 +185,13 @@ void Fonts::RebuildFonts(ID3D12CommandQueue* apCommandQueue, const SIZE& acOutSi
     m_rebuildFonts = false;
 }
 
-// Call from imgui to trgger RebuildFonts in next frame
+// Call from imgui to trgger RebuildFonts in the next frame
 void Fonts::RebuildFontNextFrame()
 {
     m_rebuildFonts = true;
 }
 
+// Check if the emoji font is loaded.
 const bool Fonts::UseEmojiFont()
 {
     return m_useEmojiFont;
@@ -162,6 +204,7 @@ Fonts::Fonts(Options& aOptions, Paths& aPaths)
     EnumerateSystemFonts();
 }
 
+// Get system fonts and their path
 void Fonts::EnumerateSystemFonts()
 {
     IDWriteFactory* pDWriteFactory = NULL;
@@ -279,6 +322,10 @@ void Fonts::EnumerateSystemFonts()
             }
         }
     }
+
+    // print error message if failed
+    if (FAILED(hresult))
+        Log::Error("Error message: {}", std::system_category().message(hresult));
 }
 
 const std::vector<std::string>& Fonts::GetSystemFonts()
@@ -290,7 +337,11 @@ std::filesystem::path Fonts::GetSystemFontPath(const std::string& acFontName)
 {
     try
     {
-        return m_systemFontPaths.at(acFontName);
+        auto path = m_systemFontPaths.at(acFontName);
+        if (exists(path))
+            return path;
+        else
+            return {};
     }
     catch (...)
     {
@@ -298,6 +349,7 @@ std::filesystem::path Fonts::GetSystemFontPath(const std::string& acFontName)
     }
 }
 
+// Returns absolute path, already checked for file existence.
 std::filesystem::path Fonts::GetFontPathFromOption(const std::string& acFontOption)
 {
     if (!GetSystemFontPath(acFontOption).empty())
