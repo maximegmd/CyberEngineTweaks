@@ -38,6 +38,23 @@ void PatchesSettings::ResetToDefaults()
     *this = {};
 }
 
+void LanguageSettings::Load(const nlohmann::json& aConfig)
+{
+    Locale = aConfig.value("language", Locale);
+}
+
+nlohmann::json LanguageSettings::Save() const
+{
+    return {
+        {"language", Locale}
+    };
+}
+
+void LanguageSettings::ResetToDefaults()
+{
+    *this = {};
+}
+
 void FontSettings::Load(const nlohmann::json& aConfig)
 {
     MainFont = aConfig.value("main_font", MainFont);
@@ -109,6 +126,11 @@ void Options::Load()
     if (!patchesConfig.empty())
         Patches.Load(patchesConfig);
 
+    // language config
+    const auto& languageConfig = config["language"];
+    if (!languageConfig.empty())
+        Language.Load(languageConfig);
+
     // font config
     const auto& fontConfig = config["font"];
     if (!fontConfig.empty())
@@ -122,7 +144,7 @@ void Options::Load()
 
 void Options::Save() const
 {
-    nlohmann::json config = {{"patches", Patches.Save()}, {"font", Font.Save()}, {"developer", Developer.Save()}};
+    nlohmann::json config = {{"patches", Patches.Save()}, {"language", Language.Save()}, {"font", Font.Save()}, {"developer", Developer.Save()}};
 
     const auto path = GetAbsolutePath(m_paths.Config(), "", true);
     std::ofstream o(path);
@@ -132,6 +154,7 @@ void Options::Save() const
 void Options::ResetToDefaults()
 {
     Patches.ResetToDefaults();
+    Language.ResetToDefaults();
     Font.ResetToDefaults();
     Developer.ResetToDefaults();
 

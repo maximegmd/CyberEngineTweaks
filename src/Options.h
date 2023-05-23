@@ -24,6 +24,17 @@ struct PatchesSettings
     bool MinimapFlicker{false};
 };
 
+struct LanguageSettings
+{
+    void Load(const nlohmann::json& aConfig);
+    nlohmann::json Save() const;
+    void ResetToDefaults();
+
+    [[nodiscard]] auto operator<=>(const LanguageSettings&) const = default;
+
+    std::string Locale{"en-US"};
+};
+
 struct FontSettings
 {
     void Load(const nlohmann::json& aConfig);
@@ -68,6 +79,7 @@ struct Options
     bool ExeValid{false};
 
     PatchesSettings Patches{};
+    LanguageSettings Language{};
     FontSettings Font{};
     DeveloperSettings Developer{};
 

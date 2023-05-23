@@ -64,7 +64,7 @@ I18n::I18n(Options& aOptions, Paths& aPaths)
               << "Country:   " << language.get_country() << std::endl
               << "Modifier:  " << language.get_modifier() << std::endl
               << std::endl;
-    if (language.get_language() == "zh")
+    if (language.get_language() == m_options.Language.Locale)
     {
       SetLanguage(language);
       break;
