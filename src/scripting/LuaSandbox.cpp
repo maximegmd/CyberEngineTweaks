@@ -267,10 +267,7 @@ void LuaSandbox::InitializeExtraLibsForSandbox(Sandbox& aSandbox, const sol::sta
 
     // copy extra whitelisted libs from global table
     for (const auto* cKey : s_cGlobalExtraLibsWhitelist)
-    {
         sbEnv[cKey] = DeepCopySolObject(globals[cKey].get<sol::object>(), acpState);
-        MakeSolUsertypeImmutable(sbEnv[cKey], acpState);
-    }
 
     sol::table imgui = sbEnv["ImGui"];
 
@@ -291,6 +288,9 @@ void LuaSandbox::InitializeExtraLibsForSandbox(Sandbox& aSandbox, const sol::sta
 
         return std::make_tuple(texture, sol::nil);
     };
+
+    for (const auto* cKey : s_cGlobalExtraLibsWhitelist)
+        MakeSolUsertypeImmutable(sbEnv[cKey], acpState);
 }
 
 void LuaSandbox::InitializeDBForSandbox(Sandbox& aSandbox, const sol::state& acpState)
