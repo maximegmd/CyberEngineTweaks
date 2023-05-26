@@ -33,7 +33,7 @@ void LogWindow::Draw(const ImVec2& size)
     if (ImGui::BeginChildFrame(frameId, size, ImGuiWindowFlags_HorizontalScrollbar))
     {
         std::lock_guard _{m_lock};
-        ImGui::PushFont(CET::Get().GetFonts().MonospaceFont);
+        ImGui::PushFont(CET::Get().GetFonts().MonoFont);
 
         if (!m_lines.empty() && (m_normalizedWidth < 0.0f || m_nextIndexToCheck < m_lines.size()))
         {

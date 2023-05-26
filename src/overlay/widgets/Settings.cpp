@@ -99,10 +99,10 @@ void Settings::OnUpdate()
             {
                 const auto& fontSettings = m_options.Font;
                 m_madeFontChanges |=
-                    SettingItemCombo("🦄", "Main Font", "Main display font for CET.", m_font.FontMain, fontSettings.FontMain, CET::Get().GetFonts().GetSystemFonts());
+                    SettingItemCombo("🦄", "Main Font", "Main display font for CET.", m_font.MainFont, fontSettings.MainFont, CET::Get().GetFonts().GetSystemFonts());
                 m_madeFontChanges |= SettingItemCombo(
-                    "🪲", "Monospace Font", "Monospacee font, which is used for displaying texts in Console and Game Log, for CET.", m_font.FontMonospace,
-                    fontSettings.FontMonospace, CET::Get().GetFonts().GetSystemFonts());
+                    "🪲", "Monospaced Font", "Monospaceed font, which is used for displaying texts in Console and Game Log, for CET.", m_font.MonoFont,
+                    fontSettings.MonoFont, CET::Get().GetFonts().GetSystemFonts());
                 m_madeFontChanges |= SettingItemSliderFloat(
                     "📏", "Font Size", "Changees the size of the font, default value is 18px.", m_font.BaseSize, fontSettings.BaseSize, 10.0f, 72.0f, "%.0fpx");
 

@@ -85,26 +85,29 @@ void Fonts::BuildFonts(const SIZE& acOutSize)
 
     // get fontpaths
     // Get custom font paths from options
-    const auto customMainFontPath = GetFontPathFromOption(fontSettings.FontMain);
-    if (customMainFontPath.empty() && !fontSettings.FontMain.empty() && fontSettings.FontMain != "Default")
-        Log::Error("Can't find custom main font at path: {}", GetAbsolutePath(fontSettings.FontMain, m_paths.Fonts(), true).string());
+    const auto customMainFontPath = GetFontPathFromOption(fontSettings.MainFont);
+    if (customMainFontPath.empty() && !fontSettings.MainFont.empty() && fontSettings.MainFont != "Default")
+        Log::Error("Can't find custom main font at path: {}", GetAbsolutePath(fontSettings.MainFont, m_paths.Fonts(), true).string());
 
-    const auto customMonospaceFontPath = GetFontPathFromOption(fontSettings.FontMonospace);
-    if (customMonospaceFontPath.empty() && !fontSettings.FontMonospace.empty() && fontSettings.FontMonospace != "Default")
-        Log::Error("Can't find custom main font at path: {}", GetAbsolutePath(fontSettings.FontMonospace, m_paths.Fonts(), true).string());
+    const auto customMonosFontPath = GetFontPathFromOption(fontSettings.MonoFont);
+    if (customMonosFontPath.empty() && !fontSettings.MonoFont.empty() && fontSettings.MonoFont != "Default")
+        Log::Error("Can't find custom main font at path: {}", GetAbsolutePath(fontSettings.MonoFont, m_paths.Fonts(), true).string());
 
     const bool useCustomMainFont = !customMainFontPath.empty();
-    const bool useCustomMonospaceFont = !customMonospaceFontPath.empty();
+    const bool useCustomMonosFont = !customMonosFontPath.empty();
+
+    const auto defaultMainFontPath = GetAbsolutePath(m_defaultMainFont, m_paths.Fonts(), false);
+    const auto defaultMonoFontPath = GetAbsolutePath(m_defaultMonoFont, m_paths.Fonts(), false);
 
     // Set main font path to default if customMainFontPath is empty or doesnt exist.
-    const auto mainFontPath = useCustomMainFont ? customMainFontPath : GetAbsolutePath(m_defaultMainFont, m_paths.Fonts(), false);
+    const auto mainFontPath = useCustomMainFont ? customMainFontPath : defaultMainFontPath;
     if (mainFontPath.empty())
         Log::Error("Can't find default main font at path: {}, will use built-in font.", GetAbsolutePath(m_defaultMainFont, m_paths.Fonts(), true).string());
 
-    // Set monospace font path to default if customMonospaceFontPath is empty or doesnt exist.
-    const auto monospaceFontPath = useCustomMonospaceFont ? customMonospaceFontPath : GetAbsolutePath(m_defaultMonospaceFont, m_paths.Fonts(), false);
-    if (monospaceFontPath.empty())
-        Log::Error("Can't find default monospacee font at path: {}, will use built-in font.", GetAbsolutePath(m_defaultMonospaceFont, m_paths.Fonts(), true).string());
+    // Set monospace font path to default if customMonosFontPath is empty or doesnt exist.
+    const auto monoFontPath = useCustomMonosFont ? customMonosFontPath : defaultMonoFontPath;
+    if (monoFontPath.empty())
+        Log::Error("Can't find default monospacee font at path: {}, will use built-in font.", GetAbsolutePath(m_defaultMonoFont, m_paths.Fonts(), true).string());
 
     const auto iconFontPath = GetAbsolutePath(m_defaultIconFont, m_paths.Fonts(), false);
     if (iconFontPath.empty())
@@ -135,20 +138,20 @@ void Fonts::BuildFonts(const SIZE& acOutSize)
 
     // load fonts without merging first, so we can calculate the offset to align the fonts.
     float mainFontBaselineDifference = 0.0f;
-    float monospaceFontBaselineDifference = 0.0f;
-    if (!mainFontPath.empty() && !monospaceFontPath.empty() && !iconFontPath.empty())
+    float monoFontBaselineDifference = 0.0f;
+    if (!mainFontPath.empty() && !monoFontPath.empty() && !iconFontPath.empty())
     {
         static const ImWchar mainFontRange[] = {0x0041, 0x0041, 0};
         static const ImWchar iconFontRange[] = {0xF01C9, 0xF01C9, 0};
         auto mainFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(mainFontPath.native()).c_str(), fontSize, &fontConfig, mainFontRange);
-        auto monospaceFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(monospaceFontPath.native()).c_str(), fontSize, &fontConfig, mainFontRange);
+        auto monoFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(monoFontPath.native()).c_str(), fontSize, &fontConfig, mainFontRange);
         auto iconFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(iconFontPath.native()).c_str(), fontSize, &iconFontConfig, iconFontRange);
 
         io.Fonts->Build(); // Build atlas, retrieve pixel data.
 
         // calculate font baseline differences
         mainFontBaselineDifference = iconFont->Ascent - mainFont->Ascent;
-        monospaceFontBaselineDifference = iconFont->Ascent - monospaceFont->Ascent;
+        monoFontBaselineDifference = iconFont->Ascent - monoFont->Ascent;
 
         // clear fonts then merge
         io.Fonts->Clear();
@@ -168,22 +171,24 @@ void Fonts::BuildFonts(const SIZE& acOutSize)
         else
             MainFont = io.Fonts->AddFontDefault();
 
+
+        fontConfig.MergeMode = true;
+        // merge NotoSans-Regular as fallback font when using custom font
+        if (useCustomMainFont && !defaultMainFontPath.empty())
+            io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(defaultMainFontPath.native()).c_str(), fontSize, &fontConfig, fontRange.Data);
+
         // merge the default CJK fonts
-        if (!useCustomMainFont)
+        for (const auto& font : m_defaultCJKFonts)
         {
-            fontConfig.MergeMode = true;
-            for (const auto& font : m_defaultCJKFonts)
+            const std::filesystem::path fontPath = GetAbsolutePath(font, m_paths.Fonts(), false);
+            if (fontPath.empty())
             {
-                const std::filesystem::path fontPath = GetAbsolutePath(font, m_paths.Fonts(), false);
-                if (fontPath.empty())
-                {
-                    Log::Error("Can't find font {}.", GetAbsolutePath(font, m_paths.Fonts(), true).string());
-                    continue;
-                }
-                io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(fontPath.native()).c_str(), fontSize, &fontConfig, fontRange.Data);
+                Log::Error("Can't find font {}.", GetAbsolutePath(font, m_paths.Fonts(), true).string());
+                continue;
             }
-            fontConfig.MergeMode = false;
+            io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(fontPath.native()).c_str(), fontSize, &fontConfig, fontRange.Data);
         }
+        fontConfig.MergeMode = false;
 
         // merge the icon font and emoji font
         if (!iconFontPath.empty())
@@ -195,30 +200,31 @@ void Fonts::BuildFonts(const SIZE& acOutSize)
 
     // add monospace font
     {
-        fontConfig.GlyphOffset.y = std::floorf(monospaceFontBaselineDifference * -0.5f);
-        iconFontConfig.GlyphOffset.y = std::ceilf(monospaceFontBaselineDifference * 0.5f);
+        fontConfig.GlyphOffset.y = std::floorf(monoFontBaselineDifference * -0.5f);
+        iconFontConfig.GlyphOffset.y = std::ceilf(monoFontBaselineDifference * 0.5f);
 
-        if (!monospaceFontPath.empty())
-            MonospaceFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(monospaceFontPath.native()).c_str(), fontSize, &fontConfig, fontRange.Data);
+        if (!monoFontPath.empty())
+            MonoFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(monoFontPath.native()).c_str(), fontSize, &fontConfig, fontRange.Data);
         else
-            MonospaceFont = io.Fonts->AddFontDefault();
+            MonoFont = io.Fonts->AddFontDefault();
+
+        fontConfig.MergeMode = true;
+        
+        // merge NotoSans-Mono as fallback font when using custom monospace font
+        if (useCustomMonosFont && !defaultMonoFontPath.empty())
+            io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(defaultMonoFontPath.native()).c_str(), fontSize, &fontConfig, fontRange.Data);
 
         // merge main font with monospace font
-        fontConfig.MergeMode = true;
-
         if (!mainFontPath.empty())
             io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(mainFontPath.native()).c_str(), fontSize, &fontConfig, fontRange.Data);
 
         // merge the default CJK fonts
-        if (!useCustomMainFont)
+        for (const auto& font : m_defaultCJKFonts)
         {
-            for (const auto& font : m_defaultCJKFonts)
-            {
-                const std::filesystem::path fontPath = GetAbsolutePath(font, m_paths.Fonts(), false);
-                if (fontPath.empty())
-                    continue;
-                io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(fontPath.native()).c_str(), fontSize, &fontConfig, fontRange.Data);
-            }
+            const std::filesystem::path fontPath = GetAbsolutePath(font, m_paths.Fonts(), false);
+            if (fontPath.empty())
+                continue;
+            io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(fontPath.native()).c_str(), fontSize, &fontConfig, fontRange.Data);
         }
 
         if (!iconFontPath.empty())

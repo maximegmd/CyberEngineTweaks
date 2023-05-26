@@ -76,9 +76,9 @@ void Scripting::Initialize()
     sol::table imgui = globals["ImGui"];
     Texture::BindTexture(imgui);
     
-    imgui["GetMonospaceFont"] = []() -> ImFont*
+    imgui["GetMonoFont"] = []() -> ImFont*
     {
-        return CET::Get().GetFonts().MonospaceFont;
+        return CET::Get().GetFonts().MonoFont;
     };
 
     for (auto [key, value] : imgui)
