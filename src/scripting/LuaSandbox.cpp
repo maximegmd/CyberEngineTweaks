@@ -527,7 +527,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
             auto path = GetLuaPath(acPath, cSBRootPath, false);
             path = path.empty() || acPath == "db.sqlite3" ? "" : path;
 
-            // add the file content to the glyph range builder. 
+            // add the file content to the glyph range builder.
             m_fonts.GetGlyphRangesBuilder().AddFile(path);
 
             auto result = cIO["lines"](UTF16ToUTF8(path.native()));
@@ -544,9 +544,13 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
             auto path = GetLuaPath(acPath, cSBRootPath, true);
             path = path.empty() || acPath == "db.sqlite3" ? "" : path;
 
-            // add the file content to the glyph range builder, only in modes allow read permissions.
+            // add the file content to the glyph range builder, only in modes allow read permissions. and exclude file types not in the list
             if (acMode != "w" || acMode != "a")
-                m_fonts.GetGlyphRangesBuilder().AddFile(path);
+            {
+                const std::vector<std::string> extensionFilter = {".lua", ".txt", ".json", ".yml", ".yaml", ".toml", ".ini"};
+                if (std::find(extensionFilter.begin(), extensionFilter.end(), UTF16ToUTF8(path.extension().native())) != extensionFilter.end())
+                    m_fonts.GetGlyphRangesBuilder().AddFile(path);
+            }
 
             auto result = cIO["open"](UTF16ToUTF8(path.native()), acMode);
 

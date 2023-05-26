@@ -458,9 +458,9 @@ void Fonts::PrecacheGlyphsFromMods()
                 continue;
 
             // ignore files without the following extension names: lua, txt, json, yml, yaml, toml, ini
-            const std::vector<std::string> extensions = {".lua", ".txt", ".json", ".yml", ".yaml", ".toml", ".ini"};
+            const std::vector<std::string> extensionFilter = {".lua", ".txt", ".json", ".yml", ".yaml", ".toml", ".ini"};
             const std::string entryExtension = UTF16ToUTF8(entry.path().extension().native());
-            if (std::find(extensions.begin(), extensions.end(), entryExtension) == extensions.end())
+            if (std::find(extensionFilter.begin(), extensionFilter.end(), entryExtension) == extensionFilter.end())
                 continue;
 
             // open the file and add the content to the glyph range builder
