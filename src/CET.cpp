@@ -77,7 +77,7 @@ CET::CET()
     , m_window(&m_bindings, &m_d3d12)
     , m_fonts(m_options, m_paths)
     , m_d3d12(m_window, m_paths, m_options, m_fonts)
-    , m_vm(m_paths, m_bindings, m_d3d12)
+    , m_vm(m_paths, m_bindings, m_d3d12, m_fonts)
     , m_overlay(m_bindings, m_options, m_persistentState, m_vm)
 {
     m_vm.Initialize();

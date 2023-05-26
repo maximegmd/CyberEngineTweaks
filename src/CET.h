@@ -37,9 +37,9 @@ private:
     PersistentState m_persistentState;
     VKBindings m_bindings;
     Window m_window;
+    Fonts m_fonts;
     D3D12 m_d3d12;
     LuaVM m_vm;
     Overlay m_overlay;
     CETTasks m_tasks;
-    Fonts m_fonts;
 };

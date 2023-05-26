@@ -32,12 +32,13 @@ static constexpr bool s_cThrowLuaErrors = true;
 static RTTILocator s_stringType{RED4ext::FNV1a64("String")};
 static RTTILocator s_resRefType{RED4ext::FNV1a64("redResourceReferenceScriptToken")};
 
-Scripting::Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12)
-    : m_sandbox(this, aBindings)
+Scripting::Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12, Fonts& aFonts)
+    : m_sandbox(this, aBindings, aFonts)
     , m_mapper(m_lua.AsRef(), m_sandbox)
     , m_store(m_sandbox, aPaths, aBindings)
     , m_override(this)
     , m_paths(aPaths)
+    , m_fonts(aFonts)
     , m_d3d12(aD3D12)
 {
     CreateLogger(aPaths.CETRoot() / "scripting.log", "scripting");
@@ -50,7 +51,7 @@ void Scripting::Initialize()
     auto& luaVm = lua.Get();
 
     // putting it here so it can be called from IconGlyphs/icons.lua
-    luaVm.set_function("AddTextGlyphs", [](const std::string& acString) -> void { CET::Get().GetFonts().GetGlyphRangesBuilder().AddText(acString); });
+    luaVm.set_function("AddTextGlyphs", [this](const std::string& acString) -> void { m_fonts.GetGlyphRangesBuilder().AddText(acString); });
 
     luaVm.open_libraries(sol::lib::base, sol::lib::string, sol::lib::io, sol::lib::math, sol::lib::package, sol::lib::os, sol::lib::table, sol::lib::bit32);
     luaVm.require("sqlite3", luaopen_lsqlite3);
@@ -76,9 +77,9 @@ void Scripting::Initialize()
     sol::table imgui = globals["ImGui"];
     Texture::BindTexture(imgui);
     
-    imgui["GetMonoFont"] = []() -> ImFont*
+    imgui["GetMonoFont"] = [this]() -> ImFont*
     {
-        return CET::Get().GetFonts().MonoFont;
+        return m_fonts.MonoFont;
     };
 
     for (auto [key, value] : imgui)
@@ -137,9 +138,9 @@ void Scripting::Initialize()
         return {static_cast<float>(resolution.cx), static_cast<float>(resolution.cy)};
     };
 
-    globals["AddTextGlyphs"] = [](const std::string& acString) -> void
+    globals["AddTextGlyphs"] = [this](const std::string& acString) -> void
     {
-        CET::Get().GetFonts().GetGlyphRangesBuilder().AddText(acString);
+        m_fonts.GetGlyphRangesBuilder().AddText(acString);
     };
 
     globals["ModArchiveExists"] = [this](const std::string& acArchiveName) -> bool
@@ -163,6 +164,7 @@ void Scripting::Initialize()
     };
 
     // load mods
+    m_fonts.GetGlyphRangesBuilder().AddText("whahaha!");
     m_store.LoadAll();
 }
 

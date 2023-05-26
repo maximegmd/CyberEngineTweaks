@@ -111,9 +111,10 @@ static constexpr const char* s_cGlobalExtraLibsWhitelist[] = {
     "ImGui",
 };
 
-LuaSandbox::LuaSandbox(Scripting* apScripting, const VKBindings& acVKBindings)
+LuaSandbox::LuaSandbox(Scripting* apScripting, const VKBindings& acVKBindings, Fonts& aFonts)
     : m_pScripting(apScripting)
     , m_vkBindings(acVKBindings)
+    , m_fonts(aFonts)
 {
 }
 
@@ -518,7 +519,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
         ioSB["output"] = DeepCopySolObject(cIO["output"], acpState);
         ioSB["type"] = DeepCopySolObject(cIO["type"], acpState);
         ioSB["close"] = DeepCopySolObject(cIO["close"], acpState);
-        ioSB["lines"] = [cIO, cSBRootPath](const std::string& acPath)
+        ioSB["lines"] = [this, cIO, cSBRootPath](const std::string& acPath)
         {
             const auto previousCurrentPath = std::filesystem::current_path();
             current_path(cSBRootPath);
@@ -526,17 +527,16 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
             auto path = GetLuaPath(acPath, cSBRootPath, false);
             path = path.empty() || acPath == "db.sqlite3" ? "" : path;
 
-            // TODO: add the file content to the glyph range builder. 
-            // This gives assertion error at launch if it's called from a mod before registerForEvent("init")
-            // But no assertion error if the mod is loaded after the game has launched.
-            // CET::Get().GetFonts().GetGlyphRangesBuilder().AddFile(path);
+            // add the file content to the glyph range builder. 
+            m_fonts.GetGlyphRangesBuilder().AddFile(path);
+
             auto result = cIO["lines"](UTF16ToUTF8(path.native()));
 
             current_path(previousCurrentPath);
 
             return result;
         };
-        const auto cOpenWithMode = [cIO, cSBRootPath](const std::string& acPath, const std::string& acMode)
+        const auto cOpenWithMode = [this, cIO, cSBRootPath](const std::string& acPath, const std::string& acMode)
         {
             const auto previousCurrentPath = std::filesystem::current_path();
             current_path(cSBRootPath);
@@ -544,10 +544,9 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
             auto path = GetLuaPath(acPath, cSBRootPath, true);
             path = path.empty() || acPath == "db.sqlite3" ? "" : path;
 
-            // TODO: add the file content to the glyph range builder, only in modes allow read permissions.
-            // Same error as "lines".
-            // if (acMode != "w" || acMode != "a")
-            //     CET::Get().GetFonts().GetGlyphRangesBuilder().AddFile(path);
+            // add the file content to the glyph range builder, only in modes allow read permissions.
+            if (acMode != "w" || acMode != "a")
+                m_fonts.GetGlyphRangesBuilder().AddFile(path);
 
             auto result = cIO["open"](UTF16ToUTF8(path.native()), acMode);
 

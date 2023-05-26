@@ -1,19 +1,16 @@
 #include <stdafx.h>
 
-#include <dwrite.h>
-#include <imgui_freetype.h>
-#include <imgui_internal.h>
-
 #include "Fonts.h"
-#include "Utils.h"
 
+#include <Utils.h>
 #include <imgui_impl/dx12.h>
 
 GlyphRangesBuilder::GlyphRangesBuilder()
 {
     const ImWchar defaultRange[] = {0x0020, 0x00FF, 0};
     m_builder.AddRanges(defaultRange);
-    m_builder.AddChar(0xFFFD);
+    m_builder.AddChar(0xFFFD); // FallbackChar
+    m_builder.AddChar(0x2026); // EllipsisChar
 }
 
 bool GlyphRangesBuilder::NeedsRebuild() const

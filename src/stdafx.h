@@ -3,6 +3,8 @@
 #include <sol/sol.hpp>
 #include <spdlog/spdlog.h>
 #include <imgui.h>
+#include <imgui_freetype.h>
+#include <imgui_internal.h>
 #include <MinHook.h>
 #include <mem/module.h>
 #include <mem/pattern.h>
@@ -43,6 +45,7 @@
 #include <SDKDDKVer.h>
 #include <Windows.h>
 #include <wrl.h>
+#include <dwrite.h>
 
 #include <algorithm>
 #include <array>
