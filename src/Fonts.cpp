@@ -2,11 +2,64 @@
 
 #include <dwrite.h>
 #include <imgui_freetype.h>
+#include <imgui_internal.h>
 
 #include "Fonts.h"
 #include "Utils.h"
 
 #include <imgui_impl/dx12.h>
+
+GlyphRangesBuilder::GlyphRangesBuilder()
+{
+    const ImWchar defaultRange[] = {0x0020, 0x00FF, 0};
+    m_builder.AddRanges(defaultRange);
+    m_builder.AddChar(0xFFFD);
+}
+
+bool GlyphRangesBuilder::NeedsRebuild() const
+{
+    return m_needsRebuild;
+}
+
+void GlyphRangesBuilder::AddText(const std::string& acText)
+{
+    auto text = acText.c_str();
+    while (*text)
+    {
+        unsigned int c = 0;
+        int c_len = ImTextCharFromUtf8(&c, text, NULL);
+        text += c_len;
+        if (c_len == 0)
+            break;
+        if (!m_builder.GetBit(c))
+        {
+            m_builder.AddChar((ImWchar)c);
+            m_needsRebuild = true;
+        }
+    }
+}
+
+bool GlyphRangesBuilder::AddFile(const std::filesystem::path& acPath)
+{
+    std::ifstream file(acPath);
+    if (!file)
+        return false;
+
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+
+    AddText(buffer.str());
+
+    file.close();
+
+    return true;
+}
+
+void GlyphRangesBuilder::BuildRanges(ImVector<ImWchar>* apRange)
+{
+    m_builder.BuildRanges(apRange);
+    m_needsRebuild = false;
+}
 
 // Build Fonts
 // if custom font not set:
@@ -67,24 +120,28 @@ void Fonts::BuildFonts(const SIZE& acOutSize)
     ImFontConfig fontConfig;
     fontConfig.OversampleH = fontSettings.OversampleHorizontal;
     fontConfig.OversampleV = fontSettings.OversampleVertical;
-    static const ImWchar fontRange[] = {0x1, 0xFFFF, 0};
+
+    static ImVector<ImWchar> fontRange;
+    fontRange.clear();
+    m_glyphRangesBuilder.BuildRanges(&fontRange);
 
     ImFontConfig iconFontConfig;
     iconFontConfig.OversampleH = iconFontConfig.OversampleV = 1;
     iconFontConfig.GlyphMinAdvanceX = fontSize;
-    static const ImWchar iconFontRange[] = {ICON_MIN_MD, ICON_MAX_MD, 0};
 
     ImFontConfig emojiFontConfig;
     emojiFontConfig.OversampleH = emojiFontConfig.OversampleV = 1;
     emojiFontConfig.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
-    static const ImWchar emojiFontRanges[] = {0x1, 0x1FFFF, 0};
 
     // load fonts without merging first, so we can calculate the offset to align the fonts.
     float mainFontBaselineDifference = 0.0f;
     float monospaceFontBaselineDifference = 0.0f;
-    if (!mainFontPath.empty() && !monospaceFontPath.empty() && !iconFontPath.empty()) {
-        auto mainFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(mainFontPath.native()).c_str(), fontSize, &fontConfig);
-        auto monospaceFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(monospaceFontPath.native()).c_str(), fontSize, &fontConfig);
+    if (!mainFontPath.empty() && !monospaceFontPath.empty() && !iconFontPath.empty())
+    {
+        static const ImWchar mainFontRange[] = {0x0041, 0x0041, 0};
+        static const ImWchar iconFontRange[] = {0xF01C9, 0xF01C9, 0};
+        auto mainFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(mainFontPath.native()).c_str(), fontSize, &fontConfig, mainFontRange);
+        auto monospaceFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(monospaceFontPath.native()).c_str(), fontSize, &fontConfig, mainFontRange);
         auto iconFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(iconFontPath.native()).c_str(), fontSize, &iconFontConfig, iconFontRange);
 
         io.Fonts->Build(); // Build atlas, retrieve pixel data.
@@ -107,7 +164,7 @@ void Fonts::BuildFonts(const SIZE& acOutSize)
         iconFontConfig.GlyphOffset.y = std::ceilf(mainFontBaselineDifference * 0.5f);
 
         if (!mainFontPath.empty())
-            MainFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(mainFontPath.native()).c_str(), fontSize, &fontConfig, fontRange);
+            MainFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(mainFontPath.native()).c_str(), fontSize, &fontConfig, fontRange.Data);
         else
             MainFont = io.Fonts->AddFontDefault();
 
@@ -115,7 +172,7 @@ void Fonts::BuildFonts(const SIZE& acOutSize)
         if (!useCustomMainFont)
         {
             fontConfig.MergeMode = true;
-            for(const auto& font : m_defaultCJKFonts)
+            for (const auto& font : m_defaultCJKFonts)
             {
                 const std::filesystem::path fontPath = GetAbsolutePath(font, m_paths.Fonts(), false);
                 if (fontPath.empty())
@@ -123,17 +180,17 @@ void Fonts::BuildFonts(const SIZE& acOutSize)
                     Log::Error("Can't find font {}.", GetAbsolutePath(font, m_paths.Fonts(), true).string());
                     continue;
                 }
-                io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(fontPath.native()).c_str(), fontSize, &fontConfig, fontRange);
+                io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(fontPath.native()).c_str(), fontSize, &fontConfig, fontRange.Data);
             }
             fontConfig.MergeMode = false;
         }
 
         // merge the icon font and emoji font
         if (!iconFontPath.empty())
-            io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(iconFontPath.native()).c_str(), fontSize, &iconFontConfig, iconFontRange);
+            io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(iconFontPath.native()).c_str(), fontSize, &iconFontConfig, fontRange.Data);
 
         if (m_useEmojiFont)
-            io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(emojiFontPath.native()).c_str(), emojiSize, &emojiFontConfig, emojiFontRanges);
+            io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(emojiFontPath.native()).c_str(), emojiSize, &emojiFontConfig, fontRange.Data);
     }
 
     // add monospace font
@@ -142,7 +199,7 @@ void Fonts::BuildFonts(const SIZE& acOutSize)
         iconFontConfig.GlyphOffset.y = std::ceilf(monospaceFontBaselineDifference * 0.5f);
 
         if (!monospaceFontPath.empty())
-            MonospaceFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(monospaceFontPath.native()).c_str(), fontSize, &fontConfig, fontRange);
+            MonospaceFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(monospaceFontPath.native()).c_str(), fontSize, &fontConfig, fontRange.Data);
         else
             MonospaceFont = io.Fonts->AddFontDefault();
 
@@ -150,25 +207,25 @@ void Fonts::BuildFonts(const SIZE& acOutSize)
         fontConfig.MergeMode = true;
 
         if (!mainFontPath.empty())
-            io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(mainFontPath.native()).c_str(), fontSize, &fontConfig, fontRange);
+            io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(mainFontPath.native()).c_str(), fontSize, &fontConfig, fontRange.Data);
 
         // merge the default CJK fonts
         if (!useCustomMainFont)
         {
-            for(const auto& font : m_defaultCJKFonts)
+            for (const auto& font : m_defaultCJKFonts)
             {
                 const std::filesystem::path fontPath = GetAbsolutePath(font, m_paths.Fonts(), false);
                 if (fontPath.empty())
                     continue;
-                io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(fontPath.native()).c_str(), fontSize, &fontConfig, fontRange);
+                io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(fontPath.native()).c_str(), fontSize, &fontConfig, fontRange.Data);
             }
         }
 
         if (!iconFontPath.empty())
-            io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(iconFontPath.native()).c_str(), fontSize, &iconFontConfig, iconFontRange);
+            io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(iconFontPath.native()).c_str(), fontSize, &iconFontConfig, fontRange.Data);
 
         if (m_useEmojiFont)
-            io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(emojiFontPath.native()).c_str(), emojiSize, &emojiFontConfig, emojiFontRanges);
+            io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(emojiFontPath.native()).c_str(), emojiSize, &emojiFontConfig, fontRange.Data);
     }
 }
 
@@ -176,13 +233,14 @@ void Fonts::BuildFonts(const SIZE& acOutSize)
 // Call before ImGui_ImplXXXX_NewFrame()
 void Fonts::RebuildFonts(ID3D12CommandQueue* apCommandQueue, const SIZE& acOutSize)
 {
-    if (!m_rebuildFonts)
-        return;
 
-    BuildFonts(acOutSize);
-    ImGui_ImplDX12_RecreateFontsTexture(apCommandQueue);
+    if (m_rebuildFonts || m_glyphRangesBuilder.NeedsRebuild()) // Rebuild when font settings changed or glyph ranges changed
+    {
+        BuildFonts(acOutSize);
+        ImGui_ImplDX12_RecreateFontsTexture(apCommandQueue);
 
-    m_rebuildFonts = false;
+        m_rebuildFonts = false;
+    }
 }
 
 // Call from imgui to trgger RebuildFonts in the next frame
@@ -195,13 +253,6 @@ void Fonts::RebuildFontNextFrame()
 const bool Fonts::UseEmojiFont()
 {
     return m_useEmojiFont;
-}
-
-Fonts::Fonts(Options& aOptions, Paths& aPaths)
-    : m_options(aOptions)
-    , m_paths(aPaths)
-{
-    EnumerateSystemFonts();
 }
 
 // Get system fonts and their path
@@ -359,4 +410,76 @@ std::filesystem::path Fonts::GetFontPathFromOption(const std::string& acFontOpti
         return GetAbsolutePath(acFontOption, m_paths.Fonts(), false);
 
     return {};
+}
+
+GlyphRangesBuilder& Fonts::GetGlyphRangesBuilder()
+{
+    return m_glyphRangesBuilder;
+}
+
+void Fonts::PrecacheGlyphsFromMods()
+{
+    const auto modsRoot = m_paths.ModsRoot();
+
+    int fileCount = 0;
+
+    for (const auto& modEntry : std::filesystem::directory_iterator(modsRoot))
+    {
+        // ignore normal files
+        if (!modEntry.is_directory() && !modEntry.is_symlink())
+            continue;
+        // ignore mod using preserved name
+        if (modEntry.path().native().starts_with(L"cet\\"))
+            continue;
+
+        const auto path = GetAbsolutePath(modEntry.path(), modsRoot, false);
+        // ignore invalid path
+        if (path.empty())
+            continue;
+        // ignore path symlinked to file
+        if (!is_directory(path))
+            continue;
+        // ignore directory doesn't contain init.lua
+        if (!exists(path / L"init.lua"))
+            continue;
+
+        // iterate all files within each mod folder recursively
+        for (const auto& entry : std::filesystem::recursive_directory_iterator(modEntry, std::filesystem::directory_options::follow_directory_symlink))
+        {
+            const auto pathStr = UTF16ToUTF8(entry.path().native());
+
+            // add the file path to the glyph range builder
+            m_glyphRangesBuilder.AddText(pathStr);
+
+            if (!entry.is_regular_file())
+                continue;
+
+            // ignore files without the following extension names: lua, txt, json, yml, yaml, toml, ini
+            const std::vector<std::string> extensions = {".lua", ".txt", ".json", ".yml", ".yaml", ".toml", ".ini"};
+            const std::string entryExtension = UTF16ToUTF8(entry.path().extension().native());
+            if (std::find(extensions.begin(), extensions.end(), entryExtension) == extensions.end())
+                continue;
+
+            // open the file and add the content to the glyph range builder
+            bool result = m_glyphRangesBuilder.AddFile(entry.path());
+
+            if (!result)
+            {
+                Log::Error("Can't read file {}.", pathStr);
+                continue;
+            }
+
+            fileCount++;
+        }
+    }
+
+    Log::Info("Total mod files cached into glyph ranges builder: {}.", fileCount);
+}
+
+Fonts::Fonts(Options& aOptions, Paths& aPaths)
+    : m_options(aOptions)
+    , m_paths(aPaths)
+{
+    EnumerateSystemFonts();
+    PrecacheGlyphsFromMods();
 }

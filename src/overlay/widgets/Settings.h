@@ -21,15 +21,15 @@ protected:
     WidgetResult OnPopup() override;
 
 private:
-    void SettingItemTemplate(const char* acIcon, const std::string& acLabel, const std::string& acTooltip, const bool& aValueChanged, std::function<void()>& aImGuiFunction);
-    bool SettingItemCheckBox(const char* acIcon, const std::string& acLabel, const std::string& acTooltip, bool& aCurrent, const bool& acSaved);
+    void SettingItemTemplate(const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, const bool& aValueChanged, std::function<void()>& aImGuiFunction);
+    bool SettingItemCheckBox(const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, bool& aCurrent, const bool& acSaved);
     bool SettingItemSliderFloat(
-        const char* acIcon, const std::string& acLabel, const std::string& acTooltip, float& aCurrent, const float& acSaved, float aValueMin, float aValueMax,
+        const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, float& aCurrent, const float& acSaved, float aValueMin, float aValueMax,
         const char* aFormat = "%.1f");
     bool SettingItemSliderInt(
-        const char* acIcon, const std::string& acLabel, const std::string& acTooltip, int& aCurrent, const int& acSaved, int aValueMin, int aValueMax, const char* aFormat = "%d");
+        const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, int& aCurrent, const int& acSaved, int aValueMin, int aValueMax, const char* aFormat = "%d");
     bool SettingItemCombo(
-        const char* acIcon, const std::string& acLabel, const std::string& acTooltip, std::string& aCurrent, const std::string& acSaved, const std::vector<std::string>& acItems);
+        const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, std::string& aCurrent, const std::string& acSaved, const std::vector<std::string>& acItems);
 
     PatchesSettings m_patches;
     DeveloperSettings m_developer;

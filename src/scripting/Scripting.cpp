@@ -49,6 +49,9 @@ void Scripting::Initialize()
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
 
+    // putting it here so it can be called from IconGlyphs/icons.lua
+    luaVm.set_function("AddTextGlyphs", [](const std::string& acString) -> void { CET::Get().GetFonts().GetGlyphRangesBuilder().AddText(acString); });
+
     luaVm.open_libraries(sol::lib::base, sol::lib::string, sol::lib::io, sol::lib::math, sol::lib::package, sol::lib::os, sol::lib::table, sol::lib::bit32);
     luaVm.require("sqlite3", luaopen_lsqlite3);
 
@@ -72,6 +75,12 @@ void Scripting::Initialize()
     sol_ImGui::InitBindings(luaVm, globals);
     sol::table imgui = globals["ImGui"];
     Texture::BindTexture(imgui);
+    
+    imgui["GetMonospaceFont"] = []() -> ImFont*
+    {
+        return CET::Get().GetFonts().MonospaceFont;
+    };
+
     for (auto [key, value] : imgui)
     {
         if (value.get_type() != sol::type::function)
@@ -128,9 +137,9 @@ void Scripting::Initialize()
         return {static_cast<float>(resolution.cx), static_cast<float>(resolution.cy)};
     };
 
-    globals["GetMonospaceFont"] = [this]() -> ImFont*
+    globals["AddTextGlyphs"] = [](const std::string& acString) -> void
     {
-        return CET::Get().GetFonts().MonospaceFont;
+        CET::Get().GetFonts().GetGlyphRangesBuilder().AddText(acString);
     };
 
     globals["ModArchiveExists"] = [this](const std::string& acArchiveName) -> bool
@@ -615,6 +624,7 @@ void Scripting::UnloadAllMods()
 void Scripting::ReloadAllMods()
 {
     UnloadAllMods();
+    CET::Get().GetFonts().PrecacheGlyphsFromMods(); // recache glyphs from mods in case of changes
 
     m_store.LoadAll();
 

@@ -285,6 +285,9 @@ Overlay::~Overlay()
 
 void Overlay::DrawToolbar()
 {
+    // add icons to glyph builder
+    CET::Get().GetFonts().GetGlyphRangesBuilder().AddText(ICON_MD_CONSOLE ICON_MD_KEYBOARD_SETTINGS ICON_MD_COG ICON_MD_DATABASE_EDIT ICON_MD_FILE_DOCUMENT ICON_MD_BUG ICON_MD_RESTART);
+
     const auto itemWidth = GetAlignedItemWidth(7);
     auto& persistentState = m_persistentState.Overlay;
 

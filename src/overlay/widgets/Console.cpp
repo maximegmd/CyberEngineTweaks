@@ -92,6 +92,7 @@ void Console::OnUpdate()
     ImGui::SetNextItemWidth(-FLT_MIN);
     constexpr auto flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackResize;
     ImGui::PushFont(CET::Get().GetFonts().MonospaceFont);
+    CET::Get().GetFonts().GetGlyphRangesBuilder().AddText(m_command); // Add text to glyph ranges
     const auto execute = ImGui::InputText("##InputCommand", m_command.data(), m_command.capacity(), flags, &HandleConsole, this);
     ImGui::PopFont();
     ImGui::SetItemDefaultFocus();

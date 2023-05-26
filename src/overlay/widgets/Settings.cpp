@@ -199,7 +199,7 @@ void Settings::ResetToDefaults()
     CET::Get().GetFonts().RebuildFontNextFrame();
 }
 
-void Settings::SettingItemTemplate(const char* acIcon, const std::string& acLabel, const std::string& acTooltip, const bool& aValueChanged, std::function<void()>& aImGuiFunction)
+void Settings::SettingItemTemplate(const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, const bool& aValueChanged, std::function<void()>& aImGuiFunction)
 {
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
@@ -213,9 +213,10 @@ void Settings::SettingItemTemplate(const char* acIcon, const std::string& acLabe
     ImGui::PushStyleColor(ImGuiCol_Text, curTextColor);
 
     ImGui::PushID(&acLabel);
-    if (CET::Get().GetFonts().UseEmojiFont() && acIcon && acIcon[0])
+    if (CET::Get().GetFonts().UseEmojiFont() && !acIcon.empty())
     {
-        ImGui::TextUnformatted(acIcon);
+        CET::Get().GetFonts().GetGlyphRangesBuilder().AddText(acIcon);
+        ImGui::TextUnformatted(acIcon.c_str());
         ImGui::SameLine();
     }
     ImGui::TextUnformatted(acLabel.c_str());
@@ -237,7 +238,7 @@ void Settings::SettingItemTemplate(const char* acIcon, const std::string& acLabe
     ImGui::PopStyleColor();
 }
 
-bool Settings::SettingItemCheckBox(const char* acIcon, const std::string& acLabel, const std::string& acTooltip, bool& aCurrent, const bool& acSaved)
+bool Settings::SettingItemCheckBox(const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, bool& aCurrent, const bool& acSaved)
 {
     std::function<void()> imguiWidget = [&]()
     {
@@ -265,7 +266,7 @@ bool Settings::SettingItemCheckBox(const char* acIcon, const std::string& acLabe
 }
 
 bool Settings::SettingItemSliderFloat(
-    const char* acIcon, const std::string& acLabel, const std::string& acTooltip, float& aCurrent, const float& acSaved, float aValueMin, float aValueMax, const char* aFormat)
+    const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, float& aCurrent, const float& acSaved, float aValueMin, float aValueMax, const char* aFormat)
 {
     std::function<void()> imguiWidget = [&]()
     {
@@ -282,7 +283,7 @@ bool Settings::SettingItemSliderFloat(
 }
 
 bool Settings::SettingItemSliderInt(
-    const char* acIcon, const std::string& acLabel, const std::string& acTooltip, int& aCurrent, const int& acSaved, int aValueMin, int aValueMax, const char* aFormat)
+    const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, int& aCurrent, const int& acSaved, int aValueMin, int aValueMax, const char* aFormat)
 {
     std::function<void()> imguiWidget = [&]()
     {
@@ -299,7 +300,7 @@ bool Settings::SettingItemSliderInt(
 }
 
 bool Settings::SettingItemCombo(
-    const char* acIcon, const std::string& acLabel, const std::string& acTooltip, std::string& aCurrent, const std::string& acSaved, const std::vector<std::string>& acItems)
+    const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, std::string& aCurrent, const std::string& acSaved, const std::vector<std::string>& acItems)
 {
     std::function<void()> imguiWidget = [&]()
     {

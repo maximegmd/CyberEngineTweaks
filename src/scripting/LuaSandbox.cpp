@@ -46,7 +46,7 @@ static constexpr const char* s_cGlobalObjectsWhitelist[] = {
     "print",
     "GetVersion",
     "GetDisplayResolution",
-    "GetMonospaceFont",
+    "AddTextGlyphs",
     "ModArchiveExists",
 
     "ImGuiListClipper",
@@ -523,9 +523,14 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
             const auto previousCurrentPath = std::filesystem::current_path();
             current_path(cSBRootPath);
 
-            const auto path = GetLuaPath(acPath, cSBRootPath, false);
+            auto path = GetLuaPath(acPath, cSBRootPath, false);
+            path = path.empty() || acPath == "db.sqlite3" ? "" : path;
 
-            auto result = cIO["lines"](path.empty() || acPath == "db.sqlite3" ? "" : UTF16ToUTF8(path.native()));
+            // TODO: add the file content to the glyph range builder. 
+            // This gives assertion error at launch if it's called from a mod before registerForEvent("init")
+            // But no assertion error if the mod is loaded after the game has launched.
+            // CET::Get().GetFonts().GetGlyphRangesBuilder().AddFile(path);
+            auto result = cIO["lines"](UTF16ToUTF8(path.native()));
 
             current_path(previousCurrentPath);
 
@@ -536,9 +541,15 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
             const auto previousCurrentPath = std::filesystem::current_path();
             current_path(cSBRootPath);
 
-            const auto path = GetLuaPath(acPath, cSBRootPath, true);
+            auto path = GetLuaPath(acPath, cSBRootPath, true);
+            path = path.empty() || acPath == "db.sqlite3" ? "" : path;
 
-            auto result = cIO["open"](path.empty() || acPath == "db.sqlite3" ? "" : UTF16ToUTF8(path.native()), acMode);
+            // TODO: add the file content to the glyph range builder, only in modes allow read permissions.
+            // Same error as "lines".
+            // if (acMode != "w" || acMode != "a")
+            //     CET::Get().GetFonts().GetGlyphRangesBuilder().AddFile(path);
+
+            auto result = cIO["open"](UTF16ToUTF8(path.native()), acMode);
 
             current_path(previousCurrentPath);
 

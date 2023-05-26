@@ -78,6 +78,8 @@ void LogWindow::Draw(const ImVec2& size)
                 ImGui::SetNextItemWidth(listItemWidth);
 
                 ImGui::PushID(i);
+
+                CET::Get().GetFonts().GetGlyphRangesBuilder().AddText(item); // Add text to glyph ranges
                 ImGui::InputText(("##" + item).c_str(), item.data(), item.size(), ImGuiInputTextFlags_ReadOnly);
                 ImGui::PopID();
 
