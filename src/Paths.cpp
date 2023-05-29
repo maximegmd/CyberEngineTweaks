@@ -98,4 +98,5 @@ Paths::Paths()
     m_tweakdb = m_cetRoot / L"tweakdb";
 
     m_languages = m_cetRoot / L"languages";
+    create_directories(m_languages);
 }

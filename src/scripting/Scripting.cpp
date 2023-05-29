@@ -624,7 +624,7 @@ void Scripting::UnloadAllMods()
 void Scripting::ReloadAllMods()
 {
     UnloadAllMods();
-    CET::Get().GetFonts().PrecacheGlyphsFromMods(); // recache glyphs from mods in case of changes
+    CET::Get().GetFonts().PrecacheModFiles(); // recache glyphs from mods in case of changes
 
     m_store.LoadAll();
 

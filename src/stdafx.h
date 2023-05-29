@@ -37,6 +37,7 @@
 #include <TiltedCore/TaskQueue.hpp>
 
 #include <tinygettext/tinygettext.hpp>
+#include <tinygettext/log.hpp>
 
 #include <tchar.h>
 #include <d3d12.h>
