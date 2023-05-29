@@ -1,74 +1,143 @@
 #include <stdafx.h>
 
-#include <tinygettext/unix_file_system.hpp>
-
 #include "I18n.h"
 
-void I18n::LoadLanguages(const std::filesystem::path &aLanguageDir)
+#include <Utils.h>
+
+void I18n::PopulateOptions()
 {
-  m_dict_manager->add_directory(aLanguageDir.string());
+    for (const auto& language : m_languages)
+    {
+        m_dictManager.set_language(language);
+        // Translators: Translate this to your language's native name. (e.g. French -> Français)
+        const std::string nativeName = m_dictManager.get_dictionary().translate("Native Language Name");
+        std::string name = language.get_name();
+        std::string formatedName;
+        if (name.empty())
+            name = language.str();
+        if (nativeName == "Native Language Name" || nativeName == name)
+            formatedName = name;
+        else
+            formatedName = std::format("{}\n{}", name, nativeName);
+        m_localeOptions.emplace_back(formatedName);
+    }
 }
 
-void I18n::SetLanguage(const tinygettext::Language &aLanguage)
+void I18n::LoadLanguageFiles()
 {
-  m_dict_manager->set_language(aLanguage);
+    m_dictManager.add_directory(UTF16ToUTF8(m_paths.Languages().native()));
+    m_languages = m_dictManager.get_languages();
 }
 
-tinygettext::Dictionary &I18n::GetDictionary()
+tinygettext::Dictionary& I18n::GetDictionary()
 {
-  return m_dict_manager->get_dictionary();
+    return m_dictManager.get_dictionary();
 }
 
-const char* I18n::Translate(const std::string& aMsgid)
+std::string I18n::Translate(const std::string& aMsgid) const
 {
-  return m_dict->translate(aMsgid).c_str();
+    return m_dict->translate(aMsgid);
 }
 
-const char* I18n::TranslatePlural(const std::string& aMsgid, const std::string& aMsgidPlural, int aNum)
+std::string I18n::Translate(const std::string& aMsgctxt, const std::string aMsgid) const
 {
-  return m_dict->translate_plural(aMsgid, aMsgidPlural, aNum).c_str();
+    return m_dict->translate_ctxt(aMsgctxt, aMsgid);
 }
 
-const char* I18n::TranslateWithContext(const std::string& aMsgctxt, const std::string aMsgid)
+std::string I18n::Translate(const std::string& aMsgid, const std::string& aMsgidPlural, int aNum) const
 {
-  return m_dict->translate_ctxt(aMsgctxt, aMsgid).c_str();
+    return m_dict->translate_plural(aMsgid, aMsgidPlural, aNum);
 }
 
-const char* I18n::TranslatePluralWithContext(const std::string& aMsgctxt, const std::string aMsgid, const std::string& aMsgidPlural, int aNum)
+std::string I18n::Translate(const std::string& aMsgctxt, const std::string aMsgid, const std::string& aMsgidPlural, int aNum) const
 {
-  return m_dict->translate_ctxt_plural(aMsgctxt, aMsgid, aMsgidPlural, aNum).c_str();
+    return m_dict->translate_ctxt_plural(aMsgctxt, aMsgid, aMsgidPlural, aNum);
 }
 
-I18n::I18n(Options& aOptions, Paths& aPaths)
+// Set language closest to the system display locale
+void I18n::SetLanguageBaseOnSystemLocale()
+{
+    auto systemLanguage = tinygettext::Language::from_env(GetSystemLocale());
+    int highScore = 0;
+    auto closestMatch = tinygettext::Language::from_env(m_defaultLocale);
+    for (const auto& language : m_languages)
+    {
+        int score = language.match(systemLanguage, language);
+        if (score > highScore)
+        {
+            closestMatch = language;
+            highScore = score;
+        }
+    }
+
+    m_dictManager.set_language(closestMatch);
+    m_dict = &m_dictManager.get_dictionary();
+}
+
+// Set language base on given locale string
+void I18n::SetLanguage(std::string aLocale)
+{
+    auto language = tinygettext::Language::from_env(aLocale);
+    if (m_languages.find(language) == m_languages.end())
+    {
+        SetLanguageBaseOnSystemLocale();
+        m_options.Language.Locale = "System";
+        m_options.Save();
+        Log::Error("Translation for {} not found, using system locale instead.", aLocale, m_defaultLocale);
+    }
+
+    m_dictManager.set_language(language);
+    m_dict = &m_dictManager.get_dictionary();
+}
+
+// Load setting from the config and set the language
+void I18n::LoadLanguageSettings()
+{
+    const auto& locale = m_options.Language.Locale;
+    if (locale == "System")
+        SetLanguageBaseOnSystemLocale();
+    else
+        SetLanguage(locale);
+}
+
+// Get system display locale
+std::string I18n::GetSystemLocale() const
+{
+    LCID localeId = GetUserDefaultLCID(); // Get the user default locale identifier
+    WCHAR localeName[LOCALE_NAME_MAX_LENGTH];
+    int result = GetLocaleInfoEx(LOCALE_NAME_USER_DEFAULT, LOCALE_SNAME, localeName, LOCALE_NAME_MAX_LENGTH); // Get the locale name using locale identifier
+
+    if (result == 0)
+    {
+        Log::Error("Error when getting system display locale: {}", GetLastError());
+        return "en_US";
+    }
+
+    return UTF16ToUTF8(localeName);
+}
+
+void I18n::LogInfoCallback(const std::string& acString)
+{
+    Log::Info((!acString.empty() && acString.back() == '\n') ? acString.substr(0, acString.size() - 1) : acString);
+}
+void I18n::LogWarnCallback(const std::string& acString)
+{
+    Log::Warn((!acString.empty() && acString.back() == '\n') ? acString.substr(0, acString.size() - 1) : acString);
+}
+void I18n::LogErrorCallback(const std::string& acString)
+{
+    Log::Error((!acString.empty() && acString.back() == '\n') ? acString.substr(0, acString.size() - 1) : acString);
+}
+
+I18n::I18n(Options& aOptions, Paths& aPaths, Fonts& aFonts)
     : m_options(aOptions)
     , m_paths(aPaths)
+    , m_fonts(aFonts)
 {
-  tinygettext::DictionaryManager dict_manager(std::unique_ptr<tinygettext::FileSystem>(new tinygettext::UnixFileSystem));
-
-  m_dict_manager = &dict_manager;
-  LoadLanguages(m_paths.Languages());
-  auto languages = m_dict_manager->get_languages();
-  if (languages.size() < 1)
-  {
-    std::cout << "No languages loaded"
-              << "\n";
-    return;
-  }
-  std::cout << "Number of languages: " << languages.size() << std::endl;
-  for (std::set<tinygettext::Language>::const_iterator it = languages.begin(); it != languages.end(); ++it)
-  {
-    const tinygettext::Language &language = *it;
-    std::cout << "Env:       " << language.str() << std::endl
-              << "Name:      " << language.get_name() << std::endl
-              << "Language:  " << language.get_language() << std::endl
-              << "Country:   " << language.get_country() << std::endl
-              << "Modifier:  " << language.get_modifier() << std::endl
-              << std::endl;
-    if (language.get_language() == m_options.Language.Locale)
-    {
-      SetLanguage(language);
-      break;
-    }
-    m_dict = &m_dict_manager->get_dictionary();
-  }
+    tinygettext::Log::set_log_info_callback(&LogInfoCallback);
+    tinygettext::Log::set_log_warning_callback(&LogWarnCallback);
+    tinygettext::Log::set_log_error_callback(&LogErrorCallback);
+    LoadLanguageFiles();
+    PopulateOptions();
+    LoadLanguageSettings();
 }

@@ -437,7 +437,7 @@ GlyphRangesBuilder& Fonts::GetGlyphRangesBuilder()
     return m_glyphRangesBuilder;
 }
 
-void Fonts::PrecacheGlyphsFromMods()
+void Fonts::PrecacheModFiles()
 {
     const auto modsRoot = m_paths.ModsRoot();
 
@@ -496,10 +496,35 @@ void Fonts::PrecacheGlyphsFromMods()
     Log::Info("Total mod files cached into glyph ranges builder: {}.", fileCount);
 }
 
+void Fonts::PrecacheLanguageFiles()
+{
+    int fileCount = 0;
+    for (const auto& entry : std::filesystem::directory_iterator(m_paths.Languages()))
+    {
+        if (!entry.is_regular_file())
+            continue;
+
+        if (entry.path().extension() != ".po")
+            continue;
+
+        bool result = m_glyphRangesBuilder.AddFile(entry.path());
+
+        if (!result)
+        {
+            Log::Error("Can't read file {}.", UTF16ToUTF8(entry.path().native()));
+            continue;
+        }
+
+        fileCount++;
+    }
+    Log::Info("Total language files cached into glyph ranges builder: {}.", fileCount);
+}
+
 Fonts::Fonts(Options& aOptions, Paths& aPaths)
     : m_options(aOptions)
     , m_paths(aPaths)
 {
     EnumerateSystemFonts();
-    PrecacheGlyphsFromMods();
+    PrecacheModFiles();
+    PrecacheLanguageFiles();
 }

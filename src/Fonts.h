@@ -43,7 +43,8 @@ struct Fonts
     std::filesystem::path GetFontPathFromOption(const std::string& acFontOption) const;
 
     GlyphRangesBuilder& GetGlyphRangesBuilder();
-    void PrecacheGlyphsFromMods();
+    void PrecacheModFiles();
+    void PrecacheLanguageFiles();
 
     ImFont* MainFont;
     ImFont* MonoFont;

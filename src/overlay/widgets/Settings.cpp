@@ -92,6 +92,17 @@ void Settings::OnUpdate()
             }
             ImGui::TreePop();
         }
+        if (ImGui::CollapsingHeader("CET Language Settings", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            ImGui::TreePush();
+            if (ImGui::BeginTable("SETTINGS", 2, ImGuiTableFlags_NoSavedSettings, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
+            {
+                const auto& languageSettings = m_options.Language;
+                SettingItemCombo("🌐", "Language", "Display language for CET.", m_language.Locale, languageSettings.Locale, CET::Get().GetI18n().GetLocaleOptions());
+                ImGui::EndTable();
+            }
+            ImGui::TreePop();
+        }
         if (ImGui::CollapsingHeader("CET Font Settings", ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::TreePush();
@@ -176,6 +187,7 @@ void Settings::Load()
     m_patches = m_options.Patches;
     m_developer = m_options.Developer;
     m_font = m_options.Font;
+    m_language = m_options.Language;
 }
 
 void Settings::Save() const
@@ -183,8 +195,10 @@ void Settings::Save() const
     m_options.Patches = m_patches;
     m_options.Developer = m_developer;
     m_options.Font = m_font;
+    m_options.Language = m_language;
     if (m_madeFontChanges)
         CET::Get().GetFonts().RebuildFontNextFrame();
+    CET::Get().GetI18n().LoadLanguageSettings();
 
     m_options.Save();
 }
@@ -196,6 +210,7 @@ void Settings::ResetToDefaults()
     m_patches = m_options.Patches;
     m_developer = m_options.Developer;
     m_font = m_options.Font;
+    m_language = m_options.Language;
     CET::Get().GetFonts().RebuildFontNextFrame();
 }
 

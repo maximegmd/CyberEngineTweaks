@@ -36,6 +36,7 @@
 #include <TiltedCore/TaskQueue.hpp>
 
 #include <tinygettext/tinygettext.hpp>
+#include <tinygettext/log.hpp>
 
 #include <atlcomcli.h>
 #include <d3d12.h>

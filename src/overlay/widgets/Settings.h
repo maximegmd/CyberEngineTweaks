@@ -34,6 +34,7 @@ private:
     PatchesSettings m_patches;
     DeveloperSettings m_developer;
     FontSettings m_font;
+    LanguageSettings m_language;
 
     Options& m_options;
     LuaVM& m_vm;
