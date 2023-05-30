@@ -3,10 +3,10 @@ msgstr ""
 "Project-Id-Version: cyber-engine-tweaks\n"
 "Report-Msgid-Bugs-To: https://github.com/maximegmd/CyberEngineTweaks/issues\n"
 "POT-Creation-Date: 2023-05-30 14:57+0800\n"
-"PO-Revision-Date: 2023-05-30 15:44\n"
-"Last-Translator: \n"
+"PO-Revision-Date: 2023-05-30 17:10\n"
+"Last-Translator: Automatically generated\n"
 "Language-Team: Japanese\n"
-"Language: ja_JP\n"
+"Language: ja\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -14,8 +14,8 @@ msgstr ""
 "X-Crowdin-Project: cyber-engine-tweaks\n"
 "X-Crowdin-Project-ID: 591959\n"
 "X-Crowdin-Language: ja\n"
-"X-Crowdin-File: /i18n/languages/template.pot\n"
-"X-Crowdin-File-ID: 9\n"
+"X-Crowdin-File: /i18n/languages/en.po\n"
+"X-Crowdin-File-ID: 19\n"
 
 #. Translators: Type in your language name in it's own language. (e.g. French -> Français)
 #: src\I18n.cpp:61
@@ -451,4 +451,13 @@ msgstr ""
 #: src\overlay\widgets\TweakDBEditor.cpp:1644
 msgid "Clone record"
 msgstr ""
+
+#~ msgid "(requires restart to take effect)."
+#~ msgstr "(requires restart to take effect)."
+
+#~ msgid "Changees the size of the font, default value is 18px."
+#~ msgstr "Changees the size of the font, default value is 18px."
+
+#~ msgid "TweakDBEditor-Bar"
+#~ msgstr "TweakDBEditor-Bar"
 
