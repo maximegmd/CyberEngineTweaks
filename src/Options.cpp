@@ -87,6 +87,7 @@ void DeveloperSettings::Load(const nlohmann::json& aConfig)
     DumpGameOptions = aConfig.value("dump_game_options", DumpGameOptions);
     MaxLinesConsoleHistory = aConfig.value("max_lines_console_history", MaxLinesConsoleHistory);
     PersistentConsole = aConfig.value("persistent_console", PersistentConsole);
+    EnableI18nLog = aConfig.value("enable_i18n_log", EnableI18nLog);
 
     // set global "Enable ImGui Assertions"
     g_ImGuiAssertionsEnabled = EnableImGuiAssertions;
@@ -98,7 +99,8 @@ nlohmann::json DeveloperSettings::Save() const
     g_ImGuiAssertionsEnabled = EnableImGuiAssertions;
 
     return {{"remove_dead_bindings", RemoveDeadBindings}, {"enable_imgui_assertions", EnableImGuiAssertions},    {"enable_debug", EnableDebug},
-            {"dump_game_options", DumpGameOptions},       {"max_lines_console_history", MaxLinesConsoleHistory}, {"persistent_console", PersistentConsole}};
+            {"dump_game_options", DumpGameOptions},       {"max_lines_console_history", MaxLinesConsoleHistory}, {"persistent_console", PersistentConsole},
+            {"enable_i18n_log", EnableI18nLog}};
 }
 
 void DeveloperSettings::ResetToDefaults()

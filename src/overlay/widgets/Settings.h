@@ -31,6 +31,9 @@ private:
     bool SettingItemFontCombo(
         const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, std::string& aCurrent, const std::string& acSaved, const std::vector<Font>& acFonts);
 
+    bool SettingItemLanguageCombo(
+        const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, std::string& aCurrent, const std::string& acSaved, const std::vector<Language>& acLanguages);
+
     PatchesSettings m_patches;
     DeveloperSettings m_developer;
     FontSettings m_font;

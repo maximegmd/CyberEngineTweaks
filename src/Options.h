@@ -32,7 +32,7 @@ struct LanguageSettings
 
     [[nodiscard]] auto operator<=>(const LanguageSettings&) const = default;
 
-    std::string Locale{"en-US"};
+    std::string Locale{"System"};
 };
 
 struct FontSettings
@@ -64,6 +64,7 @@ struct DeveloperSettings
     bool DumpGameOptions{false};
     uint64_t MaxLinesConsoleHistory{1000};
     bool PersistentConsole{true};
+    bool EnableI18nLog{false};
 };
 
 struct Options

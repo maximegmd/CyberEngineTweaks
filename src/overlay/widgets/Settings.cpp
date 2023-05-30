@@ -98,7 +98,7 @@ void Settings::OnUpdate()
             if (ImGui::BeginTable("SETTINGS", 2, ImGuiTableFlags_NoSavedSettings, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
             {
                 const auto& languageSettings = m_options.Language;
-                SettingItemCombo("🌐", "Language", "Display language for CET.", m_language.Locale, languageSettings.Locale, CET::Get().GetI18n().GetLocaleOptions());
+                SettingItemLanguageCombo("🌐", "Language", "Display language for CET.", m_language.Locale, languageSettings.Locale, CET::Get().GetI18n().GetLanguages());
                 ImGui::EndTable();
             }
             ImGui::TreePop();
@@ -159,6 +159,9 @@ void Settings::OnUpdate()
                 SettingItemCheckBox(
                     "🖨", "Dump Game Options", "Dumps all game options into main log file (requires restart to take effect).", m_developer.DumpGameOptions,
                     developerSettings.DumpGameOptions);
+                SettingItemCheckBox(
+                    "🗒", "Enable Tranlation Log", "Show logs when there's a missing translation (requires restart to take effect).", m_developer.EnableI18nLog,
+                    developerSettings.EnableI18nLog);
 
                 ImGui::EndTable();
             }
@@ -214,7 +217,8 @@ void Settings::ResetToDefaults()
     CET::Get().GetFonts().RebuildFontNextFrame();
 }
 
-void Settings::SettingItemTemplate(const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, const bool& aValueChanged, std::function<void()>& aImGuiFunction)
+void Settings::SettingItemTemplate(
+    const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, const bool& aValueChanged, std::function<void()>& aImGuiFunction)
 {
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
@@ -281,7 +285,8 @@ bool Settings::SettingItemCheckBox(const std::string& acIcon, const std::string&
 }
 
 bool Settings::SettingItemSliderFloat(
-    const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, float& aCurrent, const float& acSaved, float aValueMin, float aValueMax, const char* aFormat)
+    const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, float& aCurrent, const float& acSaved, float aValueMin, float aValueMax,
+    const char* aFormat)
 {
     std::function<void()> imguiWidget = [&]()
     {
@@ -326,6 +331,47 @@ bool Settings::SettingItemFontCombo(
                 const bool isSelected = aCurrent == font.GetName();
                 if (ImGui::Selectable(font.GetName().c_str(), isSelected))
                     aCurrent = font.GetName();
+                if (isSelected)
+                    ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
+    };
+
+    const bool valueChanged = aCurrent != acSaved;
+
+    SettingItemTemplate(acIcon, acLabel, acTooltip, valueChanged, imguiWidget);
+
+    m_madeChanges |= aCurrent != acSaved;
+
+    return aCurrent != acSaved;
+}
+
+bool Settings::SettingItemLanguageCombo(
+    const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, std::string& aCurrent, const std::string& acSaved,
+    const std::vector<Language>& acLanguages)
+{
+    std::function<void()> imguiWidget = [&]()
+    {
+        auto currentItem = CET::Get().GetI18n().GetLanguage(aCurrent).GetLocalizedName();
+        if (currentItem == "System")
+            currentItem = _t("Settings", "System");
+
+        if (ImGui::BeginCombo(("##" + acLabel).c_str(), currentItem.c_str()))
+        {
+            for (const auto& language : acLanguages)
+            {
+                const bool isSelected = aCurrent == language.GetLocale();
+                if (language.GetLocale() == "System")
+                {
+                    if (ImGui::Selectable(_t("Settings", "System"), isSelected))
+                        aCurrent = language.GetLocale();
+                }
+                else
+                {
+                    if (ImGui::Selectable(language.GetFormatedName().c_str(), isSelected))
+                        aCurrent = language.GetLocale();
+                }
                 if (isSelected)
                     ImGui::SetItemDefaultFocus();
             }
