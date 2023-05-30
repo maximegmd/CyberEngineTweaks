@@ -81,6 +81,16 @@ Language I18n::GetLanguage(const std::string& acLocale) const
         return *languageIterator;
 }
 
+std::string I18n::GetSystemLocale() const
+{
+    return m_systemLocale;
+}
+
+std::string I18n::GetCurrentLocale() const
+{
+    return m_options.Language.Locale;
+}
+
 // Basic translate
 std::string I18n::Translate(const std::string& aMsgid) const
 {
@@ -105,8 +115,8 @@ std::string I18n::Translate(const std::string& aMsgctxt, const std::string aMsgi
     return m_dict->translate_ctxt_plural(aMsgctxt, aMsgid, aMsgidPlural, aNum);
 }
 
-// Get system display locale
-std::string I18n::GetSystemLocale() const
+// Fetch system display locale
+void I18n::FetchSystemLocale()
 {
     LCID localeId = GetUserDefaultLCID(); // Get the user default locale identifier
     WCHAR localeName[LOCALE_NAME_MAX_LENGTH];
@@ -115,11 +125,11 @@ std::string I18n::GetSystemLocale() const
     if (result == 0)
     {
         Log::Error("Error when getting system display locale: {}", GetLastError());
-        return "en_US";
+        m_systemLocale = "en_US";
     }
     auto localeUTF8 = UTF16ToUTF8(localeName);
     std::replace(localeUTF8.begin(), localeUTF8.end(), '-', '_');
-    return localeUTF8;
+    m_systemLocale = localeUTF8;
 }
 
 // Load setting from the config and set the language
@@ -153,7 +163,7 @@ void I18n::SetLanguage(const std::string& acLocale)
 // Set language closest to the system display locale
 void I18n::SetLanguageBaseOnSystemLocale()
 {
-    auto systemLanguage = tinygettext::Language::from_env(GetSystemLocale());
+    auto systemLanguage = tinygettext::Language::from_env(m_systemLocale);
     int highScore = 0;
     auto closestMatch = tinygettext::Language::from_env(m_defaultLocale);
     for (const auto& language : m_dictManager.get_languages())
@@ -199,6 +209,7 @@ I18n::I18n(Options& aOptions, Paths& aPaths, Fonts& aFonts)
         tinygettext::Log::set_log_info_callback(NULL);
     tinygettext::Log::set_log_warning_callback(&LogWarnCallback);
     tinygettext::Log::set_log_error_callback(&LogErrorCallback);
+    FetchSystemLocale();
     LoadLanguageFiles();
     LoadLanguageSettings();
 }
