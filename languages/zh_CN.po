@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: cyber-engine-tweaks\n"
 "Report-Msgid-Bugs-To: https://github.com/maximegmd/CyberEngineTweaks/issues\n"
 "POT-Creation-Date: 2023-05-30 14:57+0800\n"
-"PO-Revision-Date: 2023-05-30 15:44\n"
+"PO-Revision-Date: 2023-05-30 16:20\n"
 "Last-Translator: \n"
 "Language-Team: Chinese Simplified\n"
 "Language: zh_CN\n"
@@ -60,19 +60,19 @@ msgstr "重置更改"
 
 #: src\overlay\widgets\Bindings.cpp:168 src\overlay\widgets\Bindings.cpp:170
 msgid "CET First Time Setup"
-msgstr "CET首次设置"
+msgstr "CET首次使用设置"
 
 #: src\overlay\widgets\Bindings.cpp:172 src\overlay\widgets\Bindings.cpp:178
 msgid "Combo can be composed from up to 4 keys."
-msgstr "按键组合最多可为4个。"
+msgstr "按键组合可以最多由4个键组成。"
 
 #: src\overlay\widgets\Bindings.cpp:173 src\overlay\widgets\Bindings.cpp:176
 msgid "Please, bind some key combination for toggling overlay!"
-msgstr "请为开启CET界面绑定热键！"
+msgstr "请绑定快捷键以切换CET界面！"
 
 #: src\overlay\widgets\Bindings.cpp:362 src\overlay\widgets\Bindings.cpp:399
 msgid "Currently unable to draw this tooltip. Wait for a bit please..."
-msgstr "目前无法渲染这个工具提示，请稍等。。。"
+msgstr "目前无法渲染这个工具提示，请稍等..."
 
 #: src\overlay\widgets\Bindings.cpp:428
 msgid "Uncheck this checkbox to unbind this binding."
@@ -80,19 +80,19 @@ msgstr "取消勾选此复选框以解除此绑定。"
 
 #: src\overlay\widgets\Bindings.cpp:474 src\overlay\widgets\Bindings.cpp:475
 msgid "Hotkeys"
-msgstr "热键"
+msgstr "快捷键"
 
 #: src\overlay\widgets\Bindings.cpp:477
 msgid "Hotkeys react after assigned key combination has been pressed and subsequently released. You can bind up to 4 key combination to them."
-msgstr "热键在组合键按下后就会立即触发一次。你可以最多设置4个按键的组合。"
+msgstr "快捷键只能短按。你可以最多设置4个按键的组合。"
 
 #: src\overlay\widgets\Bindings.cpp:498 src\overlay\widgets\Bindings.cpp:499
 msgid "Inputs"
-msgstr "输入"
+msgstr "输入键"
 
 #: src\overlay\widgets\Bindings.cpp:501
 msgid "Inputs react when key is pressed and released. You can bind single key to them."
-msgstr "输入会在按下和释放的时候触发。你可以绑定单个按键。"
+msgstr "输入键可以长按。你可以绑定单个按键。"
 
 #: src\overlay\widgets\Console.cpp:113
 msgid "Command failed to execute!"
@@ -132,7 +132,7 @@ msgstr "禁用异步计算"
 
 #: src\overlay\widgets\Settings.cpp:70
 msgid "Disables async compute, this can give a boost on older GPUs like Nvidia 10xx series for example (requires restart to take effect)."
-msgstr "禁用异步计算，可能对旧的GPU，例如Nvidia GTX10XX系列，带来提升（需要重新启动才能生效）。"
+msgstr "禁用异步计算，这可能对旧的GPU带来提升，例如Nvidia GTX10XX系列（需要重新启动才能生效）。"
 
 #: src\overlay\widgets\Settings.cpp:73
 msgid "Disable Anti-aliasing"
@@ -144,27 +144,27 @@ msgstr "完全禁用抗锯齿（需要重新启动才能生效）。"
 
 #: src\overlay\widgets\Settings.cpp:76
 msgid "Skip Start Menu"
-msgstr "跳过开始菜单"
+msgstr "跳过启动菜单"
 
 #: src\overlay\widgets\Settings.cpp:76
 msgid "Skips the 'Breaching...' menu asking you to press space bar to continue (requires restart to take effect)."
-msgstr "跳过 '正在入侵'菜单，要求你按空格键继续的那个（需要重新启动才能生效）。"
+msgstr "跳过需要你按空格键继续的”正在入侵“菜单，需要你按空格键继续的（需要重新启动才能生效）。"
 
 #: src\overlay\widgets\Settings.cpp:79
 msgid "Suppress Intro Movies"
-msgstr "抑制启动视频"
+msgstr "禁止启动视频"
 
 #: src\overlay\widgets\Settings.cpp:79
 msgid "Disables logos played at the beginning (requires restart to take effect)."
-msgstr "禁用开始时播放的标识（需要重新启动才能生效）。"
+msgstr "禁用开始时播放的徽标视频（需要重新启动才能生效）。"
 
 #: src\overlay\widgets\Settings.cpp:82
 msgid "Disable Vignette"
-msgstr "禁用渐晕"
+msgstr "禁用暗角效果"
 
 #: src\overlay\widgets\Settings.cpp:82
 msgid "Disables vignetting along screen borders (requires restart to take effect)."
-msgstr "禁用沿屏幕边界的渐晕（需要重新启动才能生效）。"
+msgstr "禁用屏幕边缘的暗角效果（需要重新启动才能生效）。"
 
 #: src\overlay\widgets\Settings.cpp:85
 msgid "Disable Boundary Teleport"
@@ -172,7 +172,7 @@ msgstr "禁用边界传送"
 
 #: src\overlay\widgets\Settings.cpp:85
 msgid "Allows players to access out-of-bounds locations (requires restart to take effect)."
-msgstr "允许玩家进入界外地点（需要重新启动才能生效）。"
+msgstr "允许玩家进入超出边界的位置（需要重新启动才能生效）。"
 
 #: src\overlay\widgets\Settings.cpp:88
 msgid "Disable V-Sync (Windows 7 only)"
@@ -180,7 +180,7 @@ msgstr "禁用垂直同步（仅限Windows 7）"
 
 #: src\overlay\widgets\Settings.cpp:88
 msgid "Disables VSync on Windows 7 to bypass the 60 FPS limit (requires restart to take effect)."
-msgstr "在Windows 7上禁用VSync，以绕过60 FPS的限制（需要重新启动才能）。"
+msgstr "在Windows 7上禁用垂直同步，以绕过60FPS的限制（需要重新启动才能生效）。"
 
 #: src\overlay\widgets\Settings.cpp:90
 msgid "Fix Minimap Flicker"
@@ -188,7 +188,7 @@ msgstr "修复小地图闪烁"
 
 #: src\overlay\widgets\Settings.cpp:90
 msgid "Fix minimap flickering (requires restart to take effect)."
-msgstr "修复小地图的闪烁问题（需要重新启动才能）。"
+msgstr "修复小地图的闪烁问题（需要重新启动才能生效）。"
 
 #: src\overlay\widgets\Settings.cpp:97
 msgid "CET Language Settings"
@@ -256,7 +256,7 @@ msgstr "CET开发设置"
 
 #: src\overlay\widgets\Settings.cpp:153
 msgid "Remove Dead Bindings"
-msgstr "移除失效热键"
+msgstr "移除失效快捷键"
 
 #: src\overlay\widgets\Settings.cpp:153
 msgid "Removes all bindings which are no longer valid (disabling this could be useful when debugging mod issues)."
@@ -280,11 +280,11 @@ msgstr "设置内部标记以伪装成调试构建（需要重启才能生效）
 
 #: src\overlay\widgets\Settings.cpp:165
 msgid "Dump Game Options"
-msgstr "转储游戏选项"
+msgstr "导出游戏选项"
 
 #: src\overlay\widgets\Settings.cpp:165
 msgid "Dumps all game options into main log file (requires restart to take effect)."
-msgstr "将所有游戏选项转储到主日志文件中（需要重新启动才能生效）。"
+msgstr "将所有游戏选项导出到主日志文件中（需要重新启动才能生效）。"
 
 #: src\overlay\widgets\Settings.cpp:168
 msgid "Enable Tranlation Log"
@@ -296,11 +296,11 @@ msgstr "在翻译有缺失的时候显示日志（需要重新启动才能生效
 
 #: src\overlay\widgets\Settings.cpp:181
 msgid "Load"
-msgstr "加载"
+msgstr "载入"
 
 #: src\overlay\widgets\Settings.cpp:187
 msgid "Defaults"
-msgstr "默认"
+msgstr "恢复默认"
 
 #: src\overlay\widgets\Settings.cpp:334 src\overlay\widgets\Settings.cpp:342
 msgctxt "Settings"
@@ -314,7 +314,7 @@ msgstr "系统"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:134
 msgid "TweakDB is not initialized yet"
-msgstr "TweakDB还未被初始化"
+msgstr "TweakDB尚未初始化"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:146
 msgid "Records"
@@ -343,12 +343,12 @@ msgstr "搜索"
 #: src\overlay\widgets\TweakDBEditor.cpp:544
 #, c-format
 msgid "'%s' is not found in TweakDB"
-msgstr "未在TweakDB中找到'%s'"
+msgstr "未在TweakDB中找到”%s“"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:604
 #, c-format
 msgid "unsupported type: %s"
-msgstr "未被支持的类型：%s"
+msgstr "不支持的类型：%s"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:637
 #, c-format
@@ -374,7 +374,7 @@ msgstr "保存"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:739
 msgid "add new"
-msgstr "添加"
+msgstr "新增"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:785
 msgid "ERROR_RECORD_NOT_FOUND"
@@ -382,19 +382,19 @@ msgstr "错误，未找到记录"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:879
 msgid "Roll "
-msgstr "滚动"
+msgstr "滚转角 "
 
 #: src\overlay\widgets\TweakDBEditor.cpp:884
 msgid "Pitch"
-msgstr "俯仰"
+msgstr "俯仰角"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:889
 msgid "Yaw  "
-msgstr "偏航"
+msgstr "偏航角  "
 
 #: src\overlay\widgets\TweakDBEditor.cpp:1008
 msgid "'Color' is not supported yet"
-msgstr "'颜色'还未被支持"
+msgstr "还不支持”Color“"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:1044
 msgid "This is a LocalizationKey"
@@ -402,14 +402,14 @@ msgstr "这是一个LocalizationKey"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:1202
 msgid "Game is expecting specific values."
-msgstr "游戏期待着特定的值。"
+msgstr "游戏期待特定值。"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:1354
 #: src\overlay\widgets\TweakDBEditor.cpp:1360
 #: src\overlay\widgets\TweakDBEditor.cpp:1480
 #: src\overlay\widgets\TweakDBEditor.cpp:1486
 msgid "Regex"
-msgstr "正则表达式"
+msgstr "正则"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:1425
 #: src\overlay\widgets\TweakDBEditor.cpp:1543
@@ -418,7 +418,7 @@ msgstr "错误，未找到平面"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:1565
 msgid "'Flats' Grouping depth"
-msgstr "'平面'分组深度"
+msgstr "”平面“分组深度"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:1571
 msgid "ComboBox dropdown height"
@@ -426,7 +426,7 @@ msgstr "组合框下拉高度"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:1573
 msgid "Refresh all"
-msgstr "全部刷新"
+msgstr "刷新全部"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:1594
 msgid "Record name"
