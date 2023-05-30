@@ -28,8 +28,8 @@ private:
         const char* aFormat = "%.1f");
     bool SettingItemSliderInt(
         const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, int& aCurrent, const int& acSaved, int aValueMin, int aValueMax, const char* aFormat = "%d");
-    bool SettingItemCombo(
-        const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, std::string& aCurrent, const std::string& acSaved, const std::vector<std::string>& acItems);
+    bool SettingItemFontCombo(
+        const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, std::string& aCurrent, const std::string& acSaved, const std::vector<Font>& acFonts);
 
     PatchesSettings m_patches;
     DeveloperSettings m_developer;

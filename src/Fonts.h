@@ -14,6 +14,19 @@ private:
     ImFontGlyphRangesBuilder m_builder;
 };
 
+struct Font
+{
+    Font(const std::filesystem::path& acPath);
+    Font(const std::string& acName, const std::filesystem::path& acPath);
+    std::string GetName() const;
+    std::filesystem::path GetPath() const;
+    bool Exists();
+
+private:
+    std::string m_name;
+    std::filesystem::path m_path;
+};
+
 struct Fonts
 {
     ~Fonts() = default;
@@ -25,9 +38,9 @@ struct Fonts
     const bool UseEmojiFont();
 
     void EnumerateSystemFonts();
-    const std::vector<std::string>& GetSystemFonts();
-    std::filesystem::path GetSystemFontPath(const std::string& acFontName);
-    std::filesystem::path GetFontPathFromOption(const std::string& acFontOption);
+    const std::vector<Font>& GetSystemFonts();
+    Font GetSystemFont(const std::string& acFontName) const;
+    std::filesystem::path GetFontPathFromOption(const std::string& acFontOption) const;
 
     GlyphRangesBuilder& GetGlyphRangesBuilder();
     void PrecacheGlyphsFromMods();
@@ -46,8 +59,7 @@ private:
 
     bool m_rebuildFonts{false};
     bool m_useEmojiFont{false};
-    std::vector<std::string> m_systemFonts{"Default"};
-    std::unordered_map<std::string, std::filesystem::path> m_systemFontPaths{};
+    std::vector<Font> m_systemFonts;
 
     std::filesystem::path m_defaultMainFont{L"NotoSans-Regular.ttf"};
     std::vector<std::filesystem::path> m_defaultCJKFonts{

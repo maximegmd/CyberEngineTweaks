@@ -99,8 +99,8 @@ void Settings::OnUpdate()
             {
                 const auto& fontSettings = m_options.Font;
                 m_madeFontChanges |=
-                    SettingItemCombo("🦄", "Main Font", "Main display font for CET.", m_font.MainFont, fontSettings.MainFont, CET::Get().GetFonts().GetSystemFonts());
-                m_madeFontChanges |= SettingItemCombo(
+                    SettingItemFontCombo("🦄", "Main Font", "Main display font for CET.", m_font.MainFont, fontSettings.MainFont, CET::Get().GetFonts().GetSystemFonts());
+                m_madeFontChanges |= SettingItemFontCombo(
                     "🪲", "Monospaced Font", "Monospaceed font, which is used for displaying texts in Console and Game Log, for CET.", m_font.MonoFont,
                     fontSettings.MonoFont, CET::Get().GetFonts().GetSystemFonts());
                 m_madeFontChanges |= SettingItemSliderFloat(
@@ -299,18 +299,18 @@ bool Settings::SettingItemSliderInt(
     return aCurrent != acSaved;
 }
 
-bool Settings::SettingItemCombo(
-    const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, std::string& aCurrent, const std::string& acSaved, const std::vector<std::string>& acItems)
+bool Settings::SettingItemFontCombo(
+    const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, std::string& aCurrent, const std::string& acSaved, const std::vector<Font>& acFonts)
 {
     std::function<void()> imguiWidget = [&]()
     {
         if (ImGui::BeginCombo(("##" + acLabel).c_str(), aCurrent.c_str()))
         {
-            for (const auto item : acItems)
+            for (const auto& font : acFonts)
             {
-                const bool isSelected = aCurrent == item;
-                if (ImGui::Selectable(item.c_str(), isSelected))
-                    aCurrent = item;
+                const bool isSelected = aCurrent == font.GetName();
+                if (ImGui::Selectable(font.GetName().c_str(), isSelected))
+                    aCurrent = font.GetName();
                 if (isSelected)
                     ImGui::SetItemDefaultFocus();
             }

@@ -164,7 +164,6 @@ void Scripting::Initialize()
     };
 
     // load mods
-    m_fonts.GetGlyphRangesBuilder().AddText("whahaha!");
     m_store.LoadAll();
 }
 

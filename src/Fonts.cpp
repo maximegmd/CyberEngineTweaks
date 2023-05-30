@@ -58,6 +58,29 @@ void GlyphRangesBuilder::BuildRanges(ImVector<ImWchar>* apRange)
     m_needsRebuild = false;
 }
 
+Font::Font(const std::filesystem::path& acPath)
+    : m_path(acPath)
+{
+    m_name = UTF16ToUTF8(m_path.stem().native());
+}
+Font::Font(const std::string& acName, const std::filesystem::path& acPath)
+    : m_name(acName)
+    , m_path(acPath)
+{
+}
+std::string Font::GetName() const
+{
+    return m_name;
+}
+std::filesystem::path Font::GetPath() const
+{
+    return m_path;
+}
+bool Font::Exists()
+{
+    return exists(m_path);
+}
+
 // Build Fonts
 // if custom font not set:
 //     we merge and use all the notosans fonts
@@ -65,10 +88,10 @@ void GlyphRangesBuilder::BuildRanges(ImVector<ImWchar>* apRange)
 //
 // if custom font is set:
 //     we use the custom font (e.g. c:/windows/fonts/Comic.ttf).
-//
+// TODO: Refactor this
 void Fonts::BuildFonts(const SIZE& acOutSize)
 {
-    // TODO - scale also by DPI
+    // TODO: scale also by DPI
     const auto [resx, resy] = acOutSize;
     const auto scaleFromReference = std::min(static_cast<float>(resx) / 1920.0f, static_cast<float>(resy) / 1080.0f);
 
@@ -134,8 +157,8 @@ void Fonts::BuildFonts(const SIZE& acOutSize)
     emojiFontConfig.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
 
     // load fonts without merging first, so we can calculate the offset to align the fonts.
-    float mainFontBaselineDifference = 0.0f;
-    float monoFontBaselineDifference = 0.0f;
+    float mainFontBaselineOffset = 0.0f;
+    float monoFontBaselineOffset = 0.0f;
     if (!mainFontPath.empty() && !monoFontPath.empty() && !iconFontPath.empty())
     {
         static const ImWchar mainFontRange[] = {0x0041, 0x0041, 0};
@@ -147,8 +170,8 @@ void Fonts::BuildFonts(const SIZE& acOutSize)
         io.Fonts->Build(); // Build atlas, retrieve pixel data.
 
         // calculate font baseline differences
-        mainFontBaselineDifference = iconFont->Ascent - mainFont->Ascent;
-        monoFontBaselineDifference = iconFont->Ascent - monoFont->Ascent;
+        mainFontBaselineOffset = iconFont->Ascent - mainFont->Ascent;
+        monoFontBaselineOffset = iconFont->Ascent - monoFont->Ascent;
 
         // clear fonts then merge
         io.Fonts->Clear();
@@ -160,14 +183,13 @@ void Fonts::BuildFonts(const SIZE& acOutSize)
 
     // add main font
     {
-        fontConfig.GlyphOffset.y = std::floorf(mainFontBaselineDifference * -0.5f);
-        iconFontConfig.GlyphOffset.y = std::ceilf(mainFontBaselineDifference * 0.5f);
+        fontConfig.GlyphOffset.y = std::floorf(mainFontBaselineOffset * -0.5f);
+        iconFontConfig.GlyphOffset.y = std::ceilf(mainFontBaselineOffset * 0.5f);
 
         if (!mainFontPath.empty())
             MainFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(mainFontPath.native()).c_str(), fontSize, &fontConfig, fontRange.Data);
         else
             MainFont = io.Fonts->AddFontDefault();
-
 
         fontConfig.MergeMode = true;
         // merge NotoSans-Regular as fallback font when using custom font
@@ -197,8 +219,8 @@ void Fonts::BuildFonts(const SIZE& acOutSize)
 
     // add monospace font
     {
-        fontConfig.GlyphOffset.y = std::floorf(monoFontBaselineDifference * -0.5f);
-        iconFontConfig.GlyphOffset.y = std::ceilf(monoFontBaselineDifference * 0.5f);
+        fontConfig.GlyphOffset.y = std::floorf(monoFontBaselineOffset * -0.5f);
+        iconFontConfig.GlyphOffset.y = std::ceilf(monoFontBaselineOffset * 0.5f);
 
         if (!monoFontPath.empty())
             MonoFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(monoFontPath.native()).c_str(), fontSize, &fontConfig, fontRange.Data);
@@ -206,7 +228,7 @@ void Fonts::BuildFonts(const SIZE& acOutSize)
             MonoFont = io.Fonts->AddFontDefault();
 
         fontConfig.MergeMode = true;
-        
+
         // merge NotoSans-Mono as fallback font when using custom monospace font
         if (useCustomMonosFont && !defaultMonoFontPath.empty())
             io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(defaultMonoFontPath.native()).c_str(), fontSize, &fontConfig, fontRange.Data);
@@ -261,6 +283,8 @@ const bool Fonts::UseEmojiFont()
 // Get system fonts and their path
 void Fonts::EnumerateSystemFonts()
 {
+    m_systemFonts.clear();
+    m_systemFonts.emplace_back(Font("Default", ""));
     IDWriteFactory* pDWriteFactory = NULL;
     HRESULT hresult = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), reinterpret_cast<IUnknown**>(&pDWriteFactory));
 
@@ -371,8 +395,7 @@ void Fonts::EnumerateSystemFonts()
 
             if (SUCCEEDED(hresult))
             {
-                m_systemFonts.emplace_back(UTF16ToUTF8(name));
-                m_systemFontPaths.emplace(UTF16ToUTF8(name), UTF16ToUTF8(fontPath));
+                m_systemFonts.emplace_back(Font(UTF16ToUTF8(name), fontPath));
             }
         }
     }
@@ -382,32 +405,26 @@ void Fonts::EnumerateSystemFonts()
         Log::Error("Error message: {}", std::system_category().message(hresult));
 }
 
-const std::vector<std::string>& Fonts::GetSystemFonts()
+const std::vector<Font>& Fonts::GetSystemFonts()
 {
     return m_systemFonts;
 }
 
-std::filesystem::path Fonts::GetSystemFontPath(const std::string& acFontName)
+Font Fonts::GetSystemFont(const std::string& acFontName) const
 {
-    try
+    for (const auto& systemFont : m_systemFonts)
     {
-        auto path = m_systemFontPaths.at(acFontName);
-        if (exists(path))
-            return path;
-        else
-            return {};
+        if (systemFont.GetName() == acFontName)
+            return systemFont;
     }
-    catch (...)
-    {
-        return {};
-    }
+    return Font("");
 }
 
 // Returns absolute path, already checked for file existence.
-std::filesystem::path Fonts::GetFontPathFromOption(const std::string& acFontOption)
+std::filesystem::path Fonts::GetFontPathFromOption(const std::string& acFontOption) const
 {
-    if (!GetSystemFontPath(acFontOption).empty())
-        return GetSystemFontPath(acFontOption);
+    if (GetSystemFont(acFontOption).Exists())
+        return GetSystemFont(acFontOption).GetPath();
 
     if (!GetAbsolutePath(acFontOption, m_paths.Fonts(), false).empty())
         return GetAbsolutePath(acFontOption, m_paths.Fonts(), false);
