@@ -7,7 +7,7 @@
 #include <Utils.h>
 
 Settings::Settings(Options& aOptions, LuaVM& aVm)
-    : Widget(ICON_MD_COG " Settings")
+    : Widget(ICON_MD_COG, _noop("Settings"))
     , m_options(aOptions)
     , m_vm(aVm)
 {
@@ -53,85 +53,89 @@ void Settings::OnUpdate()
     {
         m_madeChanges = false;
         m_madeFontChanges = false;
-        if (ImGui::CollapsingHeader("Patches", ImGuiTreeNodeFlags_DefaultOpen))
+        if (ImGui::CollapsingHeader(_t("Patches"), ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::TreePush();
             if (ImGui::BeginTable("SETTINGS", 2, ImGuiTableFlags_NoSavedSettings, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
             {
                 const auto& patchesSettings = m_options.Patches;
                 SettingItemCheckBox(
-                    "🚑", "AMD SMT Patch", "For AMD CPUs that did not get a performance boost after CDPR's patch (requires restart to take effect).", m_patches.AmdSmt,
+                    "🚑", _t("AMD SMT Patch"), _t("For AMD CPUs that did not get a performance boost after CDPR's patch (requires restart to take effect)."), m_patches.AmdSmt,
                     patchesSettings.AmdSmt);
                 SettingItemCheckBox(
-                    "👻", "Remove Pedestrians", "Removes most of the pedestrians and traffic (requires restart to take effect).", m_patches.RemovePedestrians,
+                    "👻", _t("Remove Pedestrians"), _t("Removes most of the pedestrians and traffic (requires restart to take effect)."), m_patches.RemovePedestrians,
                     patchesSettings.RemovePedestrians);
                 SettingItemCheckBox(
-                    "🐌", "Disable Async Compute",
-                    "Disables async compute, this can give a boost on older GPUs like Nvidia 10xx series for example (requires restart to take effect).", m_patches.AsyncCompute,
-                    patchesSettings.AsyncCompute);
+                    "🐌", _t("Disable Async Compute"),
+                    _t("Disables async compute, this can give a boost on older GPUs like Nvidia 10xx series for example (requires restart to take effect)."),
+                    m_patches.AsyncCompute, patchesSettings.AsyncCompute);
                 SettingItemCheckBox(
-                    "🤮", "Disable Anti-aliasing", "Completely disables anti-aliasing (requires restart to take effect).", m_patches.Antialiasing, patchesSettings.Antialiasing);
+                    "🤮", _t("Disable Anti-aliasing"), _t("Completely disables anti-aliasing (requires restart to take effect)."), m_patches.Antialiasing,
+                    patchesSettings.Antialiasing);
                 SettingItemCheckBox(
-                    "🏄", "Skip Start Menu", "Skips the 'Breaching...' menu asking you to press space bar to continue (requires restart to take effect).", m_patches.SkipStartMenu,
-                    patchesSettings.SkipStartMenu);
+                    "🏄", _t("Skip Start Menu"), _t("Skips the 'Breaching...' menu asking you to press space bar to continue (requires restart to take effect)."),
+                    m_patches.SkipStartMenu, patchesSettings.SkipStartMenu);
                 SettingItemCheckBox(
-                    "🎞", "Suppress Intro Movies", "Disables logos played at the beginning (requires restart to take effect).", m_patches.DisableIntroMovies,
+                    "🎞", _t("Suppress Intro Movies"), _t("Disables logos played at the beginning (requires restart to take effect)."), m_patches.DisableIntroMovies,
                     patchesSettings.DisableIntroMovies);
                 SettingItemCheckBox(
-                    "🔦", "Disable Vignette", "Disables vignetting along screen borders (requires restart to take effect).", m_patches.DisableVignette,
+                    "🔦", _t("Disable Vignette"), _t("Disables vignetting along screen borders (requires restart to take effect)."), m_patches.DisableVignette,
                     patchesSettings.DisableVignette);
                 SettingItemCheckBox(
-                    "🗺", "Disable Boundary Teleport", "Allows players to access out-of-bounds locations (requires restart to take effect).", m_patches.DisableBoundaryTeleport,
-                    patchesSettings.DisableBoundaryTeleport);
-                SettingItemCheckBox("💨", "Disable V-Sync (Windows 7 only)", " (requires restart to take effect).", m_patches.DisableWin7Vsync, patchesSettings.DisableWin7Vsync);
+                    "🗺", _t("Disable Boundary Teleport"), _t("Allows players to access out-of-bounds locations (requires restart to take effect)."),
+                    m_patches.DisableBoundaryTeleport, patchesSettings.DisableBoundaryTeleport);
                 SettingItemCheckBox(
-                    "✨", "Fix Minimap Flicker", "Disables VSync on Windows 7 to bypass the 60 FPS limit (requires restart to take effect).", m_patches.MinimapFlicker,
+                    "💨", _t("Disable V-Sync (Windows 7 only)"), _t("Disables VSync on Windows 7 to bypass the 60 FPS limit (requires restart to take effect)."), m_patches.DisableWin7Vsync, patchesSettings.DisableWin7Vsync);
+                SettingItemCheckBox(
+                    "✨", _t("Fix Minimap Flicker"), _t("Fix minimap flickering (requires restart to take effect)."), m_patches.MinimapFlicker,
                     patchesSettings.MinimapFlicker);
 
                 ImGui::EndTable();
             }
             ImGui::TreePop();
         }
-        if (ImGui::CollapsingHeader("CET Language Settings", ImGuiTreeNodeFlags_DefaultOpen))
+        if (ImGui::CollapsingHeader(_t("CET Language Settings"), ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::TreePush();
             if (ImGui::BeginTable("SETTINGS", 2, ImGuiTableFlags_NoSavedSettings, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
             {
                 const auto& languageSettings = m_options.Language;
-                SettingItemLanguageCombo("🌐", "Language", "Display language for CET.", m_language.Locale, languageSettings.Locale, CET::Get().GetI18n().GetLanguages());
+                SettingItemLanguageCombo("🌐", _t("Language"), _t("Display language for CET."), m_language.Locale, languageSettings.Locale, CET::Get().GetI18n().GetLanguages());
                 ImGui::EndTable();
             }
             ImGui::TreePop();
         }
-        if (ImGui::CollapsingHeader("CET Font Settings", ImGuiTreeNodeFlags_DefaultOpen))
+        if (ImGui::CollapsingHeader(_t("CET Font Settings"), ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::TreePush();
             if (ImGui::BeginTable("SETTINGS", 2, ImGuiTableFlags_NoSavedSettings, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
             {
                 const auto& fontSettings = m_options.Font;
                 m_madeFontChanges |=
-                    SettingItemFontCombo("🦄", "Main Font", "Main display font for CET.", m_font.MainFont, fontSettings.MainFont, CET::Get().GetFonts().GetSystemFonts());
+                    SettingItemFontCombo("🦄", _t("Main Font"), _t("Main display font for CET."), m_font.MainFont, fontSettings.MainFont, CET::Get().GetFonts().GetSystemFonts());
                 m_madeFontChanges |= SettingItemFontCombo(
-                    "🪲", "Monospaced Font", "Monospaceed font, which is used for displaying texts in Console and Game Log, for CET.", m_font.MonoFont,
+                    "🪲", _t("Monospaced Font"), _t("Monospaceed font, which is used for displaying texts in Console and Game Log, for CET."), m_font.MonoFont,
                     fontSettings.MonoFont, CET::Get().GetFonts().GetSystemFonts());
                 m_madeFontChanges |= SettingItemSliderFloat(
-                    "📏", "Font Size", "Changees the size of the font, default value is 18px.", m_font.BaseSize, fontSettings.BaseSize, 10.0f, 72.0f, "%.0fpx");
+                    "📏", _t("Font Size"), _t("Changes the size of the font, default value is 18px."), m_font.BaseSize, fontSettings.BaseSize, 10.0f, 72.0f, "%.0fpx");
 
                 ImGui::TableNextRow();
                 ImGui::TableSetColumnIndex(0);
                 static bool openFontAdvSettings = false;
-                ImGui::Selectable("Advance Settings", false, ImGuiSelectableFlags_SpanAllColumns);
+                ImGui::Selectable(_t("Advance Settings"), false, ImGuiSelectableFlags_SpanAllColumns);
                 if (ImGui::IsItemClicked())
                     openFontAdvSettings = !openFontAdvSettings;
                 if (openFontAdvSettings)
                 {
                     ImGui::Indent(ImGui::GetFrameHeight());
                     m_madeFontChanges |= SettingItemSliderInt(
-                        "↔", "Oversample Horizontal", "Oversamples font horizontally, default value is 3x. (May increase font clearity, at the cost of increasing memory usage.)",
+                        "↔", _t("Oversample Horizontal"),
+                        _t("Oversamples font horizontally, default value is 3x. (May increase font clearity, at the cost of increasing memory usage.)"),
                         m_font.OversampleHorizontal, fontSettings.OversampleHorizontal, 1, 10, "%dx");
                     m_madeFontChanges |= SettingItemSliderInt(
-                        "↕", "Oversample Vertical", "Oversamples font vertically, default value is 1x. (May increase font clearity, at the cost of increasing memory usage.)",
-                        m_font.OversampleVertical, fontSettings.OversampleVertical, 1, 10, "%dx");
+                        "↕", _t("Oversample Vertical"),
+                        _t("Oversamples font vertically, default value is 1x. (May increase font clearity, at the cost of increasing memory usage.)"), m_font.OversampleVertical,
+                        fontSettings.OversampleVertical, 1, 10, "%dx");
                     ImGui::Unindent(ImGui::GetFrameHeight());
                 }
 
@@ -139,28 +143,29 @@ void Settings::OnUpdate()
             }
             ImGui::TreePop();
         }
-        if (ImGui::CollapsingHeader("CET Development Settings", ImGuiTreeNodeFlags_DefaultOpen))
+        if (ImGui::CollapsingHeader(_t("CET Development Settings"), ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::TreePush();
             if (ImGui::BeginTable("SETTINGS", 2, ImGuiTableFlags_NoSavedSettings, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
             {
                 const auto& developerSettings = m_options.Developer;
                 SettingItemCheckBox(
-                    "🗑", "Remove Dead Bindings", "Removes all bindings which are no longer valid (disabling this could be useful when debugging mod issues).",
+                    "🗑", _t("Remove Dead Bindings"), _t("Removes all bindings which are no longer valid (disabling this could be useful when debugging mod issues)."),
                     m_developer.RemoveDeadBindings, developerSettings.RemoveDeadBindings);
                 SettingItemCheckBox(
-                    "💣", "Enable ImGui Assertions",
-                    "Enables all ImGui assertions, assertions will get logged into log file of whoever triggered the assertion (useful when debugging ImGui issues, should also be "
-                    "used to check mods before shipping!).",
+                    "💣", _t("Enable ImGui Assertions"),
+                    _t("Enables all ImGui assertions, assertions will get logged into log file of whoever triggered the assertion (useful when debugging ImGui issues, should also "
+                       "be "
+                       "used to check mods before shipping!)."),
                     m_developer.EnableImGuiAssertions, developerSettings.EnableImGuiAssertions);
                 SettingItemCheckBox(
-                    "🔨", "Enable Debug Build", "Sets internal flags to disguise as debug build (requires restart to take effect).", m_developer.EnableDebug,
+                    "🔨", _t("Enable Debug Build"), _t("Sets internal flags to disguise as debug build (requires restart to take effect)."), m_developer.EnableDebug,
                     developerSettings.EnableDebug);
                 SettingItemCheckBox(
-                    "🖨", "Dump Game Options", "Dumps all game options into main log file (requires restart to take effect).", m_developer.DumpGameOptions,
+                    "🖨", _t("Dump Game Options"), _t("Dumps all game options into main log file (requires restart to take effect)."), m_developer.DumpGameOptions,
                     developerSettings.DumpGameOptions);
                 SettingItemCheckBox(
-                    "🗒", "Enable Tranlation Log", "Show logs when there's a missing translation (requires restart to take effect).", m_developer.EnableI18nLog,
+                    "🗒", _t("Enable Tranlation Log"), _t("Show logs when there's a missing translation (requires restart to take effect)."), m_developer.EnableI18nLog,
                     developerSettings.EnableI18nLog);
 
                 ImGui::EndTable();
@@ -173,13 +178,13 @@ void Settings::OnUpdate()
     ImGui::Separator();
 
     const auto itemWidth = GetAlignedItemWidth(3);
-    if (ImGui::Button("Load", ImVec2(itemWidth, 0)))
+    if (ImGui::Button(_t("Load"), ImVec2(itemWidth, 0)))
         Load();
     ImGui::SameLine();
-    if (ImGui::Button("Save", ImVec2(itemWidth, 0)))
+    if (ImGui::Button(_t("Save"), ImVec2(itemWidth, 0)))
         Save();
     ImGui::SameLine();
-    if (ImGui::Button("Defaults", ImVec2(itemWidth, 0)))
+    if (ImGui::Button(_t("Defaults"), ImVec2(itemWidth, 0)))
         ResetToDefaults();
 }
 
@@ -324,12 +329,18 @@ bool Settings::SettingItemFontCombo(
 {
     std::function<void()> imguiWidget = [&]()
     {
-        if (ImGui::BeginCombo(("##" + acLabel).c_str(), aCurrent.c_str()))
+        auto currentItem = aCurrent;
+        if (currentItem == "Default")
+            currentItem = _t("Settings", "Default");
+        if (ImGui::BeginCombo(("##" + acLabel).c_str(), currentItem.c_str()))
         {
             for (const auto& font : acFonts)
             {
-                const bool isSelected = aCurrent == font.GetName();
-                if (ImGui::Selectable(font.GetName().c_str(), isSelected))
+                auto fontName = font.GetName();
+                const bool isSelected = aCurrent == fontName;
+                if (fontName == "Default")
+                    fontName = _t("Settings", "Default");
+                if (ImGui::Selectable(fontName.c_str(), isSelected))
                     aCurrent = font.GetName();
                 if (isSelected)
                     ImGui::SetItemDefaultFocus();
@@ -362,16 +373,12 @@ bool Settings::SettingItemLanguageCombo(
             for (const auto& language : acLanguages)
             {
                 const bool isSelected = aCurrent == language.GetLocale();
+                auto formatedName = language.GetFormatedName();
                 if (language.GetLocale() == "System")
-                {
-                    if (ImGui::Selectable(_t("Settings", "System"), isSelected))
-                        aCurrent = language.GetLocale();
-                }
-                else
-                {
-                    if (ImGui::Selectable(language.GetFormatedName().c_str(), isSelected))
-                        aCurrent = language.GetLocale();
-                }
+                    formatedName = _t("Settings", "System");
+
+                if (ImGui::Selectable(formatedName.c_str(), isSelected))
+                    aCurrent = language.GetLocale();
                 if (isSelected)
                     ImGui::SetItemDefaultFocus();
             }

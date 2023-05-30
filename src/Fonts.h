@@ -64,7 +64,7 @@ private:
 
     std::filesystem::path m_defaultMainFont{L"NotoSans-Regular.ttf"};
     std::vector<std::filesystem::path> m_defaultCJKFonts{
-        L"NotoSansJP-Regular.otf", L"NotoSansKR-Regular.otf", L"NotoSansSC-Regular.otf", L"NotoSansTC-Regular.otf", L"NotoSansThai-Regular.ttf"};
+        L"NotoSansSC-Regular.otf", L"NotoSansJP-Regular.otf", L"NotoSansTC-Regular.otf", L"NotoSansKR-Regular.otf", L"NotoSansThai-Regular.ttf"};
     std::filesystem::path m_defaultMonoFont{L"NotoSansMono-Regular.ttf"};
     std::filesystem::path m_defaultIconFont{L"materialdesignicons.ttf"};
     std::filesystem::path m_defaultEmojiFont{L"C:\\Windows\\Fonts\\seguiemj.ttf"}; // tried to use noto color emoji but it wont render. only this one works

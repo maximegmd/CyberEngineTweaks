@@ -9,7 +9,7 @@ enum class WidgetResult
 
 struct Widget
 {
-    Widget(const std::string& acpName, bool aOwnerDraw = false);
+    Widget(const std::string& acIcon, const std::string& acpName, bool aOwnerDraw = false);
     virtual ~Widget() = default;
 
     virtual WidgetResult OnEnable();
@@ -26,6 +26,7 @@ protected:
     virtual WidgetResult OnPopup();
     virtual void OnToggle();
 
+    std::string m_icon;
     std::string m_name;
     bool m_ownerDraw{false};
     bool m_enabled{false};

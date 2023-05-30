@@ -10,7 +10,8 @@
 #include "common/CETTasks.h"
 #include "Fonts.h"
 
-#define _t(...) CET::Get().GetI18n().Translate(__VA_ARGS__).c_str()
+#define _noop(String) String // Marker for translatable strings
+#define _t(...) CET::Get().GetI18n().Translate(__VA_ARGS__).c_str() // Translate
 
 struct CET
 {

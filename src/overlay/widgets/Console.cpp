@@ -7,7 +7,7 @@
 #include <Utils.h>
 
 Console::Console(Options& aOptions, PersistentState& aPersistentState, LuaVM& aVm)
-    : Widget(ICON_MD_CONSOLE " Console")
+    : Widget(ICON_MD_CONSOLE, _noop("Console"))
     , m_options(aOptions)
     , m_persistentState(aPersistentState)
     , m_vm(aVm)
@@ -110,7 +110,7 @@ void Console::OnUpdate()
         if (!m_command.empty())
         {
             if (!m_vm.ExecuteLua(m_command))
-                consoleLogger->info("Command failed to execute!");
+                consoleLogger->info(_t("Command failed to execute!"));
 
             m_command.shrink_to_fit();
 
