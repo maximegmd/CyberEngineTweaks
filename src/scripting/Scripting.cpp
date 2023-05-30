@@ -32,7 +32,7 @@ static constexpr bool s_cThrowLuaErrors = true;
 static RTTILocator s_stringType{RED4ext::FNV1a64("String")};
 static RTTILocator s_resRefType{RED4ext::FNV1a64("redResourceReferenceScriptToken")};
 
-Scripting::Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12, Fonts& aFonts)
+Scripting::Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12, Fonts& aFonts, I18n& aI18n)
     : m_sandbox(this, aBindings, aFonts)
     , m_mapper(m_lua.AsRef(), m_sandbox)
     , m_store(m_sandbox, aPaths, aBindings)
@@ -40,6 +40,7 @@ Scripting::Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12, 
     , m_paths(aPaths)
     , m_fonts(aFonts)
     , m_d3d12(aD3D12)
+    , m_i18n(aI18n)
 {
     CreateLogger(aPaths.CETRoot() / "scripting.log", "scripting");
     CreateLogger(aPaths.CETRoot() / "gamelog.log", "gamelog");
@@ -161,6 +162,16 @@ void Scripting::Initialize()
         }
 
         return false;
+    };
+
+    globals["GetSystemLocale"] = [this]() -> const std::string
+    {
+        return m_i18n.GetSystemLocale();
+    };
+
+    globals["GetCETLocale"] = [this]() -> const std::string
+    {
+        return m_i18n.GetCurrentLocale();
     };
 
     // load mods

@@ -26,6 +26,8 @@ struct I18n
     void LoadLanguageSettings();
     std::vector<Language> GetLanguages() const;
     Language GetLanguage(const std::string& acLocale) const;
+    std::string GetSystemLocale() const;
+    std::string GetCurrentLocale() const;
 
     std::string Translate(const std::string& aMsgid) const;
     std::string Translate(const std::string& aMsgctxt, const std::string aMsgid) const;
@@ -35,7 +37,7 @@ struct I18n
 private:
     friend struct CET;
     I18n(Options& aOptions, Paths& aPaths, Fonts& aFonts);
-    std::string GetSystemLocale() const;
+    void FetchSystemLocale();
     void LoadLanguageFiles();
     void SetLanguage(const std::string& aLocale);
     void SetLanguageBaseOnSystemLocale();
@@ -49,6 +51,7 @@ private:
     Fonts& m_fonts;
 
     const std::string m_defaultLocale{"en"};
+    std::string m_systemLocale{};
     std::vector<Language> m_languages;
     tinygettext::DictionaryManager m_dictManager;
     tinygettext::Dictionary* m_dict;
