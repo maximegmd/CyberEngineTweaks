@@ -33,6 +33,7 @@ protected:
     static BOOL ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis);
 
 private:
+    bool ToolbarButton(const std::string& acIcon, const std::string& acLabel, const ImVec2& acSize);
     void DrawToolbar();
 
     Console m_console;

@@ -2,8 +2,10 @@
 
 #include "ImGuiDebug.h"
 
+#include <CET.h>
+
 ImGuiDebug::ImGuiDebug()
-    : Widget(ICON_MD_BUG " ImGui Debug", true)
+    : Widget(ICON_MD_BUG, _noop("ImGui Debug"), true)
 {
 }
 
