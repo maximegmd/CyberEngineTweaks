@@ -10,7 +10,7 @@
 #include "common/CETTasks.h"
 #include "Fonts.h"
 
-#define _(...) CET::Get().GetI18n().Translate(__VA_ARGS__).c_str()
+#define _t(...) CET::Get().GetI18n().Translate(__VA_ARGS__).c_str()
 
 struct CET
 {
