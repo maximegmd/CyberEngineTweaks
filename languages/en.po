@@ -1,0 +1,531 @@
+# English translations for CyberEngineTweaks package.
+# Copyright (C) 2023 yamashi
+# This file is distributed under the same license as the CyberEngineTweaks package.
+# Automatically generated, 2023.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: CyberEngineTweaks \n"
+"Report-Msgid-Bugs-To: https://github.com/maximegmd/CyberEngineTweaks/issues\n"
+"POT-Creation-Date: 2023-05-30 14:57+0800\n"
+"PO-Revision-Date: 2023-05-29 08:27+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. Translators: Type in your language name in it's own language. (e.g. French -> Français)
+#: src\I18n.cpp:61
+msgid "Localized Language Name"
+msgstr "English"
+
+#: src\overlay\Overlay.cpp:300
+msgid "Console"
+msgstr "Console"
+
+#: src\overlay\Overlay.cpp:309
+msgid "Bindings"
+msgstr "Bindings"
+
+#: src\overlay\Overlay.cpp:318
+msgid "Settings"
+msgstr "Settings"
+
+#: src\overlay\Overlay.cpp:327
+msgid "TweakDB Editor"
+msgstr "TweakDB Editor"
+
+#: src\overlay\Overlay.cpp:336
+msgid "Game Log"
+msgstr "Game Log"
+
+#: src\overlay\Overlay.cpp:345
+msgid "ImGui Debug"
+msgstr "ImGui Debug"
+
+#: src\overlay\Overlay.cpp:353
+msgid "Reload all mods"
+msgstr "Reload all mods"
+
+#: src\overlay\widgets\Bindings.cpp:93 src\overlay\widgets\Settings.cpp:184
+msgid "Save"
+msgstr "Save"
+
+#: src\overlay\widgets\Bindings.cpp:96
+msgid "Reset changes"
+msgstr "Reset changes"
+
+#: src\overlay\widgets\Bindings.cpp:168 src\overlay\widgets\Bindings.cpp:170
+msgid "CET First Time Setup"
+msgstr "CET First Time Setup"
+
+#: src\overlay\widgets\Bindings.cpp:172 src\overlay\widgets\Bindings.cpp:178
+msgid "Combo can be composed from up to 4 keys."
+msgstr "Combo can be composed from up to 4 keys."
+
+#: src\overlay\widgets\Bindings.cpp:173 src\overlay\widgets\Bindings.cpp:176
+msgid "Please, bind some key combination for toggling overlay!"
+msgstr "Please, bind some key combination for toggling overlay!"
+
+#: src\overlay\widgets\Bindings.cpp:362 src\overlay\widgets\Bindings.cpp:399
+msgid "Currently unable to draw this tooltip. Wait for a bit please..."
+msgstr "Currently unable to draw this tooltip. Wait for a bit please..."
+
+#: src\overlay\widgets\Bindings.cpp:428
+msgid "Uncheck this checkbox to unbind this binding."
+msgstr "Uncheck this checkbox to unbind this binding."
+
+#: src\overlay\widgets\Bindings.cpp:474 src\overlay\widgets\Bindings.cpp:475
+msgid "Hotkeys"
+msgstr "Hotkeys"
+
+#: src\overlay\widgets\Bindings.cpp:477
+msgid ""
+"Hotkeys react after assigned key combination has been pressed and "
+"subsequently released. You can bind up to 4 key combination to them."
+msgstr ""
+"Hotkeys react after assigned key combination has been pressed and "
+"subsequently released. You can bind up to 4 key combination to them."
+
+#: src\overlay\widgets\Bindings.cpp:498 src\overlay\widgets\Bindings.cpp:499
+msgid "Inputs"
+msgstr "Inputs"
+
+#: src\overlay\widgets\Bindings.cpp:501
+msgid ""
+"Inputs react when key is pressed and released. You can bind single key to "
+"them."
+msgstr ""
+"Inputs react when key is pressed and released. You can bind single key to "
+"them."
+
+#: src\overlay\widgets\Console.cpp:113
+msgid "Command failed to execute!"
+msgstr "Command failed to execute!"
+
+#: src\overlay\widgets\LogWindow.cpp:20
+msgid "Clear output"
+msgstr "Clear output"
+
+#: src\overlay\widgets\LogWindow.cpp:28
+msgid "Auto-scroll"
+msgstr "Auto-scroll"
+
+#: src\overlay\widgets\Settings.cpp:56
+msgid "Patches"
+msgstr "Patches"
+
+#: src\overlay\widgets\Settings.cpp:63
+msgid "AMD SMT Patch"
+msgstr "AMD SMT Patch"
+
+#: src\overlay\widgets\Settings.cpp:63
+msgid ""
+"For AMD CPUs that did not get a performance boost after CDPR's patch "
+"(requires restart to take effect)."
+msgstr ""
+"For AMD CPUs that did not get a performance boost after CDPR's patch "
+"(requires restart to take effect)."
+
+#: src\overlay\widgets\Settings.cpp:66
+msgid "Remove Pedestrians"
+msgstr "Remove Pedestrians"
+
+#: src\overlay\widgets\Settings.cpp:66
+msgid ""
+"Removes most of the pedestrians and traffic (requires restart to take "
+"effect)."
+msgstr ""
+"Removes most of the pedestrians and traffic (requires restart to take "
+"effect)."
+
+#: src\overlay\widgets\Settings.cpp:69
+msgid "Disable Async Compute"
+msgstr "Disable Async Compute"
+
+#: src\overlay\widgets\Settings.cpp:70
+msgid ""
+"Disables async compute, this can give a boost on older GPUs like Nvidia 10xx "
+"series for example (requires restart to take effect)."
+msgstr ""
+"Disables async compute, this can give a boost on older GPUs like Nvidia 10xx "
+"series for example (requires restart to take effect)."
+
+#: src\overlay\widgets\Settings.cpp:73
+msgid "Disable Anti-aliasing"
+msgstr "Disable Anti-aliasing"
+
+#: src\overlay\widgets\Settings.cpp:73
+msgid "Completely disables anti-aliasing (requires restart to take effect)."
+msgstr "Completely disables anti-aliasing (requires restart to take effect)."
+
+#: src\overlay\widgets\Settings.cpp:76
+msgid "Skip Start Menu"
+msgstr "Skip Start Menu"
+
+#: src\overlay\widgets\Settings.cpp:76
+msgid ""
+"Skips the 'Breaching...' menu asking you to press space bar to continue "
+"(requires restart to take effect)."
+msgstr ""
+"Skips the 'Breaching...' menu asking you to press space bar to continue "
+"(requires restart to take effect)."
+
+#: src\overlay\widgets\Settings.cpp:79
+msgid "Suppress Intro Movies"
+msgstr "Suppress Intro Movies"
+
+#: src\overlay\widgets\Settings.cpp:79
+msgid ""
+"Disables logos played at the beginning (requires restart to take effect)."
+msgstr ""
+"Disables logos played at the beginning (requires restart to take effect)."
+
+#: src\overlay\widgets\Settings.cpp:82
+msgid "Disable Vignette"
+msgstr "Disable Vignette"
+
+#: src\overlay\widgets\Settings.cpp:82
+msgid ""
+"Disables vignetting along screen borders (requires restart to take effect)."
+msgstr ""
+"Disables vignetting along screen borders (requires restart to take effect)."
+
+#: src\overlay\widgets\Settings.cpp:85
+msgid "Disable Boundary Teleport"
+msgstr "Disable Boundary Teleport"
+
+#: src\overlay\widgets\Settings.cpp:85
+msgid ""
+"Allows players to access out-of-bounds locations (requires restart to take "
+"effect)."
+msgstr ""
+"Allows players to access out-of-bounds locations (requires restart to take "
+"effect)."
+
+#: src\overlay\widgets\Settings.cpp:88
+msgid "Disable V-Sync (Windows 7 only)"
+msgstr "Disable V-Sync (Windows 7 only)"
+
+#: src\overlay\widgets\Settings.cpp:88
+msgid ""
+"Disables VSync on Windows 7 to bypass the 60 FPS limit (requires restart to "
+"take effect)."
+msgstr ""
+"Disables VSync on Windows 7 to bypass the 60 FPS limit (requires restart to "
+"take effect)."
+
+#: src\overlay\widgets\Settings.cpp:90
+msgid "Fix Minimap Flicker"
+msgstr "Fix Minimap Flicker"
+
+#: src\overlay\widgets\Settings.cpp:90
+msgid "Fix minimap flickering (requires restart to take effect)."
+msgstr "Fix minimap flickering (requires restart to take effect)."
+
+#: src\overlay\widgets\Settings.cpp:97
+msgid "CET Language Settings"
+msgstr "CET Language Settings"
+
+#: src\overlay\widgets\Settings.cpp:103
+msgid "Language"
+msgstr "Language"
+
+#: src\overlay\widgets\Settings.cpp:103
+msgid "Display language for CET."
+msgstr "Display language for CET."
+
+#: src\overlay\widgets\Settings.cpp:108
+msgid "CET Font Settings"
+msgstr "CET Font Settings"
+
+#: src\overlay\widgets\Settings.cpp:115
+msgid "Main Font"
+msgstr "Main Font"
+
+#: src\overlay\widgets\Settings.cpp:115
+msgid "Main display font for CET."
+msgstr "Main display font for CET."
+
+#: src\overlay\widgets\Settings.cpp:117
+msgid "Monospaced Font"
+msgstr "Monospaced Font"
+
+#: src\overlay\widgets\Settings.cpp:117
+msgid ""
+"Monospaceed font, which is used for displaying texts in Console and Game "
+"Log, for CET."
+msgstr ""
+"Monospaceed font, which is used for displaying texts in Console and Game "
+"Log, for CET."
+
+#: src\overlay\widgets\Settings.cpp:120
+msgid "Font Size"
+msgstr "Font Size"
+
+#: src\overlay\widgets\Settings.cpp:120
+msgid "Changes the size of the font, default value is 18px."
+msgstr "Changes the size of the font, default value is 18px."
+
+#: src\overlay\widgets\Settings.cpp:125
+msgid "Advance Settings"
+msgstr "Advance Settings"
+
+#: src\overlay\widgets\Settings.cpp:132
+msgid "Oversample Horizontal"
+msgstr "Oversample Horizontal"
+
+#: src\overlay\widgets\Settings.cpp:133
+msgid ""
+"Oversamples font horizontally, default value is 3x. (May increase font "
+"clearity, at the cost of increasing memory usage.)"
+msgstr ""
+"Oversamples font horizontally, default value is 3x. (May increase font "
+"clearity, at the cost of increasing memory usage.)"
+
+#: src\overlay\widgets\Settings.cpp:136
+msgid "Oversample Vertical"
+msgstr "Oversample Vertical"
+
+#: src\overlay\widgets\Settings.cpp:137
+msgid ""
+"Oversamples font vertically, default value is 1x. (May increase font "
+"clearity, at the cost of increasing memory usage.)"
+msgstr ""
+"Oversamples font vertically, default value is 1x. (May increase font "
+"clearity, at the cost of increasing memory usage.)"
+
+#: src\overlay\widgets\Settings.cpp:146
+msgid "CET Development Settings"
+msgstr "CET Development Settings"
+
+#: src\overlay\widgets\Settings.cpp:153
+msgid "Remove Dead Bindings"
+msgstr "Remove Dead Bindings"
+
+#: src\overlay\widgets\Settings.cpp:153
+msgid ""
+"Removes all bindings which are no longer valid (disabling this could be "
+"useful when debugging mod issues)."
+msgstr ""
+"Removes all bindings which are no longer valid (disabling this could be "
+"useful when debugging mod issues)."
+
+#: src\overlay\widgets\Settings.cpp:156
+msgid "Enable ImGui Assertions"
+msgstr "Enable ImGui Assertions"
+
+#: src\overlay\widgets\Settings.cpp:157
+msgid ""
+"Enables all ImGui assertions, assertions will get logged into log file of "
+"whoever triggered the assertion (useful when debugging ImGui issues, should "
+"also be used to check mods before shipping!)."
+msgstr ""
+"Enables all ImGui assertions, assertions will get logged into log file of "
+"whoever triggered the assertion (useful when debugging ImGui issues, should "
+"also be used to check mods before shipping!)."
+
+#: src\overlay\widgets\Settings.cpp:162
+msgid "Enable Debug Build"
+msgstr "Enable Debug Build"
+
+#: src\overlay\widgets\Settings.cpp:162
+msgid ""
+"Sets internal flags to disguise as debug build (requires restart to take "
+"effect)."
+msgstr ""
+"Sets internal flags to disguise as debug build (requires restart to take "
+"effect)."
+
+#: src\overlay\widgets\Settings.cpp:165
+msgid "Dump Game Options"
+msgstr "Dump Game Options"
+
+#: src\overlay\widgets\Settings.cpp:165
+msgid ""
+"Dumps all game options into main log file (requires restart to take effect)."
+msgstr ""
+"Dumps all game options into main log file (requires restart to take effect)."
+
+#: src\overlay\widgets\Settings.cpp:168
+msgid "Enable Tranlation Log"
+msgstr "Enable Tranlation Log"
+
+#: src\overlay\widgets\Settings.cpp:168
+msgid ""
+"Show logs when there's a missing translation (requires restart to take "
+"effect)."
+msgstr ""
+"Show logs when there's a missing translation (requires restart to take "
+"effect)."
+
+#: src\overlay\widgets\Settings.cpp:181
+msgid "Load"
+msgstr "Load"
+
+#: src\overlay\widgets\Settings.cpp:187
+msgid "Defaults"
+msgstr "Defaults"
+
+#: src\overlay\widgets\Settings.cpp:334 src\overlay\widgets\Settings.cpp:342
+msgctxt "Settings"
+msgid "Default"
+msgstr "Default"
+
+#: src\overlay\widgets\Settings.cpp:369 src\overlay\widgets\Settings.cpp:378
+msgctxt "Settings"
+msgid "System"
+msgstr "System"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:134
+msgid "TweakDB is not initialized yet"
+msgstr "TweakDB is not initialized yet"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:146
+msgid "Records"
+msgstr "Records"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:154
+msgid "Queries"
+msgstr "Queries"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:162
+msgid "Flats"
+msgstr "Flats"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:170
+msgid "Advanced"
+msgstr "Advanced"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:442
+#: src\overlay\widgets\TweakDBEditor.cpp:1099
+#: src\overlay\widgets\TweakDBEditor.cpp:1355
+#: src\overlay\widgets\TweakDBEditor.cpp:1481
+#: src\overlay\widgets\TweakDBEditor.cpp:1607
+msgid "Search"
+msgstr "Search"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:544
+#, c-format
+msgid "'%s' is not found in TweakDB"
+msgstr "'%s' is not found in TweakDB"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:604
+#, c-format
+msgid "unsupported type: %s"
+msgstr "unsupported type: %s"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:637
+#, c-format
+msgid "[%s] %u item"
+msgid_plural "[%s] %u items"
+msgstr[0] "[%s] %u item"
+msgstr[1] "[%s] %u items"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:639
+msgid "clear"
+msgstr "clear"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:650
+msgid "edit"
+msgstr "edit"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:662
+msgid "cancel"
+msgstr "cancel"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:675
+msgid "save"
+msgstr "save"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:739
+msgid "add new"
+msgstr "add new"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:785
+msgid "ERROR_RECORD_NOT_FOUND"
+msgstr "ERROR_RECORD_NOT_FOUND"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:879
+msgid "Roll "
+msgstr "Roll "
+
+#: src\overlay\widgets\TweakDBEditor.cpp:884
+msgid "Pitch"
+msgstr "Pitch"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:889
+msgid "Yaw  "
+msgstr "Yaw  "
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1008
+msgid "'Color' is not supported yet"
+msgstr "'Color' is not supported yet"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1044
+msgid "This is a LocalizationKey"
+msgstr "This is a LocalizationKey"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1202
+msgid "Game is expecting specific values."
+msgstr "Game is expecting specific values."
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1354
+#: src\overlay\widgets\TweakDBEditor.cpp:1360
+#: src\overlay\widgets\TweakDBEditor.cpp:1480
+#: src\overlay\widgets\TweakDBEditor.cpp:1486
+msgid "Regex"
+msgstr "Regex"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1425
+#: src\overlay\widgets\TweakDBEditor.cpp:1543
+msgid "ERROR_FLAT_NOT_FOUND"
+msgstr "ERROR_FLAT_NOT_FOUND"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1565
+msgid "'Flats' Grouping depth"
+msgstr "'Flats' Grouping depth"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1571
+msgid "ComboBox dropdown height"
+msgstr "ComboBox dropdown height"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1573
+msgid "Refresh all"
+msgstr "Refresh all"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1594
+msgid "Record name"
+msgstr "Record name"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1596
+msgid "Delete Record"
+msgstr "Delete Record"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1604
+msgid "Record type to create"
+msgstr "Record type to create"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1634
+msgid "Create record"
+msgstr "Create record"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1642
+msgid "Record to clone"
+msgstr "Record to clone"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1644
+msgid "Clone record"
+msgstr "Clone record"
+
+#~ msgid "(requires restart to take effect)."
+#~ msgstr "(requires restart to take effect)."
+
+#~ msgid "Changees the size of the font, default value is 18px."
+#~ msgstr "Changees the size of the font, default value is 18px."
+
+#~ msgid "TweakDBEditor-Bar"
+#~ msgstr "TweakDBEditor-Bar"
