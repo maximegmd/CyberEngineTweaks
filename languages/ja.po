@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: cyber-engine-tweaks\n"
 "Report-Msgid-Bugs-To: https://github.com/maximegmd/CyberEngineTweaks/issues\n"
 "POT-Creation-Date: 2023-05-30 14:57+0800\n"
-"PO-Revision-Date: 2023-05-31 08:30\n"
+"PO-Revision-Date: 2023-05-31 09:33\n"
 "Last-Translator: \n"
 "Language-Team: Japanese\n"
 "Language: ja_JP\n"
@@ -84,15 +84,15 @@ msgstr "ホットキー"
 
 #: src\overlay\widgets\Bindings.cpp:477
 msgid "Hotkeys react after assigned key combination has been pressed and subsequently released. You can bind up to 4 key combination to them."
-msgstr "ホットキーは、割り当てられたキーの組み合わせが押され、その後解放された後に反応します。最大4つのキーの組み合わせをバインドできます。"
+msgstr "設定されたキーの組み合わせを押してから離すと、ホットキーが反応します。最大4つのキーの組み合わせを設定することができます。"
 
 #: src\overlay\widgets\Bindings.cpp:498 src\overlay\widgets\Bindings.cpp:499
 msgid "Inputs"
-msgstr "Inputs"
+msgstr "インプット"
 
 #: src\overlay\widgets\Bindings.cpp:501
 msgid "Inputs react when key is pressed and released. You can bind single key to them."
-msgstr "Inputs react when key is pressed and release. You can bind single key to them"
+msgstr "キーが押されたり、離されたりすると、インプットが反応します。一つのキーをバインドすることができます。"
 
 #: src\overlay\widgets\Console.cpp:113
 msgid "Command failed to execute!"
@@ -116,23 +116,23 @@ msgstr "AMD SMT パッチ"
 
 #: src\overlay\widgets\Settings.cpp:63
 msgid "For AMD CPUs that did not get a performance boost after CDPR's patch (requires restart to take effect)."
-msgstr "CDPRのパッチの後にパフォーマンスを向上させなかったAMDのCPUの場合(有効にするには再起動が必要)。"
+msgstr "CDPRのパッチ後のパフォーマンス向上がなかったAMD CPUのために（再起動が必要）。"
 
 #: src\overlay\widgets\Settings.cpp:66
 msgid "Remove Pedestrians"
-msgstr "Remove Pedestrians"
+msgstr "歩行者を取り除く"
 
 #: src\overlay\widgets\Settings.cpp:66
 msgid "Removes most of the pedestrians and traffic (requires restart to take effect)."
-msgstr "歩行者と交通量の大部分を削除します(有効にするには再起動が必要です)。"
+msgstr "歩行者と交通のほとんどを取り除きます（再起動が必要です）。"
 
 #: src\overlay\widgets\Settings.cpp:69
 msgid "Disable Async Compute"
-msgstr "同期計算を無効にする"
+msgstr "非同期計算を無効にする"
 
 #: src\overlay\widgets\Settings.cpp:70
 msgid "Disables async compute, this can give a boost on older GPUs like Nvidia 10xx series for example (requires restart to take effect)."
-msgstr "非同期計算を無効にすると、たとえばNvidia 10xx シリーズのような古いGPUでブーストすることができます (有効にするには再起動が必要です)。"
+msgstr "非同期計算を無効にする。Nvidia 10xx シリーズなどの古いGPUに対してブーストすることができます (再起動が必要です)。"
 
 #: src\overlay\widgets\Settings.cpp:73
 msgid "Disable Anti-aliasing"
@@ -140,7 +140,7 @@ msgstr "アンチエイリアスを無効にする"
 
 #: src\overlay\widgets\Settings.cpp:73
 msgid "Completely disables anti-aliasing (requires restart to take effect)."
-msgstr "完全にアンチエイリアスを無効にします（有効にするには再起動が必要です）。"
+msgstr "完全にアンチエイリアスを無効にします（再起動が必要です）。"
 
 #: src\overlay\widgets\Settings.cpp:76
 msgid "Skip Start Menu"
@@ -148,47 +148,47 @@ msgstr "スタートメニューをスキップ"
 
 #: src\overlay\widgets\Settings.cpp:76
 msgid "Skips the 'Breaching...' menu asking you to press space bar to continue (requires restart to take effect)."
-msgstr "「Breaching...」メニューをスキップして続行するにはスペースバーを押してください（有効にするには再起動が必要です）。"
+msgstr "スペースキーを押して続行するよう要求される「侵入中...」メニューをスキップします（再起動が必要です）。"
 
 #: src\overlay\widgets\Settings.cpp:79
 msgid "Suppress Intro Movies"
-msgstr "イントロ映画を抑制する"
+msgstr "イントロ動画をスキップ"
 
 #: src\overlay\widgets\Settings.cpp:79
 msgid "Disables logos played at the beginning (requires restart to take effect)."
-msgstr "最初に再生されたロゴを無効にします（有効にするには再起動が必要です）。"
+msgstr "最初に再生されたロゴ動画をスキップします（再起動が必要です）。"
 
 #: src\overlay\widgets\Settings.cpp:82
 msgid "Disable Vignette"
-msgstr "Vignetteを無効にする"
+msgstr "ヴィネットを無効にする"
 
 #: src\overlay\widgets\Settings.cpp:82
 msgid "Disables vignetting along screen borders (requires restart to take effect)."
-msgstr "画面の境界線に沿って設定を無効にします（有効にするには再起動が必要です）。"
+msgstr "画面境界を暗くする効果を無効にします（再起動が必要です）。"
 
 #: src\overlay\widgets\Settings.cpp:85
 msgid "Disable Boundary Teleport"
-msgstr "境界テレポートを無効にする"
+msgstr "境界線転移を無効にする"
 
 #: src\overlay\widgets\Settings.cpp:85
 msgid "Allows players to access out-of-bounds locations (requires restart to take effect)."
-msgstr "範囲外の場所にアクセスできるようにします（有効にするには再起動が必要です）"
+msgstr "範囲外の場所にアクセスできるようにします（再起動が必要です）"
 
 #: src\overlay\widgets\Settings.cpp:88
 msgid "Disable V-Sync (Windows 7 only)"
-msgstr "V-Sync を無効にする (Windows 7 のみ)"
+msgstr "垂直同期を無効にする (Windows 7 のみ)"
 
 #: src\overlay\widgets\Settings.cpp:88
 msgid "Disables VSync on Windows 7 to bypass the 60 FPS limit (requires restart to take effect)."
-msgstr "Windows 7では、60 FPS制限をバイパスするためにVSyncを無効にします(有効にするには再起動が必要です)。"
+msgstr "Windows 7 で垂直同期を無効にして60 FPSの制限を上回ります（再起動が必要です）。"
 
 #: src\overlay\widgets\Settings.cpp:90
 msgid "Fix Minimap Flicker"
-msgstr "ミニマップフリッカーを修正"
+msgstr "ミニマップのフリックを修正"
 
 #: src\overlay\widgets\Settings.cpp:90
 msgid "Fix minimap flickering (requires restart to take effect)."
-msgstr "ミニマップフリッカーを修正（有効にするには再起動が必要）"
+msgstr "ミニマップのフリック問題を修正（再起動が必要です）。"
 
 #: src\overlay\widgets\Settings.cpp:97
 msgid "CET Language Settings"
@@ -200,19 +200,19 @@ msgstr "言語"
 
 #: src\overlay\widgets\Settings.cpp:103
 msgid "Display language for CET."
-msgstr "CETの言語を表示する"
+msgstr "CETの表示言語です。"
 
 #: src\overlay\widgets\Settings.cpp:108
 msgid "CET Font Settings"
-msgstr "CETフォント設定"
+msgstr "CET フォント設定"
 
 #: src\overlay\widgets\Settings.cpp:115
 msgid "Main Font"
-msgstr "メインフォント"
+msgstr "主要フォント"
 
 #: src\overlay\widgets\Settings.cpp:115
 msgid "Main display font for CET."
-msgstr "CETのメイン表示フォント。"
+msgstr "CETの主要表示フォント。"
 
 #: src\overlay\widgets\Settings.cpp:117
 msgid "Monospaced Font"
@@ -224,11 +224,11 @@ msgstr "ConsoleやGame LogでCET用にテキストを表示するために使用
 
 #: src\overlay\widgets\Settings.cpp:120
 msgid "Font Size"
-msgstr "Font Size"
+msgstr "文字サイズ"
 
 #: src\overlay\widgets\Settings.cpp:120
 msgid "Changes the size of the font, default value is 18px."
-msgstr "フォントのサイズを変更します。デフォルト値は18pxです。"
+msgstr "フォントのサイズを変更します。既定値は18pxです。"
 
 #: src\overlay\widgets\Settings.cpp:125
 msgid "Advance Settings"
@@ -236,7 +236,7 @@ msgstr "詳細設定"
 
 #: src\overlay\widgets\Settings.cpp:132
 msgid "Oversample Horizontal"
-msgstr "オーバーサンプリング（水平）"
+msgstr "水平オーバーサンプリング"
 
 #: src\overlay\widgets\Settings.cpp:133
 msgid "Oversamples font horizontally, default value is 3x. (May increase font clearity, at the cost of increasing memory usage.)"
@@ -244,7 +244,7 @@ msgstr "オーバーサンプルフォントの水平方向のデフォルト値
 
 #: src\overlay\widgets\Settings.cpp:136
 msgid "Oversample Vertical"
-msgstr "オーバーサンプリングを垂直にする"
+msgstr "垂直オーバーサンプリング"
 
 #: src\overlay\widgets\Settings.cpp:137
 msgid "Oversamples font vertically, default value is 1x. (May increase font clearity, at the cost of increasing memory usage.)"
@@ -256,7 +256,7 @@ msgstr "CET 開発設定"
 
 #: src\overlay\widgets\Settings.cpp:153
 msgid "Remove Dead Bindings"
-msgstr "死んだバインディングを削除"
+msgstr "無効バインディングを削除"
 
 #: src\overlay\widgets\Settings.cpp:153
 msgid "Removes all bindings which are no longer valid (disabling this could be useful when debugging mod issues)."
@@ -268,7 +268,7 @@ msgstr "ImGuiアサーションを有効にする"
 
 #: src\overlay\widgets\Settings.cpp:157
 msgid "Enables all ImGui assertions, assertions will get logged into log file of whoever triggered the assertion (useful when debugging ImGui issues, should also be used to check mods before shipping!)."
-msgstr "すべての ImGui アサーションを有効にします。アサーションは、アサーションをトリガーした人物のログファイルにログインされます (ImGui Issue のデバッグ時に便利です。 出荷前にModをチェックするためにも使用する必要があります!)。"
+msgstr "すべての ImGui アサーションを有効にします。アサーションは、トリガーしたModのログファイルに記録されます (ImGuiの問題のデバッグ時に便利です。 リリース前にModをチェックするためにも使用するべきです！)。"
 
 #: src\overlay\widgets\Settings.cpp:162
 msgid "Enable Debug Build"
@@ -276,11 +276,11 @@ msgstr "デバッグビルドを有効にする"
 
 #: src\overlay\widgets\Settings.cpp:162
 msgid "Sets internal flags to disguise as debug build (requires restart to take effect)."
-msgstr "内部フラグをデバッグビルドに変装させるように設定します (有効にするには再起動が必要です)。"
+msgstr "内部フラグをデバッグビルドに変装させるように設定します (再起動が必要です)。"
 
 #: src\overlay\widgets\Settings.cpp:165
 msgid "Dump Game Options"
-msgstr "ゲームオプションのダンプ"
+msgstr "ゲームオプションをエクスポートする"
 
 #: src\overlay\widgets\Settings.cpp:165
 msgid "Dumps all game options into main log file (requires restart to take effect)."
@@ -330,7 +330,7 @@ msgstr "フラット"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:170
 msgid "Advanced"
-msgstr "高度な設定"
+msgstr "詳細設定"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:442
 #: src\overlay\widgets\TweakDBEditor.cpp:1099
@@ -354,11 +354,11 @@ msgstr "サポートされていないタイプ: %s"
 #, c-format
 msgid "[%s] %u item"
 msgid_plural "[%s] %u items"
-msgstr[0] "[%s] %u アイテム"
+msgstr[0] "[%s] アイテム %u 個"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:639
 msgid "clear"
-msgstr "クリア"
+msgstr "削除"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:650
 msgid "edit"
@@ -378,27 +378,27 @@ msgstr "新規"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:785
 msgid "ERROR_RECORD_NOT_FOUND"
-msgstr "ファイルが見つかりませんでした。"
+msgstr "エラー：レコードが見つかりませんでした。"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:879
 msgid "Roll "
-msgstr "ロール "
+msgstr "横揺れ角 "
 
 #: src\overlay\widgets\TweakDBEditor.cpp:884
 msgid "Pitch"
-msgstr "Pitch"
+msgstr "縦揺れ角"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:889
 msgid "Yaw  "
-msgstr "Yaw.  "
+msgstr "偏揺れ角  "
 
 #: src\overlay\widgets\TweakDBEditor.cpp:1008
 msgid "'Color' is not supported yet"
-msgstr "「カラー」はまだサポートされていません"
+msgstr "「Color」はまだサポートされていません"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:1044
 msgid "This is a LocalizationKey"
-msgstr "これはLocalizationKey"
+msgstr "これはLocalizationKeyです"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:1202
 msgid "Game is expecting specific values."
@@ -414,7 +414,7 @@ msgstr "正規表現"
 #: src\overlay\widgets\TweakDBEditor.cpp:1425
 #: src\overlay\widgets\TweakDBEditor.cpp:1543
 msgid "ERROR_FLAT_NOT_FOUND"
-msgstr "number@@0 が見つかりません。"
+msgstr "エラー：フラットが見つかりませんでした。"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:1565
 msgid "'Flats' Grouping depth"
@@ -422,11 +422,11 @@ msgstr "「フラット」グループの深さ"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:1571
 msgid "ComboBox dropdown height"
-msgstr "ComboBoxのドロップダウンの高さ"
+msgstr "コンボボックスのドロップダウンの高さ"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:1573
 msgid "Refresh all"
-msgstr "すべて更新"
+msgstr "全て更新"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:1594
 msgid "Record name"
@@ -446,7 +446,7 @@ msgstr "レコードを作成"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:1642
 msgid "Record to clone"
-msgstr "クローンするレコード"
+msgstr "複製するレコード"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:1644
 msgid "Clone record"
