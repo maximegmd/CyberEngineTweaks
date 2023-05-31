@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: cyber-engine-tweaks\n"
 "Report-Msgid-Bugs-To: https://github.com/maximegmd/CyberEngineTweaks/issues\n"
-"POT-Creation-Date: 2023-05-30 14:57+0800\n"
-"PO-Revision-Date: 2023-05-30 18:15\n"
+"POT-Creation-Date: 2023-05-31 17:59+0800\n"
+"PO-Revision-Date: 2023-05-31 10:11\n"
 "Last-Translator: \n"
 "Language-Team: Chinese Traditional\n"
 "Language: zh_TW\n"
@@ -287,8 +287,8 @@ msgid "Dumps all game options into main log file (requires restart to take effec
 msgstr "將所有遊戲選項轉存到主日誌檔案（需要重新啟動才能生效）。"
 
 #: src\overlay\widgets\Settings.cpp:168
-msgid "Enable Tranlation Log"
-msgstr "啟用翻譯日誌"
+msgid "Enable Translation Log"
+msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:168
 msgid "Show logs when there's a missing translation (requires restart to take effect)."
