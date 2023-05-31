@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: cyber-engine-tweaks\n"
 "Report-Msgid-Bugs-To: https://github.com/maximegmd/CyberEngineTweaks/issues\n"
 "POT-Creation-Date: 2023-05-31 17:59+0800\n"
-"PO-Revision-Date: 2023-05-31 10:11\n"
+"PO-Revision-Date: 2023-05-31 11:04\n"
 "Last-Translator: \n"
 "Language-Team: Japanese\n"
 "Language: ja_JP\n"
@@ -288,7 +288,7 @@ msgstr "すべてのゲームオプションをメインログファイルに出
 
 #: src\overlay\widgets\Settings.cpp:168
 msgid "Enable Translation Log"
-msgstr ""
+msgstr "翻訳ログを有効にする"
 
 #: src\overlay\widgets\Settings.cpp:168
 msgid "Show logs when there's a missing translation (requires restart to take effect)."
