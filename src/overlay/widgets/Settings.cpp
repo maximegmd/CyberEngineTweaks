@@ -165,7 +165,7 @@ void Settings::OnUpdate()
                     "🖨", _t("Dump Game Options"), _t("Dumps all game options into main log file (requires restart to take effect)."), m_developer.DumpGameOptions,
                     developerSettings.DumpGameOptions);
                 SettingItemCheckBox(
-                    "🗒", _t("Enable Tranlation Log"), _t("Show logs when there's a missing translation (requires restart to take effect)."), m_developer.EnableI18nLog,
+                    "🗒", _t("Enable Translation Log"), _t("Show logs when there's a missing translation (requires restart to take effect)."), m_developer.EnableI18nLog,
                     developerSettings.EnableI18nLog);
 
                 ImGui::EndTable();

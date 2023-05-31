@@ -154,6 +154,7 @@ task("i18n-pot")
             "--c++",
             "--from-code=UTF-8",
             "--add-comments",
+            "--no-wrap",
             "--keyword",
             "--keyword=_t:1,1t", "--keyword=Translate:1,1t", "--keyword=translate:1,1t",
             "--keyword=_t:1c,2,2t", "--keyword=Translate:1c,2,2t", "--keyword=translate_ctxt:1,1t",
@@ -164,9 +165,28 @@ task("i18n-pot")
             "--package-version=",
             "--msgid-bugs-address=https://github.com/maximegmd/CyberEngineTweaks/issues"
         })
-
         -- remove the tmp file
         os.rm(fileListPath)
+
+        -- auto generate and update en.po
+        local enpoPath = "./languages/en.po"
+        os.execv("vendor/gettext-tools/msginit.exe", {
+            format("--input=%s", potPath),
+            format("--output-file=%s.tmp", enpoPath),
+            format("--locale=%s", "en"),
+            "--no-translator",
+            "--no-wrap",
+        })
+        os.execv("vendor/gettext-tools/msgmerge.exe", {
+            "--update",
+            "--backup=off",
+            "--no-fuzzy-matching",
+            "--no-wrap",
+            enpoPath,
+            enpoPath..".tmp"
+        })
+        os.rm(enpoPath..".tmp")
+
     end)
 
 task("i18n-po")
@@ -202,6 +222,7 @@ task("i18n-po")
                 format("--input=%s", potPath),
                 format("--output-file=%s", langDir..locale..".po"),
                 format("--locale=%s", locale),
+                "--no-wrap",
             })
         end
 
@@ -210,29 +231,15 @@ task("i18n-po")
             for _, poPath in ipairs(os.files(langDir.."*.po")) do
                 cprint("${green bright}Updating${clear} %s", poPath)
 
-                if path.basename(poPath) == "en" then
-                    os.execv("vendor/gettext-tools/msginit.exe", {
-                        format("--input=%s", potPath),
-                        format("--output-file=%s.tmp", poPath),
-                        format("--locale=%s", "en"),
-                        "--no-translator",
-                    })
+                if path.basename(poPath) ~= "en" then
                     os.execv("vendor/gettext-tools/msgmerge.exe", {
                         "--update",
                         "--backup=off",
-                        "--no-fuzzy-matching",
-                        poPath,
-                        poPath..".tmp"
-                    })
-                    os.rm(poPath..".tmp")
-                else
-                    os.execv("vendor/gettext-tools/msgmerge.exe", {
-                        "--update",
-                        "--backup=off",
+                        "--no-wrap",
                         poPath,
                         potPath
                     })
-                end 
+                end
             end
         end
     end)
