@@ -1,3 +1,7 @@
+pull_request_title: Translation Updates
+commit_message: [ci skip] New translations
+
 files:
   - source: /languages/template.pot
     translation: /languages/%two_letters_code%.po
+    update_option: update_as_unapproved
