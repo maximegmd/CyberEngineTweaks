@@ -38,10 +38,27 @@ void PatchesSettings::ResetToDefaults()
     *this = {};
 }
 
+void LanguageSettings::Load(const nlohmann::json& aConfig)
+{
+    Locale = aConfig.value("language", Locale);
+}
+
+nlohmann::json LanguageSettings::Save() const
+{
+    return {
+        {"language", Locale}
+    };
+}
+
+void LanguageSettings::ResetToDefaults()
+{
+    *this = {};
+}
+
 void FontSettings::Load(const nlohmann::json& aConfig)
 {
-    Path = aConfig.value("path", Path);
-    Language = aConfig.value("language", Language);
+    MainFont = aConfig.value("main_font", MainFont);
+    MonoFont = aConfig.value("mono_font", MonoFont);
     BaseSize = aConfig.value("base_size", BaseSize);
     OversampleHorizontal = aConfig.value("oversample_horizontal", OversampleHorizontal);
     OversampleVertical = aConfig.value("oversample_vertical", OversampleVertical);
@@ -49,7 +66,12 @@ void FontSettings::Load(const nlohmann::json& aConfig)
 
 nlohmann::json FontSettings::Save() const
 {
-    return {{"path", Path}, {"language", Language}, {"base_size", BaseSize}, {"oversample_horizontal", OversampleHorizontal}, {"oversample_vertical", OversampleVertical}};
+    return {
+        {"main_font", MainFont},
+        {"mono_font", MonoFont},
+        {"base_size", BaseSize},
+        {"oversample_horizontal", OversampleHorizontal},
+        {"oversample_vertical", OversampleVertical}};
 }
 
 void FontSettings::ResetToDefaults()
@@ -65,6 +87,7 @@ void DeveloperSettings::Load(const nlohmann::json& aConfig)
     DumpGameOptions = aConfig.value("dump_game_options", DumpGameOptions);
     MaxLinesConsoleHistory = aConfig.value("max_lines_console_history", MaxLinesConsoleHistory);
     PersistentConsole = aConfig.value("persistent_console", PersistentConsole);
+    EnableI18nLog = aConfig.value("enable_i18n_log", EnableI18nLog);
 
     // set global "Enable ImGui Assertions"
     g_ImGuiAssertionsEnabled = EnableImGuiAssertions;
@@ -76,7 +99,8 @@ nlohmann::json DeveloperSettings::Save() const
     g_ImGuiAssertionsEnabled = EnableImGuiAssertions;
 
     return {{"remove_dead_bindings", RemoveDeadBindings}, {"enable_imgui_assertions", EnableImGuiAssertions},    {"enable_debug", EnableDebug},
-            {"dump_game_options", DumpGameOptions},       {"max_lines_console_history", MaxLinesConsoleHistory}, {"persistent_console", PersistentConsole}};
+            {"dump_game_options", DumpGameOptions},       {"max_lines_console_history", MaxLinesConsoleHistory}, {"persistent_console", PersistentConsole},
+            {"enable_i18n_log", EnableI18nLog}};
 }
 
 void DeveloperSettings::ResetToDefaults()
@@ -104,6 +128,11 @@ void Options::Load()
     if (!patchesConfig.empty())
         Patches.Load(patchesConfig);
 
+    // language config
+    const auto& languageConfig = config["language"];
+    if (!languageConfig.empty())
+        Language.Load(languageConfig);
+
     // font config
     const auto& fontConfig = config["font"];
     if (!fontConfig.empty())
@@ -117,7 +146,7 @@ void Options::Load()
 
 void Options::Save() const
 {
-    nlohmann::json config = {{"patches", Patches.Save()}, {"font", Font.Save()}, {"developer", Developer.Save()}};
+    nlohmann::json config = {{"patches", Patches.Save()}, {"language", Language.Save()}, {"font", Font.Save()}, {"developer", Developer.Save()}};
 
     const auto path = GetAbsolutePath(m_paths.Config(), "", true);
     std::ofstream o(path);
@@ -127,6 +156,7 @@ void Options::Save() const
 void Options::ResetToDefaults()
 {
     Patches.ResetToDefaults();
+    Language.ResetToDefaults();
     Font.ResetToDefaults();
     Developer.ResetToDefaults();
 

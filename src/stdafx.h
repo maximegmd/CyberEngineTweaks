@@ -3,6 +3,8 @@
 #include <sol/sol.hpp>
 #include <spdlog/spdlog.h>
 #include <imgui.h>
+#include <imgui_freetype.h>
+#include <imgui_internal.h>
 #include <MinHook.h>
 #include <mem/module.h>
 #include <mem/pattern.h>
@@ -34,6 +36,9 @@
 #include <TiltedCore/StackAllocator.hpp>
 #include <TiltedCore/TaskQueue.hpp>
 
+#include <tinygettext/tinygettext.hpp>
+#include <tinygettext/log.hpp>
+
 #include <atlcomcli.h>
 #include <d3d12.h>
 #include <d3d11.h>
@@ -44,6 +49,7 @@
 #include <SDKDDKVer.h>
 #include <Windows.h>
 #include <wrl.h>
+#include <dwrite.h>
 
 #include <algorithm>
 #include <array>
@@ -68,10 +74,12 @@
 #include "common/FontMaterialDesignIcons.h"
 #include "Options.h"
 #include "Paths.h"
+#include "Fonts.h"
 #include "PersistentState.h"
 #include "reverse/Addresses.h"
 #include "scripting/GameHooks.h"
 #include "VKBindings.h"
+#include "I18n.h"
 
 template <> struct std::hash<RED4ext::CName>
 {

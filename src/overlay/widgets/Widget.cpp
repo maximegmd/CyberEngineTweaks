@@ -4,8 +4,9 @@
 
 #include <CET.h>
 
-Widget::Widget(const std::string& acpName, bool aOwnerDraw)
-    : m_name(acpName)
+Widget::Widget(const std::string& acIcon, const std::string& acpName, bool aOwnerDraw)
+    : m_icon(acIcon)
+    , m_name(acpName)
     , m_ownerDraw(aOwnerDraw)
 {
 }
@@ -96,7 +97,8 @@ void Widget::Draw()
         ImGui::SetNextWindowPos(ImVec2(width * 0.2f, height * 0.2f), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize(ImVec2(width * 0.6f, height * 0.6f), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSizeConstraints(ImVec2(420, 315), ImVec2(FLT_MAX, FLT_MAX));
-        if (ImGui::Begin(m_name.c_str(), &newEnabled))
+        const auto title = m_icon + " " + _t(m_name);
+        if (ImGui::Begin(title.c_str(), &newEnabled))
             OnUpdate();
         ImGui::End();
     }

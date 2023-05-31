@@ -32,13 +32,15 @@ static constexpr bool s_cThrowLuaErrors = true;
 static RTTILocator s_stringType{RED4ext::FNV1a64("String")};
 static RTTILocator s_resRefType{RED4ext::FNV1a64("redResourceReferenceScriptToken")};
 
-Scripting::Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12)
-    : m_sandbox(this, aBindings)
+Scripting::Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12, Fonts& aFonts, I18n& aI18n)
+    : m_sandbox(this, aBindings, aFonts)
     , m_mapper(m_lua.AsRef(), m_sandbox)
     , m_store(m_sandbox, aPaths, aBindings)
     , m_override(this)
     , m_paths(aPaths)
+    , m_fonts(aFonts)
     , m_d3d12(aD3D12)
+    , m_i18n(aI18n)
 {
     CreateLogger(aPaths.CETRoot() / "scripting.log", "scripting");
     CreateLogger(aPaths.CETRoot() / "gamelog.log", "gamelog");
@@ -48,6 +50,9 @@ void Scripting::Initialize()
 {
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
+
+    // putting it here so it can be called from IconGlyphs/icons.lua
+    luaVm.set_function("AddTextGlyphs", [this](const std::string& acString) -> void { m_fonts.GetGlyphRangesBuilder().AddText(acString); });
 
     luaVm.open_libraries(sol::lib::base, sol::lib::string, sol::lib::io, sol::lib::math, sol::lib::package, sol::lib::os, sol::lib::table, sol::lib::bit32);
     luaVm.require("sqlite3", luaopen_lsqlite3);
@@ -72,6 +77,12 @@ void Scripting::Initialize()
     sol_ImGui::InitBindings(luaVm, globals);
     sol::table imgui = globals["ImGui"];
     Texture::BindTexture(imgui);
+    
+    imgui["GetMonoFont"] = [this]() -> ImFont*
+    {
+        return m_fonts.MonoFont;
+    };
+
     for (auto [key, value] : imgui)
     {
         if (value.get_type() != sol::type::function)
@@ -128,6 +139,11 @@ void Scripting::Initialize()
         return {static_cast<float>(resolution.cx), static_cast<float>(resolution.cy)};
     };
 
+    globals["AddTextGlyphs"] = [this](const std::string& acString) -> void
+    {
+        m_fonts.GetGlyphRangesBuilder().AddText(acString);
+    };
+
     globals["ModArchiveExists"] = [this](const std::string& acArchiveName) -> bool
     {
         const auto resourceDepot = RED4ext::ResourceDepot::Get();
@@ -146,6 +162,16 @@ void Scripting::Initialize()
         }
 
         return false;
+    };
+
+    globals["GetSystemLocale"] = [this]() -> const std::string
+    {
+        return m_i18n.GetSystemLocale();
+    };
+
+    globals["GetCETLocale"] = [this]() -> const std::string
+    {
+        return m_i18n.GetCurrentLocale();
     };
 
     // load mods
@@ -609,6 +635,7 @@ void Scripting::UnloadAllMods()
 void Scripting::ReloadAllMods()
 {
     UnloadAllMods();
+    CET::Get().GetFonts().PrecacheModFiles(); // recache glyphs from mods in case of changes
 
     m_store.LoadAll();
 

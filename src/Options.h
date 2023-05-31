@@ -24,6 +24,17 @@ struct PatchesSettings
     bool MinimapFlicker{false};
 };
 
+struct LanguageSettings
+{
+    void Load(const nlohmann::json& aConfig);
+    nlohmann::json Save() const;
+    void ResetToDefaults();
+
+    [[nodiscard]] auto operator<=>(const LanguageSettings&) const = default;
+
+    std::string Locale{"System"};
+};
+
 struct FontSettings
 {
     void Load(const nlohmann::json& aConfig);
@@ -32,8 +43,8 @@ struct FontSettings
 
     [[nodiscard]] auto operator<=>(const FontSettings&) const = default;
 
-    std::string Path{};
-    std::string Language{"Default"};
+    std::string MainFont{"Default"};
+    std::string MonoFont{"Default"};
     float BaseSize{18.0f};
     int32_t OversampleHorizontal{3};
     int32_t OversampleVertical{1};
@@ -53,6 +64,7 @@ struct DeveloperSettings
     bool DumpGameOptions{false};
     uint64_t MaxLinesConsoleHistory{1000};
     bool PersistentConsole{true};
+    bool EnableI18nLog{false};
 };
 
 struct Options
@@ -68,6 +80,7 @@ struct Options
     bool ExeValid{false};
 
     PatchesSettings Patches{};
+    LanguageSettings Language{};
     FontSettings Font{};
     DeveloperSettings Developer{};
 

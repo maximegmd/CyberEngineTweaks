@@ -2,8 +2,10 @@
 
 #include "GameLog.h"
 
+#include <CET.h>
+
 GameLog::GameLog()
-    : Widget("Game Log")
+    : Widget(ICON_MD_FILE_DOCUMENT, _noop("Game Log"))
     , m_logWindow("gamelog")
 {
 }

@@ -4,3 +4,6 @@
 [submodule "vendor/luasocket"]
 	path = vendor/luasocket
 	url = https://github.com/diegonehab/luasocket.git
+[submodule "vendor/tinygettext"]
+	path = vendor/tinygettext
+	url = https://github.com/tinygettext/tinygettext.git

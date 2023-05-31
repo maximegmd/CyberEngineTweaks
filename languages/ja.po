@@ -1,0 +1,454 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: cyber-engine-tweaks\n"
+"Report-Msgid-Bugs-To: https://github.com/maximegmd/CyberEngineTweaks/issues\n"
+"POT-Creation-Date: 2023-05-31 17:59+0800\n"
+"PO-Revision-Date: 2023-05-31 11:04\n"
+"Last-Translator: \n"
+"Language-Team: Japanese\n"
+"Language: ja_JP\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Crowdin-Project: cyber-engine-tweaks\n"
+"X-Crowdin-Project-ID: 591959\n"
+"X-Crowdin-Language: ja\n"
+"X-Crowdin-File: /i18n/languages/template.pot\n"
+"X-Crowdin-File-ID: 9\n"
+
+#. Translators: Type in your language name in it's own language. (e.g. French -> Français)
+#: src\I18n.cpp:61
+msgid "Localized Language Name"
+msgstr "日本語"
+
+#: src\overlay\Overlay.cpp:300
+msgid "Console"
+msgstr "コンソール"
+
+#: src\overlay\Overlay.cpp:309
+msgid "Bindings"
+msgstr "バインド設定"
+
+#: src\overlay\Overlay.cpp:318
+msgid "Settings"
+msgstr "設定"
+
+#: src\overlay\Overlay.cpp:327
+msgid "TweakDB Editor"
+msgstr "TweakDBエディター"
+
+#: src\overlay\Overlay.cpp:336
+msgid "Game Log"
+msgstr "ゲームログ"
+
+#: src\overlay\Overlay.cpp:345
+msgid "ImGui Debug"
+msgstr "ImGui デバッグ"
+
+#: src\overlay\Overlay.cpp:353
+msgid "Reload all mods"
+msgstr "全MODをリロード"
+
+#: src\overlay\widgets\Bindings.cpp:93 src\overlay\widgets\Settings.cpp:184
+msgid "Save"
+msgstr "保存"
+
+#: src\overlay\widgets\Bindings.cpp:96
+msgid "Reset changes"
+msgstr "リセット変更"
+
+#: src\overlay\widgets\Bindings.cpp:168 src\overlay\widgets\Bindings.cpp:170
+msgid "CET First Time Setup"
+msgstr "CET初回セットアップ"
+
+#: src\overlay\widgets\Bindings.cpp:172 src\overlay\widgets\Bindings.cpp:178
+msgid "Combo can be composed from up to 4 keys."
+msgstr "4つのキーまででコンボを構成できます。"
+
+#: src\overlay\widgets\Bindings.cpp:173 src\overlay\widgets\Bindings.cpp:176
+msgid "Please, bind some key combination for toggling overlay!"
+msgstr "CETのオーバーレイを切り替えるためにホットキーを設定してください！"
+
+#: src\overlay\widgets\Bindings.cpp:362 src\overlay\widgets\Bindings.cpp:399
+msgid "Currently unable to draw this tooltip. Wait for a bit please..."
+msgstr "現在このツールチップを描くことができません。少しお待ちください..."
+
+#: src\overlay\widgets\Bindings.cpp:428
+msgid "Uncheck this checkbox to unbind this binding."
+msgstr "このバインドを解除するにはチェックボックスをオフにしてください。"
+
+#: src\overlay\widgets\Bindings.cpp:474 src\overlay\widgets\Bindings.cpp:475
+msgid "Hotkeys"
+msgstr "ホットキー"
+
+#: src\overlay\widgets\Bindings.cpp:477
+msgid "Hotkeys react after assigned key combination has been pressed and subsequently released. You can bind up to 4 key combination to them."
+msgstr "設定されたキーの組み合わせを押してから離すと、ホットキーが反応します。最大4つのキーの組み合わせを設定することができます。"
+
+#: src\overlay\widgets\Bindings.cpp:498 src\overlay\widgets\Bindings.cpp:499
+msgid "Inputs"
+msgstr "インプット"
+
+#: src\overlay\widgets\Bindings.cpp:501
+msgid "Inputs react when key is pressed and released. You can bind single key to them."
+msgstr "キーが押されたり、離されたりすると、インプットが反応します。一つのキーをバインドすることができます。"
+
+#: src\overlay\widgets\Console.cpp:113
+msgid "Command failed to execute!"
+msgstr "コマンドの実行に失敗しました！"
+
+#: src\overlay\widgets\LogWindow.cpp:20
+msgid "Clear output"
+msgstr "出力をクリア"
+
+#: src\overlay\widgets\LogWindow.cpp:28
+msgid "Auto-scroll"
+msgstr "自動スクロール"
+
+#: src\overlay\widgets\Settings.cpp:56
+msgid "Patches"
+msgstr "パッチ"
+
+#: src\overlay\widgets\Settings.cpp:63
+msgid "AMD SMT Patch"
+msgstr "AMD SMT パッチ"
+
+#: src\overlay\widgets\Settings.cpp:63
+msgid "For AMD CPUs that did not get a performance boost after CDPR's patch (requires restart to take effect)."
+msgstr "CDPRのパッチ後のパフォーマンス向上がなかったAMD CPUのために（再起動が必要）。"
+
+#: src\overlay\widgets\Settings.cpp:66
+msgid "Remove Pedestrians"
+msgstr "歩行者を取り除く"
+
+#: src\overlay\widgets\Settings.cpp:66
+msgid "Removes most of the pedestrians and traffic (requires restart to take effect)."
+msgstr "歩行者と交通のほとんどを取り除きます（再起動が必要です）。"
+
+#: src\overlay\widgets\Settings.cpp:69
+msgid "Disable Async Compute"
+msgstr "非同期計算を無効にする"
+
+#: src\overlay\widgets\Settings.cpp:70
+msgid "Disables async compute, this can give a boost on older GPUs like Nvidia 10xx series for example (requires restart to take effect)."
+msgstr "非同期計算を無効にする。Nvidia 10xx シリーズなどの古いGPUに対してブーストすることができます (再起動が必要です)。"
+
+#: src\overlay\widgets\Settings.cpp:73
+msgid "Disable Anti-aliasing"
+msgstr "アンチエイリアスを無効にする"
+
+#: src\overlay\widgets\Settings.cpp:73
+msgid "Completely disables anti-aliasing (requires restart to take effect)."
+msgstr "完全にアンチエイリアスを無効にします（再起動が必要です）。"
+
+#: src\overlay\widgets\Settings.cpp:76
+msgid "Skip Start Menu"
+msgstr "スタートメニューをスキップ"
+
+#: src\overlay\widgets\Settings.cpp:76
+msgid "Skips the 'Breaching...' menu asking you to press space bar to continue (requires restart to take effect)."
+msgstr "スペースキーを押して続行するよう要求される「侵入中...」メニューをスキップします（再起動が必要です）。"
+
+#: src\overlay\widgets\Settings.cpp:79
+msgid "Suppress Intro Movies"
+msgstr "イントロ動画をスキップ"
+
+#: src\overlay\widgets\Settings.cpp:79
+msgid "Disables logos played at the beginning (requires restart to take effect)."
+msgstr "最初に再生されたロゴ動画をスキップします（再起動が必要です）。"
+
+#: src\overlay\widgets\Settings.cpp:82
+msgid "Disable Vignette"
+msgstr "ヴィネットを無効にする"
+
+#: src\overlay\widgets\Settings.cpp:82
+msgid "Disables vignetting along screen borders (requires restart to take effect)."
+msgstr "画面境界を暗くする効果を無効にします（再起動が必要です）。"
+
+#: src\overlay\widgets\Settings.cpp:85
+msgid "Disable Boundary Teleport"
+msgstr "境界線転移を無効にする"
+
+#: src\overlay\widgets\Settings.cpp:85
+msgid "Allows players to access out-of-bounds locations (requires restart to take effect)."
+msgstr "範囲外の場所にアクセスできるようにします（再起動が必要です）"
+
+#: src\overlay\widgets\Settings.cpp:88
+msgid "Disable V-Sync (Windows 7 only)"
+msgstr "垂直同期を無効にする (Windows 7 のみ)"
+
+#: src\overlay\widgets\Settings.cpp:88
+msgid "Disables VSync on Windows 7 to bypass the 60 FPS limit (requires restart to take effect)."
+msgstr "Windows 7 で垂直同期を無効にして60 FPSの制限を上回ります（再起動が必要です）。"
+
+#: src\overlay\widgets\Settings.cpp:90
+msgid "Fix Minimap Flicker"
+msgstr "ミニマップのフリックを修正"
+
+#: src\overlay\widgets\Settings.cpp:90
+msgid "Fix minimap flickering (requires restart to take effect)."
+msgstr "ミニマップのフリック問題を修正（再起動が必要です）。"
+
+#: src\overlay\widgets\Settings.cpp:97
+msgid "CET Language Settings"
+msgstr "CET 言語設定"
+
+#: src\overlay\widgets\Settings.cpp:103
+msgid "Language"
+msgstr "言語"
+
+#: src\overlay\widgets\Settings.cpp:103
+msgid "Display language for CET."
+msgstr "CETの表示言語です。"
+
+#: src\overlay\widgets\Settings.cpp:108
+msgid "CET Font Settings"
+msgstr "CET フォント設定"
+
+#: src\overlay\widgets\Settings.cpp:115
+msgid "Main Font"
+msgstr "主要フォント"
+
+#: src\overlay\widgets\Settings.cpp:115
+msgid "Main display font for CET."
+msgstr "CETの主要表示フォント。"
+
+#: src\overlay\widgets\Settings.cpp:117
+msgid "Monospaced Font"
+msgstr "等幅フォント"
+
+#: src\overlay\widgets\Settings.cpp:117
+msgid "Monospaceed font, which is used for displaying texts in Console and Game Log, for CET."
+msgstr "CETの等幅フォント、コンソールやゲームログでテキストを表示するために使用されます。"
+
+#: src\overlay\widgets\Settings.cpp:120
+msgid "Font Size"
+msgstr "文字サイズ"
+
+#: src\overlay\widgets\Settings.cpp:120
+msgid "Changes the size of the font, default value is 18px."
+msgstr "フォントのサイズを変更します。既定値は18pxです。"
+
+#: src\overlay\widgets\Settings.cpp:125
+msgid "Advance Settings"
+msgstr "詳細設定"
+
+#: src\overlay\widgets\Settings.cpp:132
+msgid "Oversample Horizontal"
+msgstr "水平オーバーサンプリング"
+
+#: src\overlay\widgets\Settings.cpp:133
+msgid "Oversamples font horizontally, default value is 3x. (May increase font clearity, at the cost of increasing memory usage.)"
+msgstr "水平方向にフォントをオーバーサンプリングします。デフォルト値は3倍です。（フォントのクリア度を高めることができますが、メモリ使用量が増加します。）"
+
+#: src\overlay\widgets\Settings.cpp:136
+msgid "Oversample Vertical"
+msgstr "垂直オーバーサンプリング"
+
+#: src\overlay\widgets\Settings.cpp:137
+msgid "Oversamples font vertically, default value is 1x. (May increase font clearity, at the cost of increasing memory usage.)"
+msgstr "垂直方向にフォントをオーバーサンプリングします。デフォルト値は1倍です。（フォントのクリア度を高めることができますが、メモリ使用量が増加します。）"
+
+#: src\overlay\widgets\Settings.cpp:146
+msgid "CET Development Settings"
+msgstr "CET 開発設定"
+
+#: src\overlay\widgets\Settings.cpp:153
+msgid "Remove Dead Bindings"
+msgstr "無効バインディングを削除"
+
+#: src\overlay\widgets\Settings.cpp:153
+msgid "Removes all bindings which are no longer valid (disabling this could be useful when debugging mod issues)."
+msgstr "無効になったすべてのバインディングを削除します（Modの問題をデバッグするときに、このオプションを無効にすると便利です）。"
+
+#: src\overlay\widgets\Settings.cpp:156
+msgid "Enable ImGui Assertions"
+msgstr "ImGuiアサーションを有効にする"
+
+#: src\overlay\widgets\Settings.cpp:157
+msgid "Enables all ImGui assertions, assertions will get logged into log file of whoever triggered the assertion (useful when debugging ImGui issues, should also be used to check mods before shipping!)."
+msgstr "すべての ImGui アサーションを有効にします。アサーションは、トリガーしたModのログファイルに記録されます (ImGuiの問題のデバッグ時に便利です。 リリース前にModをチェックするためにも使用するべきです！)。"
+
+#: src\overlay\widgets\Settings.cpp:162
+msgid "Enable Debug Build"
+msgstr "デバッグビルドを有効にする"
+
+#: src\overlay\widgets\Settings.cpp:162
+msgid "Sets internal flags to disguise as debug build (requires restart to take effect)."
+msgstr "内部フラグをデバッグビルドに変装させるように設定します (再起動が必要です)。"
+
+#: src\overlay\widgets\Settings.cpp:165
+msgid "Dump Game Options"
+msgstr "ゲームオプションをエクスポートする"
+
+#: src\overlay\widgets\Settings.cpp:165
+msgid "Dumps all game options into main log file (requires restart to take effect)."
+msgstr "すべてのゲームオプションをメインログファイルに出力します(再起動が必要です)。"
+
+#: src\overlay\widgets\Settings.cpp:168
+msgid "Enable Translation Log"
+msgstr "翻訳ログを有効にする"
+
+#: src\overlay\widgets\Settings.cpp:168
+msgid "Show logs when there's a missing translation (requires restart to take effect)."
+msgstr "翻訳が不足している場合にログを表示します (再起動が必要です)。"
+
+#: src\overlay\widgets\Settings.cpp:181
+msgid "Load"
+msgstr "読み込み"
+
+#: src\overlay\widgets\Settings.cpp:187
+msgid "Defaults"
+msgstr "デフォルト値"
+
+#: src\overlay\widgets\Settings.cpp:334 src\overlay\widgets\Settings.cpp:342
+msgctxt "Settings"
+msgid "Default"
+msgstr "デフォルト"
+
+#: src\overlay\widgets\Settings.cpp:369 src\overlay\widgets\Settings.cpp:378
+msgctxt "Settings"
+msgid "System"
+msgstr "システム"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:134
+msgid "TweakDB is not initialized yet"
+msgstr "TweakDBはまだ初期化されていません"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:146
+msgid "Records"
+msgstr "レコード"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:154
+msgid "Queries"
+msgstr "クエリ"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:162
+msgid "Flats"
+msgstr "フラット"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:170
+msgid "Advanced"
+msgstr "詳細設定"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:442
+#: src\overlay\widgets\TweakDBEditor.cpp:1099
+#: src\overlay\widgets\TweakDBEditor.cpp:1355
+#: src\overlay\widgets\TweakDBEditor.cpp:1481
+#: src\overlay\widgets\TweakDBEditor.cpp:1607
+msgid "Search"
+msgstr "検索"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:544
+#, c-format
+msgid "'%s' is not found in TweakDB"
+msgstr "'%s' は TweakDB に見つかりません"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:604
+#, c-format
+msgid "unsupported type: %s"
+msgstr "サポートされていないタイプ: %s"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:637
+#, c-format
+msgid "[%s] %u item"
+msgid_plural "[%s] %u items"
+msgstr[0] "[%s] %u 個のアイテム"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:639
+msgid "clear"
+msgstr "削除"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:650
+msgid "edit"
+msgstr "編集"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:662
+msgid "cancel"
+msgstr "キャンセル"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:675
+msgid "save"
+msgstr "保存"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:739
+msgid "add new"
+msgstr "新規"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:785
+msgid "ERROR_RECORD_NOT_FOUND"
+msgstr "エラー：レコードが見つかりませんでした。"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:879
+msgid "Roll "
+msgstr "横揺れ角 "
+
+#: src\overlay\widgets\TweakDBEditor.cpp:884
+msgid "Pitch"
+msgstr "縦揺れ角"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:889
+msgid "Yaw  "
+msgstr "偏揺れ角  "
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1008
+msgid "'Color' is not supported yet"
+msgstr "「Color」はまだサポートされていません"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1044
+msgid "This is a LocalizationKey"
+msgstr "これはLocalizationKeyです"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1202
+msgid "Game is expecting specific values."
+msgstr "ゲームは特定の値を期待しています。"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1354
+#: src\overlay\widgets\TweakDBEditor.cpp:1360
+#: src\overlay\widgets\TweakDBEditor.cpp:1480
+#: src\overlay\widgets\TweakDBEditor.cpp:1486
+msgid "Regex"
+msgstr "正規表現"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1425
+#: src\overlay\widgets\TweakDBEditor.cpp:1543
+msgid "ERROR_FLAT_NOT_FOUND"
+msgstr "エラー：フラットが見つかりませんでした。"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1565
+msgid "'Flats' Grouping depth"
+msgstr "「フラット」グループの深さ"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1571
+msgid "ComboBox dropdown height"
+msgstr "コンボボックスのドロップダウンの高さ"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1573
+msgid "Refresh all"
+msgstr "全て更新"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1594
+msgid "Record name"
+msgstr "レコード名"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1596
+msgid "Delete Record"
+msgstr "レコードを削除"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1604
+msgid "Record type to create"
+msgstr "作成するレコードの種類"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1634
+msgid "Create record"
+msgstr "レコードを作成"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1642
+msgid "Record to clone"
+msgstr "複製するレコード"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1644
+msgid "Clone record"
+msgstr "レコードを複製"
+

@@ -1,0 +1,454 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: cyber-engine-tweaks\n"
+"Report-Msgid-Bugs-To: https://github.com/maximegmd/CyberEngineTweaks/issues\n"
+"POT-Creation-Date: 2023-05-31 17:59+0800\n"
+"PO-Revision-Date: 2023-05-31 11:04\n"
+"Last-Translator: \n"
+"Language-Team: Chinese Simplified\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Crowdin-Project: cyber-engine-tweaks\n"
+"X-Crowdin-Project-ID: 591959\n"
+"X-Crowdin-Language: zh-CN\n"
+"X-Crowdin-File: /i18n/languages/template.pot\n"
+"X-Crowdin-File-ID: 9\n"
+
+#. Translators: Type in your language name in it's own language. (e.g. French -> Français)
+#: src\I18n.cpp:61
+msgid "Localized Language Name"
+msgstr "中文（简体）"
+
+#: src\overlay\Overlay.cpp:300
+msgid "Console"
+msgstr "控制台"
+
+#: src\overlay\Overlay.cpp:309
+msgid "Bindings"
+msgstr "按键绑定"
+
+#: src\overlay\Overlay.cpp:318
+msgid "Settings"
+msgstr "设置"
+
+#: src\overlay\Overlay.cpp:327
+msgid "TweakDB Editor"
+msgstr "TweakDB编辑器"
+
+#: src\overlay\Overlay.cpp:336
+msgid "Game Log"
+msgstr "游戏日志"
+
+#: src\overlay\Overlay.cpp:345
+msgid "ImGui Debug"
+msgstr "ImGui调试"
+
+#: src\overlay\Overlay.cpp:353
+msgid "Reload all mods"
+msgstr "重载所有Mod"
+
+#: src\overlay\widgets\Bindings.cpp:93 src\overlay\widgets\Settings.cpp:184
+msgid "Save"
+msgstr "保存"
+
+#: src\overlay\widgets\Bindings.cpp:96
+msgid "Reset changes"
+msgstr "重置更改"
+
+#: src\overlay\widgets\Bindings.cpp:168 src\overlay\widgets\Bindings.cpp:170
+msgid "CET First Time Setup"
+msgstr "CET首次使用设置"
+
+#: src\overlay\widgets\Bindings.cpp:172 src\overlay\widgets\Bindings.cpp:178
+msgid "Combo can be composed from up to 4 keys."
+msgstr "按键组合可以最多由4个键组成。"
+
+#: src\overlay\widgets\Bindings.cpp:173 src\overlay\widgets\Bindings.cpp:176
+msgid "Please, bind some key combination for toggling overlay!"
+msgstr "请绑定快捷键以切换CET界面！"
+
+#: src\overlay\widgets\Bindings.cpp:362 src\overlay\widgets\Bindings.cpp:399
+msgid "Currently unable to draw this tooltip. Wait for a bit please..."
+msgstr "目前无法渲染这个工具提示，请稍等..."
+
+#: src\overlay\widgets\Bindings.cpp:428
+msgid "Uncheck this checkbox to unbind this binding."
+msgstr "取消勾选此复选框以解除此绑定。"
+
+#: src\overlay\widgets\Bindings.cpp:474 src\overlay\widgets\Bindings.cpp:475
+msgid "Hotkeys"
+msgstr "快捷键"
+
+#: src\overlay\widgets\Bindings.cpp:477
+msgid "Hotkeys react after assigned key combination has been pressed and subsequently released. You can bind up to 4 key combination to them."
+msgstr "快捷键只能短按。你可以最多设置4个按键的组合。"
+
+#: src\overlay\widgets\Bindings.cpp:498 src\overlay\widgets\Bindings.cpp:499
+msgid "Inputs"
+msgstr "输入键"
+
+#: src\overlay\widgets\Bindings.cpp:501
+msgid "Inputs react when key is pressed and released. You can bind single key to them."
+msgstr "输入键可以长按。你可以绑定单个按键。"
+
+#: src\overlay\widgets\Console.cpp:113
+msgid "Command failed to execute!"
+msgstr "命令执行失败！"
+
+#: src\overlay\widgets\LogWindow.cpp:20
+msgid "Clear output"
+msgstr "清空输出"
+
+#: src\overlay\widgets\LogWindow.cpp:28
+msgid "Auto-scroll"
+msgstr "自动滚屏"
+
+#: src\overlay\widgets\Settings.cpp:56
+msgid "Patches"
+msgstr "补丁"
+
+#: src\overlay\widgets\Settings.cpp:63
+msgid "AMD SMT Patch"
+msgstr "AMD SMT补丁"
+
+#: src\overlay\widgets\Settings.cpp:63
+msgid "For AMD CPUs that did not get a performance boost after CDPR's patch (requires restart to take effect)."
+msgstr "用于打了CDPR的官方补丁之后没有得到性能提升的AMD CPU（需要重新启动才能生效）。"
+
+#: src\overlay\widgets\Settings.cpp:66
+msgid "Remove Pedestrians"
+msgstr "移除行人"
+
+#: src\overlay\widgets\Settings.cpp:66
+msgid "Removes most of the pedestrians and traffic (requires restart to take effect)."
+msgstr "移除大部分的行人和交通（需要重新启动才能生效）。"
+
+#: src\overlay\widgets\Settings.cpp:69
+msgid "Disable Async Compute"
+msgstr "禁用异步计算"
+
+#: src\overlay\widgets\Settings.cpp:70
+msgid "Disables async compute, this can give a boost on older GPUs like Nvidia 10xx series for example (requires restart to take effect)."
+msgstr "禁用异步计算，这可能对旧的GPU带来提升，例如Nvidia GTX10XX系列（需要重新启动才能生效）。"
+
+#: src\overlay\widgets\Settings.cpp:73
+msgid "Disable Anti-aliasing"
+msgstr "禁用抗锯齿"
+
+#: src\overlay\widgets\Settings.cpp:73
+msgid "Completely disables anti-aliasing (requires restart to take effect)."
+msgstr "完全禁用抗锯齿（需要重新启动才能生效）。"
+
+#: src\overlay\widgets\Settings.cpp:76
+msgid "Skip Start Menu"
+msgstr "跳过启动菜单"
+
+#: src\overlay\widgets\Settings.cpp:76
+msgid "Skips the 'Breaching...' menu asking you to press space bar to continue (requires restart to take effect)."
+msgstr "跳过需要你按空格键继续的”正在入侵“菜单，需要你按空格键继续的（需要重新启动才能生效）。"
+
+#: src\overlay\widgets\Settings.cpp:79
+msgid "Suppress Intro Movies"
+msgstr "禁止启动视频"
+
+#: src\overlay\widgets\Settings.cpp:79
+msgid "Disables logos played at the beginning (requires restart to take effect)."
+msgstr "禁用开始时播放的徽标视频（需要重新启动才能生效）。"
+
+#: src\overlay\widgets\Settings.cpp:82
+msgid "Disable Vignette"
+msgstr "禁用暗角效果"
+
+#: src\overlay\widgets\Settings.cpp:82
+msgid "Disables vignetting along screen borders (requires restart to take effect)."
+msgstr "禁用屏幕边缘的暗角效果（需要重新启动才能生效）。"
+
+#: src\overlay\widgets\Settings.cpp:85
+msgid "Disable Boundary Teleport"
+msgstr "禁用边界传送"
+
+#: src\overlay\widgets\Settings.cpp:85
+msgid "Allows players to access out-of-bounds locations (requires restart to take effect)."
+msgstr "允许玩家进入超出边界的位置（需要重新启动才能生效）。"
+
+#: src\overlay\widgets\Settings.cpp:88
+msgid "Disable V-Sync (Windows 7 only)"
+msgstr "禁用垂直同步（仅限Windows 7）"
+
+#: src\overlay\widgets\Settings.cpp:88
+msgid "Disables VSync on Windows 7 to bypass the 60 FPS limit (requires restart to take effect)."
+msgstr "在Windows 7上禁用垂直同步，以绕过60FPS的限制（需要重新启动才能生效）。"
+
+#: src\overlay\widgets\Settings.cpp:90
+msgid "Fix Minimap Flicker"
+msgstr "修复小地图闪烁"
+
+#: src\overlay\widgets\Settings.cpp:90
+msgid "Fix minimap flickering (requires restart to take effect)."
+msgstr "修复小地图的闪烁问题（需要重新启动才能生效）。"
+
+#: src\overlay\widgets\Settings.cpp:97
+msgid "CET Language Settings"
+msgstr "CET语言设置"
+
+#: src\overlay\widgets\Settings.cpp:103
+msgid "Language"
+msgstr "语言"
+
+#: src\overlay\widgets\Settings.cpp:103
+msgid "Display language for CET."
+msgstr "CET的界面语言"
+
+#: src\overlay\widgets\Settings.cpp:108
+msgid "CET Font Settings"
+msgstr "CET字体设置"
+
+#: src\overlay\widgets\Settings.cpp:115
+msgid "Main Font"
+msgstr "主字体"
+
+#: src\overlay\widgets\Settings.cpp:115
+msgid "Main display font for CET."
+msgstr "CET的主字体"
+
+#: src\overlay\widgets\Settings.cpp:117
+msgid "Monospaced Font"
+msgstr "等宽字体"
+
+#: src\overlay\widgets\Settings.cpp:117
+msgid "Monospaceed font, which is used for displaying texts in Console and Game Log, for CET."
+msgstr "CET的等宽字体，用于显示控制台于游戏日志中的文本。"
+
+#: src\overlay\widgets\Settings.cpp:120
+msgid "Font Size"
+msgstr "字体大小"
+
+#: src\overlay\widgets\Settings.cpp:120
+msgid "Changes the size of the font, default value is 18px."
+msgstr "改变字体的大小，默认值为18px。"
+
+#: src\overlay\widgets\Settings.cpp:125
+msgid "Advance Settings"
+msgstr "高级设置"
+
+#: src\overlay\widgets\Settings.cpp:132
+msgid "Oversample Horizontal"
+msgstr "水平过采样"
+
+#: src\overlay\widgets\Settings.cpp:133
+msgid "Oversamples font horizontally, default value is 3x. (May increase font clearity, at the cost of increasing memory usage.)"
+msgstr "对字体进行水平过采样，默认值为3倍。（可能会增加字体的清晰度，但代价是增加内存占用。）"
+
+#: src\overlay\widgets\Settings.cpp:136
+msgid "Oversample Vertical"
+msgstr "垂直过采样"
+
+#: src\overlay\widgets\Settings.cpp:137
+msgid "Oversamples font vertically, default value is 1x. (May increase font clearity, at the cost of increasing memory usage.)"
+msgstr "对字体进行垂直过采样，默认值为1倍。（可能会增加字体的清晰度，但代价是增加内存占用。）"
+
+#: src\overlay\widgets\Settings.cpp:146
+msgid "CET Development Settings"
+msgstr "CET开发设置"
+
+#: src\overlay\widgets\Settings.cpp:153
+msgid "Remove Dead Bindings"
+msgstr "移除失效快捷键"
+
+#: src\overlay\widgets\Settings.cpp:153
+msgid "Removes all bindings which are no longer valid (disabling this could be useful when debugging mod issues)."
+msgstr "删除所有不再有效的按键绑定（在调试Mod问题时禁用这个功能可能会比较好）。"
+
+#: src\overlay\widgets\Settings.cpp:156
+msgid "Enable ImGui Assertions"
+msgstr "启用ImGui断言"
+
+#: src\overlay\widgets\Settings.cpp:157
+msgid "Enables all ImGui assertions, assertions will get logged into log file of whoever triggered the assertion (useful when debugging ImGui issues, should also be used to check mods before shipping!)."
+msgstr "启用所有的ImGui断言，断言将被记录在断言触发着的的日志文件中（在调试ImGui问题时很有用，也应该用来在Mod发布前的检查！）。"
+
+#: src\overlay\widgets\Settings.cpp:162
+msgid "Enable Debug Build"
+msgstr "启用调试构建"
+
+#: src\overlay\widgets\Settings.cpp:162
+msgid "Sets internal flags to disguise as debug build (requires restart to take effect)."
+msgstr "设置内部标记以伪装成调试构建（需要重启才能生效）。"
+
+#: src\overlay\widgets\Settings.cpp:165
+msgid "Dump Game Options"
+msgstr "导出游戏选项"
+
+#: src\overlay\widgets\Settings.cpp:165
+msgid "Dumps all game options into main log file (requires restart to take effect)."
+msgstr "将所有游戏选项导出到主日志文件中（需要重新启动才能生效）。"
+
+#: src\overlay\widgets\Settings.cpp:168
+msgid "Enable Translation Log"
+msgstr "启用翻译日志"
+
+#: src\overlay\widgets\Settings.cpp:168
+msgid "Show logs when there's a missing translation (requires restart to take effect)."
+msgstr "在翻译有缺失的时候显示日志（需要重新启动才能生效）。"
+
+#: src\overlay\widgets\Settings.cpp:181
+msgid "Load"
+msgstr "载入"
+
+#: src\overlay\widgets\Settings.cpp:187
+msgid "Defaults"
+msgstr "恢复默认"
+
+#: src\overlay\widgets\Settings.cpp:334 src\overlay\widgets\Settings.cpp:342
+msgctxt "Settings"
+msgid "Default"
+msgstr "默认"
+
+#: src\overlay\widgets\Settings.cpp:369 src\overlay\widgets\Settings.cpp:378
+msgctxt "Settings"
+msgid "System"
+msgstr "系统"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:134
+msgid "TweakDB is not initialized yet"
+msgstr "TweakDB尚未初始化"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:146
+msgid "Records"
+msgstr "记录"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:154
+msgid "Queries"
+msgstr "查询"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:162
+msgid "Flats"
+msgstr "平面"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:170
+msgid "Advanced"
+msgstr "高级"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:442
+#: src\overlay\widgets\TweakDBEditor.cpp:1099
+#: src\overlay\widgets\TweakDBEditor.cpp:1355
+#: src\overlay\widgets\TweakDBEditor.cpp:1481
+#: src\overlay\widgets\TweakDBEditor.cpp:1607
+msgid "Search"
+msgstr "搜索"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:544
+#, c-format
+msgid "'%s' is not found in TweakDB"
+msgstr "未在TweakDB中找到”%s“"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:604
+#, c-format
+msgid "unsupported type: %s"
+msgstr "不支持的类型：%s"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:637
+#, c-format
+msgid "[%s] %u item"
+msgid_plural "[%s] %u items"
+msgstr[0] "[%s] %u个项目"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:639
+msgid "clear"
+msgstr "清除"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:650
+msgid "edit"
+msgstr "编辑"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:662
+msgid "cancel"
+msgstr "取消"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:675
+msgid "save"
+msgstr "保存"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:739
+msgid "add new"
+msgstr "新增"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:785
+msgid "ERROR_RECORD_NOT_FOUND"
+msgstr "错误，未找到记录"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:879
+msgid "Roll "
+msgstr "滚转角 "
+
+#: src\overlay\widgets\TweakDBEditor.cpp:884
+msgid "Pitch"
+msgstr "俯仰角"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:889
+msgid "Yaw  "
+msgstr "偏航角  "
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1008
+msgid "'Color' is not supported yet"
+msgstr "还不支持”Color“"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1044
+msgid "This is a LocalizationKey"
+msgstr "这是一个LocalizationKey"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1202
+msgid "Game is expecting specific values."
+msgstr "游戏期待特定值。"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1354
+#: src\overlay\widgets\TweakDBEditor.cpp:1360
+#: src\overlay\widgets\TweakDBEditor.cpp:1480
+#: src\overlay\widgets\TweakDBEditor.cpp:1486
+msgid "Regex"
+msgstr "正则"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1425
+#: src\overlay\widgets\TweakDBEditor.cpp:1543
+msgid "ERROR_FLAT_NOT_FOUND"
+msgstr "错误，未找到平面"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1565
+msgid "'Flats' Grouping depth"
+msgstr "”平面“分组深度"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1571
+msgid "ComboBox dropdown height"
+msgstr "组合框下拉高度"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1573
+msgid "Refresh all"
+msgstr "刷新全部"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1594
+msgid "Record name"
+msgstr "记录名称"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1596
+msgid "Delete Record"
+msgstr "删除记录"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1604
+msgid "Record type to create"
+msgstr "要创建的记录类型"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1634
+msgid "Create record"
+msgstr "创建记录"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1642
+msgid "Record to clone"
+msgstr "要复制的记录"
+
+#: src\overlay\widgets\TweakDBEditor.cpp:1644
+msgid "Clone record"
+msgstr "复制记录"
+
