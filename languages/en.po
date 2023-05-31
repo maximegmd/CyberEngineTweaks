@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CyberEngineTweaks \n"
 "Report-Msgid-Bugs-To: https://github.com/maximegmd/CyberEngineTweaks/issues\n"
-"POT-Creation-Date: 2023-05-30 14:57+0800\n"
+"POT-Creation-Date: 2023-05-31 17:59+0800\n"
 "PO-Revision-Date: 2023-05-29 08:27+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -83,24 +83,16 @@ msgid "Hotkeys"
 msgstr "Hotkeys"
 
 #: src\overlay\widgets\Bindings.cpp:477
-msgid ""
-"Hotkeys react after assigned key combination has been pressed and "
-"subsequently released. You can bind up to 4 key combination to them."
-msgstr ""
-"Hotkeys react after assigned key combination has been pressed and "
-"subsequently released. You can bind up to 4 key combination to them."
+msgid "Hotkeys react after assigned key combination has been pressed and subsequently released. You can bind up to 4 key combination to them."
+msgstr "Hotkeys react after assigned key combination has been pressed and subsequently released. You can bind up to 4 key combination to them."
 
 #: src\overlay\widgets\Bindings.cpp:498 src\overlay\widgets\Bindings.cpp:499
 msgid "Inputs"
 msgstr "Inputs"
 
 #: src\overlay\widgets\Bindings.cpp:501
-msgid ""
-"Inputs react when key is pressed and released. You can bind single key to "
-"them."
-msgstr ""
-"Inputs react when key is pressed and released. You can bind single key to "
-"them."
+msgid "Inputs react when key is pressed and released. You can bind single key to them."
+msgstr "Inputs react when key is pressed and released. You can bind single key to them."
 
 #: src\overlay\widgets\Console.cpp:113
 msgid "Command failed to execute!"
@@ -123,36 +115,24 @@ msgid "AMD SMT Patch"
 msgstr "AMD SMT Patch"
 
 #: src\overlay\widgets\Settings.cpp:63
-msgid ""
-"For AMD CPUs that did not get a performance boost after CDPR's patch "
-"(requires restart to take effect)."
-msgstr ""
-"For AMD CPUs that did not get a performance boost after CDPR's patch "
-"(requires restart to take effect)."
+msgid "For AMD CPUs that did not get a performance boost after CDPR's patch (requires restart to take effect)."
+msgstr "For AMD CPUs that did not get a performance boost after CDPR's patch (requires restart to take effect)."
 
 #: src\overlay\widgets\Settings.cpp:66
 msgid "Remove Pedestrians"
 msgstr "Remove Pedestrians"
 
 #: src\overlay\widgets\Settings.cpp:66
-msgid ""
-"Removes most of the pedestrians and traffic (requires restart to take "
-"effect)."
-msgstr ""
-"Removes most of the pedestrians and traffic (requires restart to take "
-"effect)."
+msgid "Removes most of the pedestrians and traffic (requires restart to take effect)."
+msgstr "Removes most of the pedestrians and traffic (requires restart to take effect)."
 
 #: src\overlay\widgets\Settings.cpp:69
 msgid "Disable Async Compute"
 msgstr "Disable Async Compute"
 
 #: src\overlay\widgets\Settings.cpp:70
-msgid ""
-"Disables async compute, this can give a boost on older GPUs like Nvidia 10xx "
-"series for example (requires restart to take effect)."
-msgstr ""
-"Disables async compute, this can give a boost on older GPUs like Nvidia 10xx "
-"series for example (requires restart to take effect)."
+msgid "Disables async compute, this can give a boost on older GPUs like Nvidia 10xx series for example (requires restart to take effect)."
+msgstr "Disables async compute, this can give a boost on older GPUs like Nvidia 10xx series for example (requires restart to take effect)."
 
 #: src\overlay\widgets\Settings.cpp:73
 msgid "Disable Anti-aliasing"
@@ -167,56 +147,40 @@ msgid "Skip Start Menu"
 msgstr "Skip Start Menu"
 
 #: src\overlay\widgets\Settings.cpp:76
-msgid ""
-"Skips the 'Breaching...' menu asking you to press space bar to continue "
-"(requires restart to take effect)."
-msgstr ""
-"Skips the 'Breaching...' menu asking you to press space bar to continue "
-"(requires restart to take effect)."
+msgid "Skips the 'Breaching...' menu asking you to press space bar to continue (requires restart to take effect)."
+msgstr "Skips the 'Breaching...' menu asking you to press space bar to continue (requires restart to take effect)."
 
 #: src\overlay\widgets\Settings.cpp:79
 msgid "Suppress Intro Movies"
 msgstr "Suppress Intro Movies"
 
 #: src\overlay\widgets\Settings.cpp:79
-msgid ""
-"Disables logos played at the beginning (requires restart to take effect)."
-msgstr ""
-"Disables logos played at the beginning (requires restart to take effect)."
+msgid "Disables logos played at the beginning (requires restart to take effect)."
+msgstr "Disables logos played at the beginning (requires restart to take effect)."
 
 #: src\overlay\widgets\Settings.cpp:82
 msgid "Disable Vignette"
 msgstr "Disable Vignette"
 
 #: src\overlay\widgets\Settings.cpp:82
-msgid ""
-"Disables vignetting along screen borders (requires restart to take effect)."
-msgstr ""
-"Disables vignetting along screen borders (requires restart to take effect)."
+msgid "Disables vignetting along screen borders (requires restart to take effect)."
+msgstr "Disables vignetting along screen borders (requires restart to take effect)."
 
 #: src\overlay\widgets\Settings.cpp:85
 msgid "Disable Boundary Teleport"
 msgstr "Disable Boundary Teleport"
 
 #: src\overlay\widgets\Settings.cpp:85
-msgid ""
-"Allows players to access out-of-bounds locations (requires restart to take "
-"effect)."
-msgstr ""
-"Allows players to access out-of-bounds locations (requires restart to take "
-"effect)."
+msgid "Allows players to access out-of-bounds locations (requires restart to take effect)."
+msgstr "Allows players to access out-of-bounds locations (requires restart to take effect)."
 
 #: src\overlay\widgets\Settings.cpp:88
 msgid "Disable V-Sync (Windows 7 only)"
 msgstr "Disable V-Sync (Windows 7 only)"
 
 #: src\overlay\widgets\Settings.cpp:88
-msgid ""
-"Disables VSync on Windows 7 to bypass the 60 FPS limit (requires restart to "
-"take effect)."
-msgstr ""
-"Disables VSync on Windows 7 to bypass the 60 FPS limit (requires restart to "
-"take effect)."
+msgid "Disables VSync on Windows 7 to bypass the 60 FPS limit (requires restart to take effect)."
+msgstr "Disables VSync on Windows 7 to bypass the 60 FPS limit (requires restart to take effect)."
 
 #: src\overlay\widgets\Settings.cpp:90
 msgid "Fix Minimap Flicker"
@@ -255,12 +219,8 @@ msgid "Monospaced Font"
 msgstr "Monospaced Font"
 
 #: src\overlay\widgets\Settings.cpp:117
-msgid ""
-"Monospaceed font, which is used for displaying texts in Console and Game "
-"Log, for CET."
-msgstr ""
-"Monospaceed font, which is used for displaying texts in Console and Game "
-"Log, for CET."
+msgid "Monospaceed font, which is used for displaying texts in Console and Game Log, for CET."
+msgstr "Monospaceed font, which is used for displaying texts in Console and Game Log, for CET."
 
 #: src\overlay\widgets\Settings.cpp:120
 msgid "Font Size"
@@ -279,24 +239,16 @@ msgid "Oversample Horizontal"
 msgstr "Oversample Horizontal"
 
 #: src\overlay\widgets\Settings.cpp:133
-msgid ""
-"Oversamples font horizontally, default value is 3x. (May increase font "
-"clearity, at the cost of increasing memory usage.)"
-msgstr ""
-"Oversamples font horizontally, default value is 3x. (May increase font "
-"clearity, at the cost of increasing memory usage.)"
+msgid "Oversamples font horizontally, default value is 3x. (May increase font clearity, at the cost of increasing memory usage.)"
+msgstr "Oversamples font horizontally, default value is 3x. (May increase font clearity, at the cost of increasing memory usage.)"
 
 #: src\overlay\widgets\Settings.cpp:136
 msgid "Oversample Vertical"
 msgstr "Oversample Vertical"
 
 #: src\overlay\widgets\Settings.cpp:137
-msgid ""
-"Oversamples font vertically, default value is 1x. (May increase font "
-"clearity, at the cost of increasing memory usage.)"
-msgstr ""
-"Oversamples font vertically, default value is 1x. (May increase font "
-"clearity, at the cost of increasing memory usage.)"
+msgid "Oversamples font vertically, default value is 1x. (May increase font clearity, at the cost of increasing memory usage.)"
+msgstr "Oversamples font vertically, default value is 1x. (May increase font clearity, at the cost of increasing memory usage.)"
 
 #: src\overlay\widgets\Settings.cpp:146
 msgid "CET Development Settings"
@@ -307,60 +259,40 @@ msgid "Remove Dead Bindings"
 msgstr "Remove Dead Bindings"
 
 #: src\overlay\widgets\Settings.cpp:153
-msgid ""
-"Removes all bindings which are no longer valid (disabling this could be "
-"useful when debugging mod issues)."
-msgstr ""
-"Removes all bindings which are no longer valid (disabling this could be "
-"useful when debugging mod issues)."
+msgid "Removes all bindings which are no longer valid (disabling this could be useful when debugging mod issues)."
+msgstr "Removes all bindings which are no longer valid (disabling this could be useful when debugging mod issues)."
 
 #: src\overlay\widgets\Settings.cpp:156
 msgid "Enable ImGui Assertions"
 msgstr "Enable ImGui Assertions"
 
 #: src\overlay\widgets\Settings.cpp:157
-msgid ""
-"Enables all ImGui assertions, assertions will get logged into log file of "
-"whoever triggered the assertion (useful when debugging ImGui issues, should "
-"also be used to check mods before shipping!)."
-msgstr ""
-"Enables all ImGui assertions, assertions will get logged into log file of "
-"whoever triggered the assertion (useful when debugging ImGui issues, should "
-"also be used to check mods before shipping!)."
+msgid "Enables all ImGui assertions, assertions will get logged into log file of whoever triggered the assertion (useful when debugging ImGui issues, should also be used to check mods before shipping!)."
+msgstr "Enables all ImGui assertions, assertions will get logged into log file of whoever triggered the assertion (useful when debugging ImGui issues, should also be used to check mods before shipping!)."
 
 #: src\overlay\widgets\Settings.cpp:162
 msgid "Enable Debug Build"
 msgstr "Enable Debug Build"
 
 #: src\overlay\widgets\Settings.cpp:162
-msgid ""
-"Sets internal flags to disguise as debug build (requires restart to take "
-"effect)."
-msgstr ""
-"Sets internal flags to disguise as debug build (requires restart to take "
-"effect)."
+msgid "Sets internal flags to disguise as debug build (requires restart to take effect)."
+msgstr "Sets internal flags to disguise as debug build (requires restart to take effect)."
 
 #: src\overlay\widgets\Settings.cpp:165
 msgid "Dump Game Options"
 msgstr "Dump Game Options"
 
 #: src\overlay\widgets\Settings.cpp:165
-msgid ""
-"Dumps all game options into main log file (requires restart to take effect)."
-msgstr ""
-"Dumps all game options into main log file (requires restart to take effect)."
+msgid "Dumps all game options into main log file (requires restart to take effect)."
+msgstr "Dumps all game options into main log file (requires restart to take effect)."
 
 #: src\overlay\widgets\Settings.cpp:168
-msgid "Enable Tranlation Log"
-msgstr "Enable Tranlation Log"
+msgid "Enable Translation Log"
+msgstr "Enable Translation Log"
 
 #: src\overlay\widgets\Settings.cpp:168
-msgid ""
-"Show logs when there's a missing translation (requires restart to take "
-"effect)."
-msgstr ""
-"Show logs when there's a missing translation (requires restart to take "
-"effect)."
+msgid "Show logs when there's a missing translation (requires restart to take effect)."
+msgstr "Show logs when there's a missing translation (requires restart to take effect)."
 
 #: src\overlay\widgets\Settings.cpp:181
 msgid "Load"
@@ -520,12 +452,3 @@ msgstr "Record to clone"
 #: src\overlay\widgets\TweakDBEditor.cpp:1644
 msgid "Clone record"
 msgstr "Clone record"
-
-#~ msgid "(requires restart to take effect)."
-#~ msgstr "(requires restart to take effect)."
-
-#~ msgid "Changees the size of the font, default value is 18px."
-#~ msgstr "Changees the size of the font, default value is 18px."
-
-#~ msgid "TweakDBEditor-Bar"
-#~ msgstr "TweakDBEditor-Bar"

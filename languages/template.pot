@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CyberEngineTweaks \n"
 "Report-Msgid-Bugs-To: https://github.com/maximegmd/CyberEngineTweaks/issues\n"
-"POT-Creation-Date: 2023-05-30 14:57+0800\n"
+"POT-Creation-Date: 2023-05-31 17:59+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -84,9 +84,7 @@ msgid "Hotkeys"
 msgstr ""
 
 #: src\overlay\widgets\Bindings.cpp:477
-msgid ""
-"Hotkeys react after assigned key combination has been pressed and "
-"subsequently released. You can bind up to 4 key combination to them."
+msgid "Hotkeys react after assigned key combination has been pressed and subsequently released. You can bind up to 4 key combination to them."
 msgstr ""
 
 #: src\overlay\widgets\Bindings.cpp:498 src\overlay\widgets\Bindings.cpp:499
@@ -94,9 +92,7 @@ msgid "Inputs"
 msgstr ""
 
 #: src\overlay\widgets\Bindings.cpp:501
-msgid ""
-"Inputs react when key is pressed and released. You can bind single key to "
-"them."
+msgid "Inputs react when key is pressed and released. You can bind single key to them."
 msgstr ""
 
 #: src\overlay\widgets\Console.cpp:113
@@ -120,9 +116,7 @@ msgid "AMD SMT Patch"
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:63
-msgid ""
-"For AMD CPUs that did not get a performance boost after CDPR's patch "
-"(requires restart to take effect)."
+msgid "For AMD CPUs that did not get a performance boost after CDPR's patch (requires restart to take effect)."
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:66
@@ -130,9 +124,7 @@ msgid "Remove Pedestrians"
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:66
-msgid ""
-"Removes most of the pedestrians and traffic (requires restart to take "
-"effect)."
+msgid "Removes most of the pedestrians and traffic (requires restart to take effect)."
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:69
@@ -140,9 +132,7 @@ msgid "Disable Async Compute"
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:70
-msgid ""
-"Disables async compute, this can give a boost on older GPUs like Nvidia 10xx "
-"series for example (requires restart to take effect)."
+msgid "Disables async compute, this can give a boost on older GPUs like Nvidia 10xx series for example (requires restart to take effect)."
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:73
@@ -158,9 +148,7 @@ msgid "Skip Start Menu"
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:76
-msgid ""
-"Skips the 'Breaching...' menu asking you to press space bar to continue "
-"(requires restart to take effect)."
+msgid "Skips the 'Breaching...' menu asking you to press space bar to continue (requires restart to take effect)."
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:79
@@ -168,8 +156,7 @@ msgid "Suppress Intro Movies"
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:79
-msgid ""
-"Disables logos played at the beginning (requires restart to take effect)."
+msgid "Disables logos played at the beginning (requires restart to take effect)."
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:82
@@ -177,8 +164,7 @@ msgid "Disable Vignette"
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:82
-msgid ""
-"Disables vignetting along screen borders (requires restart to take effect)."
+msgid "Disables vignetting along screen borders (requires restart to take effect)."
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:85
@@ -186,9 +172,7 @@ msgid "Disable Boundary Teleport"
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:85
-msgid ""
-"Allows players to access out-of-bounds locations (requires restart to take "
-"effect)."
+msgid "Allows players to access out-of-bounds locations (requires restart to take effect)."
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:88
@@ -196,9 +180,7 @@ msgid "Disable V-Sync (Windows 7 only)"
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:88
-msgid ""
-"Disables VSync on Windows 7 to bypass the 60 FPS limit (requires restart to "
-"take effect)."
+msgid "Disables VSync on Windows 7 to bypass the 60 FPS limit (requires restart to take effect)."
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:90
@@ -238,9 +220,7 @@ msgid "Monospaced Font"
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:117
-msgid ""
-"Monospaceed font, which is used for displaying texts in Console and Game "
-"Log, for CET."
+msgid "Monospaceed font, which is used for displaying texts in Console and Game Log, for CET."
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:120
@@ -260,9 +240,7 @@ msgid "Oversample Horizontal"
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:133
-msgid ""
-"Oversamples font horizontally, default value is 3x. (May increase font "
-"clearity, at the cost of increasing memory usage.)"
+msgid "Oversamples font horizontally, default value is 3x. (May increase font clearity, at the cost of increasing memory usage.)"
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:136
@@ -270,9 +248,7 @@ msgid "Oversample Vertical"
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:137
-msgid ""
-"Oversamples font vertically, default value is 1x. (May increase font "
-"clearity, at the cost of increasing memory usage.)"
+msgid "Oversamples font vertically, default value is 1x. (May increase font clearity, at the cost of increasing memory usage.)"
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:146
@@ -284,9 +260,7 @@ msgid "Remove Dead Bindings"
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:153
-msgid ""
-"Removes all bindings which are no longer valid (disabling this could be "
-"useful when debugging mod issues)."
+msgid "Removes all bindings which are no longer valid (disabling this could be useful when debugging mod issues)."
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:156
@@ -294,10 +268,7 @@ msgid "Enable ImGui Assertions"
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:157
-msgid ""
-"Enables all ImGui assertions, assertions will get logged into log file of "
-"whoever triggered the assertion (useful when debugging ImGui issues, should "
-"also be used to check mods before shipping!)."
+msgid "Enables all ImGui assertions, assertions will get logged into log file of whoever triggered the assertion (useful when debugging ImGui issues, should also be used to check mods before shipping!)."
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:162
@@ -305,9 +276,7 @@ msgid "Enable Debug Build"
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:162
-msgid ""
-"Sets internal flags to disguise as debug build (requires restart to take "
-"effect)."
+msgid "Sets internal flags to disguise as debug build (requires restart to take effect)."
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:165
@@ -315,18 +284,15 @@ msgid "Dump Game Options"
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:165
-msgid ""
-"Dumps all game options into main log file (requires restart to take effect)."
+msgid "Dumps all game options into main log file (requires restart to take effect)."
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:168
-msgid "Enable Tranlation Log"
+msgid "Enable Translation Log"
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:168
-msgid ""
-"Show logs when there's a missing translation (requires restart to take "
-"effect)."
+msgid "Show logs when there's a missing translation (requires restart to take effect)."
 msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:181
