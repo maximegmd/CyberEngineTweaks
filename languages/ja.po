@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: cyber-engine-tweaks\n"
 "Report-Msgid-Bugs-To: https://github.com/maximegmd/CyberEngineTweaks/issues\n"
 "POT-Creation-Date: 2023-05-30 14:57+0800\n"
-"PO-Revision-Date: 2023-05-30 17:16\n"
+"PO-Revision-Date: 2023-05-31 08:30\n"
 "Last-Translator: \n"
 "Language-Team: Japanese\n"
 "Language: ja_JP\n"
@@ -28,7 +28,7 @@ msgstr "コンソール"
 
 #: src\overlay\Overlay.cpp:309
 msgid "Bindings"
-msgstr "バインド"
+msgstr "バインド設定"
 
 #: src\overlay\Overlay.cpp:318
 msgid "Settings"
@@ -44,11 +44,11 @@ msgstr "ゲームログ"
 
 #: src\overlay\Overlay.cpp:345
 msgid "ImGui Debug"
-msgstr "ImGui Debug"
+msgstr "ImGui デバッグ"
 
 #: src\overlay\Overlay.cpp:353
 msgid "Reload all mods"
-msgstr "すべてのMODを再読み込み"
+msgstr "全MODをリロード"
 
 #: src\overlay\widgets\Bindings.cpp:93 src\overlay\widgets\Settings.cpp:184
 msgid "Save"
@@ -56,7 +56,7 @@ msgstr "保存"
 
 #: src\overlay\widgets\Bindings.cpp:96
 msgid "Reset changes"
-msgstr "変更をリセット"
+msgstr "リセット変更"
 
 #: src\overlay\widgets\Bindings.cpp:168 src\overlay\widgets\Bindings.cpp:170
 msgid "CET First Time Setup"
@@ -64,11 +64,11 @@ msgstr "CET初回セットアップ"
 
 #: src\overlay\widgets\Bindings.cpp:172 src\overlay\widgets\Bindings.cpp:178
 msgid "Combo can be composed from up to 4 keys."
-msgstr "コンボは最大4つのキーから構成できます。"
+msgstr "4つのキーまででコンボを構成できます。"
 
 #: src\overlay\widgets\Bindings.cpp:173 src\overlay\widgets\Bindings.cpp:176
 msgid "Please, bind some key combination for toggling overlay!"
-msgstr "オーバーレイを切り替えるためにいくつかのキーの組み合わせをバインドしてください！"
+msgstr "CETのオーバーレイを切り替えるためにホットキーを設定してください！"
 
 #: src\overlay\widgets\Bindings.cpp:362 src\overlay\widgets\Bindings.cpp:399
 msgid "Currently unable to draw this tooltip. Wait for a bit please..."
