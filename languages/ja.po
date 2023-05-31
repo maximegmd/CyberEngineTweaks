@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: cyber-engine-tweaks\n"
 "Report-Msgid-Bugs-To: https://github.com/maximegmd/CyberEngineTweaks/issues\n"
-"POT-Creation-Date: 2023-05-30 14:57+0800\n"
-"PO-Revision-Date: 2023-05-31 09:33\n"
+"POT-Creation-Date: 2023-05-31 17:59+0800\n"
+"PO-Revision-Date: 2023-05-31 10:11\n"
 "Last-Translator: \n"
 "Language-Team: Japanese\n"
 "Language: ja_JP\n"
@@ -220,7 +220,7 @@ msgstr "等幅フォント"
 
 #: src\overlay\widgets\Settings.cpp:117
 msgid "Monospaceed font, which is used for displaying texts in Console and Game Log, for CET."
-msgstr "ConsoleやGame LogでCET用にテキストを表示するために使用されるMonospaceedフォント。"
+msgstr "CETの等幅フォント、コンソールやゲームログでテキストを表示するために使用されます。"
 
 #: src\overlay\widgets\Settings.cpp:120
 msgid "Font Size"
@@ -240,7 +240,7 @@ msgstr "水平オーバーサンプリング"
 
 #: src\overlay\widgets\Settings.cpp:133
 msgid "Oversamples font horizontally, default value is 3x. (May increase font clearity, at the cost of increasing memory usage.)"
-msgstr "オーバーサンプルフォントの水平方向のデフォルト値は3倍です。メモリ使用量を増やすため、フォントの透明度を高めることができます。"
+msgstr "水平方向にフォントをオーバーサンプリングします。デフォルト値は3倍です。（フォントのクリア度を高めることができますが、メモリ使用量が増加します。）"
 
 #: src\overlay\widgets\Settings.cpp:136
 msgid "Oversample Vertical"
@@ -248,7 +248,7 @@ msgstr "垂直オーバーサンプリング"
 
 #: src\overlay\widgets\Settings.cpp:137
 msgid "Oversamples font vertically, default value is 1x. (May increase font clearity, at the cost of increasing memory usage.)"
-msgstr "フォントを垂直方向にオーバーサンプルします。デフォルト値は1倍です。メモリ使用量を増やすため、フォントの透明度を高めることができます。"
+msgstr "垂直方向にフォントをオーバーサンプリングします。デフォルト値は1倍です。（フォントのクリア度を高めることができますが、メモリ使用量が増加します。）"
 
 #: src\overlay\widgets\Settings.cpp:146
 msgid "CET Development Settings"
@@ -260,7 +260,7 @@ msgstr "無効バインディングを削除"
 
 #: src\overlay\widgets\Settings.cpp:153
 msgid "Removes all bindings which are no longer valid (disabling this could be useful when debugging mod issues)."
-msgstr "無効になったすべてのバインディングを削除します（無効にするとMODの問題をデバッグするときに便利です）。"
+msgstr "無効になったすべてのバインディングを削除します（Modの問題をデバッグするときに、このオプションを無効にすると便利です）。"
 
 #: src\overlay\widgets\Settings.cpp:156
 msgid "Enable ImGui Assertions"
@@ -284,15 +284,15 @@ msgstr "ゲームオプションをエクスポートする"
 
 #: src\overlay\widgets\Settings.cpp:165
 msgid "Dumps all game options into main log file (requires restart to take effect)."
-msgstr "すべてのゲームオプションをメインログファイルにダンプします(有効にするには再起動が必要です)。"
+msgstr "すべてのゲームオプションをメインログファイルに出力します(再起動が必要です)。"
 
 #: src\overlay\widgets\Settings.cpp:168
-msgid "Enable Tranlation Log"
-msgstr "翻訳ログを有効にする"
+msgid "Enable Translation Log"
+msgstr ""
 
 #: src\overlay\widgets\Settings.cpp:168
 msgid "Show logs when there's a missing translation (requires restart to take effect)."
-msgstr "翻訳が不足している場合にログを表示します (有効にするには再起動が必要です)。"
+msgstr "翻訳が不足している場合にログを表示します (再起動が必要です)。"
 
 #: src\overlay\widgets\Settings.cpp:181
 msgid "Load"
@@ -300,7 +300,7 @@ msgstr "読み込み"
 
 #: src\overlay\widgets\Settings.cpp:187
 msgid "Defaults"
-msgstr "デフォルト"
+msgstr "デフォルト値"
 
 #: src\overlay\widgets\Settings.cpp:334 src\overlay\widgets\Settings.cpp:342
 msgctxt "Settings"
@@ -354,7 +354,7 @@ msgstr "サポートされていないタイプ: %s"
 #, c-format
 msgid "[%s] %u item"
 msgid_plural "[%s] %u items"
-msgstr[0] "[%s] アイテム %u 個"
+msgstr[0] "[%s] %u 個のアイテム"
 
 #: src\overlay\widgets\TweakDBEditor.cpp:639
 msgid "clear"
