@@ -6,5 +6,5 @@ files:
     update_option: update_as_unapproved
     languages_mapping:
       two_letters_code:
-        zh-CN: zh_CH
+        zh-CN: zh_CN
         zh-TW: zh_TW
