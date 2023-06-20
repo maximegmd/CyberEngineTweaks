@@ -11,6 +11,8 @@ struct TweakDBEditor : Widget
 protected:
     void OnUpdate() override;
 
+    void RebuildCache();
+
     void RefreshAll();
     void RefreshRecords();
     void RefreshFlats();
@@ -124,6 +126,8 @@ private:
 
     LuaVM& m_vm;
     bool m_initialized = false;
+    bool m_rebuildingCache = false;
+    std::future<void> m_rebuildCacheFuture;
     int32_t m_flatGroupNameDepth = 1;
     TiltedPhoques::Vector<CachedFlatGroup> m_cachedFlatGroups;
     TiltedPhoques::Vector<CachedRecordGroup> m_cachedRecords;
