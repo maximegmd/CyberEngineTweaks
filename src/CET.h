@@ -42,4 +42,6 @@ private:
     LuaVM m_vm;
     Overlay m_overlay;
     CETTasks m_tasks;
+
+    inline static std::unique_ptr<CET> s_pInstance{nullptr};
 };

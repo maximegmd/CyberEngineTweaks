@@ -5,6 +5,8 @@
 #include "reverse/RTTIMapper.h"
 #include "reverse/SingletonReference.h"
 
+inline static constexpr bool s_cThrowLuaErrors = true;
+
 struct D3D12;
 
 struct Scripting

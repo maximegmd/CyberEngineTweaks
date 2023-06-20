@@ -83,4 +83,6 @@ private:
     RedFunctionMap m_extendedFunctions;
     LuaFunctionMap m_resolvedFunctions[2];
     LuaSandbox& m_sandbox;
+
+    inline static std::unique_ptr<RTTIHelper> s_pInstance{nullptr};
 };

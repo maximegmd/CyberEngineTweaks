@@ -18,7 +18,6 @@ using TCallScriptFunction = bool (*)(RED4ext::IFunction* apFunction, RED4ext::IS
 
 TRunPureScriptFunction RealRunPureScriptFunction = nullptr;
 TCreateFunction RealCreateFunction = nullptr;
-RED4ext::RelocFunc<TCallScriptFunction> CallScriptFunction(RED4ext::Addresses::CBaseFunction_InternalExecute);
 
 constexpr size_t s_cMaxFunctionSize = std::max({sizeof(RED4ext::CClassFunction), sizeof(RED4ext::CClassStaticFunction), sizeof(RED4ext::CGlobalFunction)});
 
@@ -347,7 +346,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
 
     lock.unlock();
 
-    CallScriptFunction(pRealFunction, apContext, apFrame, apOut, a4);
+    RED4ext::RelocFunc<TCallScriptFunction>{RED4ext::Addresses::CBaseFunction_InternalExecute}(pRealFunction, apContext, apFrame, apOut, a4);
 }
 
 bool FunctionOverride::ExecuteChain(
@@ -418,7 +417,8 @@ bool FunctionOverride::ExecuteChain(
             apFrame->code = apCode;
             apFrame->currentParam = aParam;
 
-            realRetValue = CallScriptFunction(pRealFunction, apContext, apFrame, apResult->value, apResult->type);
+            realRetValue =
+                RED4ext::RelocFunc<TCallScriptFunction>{RED4ext::Addresses::CBaseFunction_InternalExecute}(pRealFunction, apContext, apFrame, apResult->value, apResult->type);
         }
     }
 

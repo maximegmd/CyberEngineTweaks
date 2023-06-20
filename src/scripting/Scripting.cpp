@@ -27,8 +27,6 @@
 #include <RED4ext/Dump/Reflection.hpp>
 #endif
 
-static constexpr bool s_cThrowLuaErrors = true;
-
 static RTTILocator s_stringType{RED4ext::FNV1a64("String")};
 static RTTILocator s_resRefType{RED4ext::FNV1a64("redResourceReferenceScriptToken")};
 

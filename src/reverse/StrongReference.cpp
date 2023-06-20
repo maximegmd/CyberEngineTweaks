@@ -5,8 +5,6 @@
 
 #include "CET.h"
 
-static RTTILocator s_sIScriptableType{RED4ext::FNV1a64("IScriptable")};
-
 StrongReference::StrongReference(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::Handle<RED4ext::IScriptable> aStrongHandle)
     : ClassType(aView, nullptr)
     , m_strongHandle(std::move(aStrongHandle))
@@ -22,12 +20,13 @@ StrongReference::StrongReference(
     : ClassType(aView, nullptr)
     , m_strongHandle(std::move(aStrongHandle))
 {
-    if (m_strongHandle)
-    {
-        auto const cpClass = reinterpret_cast<RED4ext::CClass*>(apStrongHandleType->GetInnerType());
+    if (!m_strongHandle)
+        return;
 
-        m_pType = cpClass->IsA(s_sIScriptableType) ? m_strongHandle->GetType() : m_strongHandle->GetNativeType();
-    }
+    const auto cpClass = reinterpret_cast<RED4ext::CClass*>(apStrongHandleType->GetInnerType());
+
+    thread_local static RTTILocator sIScriptableType{RED4ext::FNV1a64("IScriptable")};
+    m_pType = cpClass->IsA(sIScriptableType) ? m_strongHandle->GetType() : m_strongHandle->GetNativeType();
 }
 
 StrongReference::~StrongReference()

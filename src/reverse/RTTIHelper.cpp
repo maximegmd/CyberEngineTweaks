@@ -14,9 +14,6 @@ namespace
 {
 constexpr bool s_cEnableOverloads = true;
 constexpr bool s_cLogAllOverloadVariants = true;
-constexpr bool s_cThrowLuaErrors = true;
-
-std::unique_ptr<RTTIHelper> s_pInstance{nullptr};
 
 using TCallScriptFunction = bool (*)(RED4ext::IFunction* apFunction, RED4ext::IScriptable* apContext, RED4ext::CStackFrame* apFrame, void* apResult, void* apResultType);
 
