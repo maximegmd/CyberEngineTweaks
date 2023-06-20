@@ -2,6 +2,7 @@
 
 #include "LogWindow.h"
 
+#include <CET.h>
 #include <Utils.h>
 
 LogWindow::LogWindow(const std::string& acpLoggerName)
@@ -32,6 +33,7 @@ void LogWindow::Draw(const ImVec2& size)
     if (ImGui::BeginChildFrame(frameId, size, ImGuiWindowFlags_HorizontalScrollbar))
     {
         std::lock_guard _{m_lock};
+        ImGui::PushFont(CET::Get().GetFonts().MonoFont);
 
         if (!m_lines.empty() && (m_normalizedWidth < 0.0f || m_nextIndexToCheck < m_lines.size()))
         {
@@ -76,6 +78,8 @@ void LogWindow::Draw(const ImVec2& size)
                 ImGui::SetNextItemWidth(listItemWidth);
 
                 ImGui::PushID(i);
+
+                CET::Get().GetFonts().GetGlyphRangesBuilder().AddText(item); // Add text to glyph ranges
                 ImGui::InputText(("##" + item).c_str(), item.data(), item.size(), ImGuiInputTextFlags_ReadOnly);
                 ImGui::PopID();
 
@@ -93,6 +97,7 @@ void LogWindow::Draw(const ImVec2& size)
             }
             m_scroll = false;
         }
+        ImGui::PopFont();
     }
     ImGui::EndChildFrame();
 }

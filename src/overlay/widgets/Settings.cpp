@@ -7,7 +7,7 @@
 #include <Utils.h>
 
 Settings::Settings(Options& aOptions, LuaVM& aVm)
-    : Widget("Settings")
+    : Widget(ICON_MD_COG " Settings")
     , m_options(aOptions)
     , m_vm(aVm)
 {
@@ -52,44 +52,77 @@ void Settings::OnUpdate()
     if (ImGui::BeginChild(ImGui::GetID("Settings"), frameSize))
     {
         m_madeChanges = false;
+        m_madeFontChanges = false;
         if (ImGui::CollapsingHeader("Patches", ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::TreePush();
-            if (ImGui::BeginTable("##SETTINGS_PATCHES", 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
+            if (ImGui::BeginTable("SETTINGS", 2, ImGuiTableFlags_NoSavedSettings, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
             {
                 const auto& patchesSettings = m_options.Patches;
-                UpdateAndDrawSetting(
-                    "AMD SMT Patch",
-                    "For AMD CPUs that did not get a performance boost after CDPR's patch (requires restart to take "
-                    "effect).",
-                    m_patches.AmdSmt, patchesSettings.AmdSmt);
-                UpdateAndDrawSetting(
-                    "Remove Pedestrians", "Removes most of the pedestrians and traffic (requires restart to take effect).", m_patches.RemovePedestrians,
+                SettingItemCheckBox(
+                    "🚑", "AMD SMT Patch", "For AMD CPUs that did not get a performance boost after CDPR's patch (requires restart to take effect).", m_patches.AmdSmt,
+                    patchesSettings.AmdSmt);
+                SettingItemCheckBox(
+                    "👻", "Remove Pedestrians", "Removes most of the pedestrians and traffic (requires restart to take effect).", m_patches.RemovePedestrians,
                     patchesSettings.RemovePedestrians);
-                UpdateAndDrawSetting(
-                    "Disable Async Compute",
-                    "Disables async compute, this can give a boost on older GPUs like Nvidia 10xx series for example "
-                    "(requires restart to take effect).",
-                    m_patches.AsyncCompute, patchesSettings.AsyncCompute);
-                UpdateAndDrawSetting(
-                    "Disable Anti-aliasing", "Completely disables anti-aliasing (requires restart to take effect).", m_patches.Antialiasing, patchesSettings.Antialiasing);
-                UpdateAndDrawSetting(
-                    "Skip Start Menu",
-                    "Skips the 'Breaching...' menu asking you to press space bar to continue (requires restart to take "
-                    "effect).",
-                    m_patches.SkipStartMenu, patchesSettings.SkipStartMenu);
-                UpdateAndDrawSetting(
-                    "Suppress Intro Movies", "Disables logos played at the beginning (requires restart to take effect).", m_patches.DisableIntroMovies,
+                SettingItemCheckBox(
+                    "🐌", "Disable Async Compute",
+                    "Disables async compute, this can give a boost on older GPUs like Nvidia 10xx series for example (requires restart to take effect).", m_patches.AsyncCompute,
+                    patchesSettings.AsyncCompute);
+                SettingItemCheckBox(
+                    "🤮", "Disable Anti-aliasing", "Completely disables anti-aliasing (requires restart to take effect).", m_patches.Antialiasing, patchesSettings.Antialiasing);
+                SettingItemCheckBox(
+                    "🏄", "Skip Start Menu", "Skips the 'Breaching...' menu asking you to press space bar to continue (requires restart to take effect).", m_patches.SkipStartMenu,
+                    patchesSettings.SkipStartMenu);
+                SettingItemCheckBox(
+                    "🎞", "Suppress Intro Movies", "Disables logos played at the beginning (requires restart to take effect).", m_patches.DisableIntroMovies,
                     patchesSettings.DisableIntroMovies);
-                UpdateAndDrawSetting(
-                    "Disable Vignette", "Disables vignetting along screen borders (requires restart to take effect).", m_patches.DisableVignette, patchesSettings.DisableVignette);
-                UpdateAndDrawSetting(
-                    "Disable Boundary Teleport", "Allows players to access out-of-bounds locations (requires restart to take effect).", m_patches.DisableBoundaryTeleport,
+                SettingItemCheckBox(
+                    "🔦", "Disable Vignette", "Disables vignetting along screen borders (requires restart to take effect).", m_patches.DisableVignette,
+                    patchesSettings.DisableVignette);
+                SettingItemCheckBox(
+                    "🗺", "Disable Boundary Teleport", "Allows players to access out-of-bounds locations (requires restart to take effect).", m_patches.DisableBoundaryTeleport,
                     patchesSettings.DisableBoundaryTeleport);
-                UpdateAndDrawSetting("Disable V-Sync (Windows 7 only)", " (requires restart to take effect).", m_patches.DisableWin7Vsync, patchesSettings.DisableWin7Vsync);
-                UpdateAndDrawSetting(
-                    "Fix Minimap Flicker", "Disables VSync on Windows 7 to bypass the 60 FPS limit (requires restart to take effect).", m_patches.MinimapFlicker,
+                SettingItemCheckBox("💨", "Disable V-Sync (Windows 7 only)", " (requires restart to take effect).", m_patches.DisableWin7Vsync, patchesSettings.DisableWin7Vsync);
+                SettingItemCheckBox(
+                    "✨", "Fix Minimap Flicker", "Disables VSync on Windows 7 to bypass the 60 FPS limit (requires restart to take effect).", m_patches.MinimapFlicker,
                     patchesSettings.MinimapFlicker);
+
+                ImGui::EndTable();
+            }
+            ImGui::TreePop();
+        }
+        if (ImGui::CollapsingHeader("CET Font Settings", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            ImGui::TreePush();
+            if (ImGui::BeginTable("SETTINGS", 2, ImGuiTableFlags_NoSavedSettings, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
+            {
+                const auto& fontSettings = m_options.Font;
+                m_madeFontChanges |=
+                    SettingItemFontCombo("🦄", "Main Font", "Main display font for CET.", m_font.MainFont, fontSettings.MainFont, CET::Get().GetFonts().GetSystemFonts());
+                m_madeFontChanges |= SettingItemFontCombo(
+                    "🪲", "Monospaced Font", "Monospaceed font, which is used for displaying texts in Console and Game Log, for CET.", m_font.MonoFont,
+                    fontSettings.MonoFont, CET::Get().GetFonts().GetSystemFonts());
+                m_madeFontChanges |= SettingItemSliderFloat(
+                    "📏", "Font Size", "Changees the size of the font, default value is 18px.", m_font.BaseSize, fontSettings.BaseSize, 10.0f, 72.0f, "%.0fpx");
+
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                static bool openFontAdvSettings = false;
+                ImGui::Selectable("Advance Settings", false, ImGuiSelectableFlags_SpanAllColumns);
+                if (ImGui::IsItemClicked())
+                    openFontAdvSettings = !openFontAdvSettings;
+                if (openFontAdvSettings)
+                {
+                    ImGui::Indent(ImGui::GetFrameHeight());
+                    m_madeFontChanges |= SettingItemSliderInt(
+                        "↔", "Oversample Horizontal", "Oversamples font horizontally, default value is 3x. (May increase font clearity, at the cost of increasing memory usage.)",
+                        m_font.OversampleHorizontal, fontSettings.OversampleHorizontal, 1, 10, "%dx");
+                    m_madeFontChanges |= SettingItemSliderInt(
+                        "↕", "Oversample Vertical", "Oversamples font vertically, default value is 1x. (May increase font clearity, at the cost of increasing memory usage.)",
+                        m_font.OversampleVertical, fontSettings.OversampleVertical, 1, 10, "%dx");
+                    ImGui::Unindent(ImGui::GetFrameHeight());
+                }
 
                 ImGui::EndTable();
             }
@@ -98,25 +131,22 @@ void Settings::OnUpdate()
         if (ImGui::CollapsingHeader("CET Development Settings", ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::TreePush();
-            if (ImGui::BeginTable("##SETTINGS_DEV", 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
+            if (ImGui::BeginTable("SETTINGS", 2, ImGuiTableFlags_NoSavedSettings, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
             {
                 const auto& developerSettings = m_options.Developer;
-                UpdateAndDrawSetting(
-                    "Remove Dead Bindings",
-                    "Removes all bindings which are no longer valid (disabling this could be useful when debugging mod "
-                    "issues).",
+                SettingItemCheckBox(
+                    "🗑", "Remove Dead Bindings", "Removes all bindings which are no longer valid (disabling this could be useful when debugging mod issues).",
                     m_developer.RemoveDeadBindings, developerSettings.RemoveDeadBindings);
-                UpdateAndDrawSetting(
-                    "Enable ImGui Assertions",
-                    "Enables all ImGui assertions, assertions will get logged into log file of whoever triggered the "
-                    "assertion (useful when debugging ImGui issues, should also be used to check mods before "
-                    "shipping!).",
+                SettingItemCheckBox(
+                    "💣", "Enable ImGui Assertions",
+                    "Enables all ImGui assertions, assertions will get logged into log file of whoever triggered the assertion (useful when debugging ImGui issues, should also be "
+                    "used to check mods before shipping!).",
                     m_developer.EnableImGuiAssertions, developerSettings.EnableImGuiAssertions);
-                UpdateAndDrawSetting(
-                    "Enable Debug Build", "Sets internal flags to disguise as debug build (requires restart to take effect).", m_developer.EnableDebug,
+                SettingItemCheckBox(
+                    "🔨", "Enable Debug Build", "Sets internal flags to disguise as debug build (requires restart to take effect).", m_developer.EnableDebug,
                     developerSettings.EnableDebug);
-                UpdateAndDrawSetting(
-                    "Dump Game Options", "Dumps all game options into main log file (requires restart to take effect).", m_developer.DumpGameOptions,
+                SettingItemCheckBox(
+                    "🖨", "Dump Game Options", "Dumps all game options into main log file (requires restart to take effect).", m_developer.DumpGameOptions,
                     developerSettings.DumpGameOptions);
 
                 ImGui::EndTable();
@@ -145,12 +175,16 @@ void Settings::Load()
 
     m_patches = m_options.Patches;
     m_developer = m_options.Developer;
+    m_font = m_options.Font;
 }
 
 void Settings::Save() const
 {
     m_options.Patches = m_patches;
     m_options.Developer = m_developer;
+    m_options.Font = m_font;
+    if (m_madeFontChanges)
+        CET::Get().GetFonts().RebuildFontNextFrame();
 
     m_options.Save();
 }
@@ -161,15 +195,17 @@ void Settings::ResetToDefaults()
 
     m_patches = m_options.Patches;
     m_developer = m_options.Developer;
+    m_font = m_options.Font;
+    CET::Get().GetFonts().RebuildFontNextFrame();
 }
 
-void Settings::UpdateAndDrawSetting(const std::string& acLabel, const std::string& acTooltip, bool& aCurrent, const bool& acSaved)
+void Settings::SettingItemTemplate(const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, const bool& aValueChanged, std::function<void()>& aImGuiFunction)
 {
     ImGui::TableNextRow();
-    ImGui::TableNextColumn();
+    ImGui::TableSetColumnIndex(0);
 
     ImVec4 curTextColor = ImGui::GetStyleColorVec4(ImGuiCol_Text);
-    if (aCurrent != acSaved)
+    if (aValueChanged)
         curTextColor = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
 
     ImGui::AlignTextToFramePadding();
@@ -177,20 +213,116 @@ void Settings::UpdateAndDrawSetting(const std::string& acLabel, const std::strin
     ImGui::PushStyleColor(ImGuiCol_Text, curTextColor);
 
     ImGui::PushID(&acLabel);
+    if (CET::Get().GetFonts().UseEmojiFont() && !acIcon.empty())
+    {
+        CET::Get().GetFonts().GetGlyphRangesBuilder().AddText(acIcon);
+        ImGui::TextUnformatted(acIcon.c_str());
+        ImGui::SameLine();
+    }
     ImGui::TextUnformatted(acLabel.c_str());
     ImGui::PopID();
 
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled) && !acTooltip.empty())
         ImGui::SetTooltip("%s", acTooltip.c_str());
 
-    ImGui::TableNextColumn();
+    ImGui::TableSetColumnIndex(1);
 
-    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (ImGui::GetContentRegionAvail().x - ImGui::GetFrameHeight()) / 2);
-    ImGui::Checkbox(("##" + acLabel).c_str(), &aCurrent);
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x / 4);
+    ImGui::SetNextItemWidth(-FLT_MIN);
+
+    aImGuiFunction();
+
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
         ImGui::SetTooltip("%s", acTooltip.c_str());
 
     ImGui::PopStyleColor();
+}
+
+bool Settings::SettingItemCheckBox(const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, bool& aCurrent, const bool& acSaved)
+{
+    std::function<void()> imguiWidget = [&]()
+    {
+        // Right align checkbox
+        if (ImGui::BeginTable("CheckboxItem", 2, ImGuiTableFlags_NoSavedSettings))
+        {
+            ImGui::TableSetupColumn("Col1", ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableSetupColumn("Col2", ImGuiTableColumnFlags_WidthFixed);
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(1);
+
+            ImGui::Checkbox(("##" + acLabel).c_str(), &aCurrent);
+
+            ImGui::EndTable();
+        }
+    };
+
+    const bool valueChanged = aCurrent != acSaved;
+
+    SettingItemTemplate(acIcon, acLabel, acTooltip, valueChanged, imguiWidget);
 
     m_madeChanges |= aCurrent != acSaved;
+
+    return aCurrent != acSaved;
+}
+
+bool Settings::SettingItemSliderFloat(
+    const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, float& aCurrent, const float& acSaved, float aValueMin, float aValueMax, const char* aFormat)
+{
+    std::function<void()> imguiWidget = [&]()
+    {
+        ImGui::SliderFloat(("##" + acLabel).c_str(), &aCurrent, aValueMin, aValueMax, aFormat);
+    };
+
+    const bool valueChanged = aCurrent != acSaved;
+
+    SettingItemTemplate(acIcon, acLabel, acTooltip, valueChanged, imguiWidget);
+
+    m_madeChanges |= aCurrent != acSaved;
+
+    return aCurrent != acSaved;
+}
+
+bool Settings::SettingItemSliderInt(
+    const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, int& aCurrent, const int& acSaved, int aValueMin, int aValueMax, const char* aFormat)
+{
+    std::function<void()> imguiWidget = [&]()
+    {
+        ImGui::SliderInt(("##" + acLabel).c_str(), &aCurrent, aValueMin, aValueMax, aFormat);
+    };
+
+    const bool valueChanged = aCurrent != acSaved;
+
+    SettingItemTemplate(acIcon, acLabel, acTooltip, valueChanged, imguiWidget);
+
+    m_madeChanges |= aCurrent != acSaved;
+
+    return aCurrent != acSaved;
+}
+
+bool Settings::SettingItemFontCombo(
+    const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, std::string& aCurrent, const std::string& acSaved, const std::vector<Font>& acFonts)
+{
+    std::function<void()> imguiWidget = [&]()
+    {
+        if (ImGui::BeginCombo(("##" + acLabel).c_str(), aCurrent.c_str()))
+        {
+            for (const auto& font : acFonts)
+            {
+                const bool isSelected = aCurrent == font.GetName();
+                if (ImGui::Selectable(font.GetName().c_str(), isSelected))
+                    aCurrent = font.GetName();
+                if (isSelected)
+                    ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
+    };
+
+    const bool valueChanged = aCurrent != acSaved;
+
+    SettingItemTemplate(acIcon, acLabel, acTooltip, valueChanged, imguiWidget);
+
+    m_madeChanges |= aCurrent != acSaved;
+
+    return aCurrent != acSaved;
 }
