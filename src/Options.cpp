@@ -150,16 +150,16 @@ Options::Options(Paths& aPaths)
             }* pTranslations;
 
             UINT transBytes = 0;
-            if (VerQueryValue(verInfo.get(), _T("\\VarFileInfo\\Translation"), reinterpret_cast<void**>(&pTranslations), &transBytes))
+            if (VerQueryValue(verInfo.get(), TEXT("\\VarFileInfo\\Translation"), reinterpret_cast<void**>(&pTranslations), &transBytes))
             {
                 UINT dummy;
                 TCHAR* productName = nullptr;
                 TCHAR subBlock[64];
                 for (UINT i = 0; i < (transBytes / sizeof(*pTranslations)); i++)
                 {
-                    _stprintf(subBlock, _T("\\StringFileInfo\\%04x%04x\\ProductName"), pTranslations[i].Language, pTranslations[i].CodePage);
+                    _stprintf(subBlock, TEXT("\\StringFileInfo\\%04x%04x\\ProductName"), pTranslations[i].Language, pTranslations[i].CodePage);
                     if (VerQueryValue(verInfo.get(), subBlock, reinterpret_cast<void**>(&productName), &dummy))
-                        if (_tcscmp(productName, _T("Cyberpunk 2077")) == 0)
+                        if (_tcscmp(productName, TEXT("Cyberpunk 2077")) == 0)
                         {
                             ExeValid = true;
                             break;

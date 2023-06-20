@@ -439,15 +439,15 @@ bool ImGui_ImplDX12_CreateDeviceObjects(ID3D12CommandQueue* apCommandQueue)
                      D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS | D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
 
         // See if any version of d3d12.dll is already loaded in the process. If so, give preference to that.
-        static HINSTANCE d3d12_dll = ::GetModuleHandle(_T("d3d12.dll"));
+        static HINSTANCE d3d12_dll = ::GetModuleHandle(TEXT("d3d12.dll"));
         if (d3d12_dll == NULL)
         {
             // Attempt to load d3d12.dll from local directories in decreasing order of likelihood. This will only
             // succeed if (1) the current OS is Windows 7, and (2) there exists a version of d3d12.dll for Windows 7
             // (D3D12On7) in one of the following directories.
             static const TCHAR* localD3d12Paths[] = {
-                _T(".\\d3d12on7\\d3d12.dll"), // used by some games
-                _T(".\\12on7\\d3d12.dll")     // used in the Microsoft D3D12On7 sample
+                TEXT(".\\d3d12on7\\d3d12.dll"), // used by some games
+                TEXT(".\\12on7\\d3d12.dll")     // used in the Microsoft D3D12On7 sample
             };
 
             for (unsigned int i = 0; i < _countof(localD3d12Paths); i++)
@@ -459,7 +459,7 @@ bool ImGui_ImplDX12_CreateDeviceObjects(ID3D12CommandQueue* apCommandQueue)
 
             // If failed, we should be on Windows 10.
             if (d3d12_dll == NULL)
-                d3d12_dll = ::LoadLibrary(_T("d3d12.dll"));
+                d3d12_dll = ::LoadLibrary(TEXT("d3d12.dll"));
 
             if (d3d12_dll == NULL)
                 return false;

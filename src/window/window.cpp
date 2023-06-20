@@ -16,7 +16,7 @@ static BOOL CALLBACK EnumWindowsProcCP77(HWND ahWnd, LPARAM alParam)
     {
         TCHAR name[512] = {0};
         GetWindowText(ahWnd, name, 511);
-        if (_tcscmp(_T("Cyberpunk 2077 (C) 2020 by CD Projekt RED"), name) == 0)
+        if (_tcscmp(TEXT("Cyberpunk 2077 (C) 2020 by CD Projekt RED"), name) == 0)
         {
             *reinterpret_cast<HWND*>(alParam) = ahWnd;
             return FALSE;

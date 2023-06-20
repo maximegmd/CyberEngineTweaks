@@ -32,25 +32,25 @@ kiero::Status::Enum kiero::init()
     windowClass.hCursor = nullptr;
     windowClass.hbrBackground = nullptr;
     windowClass.lpszMenuName = nullptr;
-    windowClass.lpszClassName = _T("Kiero");
+    windowClass.lpszClassName = TEXT("Kiero");
     windowClass.hIconSm = nullptr;
 
     ::RegisterClassEx(&windowClass);
 
-    HWND window = ::CreateWindow(windowClass.lpszClassName, _T("Kiero DirectX Window"), WS_OVERLAPPEDWINDOW, 0, 0, 100, 100, NULL, NULL, windowClass.hInstance, NULL);
+    HWND window = ::CreateWindow(windowClass.lpszClassName, TEXT("Kiero DirectX Window"), WS_OVERLAPPEDWINDOW, 0, 0, 100, 100, NULL, NULL, windowClass.hInstance, NULL);
 
     HMODULE libDXGI;
     HMODULE libD3D12;
-    if ((libDXGI = ::GetModuleHandle(_T("dxgi.dll"))) == nullptr)
+    if ((libDXGI = ::GetModuleHandle(TEXT("dxgi.dll"))) == nullptr)
     {
         DestroyWindow(window);
         UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
         return Status::ModuleNotFoundError;
     }
 
-    if ((libD3D12 = ::GetModuleHandle(_T("d3d12.dll"))) == nullptr)
+    if ((libD3D12 = ::GetModuleHandle(TEXT("d3d12.dll"))) == nullptr)
     {
-        const TCHAR* localD3d12on7Paths[] = {_T(".\\d3d12on7\\d3d12.dll"), _T(".\\12on7\\d3d12.dll")};
+        const TCHAR* localD3d12on7Paths[] = {TEXT(".\\d3d12on7\\d3d12.dll"), TEXT(".\\12on7\\d3d12.dll")};
 
         for (uint32_t i = 0; i < std::size(localD3d12on7Paths); i++)
         {
@@ -61,7 +61,7 @@ kiero::Status::Enum kiero::init()
 
         if (libD3D12 == nullptr)
         {
-            if ((libD3D12 = ::LoadLibrary(_T("d3d12.dll"))) == nullptr)
+            if ((libD3D12 = ::LoadLibrary(TEXT("d3d12.dll"))) == nullptr)
             {
                 DestroyWindow(window);
                 UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
