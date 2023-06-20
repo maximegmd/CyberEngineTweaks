@@ -3,6 +3,7 @@
 #include "TweakDBEditor.h"
 
 #include <CET.h>
+#include <future>
 #include <Utils.h>
 
 #include <reverse/TweakDB/ResourcesList.h>
@@ -137,8 +138,10 @@ void TweakDBEditor::OnUpdate()
 
     if (!m_initialized)
     {
-        RefreshAll();
-        m_initialized = true;
+        RebuildCache();
+
+        ImGui::TextUnformatted("Rebuilding cache...");
+        return;
     }
 
     if (ImGui::BeginTabBar("TweakDBEditor-Bar"))
@@ -179,10 +182,39 @@ void TweakDBEditor::OnUpdate()
     }
 }
 
+void TweakDBEditor::RebuildCache()
+{
+    using namespace std::chrono_literals;
+
+    if (m_rebuildingCache)
+    {
+        assert(m_rebuildCacheFuture.valid());
+        if (m_rebuildCacheFuture.wait_for(3ms) != std::future_status::ready)
+            return;
+
+        m_rebuildCacheFuture.get();
+        m_rebuildingCache = false;
+        m_initialized = true;
+
+        return;
+    }
+
+    m_rebuildingCache = true;
+
+    m_rebuildCacheFuture = std::async(
+        [this]
+        {
+            RefreshAll();
+            FilterAll();
+        });
+}
+
 void TweakDBEditor::RefreshAll()
 {
     RefreshRecords();
     RefreshFlats();
+
+    m_initialized = true;
 }
 
 void TweakDBEditor::RefreshRecords()
@@ -1572,8 +1604,8 @@ void TweakDBEditor::DrawAdvancedTab()
 
     if (ImGui::Button("Refresh all"))
     {
-        RefreshAll();
-        FilterAll();
+        // prompt widget reinitialization
+        m_initialized = false;
     }
 
     if (ImGui::BeginChild("CreateRecord", ImVec2(0.0f, 0.0f), true))
