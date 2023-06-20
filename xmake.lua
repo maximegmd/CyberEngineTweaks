@@ -10,20 +10,24 @@ add_rules("c.unity_build")
 add_cxflags("/bigobj", "/MP")
 add_defines("RED4EXT_STATIC_LIB", "UNICODE", "_UNICODE", "_CRT_SECURE_NO_WARNINGS")
 
+local vsRuntime = "MD"
+
 if is_mode("debug") then
     add_defines("CET_DEBUG")
     set_symbols("debug")
     set_optimize("none")
-    set_runtimes("MDd")
     set_warnings("all")
     set_policy("build.optimization.lto", false)
+
+    vsRuntime = vsRuntime.."d"
 elseif is_mode("releasedbg") then
     add_defines("CET_DEBUG")
     set_symbols("debug")
     set_optimize("fastest")
-    set_runtimes("MD")
     set_warnings("all")
     set_policy("build.optimization.lto", true)
+
+    vsRuntime = vsRuntime.."d"
 elseif is_mode("release") then
     add_defines("NDEBUG")
     set_symbols("hidden")
@@ -34,9 +38,10 @@ elseif is_mode("release") then
     set_policy("build.optimization.lto", true)
 end
 
-local imguiUserConfig = path.absolute("src/imgui_impl/imgui_user_config.h")
+set_runtimes(vsRuntime);
 
-add_requireconfs("*", { debug = is_mode("debug"), lto = not is_mode("debug"), configs = { shared = false } })
+add_requireconfs("*", { configs = { debug = is_mode("debug"), lto = not is_mode("debug"), shared = false, vs_runtime = vsRuntime } })
+
 add_requires("spdlog 1.11.0")
 add_requires("nlohmann_json")
 add_requires("hopscotch-map")
@@ -48,6 +53,8 @@ add_requires("xbyak")
 add_requires("stb")
 add_requires("sol2", { configs = { includes_lua = false } })
 add_requires("openrestry-luajit", { configs = { gc64 = true } })
+
+local imguiUserConfig = path.absolute("src/imgui_impl/imgui_user_config.h")
 add_requires("imgui v1.88-docking", { configs = { wchar32 = true, freetype = true, user_config = imguiUserConfig } })
 
 target("RED4ext.SDK")
