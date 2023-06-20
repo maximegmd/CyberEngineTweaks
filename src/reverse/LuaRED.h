@@ -57,7 +57,10 @@ template <class T, FixedString REDName> struct LuaRED
         {
             if (aObject.get_type() == sol::type::number)
             {
-                result.value = apAllocator->New<T>(aObject.as<T>());
+                if (aObject.is<T>())
+                {
+                    result.value = apAllocator->New<T>(aObject.as<T>());
+                }
             }
             else if (IsLuaCData(aObject))
             {
