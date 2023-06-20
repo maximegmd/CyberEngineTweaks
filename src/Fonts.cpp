@@ -107,11 +107,11 @@ void Fonts::BuildFonts(const SIZE& acOutSize)
     // Get custom font paths from options
     const auto customMainFontPath = GetFontPathFromOption(fontSettings.MainFont);
     if (customMainFontPath.empty() && !fontSettings.MainFont.empty() && fontSettings.MainFont != "Default")
-        Log::Error("Can't find custom main font at path: {}", GetAbsolutePath(fontSettings.MainFont, m_paths.Fonts(), true).string());
+        Log::Warn("Can't find custom main font at path: {}", GetAbsolutePath(fontSettings.MainFont, m_paths.Fonts(), true).string());
 
     const auto customMonosFontPath = GetFontPathFromOption(fontSettings.MonoFont);
     if (customMonosFontPath.empty() && !fontSettings.MonoFont.empty() && fontSettings.MonoFont != "Default")
-        Log::Error("Can't find custom main font at path: {}", GetAbsolutePath(fontSettings.MonoFont, m_paths.Fonts(), true).string());
+        Log::Warn("Can't find custom main font at path: {}", GetAbsolutePath(fontSettings.MonoFont, m_paths.Fonts(), true).string());
 
     const bool useCustomMainFont = !customMainFontPath.empty();
     const bool useCustomMonosFont = !customMonosFontPath.empty();
@@ -122,20 +122,20 @@ void Fonts::BuildFonts(const SIZE& acOutSize)
     // Set main font path to default if customMainFontPath is empty or doesnt exist.
     const auto mainFontPath = useCustomMainFont ? customMainFontPath : defaultMainFontPath;
     if (mainFontPath.empty())
-        Log::Error("Can't find default main font at path: {}, will use built-in font.", GetAbsolutePath(m_defaultMainFont, m_paths.Fonts(), true).string());
+        Log::Warn("Can't find default main font at path: {}, will use built-in font.", GetAbsolutePath(m_defaultMainFont, m_paths.Fonts(), true).string());
 
     // Set monospace font path to default if customMonosFontPath is empty or doesnt exist.
     const auto monoFontPath = useCustomMonosFont ? customMonosFontPath : defaultMonoFontPath;
     if (monoFontPath.empty())
-        Log::Error("Can't find default monospacee font at path: {}, will use built-in font.", GetAbsolutePath(m_defaultMonoFont, m_paths.Fonts(), true).string());
+        Log::Warn("Can't find default monospacee font at path: {}, will use built-in font.", GetAbsolutePath(m_defaultMonoFont, m_paths.Fonts(), true).string());
 
     const auto iconFontPath = GetAbsolutePath(m_defaultIconFont, m_paths.Fonts(), false);
     if (iconFontPath.empty())
-        Log::Error("Can't find icon font at path: {}", GetAbsolutePath(m_defaultIconFont, m_paths.Fonts(), true).string());
+        Log::Warn("Can't find icon font at path: {}", GetAbsolutePath(m_defaultIconFont, m_paths.Fonts(), true).string());
 
     const auto emojiFontPath = GetAbsolutePath(m_defaultEmojiFont, m_paths.Fonts(), false);
     if (emojiFontPath.empty())
-        Log::Error("Can't find emoji font at path: {}", GetAbsolutePath(m_defaultEmojiFont, m_paths.Fonts(), true).string());
+        Log::Warn("Can't find emoji font at path: {}", GetAbsolutePath(m_defaultEmojiFont, m_paths.Fonts(), true).string());
 
     m_useEmojiFont = !emojiFontPath.empty();
 
@@ -202,7 +202,7 @@ void Fonts::BuildFonts(const SIZE& acOutSize)
             const std::filesystem::path fontPath = GetAbsolutePath(font, m_paths.Fonts(), false);
             if (fontPath.empty())
             {
-                Log::Error("Can't find font {}.", GetAbsolutePath(font, m_paths.Fonts(), true).string());
+                Log::Warn("Can't find font {}.", GetAbsolutePath(font, m_paths.Fonts(), true).string());
                 continue;
             }
             io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(fontPath.native()).c_str(), fontSize, &fontConfig, fontRange.Data);
