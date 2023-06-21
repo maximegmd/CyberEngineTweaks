@@ -3,7 +3,6 @@
 #include "TweakDBEditor.h"
 
 #include <CET.h>
-#include <future>
 #include <Utils.h>
 
 #include <reverse/TweakDB/ResourcesList.h>
@@ -202,6 +201,7 @@ void TweakDBEditor::RebuildCache()
     m_rebuildingCache = true;
 
     m_rebuildCacheFuture = std::async(
+        std::launch::async,
         [this]
         {
             RefreshAll();
