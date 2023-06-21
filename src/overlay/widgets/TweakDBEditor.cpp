@@ -213,8 +213,6 @@ void TweakDBEditor::RefreshAll()
 {
     RefreshRecords();
     RefreshFlats();
-
-    m_initialized = true;
 }
 
 void TweakDBEditor::RefreshRecords()
