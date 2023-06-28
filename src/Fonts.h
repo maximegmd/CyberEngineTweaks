@@ -32,7 +32,7 @@ struct Fonts
     ~Fonts() = default;
 
     void BuildFonts(const SIZE& acOutSize);
-    void RebuildFonts(ID3D12CommandQueue* apCommandQueue, const SIZE& acOutSize);
+    void RebuildFonts(const SIZE& acOutSize);
     void RebuildFontNextFrame();
 
     const bool UseEmojiFont();
