@@ -24,7 +24,7 @@ bool VKBindInfo::operator==(const std::string& id) const
 }
 
 Bindings::Bindings(VKBindings& aBindings, LuaVM& aVm)
-    : Widget(ICON_MD_KEYBOARD_SETTINGS " Bindings")
+    : Widget("Bindings")
     , m_bindings(aBindings)
     , m_vm(aVm)
 {

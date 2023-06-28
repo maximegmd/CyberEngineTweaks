@@ -60,11 +60,6 @@ LuaVM& CET::GetVM() noexcept
     return m_vm;
 }
 
-Fonts& CET::GetFonts() noexcept
-{
-    return m_fonts;
-}
-
 bool CET::IsRunning() noexcept
 {
     return s_isRunning;
@@ -75,9 +70,8 @@ CET::CET()
     , m_persistentState(m_paths, m_options)
     , m_bindings(m_paths, m_options)
     , m_window(&m_bindings, &m_d3d12)
-    , m_fonts(m_options, m_paths)
-    , m_d3d12(m_window, m_paths, m_options, m_fonts)
-    , m_vm(m_paths, m_bindings, m_d3d12, m_fonts)
+    , m_d3d12(m_window, m_paths, m_options)
+    , m_vm(m_paths, m_bindings, m_d3d12)
     , m_overlay(m_bindings, m_options, m_persistentState, m_vm)
 {
     m_vm.Initialize();

@@ -46,7 +46,6 @@ static constexpr const char* s_cGlobalObjectsWhitelist[] = {
     "print",
     "GetVersion",
     "GetDisplayResolution",
-    "AddTextGlyphs",
     "ModArchiveExists",
 
     "ImGuiListClipper",
@@ -111,10 +110,9 @@ static constexpr const char* s_cGlobalExtraLibsWhitelist[] = {
     "ImGui",
 };
 
-LuaSandbox::LuaSandbox(Scripting* apScripting, const VKBindings& acVKBindings, Fonts& aFonts)
+LuaSandbox::LuaSandbox(Scripting* apScripting, const VKBindings& acVKBindings)
     : m_pScripting(apScripting)
     , m_vkBindings(acVKBindings)
-    , m_fonts(aFonts)
 {
 }
 
@@ -519,40 +517,27 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
         ioSB["output"] = DeepCopySolObject(cIO["output"], acpState);
         ioSB["type"] = DeepCopySolObject(cIO["type"], acpState);
         ioSB["close"] = DeepCopySolObject(cIO["close"], acpState);
-        ioSB["lines"] = [this, cIO, cSBRootPath](const std::string& acPath)
+        ioSB["lines"] = [cIO, cSBRootPath](const std::string& acPath)
         {
             const auto previousCurrentPath = std::filesystem::current_path();
             current_path(cSBRootPath);
 
-            auto path = GetLuaPath(acPath, cSBRootPath, false);
-            path = path.empty() || acPath == "db.sqlite3" ? "" : path;
+            const auto path = GetLuaPath(acPath, cSBRootPath, false);
 
-            // add the file content to the glyph range builder.
-            m_fonts.GetGlyphRangesBuilder().AddFile(path);
-
-            auto result = cIO["lines"](UTF16ToUTF8(path.native()));
+            auto result = cIO["lines"](path.empty() || acPath == "db.sqlite3" ? "" : UTF16ToUTF8(path.native()));
 
             current_path(previousCurrentPath);
 
             return result;
         };
-        const auto cOpenWithMode = [this, cIO, cSBRootPath](const std::string& acPath, const std::string& acMode)
+        const auto cOpenWithMode = [cIO, cSBRootPath](const std::string& acPath, const std::string& acMode)
         {
             const auto previousCurrentPath = std::filesystem::current_path();
             current_path(cSBRootPath);
 
-            auto path = GetLuaPath(acPath, cSBRootPath, true);
-            path = path.empty() || acPath == "db.sqlite3" ? "" : path;
+            const auto path = GetLuaPath(acPath, cSBRootPath, true);
 
-            // add the file content to the glyph range builder, only in modes allow read permissions. and exclude file types not in the list
-            if (acMode != "w" || acMode != "a")
-            {
-                const std::vector<std::string> extensionFilter = {".lua", ".txt", ".json", ".yml", ".yaml", ".toml", ".ini"};
-                if (std::find(extensionFilter.begin(), extensionFilter.end(), UTF16ToUTF8(path.extension().native())) != extensionFilter.end())
-                    m_fonts.GetGlyphRangesBuilder().AddFile(path);
-            }
-
-            auto result = cIO["open"](UTF16ToUTF8(path.native()), acMode);
+            auto result = cIO["open"](path.empty() || acPath == "db.sqlite3" ? "" : UTF16ToUTF8(path.native()), acMode);
 
             current_path(previousCurrentPath);
 

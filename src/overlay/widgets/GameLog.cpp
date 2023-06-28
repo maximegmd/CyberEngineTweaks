@@ -3,7 +3,7 @@
 #include "GameLog.h"
 
 GameLog::GameLog()
-    : Widget(ICON_MD_FILE_DOCUMENT " Game Log")
+    : Widget("Game Log")
     , m_logWindow("gamelog")
 {
 }

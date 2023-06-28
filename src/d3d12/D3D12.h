@@ -15,8 +15,10 @@ struct D3D12
 {
     inline static const uint32_t g_numDownlevelBackbuffersRequired = 3; // Windows 7 only: number of buffers needed before we start rendering
 
-    D3D12(Window& aWindow, Paths& aPaths, Options& aOptions, Fonts& aFonts);
+    D3D12(Window& aWindow, Paths& aPaths, Options& aOptions);
     ~D3D12();
+
+    void ReloadFonts();
 
     void SetTrapInputInImGui(const bool acEnabled);
     void DelayedSetTrapInputInImGui(const bool acEnabled);
@@ -93,7 +95,6 @@ private:
     Paths& m_paths;
     Window& m_window;
     Options& m_options;
-    Fonts& m_fonts;
 
     std::recursive_mutex m_imguiLock;
     std::array<ImDrawData, 3> m_imguiDrawDataBuffers;
