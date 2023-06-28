@@ -256,13 +256,13 @@ void Fonts::BuildFonts(const SIZE& acOutSize)
 
 // Rebuild font texture during runtime.
 // Call before ImGui_ImplXXXX_NewFrame()
-void Fonts::RebuildFonts(ID3D12CommandQueue* apCommandQueue, const SIZE& acOutSize)
+void Fonts::RebuildFonts(const SIZE& acOutSize)
 {
 
     if (m_rebuildFonts || m_glyphRangesBuilder.NeedsRebuild()) // Rebuild when font settings changed or glyph ranges changed
     {
         BuildFonts(acOutSize);
-        ImGui_ImplDX12_RecreateFontsTexture(apCommandQueue);
+        ImGui_ImplDX12_RecreateFontsTexture();
 
         m_rebuildFonts = false;
     }
