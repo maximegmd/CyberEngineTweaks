@@ -690,3 +690,11 @@ void ImGui_ImplDX12_NewFrame(ID3D12CommandQueue* apCommandQueue)
     if (!g_pPipelineState || !ImGui::GetIO().Fonts->IsBuilt())
         ImGui_ImplDX12_CreateDeviceObjects(apCommandQueue);
 }
+
+void ImGui_ImplDX12_RecreateFontsTexture(ID3D12CommandQueue* apCommandQueue)
+{
+    SafeRelease(g_pFontTextureResource);
+    ImGuiIO& io = ImGui::GetIO();
+    io.Fonts->TexID = NULL;
+    ImGui_ImplDX12_CreateFontsTexture(apCommandQueue);
+}

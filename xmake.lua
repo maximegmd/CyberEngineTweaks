@@ -66,14 +66,14 @@ target("RED4ext.SDK")
     on_install(function() end)
 
 target("cyber_engine_tweaks")
-    add_defines("WIN32_LEAN_AND_MEAN", "NOMINMAX", "WINVER=0x0601", "SOL_ALL_SAFETIES_ON", "SOL_LUAJIT=1", "SOL_EXCEPTIONS_SAFE_PROPAGATION", "SPDLOG_WCHAR_TO_UTF8_SUPPORT", "SPDLOG_WCHAR_FILENAMES", "SPDLOG_WCHAR_SUPPORT", "IMGUI_USER_CONFIG=\""..imguiUserConfig.."\"") -- WINVER=0x0601 == Windows 7xmake
+    add_defines("WIN32_LEAN_AND_MEAN", "NOMINMAX", "WINVER=0x0601", "SOL_ALL_SAFETIES_ON", "SOL_LUAJIT=1", "SOL_EXCEPTIONS_SAFE_PROPAGATION", "SPDLOG_WCHAR_TO_UTF8_SUPPORT", "SPDLOG_WCHAR_FILENAMES", "SPDLOG_WCHAR_SUPPORT", "IMGUI_USER_CONFIG=\""..imguiUserConfig.."\"", "SOL_IMGUI_ENABLE_FONT_MANIPULATORS") -- WINVER=0x0601 == Windows 7xmake
     set_pcxxheader("src/stdafx.h")
     set_kind("shared")
     set_filename("cyber_engine_tweaks.asi")
     add_files("src/**.cpp")
     add_headerfiles("src/**.h", "build/CETVersion.h")
     add_includedirs("src/", "build/")
-    add_syslinks("User32", "Version", "d3d11")
+    add_syslinks("User32", "Version", "d3d11", "Dwrite")
     add_packages("spdlog", "nlohmann_json", "minhook", "hopscotch-map", "imgui", "mem", "sol2", "tiltedcore", "sqlite3", "openrestry-luajit", "xbyak", "stb")
     add_deps("RED4ext.SDK")
     add_configfiles("src/CETVersion.h.in")
