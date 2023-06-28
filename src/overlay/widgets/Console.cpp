@@ -2,12 +2,11 @@
 
 #include "Console.h"
 
-#include <CET.h>
 #include <scripting/LuaVM.h>
 #include <Utils.h>
 
 Console::Console(Options& aOptions, PersistentState& aPersistentState, LuaVM& aVm)
-    : Widget(ICON_MD_CONSOLE " Console")
+    : Widget("Console")
     , m_options(aOptions)
     , m_persistentState(aPersistentState)
     , m_vm(aVm)
@@ -91,10 +90,7 @@ void Console::OnUpdate()
 
     ImGui::SetNextItemWidth(-FLT_MIN);
     constexpr auto flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackResize;
-    ImGui::PushFont(CET::Get().GetFonts().MonoFont);
-    CET::Get().GetFonts().GetGlyphRangesBuilder().AddText(m_command); // Add text to glyph ranges
     const auto execute = ImGui::InputText("##InputCommand", m_command.data(), m_command.capacity(), flags, &HandleConsole, this);
-    ImGui::PopFont();
     ImGui::SetItemDefaultFocus();
     if (execute)
     {

@@ -121,7 +121,7 @@ bool StringContains(const std::string_view& acString, const std::string_view& ac
 }
 
 TweakDBEditor::TweakDBEditor(LuaVM& aVm)
-    : Widget(ICON_MD_DATABASE_EDIT " TweakDB Editor")
+    : Widget("TweakDB Editor")
     , m_vm(aVm)
 {
 }

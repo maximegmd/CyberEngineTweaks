@@ -1466,56 +1466,42 @@ inline void VSliderScalar()
 // Widgets: Input with Keyboard
 inline std::tuple<std::string, bool> InputText(const std::string& label, std::string text, unsigned int buf_size)
 {
-    CET::Get().GetFonts().GetGlyphRangesBuilder().AddText(text); // Add text to glyph ranges
-
     text.resize(buf_size);
     bool selected = ImGui::InputText(label.c_str(), text.data(), buf_size);
     return std::make_tuple(text.c_str(), selected);
 }
 inline std::tuple<std::string, bool> InputText(const std::string& label, std::string text, unsigned int buf_size, int flags)
 {
-    CET::Get().GetFonts().GetGlyphRangesBuilder().AddText(text); // Add text to glyph ranges
-
     text.resize(buf_size);
     bool selected = ImGui::InputText(label.c_str(), text.data(), buf_size, flags);
     return std::make_tuple(text.c_str(), selected);
 }
 inline std::tuple<std::string, bool> InputTextMultiline(const std::string& label, std::string text, unsigned int buf_size)
 {
-    CET::Get().GetFonts().GetGlyphRangesBuilder().AddText(text); // Add text to glyph ranges
-
     text.resize(buf_size);
     bool selected = ImGui::InputTextMultiline(label.c_str(), text.data(), buf_size);
     return std::make_tuple(text.c_str(), selected);
 }
 inline std::tuple<std::string, bool> InputTextMultiline(const std::string& label, std::string text, unsigned int buf_size, float sizeX, float sizeY)
 {
-    CET::Get().GetFonts().GetGlyphRangesBuilder().AddText(text); // Add text to glyph ranges
-
     text.resize(buf_size);
     bool selected = ImGui::InputTextMultiline(label.c_str(), text.data(), buf_size, {sizeX, sizeY});
     return std::make_tuple(text.c_str(), selected);
 }
 inline std::tuple<std::string, bool> InputTextMultiline(const std::string& label, std::string text, unsigned int buf_size, float sizeX, float sizeY, int flags)
 {
-    CET::Get().GetFonts().GetGlyphRangesBuilder().AddText(text); // Add text to glyph ranges
-
     text.resize(buf_size);
     bool selected = ImGui::InputTextMultiline(label.c_str(), text.data(), buf_size, {sizeX, sizeY}, flags);
     return std::make_tuple(text.c_str(), selected);
 }
 inline std::tuple<std::string, bool> InputTextWithHint(const std::string& label, const std::string& hint, std::string text, unsigned int buf_size)
 {
-    CET::Get().GetFonts().GetGlyphRangesBuilder().AddText(text); // Add text to glyph ranges
-
     text.resize(buf_size);
     bool selected = ImGui::InputTextWithHint(label.c_str(), hint.c_str(), text.data(), buf_size);
     return std::make_tuple(text.c_str(), selected);
 }
 inline std::tuple<std::string, bool> InputTextWithHint(const std::string& label, const std::string& hint, std::string text, unsigned int buf_size, int flags)
 {
-    CET::Get().GetFonts().GetGlyphRangesBuilder().AddText(text); // Add text to glyph ranges
-    
     text.resize(buf_size);
     bool selected = ImGui::InputTextWithHint(label.c_str(), hint.c_str(), text.data(), buf_size, flags);
     return std::make_tuple(text.c_str(), selected);

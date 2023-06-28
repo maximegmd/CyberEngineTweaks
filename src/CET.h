@@ -8,7 +8,6 @@
 #include "overlay/Overlay.h"
 #include "scripting/LuaVM.h"
 #include "common/CETTasks.h"
-#include "Fonts.h"
 
 struct CET
 {
@@ -25,7 +24,6 @@ struct CET
     VKBindings& GetBindings() noexcept;
     Overlay& GetOverlay() noexcept;
     LuaVM& GetVM() noexcept;
-    Fonts& GetFonts() noexcept;
 
     static bool IsRunning() noexcept;
 
@@ -37,7 +35,6 @@ private:
     PersistentState m_persistentState;
     VKBindings m_bindings;
     Window m_window;
-    Fonts m_fonts;
     D3D12 m_d3d12;
     LuaVM m_vm;
     Overlay m_overlay;
