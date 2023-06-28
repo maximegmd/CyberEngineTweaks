@@ -4,7 +4,7 @@
 
 struct LuaSandbox
 {
-    LuaSandbox(Scripting* apScripting, const VKBindings& acVKBindings);
+    LuaSandbox(Scripting* apScripting, const VKBindings& acVKBindings, Fonts& aFonts);
     ~LuaSandbox() = default;
 
     void Initialize();
@@ -42,6 +42,7 @@ private:
 
     void CloseDBForSandbox(const Sandbox& aSandbox) const;
 
+    Fonts& m_fonts;
     Scripting* m_pScripting;
     const VKBindings& m_vkBindings;
     sol::table m_globals{};

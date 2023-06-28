@@ -46,6 +46,7 @@ static constexpr const char* s_cGlobalObjectsWhitelist[] = {
     "print",
     "GetVersion",
     "GetDisplayResolution",
+    "AddTextGlyphs",
     "ModArchiveExists",
 
     "ImGuiListClipper",
@@ -110,9 +111,10 @@ static constexpr const char* s_cGlobalExtraLibsWhitelist[] = {
     "ImGui",
 };
 
-LuaSandbox::LuaSandbox(Scripting* apScripting, const VKBindings& acVKBindings)
+LuaSandbox::LuaSandbox(Scripting* apScripting, const VKBindings& acVKBindings, Fonts& aFonts)
     : m_pScripting(apScripting)
     , m_vkBindings(acVKBindings)
+    , m_fonts(aFonts)
 {
 }
 
@@ -532,9 +534,13 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
             const auto previousCurrentPath = std::filesystem::current_path();
             current_path(cSBRootPath);
 
-            const auto path = GetLuaPath(acPath, cSBRootPath, false);
+            auto path = GetLuaPath(acPath, cSBRootPath, false);
+            path = path.empty() || acPath == "db.sqlite3" ? "" : path;
 
-            auto result = cIO["lines"](path.empty() || acPath == "db.sqlite3" ? "" : UTF16ToUTF8(path.native()));
+            // add the file content to the glyph range builder.
+            m_fonts.GetGlyphRangesBuilder().AddFile(path);
+
+            auto result = cIO["lines"](UTF16ToUTF8(path.native()));
 
             current_path(previousCurrentPath);
 
@@ -545,9 +551,18 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
             const auto previousCurrentPath = std::filesystem::current_path();
             current_path(cSBRootPath);
 
-            const auto path = GetLuaPath(acPath, cSBRootPath, true);
+            auto path = GetLuaPath(acPath, cSBRootPath, true);
+            path = path.empty() || acPath == "db.sqlite3" ? "" : path;
 
-            auto result = cIO["open"](path.empty() || acPath == "db.sqlite3" ? "" : UTF16ToUTF8(path.native()), acMode);
+            // add the file content to the glyph range builder, only in modes allow read permissions. and exclude file types not in the list
+            if (acMode != "w" || acMode != "a")
+            {
+                const std::vector<std::string> extensionFilter = {".lua", ".txt", ".json", ".yml", ".yaml", ".toml", ".ini"};
+                if (std::find(extensionFilter.begin(), extensionFilter.end(), UTF16ToUTF8(path.extension().native())) != extensionFilter.end())
+                    m_fonts.GetGlyphRangesBuilder().AddFile(path);
+            }
+
+            auto result = cIO["open"](UTF16ToUTF8(path.native()), acMode);
 
             current_path(previousCurrentPath);
 
