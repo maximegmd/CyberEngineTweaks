@@ -7,3 +7,7 @@
 [submodule "vendor/luasocket"]
 	path = vendor/luasocket
 	url = https://github.com/diegonehab/luasocket.git
+[submodule "vendor/imgui"]
+	path = vendor/imgui
+	url = https://github.com/Nats-ji/imgui.git
+	branch = docking-1.89.6-texture_update
