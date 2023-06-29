@@ -187,7 +187,10 @@ void Fonts::BuildFonts(const SIZE& acOutSize)
         iconFontConfig.GlyphOffset.y = std::ceilf(mainFontBaselineOffset * 0.5f);
 
         if (!mainFontPath.empty())
+        {
             MainFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(mainFontPath.native()).c_str(), fontSize, &fontConfig, fontRange.Data);
+            MainFont->FallbackChar = ' ';
+        }
         else
             MainFont = io.Fonts->AddFontDefault();
 
@@ -223,7 +226,10 @@ void Fonts::BuildFonts(const SIZE& acOutSize)
         iconFontConfig.GlyphOffset.y = std::ceilf(monoFontBaselineOffset * 0.5f);
 
         if (!monoFontPath.empty())
+        {
             MonoFont = io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(monoFontPath.native()).c_str(), fontSize, &fontConfig, fontRange.Data);
+            MonoFont->FallbackChar = ' ';
+        }
         else
             MonoFont = io.Fonts->AddFontDefault();
 
@@ -262,7 +268,7 @@ void Fonts::RebuildFonts(const SIZE& acOutSize)
     if (m_rebuildFonts || m_glyphRangesBuilder.NeedsRebuild()) // Rebuild when font settings changed or glyph ranges changed
     {
         BuildFonts(acOutSize);
-        ImGui_ImplDX12_RecreateFontsTexture();
+        ImGui_ImplDX12_UpdateFontsTexture();
 
         m_rebuildFonts = false;
     }
