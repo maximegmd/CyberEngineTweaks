@@ -55,7 +55,7 @@ void Settings::OnUpdate()
         m_madeFontChanges = false;
         if (ImGui::CollapsingHeader("Patches", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            ImGui::TreePush();
+            ImGui::TreePush((void*)NULL);
             if (ImGui::BeginTable("SETTINGS", 2, ImGuiTableFlags_NoSavedSettings, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
             {
                 const auto& patchesSettings = m_options.Patches;
@@ -94,7 +94,7 @@ void Settings::OnUpdate()
         }
         if (ImGui::CollapsingHeader("CET Font Settings", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            ImGui::TreePush();
+            ImGui::TreePush((void*)NULL);
             if (ImGui::BeginTable("SETTINGS", 2, ImGuiTableFlags_NoSavedSettings, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
             {
                 const auto& fontSettings = m_options.Font;
@@ -130,7 +130,7 @@ void Settings::OnUpdate()
         }
         if (ImGui::CollapsingHeader("CET Development Settings", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            ImGui::TreePush();
+            ImGui::TreePush((void*)NULL);
             if (ImGui::BeginTable("SETTINGS", 2, ImGuiTableFlags_NoSavedSettings, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
             {
                 const auto& developerSettings = m_options.Developer;
