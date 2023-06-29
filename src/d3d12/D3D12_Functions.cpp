@@ -322,6 +322,7 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         return false;
     }
 
+    ImGui::GetIO().BackendFlags |= ImGuiBackendFlags_RendererHasTexReload; // Set flag to indicate that we can reload textures when requested.
     m_fonts.BuildFonts(m_outSize);
 
     if (!ImGui_ImplDX12_CreateDeviceObjects())
@@ -342,9 +343,10 @@ void D3D12::PrepareUpdate()
 
     std::lock_guard _(m_imguiLock);
 
+    ImGui_ImplWin32_NewFrame(m_outSize);
+
     m_fonts.RebuildFonts(m_outSize);
 
-    ImGui_ImplWin32_NewFrame(m_outSize);
     ImGui::NewFrame();
 
     CET::Get().GetOverlay().Update();
