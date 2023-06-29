@@ -2932,7 +2932,7 @@ inline void InitEnums(sol::table luaGlobals)
 
 #pragma region Slider Flags
     luaGlobals.new_enum(
-        "ImGuiSliderFlags", "None", ImGuiSliderFlags_None, "ClampOnInput", ImGuiSliderFlags_ClampOnInput, "Logarithmic", ImGuiSliderFlags_Logarithmic, "NoRoundToFormat",
+        "ImGuiSliderFlags", "None", ImGuiSliderFlags_None, "AlwaysClamp", ImGuiSliderFlags_AlwaysClamp, "ClampOnInput", ImGuiSliderFlags_AlwaysClamp, "Logarithmic", ImGuiSliderFlags_Logarithmic, "NoRoundToFormat",
         ImGuiSliderFlags_NoRoundToFormat, "NoInput", ImGuiSliderFlags_NoInput);
 #pragma endregion Slider Flags
 
