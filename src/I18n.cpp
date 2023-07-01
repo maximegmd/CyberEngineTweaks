@@ -91,6 +91,14 @@ std::string I18n::GetCurrentLocale() const
     return m_options.Language.Locale;
 }
 
+void I18n::Reload()
+{
+    m_fonts.PrecacheLanguageFiles();
+    m_dictManager.remove_directory(UTF16ToUTF8(m_paths.Languages().native()));
+    LoadLanguageFiles();
+    LoadLanguageSettings();
+}
+
 // Basic translate
 std::string I18n::Translate(const std::string& aMsgid) const
 {

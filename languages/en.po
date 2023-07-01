@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CyberEngineTweaks \n"
 "Report-Msgid-Bugs-To: https://github.com/maximegmd/CyberEngineTweaks/issues\n"
-"POT-Creation-Date: 2023-05-31 17:59+0800\n"
+"POT-Creation-Date: 2023-07-01 16:05+0800\n"
 "PO-Revision-Date: 2023-05-29 08:27+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -50,7 +50,7 @@ msgstr "ImGui Debug"
 msgid "Reload all mods"
 msgstr "Reload all mods"
 
-#: src\overlay\widgets\Bindings.cpp:93 src\overlay\widgets\Settings.cpp:184
+#: src\overlay\widgets\Bindings.cpp:93 src\overlay\widgets\Settings.cpp:186
 msgid "Save"
 msgstr "Save"
 
@@ -294,20 +294,28 @@ msgstr "Enable Translation Log"
 msgid "Show logs when there's a missing translation (requires restart to take effect)."
 msgstr "Show logs when there's a missing translation (requires restart to take effect)."
 
-#: src\overlay\widgets\Settings.cpp:181
+#: src\overlay\widgets\Settings.cpp:170
+msgid "Reload translation"
+msgstr "Reload translation"
+
+#: src\overlay\widgets\Settings.cpp:170
+msgid "Reload translation files."
+msgstr "Reload translation files."
+
+#: src\overlay\widgets\Settings.cpp:183
 msgid "Load"
 msgstr "Load"
 
-#: src\overlay\widgets\Settings.cpp:187
+#: src\overlay\widgets\Settings.cpp:189
 msgid "Defaults"
 msgstr "Defaults"
 
-#: src\overlay\widgets\Settings.cpp:334 src\overlay\widgets\Settings.cpp:342
+#: src\overlay\widgets\Settings.cpp:365 src\overlay\widgets\Settings.cpp:373
 msgctxt "Settings"
 msgid "Default"
 msgstr "Default"
 
-#: src\overlay\widgets\Settings.cpp:369 src\overlay\widgets\Settings.cpp:378
+#: src\overlay\widgets\Settings.cpp:401 src\overlay\widgets\Settings.cpp:410
 msgctxt "Settings"
 msgid "System"
 msgstr "System"
@@ -316,139 +324,142 @@ msgstr "System"
 msgid "TweakDB is not initialized yet"
 msgstr "TweakDB is not initialized yet"
 
-#: src\overlay\widgets\TweakDBEditor.cpp:146
+#: src\overlay\widgets\TweakDBEditor.cpp:148
 msgid "Records"
 msgstr "Records"
 
-#: src\overlay\widgets\TweakDBEditor.cpp:154
+#: src\overlay\widgets\TweakDBEditor.cpp:156
 msgid "Queries"
 msgstr "Queries"
 
-#: src\overlay\widgets\TweakDBEditor.cpp:162
+#: src\overlay\widgets\TweakDBEditor.cpp:164
 msgid "Flats"
 msgstr "Flats"
 
-#: src\overlay\widgets\TweakDBEditor.cpp:170
+#: src\overlay\widgets\TweakDBEditor.cpp:172
 msgid "Advanced"
 msgstr "Advanced"
 
-#: src\overlay\widgets\TweakDBEditor.cpp:442
-#: src\overlay\widgets\TweakDBEditor.cpp:1099
-#: src\overlay\widgets\TweakDBEditor.cpp:1355
-#: src\overlay\widgets\TweakDBEditor.cpp:1481
-#: src\overlay\widgets\TweakDBEditor.cpp:1607
+#: src\overlay\widgets\TweakDBEditor.cpp:472
+#: src\overlay\widgets\TweakDBEditor.cpp:1129
+#: src\overlay\widgets\TweakDBEditor.cpp:1385
+#: src\overlay\widgets\TweakDBEditor.cpp:1511
+#: src\overlay\widgets\TweakDBEditor.cpp:1637
 msgid "Search"
 msgstr "Search"
 
-#: src\overlay\widgets\TweakDBEditor.cpp:544
+#: src\overlay\widgets\TweakDBEditor.cpp:574
 #, c-format
 msgid "'%s' is not found in TweakDB"
 msgstr "'%s' is not found in TweakDB"
 
-#: src\overlay\widgets\TweakDBEditor.cpp:604
+#: src\overlay\widgets\TweakDBEditor.cpp:634
 #, c-format
 msgid "unsupported type: %s"
 msgstr "unsupported type: %s"
 
-#: src\overlay\widgets\TweakDBEditor.cpp:637
+#: src\overlay\widgets\TweakDBEditor.cpp:667
 #, c-format
 msgid "[%s] %u item"
 msgid_plural "[%s] %u items"
 msgstr[0] "[%s] %u item"
 msgstr[1] "[%s] %u items"
 
-#: src\overlay\widgets\TweakDBEditor.cpp:639
+#: src\overlay\widgets\TweakDBEditor.cpp:669
 msgid "clear"
 msgstr "clear"
 
-#: src\overlay\widgets\TweakDBEditor.cpp:650
+#: src\overlay\widgets\TweakDBEditor.cpp:680
 msgid "edit"
 msgstr "edit"
 
-#: src\overlay\widgets\TweakDBEditor.cpp:662
+#: src\overlay\widgets\TweakDBEditor.cpp:692
 msgid "cancel"
 msgstr "cancel"
 
-#: src\overlay\widgets\TweakDBEditor.cpp:675
+#: src\overlay\widgets\TweakDBEditor.cpp:705
 msgid "save"
 msgstr "save"
 
-#: src\overlay\widgets\TweakDBEditor.cpp:739
+#: src\overlay\widgets\TweakDBEditor.cpp:769
 msgid "add new"
 msgstr "add new"
 
-#: src\overlay\widgets\TweakDBEditor.cpp:785
+#: src\overlay\widgets\TweakDBEditor.cpp:815
 msgid "ERROR_RECORD_NOT_FOUND"
 msgstr "ERROR_RECORD_NOT_FOUND"
 
-#: src\overlay\widgets\TweakDBEditor.cpp:879
+#: src\overlay\widgets\TweakDBEditor.cpp:909
 msgid "Roll "
 msgstr "Roll "
 
-#: src\overlay\widgets\TweakDBEditor.cpp:884
+#: src\overlay\widgets\TweakDBEditor.cpp:914
 msgid "Pitch"
 msgstr "Pitch"
 
-#: src\overlay\widgets\TweakDBEditor.cpp:889
+#: src\overlay\widgets\TweakDBEditor.cpp:919
 msgid "Yaw  "
 msgstr "Yaw  "
 
-#: src\overlay\widgets\TweakDBEditor.cpp:1008
+#: src\overlay\widgets\TweakDBEditor.cpp:1038
 msgid "'Color' is not supported yet"
 msgstr "'Color' is not supported yet"
 
-#: src\overlay\widgets\TweakDBEditor.cpp:1044
+#: src\overlay\widgets\TweakDBEditor.cpp:1074
 msgid "This is a LocalizationKey"
 msgstr "This is a LocalizationKey"
 
-#: src\overlay\widgets\TweakDBEditor.cpp:1202
+#: src\overlay\widgets\TweakDBEditor.cpp:1232
 msgid "Game is expecting specific values."
 msgstr "Game is expecting specific values."
 
-#: src\overlay\widgets\TweakDBEditor.cpp:1354
-#: src\overlay\widgets\TweakDBEditor.cpp:1360
-#: src\overlay\widgets\TweakDBEditor.cpp:1480
-#: src\overlay\widgets\TweakDBEditor.cpp:1486
+#: src\overlay\widgets\TweakDBEditor.cpp:1384
+#: src\overlay\widgets\TweakDBEditor.cpp:1390
+#: src\overlay\widgets\TweakDBEditor.cpp:1510
+#: src\overlay\widgets\TweakDBEditor.cpp:1516
 msgid "Regex"
 msgstr "Regex"
 
-#: src\overlay\widgets\TweakDBEditor.cpp:1425
-#: src\overlay\widgets\TweakDBEditor.cpp:1543
+#: src\overlay\widgets\TweakDBEditor.cpp:1455
+#: src\overlay\widgets\TweakDBEditor.cpp:1573
 msgid "ERROR_FLAT_NOT_FOUND"
 msgstr "ERROR_FLAT_NOT_FOUND"
 
-#: src\overlay\widgets\TweakDBEditor.cpp:1565
+#: src\overlay\widgets\TweakDBEditor.cpp:1595
 msgid "'Flats' Grouping depth"
 msgstr "'Flats' Grouping depth"
 
-#: src\overlay\widgets\TweakDBEditor.cpp:1571
+#: src\overlay\widgets\TweakDBEditor.cpp:1601
 msgid "ComboBox dropdown height"
 msgstr "ComboBox dropdown height"
 
-#: src\overlay\widgets\TweakDBEditor.cpp:1573
+#: src\overlay\widgets\TweakDBEditor.cpp:1603
 msgid "Refresh all"
 msgstr "Refresh all"
 
-#: src\overlay\widgets\TweakDBEditor.cpp:1594
+#: src\overlay\widgets\TweakDBEditor.cpp:1624
 msgid "Record name"
 msgstr "Record name"
 
-#: src\overlay\widgets\TweakDBEditor.cpp:1596
+#: src\overlay\widgets\TweakDBEditor.cpp:1626
 msgid "Delete Record"
 msgstr "Delete Record"
 
-#: src\overlay\widgets\TweakDBEditor.cpp:1604
+#: src\overlay\widgets\TweakDBEditor.cpp:1634
 msgid "Record type to create"
 msgstr "Record type to create"
 
-#: src\overlay\widgets\TweakDBEditor.cpp:1634
+#: src\overlay\widgets\TweakDBEditor.cpp:1664
 msgid "Create record"
 msgstr "Create record"
 
-#: src\overlay\widgets\TweakDBEditor.cpp:1642
+#: src\overlay\widgets\TweakDBEditor.cpp:1672
 msgid "Record to clone"
 msgstr "Record to clone"
 
-#: src\overlay\widgets\TweakDBEditor.cpp:1644
+#: src\overlay\widgets\TweakDBEditor.cpp:1674
 msgid "Clone record"
 msgstr "Clone record"
+
+#~ msgid "Reload"
+#~ msgstr "Reload"

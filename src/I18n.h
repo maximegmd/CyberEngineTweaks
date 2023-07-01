@@ -28,6 +28,7 @@ struct I18n
     Language GetLanguage(const std::string& acLocale) const;
     std::string GetSystemLocale() const;
     std::string GetCurrentLocale() const;
+    void Reload();
 
     std::string Translate(const std::string& aMsgid) const;
     std::string Translate(const std::string& aMsgctxt, const std::string aMsgid) const;

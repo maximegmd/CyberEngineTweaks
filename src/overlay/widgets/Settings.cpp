@@ -167,6 +167,8 @@ void Settings::OnUpdate()
                 SettingItemCheckBox(
                     "🗒", _t("Enable Translation Log"), _t("Show logs when there's a missing translation (requires restart to take effect)."), m_developer.EnableI18nLog,
                     developerSettings.EnableI18nLog);
+                if (SettingItemButton("🌐", _t("Reload translation"), ICON_MD_RESTART, _t("Reload translation files.")))
+                    CET::Get().GetI18n().Reload();
 
                 ImGui::EndTable();
             }
@@ -262,6 +264,7 @@ void Settings::SettingItemTemplate(
     ImGui::PopStyleColor();
 }
 
+// Returns true when the value has changed
 bool Settings::SettingItemCheckBox(const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, bool& aCurrent, const bool& acSaved)
 {
     std::function<void()> imguiWidget = [&]()
@@ -289,6 +292,7 @@ bool Settings::SettingItemCheckBox(const std::string& acIcon, const std::string&
     return aCurrent != acSaved;
 }
 
+// Returns true when the value has changed
 bool Settings::SettingItemSliderFloat(
     const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, float& aCurrent, const float& acSaved, float aValueMin, float aValueMax,
     const char* aFormat)
@@ -307,6 +311,7 @@ bool Settings::SettingItemSliderFloat(
     return aCurrent != acSaved;
 }
 
+// Returns true when the value has changed
 bool Settings::SettingItemSliderInt(
     const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, int& aCurrent, const int& acSaved, int aValueMin, int aValueMax, const char* aFormat)
 {
@@ -324,6 +329,32 @@ bool Settings::SettingItemSliderInt(
     return aCurrent != acSaved;
 }
 
+// Returns true when the button is pressed
+bool Settings::SettingItemButton(const std::string& acIcon, const std::string& acLabel, const std::string& acButtonText, const std::string& acTooltip, const float acWidth)
+{
+    bool clicked = false;
+    std::function<void()> imguiWidget = [&]()
+    {
+        // Right align
+        if (ImGui::BeginTable("ButtonItem", 2, ImGuiTableFlags_NoSavedSettings))
+        {
+            ImGui::TableSetupColumn("Col1", ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableSetupColumn("Col2", ImGuiTableColumnFlags_WidthFixed);
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(1);
+
+            clicked = ImGui::Button(acButtonText.c_str(), ImVec2(acWidth, 0));
+
+            ImGui::EndTable();
+        }
+    };
+
+    SettingItemTemplate(acIcon, acLabel, acTooltip, false, imguiWidget);
+
+    return clicked;
+}
+
+// Returns true when the value has changed
 bool Settings::SettingItemFontCombo(
     const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, std::string& aCurrent, const std::string& acSaved, const std::vector<Font>& acFonts)
 {
@@ -358,6 +389,7 @@ bool Settings::SettingItemFontCombo(
     return aCurrent != acSaved;
 }
 
+// Returns true when the value has changed
 bool Settings::SettingItemLanguageCombo(
     const std::string& acIcon, const std::string& acLabel, const std::string& acTooltip, std::string& aCurrent, const std::string& acSaved,
     const std::vector<Language>& acLanguages)
