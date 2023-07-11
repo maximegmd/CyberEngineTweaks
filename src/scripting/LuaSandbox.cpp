@@ -568,7 +568,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
                 return std::make_tuple(sol::nil, "Argument oldPath is invalid! ('" + acOldPath + "')");
             }
 
-            const auto newPath = GetLuaPath(acOldPath, cSBRootPath, true);
+            const auto newPath = GetLuaPath(acNewPath, cSBRootPath, true);
             if (newPath.empty() || exists(newPath) || acNewPath == "db.sqlite3")
             {
                 current_path(previousCurrentPath);
