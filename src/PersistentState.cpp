@@ -42,7 +42,10 @@ void PersistentState::Load()
     if (!configFile)
         return;
 
-    auto state = nlohmann::json::parse(configFile);
+    auto state = nlohmann::json::parse(configFile, nullptr, false);
+
+    if (state.is_discarded())
+        return;
 
     const auto& overlayState = state["overlay"];
     if (!overlayState.empty())

@@ -165,23 +165,26 @@ void VKBindings::Load()
     const auto path = GetAbsolutePath(m_paths.VKBindings(), "", false);
     if (std::ifstream ifs{path})
     {
-        auto config{nlohmann::json::parse(ifs)};
-        for (auto& mod : config.items())
+        auto config{nlohmann::json::parse(ifs, nullptr, false)};
+        if (!config.is_discarded())
         {
-            const auto& modName{mod.key()};
-            const auto concatPoint = modName.find('.');
-            if (concatPoint < modName.length())
+            for (auto& mod : config.items())
             {
-                // load old config type
-                auto modBindName = modName.substr(0, concatPoint);
-                auto modBindId = modName.substr(concatPoint + 1);
-                m_modIdToBinds[modBindName][modBindId] = mod.value();
-            }
-            else
-            {
-                // load new config type
-                for (auto& bind : mod.value().items())
-                    m_modIdToBinds[modName][bind.key()] = bind.value();
+                const auto& modName{mod.key()};
+                const auto concatPoint = modName.find('.');
+                if (concatPoint < modName.length())
+                {
+                    // load old config type
+                    auto modBindName = modName.substr(0, concatPoint);
+                    auto modBindId = modName.substr(concatPoint + 1);
+                    m_modIdToBinds[modBindName][modBindId] = mod.value();
+                }
+                else
+                {
+                    // load new config type
+                    for (auto& bind : mod.value().items())
+                        m_modIdToBinds[modName][bind.key()] = bind.value();
+                }
             }
         }
     }
