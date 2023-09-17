@@ -97,7 +97,13 @@ void Options::Load()
     if (!configFile)
         return;
 
-    auto config = nlohmann::json::parse(configFile);
+    auto config = nlohmann::json::parse(configFile, nullptr, false);
+
+    if (config.is_discarded())
+    {
+        Log::Warn("Failed to parse config.json, using default config instead.");
+        return;
+    }
 
     // patches config
     const auto& patchesConfig = config["patches"];
