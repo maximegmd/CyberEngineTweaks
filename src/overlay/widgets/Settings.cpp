@@ -59,14 +59,6 @@ void Settings::OnUpdate()
             {
                 const auto& patchesSettings = m_options.Patches;
                 UpdateAndDrawSetting(
-                    "AMD SMT Patch",
-                    "For AMD CPUs that did not get a performance boost after CDPR's patch (requires restart to take "
-                    "effect).",
-                    m_patches.AmdSmt, patchesSettings.AmdSmt);
-                UpdateAndDrawSetting(
-                    "Remove Pedestrians", "Removes most of the pedestrians and traffic (requires restart to take effect).", m_patches.RemovePedestrians,
-                    patchesSettings.RemovePedestrians);
-                UpdateAndDrawSetting(
                     "Disable Async Compute",
                     "Disables async compute, this can give a boost on older GPUs like Nvidia 10xx series for example "
                     "(requires restart to take effect).",
@@ -112,9 +104,6 @@ void Settings::OnUpdate()
                     "assertion (useful when debugging ImGui issues, should also be used to check mods before "
                     "shipping!).",
                     m_developer.EnableImGuiAssertions, developerSettings.EnableImGuiAssertions);
-                UpdateAndDrawSetting(
-                    "Enable Debug Build", "Sets internal flags to disguise as debug build (requires restart to take effect).", m_developer.EnableDebug,
-                    developerSettings.EnableDebug);
                 UpdateAndDrawSetting(
                     "Dump Game Options", "Dumps all game options into main log file (requires restart to take effect).", m_developer.DumpGameOptions,
                     developerSettings.DumpGameOptions);

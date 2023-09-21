@@ -12,11 +12,9 @@ struct PatchesSettings
 
     [[nodiscard]] auto operator<=>(const PatchesSettings&) const = default;
 
-    bool RemovePedestrians{false};
     bool AsyncCompute{false};
     bool Antialiasing{false};
     bool SkipStartMenu{false};
-    bool AmdSmt{false};
     bool DisableIntroMovies{false};
     bool DisableVignette{false};
     bool DisableBoundaryTeleport{false};
@@ -49,7 +47,6 @@ struct DeveloperSettings
 
     bool RemoveDeadBindings{true};
     bool EnableImGuiAssertions{false};
-    bool EnableDebug{false};
     bool DumpGameOptions{false};
     uint64_t MaxLinesConsoleHistory{1000};
     bool PersistentConsole{true};

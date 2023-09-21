@@ -6,14 +6,11 @@
 
 #include "scripting/GameHooks.h"
 
-void EnableDebugPatch();
 void StartScreenPatch();
-void RemovePedsPatch();
 void OptionsInitHook();
 void DisableIntroMoviesPatch();
 void DisableVignettePatch();
 void DisableBoundaryTeleportPatch();
-void SmtAmdPatch();
 void MinimapFlickerPatch();
 
 static HANDLE s_modInstanceMutex = nullptr;
@@ -36,14 +33,9 @@ static void Initialize()
             return;
 
         // initialize patches
-        if (options.Developer.EnableDebug)
-            EnableDebugPatch();
 
         if (options.Patches.SkipStartMenu)
             StartScreenPatch();
-
-        if (options.Patches.RemovePedestrians)
-            RemovePedsPatch();
 
         if (options.Patches.DisableIntroMovies)
             DisableIntroMoviesPatch();
@@ -53,9 +45,6 @@ static void Initialize()
 
         if (options.Patches.DisableBoundaryTeleport)
             DisableBoundaryTeleportPatch();
-
-        if (options.Patches.AmdSmt)
-            SmtAmdPatch();
 
         if (options.Patches.MinimapFlicker)
             MinimapFlickerPatch();
