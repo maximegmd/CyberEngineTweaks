@@ -32,8 +32,8 @@ def get_groups() -> List[Group]:
             Item(name='InstanceOffset', pattern='48 8B C4 48 89 58 08 48 89 68 10 48 89 70 18 4C 89 48 20 57 41 56 41 57 48 83 EC 30 8B 01 45 8B', expected=1, offset=62), # ok
             Item(name='_DoNotUse_RenderQueueOffset', pattern='39 72 24 74 5B 48 8B 4A 18 4C 8D 8C 24 88 00 00 00 8B 42 24 44 8B C7 48 8B 95 ? ? ? ?', expected=1) # ok
         ], functions=[
-            Item(name='Resize', pattern='44 88 4C 24 20 44 89 44 24 18 89 54 24 10 89 4C', expected=1),
-            Item(name='Shutdown', pattern='48 89 6C 24 20 41 56 48 83 EC 20 48 8D 05', expected=1)
+            Item(name='Resize', pattern='48 8B C4 44 88 48 20 44 89 40 18 89 50 10 89 48 08 55 53 56 57 41 54 41 55 41 56 41 57 48 8D 68 88 48 81 EC 38 01 00 00', expected=1),
+            Item(name='Shutdown', pattern='40 53 48 83 EC 20 48 8B D9 48 8D 05 ? ? ? ? 48 81 C1 98 00 00 00 48 89 01 E8', expected=1)
         ]),
         Group(name='CRenderNode_Present', functions=[
             Item(name='DoInternal', pattern='48 8B C4 48 89 58 08 48 89 68 10 48 89 70 18 4C 89 48 20 57 41 56 41 57 48 83 EC 30 8B 01 45 8B', expected=1) # ok
@@ -67,18 +67,18 @@ def get_groups() -> List[Group]:
             Item(name='SetRecordID', pattern='48 89 5C 24 10 48 89 4C 24 08 55 48 8B EC 48 83 EC 40 48 8B DA 48 8D 4D E0 48 8D 55 10 E8', expected=1) # ok
         ]),
         Group(name='CPatches', functions=[
-            Item(name='BoundaryTeleport', pattern='48 8B C4 55 53 41 54 48  8D A8 ? ? ? ? 48 81 EC ? ? ? ? 48 89 70 10 48 8D 59 48', expected=1),
+            #Item(name='BoundaryTeleport', pattern='48 8B C4 55 53 41 54 48  8D A8 ? ? ? ? 48 81 EC ? ? ? ? 48 89 70 10 48 8D 59 48', expected=1),
             Item(name='IntroMovie', pattern='48 89 5C 24 08 57 48 83 EC 20 48 8B 44 24 50 48 8B D9 48 89 41 08', expected=1), # ok
-            Item(name='Vignette', pattern='48 8B 41 30 48 83 78 68 00 74', expected=1),
-            Item(name='MinimapFlicker', pattern='83 79 2C 00 48 8B F2 4C', expected=1),
-            Item(name='OptionsInit', pattern='40 53 48 83 EC 40 48 8B D9 48 8D 4C 24 20 E8 ? ? ? ? E8 ? ? ? ? 4C 8B 43 08', expected=1),
-            Item(name='SkipStartScreen', pattern='74 5F E8 ? ? ? ? 48 8D 4C 24 20 8B D8 E8 ? ? ? ? 48 8B C8 8B D3 E8', expected=2, index=1),
+            #Item(name='Vignette', pattern='48 8B 41 30 48 83 78 68 00 74', expected=1),
+            #Item(name='MinimapFlicker', pattern='83 79 2C 00 48 8B F2 4C', expected=1),
+            #Item(name='OptionsInit', pattern='40 53 48 83 EC 40 48 8B D9 48 8D 4C 24 20 E8 ? ? ? ? E8 ? ? ? ? 4C 8B 43 08', expected=1),
+            #Item(name='SkipStartScreen', pattern='74 5F E8 ? ? ? ? 48 8D 4C 24 20 8B D8 E8 ? ? ? ? 48 8B C8 8B D3 E8', expected=2, index=1),
         ]),
         Group(name='CGame', functions=[
             Item(name='Main', pattern='48 89 5C 24 10 55 56 57 48 8B EC 48 81 EC 80 00 00 00 48 8B F9 0F 29 74 24 70 0F 29 7C 24 60 48 8D 4D C0', expected=1) # ok
         ]),
         Group(name='CBaseInitializationState', functions=[
-            Item(name='OnTick', pattern='48 83 EC 28 48 8B 05 ? ? ? ? 4C 8B C2 48 85 C0 75 12 8D 50 03 49 8B C8 E8 ? ? ? ?', expected=1) # ok
+            Item(name='OnTick', pattern='40 53 48 83 EC 20 48 8B 05 ? ? ? ? 33 DB 4C 8B C2 48 85 C0 ? ? ? ?', expected=1) # ok
         ]),
         Group(name='CInitializationState', functions=[
             Item(name='OnTick', pattern='40 53 48 83 EC 30 48 8B 05 ? ? ? ? 33 DB 4C 8B C2 8B 88 08 01 00 00', expected=1) # ok

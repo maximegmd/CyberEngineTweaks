@@ -1,5 +1,6 @@
 #include <stdafx.h>
 
+/*
 void StartScreenPatch()
 {
     const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CPatches_SkipStartScreen);
@@ -24,3 +25,4 @@ void StartScreenPatch()
 
     Log::Info("Start screen patch: success");
 }
+*/

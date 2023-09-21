@@ -37,6 +37,7 @@ void* HookGameOptionInit(GameOption* apThis)
     return RealGameOptionInit(apThis);
 }
 
+/*
 void OptionsInitHook()
 {
     const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CPatches_OptionsInit);
@@ -52,3 +53,4 @@ void OptionsInitHook()
     else
         Log::Warn("Hidden options hook: failed");
 }
+*/

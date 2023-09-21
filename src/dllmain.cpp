@@ -21,6 +21,9 @@ static void Initialize()
 {
     try
     {
+        while (!IsDebuggerPresent())
+            Sleep(1000);
+
         MH_Initialize();
 
         CET::Initialize();
@@ -34,7 +37,7 @@ static void Initialize()
 
         // initialize patches
 
-        if (options.Patches.SkipStartMenu)
+        /*if (options.Patches.SkipStartMenu)
             StartScreenPatch();
 
         if (options.Patches.DisableIntroMovies)
@@ -49,7 +52,7 @@ static void Initialize()
         if (options.Patches.MinimapFlicker)
             MinimapFlickerPatch();
 
-        OptionsInitHook();
+        OptionsInitHook();*/
 
         MH_EnableHook(nullptr);
     }

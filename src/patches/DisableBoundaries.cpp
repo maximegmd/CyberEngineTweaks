@@ -1,5 +1,6 @@
 #include <stdafx.h>
 
+/*
 void DisableBoundaryTeleportPatch()
 {
     // Disarm the WorldBoundarySystem/Tick function
@@ -21,3 +22,4 @@ void DisableBoundaryTeleportPatch()
 
     Log::Info("Disable boundary teleport: success");
 }
+*/

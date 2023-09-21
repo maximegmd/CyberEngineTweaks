@@ -1,5 +1,6 @@
 #include <stdafx.h>
 
+/*
 void DisableVignettePatch()
 {
     const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CPatches_Vignette);
@@ -20,3 +21,4 @@ void DisableVignettePatch()
 
     Log::Info("Disable vignette patch: success");
 }
+*/
