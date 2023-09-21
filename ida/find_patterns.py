@@ -111,7 +111,7 @@ try:
         file.write(' */\n')
         file.write('#include <cstdint>\n')
         file.write('\n')
-        file.write(f'// Addresses for Cyberpunk 2077, version {version.decode()}.\n')
+        #file.write(f'// Addresses for Cyberpunk 2077, version {version.decode()}.\n')
         file.write('namespace CyberEngineTweaks::Addresses\n')
         file.write('{\n')
         file.write(f'constexpr uintptr_t ImageBase = 0x{ida_nalt.get_imagebase():X};\n')
