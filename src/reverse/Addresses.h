@@ -17,10 +17,6 @@ constexpr uintptr_t ImageBase = 0x140000000;
 constexpr uintptr_t CBaseInitializationState_OnTick = 0x140A83490 - ImageBase; // 48 83 EC 28 48 8B 05 ? ? ? ? 4C 8B C2 48 85 C0 75 12 8D 50 03 49 8B C8 E8 ? ? ? ?, expected: 1, index: 0
 #pragma endregion
 
-#pragma region CGame
-constexpr uintptr_t CGame_Main = 0x140A859E0 - ImageBase; // 40 57 48 83 EC 70 48 8B F9 0F 29 7C 24 50 48 8D 4C 24 38, expected: 1, index: 0
-#pragma endregion
-
 #pragma region CGameApplication
 constexpr uintptr_t CGameApplication_Run = 0x140A81B30 - ImageBase; // 48 89 5C 24 08 57 48 83 EC 20 48 8B D9 33 FF 90 E8 ? ? ? ? 84 C0, expected: 1, index: 0
 #pragma endregion
@@ -61,9 +57,12 @@ constexpr uintptr_t CRunningState_OnTick = 0x140A838D0 - ImageBase; // 40 53 48 
 #pragma region CScript
 constexpr uintptr_t CScript_RunPureScript = 0x140215B60 - ImageBase; // 40 55 48 81 EC D0 00 00 00 48 8D 6C 24 40 8B, expected: 1, index: 0
 constexpr uintptr_t CScript_AllocateFunction = 0x1401B6290 - ImageBase; // BA B8 00 00 00 48 8D 4D D7 E8, expected: 3, index: 0
-constexpr uintptr_t CScript_Log = 0x1401F7DE0 - ImageBase; // 40 53 48 83 EC ? 48 8D 4C 24 20 48 8B DA E8 ? ? ? ? 33 D2 48 8D 4C  24 40 E8, expected: 1, index: 0
+constexpr uintptr_t CScript_Log = 0x1401F7DE0 - ImageBase;              // 40 53 48 83 EC ? 48 8D 4C 24 20 48 8B DA E8 ? ? ? ? 33 D2 48 8D 4C  24 40 E8, expected: 1, index: 0
+constexpr uintptr_t CScript_LogError = 0x1401F7DE0 - ImageBase;              // 40 53 48 83 EC ? 48 8D 4C 24 20 48 8B DA E8 ? ? ? ? 33 D2 48 8D 4C  24 40 E8, expected: 1, index: 0
+constexpr uintptr_t CScript_LogWarning = 0x1401F7DE0 - ImageBase;              // 40 53 48 83 EC ? 48 8D 4C 24 20 48 8B DA E8 ? ? ? ? 33 D2 48 8D 4C  24 40 E8, expected: 1, index: 0
 constexpr uintptr_t CScript_ToStringDEBUG = 0x140BE8820 - ImageBase; // 48 89 5C 24 08 57 48 83  EC 20 FE 42 62 4C 8D 15 ? ? ? ? 33 C9 33 C0, expected: 4, index: 2
 constexpr uintptr_t CScript_LogChannel = 0x1401F7E80 - ImageBase; // 4C 8B DC 49 89 5B 08 49  89 73 18 57 48 83 EC 70 48 8B 02 ? ? ? ? ? ? ? FE 42 62 4D 8D 43 10 33 FF 45 33 C9 49 89  7B 10 48 8B DA 48 89 7A, expected: 1, index: 0
+constexpr uintptr_t CScript_LogChannelWarning = 0x1401F7E80 - ImageBase; // 4C 8B DC 49 89 5B 08 49  89 73 18 57 48 83 EC 70 48 8B 02 ? ? ? ? ? ? ? FE 42 62 4D 8D 43 10 33 FF 45 33 C9 49 89  7B 10 48 8B DA 48 89 7A, expected: 1, index: 0
 constexpr uintptr_t CScript_TDBIDConstructorDerive = 0x142C2A650 - ImageBase; // 40 53 48 83 EC 30 33 C0 4C 89 44 24 20 48 8B DA, expected: 1, index: 0
 constexpr uintptr_t CScript_TranslateBytecode = 0x1402851A0 - ImageBase; // 4C 8B DC 55 53 57 41 55 49 8D 6B A1 48 81 EC 98 00 00 00 48 8B 1A 4C 8B E9 8B 42 0C 48 8D 3C C3, expected: 1, index: 0
 constexpr uintptr_t CScript_TweakDBLoad = 0x140BE6B50 - ImageBase; // 48 89 5C 24 18 55 57 41 56 48 8B EC 48 83 EC 70 48 8B D9 45 33 F6 48 8D, expected: 1, index: 0

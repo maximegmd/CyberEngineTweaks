@@ -80,7 +80,10 @@ private:
     TiltedPhoques::Map<uint64_t, std::set<uint64_t>> m_tdbidDerivedLookup{};
 
     RED4ext::OpcodeHandlers::Handler_t m_realLog{nullptr};
+    RED4ext::OpcodeHandlers::Handler_t m_realLogError{nullptr};
+    RED4ext::OpcodeHandlers::Handler_t m_realLogWarning{nullptr};
     RED4ext::OpcodeHandlers::Handler_t m_realLogChannel{nullptr};
+    RED4ext::OpcodeHandlers::Handler_t m_realLogChannelWarning{nullptr};
     RED4ext::OpcodeHandlers::Handler_t m_realTDBIDToStringDEBUG{nullptr};
     TTDBIDCtorDerive* m_realTDBIDCtorDerive{nullptr};
     TSetLoadingState* m_realSetLoadingState{nullptr};
