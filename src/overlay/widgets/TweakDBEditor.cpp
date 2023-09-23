@@ -14,6 +14,8 @@
 #include <RED4ext/Scripting/Natives/Generated/Vector2.hpp>
 #include <RED4ext/Scripting/Natives/Generated/Vector3.hpp>
 
+#include "RED4ext/Scripting/Utils.hpp"
+
 bool TweakDBEditor::s_recordsFilterIsRegex = false;
 bool TweakDBEditor::s_flatsFilterIsRegex = false;
 char TweakDBEditor::s_recordsFilterBuffer[256]{};

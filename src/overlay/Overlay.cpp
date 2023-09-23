@@ -189,7 +189,8 @@ void Overlay::Update()
 
             auto& d3d12 = CET::Get().GetD3D12();
             d3d12.DelayedSetTrapInputInImGui(m_enabled);
-            ClipToCenter(RED4ext::CGameEngine::Get()->unkC0);
+            auto* pEngine = RED4ext::CGameEngine::Get();
+            ClipToCenter(pEngine->unkC0);
             m_toggled = false;
         }
     }

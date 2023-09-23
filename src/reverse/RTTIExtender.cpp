@@ -6,6 +6,8 @@
 #include <RED4ext/Scripting/Natives/Generated/ent/Entity.hpp>
 #include <RED4ext/Scripting/Natives/Generated/ent/EntityID.hpp>
 
+#include "RED4ext/Scripting/Utils.hpp"
+
 template <typename T> struct GameCall
 {
     GameCall(uintptr_t aAddress, const int32_t acOffset = 0)
