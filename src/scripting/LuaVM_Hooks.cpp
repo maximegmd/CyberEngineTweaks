@@ -315,7 +315,7 @@ uintptr_t LuaVM::HookSetLoadingState(uintptr_t aThis, int aState)
 
     if (aState == 2)
     {
-        std::call_once(s_initBarrier, [] { s_vm->PostInitializeMods(); });
+    //    std::call_once(s_initBarrier, [] { s_vm->PostInitializeMods(); });
     }
 
     return s_vm->m_realSetLoadingState(aThis, aState);
@@ -327,7 +327,7 @@ bool LuaVM::HookTranslateBytecode(uintptr_t aBinder, uintptr_t aData)
 
     if (ret)
     {
-        s_vm->PostInitializeScripting();
+    //    s_vm->PostInitializeScripting();
     }
 
     return ret;
@@ -337,8 +337,8 @@ uint64_t LuaVM::HookPlayerSpawned(uint64_t a1, uint64_t a2, uint64_t a3, uint64_
 {
     const auto ret = s_vm->m_realPlayerSpawned(a1, a2, a3, a4);
 
-    if (!s_vm->m_initialized)
-        s_vm->PostInitializeMods();
+    //if (!s_vm->m_initialized)
+    //    s_vm->PostInitializeMods();
 
     return ret;
 }
@@ -347,7 +347,7 @@ uint64_t LuaVM::HookTweakDBLoad(uintptr_t aThis, uintptr_t aParam)
 {
     const auto ret = s_vm->m_realTweakDBLoad(aThis, aParam);
 
-    s_vm->PostInitializeTweakDB();
+    //s_vm->PostInitializeTweakDB();
 
     return ret;
 }

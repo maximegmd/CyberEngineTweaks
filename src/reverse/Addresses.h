@@ -36,7 +36,7 @@ constexpr uintptr_t CPhotoMode_SetRecordID =
 
 #pragma region CRenderGlobal
 constexpr uintptr_t CRenderGlobal_InstanceOffset =
-    0x1432EDA60 - ImageBase; // 48 8B C4 48 89 58 08 48 89 68 10 48 89 70 18 4C 89 48 20 57 41 56 41 57 48 83 EC 30 8B 01 45 8B, expected: 1, index: 0, offset: 62
+    0x1432FE498 - ImageBase; // 48 8B C4 48 89 58 08 48 89 68 10 48 89 70 18 4C 89 48 20 57 41 56 41 57 48 83 EC 30 8B 01 45 8B, expected: 1, index: 0, offset: 62
 constexpr uintptr_t CRenderGlobal__DoNotUse_RenderQueueOffset =
     0x1B5EF8520 - ImageBase; // 39 72 24 74 5B 48 8B 4A 18 4C 8D 8C 24 88 00 00 00 8B 42 24 44 8B C7 48 8B 95 ? ? ? ?, expected: 1, index: 0, offset: 0
 constexpr uintptr_t CRenderGlobal_Resize =
