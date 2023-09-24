@@ -96,7 +96,6 @@ constexpr uintptr_t gameIGameSystem_SpawnCallback =
 #pragma endregion
 
 #pragma region PlayerSystem
-constexpr uintptr_t PlayerSystem_OnPlayerSpawned =
-    0x1403EE038 - ImageBase; // 48 89 5C 24 08 48 89 74 24 18 48 89 7C 24 20 55 41 54 41 55 41 56 41 57 48 8B EC 48 83 EC 60 48 8B 5A 08 B8 01 00 00 00, expected: 1, index: 0
+constexpr uintptr_t PlayerSystem_OnPlayerSpawned = 0x1409FE5A0 - ImageBase; // 48 89 5C 24 18 48 89 74 24 20 55 57 41 54 41 56 41 57 48 8B EC 48 83 EC 50 48 8B DA 48 8B F9
 #pragma endregion
 } // namespace CyberEngineTweaks::Addresses

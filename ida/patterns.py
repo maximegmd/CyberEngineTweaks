@@ -90,7 +90,7 @@ def get_groups() -> List[Group]:
             Item(name='OnTick', pattern='40 53 48 83 EC 20 48 8B DA E8 ? ? ? ? 48 8B CB 89 83 B0 02 00 00 ', expected=1) # ok
         ]),
         Group(name='PlayerSystem', functions=[
-            Item(name='OnPlayerSpawned', pattern='48 89 5C 24 08 48 89 74 24 18 48 89 7C 24 20 55 41 54 41 55 41 56 41 57 48 8B EC 48 83 EC 60 48 8B 5A 08 B8 01 00 00 00', expected=1) # not sure but looks like it
+            Item(name='OnPlayerSpawned', pattern='48 89 5C 24 18 48 89 74 24 20 55 57 41 54 41 56 41 57 48 8B EC 48 83 EC 50 48 8B DA 48 8B F9', expected=1)
         ]),
     ]
 

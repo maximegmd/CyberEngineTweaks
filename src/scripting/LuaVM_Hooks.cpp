@@ -335,7 +335,7 @@ uint64_t LuaVM::HookTweakDBLoad(uintptr_t aThis, uintptr_t aParam)
 {
     const auto ret = s_vm->m_realTweakDBLoad(aThis, aParam);
 
-    //s_vm->PostInitializeTweakDB();
+    s_vm->PostInitializeTweakDB();
 
     return ret;
 }
