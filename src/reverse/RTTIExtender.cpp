@@ -118,7 +118,7 @@ struct gameIGameSystem : IUpdatableSystem
     {
         // expected: 2, index: 0
         using TFunc = void (*)(void*);
-        static GameCall<TFunc> func(CyberEngineTweaks::Addresses::gameIGameSystem_Constructor, -6);
+        static GameCall<TFunc> func(CyberEngineTweaks::Addresses::gameIGameSystem_Constructor);
         func(apAddress); // gameIGameSystem::ctor()
     }
 
