@@ -11,7 +11,6 @@ void OptionsInitHook();
 void DisableIntroMoviesPatch();
 void DisableVignettePatch();
 void DisableBoundaryTeleportPatch();
-void MinimapFlickerPatch();
 
 static HANDLE s_modInstanceMutex = nullptr;
 
@@ -37,8 +36,8 @@ static void Initialize()
 
         // initialize patches
 
-        /*if (options.Patches.SkipStartMenu)
-            StartScreenPatch();
+        //if (options.Patches.SkipStartMenu)
+        //    StartScreenPatch();
 
         if (options.Patches.DisableIntroMovies)
             DisableIntroMoviesPatch();
@@ -49,10 +48,8 @@ static void Initialize()
         if (options.Patches.DisableBoundaryTeleport)
             DisableBoundaryTeleportPatch();
 
-        if (options.Patches.MinimapFlicker)
-            MinimapFlickerPatch();
 
-        OptionsInitHook();*/
+        OptionsInitHook();
 
         MH_EnableHook(nullptr);
     }

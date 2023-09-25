@@ -8,6 +8,7 @@
  */
 #include <cstdint>
 
+// Addresses for Cyberpunk 2077, version 2.0.
 namespace CyberEngineTweaks::Addresses
 {
 constexpr uintptr_t ImageBase = 0x140000000;
@@ -26,7 +27,11 @@ constexpr uintptr_t CInitializationState_OnTick = 0x14084A7A8 - ImageBase; // 40
 #pragma endregion
 
 #pragma region CPatches
-constexpr uintptr_t CPatches_IntroMovie = 0x14011D85C - ImageBase; // 48 89 5C 24 08 57 48 83 EC 20 48 8B 44 24 50 48 8B D9 48 89 41 08, expected: 1, index: 0
+constexpr uintptr_t CPatches_BoundaryTeleport =
+    0x140C42C10 - ImageBase; // 48 8B C4 48 89 58 10 55 56 57 41 54 41 55 41 56 41 57 48 8D A8 F8 FE FF FF 48 81 EC D0 01 00 00 0F 29 78 B8 48 8D 51 48, expected: 1, index: 0
+constexpr uintptr_t CPatches_IntroMovie = 0x14011D85C - ImageBase;  // 48 89 5C 24 08 57 48 83 EC 20 48 8B 44 24 50 48 8B D9 48 89 41 08, expected: 1, index: 0
+constexpr uintptr_t CPatches_Vignette = 0x14230A6D4 - ImageBase;    // 33 C0 48 39  41 68 74 11, expected: 1, index: 0
+constexpr uintptr_t CPatches_OptionsInit = 0x1402CBCFC - ImageBase; // 48 89 5C 24 08 55 48 8B EC 48 83 EC 70 48 83 65 F8 00 48 8B D9 83 65 F4 00, expected: 1, index: 0
 #pragma endregion
 
 #pragma region CPhotoMode
@@ -36,7 +41,7 @@ constexpr uintptr_t CPhotoMode_SetRecordID =
 
 #pragma region CRenderGlobal
 constexpr uintptr_t CRenderGlobal_InstanceOffset =
-    0x1432FE498 - ImageBase; // 48 8B C4 48 89 58 08 48 89 68 10 48 89 70 18 4C 89 48 20 57 41 56 41 57 48 83 EC 30 8B 01 45 8B, expected: 1, index: 0, offset: 62
+    0x1432FE498 - ImageBase; // 48 8B C4 48 89 58 08 48 89 68 10 48 89 70 18 4C 89 48 20 57 41 56 41 57 48 83 EC 30 8B 01 45 8B, expected: 1, index: 0, offset: 36
 constexpr uintptr_t CRenderGlobal__DoNotUse_RenderQueueOffset =
     0x1B5EF8520 - ImageBase; // 39 72 24 74 5B 48 8B 4A 18 4C 8D 8C 24 88 00 00 00 8B 42 24 44 8B C7 48 8B 95 ? ? ? ?, expected: 1, index: 0, offset: 0
 constexpr uintptr_t CRenderGlobal_Resize =
@@ -96,6 +101,7 @@ constexpr uintptr_t gameIGameSystem_SpawnCallback =
 #pragma endregion
 
 #pragma region PlayerSystem
-constexpr uintptr_t PlayerSystem_OnPlayerSpawned = 0x1409FE5A0 - ImageBase; // 48 89 5C 24 18 48 89 74 24 20 55 57 41 54 41 56 41 57 48 8B EC 48 83 EC 50 48 8B DA 48 8B F9
+constexpr uintptr_t PlayerSystem_OnPlayerSpawned =
+    0x1409FE5A0 - ImageBase; // 48 89 5C 24 18 48 89 74 24 20 55 57 41 54 41 56 41 57 48 8B EC 48 83 EC 50 48 8B DA 48 8B F9, expected: 1, index: 0
 #pragma endregion
 } // namespace CyberEngineTweaks::Addresses
