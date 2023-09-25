@@ -15,7 +15,6 @@
 #include <reverse/ResourceAsyncReference.h>
 #include <reverse/NativeProxy.h>
 #include <reverse/RTTILocator.h>
-#include <reverse/RTTIExtender.h>
 #include <reverse/Converter.h>
 #include <reverse/TweakDB/TweakDB.h>
 #include <sol_imgui/sol_imgui.h>
@@ -479,7 +478,7 @@ void Scripting::PostInitializeScripting()
     globals["Game"] = this;
 
     RTTIHelper::Initialize(m_lua.AsRef(), m_sandbox);
-    RTTIExtender::InitializeTypes();
+    //RTTIExtender::InitializeTypes();
 
     m_mapper.Register();
 
@@ -516,7 +515,7 @@ void Scripting::PostInitializeMods()
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
 
-    RTTIExtender::InitializeSingletons();
+    //RTTIExtender::InitializeSingletons();
 
     RegisterOverrides();
 
