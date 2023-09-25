@@ -40,7 +40,7 @@ end
 
 set_runtimes(vsRuntime);
 
-add_requireconfs("*", { configs = { debug = is_mode("debug"), lto = not is_mode("debug"), shared = false, vs_runtime = vsRuntime } })
+add_requireconfs("**", { configs = { debug = is_mode("debug"), lto = not is_mode("debug"), shared = false, vs_runtime = vsRuntime } })
 
 add_requires("spdlog 1.11.0")
 add_requires("nlohmann_json")
