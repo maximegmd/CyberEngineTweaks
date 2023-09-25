@@ -7,7 +7,7 @@
 #include "widgets/GameLog.h"
 #include "widgets/ImGuiDebug.h"
 
-using TClipToCenter = HWND(RED4ext::CGameEngine::UnkC0*);
+using TClipToCenter = HWND(RED4ext::CGameEngine::UnkD0*);
 
 struct Overlay
 {
@@ -30,7 +30,7 @@ struct Overlay
 protected:
     void Hook();
 
-    static BOOL ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis);
+    static BOOL ClipToCenter(RED4ext::CGameEngine::UnkD0* apThis);
 
 private:
     void DrawToolbar();

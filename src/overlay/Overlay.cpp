@@ -18,7 +18,7 @@ void Overlay::PostInitialize()
 
             auto& d3d12 = CET::Get().GetD3D12();
             d3d12.DelayedSetTrapInputInImGui(true);
-            ClipToCenter(RED4ext::CGameEngine::Get()->unkC0);
+            ClipToCenter(RED4ext::CGameEngine::Get()->unkD0);
         }
 
         m_initialized = true;
@@ -190,7 +190,7 @@ void Overlay::Update()
             auto& d3d12 = CET::Get().GetD3D12();
             d3d12.DelayedSetTrapInputInImGui(m_enabled);
             auto* pEngine = RED4ext::CGameEngine::Get();
-            ClipToCenter(pEngine->unkC0);
+            ClipToCenter(pEngine->unkD0);
             m_toggled = false;
         }
     }
@@ -219,10 +219,10 @@ bool Overlay::IsInitialized() const noexcept
     return m_initialized;
 }
 
-BOOL Overlay::ClipToCenter(RED4ext::CGameEngine::UnkC0* apThis)
+BOOL Overlay::ClipToCenter(RED4ext::CGameEngine::UnkD0* apThis)
 {
-    const auto wnd = static_cast<HWND>(apThis->hWnd);
     const HWND foreground = GetForegroundWindow();
+    const auto wnd = static_cast<HWND>(apThis->hWnd);
 
     if (wnd == foreground && apThis->unk164 && !apThis->unk154 && !CET::Get().GetOverlay().IsEnabled())
     {
