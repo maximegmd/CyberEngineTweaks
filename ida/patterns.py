@@ -69,7 +69,7 @@ def get_groups() -> List[Group]:
         Group(name='CPatches', functions=[
             #Item(name='BoundaryTeleport', pattern='48 8B C4 55 53 41 54 48  8D A8 ? ? ? ? 48 81 EC ? ? ? ? 48 89 70 10 48 8D 59 48', expected=1),
             Item(name='IntroMovie', pattern='48 89 5C 24 08 57 48 83 EC 20 48 8B 44 24 50 48 8B D9 48 89 41 08', expected=1), # ok
-            #Item(name='Vignette', pattern='48 8B 41 30 48 83 78 68 00 74', expected=1),
+            Item(name='Vignette', pattern='33 C0 48 39  41 68 74 11', expected=1),
             #Item(name='MinimapFlicker', pattern='83 79 2C 00 48 8B F2 4C', expected=1),
             #Item(name='OptionsInit', pattern='40 53 48 83 EC 40 48 8B D9 48 8D 4C 24 20 E8 ? ? ? ? E8 ? ? ? ? 4C 8B 43 08', expected=1),
             #Item(name='SkipStartScreen', pattern='74 5F E8 ? ? ? ? 48 8D 4C 24 20 8B D8 E8 ? ? ? ? 48 8B C8 8B D3 E8', expected=2, index=1),
