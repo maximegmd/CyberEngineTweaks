@@ -20,9 +20,6 @@ static void Initialize()
 {
     try
     {
-        while (!IsDebuggerPresent())
-            Sleep(1000);
-
         MH_Initialize();
 
         CET::Initialize();
