@@ -5,6 +5,7 @@
 #include <RED4ext/Scripting/Natives/Generated/WorldTransform.hpp>
 #include <RED4ext/Scripting/Natives/Generated/ent/Entity.hpp>
 #include <RED4ext/Scripting/Natives/Generated/ent/EntityID.hpp>
+#include <RED4ext/Scripting/Natives/Generated/game/IGameSystem.hpp>
 
 #include "RED4ext/Scripting/Utils.hpp"
 
@@ -13,7 +14,7 @@ template <typename T> struct GameCall
     GameCall(uintptr_t aAddress, const int32_t acOffset = 0)
     {
         const RED4ext::RelocPtr<uint8_t> addr(aAddress);
-        const auto* pLocation = addr.GetAddr();
+        auto* pLocation = addr.GetAddr();
         m_address = pLocation ? reinterpret_cast<T>(pLocation + acOffset) : nullptr;
     }
 
@@ -104,44 +105,6 @@ private:
 public:
     T* data;
 };
-
-struct IUpdatableSystem : RED4ext::IScriptable
-{
-    virtual void sub_110(uint64_t) = 0; // probably Update
-};
-
-struct gameIGameSystem : IUpdatableSystem
-{
-    RED4ext::GameInstance* gameInstance = nullptr;
-
-    static void CallConstructor(void* apAddress)
-    {
-        // expected: 2, index: 0
-        using TFunc = void (*)(void*);
-        static GameCall<TFunc> func(CyberEngineTweaks::Addresses::gameIGameSystem_Constructor);
-        func(apAddress); // gameIGameSystem::ctor()
-    }
-
-    virtual void OnInitialize() = 0; // 118
-    virtual void OnShutdown() = 0;   // 120
-    virtual void sub_128() = 0;
-    virtual void sub_130() = 0;
-    virtual void sub_138() = 0;
-    virtual void sub_140() = 0;
-    virtual void sub_148() = 0;
-    virtual void sub_150() = 0;
-    virtual void sub_158() = 0;
-    virtual void sub_160() = 0;
-    virtual void sub_168() = 0;
-    virtual void sub_170() = 0;
-    virtual void sub_178() = 0;
-    virtual void sub_180() = 0;
-    virtual void sub_188() = 0;
-    virtual void sub_190() = 0;
-    virtual void OnSystemInitializeAsync(void*) = 0;   // 198
-    virtual void OnSystemUnInitializeAsync(void*) = 0; // 1A0
-};
-RED4EXT_ASSERT_OFFSET(gameIGameSystem, gameInstance, 0x40);
 
 struct TEMP_PendingEntity
 {
@@ -337,33 +300,9 @@ void CreateSingleton(const RED4ext::Handle<RED4ext::IScriptable>& apClassInstanc
     {
         // Initialize system
         {
-            struct
-            {
-                uint64_t unk00 = 0;
-                const char* unk08 = "";
-                uint64_t unk10 = 0;
-                uint32_t unk18 = 0;
-                uint32_t unk1C = 1;
-                union
-                {
-                    uint32_t fullValue = 0xFF000200;
-#pragma pack(push, 1)
-                    struct
-                    {
-                        uint8_t unk00;
-                        uint16_t unk01;
-                        uint8_t unk03;
-                    };
-#pragma pack(pop)
-                } unk20;
-                uint32_t unk24 = 0;
-
-            } systemInitParams;
-            RED4EXT_ASSERT_SIZE(systemInitParams, 40);
-
-            auto* pGameSystem = reinterpret_cast<gameIGameSystem*>(apClassInstance.GetPtr());
+            auto* pGameSystem = reinterpret_cast<RED4ext::gameIGameSystem*>(apClassInstance.GetPtr());
             pGameSystem->gameInstance = pGameInstance;
-            pGameSystem->OnSystemInitializeAsync(&systemInitParams);
+            pGameSystem->OnInitialize({});
         }
 
         auto* pParentType = apClassInstance->GetType();
@@ -453,8 +392,10 @@ void WorldFunctionalTests_DespawnEntity(RED4ext::IScriptable*, RED4ext::CStackFr
 
 #pragma region EntitySpawner
 
-struct exEntitySpawnerSystem : gameIGameSystem
+struct exEntitySpawnerSystem : RED4ext::gameIGameSystem
 {
+    using AllocatorType = RED4ext::Memory::RTTIAllocator;
+
     constexpr static char NATIVE_TYPE_STR[] = "exEntitySpawner";
     constexpr static char PARENT_TYPE_STR[] = "gameIGameSystem";
     constexpr static RED4ext::CName NATIVE_TYPE = NATIVE_TYPE_STR;
@@ -463,40 +404,22 @@ struct exEntitySpawnerSystem : gameIGameSystem
     static exEntitySpawnerSystem* Singleton;
     static TEMP_Spawner exEntitySpawner_Spawner;
 
+    RED4ext::CClass* GetNativeType() override
+    {
+        return RED4ext::CRTTISystem::Get()->GetClass(NATIVE_TYPE_STR);
+    }
+
+    void OnWorldAttached(RED4ext::world::RuntimeScene* aScene) override
+    {
+        exEntitySpawner_Spawner.Initialize(gameInstance);
+    }
+
+    void OnBeforeWorldDetach(RED4ext::world::RuntimeScene* aScene) override
+    {
+        exEntitySpawner_Spawner.UnInitialize();
+    }
+
 private:
-    static exEntitySpawnerSystem* CreateNew(void* apAddress)
-    {
-        constexpr int32_t VftableSize = 0x1A8;
-        static uintptr_t* ClonedVftable = nullptr;
-
-        CallConstructor(apAddress);
-
-        if (ClonedVftable == nullptr)
-        {
-            ClonedVftable = static_cast<uintptr_t*>(malloc(VftableSize));
-            memcpy(ClonedVftable, *static_cast<uintptr_t**>(apAddress), VftableSize);
-
-            ClonedVftable[0] = reinterpret_cast<uintptr_t>(&HOOK_GetNativeType);
-            ClonedVftable[0x118 / 8] = reinterpret_cast<uintptr_t>(&HOOK_OnInitialize);
-            ClonedVftable[0x120 / 8] = reinterpret_cast<uintptr_t>(&HOOK_OnShutdown);
-        }
-
-        // overwrite vftable with our clone
-        *static_cast<uintptr_t**>(apAddress) = ClonedVftable;
-
-        return static_cast<exEntitySpawnerSystem*>(apAddress);
-    }
-
-    static RED4ext::CBaseRTTIType* HOOK_GetNativeType(exEntitySpawnerSystem*)
-    {
-        auto* pRTTI = RED4ext::CRTTISystem::Get();
-        return pRTTI->GetClass(NATIVE_TYPE_STR);
-    }
-
-    static void HOOK_OnInitialize(exEntitySpawnerSystem* apThis) { exEntitySpawner_Spawner.Initialize(apThis->gameInstance); }
-
-    static void HOOK_OnShutdown(exEntitySpawnerSystem*) { exEntitySpawner_Spawner.UnInitialize(); }
-
     static void SpawnCallback(TEMP_PendingEntity::Unk00& aUnk)
     {
         using TFunc = void (*)(IScriptable*, RED4ext::ent::Entity*);
@@ -565,13 +488,20 @@ public:
 
     static void InitializeSingleton()
     {
-        // should only be called once
-        assert(Singleton == nullptr);
         auto* pRTTI = RED4ext::CRTTISystem::Get();
+        auto* pSystemType = pRTTI->GetClass(NATIVE_TYPE);
+        auto* pGameInstance = RED4ext::CGameEngine::Get()->framework->gameInstance;
 
-        auto* pAllocator = pRTTI->GetClass(PARENT_TYPE)->GetAllocator();
-        Singleton = CreateNew(pAllocator->AllocAligned(sizeof(exEntitySpawnerSystem), alignof(exEntitySpawnerSystem)).memory);
-        CreateSingleton(RED4ext::Handle<IScriptable>(Singleton));
+        if (pGameInstance->GetSystem(pSystemType))
+            return; // already init
+
+        auto systemInstance = RED4ext::MakeHandle<exEntitySpawnerSystem>();
+        systemInstance->gameInstance = pGameInstance;
+
+        pGameInstance->systemMap.Insert(pSystemType, systemInstance);
+        pGameInstance->systemInstances.PushBack(systemInstance);
+
+        Singleton = systemInstance.instance;
     }
 
     static void Spawn(IScriptable*, RED4ext::CStackFrame* apFrame, RED4ext::ent::EntityID* apOut, int64_t)
@@ -692,11 +622,40 @@ void RTTIExtender::AddFunctionalTests()
     }
 }
 
+static void AddToInventory(RED4ext::IScriptable*, RED4ext::CStackFrame* apFrame, void*, int64_t)
+{
+    RED4ext::CString recordPath;
+    int32_t quantity{1};
+
+    RED4ext::GetParameter(apFrame, &recordPath);
+    RED4ext::GetParameter(apFrame, &quantity);
+    apFrame->code++; // skip ParamEnd
+
+    RED4ext::ScriptGameInstance gameInstance;
+    RED4ext::Handle<RED4ext::IScriptable> player;
+    RED4ext::ExecuteGlobalFunction("GetPlayer;GameInstance", &player, gameInstance);
+
+    bool result;
+    RED4ext::TweakDBID itemID(recordPath.c_str());
+    RED4ext::ExecuteFunction("gameTransactionSystem", "GiveItemByTDBID", &result, player, itemID, quantity);
+}
+
 void RTTIExtender::InitializeTypes()
 {
     exEntitySpawnerSystem::InitializeType();
 
     AddFunctionalTests(); // This is kept for backward compatibility with mods
+
+    {
+        auto pFunction = RED4ext::CGlobalFunction::Create("AddToInventory", "AddToInventory", AddToInventory);
+        pFunction->AddParam("String", "itemID");
+        pFunction->AddParam("Int32", "quantity", false, true);
+        pFunction->flags.isNative = true;
+        pFunction->flags.isExec = true;
+
+        auto pRTTI = RED4ext::CRTTISystem::Get();
+        pRTTI->RegisterFunction(pFunction);
+    }
 }
 
 void RTTIExtender::InitializeSingletons()

@@ -87,8 +87,6 @@ constexpr uintptr_t CWinapi_ClipToCenter = 0x140297FA8 - ImageBase; // 48 89 5C 
 #pragma endregion
 
 #pragma region gameIGameSystem
-constexpr uintptr_t gameIGameSystem_Constructor =
-    0x1407BBEE0 - ImageBase; // 48 83 EC 28 E8 ? ? ? ? 4C 8D 0D ? ? ? ? 48 8B C1 4C 89 09 48 83 61 48 00 48 83 61 50 00 48 83 C4 28 C3, expected: 3, index: 0
 constexpr uintptr_t gameIGameSystem_Initialize = 0x1407147C0 - ImageBase;   // 48 89 5C 24 08 57 48 83 EC 30 48 8B 42 78 4C 8B CA 48 8B D9, expected: 1, index: 0
 constexpr uintptr_t gameIGameSystem_UnInitialize = 0x141F96058 - ImageBase; //  48 89 5C 24 10 48 89 74 24 18 57 48 83 EC 20 48 8B F9 48 8D 51 42, expected: 2, index: 1
 constexpr uintptr_t gameIGameSystem_Spawn =

@@ -56,8 +56,7 @@ def get_groups() -> List[Group]:
             Item(name='ClipToCenter', pattern='48 89 5C 24 08 55 48 8B EC 48 83 EC 30 48 8B D9 48 8B 89 68 01 00 00', expected=1) # ok
         ]),
         Group(name='gameIGameSystem', functions=[
-            Item(name='Constructor', pattern='48 83 EC 28 E8 ? ? ? ? 4C 8D 0D ? ? ? ? 48 8B C1 4C 89 09 48 83 61 48 00 48 83 61 50 00 48 83 C4 28 C3', expected=3, index=0), # ok
-            Item(name='Initialize', pattern='48 89 5C 24 08 57 48 83 EC 30 48 8B 42 78 4C 8B CA 48 8B D9', expected=1), # ok 
+            Item(name='Initialize', pattern='48 89 5C 24 08 57 48 83 EC 30 48 8B 42 78 4C 8B CA 48 8B D9', expected=1), # ok
             Item(name='UnInitialize', pattern=' 48 89 5C 24 10 48 89 74 24 18 57 48 83 EC 20 48 8B F9 48 8D 51 42', expected=2, index=1), # ok 
             Item(name='Spawn', pattern='48 89 5C 24 10 48 89 74 24 18 55 57 41 56 48 8D 6C 24 B0 48 81 EC 50 01 00 00 48 83 79 50 00 49 8B D9 4D 8B F0', expected=1), # ok  
             Item(name='Despawn', pattern='48 8B C4 48  89 58 08 48 89 68 10 48 89 70 18 48 89 78 20 41  56 48 83 EC 40 48 8B E9 0F 57 C0 48 83 C1 41 48 8B F2 F3 0F 7F 40 D8 E8', expected=1), # ok 
