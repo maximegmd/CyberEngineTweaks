@@ -622,11 +622,40 @@ void RTTIExtender::AddFunctionalTests()
     }
 }
 
+static void AddToInventory(RED4ext::IScriptable*, RED4ext::CStackFrame* apFrame, void*, int64_t)
+{
+    RED4ext::CString recordPath;
+    int32_t quantity{1};
+
+    RED4ext::GetParameter(apFrame, &recordPath);
+    RED4ext::GetParameter(apFrame, &quantity);
+    apFrame->code++; // skip ParamEnd
+
+    RED4ext::ScriptGameInstance gameInstance;
+    RED4ext::Handle<RED4ext::IScriptable> player;
+    RED4ext::ExecuteGlobalFunction("GetPlayer;GameInstance", &player, gameInstance);
+
+    bool result;
+    RED4ext::TweakDBID itemID(recordPath.c_str());
+    RED4ext::ExecuteFunction("gameTransactionSystem", "GiveItemByTDBID", &result, player, itemID, quantity);
+}
+
 void RTTIExtender::InitializeTypes()
 {
     exEntitySpawnerSystem::InitializeType();
 
     AddFunctionalTests(); // This is kept for backward compatibility with mods
+
+    {
+        auto pFunction = RED4ext::CGlobalFunction::Create("AddToInventory", "AddToInventory", AddToInventory);
+        pFunction->AddParam("String", "itemID");
+        pFunction->AddParam("Int32", "quantity", false, true);
+        pFunction->flags.isNative = true;
+        pFunction->flags.isExec = true;
+
+        auto pRTTI = RED4ext::CRTTISystem::Get();
+        pRTTI->RegisterFunction(pFunction);
+    }
 }
 
 void RTTIExtender::InitializeSingletons()
