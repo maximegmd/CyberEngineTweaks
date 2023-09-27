@@ -71,7 +71,7 @@ constexpr uintptr_t CScript_LogChannelWarning = 0x141F9E2F8 - ImageBase; // 48 8
                                                                          // 18 48 83 62 30 00 45 33 C9 48 83 62 38 00, expected: 2, index: 1
 constexpr uintptr_t CScript_TDBIDConstructorDerive = 0x1405981F8 - ImageBase; // 48 89 5C 24 10 48 89 6C 24 18 48 89 74 24 20 57 45 33 C9 48 8B FA, expected: 1, index: 0
 constexpr uintptr_t CScript_TranslateBytecode =
-    0x140601D84 - ImageBase; // 40 53 55 56  57 41 54 41 56 41 57 48 83 EC 60 48 8B 1A 48 8B  E9 8B 42 0C 4C 8D 24 C3, expected: 1, index: 0
+    0x14021CA60 - ImageBase; // 48 89 5C 24 08 48 89 6C 24 10 48 89 74 24 18 57 48 83 EC 20 48 8B 1A 48 8B E9 8B 42 0C, expected: 2, index: 0
 constexpr uintptr_t CScript_TweakDBLoad =
     0x141410CBC - ImageBase; // 48 89 5C 24 10 48 89 7C 24 18 55 48 8B EC 48 83 EC 70 48 8B F9 48 8B DA 48 8B 0D ? ? ? ? 48 8B 01 FF 90 B8 00 00 00, expected: 1, index: 0
 constexpr uintptr_t CScript_RegisterMemberFunction =
