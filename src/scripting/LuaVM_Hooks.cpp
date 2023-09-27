@@ -309,16 +309,10 @@ void LuaVM::HookTDBIDToStringDEBUG(RED4ext::IScriptable*, RED4ext::CStackFrame* 
     }
 }
 
-bool LuaVM::HookTranslateBytecode(uintptr_t aBinder, uintptr_t aData)
+void LuaVM::HookTranslateBytecode(uintptr_t aBinder, uintptr_t aData)
 {
-    const auto ret = s_vm->m_realTranslateBytecode(aBinder, aData);
-
-    if (ret)
-    {
-        s_vm->PostInitializeScripting();
-    }
-
-    return ret;
+    s_vm->m_realTranslateBytecode(aBinder, aData);
+    s_vm->PostInitializeScripting();
 }
 
 uint64_t LuaVM::HookPlayerSpawned(uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4)
