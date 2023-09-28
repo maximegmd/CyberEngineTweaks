@@ -329,6 +329,9 @@ uint64_t LuaVM::HookTweakDBLoad(uintptr_t aThis, uintptr_t aParam)
 {
     const auto ret = s_vm->m_realTweakDBLoad(aThis, aParam);
 
+    // Disable changes tracking added to TweakDB in patch 2.0 and causing instability.
+    RED4ext::TweakDB::Get()->unk160 = 0;
+
     s_vm->PostInitializeTweakDB();
 
     return ret;
