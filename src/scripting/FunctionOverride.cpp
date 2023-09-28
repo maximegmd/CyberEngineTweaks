@@ -277,8 +277,13 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
 
                 const bool isScriptRef = pArg->type->GetType() == RED4ext::ERTTIType::ScriptReference;
 
-                // Exception here we need to allocate the inner object as well
-                if (isScriptRef)
+                // Determines if script ref was created from rvalue and other side expects us to copy it.
+                // If true, we must allocate the memory for the value and initialize our own script ref.
+                // If false, we don't have to initialize anything on our side and pInstance will be filled
+                // with a pointer to the original value.
+                const bool isTemporary = (apFrame->paramFlags >> apFrame->currentParam) & 1;
+
+                if (isScriptRef && isTemporary)
                 {
                     auto* pInnerType = static_cast<RED4ext::CRTTIScriptReferenceType*>(pType)->innerType;
                     auto* pScriptRef = static_cast<RED4ext::ScriptRef<void>*>(pInstance);
@@ -310,7 +315,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
                 }
 
                 // Release inner values
-                if (isScriptRef)
+                if (isScriptRef && isTemporary)
                 {
                     auto* pScriptRef = static_cast<RED4ext::ScriptRef<void>*>(pInstance);
                     pScriptRef->innerType->Destruct(pScriptRef->ref);
