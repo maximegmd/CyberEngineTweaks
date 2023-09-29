@@ -64,7 +64,7 @@ constexpr uintptr_t CScript_AllocateFunction = 0x141F91E6C - ImageBase; // 40 53
 constexpr uintptr_t CScript_Log = 0x140EC5D7C - ImageBase;              // 48 8B C4 53 48 83 EC 70 48 83 60 C0 00 48 8D 48 C8 83 60 BC 00, expected: 3, index: 0
 constexpr uintptr_t CScript_LogError = 0x14109ECF8 - ImageBase;         // 48 8B C4 53 48 83 EC 70 48 83 60 C0 00 48 8D 48 C8 83 60 BC 00, expected: 3, index: 1
 constexpr uintptr_t CScript_LogWarning = 0x141136F70 - ImageBase;       // 48 8B C4 53 48 83 EC 70 48 83 60 C0 00 48 8D 48 C8 83 60 BC 00, expected: 3, index: 2
-constexpr uintptr_t CScript_ToStringDEBUG = 0x1421CD844 - ImageBase;    // 48 89 5C 24 08 57 48 83 EC 20 83 64 24 38 00 4C 8D 15 ? ? ? ? FE 42 62 33 C0, expected: 4, index: 2
+constexpr uintptr_t CScript_ToStringDEBUG = 0x140E05224 - ImageBase;    // 48 89 5C 24 08 57 48 83 EC 20 83 64 24 38 00 4C 8D 15 ? ? ? ? FE 42 62 33 C0, expected: 4, index: 1
 constexpr uintptr_t CScript_LogChannel = 0x140D01450 - ImageBase; // 48 89 5C 24 08 48 89 74 24 18 55 48 8B EC 48 83 EC 70 48 8B 02 48 8D 35 ? ? ? ? 48 83 65 18 00 4C 8D 45 18 48
                                                                   // 83 62 30 00 45 33 C9 48 83 62 38 00, expected: 2, index: 0
 constexpr uintptr_t CScript_LogChannelWarning = 0x141F9E2F8 - ImageBase; // 48 89 5C 24 08 48 89 74 24 18 55 48 8B EC 48 83 EC 70 48 8B 02 48 8D 35 ? ? ? ? 48 83 65 18 00 4C 8D 45
