@@ -125,6 +125,16 @@ void LuaSandbox::Initialize()
     // initialize state + environment first
     m_globals = {luaState, sol::create};
 
+    // log mo2 usage
+    m_isLaunchedThroughMO2 = GetModuleHandle(TEXT("usvfs_x64.dll")) != nullptr;
+    if (m_isLaunchedThroughMO2)
+    {
+        if (auto existingLogger = spdlog::get("scripting"))
+        {
+            existingLogger->warn("CET launched with MO2.");
+        }
+    }
+    
     // copy whitelisted things from global table
     for (const auto* cKey : s_cVMGlobalObjectsWhitelist)
     {
@@ -359,7 +369,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
     };
     sbEnv["loadstring"] = cLoadString;
 
-    const auto cLoadFile = [cSBRootPath, cLoadString, stateView](const std::string& acPath) -> std::tuple<sol::object, sol::object>
+    const auto cLoadFile = [this, cSBRootPath, cLoadString, stateView](const std::string& acPath) -> std::tuple<sol::object, sol::object>
     {
         const auto previousCurrentPath = std::filesystem::current_path();
         current_path(cSBRootPath);
@@ -478,7 +488,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
         return res;
     };
 
-    sbEnv["dir"] = [cSBRootPath, stateView](const std::string& acPath) -> sol::table
+    sbEnv["dir"] = [this, cSBRootPath, stateView](const std::string& acPath) -> sol::table
     {
         const auto previousCurrentPath = std::filesystem::current_path();
         current_path(cSBRootPath);
@@ -517,7 +527,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
         ioSB["output"] = DeepCopySolObject(cIO["output"], acpState);
         ioSB["type"] = DeepCopySolObject(cIO["type"], acpState);
         ioSB["close"] = DeepCopySolObject(cIO["close"], acpState);
-        ioSB["lines"] = [cIO, cSBRootPath](const std::string& acPath)
+        ioSB["lines"] = [this, cIO, cSBRootPath](const std::string& acPath)
         {
             const auto previousCurrentPath = std::filesystem::current_path();
             current_path(cSBRootPath);
@@ -530,7 +540,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
 
             return result;
         };
-        const auto cOpenWithMode = [cIO, cSBRootPath](const std::string& acPath, const std::string& acMode)
+        const auto cOpenWithMode = [this, cIO, cSBRootPath](const std::string& acPath, const std::string& acMode)
         {
             const auto previousCurrentPath = std::filesystem::current_path();
             current_path(cSBRootPath);
@@ -555,7 +565,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
     {
         const auto cOS = globals["os"].get<sol::table>();
         sol::table osSB = DeepCopySolObject(m_globals["os"].get<sol::object>(), acpState);
-        osSB["rename"] = [cOS, cSBRootPath](const std::string& acOldPath, const std::string& acNewPath) -> std::tuple<sol::object, std::string>
+        osSB["rename"] = [this, cOS, cSBRootPath](const std::string& acOldPath, const std::string& acNewPath) -> std::tuple<sol::object, std::string>
         {
             const auto previousCurrentPath = std::filesystem::current_path();
             current_path(cSBRootPath);
@@ -582,7 +592,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
 
             return cResult.valid() ? std::make_tuple(cResult.get<sol::object>(), "") : std::make_tuple(cResult.get<sol::object>(0), cResult.get<std::string>(1));
         };
-        osSB["remove"] = [cOS, cSBRootPath](const std::string& acPath) -> std::tuple<sol::object, std::string>
+        osSB["remove"] = [this, cOS, cSBRootPath](const std::string& acPath) -> std::tuple<sol::object, std::string>
         {
             const auto previousCurrentPath = std::filesystem::current_path();
             current_path(cSBRootPath);
@@ -656,4 +666,78 @@ void LuaSandbox::CloseDBForSandbox(const Sandbox& aSandbox) const
             db:close()
         end
     )");
+}
+
+std::filesystem::path LuaSandbox::GetLuaPath(const std::string& acFilePath, const std::filesystem::path& acRootPath, const bool acAllowNonExisting) const
+{
+    return GetLuaPath(UTF8ToUTF16(acFilePath), acRootPath, acAllowNonExisting);
+}
+
+std::filesystem::path LuaSandbox::GetLuaPath(std::filesystem::path aFilePath, const std::filesystem::path& acRootPath, const bool acAllowNonExisting) const
+{
+    assert(!aFilePath.empty());
+    assert(!aFilePath.is_absolute());
+
+    if (aFilePath.empty() || aFilePath.is_absolute())
+        return {};
+
+    aFilePath.make_preferred();
+
+    if (aFilePath.native().starts_with(L"..\\"))
+        return {};
+
+    aFilePath = GetAbsolutePath(aFilePath, acRootPath, acAllowNonExisting, false);
+    if (aFilePath.empty())
+        return {};
+
+    const auto relativeFilePathToRoot = relative(aFilePath, acRootPath);
+    if (relativeFilePathToRoot.native().starts_with(L"..\\") || relativeFilePathToRoot.native().find(L"\\..\\") != std::wstring::npos)
+    {
+        auto _Weakly_canonical_path = weakly_canonical(aFilePath);
+        auto _Weakly_canonical_base = weakly_canonical(acRootPath);
+
+#ifdef CET_DEBUG
+        if (auto existingLogger = spdlog::get("scripting"))
+        {
+            existingLogger->warn("lua sandbox path missmatch for: ");
+            existingLogger->info("\t{}", acRootPath.string());
+            existingLogger->info("\tresolved to: {}", _Weakly_canonical_base.string());
+            existingLogger->info("\t{}", aFilePath.string());
+            existingLogger->info("\tresolved to: {}", _Weakly_canonical_path.string());
+        }
+#endif // CET_DEBUG
+
+        // path outside of sandbox
+        // make an exception if path outside of sandbox originates from MO2's overwrite directory
+        if (m_isLaunchedThroughMO2)
+        {
+            auto relativeFilePathToGame = aFilePath.lexically_relative(m_pScripting->GameRoot());
+            auto overwritePath = "overwrite\\bin\\x64\\" + relativeFilePathToGame.string();
+
+            const auto relativeBasePathToGame = acRootPath.lexically_relative(m_pScripting->GameRoot());
+            const auto overwriteBase = "overwrite\\bin\\x64\\" + relativeBasePathToGame.string();
+
+            if (_Weakly_canonical_path.string().ends_with(overwritePath) || _Weakly_canonical_base.string().ends_with(overwriteBase))
+            {
+                auto resolved = aFilePath.lexically_relative(std::filesystem::current_path());
+#ifdef CET_DEBUG
+                if (auto existingLogger = spdlog::get("scripting"))
+                {
+                    existingLogger->warn("\tFix filepath for MO2 to: {}", resolved.string());
+                }
+#endif // CET_DEBUG
+                return resolved;
+            }
+        }
+
+#ifdef CET_DEBUG
+        if (auto existingLogger = spdlog::get("scripting"))
+        {
+            existingLogger->error("\tCould not resolve path: {}", aFilePath.string());
+        }
+#endif // CET_DEBUG
+        return {};
+    }
+
+    return relative(aFilePath, std::filesystem::current_path());
 }

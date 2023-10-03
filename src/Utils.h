@@ -1,5 +1,7 @@
 #pragma once
 
+#include "scripting/LuaSandbox.h"
+
 #include <overlay/widgets/Widget.h>
 
 void ltrim(std::string& s);
@@ -52,9 +54,6 @@ TChangedCBResult UnsavedChangesPopup(
 GetAbsolutePath(const std::string& acFilePath, const std::filesystem::path& acRootPath, const bool acAllowNonExisting, const bool acAllowSymlink = true);
 [[nodiscard]] std::filesystem::path
 GetAbsolutePath(std::filesystem::path aFilePath, const std::filesystem::path& acRootPath, const bool acAllowNonExisting, const bool acAllowSymlink = true);
-
-[[nodiscard]] std::filesystem::path GetLuaPath(const std::string& acFilePath, const std::filesystem::path& acRootPath, const bool acAllowNonExisting);
-[[nodiscard]] std::filesystem::path GetLuaPath(std::filesystem::path aFilePath, const std::filesystem::path& acRootPath, const bool acAllowNonExisting);
 
 [[nodiscard]] std::vector<char> ReadWholeBinaryFile(const std::filesystem::path& acpPath);
 [[nodiscard]] std::string ReadWholeTextFile(const std::filesystem::path& acpPath);

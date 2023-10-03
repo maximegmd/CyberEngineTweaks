@@ -169,7 +169,7 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
         const auto previousCurrentPath = std::filesystem::current_path();
         current_path(sb.GetRootPath());
 
-        const auto path = GetLuaPath(L"init.lua", acPath, false);
+        const auto path = m_sandbox.GetLuaPath(L"init.lua", acPath, false);
 
         const auto result = sb.ExecuteFile(UTF16ToUTF8(path.native()));
 

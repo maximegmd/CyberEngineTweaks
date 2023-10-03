@@ -39,6 +39,7 @@ struct Scripting
 
     LuaSandbox& GetSandbox();
     LockedState GetLockedState() const noexcept;
+    const std::filesystem::path& GameRoot() const { return m_paths.GameRoot(); }
 
     static size_t Size(RED4ext::CBaseRTTIType* apRttiType);
     static sol::object ToLua(LockedState& aState, RED4ext::CStackType& aResult);
