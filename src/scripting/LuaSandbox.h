@@ -28,6 +28,12 @@ struct LuaSandbox
 
     sol::table& GetGlobals();
 
+    const bool GetIsLaunchedThroughMO2() const { return m_isLaunchedThroughMO2; }
+    [[nodiscard]] std::filesystem::path
+    GetLuaPath(const std::string& acFilePath, const std::filesystem::path& acRootPath, const bool acAllowNonExisting) const;
+    [[nodiscard]] std::filesystem::path
+    GetLuaPath(std::filesystem::path aFilePath, const std::filesystem::path& acRootPath, const bool acAllowNonExisting) const;
+
 private:
     void InitializeExtraLibsForSandbox(Sandbox& aSandbox, const sol::state& acpState) const;
     void InitializeDBForSandbox(Sandbox& aSandbox, const sol::state& acpState);
@@ -43,4 +49,5 @@ private:
     TiltedPhoques::Map<std::string, sol::object> m_modules{};
 
     bool m_imguiAvailable{false};
+    bool m_isLaunchedThroughMO2{false};
 };

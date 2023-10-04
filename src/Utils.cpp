@@ -286,35 +286,6 @@ std::filesystem::path GetAbsolutePath(std::filesystem::path aFilePath, const std
     return aFilePath;
 }
 
-std::filesystem::path GetLuaPath(const std::string& acFilePath, const std::filesystem::path& acRootPath, const bool acAllowNonExisting)
-{
-    return GetLuaPath(UTF8ToUTF16(acFilePath), acRootPath, acAllowNonExisting);
-}
-
-std::filesystem::path GetLuaPath(std::filesystem::path aFilePath, const std::filesystem::path& acRootPath, const bool acAllowNonExisting)
-{
-    assert(!aFilePath.empty());
-    assert(!aFilePath.is_absolute());
-
-    if (aFilePath.empty() || aFilePath.is_absolute())
-        return {};
-
-    aFilePath.make_preferred();
-
-    if (aFilePath.native().starts_with(L"..\\"))
-        return {};
-
-    aFilePath = GetAbsolutePath(aFilePath, acRootPath, acAllowNonExisting, false);
-    if (aFilePath.empty())
-        return {};
-
-    const auto relativeFilePathToRoot = relative(aFilePath, acRootPath);
-    if (relativeFilePathToRoot.native().starts_with(L"..\\") || relativeFilePathToRoot.native().find(L"\\..\\") != std::wstring::npos)
-        return {};
-
-    return relative(aFilePath, std::filesystem::current_path());
-}
-
 std::vector<char> ReadWholeBinaryFile(const std::filesystem::path& acpPath)
 {
     if (acpPath.empty() || !exists(acpPath))

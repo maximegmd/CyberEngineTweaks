@@ -74,7 +74,6 @@ CET::CET()
     , m_vm(m_paths, m_bindings, m_d3d12)
     , m_overlay(m_bindings, m_options, m_persistentState, m_vm)
 {
-    m_vm.Initialize();
 }
 
 CET::~CET()

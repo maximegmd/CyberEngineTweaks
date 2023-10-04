@@ -311,6 +311,9 @@ void LuaVM::HookTDBIDToStringDEBUG(RED4ext::IScriptable*, RED4ext::CStackFrame* 
 
 void LuaVM::HookTranslateBytecode(uintptr_t aBinder, uintptr_t aData)
 {
+    // Delay our lua hook until later, to ensure that Mod Organizer's VFS is hooked up.
+    CET::Get().GetVM().Initialize();
+
     s_vm->m_realTranslateBytecode(aBinder, aData);
     s_vm->PostInitializeScripting();
 }
