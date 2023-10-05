@@ -32,7 +32,7 @@ def get_groups() -> List[Group]:
             Item(name='InstanceOffset', pattern='48 8B C4 48 89 58 08 48 89 68 10 48 89 70 18 4C 89 48 20 57 41 56 41 57 48 83 EC 30 8B 01 45 8B', expected=1, offset=36), # ok
             Item(name='_DoNotUse_RenderQueueOffset', pattern='39 72 24 74 5B 48 8B 4A 18 4C 8D 8C 24 88 00 00 00 8B 42 24 44 8B C7 48 8B 95 ? ? ? ?', expected=1) # ok
         ], functions=[
-            Item(name='Resize', pattern='48 8B C4 44 88 48 20 44 89 40 18 89 50 10 89 48 08 55 53 56 57 41 54 41 55 41 56 41 57 48 8D 68 88 48 81 EC 38 01 00 00', expected=1),
+            Item(name='Resize', pattern='48 8B C4 44 88 48 20 44 89 40 18 89 50 10 89 48 08 55 53 56 57 41 54 41 55 41 56 41 57 48 8D 68 ? 48 81 EC ? ? 00 00', expected=1),
             Item(name='Shutdown', pattern='40 53 48 83 EC 20 48 8B D9 48 8D 05 ? ? ? ? 48 81 C1 98 00 00 00 48 89 01 E8', expected=1)
         ]),
         Group(name='CRenderNode_Present', functions=[
