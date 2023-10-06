@@ -13,7 +13,7 @@
 It also comes with a [Dear ImGui](https://github.com/ocornut/imgui/tree/v1.82) to provide GUI for different mods you are using, along with console and TweakDB editor for more advanced usage. 
 It also adds some patches for quality of life, all of which can be enabled/disabled through the settings menu or config files (requires game restart to apply).
 
-The latest version works with the 2.0 game version.
+Cyber Engine Tweaks tracks the current release of Cyberpunk 2077 closely. The current release of CET is available from the releases page: [![All Releases](https://img.shields.io/github/downloads/maximegmd/CyberEngineTweaks/total)](https://github.com/maximegmd/CyberEngineTweaks/releases).
 
 ### Current patches
 
