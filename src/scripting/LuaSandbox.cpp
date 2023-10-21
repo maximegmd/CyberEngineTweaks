@@ -693,50 +693,11 @@ std::filesystem::path LuaSandbox::GetLuaPath(std::filesystem::path aFilePath, co
     const auto relativeFilePathToRoot = relative(aFilePath, acRootPath);
     if (relativeFilePathToRoot.native().starts_with(L"..\\") || relativeFilePathToRoot.native().find(L"\\..\\") != std::wstring::npos)
     {
-        auto _Weakly_canonical_path = weakly_canonical(aFilePath);
-        auto _Weakly_canonical_base = weakly_canonical(acRootPath);
-
-#ifdef CET_DEBUG
-        if (auto existingLogger = spdlog::get("scripting"))
-        {
-            existingLogger->warn("lua sandbox path missmatch for: ");
-            existingLogger->info("\t{}", acRootPath.string());
-            existingLogger->info("\tresolved to: {}", _Weakly_canonical_base.string());
-            existingLogger->info("\t{}", aFilePath.string());
-            existingLogger->info("\tresolved to: {}", _Weakly_canonical_path.string());
-        }
-#endif // CET_DEBUG
-
-        // path outside of sandbox
-        // make an exception if path outside of sandbox originates from MO2's overwrite directory
+        // make an exception if path outside of sandbox originates from MO2
         if (m_isLaunchedThroughMO2)
         {
-            auto relativeFilePathToGame = aFilePath.lexically_relative(m_pScripting->GameRoot());
-            auto overwritePath = "overwrite\\bin\\x64\\" + relativeFilePathToGame.string();
-
-            const auto relativeBasePathToGame = acRootPath.lexically_relative(m_pScripting->GameRoot());
-            const auto overwriteBase = "overwrite\\bin\\x64\\" + relativeBasePathToGame.string();
-
-            if (_Weakly_canonical_path.string().ends_with(overwritePath) || _Weakly_canonical_base.string().ends_with(overwriteBase))
-            {
-                auto resolved = aFilePath.lexically_relative(std::filesystem::current_path());
-#ifdef CET_DEBUG
-                if (auto existingLogger = spdlog::get("scripting"))
-                {
-                    existingLogger->warn("\tFix filepath for MO2 to: {}", resolved.string());
-                }
-#endif // CET_DEBUG
-                return resolved;
-            }
+            return aFilePath.lexically_relative(std::filesystem::current_path());
         }
-
-#ifdef CET_DEBUG
-        if (auto existingLogger = spdlog::get("scripting"))
-        {
-            existingLogger->error("\tCould not resolve path: {}", aFilePath.string());
-        }
-#endif // CET_DEBUG
-        return {};
     }
 
     return relative(aFilePath, std::filesystem::current_path());
