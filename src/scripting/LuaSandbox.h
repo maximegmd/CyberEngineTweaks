@@ -29,6 +29,8 @@ struct LuaSandbox
     sol::table& GetGlobals();
 
     const bool GetIsLaunchedThroughMO2() const { return m_isLaunchedThroughMO2; }
+    [[nodiscard]] std::filesystem::path 
+    Relative(const std::filesystem::path& acFilePath, const std::filesystem::path& acRootPath) const;
     [[nodiscard]] std::filesystem::path
     GetLuaPath(const std::string& acFilePath, const std::filesystem::path& acRootPath, const bool acAllowNonExisting) const;
     [[nodiscard]] std::filesystem::path

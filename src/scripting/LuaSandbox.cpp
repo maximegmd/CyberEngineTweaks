@@ -507,7 +507,8 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
         for (const auto& entry : std::filesystem::directory_iterator(path))
         {
             sol::table item(stateView, sol::create);
-            item["name"] = UTF16ToUTF8(relative(entry.path(), path).native());
+            item["relativePath"] = UTF16ToUTF8(Relative(entry.path(), path).native());
+            item["name"] = UTF16ToUTF8(entry.path().filename().native());
             item["type"] = entry.is_directory() ? "directory" : "file";
             res[index++] = item;
         }
@@ -673,6 +674,15 @@ std::filesystem::path LuaSandbox::GetLuaPath(const std::string& acFilePath, cons
     return GetLuaPath(UTF8ToUTF16(acFilePath), acRootPath, acAllowNonExisting);
 }
 
+std::filesystem::path LuaSandbox::Relative(const std::filesystem::path& acFilePath, const std::filesystem::path& acRootPath) const
+{
+    if (m_isLaunchedThroughMO2)
+    {
+        return acFilePath.lexically_relative(acRootPath);
+    }
+    return relative(acFilePath, acRootPath);
+}
+
 std::filesystem::path LuaSandbox::GetLuaPath(std::filesystem::path aFilePath, const std::filesystem::path& acRootPath, const bool acAllowNonExisting) const
 {
     assert(!aFilePath.empty());
@@ -690,15 +700,11 @@ std::filesystem::path LuaSandbox::GetLuaPath(std::filesystem::path aFilePath, co
     if (aFilePath.empty())
         return {};
 
-    const auto relativeFilePathToRoot = relative(aFilePath, acRootPath);
+    const auto relativeFilePathToRoot = Relative(aFilePath, acRootPath);
     if (relativeFilePathToRoot.native().starts_with(L"..\\") || relativeFilePathToRoot.native().find(L"\\..\\") != std::wstring::npos)
     {
-        // make an exception if path outside of sandbox originates from MO2
-        if (m_isLaunchedThroughMO2)
-        {
-            return aFilePath.lexically_relative(std::filesystem::current_path());
-        }
+        return {};
     }
 
-    return relative(aFilePath, std::filesystem::current_path());
+    return Relative(aFilePath, std::filesystem::current_path());
 }
