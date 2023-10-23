@@ -507,8 +507,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
         for (const auto& entry : std::filesystem::directory_iterator(path))
         {
             sol::table item(stateView, sol::create);
-            item["relativePath"] = UTF16ToUTF8(Relative(entry.path(), path).native());
-            item["name"] = UTF16ToUTF8(entry.path().filename().native());
+            item["name"] = UTF16ToUTF8(Relative(entry.path(), path).native());
             item["type"] = entry.is_directory() ? "directory" : "file";
             res[index++] = item;
         }
