@@ -41,12 +41,8 @@ jobs:
     - name: Configure xmake and install dependencies
       run: xmake.exe config --arch=${{ matrix.arch }} --mode=${{ matrix.mode }} --yes
 
-    # Build the game
-    - name: Build
-      run: xmake.exe
-
     # Install the result files
-    - name: Create package
+    - name: Build and create package
       run: xmake.exe package
 
     # Upload artifacts
