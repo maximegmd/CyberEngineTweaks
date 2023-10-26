@@ -96,7 +96,7 @@ try:
 
     groups.sort(key=lambda g: g.name.lower())
 
-    addr = find_ptr(pattern='4C 8D 05 ? ? ? ? 48 89 ? ? ? 00 00', expected=9, index=2, offset=3)
+    addr = find_ptr(pattern='4C 8D 05 ? ? ? ? 48 89 ? ? ? 00 00', expected=9, index=5, offset=3)
     version = idc.get_strlit_contents(addr)
 
     print(f'Finding {total} item(s)...')

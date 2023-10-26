@@ -49,7 +49,7 @@ def get_groups() -> List[Group]:
             Item(name='LogChannelWarning', pattern='48 89 5C 24 08 48 89 74 24 18 55 48 8B EC 48 83 EC 70 48 8B 02 48 8D 35 ? ? ? ? 48 83 65 18 00 4C 8D 45 18 48 83 62 30 00 45 33 C9 48 83 62 38 00', expected=2, index=1), # ok
             Item(name='TDBIDConstructorDerive', pattern='48 89 5C 24 10 48 89 6C 24 18 48 89 74 24 20 57 45 33 C9 48 8B FA', expected=1), # ok
             Item(name='TranslateBytecode', pattern='48 89 5C 24 08 48 89 6C 24 10 48 89 74 24 18 57 48 83 EC 20 48 8B 1A 48 8B E9 8B 42 0C', expected=2), # ok
-            Item(name='TweakDBLoad', pattern='48 89 5C 24 10 48 89 7C 24 18 55 48 8B EC 48 83 EC 70 48 8B F9 48 8B DA 48 8B 0D ? ? ? ? 48 8B 01 FF 90 B8 00 00 00', expected=1), # ok
+            Item(name='TweakDBLoad', pattern='48 89 5C 24 10 48 89 7C 24 18 55 48 8B EC 48 ? EC 80 00 00 00 48 8B F9 48 8B DA 48 8B 0D', expected=1), # ok
             Item(name='RegisterMemberFunction', pattern='40 53 48 83 EC 20 49 8B C1 4D 8B D0 44 8B 4C 24 58 4C 8B DA 41 83 C9 03 4C 8B C0 49 8B D2 48 8B D9 E8', expected=1) # ok
         ]),
         Group(name='CWinapi', functions=[
@@ -86,7 +86,7 @@ def get_groups() -> List[Group]:
             Item(name='OnTick', pattern='40 53 48 83 EC 30 83 64 24 28 00 48 8D 05 ? ? ? ? 48 8B 0D ? ? ? ? 48 8B DA', expected=1) # ok
         ]),
         Group(name='CShutdownState', functions=[
-            Item(name='OnTick', pattern='40 53 48 83 EC 20 48 8B DA E8 ? ? ? ? 48 8B CB 89 83 B0 02 00 00 ', expected=1) # ok
+            Item(name='OnTick', pattern='48 89 5C 24 08 57 48 83 EC 20 48 8B 0D ? ? ? ? 48', expected=1) # ok
         ]),
         Group(name='PlayerSystem', functions=[
             Item(name='OnPlayerSpawned', pattern='48 89 5C 24 18 48 89 74 24 20 55 57 41 54 41 56 41 57 48 8B EC 48 83 EC 50 48 8B DA 48 8B F9', expected=1)
