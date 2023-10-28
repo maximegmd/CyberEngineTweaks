@@ -19,8 +19,6 @@ bool D3D12::ResetState(const bool acClearDownlevelBackbuffers, const bool acDest
         {
             for (auto i = 0; i < drawData.CmdListsCount; ++i)
                 IM_DELETE(drawData.CmdLists[i]);
-            delete[] drawData.CmdLists;
-            drawData.CmdLists = nullptr;
             drawData.Clear();
         }
 
@@ -277,148 +275,6 @@ bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resour
     return true;
 }
 
-void D3D12::ReloadFonts()
-{
-    std::lock_guard _(m_imguiLock);
-
-    // TODO - scale also by DPI
-    const auto [resx, resy] = m_outSize;
-    const auto scaleFromReference = std::min(static_cast<float>(resx) / 1920.0f, static_cast<float>(resy) / 1080.0f);
-
-    auto& io = ImGui::GetIO();
-    io.Fonts->Clear();
-
-    ImFontConfig config;
-    const auto& fontSettings = m_options.Font;
-    config.SizePixels = std::floorf(fontSettings.BaseSize * scaleFromReference);
-    config.OversampleH = fontSettings.OversampleHorizontal;
-    config.OversampleV = fontSettings.OversampleVertical;
-    if (config.OversampleH == 1 && config.OversampleV == 1)
-        config.PixelSnapH = true;
-    config.MergeMode = false;
-
-    // add default font
-    const auto customFontPath = fontSettings.Path.empty() ? std::filesystem::path{} : GetAbsolutePath(UTF8ToUTF16(fontSettings.Path), m_paths.Fonts(), false);
-    auto cetFontPath = GetAbsolutePath(L"NotoSans-Regular.ttf", m_paths.Fonts(), false);
-    const auto* cpGlyphRanges = io.Fonts->GetGlyphRangesDefault();
-    if (customFontPath.empty())
-    {
-        if (!fontSettings.Path.empty())
-            Log::Warn("D3D12::ReloadFonts() - Custom font path is invalid! Using default CET font.");
-
-        if (cetFontPath.empty())
-        {
-            Log::Warn("D3D12::ReloadFonts() - Missing default fonts!");
-            io.Fonts->AddFontDefault(&config);
-        }
-        else
-            io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(cetFontPath.native()).c_str(), config.SizePixels, &config, cpGlyphRanges);
-    }
-    else
-        io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(customFontPath.native()).c_str(), config.SizePixels, &config, cpGlyphRanges);
-
-    if (fontSettings.Language == "ChineseFull")
-    {
-        cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansTC-Regular.otf", m_paths.Fonts(), false);
-        cpGlyphRanges = io.Fonts->GetGlyphRangesChineseFull();
-    }
-    else if (fontSettings.Language == "ChineseSimplifiedCommon")
-    {
-        cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansSC-Regular.otf", m_paths.Fonts(), false);
-        cpGlyphRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
-    }
-    else if (fontSettings.Language == "Japanese")
-    {
-        cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansJP-Regular.otf", m_paths.Fonts(), false);
-        cpGlyphRanges = io.Fonts->GetGlyphRangesJapanese();
-    }
-    else if (fontSettings.Language == "Korean")
-    {
-        cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansKR-Regular.otf", m_paths.Fonts(), false);
-        cpGlyphRanges = io.Fonts->GetGlyphRangesKorean();
-    }
-    else if (fontSettings.Language == "Cyrillic")
-    {
-        cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSans-Regular.ttf", m_paths.Fonts(), false);
-        cpGlyphRanges = io.Fonts->GetGlyphRangesCyrillic();
-    }
-    else if (fontSettings.Language == "Thai")
-    {
-        cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansThai-Regular.ttf", m_paths.Fonts(), false);
-        cpGlyphRanges = io.Fonts->GetGlyphRangesThai();
-    }
-    else if (fontSettings.Language == "Vietnamese")
-    {
-        cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSans-Regular.ttf", m_paths.Fonts(), false);
-        cpGlyphRanges = io.Fonts->GetGlyphRangesVietnamese();
-    }
-    else
-    {
-        switch (GetSystemDefaultLangID())
-        {
-        case MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_TRADITIONAL):
-            cetFontPath = GetAbsolutePath(L"NotoSansTC-Regular.otf", m_paths.Fonts(), false);
-            cpGlyphRanges = io.Fonts->GetGlyphRangesChineseFull();
-            break;
-
-        case MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED):
-            cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansSC-Regular.otf", m_paths.Fonts(), false);
-            cpGlyphRanges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
-            break;
-
-        case MAKELANGID(LANG_JAPANESE, SUBLANG_DEFAULT):
-            cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansJP-Regular.otf", m_paths.Fonts(), false);
-            cpGlyphRanges = io.Fonts->GetGlyphRangesJapanese();
-            break;
-
-        case MAKELANGID(LANG_KOREAN, SUBLANG_DEFAULT):
-            cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansKR-Regular.otf", m_paths.Fonts(), false);
-            cpGlyphRanges = io.Fonts->GetGlyphRangesKorean();
-            break;
-
-        case MAKELANGID(LANG_BELARUSIAN, SUBLANG_DEFAULT):
-        case MAKELANGID(LANG_RUSSIAN, SUBLANG_DEFAULT):
-            cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSans-Regular.ttf", m_paths.Fonts(), false);
-            cpGlyphRanges = io.Fonts->GetGlyphRangesCyrillic();
-            break;
-
-        case MAKELANGID(LANG_THAI, SUBLANG_DEFAULT):
-            cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansThai-Regular.ttf", m_paths.Fonts(), false);
-            cpGlyphRanges = io.Fonts->GetGlyphRangesThai();
-            break;
-
-        case MAKELANGID(LANG_VIETNAMESE, SUBLANG_DEFAULT):
-            cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSans-Regular.ttf", m_paths.Fonts(), false);
-            cpGlyphRanges = io.Fonts->GetGlyphRangesVietnamese();
-            break;
-        }
-    }
-
-    // add extra glyphs from language font
-    config.MergeMode = true;
-    if (customFontPath.empty())
-    {
-        if (!fontSettings.Path.empty())
-            Log::Warn("D3D12::ReloadFonts() - Custom font path is invalid! Using default CET font.");
-
-        if (cetFontPath.empty())
-        {
-            Log::Warn("D3D12::ReloadFonts() - Missing fonts for extra language glyphs!");
-            io.Fonts->AddFontDefault(&config);
-        }
-        else
-            io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(cetFontPath.native()).c_str(), config.SizePixels, &config, cpGlyphRanges);
-    }
-    else
-        io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(customFontPath.native()).c_str(), config.SizePixels, &config, cpGlyphRanges);
-
-    // add icons from fontawesome4
-    config.GlyphMinAdvanceX = config.SizePixels;
-    static const ImWchar icon_ranges[] = {ICON_MIN_MD, ICON_MAX_MD, 0};
-    auto cetIconPath = GetAbsolutePath(L"materialdesignicons.ttf", m_paths.Fonts(), false);
-    io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(cetIconPath.native()).c_str(), config.SizePixels, &config, icon_ranges);
-}
-
 bool D3D12::InitializeImGui(size_t aBuffersCounts)
 {
     std::lock_guard _(m_imguiLock);
@@ -464,9 +320,10 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
         return false;
     }
 
-    ReloadFonts();
+    ImGui::GetIO().BackendFlags |= ImGuiBackendFlags_RendererHasTexReload; // Set flag to indicate that we can reload textures when requested.
+    m_fonts.BuildFonts(m_outSize);
 
-    if (!ImGui_ImplDX12_CreateDeviceObjects(m_pCommandQueue.Get()))
+    if (!ImGui_ImplDX12_CreateDeviceObjects())
     {
         Log::Error("D3D12::InitializeImGui() - ImGui_ImplDX12_CreateDeviceObjects call failed!");
         ImGui_ImplDX12_Shutdown();
@@ -485,6 +342,9 @@ void D3D12::PrepareUpdate()
     std::lock_guard _(m_imguiLock);
 
     ImGui_ImplWin32_NewFrame(m_outSize);
+
+    m_fonts.RebuildFonts(m_outSize);
+
     ImGui::NewFrame();
 
     CET::Get().GetOverlay().Update();
@@ -497,13 +357,12 @@ void D3D12::PrepareUpdate()
 
     for (auto i = 0; i < drawData.CmdListsCount; ++i)
         IM_DELETE(drawData.CmdLists[i]);
-    delete[] drawData.CmdLists;
-    drawData.CmdLists = nullptr;
     drawData.Clear();
 
     drawData = *ImGui::GetDrawData();
 
-    auto** copiedDrawLists = new ImDrawList*[drawData.CmdListsCount];
+    ImVector<ImDrawList*> copiedDrawLists;
+    copiedDrawLists.resize(drawData.CmdListsCount);
     for (auto i = 0; i < drawData.CmdListsCount; ++i)
         copiedDrawLists[i] = drawData.CmdLists[i]->CloneOutput();
     drawData.CmdLists = copiedDrawLists;
@@ -516,7 +375,7 @@ void D3D12::Update()
     // swap staging ImGui buffer with render ImGui buffer
     {
         std::lock_guard _(m_imguiLock);
-        ImGui_ImplDX12_NewFrame(m_pCommandQueue.Get());
+        ImGui_ImplDX12_NewFrame();
         if (m_imguiDrawDataBuffers[1].Valid)
         {
             std::swap(m_imguiDrawDataBuffers[0], m_imguiDrawDataBuffers[1]);

@@ -24,7 +24,7 @@ bool VKBindInfo::operator==(const std::string& id) const
 }
 
 Bindings::Bindings(VKBindings& aBindings, LuaVM& aVm)
-    : Widget("Bindings")
+    : Widget(ICON_MD_KEYBOARD_SETTINGS " Bindings")
     , m_bindings(aBindings)
     , m_vm(aVm)
 {
@@ -465,7 +465,7 @@ void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoq
     if (!headerOpen)
         return;
 
-    ImGui::TreePush();
+    ImGui::TreePush((void*)NULL);
 
     if (aHotkeyCount > 0)
     {

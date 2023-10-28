@@ -8,3 +8,6 @@ void ImGuiAssert(wchar_t const* acpMessage, wchar_t const* acpFile, unsigned aLi
 
 // custom assertion function macro for ImGui
 #define IM_ASSERT(expression) (void)((g_ImGuiAssertionsEnabled && ((!!(expression)) || (ImGuiAssert(_CRT_WIDE(#expression), _CRT_WIDE(__FILE__), (unsigned)(__LINE__)), 0))))
+
+#define IMGUI_USE_WCHAR32
+#define IMGUI_ENABLE_FREETYPE

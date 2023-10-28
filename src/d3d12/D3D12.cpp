@@ -36,6 +36,7 @@ LRESULT D3D12::OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam)
 
     if (d3d12.IsInitialized())
     {
+        extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
         if (const auto res = ImGui_ImplWin32_WndProcHandler(ahWnd, auMsg, awParam, alParam))
             return res;
 
@@ -60,10 +61,11 @@ LRESULT D3D12::OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam)
     return 0;
 }
 
-D3D12::D3D12(Window& aWindow, Paths& aPaths, Options& aOptions)
+D3D12::D3D12(Window& aWindow, Paths& aPaths, Options& aOptions, Fonts& aFonts)
     : m_paths(aPaths)
     , m_window(aWindow)
     , m_options(aOptions)
+    , m_fonts(aFonts)
 {
     HookGame();
 
