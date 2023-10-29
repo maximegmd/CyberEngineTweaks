@@ -32,12 +32,13 @@ static constexpr bool s_cThrowLuaErrors = true;
 static RTTILocator s_stringType{RED4ext::FNV1a64("String")};
 static RTTILocator s_resRefType{RED4ext::FNV1a64("redResourceReferenceScriptToken")};
 
-Scripting::Scripting(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12)
+Scripting::Scripting(const Paths& aPaths, const Options& aOptions, VKBindings& aBindings, D3D12& aD3D12)
     : m_sandbox(this, aBindings)
     , m_mapper(m_lua.AsRef(), m_sandbox)
     , m_store(m_sandbox, aPaths, aBindings)
     , m_override(this)
     , m_paths(aPaths)
+    , m_options(aOptions)
     , m_d3d12(aD3D12)
 {
     CreateLogger(aPaths.CETRoot() / "scripting.log", "scripting");
@@ -49,7 +50,11 @@ void Scripting::Initialize()
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
 
-    luaVm.open_libraries(sol::lib::base, sol::lib::string, sol::lib::io, sol::lib::math, sol::lib::package, sol::lib::os, sol::lib::table, sol::lib::bit32, sol::lib::jit);
+    luaVm.open_libraries(sol::lib::base, sol::lib::string, sol::lib::io, sol::lib::math, sol::lib::package, sol::lib::os, sol::lib::table, sol::lib::bit32);
+
+    if (m_options.Developer.EnableJIT)
+        luaVm.open_libraries(sol::lib::jit);
+
     luaVm.require("sqlite3", luaopen_lsqlite3);
 
     // make sure to set package path to current directory scope
