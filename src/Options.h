@@ -50,6 +50,7 @@ struct DeveloperSettings
     bool DumpGameOptions{false};
     uint64_t MaxLinesConsoleHistory{1000};
     bool PersistentConsole{true};
+    bool EnableJIT{true};
 };
 
 struct Options

@@ -107,6 +107,9 @@ void Settings::OnUpdate()
                 UpdateAndDrawSetting(
                     "Dump Game Options", "Dumps all game options into main log file (requires restart to take effect).", m_developer.DumpGameOptions,
                     developerSettings.DumpGameOptions);
+                UpdateAndDrawSetting(
+                    "Enable JIT for Lua", "Enables JIT compiler for Lua VM, which may majorly speed up the mods. Disable it in case you experience issues as a troubleshooting step (requires restart to take effect).", m_developer.EnableJIT,
+                    developerSettings.EnableJIT);
 
                 ImGui::EndTable();
             }
