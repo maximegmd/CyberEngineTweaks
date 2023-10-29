@@ -18,14 +18,9 @@ void PatchesSettings::Load(const nlohmann::json& aConfig)
 nlohmann::json PatchesSettings::Save() const
 {
     return {
-        {"disable_async_compute", AsyncCompute},
-        {"disable_antialiasing", Antialiasing},
-        {"skip_start_menu", SkipStartMenu},
-        {"disable_intro_movies", DisableIntroMovies},
-        {"disable_vignette", DisableVignette},
-        {"disable_boundary_teleport", DisableBoundaryTeleport},
-        {"disable_win7_vsync", DisableWin7Vsync},
-        {"minimap_flicker", MinimapFlicker},
+        {"disable_async_compute", AsyncCompute},      {"disable_antialiasing", Antialiasing}, {"skip_start_menu", SkipStartMenu},
+        {"disable_intro_movies", DisableIntroMovies}, {"disable_vignette", DisableVignette},  {"disable_boundary_teleport", DisableBoundaryTeleport},
+        {"disable_win7_vsync", DisableWin7Vsync},     {"minimap_flicker", MinimapFlicker},
     };
 }
 
