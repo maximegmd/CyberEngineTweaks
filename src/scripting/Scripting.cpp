@@ -49,7 +49,7 @@ void Scripting::Initialize()
     auto lua = m_lua.Lock();
     auto& luaVm = lua.Get();
 
-    luaVm.open_libraries(sol::lib::base, sol::lib::string, sol::lib::io, sol::lib::math, sol::lib::package, sol::lib::os, sol::lib::table, sol::lib::bit32);
+    luaVm.open_libraries(sol::lib::base, sol::lib::string, sol::lib::io, sol::lib::math, sol::lib::package, sol::lib::os, sol::lib::table, sol::lib::bit32, sol::lib::jit);
     luaVm.require("sqlite3", luaopen_lsqlite3);
 
     // make sure to set package path to current directory scope
