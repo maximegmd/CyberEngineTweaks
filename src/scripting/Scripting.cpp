@@ -214,17 +214,27 @@ void Scripting::PostInitializeScripting()
         [](const sol::object&) -> bool { return false; });
 
     globals.new_usertype<Enum>(
-        "Enum", sol::constructors<Enum(const std::string&, const std::string&), Enum(const std::string&, uint32_t), Enum(const Enum&)>(), sol::meta_function::to_string,
+        "Enum", sol::constructors<Enum(const std::string&, const std::string&), Enum(const std::string&, int32_t), Enum(const Enum&)>(), sol::meta_function::to_string,
         &Enum::ToString, sol::meta_function::equal_to, &Enum::operator==, "value", sol::property(&Enum::GetValueName, &Enum::SetValueByName));
 
     globals["EnumInt"] = [this](Enum& aEnum) -> sol::object
     {
-        static RTTILocator s_uint64Type{RED4ext::FNV1a64("Uint64")};
+        static RTTILocator s_int8Type{RED4ext::FNV1a64("Int8")};
+        static RTTILocator s_int16Type{RED4ext::FNV1a64("Int16")};
+        static RTTILocator s_int32Type{RED4ext::FNV1a64("Int32")};
+        static RTTILocator s_int64Type{RED4ext::FNV1a64("Int64")};
 
         auto lockedState = m_lua.Lock();
 
         RED4ext::CStackType stackType;
-        stackType.type = s_uint64Type;
+        switch (aEnum.m_cpType->GetSize())
+        {
+        case sizeof(int8_t): stackType.type = s_int8Type; break;
+        case sizeof(int16_t): stackType.type = s_int16Type; break;
+        case sizeof(int32_t): stackType.type = s_int32Type; break;
+        case sizeof(int64_t): stackType.type = s_int64Type; break;
+        }
+
         stackType.value = &aEnum.m_value;
 
         return Converter::ToLua(stackType, lockedState);
