@@ -39,7 +39,7 @@
 ** Lua 5.2
 */
 #ifndef lua_strlen
-#define lua_strlen lua_rawlen
+#define lua_strlen static_cast<int>(lua_rawlen)
 #endif
 /* luaL_typerror always used with arg at ndx == NULL */
 #define luaL_typerror(L, ndx, str) luaL_error(L, "bad argument %d (%s expected, got nil)", ndx, str)
@@ -250,6 +250,7 @@ static int cleanupvm(lua_State* L, sdb_vm* svm)
 
 static int stepvm(lua_State* L, sdb_vm* svm)
 {
+    (void)L;
     return sqlite3_step(svm->vm);
 }
 
@@ -614,41 +615,47 @@ static int dbvm_bind_values(lua_State* L)
     return 1;
 }
 
-static int dbvm_bind_names(lua_State* L)
+static int dbvm_bind_table_fields(lua_State* L, int idx, int n, sqlite3_stmt* vm)
 {
-    const sdb_vm* svm = lsqlite_checkvm(L, 1);
-    sqlite3_stmt* vm = svm->vm;
-    const int count = sqlite3_bind_parameter_count(vm);
     const char* name;
-    int result, n;
-    luaL_checktype(L, 2, LUA_TTABLE);
+    int result, i;
 
-    for (n = 1; n <= count; ++n)
+    for (i = 1; i <= n; ++i)
     {
-        name = sqlite3_bind_parameter_name(vm, n);
+        name = sqlite3_bind_parameter_name(vm, i);
         if (name && (name[0] == ':' || name[0] == '$'))
         {
             lua_pushstring(L, ++name);
-            lua_gettable(L, 2);
-            result = dbvm_bind_index(L, vm, n, -1);
+            lua_gettable(L, idx);
+            result = dbvm_bind_index(L, vm, i, -1);
             lua_pop(L, 1);
         }
         else
         {
-            lua_pushinteger(L, n);
-            lua_gettable(L, 2);
-            result = dbvm_bind_index(L, vm, n, -1);
+            lua_pushinteger(L, i);
+            lua_gettable(L, idx);
+            result = dbvm_bind_index(L, vm, i, -1);
             lua_pop(L, 1);
         }
 
         if (result != SQLITE_OK)
         {
-            lua_pushinteger(L, result);
-            return 1;
+            return result;
         }
     }
+    return SQLITE_OK;
+}
 
-    lua_pushinteger(L, SQLITE_OK);
+static int dbvm_bind_names(lua_State* L)
+{
+    const sdb_vm* svm = lsqlite_checkvm(L, 1);
+    sqlite3_stmt* vm = svm->vm;
+    const int count = sqlite3_bind_parameter_count(vm);
+    int result;
+    luaL_checktype(L, 2, LUA_TTABLE);
+
+    result = dbvm_bind_table_fields(L, 2, count, vm);
+    lua_pushinteger(L, result);
     return 1;
 }
 
@@ -764,7 +771,7 @@ static sdb* lsqlite_getdb(lua_State* L, int index)
 
 static sdb* lsqlite_checkdb(lua_State* L, int index)
 {
-    auto* db = lsqlite_getdb(L, index);
+    sdb* db = lsqlite_getdb(L, index);
     if (db->db == nullptr)
         luaL_argerror(L, index, "attempt to use closed sqlite database");
     return db;
@@ -783,7 +790,7 @@ typedef struct
 
 static lcontext* lsqlite_make_context(lua_State* L)
 {
-    auto* ctx = static_cast<lcontext*>(lua_newuserdata(L, sizeof(lcontext)));
+    lcontext* ctx = static_cast<lcontext*>(lua_newuserdata(L, sizeof(lcontext)));
     lua_rawgeti(L, LUA_REGISTRYINDEX, sqlite_ctx_meta_ref);
     lua_setmetatable(L, -2);
     ctx->ctx = nullptr;
@@ -793,7 +800,7 @@ static lcontext* lsqlite_make_context(lua_State* L)
 
 static lcontext* lsqlite_getcontext(lua_State* L, int index)
 {
-    auto* ctx = static_cast<lcontext*>(luaL_checkudata(L, index, sqlite_ctx_meta));
+    lcontext* ctx = static_cast<lcontext*>(luaL_checkudata(L, index, sqlite_ctx_meta));
     if (ctx == nullptr)
         luaL_typerror(L, index, "sqlite context");
     return ctx;
@@ -814,14 +821,14 @@ static int lcontext_tostring(lua_State* L)
     if (ctx->ctx == nullptr)
         strcpy(buff, "closed");
     else
-        sprintf(buff, "%p", reinterpret_cast<void*>(ctx->ctx));
+        sprintf(buff, "%p", ctx->ctx);
     lua_pushfstring(L, "sqlite function context (%s)", buff);
     return 1;
 }
 
 static void lcontext_check_aggregate(lua_State* L, lcontext* ctx)
 {
-    const auto* func = static_cast<sdb_func*>(sqlite3_user_data(ctx->ctx));
+    const sdb_func* func = static_cast<sdb_func*>(sqlite3_user_data(ctx->ctx));
     if (!func->aggregate)
     {
         luaL_error(L, "attempt to call aggregate method from scalar function");
@@ -831,7 +838,7 @@ static void lcontext_check_aggregate(lua_State* L, lcontext* ctx)
 static int lcontext_user_data(lua_State* L)
 {
     const lcontext* ctx = lsqlite_checkcontext(L, 1);
-    const auto* func = static_cast<sdb_func*>(sqlite3_user_data(ctx->ctx));
+    const sdb_func* func = static_cast<sdb_func*>(sqlite3_user_data(ctx->ctx));
     lua_rawgeti(L, LUA_REGISTRYINDEX, func->udata);
     return 1;
 }
@@ -894,7 +901,7 @@ static int lcontext_result_blob(lua_State* L)
     const lcontext* ctx = lsqlite_checkcontext(L, 1);
     const char* blob = luaL_checkstring(L, 2);
     const int size = static_cast<int>(lua_strlen(L, 2));
-    sqlite3_result_blob(ctx->ctx, blob, size, SQLITE_TRANSIENT);
+    sqlite3_result_blob(ctx->ctx, (const void*)blob, size, SQLITE_TRANSIENT);
     return 0;
 }
 
@@ -1000,7 +1007,7 @@ static int db_db_filename(lua_State* L)
 {
     const sdb* db = lsqlite_checkdb(L, 1);
     const char* db_name = luaL_checkstring(L, 2);
-    // sqlite3_db_filename may return NULL, in that case Lua pushes nil...
+    /* sqlite3_db_filename may return NULL, in that case Lua pushes nil... */
     lua_pushstring(L, sqlite3_db_filename(db->db, db_name));
     return 1;
 }
@@ -1013,7 +1020,7 @@ static void db_push_value(lua_State* L, sqlite3_value* value)
 {
     switch (sqlite3_value_type(value))
     {
-    case SQLITE_TEXT: lua_pushlstring(L, reinterpret_cast<const char*>(sqlite3_value_text(value)), sqlite3_value_bytes(value)); break;
+    case SQLITE_TEXT: lua_pushlstring(L, (const char*)sqlite3_value_text(value), sqlite3_value_bytes(value)); break;
 
     case SQLITE_INTEGER: PUSH_INT64(L, sqlite3_value_int64(value), lua_pushlstring(L, (const char*)sqlite3_value_text(value), sqlite3_value_bytes(value))); break;
 
@@ -1039,7 +1046,7 @@ static void db_push_value(lua_State* L, sqlite3_value* value)
 ** callback params: context, values... */
 static void db_sql_normal_function(sqlite3_context* context, int argc, sqlite3_value** argv)
 {
-    const auto* func = static_cast<sdb_func*>(sqlite3_user_data(context));
+    const sdb_func* func = static_cast<sdb_func*>(sqlite3_user_data(context));
     lua_State* L = func->db->L;
     int n;
     lcontext* ctx;
@@ -1105,7 +1112,7 @@ static void db_sql_normal_function(sqlite3_context* context, int argc, sqlite3_v
 
 static void db_sql_finalize_function(sqlite3_context* context)
 {
-    const auto* func = static_cast<sdb_func*>(sqlite3_user_data(context));
+    const sdb_func* func = static_cast<sdb_func*>(sqlite3_user_data(context));
     lua_State* L = func->db->L;
     void* p = sqlite3_aggregate_context(context, 1); /* minimal mem usage */
     lcontext* ctx;
@@ -1188,8 +1195,7 @@ static int db_register_function(lua_State* L, int aggregate)
     }
 
     result = sqlite3_create_function(
-        db->db, name, args, SQLITE_UTF8, func, aggregate ? nullptr : db_sql_normal_function, aggregate ? db_sql_normal_function : nullptr,
-        aggregate ? db_sql_finalize_function : nullptr);
+        db->db, name, args, SQLITE_UTF8, func, aggregate ? nullptr : db_sql_normal_function, aggregate ? db_sql_normal_function : nullptr, aggregate ? db_sql_finalize_function : nullptr);
 
     if (result == SQLITE_OK)
     {
@@ -1282,7 +1288,7 @@ static int db_create_collation(lua_State* L)
     if (collfunc != nullptr)
     {
         co = static_cast<scc*>(malloc(sizeof(scc))); /* userdata is a no-no as it
-                                            will be garbage-collected */
+                                           will be garbage-collected */
         if (co)
         {
             co->L = L;
@@ -1292,8 +1298,7 @@ static int db_create_collation(lua_State* L)
         else
             luaL_error(L, "create_collation: could not allocate callback");
     }
-    sqlite3_create_collation_v2(
-        db->db, collname, SQLITE_UTF8, co, reinterpret_cast<int (*)(void*, int, const void*, int, const void*)>(collfunc), reinterpret_cast<void (*)(void*)>(collfree));
+    sqlite3_create_collation_v2(db->db, collname, SQLITE_UTF8, (void*)co, (int (*)(void*, int, const void*, int, const void*))collfunc, (void (*)(void*))collfree);
     return 0;
 }
 
@@ -1338,7 +1343,7 @@ static int db_load_extension(lua_State* L)
 */
 static void db_trace_callback(void* user, const char* sql)
 {
-    const auto* db = static_cast<sdb*>(user);
+    const sdb* db = static_cast<sdb*>(user);
     lua_State* L = db->L;
     const int top = lua_gettop(L);
 
@@ -1400,7 +1405,7 @@ static int db_trace(lua_State* L)
 */
 static void db_update_hook_callback(void* user, int op, char const* dbname, char const* tblname, sqlite3_int64 rowid)
 {
-    const auto* db = static_cast<sdb*>(user);
+    const sdb* db = static_cast<sdb*>(user);
     lua_State* L = db->L;
     const int top = lua_gettop(L);
 
@@ -1465,7 +1470,7 @@ static int db_update_hook(lua_State* L)
 */
 static int db_commit_hook_callback(void* user)
 {
-    const auto* db = static_cast<sdb*>(user);
+    const sdb* db = static_cast<sdb*>(user);
     lua_State* L = db->L;
     const int top = lua_gettop(L);
     int rollback = 0;
@@ -1525,7 +1530,7 @@ static int db_commit_hook(lua_State* L)
 */
 static void db_rollback_hook_callback(void* user)
 {
-    const auto* db = static_cast<sdb*>(user);
+    const sdb* db = static_cast<sdb*>(user);
     lua_State* L = db->L;
     const int top = lua_gettop(L);
 
@@ -1589,7 +1594,7 @@ static int db_rollback_hook(lua_State* L)
 static int db_progress_callback(void* user)
 {
     int result = 1; /* abort by default */
-    const auto* db = static_cast<sdb*>(user);
+    const sdb* db = static_cast<sdb*>(user);
     lua_State* L = db->L;
     const int top = lua_gettop(L);
 
@@ -1688,6 +1693,7 @@ static int cleanupbu(lua_State* L, sdb_bu* sbu)
 
 static int lsqlite_backup_init(lua_State* L)
 {
+
     const sdb* target_db = lsqlite_checkdb(L, 1);
     const char* target_nm = luaL_checkstring(L, 2);
     const sdb* source_db = lsqlite_checkdb(L, 3);
@@ -1697,7 +1703,7 @@ static int lsqlite_backup_init(lua_State* L)
 
     if (nullptr != bu)
     {
-        auto* sbu = static_cast<sdb_bu*>(lua_newuserdata(L, sizeof(sdb_bu)));
+        sdb_bu* sbu = static_cast<sdb_bu*>(lua_newuserdata(L, sizeof(sdb_bu)));
 
         luaL_getmetatable(L, sqlite_bu_meta);
         lua_setmetatable(L, -2); /* set metatable */
@@ -1717,13 +1723,15 @@ static int lsqlite_backup_init(lua_State* L)
 
         return 1;
     }
-
-    return 0;
+    else
+    {
+        return 0;
+    }
 }
 
 static sdb_bu* lsqlite_getbu(lua_State* L, int index)
 {
-    auto* sbu = static_cast<sdb_bu*>(luaL_checkudata(L, index, sqlite_bu_meta));
+    sdb_bu* sbu = static_cast<sdb_bu*>(luaL_checkudata(L, index, sqlite_bu_meta));
     if (sbu == nullptr)
         luaL_typerror(L, index, "sqlite database backup");
     return sbu;
@@ -1790,7 +1798,7 @@ static int dbbu_finish(lua_State* L)
 static int db_busy_callback(void* user, int tries)
 {
     int retry = 0; /* abort by default */
-    const auto* db = static_cast<sdb*>(user);
+    const sdb* db = static_cast<sdb*>(user);
     lua_State* L = db->L;
     const int top = lua_gettop(L);
 
@@ -1865,7 +1873,7 @@ static int db_busy_timeout(lua_State* L)
 static int db_exec_callback(void* user, int columns, char** data, char** names)
 {
     int result = SQLITE_ABORT; /* abort by default */
-    auto* L = static_cast<lua_State*>(user);
+    lua_State* L = static_cast<lua_State*>(user);
     int n;
 
     const int top = lua_gettop(L);
@@ -2011,11 +2019,13 @@ static int db_do_next_row(lua_State* L, int packed)
             }
             return 1;
         }
-
-        lua_checkstack(L, columns);
-        for (i = 0; i < columns; ++i)
-            vm_push_column(L, vm, i);
-        return svm->columns;
+        else
+        {
+            lua_checkstack(L, columns);
+            for (i = 0; i < columns; ++i)
+                vm_push_column(L, vm, i);
+            return svm->columns;
+        }
     }
 
     if (svm->temp)
@@ -2083,7 +2093,14 @@ static int db_do_rows(lua_State* L, int (*f)(lua_State*))
     sdb* db = lsqlite_checkdb(L, 1);
     const char* sql = luaL_checkstring(L, 2);
     sdb_vm* svm;
-    lua_settop(L, 2); /* db,sql is on top of stack for call to newvm */
+
+    const int nargs = lua_gettop(L) - 2;
+    if (nargs > 0)
+    {
+        lua_pushvalue(L, 1);
+        lua_pushvalue(L, 2); /* copy db,sql on top of the stack for newvm */
+    }
+
     svm = newvm(L, db);
     svm->temp = 1;
 
@@ -2093,6 +2110,42 @@ static int db_do_rows(lua_State* L, int (*f)(lua_State*))
         if (cleanupvm(L, svm) == 1)
             lua_pop(L, 1); /* this should not happen since sqlite3_prepare_v2 will not set ->vm on error */
         lua_error(L);
+    }
+
+    if (nargs > 0)
+    {
+        lua_replace(L, 1);
+        lua_remove(L, 2); /* stack: vm, args.. */
+
+        if (nargs == 1 && lua_istable(L, 2))
+        {
+            int result;
+            if ((result = dbvm_bind_table_fields(L, 2, nargs, svm->vm)) != SQLITE_OK)
+            {
+                lua_pushstring(L, sqlite3_errstr(result));
+                cleanupvm(L, svm);
+                lua_error(L);
+            }
+        }
+        else if (nargs == sqlite3_bind_parameter_count(svm->vm))
+        {
+            int result, i;
+            for (i = 1; i <= nargs; i++)
+            {
+                if ((result = dbvm_bind_index(L, svm->vm, i, i + 1)) != SQLITE_OK)
+                {
+                    lua_pushstring(L, sqlite3_errstr(result));
+                    cleanupvm(L, svm);
+                    lua_error(L);
+                }
+            }
+        }
+        else
+        {
+            luaL_error(L, "Required either %d parameters or a single table, got %d.", sqlite3_bind_parameter_count(svm->vm), nargs);
+        }
+        lua_pop(L, nargs);
+        lua_pushvalue(L, 1);
     }
 
     lua_pushcfunction(L, f);
@@ -2149,7 +2202,7 @@ static int db_close_vm(lua_State* L)
     lua_pushnil(L);
     while (lua_next(L, -2))
     {
-        auto* svm = static_cast<sdb_vm*>(lua_touserdata(L, -2)); /* key: vm; val: sql text */
+        sdb_vm* svm = static_cast<sdb_vm*>(lua_touserdata(L, -2)); /* key: vm; val: sql text */
 
         if ((!temp || svm->temp) && svm->vm)
         {
@@ -2225,6 +2278,16 @@ static int lsqlite_temp_directory(lua_State* L)
     }
     lua_pushstring(L, oldtemp);
     return 1;
+}
+#endif
+
+#if defined(SQLITE_ENABLE_CEROD)
+static int lsqlite_activate_cerod(lua_State* L)
+{
+    const char* s = luaL_checkstring(L, 1);
+    sqlite3_activate_cerod(s);
+    lua_pushnil(L);
+    return 0;
 }
 #endif
 
@@ -2344,7 +2407,7 @@ static const struct
 
 /* ======================================================= */
 
-static constexpr luaL_Reg dblib[] = {
+static const luaL_Reg dblib[] = {
     {"isopen", db_isopen},
     {"last_insert_rowid", db_last_insert_rowid},
     {"changes", db_changes},
@@ -2387,7 +2450,7 @@ static constexpr luaL_Reg dblib[] = {
 
     {nullptr, nullptr}};
 
-static constexpr luaL_Reg vmlib[] = {
+static const luaL_Reg vmlib[] = {
     {"isopen", dbvm_isopen},
 
     {"step", dbvm_step},
@@ -2434,7 +2497,7 @@ static constexpr luaL_Reg vmlib[] = {
 
     {nullptr, nullptr}};
 
-static constexpr luaL_Reg ctxlib[] = {
+static const luaL_Reg ctxlib[] = {
     {"user_data", lcontext_user_data},
 
     {"get_aggregate_data", lcontext_get_aggregate_context},
@@ -2453,23 +2516,26 @@ static constexpr luaL_Reg ctxlib[] = {
     {"__tostring", lcontext_tostring},
     {nullptr, nullptr}};
 
-static constexpr luaL_Reg dbbulib[] = {
+static const luaL_Reg dbbulib[] = {
 
     {"step", dbbu_step},
     {"remaining", dbbu_remaining},
     {"pagecount", dbbu_pagecount},
     {"finish", dbbu_finish},
 
-    //  {"__tostring",  dbbu_tostring   },
+    /*  {"__tostring",  dbbu_tostring   },   */
     {"__gc", dbbu_gc},
     {nullptr, nullptr}};
 
-static constexpr luaL_Reg sqlitelib[] = {
+static const luaL_Reg sqlitelib[] = {
     {"lversion", lsqlite_lversion},
     {"version", lsqlite_version},
     {"complete", lsqlite_complete},
 #ifndef _WIN32
     {"temp_directory", lsqlite_temp_directory},
+#endif
+#if defined(SQLITE_ENABLE_CEROD)
+    {"activate_cerod", lsqlite_activate_cerod},
 #endif
     {"open", lsqlite_open},
     {"open_memory", lsqlite_open_memory},
