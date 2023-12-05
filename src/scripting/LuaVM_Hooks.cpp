@@ -258,8 +258,8 @@ void LuaVM::HookLogChannel(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack,
     }
 }
 
-LuaVM::LuaVM(const Paths& aPaths, VKBindings& aBindings, D3D12& aD3D12)
-    : m_scripting(aPaths, aBindings, aD3D12)
+LuaVM::LuaVM(const Paths& aPaths, const Options& aOptions, VKBindings& aBindings, D3D12& aD3D12)
+    : m_scripting(aPaths, aOptions, aBindings, aD3D12)
     , m_d3d12(aD3D12)
 {
     Hook();

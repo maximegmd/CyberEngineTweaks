@@ -18,14 +18,9 @@ void PatchesSettings::Load(const nlohmann::json& aConfig)
 nlohmann::json PatchesSettings::Save() const
 {
     return {
-        {"disable_async_compute", AsyncCompute},
-        {"disable_antialiasing", Antialiasing},
-        {"skip_start_menu", SkipStartMenu},
-        {"disable_intro_movies", DisableIntroMovies},
-        {"disable_vignette", DisableVignette},
-        {"disable_boundary_teleport", DisableBoundaryTeleport},
-        {"disable_win7_vsync", DisableWin7Vsync},
-        {"minimap_flicker", MinimapFlicker},
+        {"disable_async_compute", AsyncCompute},      {"disable_antialiasing", Antialiasing}, {"skip_start_menu", SkipStartMenu},
+        {"disable_intro_movies", DisableIntroMovies}, {"disable_vignette", DisableVignette},  {"disable_boundary_teleport", DisableBoundaryTeleport},
+        {"disable_win7_vsync", DisableWin7Vsync},     {"minimap_flicker", MinimapFlicker},
     };
 }
 
@@ -60,6 +55,7 @@ void DeveloperSettings::Load(const nlohmann::json& aConfig)
     DumpGameOptions = aConfig.value("dump_game_options", DumpGameOptions);
     MaxLinesConsoleHistory = aConfig.value("max_lines_console_history", MaxLinesConsoleHistory);
     PersistentConsole = aConfig.value("persistent_console", PersistentConsole);
+    EnableJIT = aConfig.value("enable_jit", EnableJIT);
 
     // set global "Enable ImGui Assertions"
     g_ImGuiAssertionsEnabled = EnableImGuiAssertions;
@@ -70,8 +66,8 @@ nlohmann::json DeveloperSettings::Save() const
     // set global "Enable ImGui Assertions"
     g_ImGuiAssertionsEnabled = EnableImGuiAssertions;
 
-    return {{"remove_dead_bindings", RemoveDeadBindings}, {"enable_imgui_assertions", EnableImGuiAssertions}, 
-            {"dump_game_options", DumpGameOptions},       {"max_lines_console_history", MaxLinesConsoleHistory}, {"persistent_console", PersistentConsole}};
+    return {{"remove_dead_bindings", RemoveDeadBindings},          {"enable_imgui_assertions", EnableImGuiAssertions}, {"dump_game_options", DumpGameOptions},
+            {"max_lines_console_history", MaxLinesConsoleHistory}, {"persistent_console", PersistentConsole},          {"enable_jit", EnableJIT}};
 }
 
 void DeveloperSettings::ResetToDefaults()
