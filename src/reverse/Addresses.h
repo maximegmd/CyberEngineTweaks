@@ -37,7 +37,7 @@ constexpr uintptr_t CPhotoMode_SetRecordID = 0x140AF8698 - ImageBase; // 48 89 5
 #pragma endregion
 
 #pragma region CRenderGlobal
-constexpr uintptr_t CRenderGlobal_InstanceOffset = 0x1BF684E21 - ImageBase; // 48 89 5C 24 08 48 89 6C 24 10 4C 89  4C 24 20 56 57 41 56 48 83 EC 30 8B 11 45 8B F0  48 8B 2D, expected: 1, index: 0, offset: 36
+constexpr uintptr_t CRenderGlobal_InstanceOffset = 0x143346628 - ImageBase; // 48 89 5C 24 08 48 89 6C 24 10 4C 89 4C 24 20 56 57 41 56 48 83 EC 30 8B 11 45 8B F0 48 8B 2D, expected: 1, index: 0, offset: 31
 constexpr uintptr_t CRenderGlobal__DoNotUse_RenderQueueOffset = 0x1B5F4F050 - ImageBase; // 39 72 24 74 5B 48 8B 4A 18 4C 8D 8C 24 88 00 00 00 8B 42 24 44 8B C7 48 8B 95 ? ? ? ?, expected: 1, index: 0, offset: 0
 constexpr uintptr_t CRenderGlobal_Resize = 0x140746654 - ImageBase; // 48 8B C4 44 88 48 20 44 89 40 18 89 50 10 89 48 08 55 53 56 57 41 54 41 55 41 56 41 57 48 8D 68 ? 48 81 EC ? ? 00 00, expected: 1, index: 0
 constexpr uintptr_t CRenderGlobal_Shutdown = 0x141032598 - ImageBase; // 40 53 48 83 EC 20 48 8B D9 48 8D 05 ? ? ? ? 48 81 C1 98 00 00 00 48 89 01 E8, expected: 1, index: 0
