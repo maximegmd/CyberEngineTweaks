@@ -224,7 +224,7 @@ BOOL Overlay::ClipToCenter(RED4ext::CGameEngine::UnkD0* apThis)
     const auto wnd = static_cast<HWND>(apThis->hWnd);
     const HWND foreground = GetForegroundWindow();
 
-    if (wnd == foreground && apThis->unk164 && !apThis->unk154 && !CET::Get().GetOverlay().IsEnabled())
+    if (wnd == foreground && apThis->unk174 && !apThis->unk164 && !CET::Get().GetOverlay().IsEnabled())
     {
         RECT rect;
         GetClientRect(wnd, &rect);
