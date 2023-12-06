@@ -617,8 +617,9 @@ void FunctionOverride::Override(
             {
                 if (pRealFunction->flags.isNative)
                 {
-                    pFunc = RED4ext::CClassStaticFunction::Create(pClassType, acFullName.c_str(), acFullName.c_str(), pExecutablePayload, pRealFunction->flags);
-                    reinterpret_cast<RED4ext::CClassStaticFunction*>(pFunc)->parent = pRealFunction->parent;
+                    auto* pResult = RED4ext::CClassStaticFunction::Create(pClassType, acFullName.c_str(), acFullName.c_str(), pExecutablePayload, pRealFunction->flags);
+                    pResult->parent = pRealFunction->parent;
+                    pFunc = pResult;
                 }
                 else
                 {
@@ -627,8 +628,9 @@ void FunctionOverride::Override(
             }
             else
             {
-                pFunc = RED4ext::CClassFunction::Create(pClassType, acFullName.c_str(), acFullName.c_str(), pExecutablePayload, pRealFunction->flags);
-                reinterpret_cast<RED4ext::CClassFunction*>(pFunc)->parent = pRealFunction->parent;
+                auto* pResult = RED4ext::CClassFunction::Create(pClassType, acFullName.c_str(), acFullName.c_str(), pExecutablePayload, pRealFunction->flags);
+                pResult->parent = pRealFunction->parent;
+                pFunc = pResult;
             }
 
             CopyFunctionDescription(pFunc, pRealFunction, true);
