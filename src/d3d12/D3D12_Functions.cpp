@@ -62,7 +62,7 @@ bool D3D12::Initialize()
     const HWND hWnd = m_window.GetWindow();
     if (!hWnd)
     {
-        Log::Warn("D3D12::InitializeDownlevel() - window not yet hooked!");
+        Log::Warn("D3D12::Initialize() - window not yet hooked!");
         return false;
     }
 
