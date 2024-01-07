@@ -13,7 +13,6 @@ struct ScriptStore
     [[nodiscard]] const VKBind* GetBind(const VKModBind& acModBind) const;
     [[nodiscard]] const TiltedPhoques::Vector<VKBind>* GetBinds(const std::string& acModName) const;
     [[nodiscard]] const TiltedPhoques::Map<std::string, std::reference_wrapper<const TiltedPhoques::Vector<VKBind>>>& GetAllBinds() const;
-    [[nodiscard]] const VKBindings& GetBindings() const;
 
     void TriggerOnHook() const;
     void TriggerOnTweak() const;
@@ -24,7 +23,8 @@ struct ScriptStore
     void TriggerOnOverlayOpen() const;
     void TriggerOnOverlayClose() const;
 
-    [[nodiscard]] TiltedPhoques::Vector<std::string> GetModNames() const;
+    [[nodiscard]] sol::object GetModInputHandlers(const std::string& acName) const;
+    [[nodiscard]] sol::object GetMods() const;
     [[nodiscard]] sol::object GetMod(const std::string& acName) const;
 
 private:

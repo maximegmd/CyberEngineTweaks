@@ -427,14 +427,9 @@ void Scripting::PostInitializeScripting()
         return this->GetSingletonHandle(acName, aThisEnv);
     };
 
-    globals["GetModNames"] = [this]() -> sol::object
+    globals["GetMods"] = [this]() -> sol::object
     {
-        return GetModNames();
-    };
-
-    globals["GetModInputHandlers"] = [this](const std::string& acName) -> sol::object
-    {
-        return GetModInputHandlers(acName);
+        return GetMods();
     };
 
     globals["GetMod"] = [this](const std::string& acName) -> sol::object
@@ -609,43 +604,14 @@ void Scripting::TriggerOnOverlayClose() const
     m_store.TriggerOnOverlayClose();
 }
 
-sol::object Scripting::GetModNames() const
+sol::object Scripting::GetMods() const
 {
-    auto lockedState = m_lua.Lock();
-    sol::table res(lockedState.Get(), sol::create);
-    for (const auto& name : m_store.GetModNames())
-        res.add(name);
-    return res;
+    return m_store.GetMods();
 }
 
 sol::object Scripting::GetMod(const std::string& acName) const
 {
     return m_store.GetMod(acName);
-}
-
-sol::object Scripting::GetModInputHandlers(const std::string& acName) const
-{
-    const auto* modBinds = m_store.GetBinds(acName);
-    if (!modBinds)
-        return sol::nil;
-
-    auto lockedState = m_lua.Lock();
-    const auto& bindings = m_store.GetBindings();
-    sol::table res(lockedState.Get(), sol::create);
-    for (const auto& bind : *modBinds)
-    {
-        sol::table info(lockedState.Get(), sol::create);
-        info["slug"] = bind.ID;
-        info["label"] = bind.DisplayName;
-        info["callback"] = bind.VmHandler;
-        if (std::holds_alternative<std::string>(bind.Description))
-        {
-            info["description"] = std::get<std::string>(bind.Description);
-        }
-        info["bind"] = bindings.GetBindString({acName, bind.ID});
-        res[bind.ID] = info;
-    }
-    return res;
 }
 
 void Scripting::UnloadAllMods()

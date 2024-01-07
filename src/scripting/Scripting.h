@@ -31,9 +31,8 @@ struct Scripting
     void TriggerOnOverlayOpen() const;
     void TriggerOnOverlayClose() const;
 
-    sol::object GetModNames() const;
+    sol::object GetMods() const;
     sol::object GetMod(const std::string& acName) const;
-    sol::object GetModInputHandlers(const std::string& acName) const;
     void UnloadAllMods();
     void ReloadAllMods();
     bool ExecuteLua(const std::string& acCommand) const;

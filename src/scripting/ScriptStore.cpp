@@ -105,11 +105,6 @@ const TiltedPhoques::Map<std::string, std::reference_wrapper<const TiltedPhoques
     return m_vkBinds;
 }
 
-const VKBindings& ScriptStore::GetBindings() const
-{
-    return m_bindings;
-}
-
 void ScriptStore::TriggerOnHook() const
 {
     for (const auto& mod : m_contexts | std::views::values)
@@ -152,11 +147,44 @@ void ScriptStore::TriggerOnOverlayClose() const
         mod.TriggerOnOverlayClose();
 }
 
-TiltedPhoques::Vector<std::string> ScriptStore::GetModNames() const
+sol::object ScriptStore::GetModInputHandlers(const std::string& acName) const
 {
-    TiltedPhoques::Vector<std::string> result;
-    std::ranges::copy(m_contexts | std::views::keys, std::back_inserter(result));
-    return result;
+    const auto* modBinds = GetBinds(acName);
+    if (!modBinds)
+        return sol::nil;
+
+    auto state = m_sandbox.GetLockedState();
+    sol::table res(state.Get(), sol::create);
+    for (const auto& bind : *modBinds)
+    {
+        sol::table info(state.Get(), sol::create);
+        info["id"] = bind.ID;
+        info["displayName"] = bind.DisplayName;
+        info["callback"] = bind.VmHandler;
+        info["isHotkey"] = bind.IsHotkey();
+        info["isBound"] = m_bindings.IsBound({acName, bind.ID});
+        if (std::holds_alternative<std::string>(bind.Description))
+        {
+            info["description"] = std::get<std::string>(bind.Description);
+        }
+        res[bind.ID] = info;
+    }
+    return res;
+}
+
+sol::object ScriptStore::GetMods() const
+{
+    auto state = m_sandbox.GetLockedState();
+    sol::table res(state.Get(), sol::create);
+    for (const auto& [name, context] : m_contexts)
+    {
+        sol::table modInfo(state.Get(), sol::create);
+        modInfo["name"] = name;
+        modInfo["rootObject"] = context.GetRootObject();
+        modInfo["inputHandlers"] = GetModInputHandlers(name);
+        res[name] = modInfo;
+    }
+    return res;
 }
 
 sol::object ScriptStore::GetMod(const std::string& acName) const
