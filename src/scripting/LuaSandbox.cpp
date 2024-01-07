@@ -101,7 +101,7 @@ static constexpr const char* s_cPostInitializeTweakDBProtectedList[] = {
 
 static constexpr const char* s_cPostInitializeModsProtectedList[] = {
     // initialized by Scripting
-    "NewObject", "GetSingleton", "GetMod", "GameDump", "Dump", "DumpType", "DumpAllTypeNames", "DumpVtables", "DumpReflection", "Game",
+    "NewObject", "GetSingleton", "GetModNames", "GetModInputHandlers", "GetMod", "GameDump", "Dump", "DumpType", "DumpAllTypeNames", "DumpVtables", "DumpReflection", "Game",
 
     // initialized by RTTIMapper
     "Vector3", "ToVector3", "Vector4", "ToVector4", "EulerAngles", "ToEulerAngles", "Quaternion", "ToQuaternion", "ItemID", "ToItemID"};

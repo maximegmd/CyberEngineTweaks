@@ -105,6 +105,11 @@ const TiltedPhoques::Map<std::string, std::reference_wrapper<const TiltedPhoques
     return m_vkBinds;
 }
 
+const VKBindings& ScriptStore::GetBindings() const
+{
+    return m_bindings;
+}
+
 void ScriptStore::TriggerOnHook() const
 {
     for (const auto& mod : m_contexts | std::views::values)
@@ -145,6 +150,13 @@ void ScriptStore::TriggerOnOverlayClose() const
 {
     for (const auto& mod : m_contexts | std::views::values)
         mod.TriggerOnOverlayClose();
+}
+
+TiltedPhoques::Vector<std::string> ScriptStore::GetModNames() const
+{
+    TiltedPhoques::Vector<std::string> result;
+    std::ranges::copy(m_contexts | std::views::keys, std::back_inserter(result));
+    return result;
 }
 
 sol::object ScriptStore::GetMod(const std::string& acName) const
