@@ -304,6 +304,38 @@ sol::object ScriptContext::GetRootObject() const
     return m_object;
 }
 
+sol::object ScriptContext::GetInputHandlers() const
+{
+    auto lockedState = m_sandbox.GetLockedState();
+    const auto& bindings = m_sandbox.GetBindings();
+    sol::table res(lockedState.Get(), sol::create);
+    for (const auto& bind : m_vkBinds)
+    {
+        sol::table info(lockedState.Get(), sol::create);
+        info["id"] = bind.ID;
+        info["displayName"] = bind.DisplayName;
+        info["callback"] = bind.VmHandler;
+        info["isHotkey"] = bind.IsHotkey();
+        info["isBound"] = bindings.IsBound({m_name, bind.ID});
+        if (std::holds_alternative<std::string>(bind.Description))
+        {
+            info["description"] = std::get<std::string>(bind.Description);
+        }
+        res[bind.ID] = info;
+    }
+    return res;
+}
+
+sol::object ScriptContext::GetMod() const
+{
+    auto lockedState = m_sandbox.GetLockedState();
+    sol::table modInfo(lockedState.Get(), sol::create);
+    modInfo["name"] = m_name;
+    modInfo["rootObject"] = GetRootObject();
+    modInfo["inputHandlers"] = GetInputHandlers();
+    return modInfo;
+}
+
 void ScriptContext::TriggerOnShutdown() const
 {
     auto lockedState = m_sandbox.GetLockedState();

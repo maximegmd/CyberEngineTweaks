@@ -263,6 +263,11 @@ bool LuaSandbox::GetImGuiAvailable() const
     return m_imguiAvailable;
 }
 
+const VKBindings& LuaSandbox::GetBindings() const
+{
+    return m_vkBindings;
+}
+
 sol::table& LuaSandbox::GetGlobals()
 {
     return m_globals;

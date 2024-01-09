@@ -147,42 +147,13 @@ void ScriptStore::TriggerOnOverlayClose() const
         mod.TriggerOnOverlayClose();
 }
 
-sol::object ScriptStore::GetModInputHandlers(const std::string& acName) const
-{
-    const auto* modBinds = GetBinds(acName);
-    if (!modBinds)
-        return sol::nil;
-
-    auto state = m_sandbox.GetLockedState();
-    sol::table res(state.Get(), sol::create);
-    for (const auto& bind : *modBinds)
-    {
-        sol::table info(state.Get(), sol::create);
-        info["id"] = bind.ID;
-        info["displayName"] = bind.DisplayName;
-        info["callback"] = bind.VmHandler;
-        info["isHotkey"] = bind.IsHotkey();
-        info["isBound"] = m_bindings.IsBound({acName, bind.ID});
-        if (std::holds_alternative<std::string>(bind.Description))
-        {
-            info["description"] = std::get<std::string>(bind.Description);
-        }
-        res[bind.ID] = info;
-    }
-    return res;
-}
-
 sol::object ScriptStore::GetMods() const
 {
-    auto state = m_sandbox.GetLockedState();
-    sol::table res(state.Get(), sol::create);
+    auto lockedState = m_sandbox.GetLockedState();
+    sol::table res(lockedState.Get(), sol::create);
     for (const auto& [name, context] : m_contexts)
     {
-        sol::table modInfo(state.Get(), sol::create);
-        modInfo["name"] = name;
-        modInfo["rootObject"] = context.GetRootObject();
-        modInfo["inputHandlers"] = GetModInputHandlers(name);
-        res[name] = modInfo;
+        res[name] = context.GetMod();
     }
     return res;
 }
@@ -191,7 +162,7 @@ sol::object ScriptStore::GetMod(const std::string& acName) const
 {
     const auto it = m_contexts.find(acName);
     if (it != m_contexts.cend())
-        return it->second.GetRootObject();
+        return it->second.GetMod();
 
     return sol::nil;
 }

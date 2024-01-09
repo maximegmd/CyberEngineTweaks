@@ -25,6 +25,8 @@ struct LuaSandbox
 
     void SetImGuiAvailable(bool aAvailable);
     bool GetImGuiAvailable() const;
+    
+    const VKBindings& GetBindings() const;
 
     sol::table& GetGlobals();
 
