@@ -2,6 +2,7 @@
 
 #include "Paths.h"
 #include "Utils.h"
+#include "RED4ext/Api/Runtime.hpp"
 
 void PatchesSettings::Load(const nlohmann::json& aConfig)
 {
@@ -177,16 +178,15 @@ Options::Options(Paths& aPaths)
 
     GameImage.Initialize();
 
-    if (GameImage.version)
+    if (GameImage.FileVersion.major != 0)
     {
         Log::Info("CET version {} [{}]", CET_BUILD_COMMIT, CET_BUILD_BRANCH);
-        auto [major, minor] = GameImage.GetVersion();
-        Log::Info("Game version {}.{:02d}", major, minor);
+        Log::Info("Game version {}.{}.{}.{}", GameImage.FileVersion.major, GameImage.FileVersion.minor, GameImage.FileVersion.build, GameImage.FileVersion.revision);
         Log::Info("Root path: \"{}\"", UTF16ToUTF8(aPaths.GameRoot().native()));
         Log::Info("Cyber Engine Tweaks path: \"{}\"", UTF16ToUTF8(aPaths.CETRoot().native()));
         Log::Info("Lua scripts search path: \"{}\"", UTF16ToUTF8(aPaths.ModsRoot().native()));
 
-        if (GameImage.GetVersion() != Image::GetSupportedVersion())
+        if (GameImage.FileVersion != RED4EXT_RUNTIME_LATEST)
         {
             const auto [smajor, sminor] = Image::GetSupportedVersion();
             Log::Error("Unsupported game version! Only {}.{:02d} is supported.", smajor, sminor);
