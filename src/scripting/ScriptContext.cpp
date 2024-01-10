@@ -115,7 +115,7 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
         return std::get<std::string>(acDescription);
     };
 
-    auto registerBinding = [this, &wrapHandler, &wrapDescription, &lockedState](
+    auto registerBinding = [this, &wrapHandler, &wrapDescription](
                                const std::string& acID, const std::string& acDisplayName, const std::variant<std::string, sol::function>& acDescription, sol::function aCallback,
                                const bool acIsHotkey)
     {
@@ -145,18 +145,8 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
                 inputTypeStr, acID, acDisplayName, bindIt->DisplayName);
             return;
         }
-        sol::function vmHandler = aCallback;
-        if (acIsHotkey)
-        {
-            vmHandler = MakeSolFunction(lockedState, [aCallback](bool isPressed) {
-                if (isPressed)
-                {
-                    aCallback();
-                }
-            });
-        }
 
-        m_vkBinds.emplace_back(acID, acDisplayName, wrapDescription(acDescription), wrapHandler(aCallback, acIsHotkey), vmHandler);
+        m_vkBinds.emplace_back(acID, acDisplayName, wrapDescription(acDescription), wrapHandler(aCallback, acIsHotkey), aCallback);
     };
 
     env["registerHotkey"] = sol::overload(
@@ -307,7 +297,7 @@ sol::object ScriptContext::GetRootObject() const
 sol::object ScriptContext::GetInputHandlers() const
 {
     auto lockedState = m_sandbox.GetLockedState();
-    const auto& bindings = m_sandbox.GetBindings();
+    const auto& bindings = CET::Get().GetBindings();
     sol::table res(lockedState.Get(), sol::create);
     for (const auto& bind : m_vkBinds)
     {
