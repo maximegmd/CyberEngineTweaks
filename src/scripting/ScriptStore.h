@@ -23,6 +23,7 @@ struct ScriptStore
     void TriggerOnOverlayOpen() const;
     void TriggerOnOverlayClose() const;
 
+    [[nodiscard]] sol::object GetMods() const;
     [[nodiscard]] sol::object GetMod(const std::string& acName) const;
 
 private:

@@ -147,11 +147,22 @@ void ScriptStore::TriggerOnOverlayClose() const
         mod.TriggerOnOverlayClose();
 }
 
+sol::object ScriptStore::GetMods() const
+{
+    auto lockedState = m_sandbox.GetLockedState();
+    sol::table res(lockedState.Get(), sol::create);
+    for (const auto& [name, context] : m_contexts)
+    {
+        res[name] = context.GetMod();
+    }
+    return res;
+}
+
 sol::object ScriptStore::GetMod(const std::string& acName) const
 {
     const auto it = m_contexts.find(acName);
     if (it != m_contexts.cend())
-        return it->second.GetRootObject();
+        return it->second.GetMod();
 
     return sol::nil;
 }

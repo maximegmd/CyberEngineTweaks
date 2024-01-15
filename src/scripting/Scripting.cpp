@@ -427,6 +427,11 @@ void Scripting::PostInitializeScripting()
         return this->GetSingletonHandle(acName, aThisEnv);
     };
 
+    globals["GetMods"] = [this]() -> sol::object
+    {
+        return GetMods();
+    };
+
     globals["GetMod"] = [this](const std::string& acName) -> sol::object
     {
         return GetMod(acName);
@@ -597,6 +602,11 @@ void Scripting::TriggerOnOverlayOpen() const
 void Scripting::TriggerOnOverlayClose() const
 {
     m_store.TriggerOnOverlayClose();
+}
+
+sol::object Scripting::GetMods() const
+{
+    return m_store.GetMods();
 }
 
 sol::object Scripting::GetMod(const std::string& acName) const

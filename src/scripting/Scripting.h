@@ -31,6 +31,7 @@ struct Scripting
     void TriggerOnOverlayOpen() const;
     void TriggerOnOverlayClose() const;
 
+    sol::object GetMods() const;
     sol::object GetMod(const std::string& acName) const;
     void UnloadAllMods();
     void ReloadAllMods();
