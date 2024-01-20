@@ -30,6 +30,13 @@ bool LuaVM::ExecuteLua(const std::string& acCommand) const
     return m_scripting.ExecuteLua(acCommand);
 }
 
+int LuaVM::ThrowLuaError(const std::string& acMessage) const
+{
+    lua_State* state = m_scripting.GetLockedState().Get().lua_state();
+
+    return luaL_error(state, "%s", acMessage.c_str());
+}
+
 void LuaVM::Update(float aDeltaTime)
 {
     if (!m_initialized)

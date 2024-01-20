@@ -33,6 +33,7 @@ struct LuaVM
     [[nodiscard]] const TiltedPhoques::Map<std::string, std::reference_wrapper<const TiltedPhoques::Vector<VKBind>>>& GetAllBinds() const;
 
     bool ExecuteLua(const std::string& acCommand) const;
+    int ThrowLuaError(const std::string& acMessage) const;
 
     void Update(float aDeltaTime);
     void Draw() const;
