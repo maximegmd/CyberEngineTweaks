@@ -23,8 +23,6 @@ struct ScriptContext
     void TriggerOnOverlayClose() const;
 
     [[nodiscard]] sol::object GetRootObject() const;
-    [[nodiscard]] sol::object GetInputHandlers() const;
-    [[nodiscard]] sol::object GetMod() const;
 
 private:
     void TriggerOnShutdown() const;
