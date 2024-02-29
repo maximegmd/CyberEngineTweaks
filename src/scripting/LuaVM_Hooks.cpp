@@ -269,6 +269,12 @@ LuaVM::LuaVM(const Paths& aPaths, const Options& aOptions, VKBindings& aBindings
     // before trying to access it or TweakDBID lookup
     // TweakDBID lookup is on top locked for the duration of the initialization so accessing it should not
     // be possible until it finishes
+
+    aBindings.SetVM(this);
+}
+
+void LuaVM::Prepare()
+{
     std::thread(
         [this]
         {
@@ -280,8 +286,6 @@ LuaVM::LuaVM(const Paths& aPaths, const Options& aOptions, VKBindings& aBindings
             ResourcesList::Get()->Initialize();
         })
         .detach();
-
-    aBindings.SetVM(this);
 }
 
 TDBID* LuaVM::HookTDBIDCtorDerive(TDBID* apBase, TDBID* apThis, const char* acpName)
@@ -345,7 +349,7 @@ void LuaVM::Hook()
     s_vm = this;
 
     {
-        const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_Log);
+        const RED4ext::UniversalRelocPtr<uint8_t> func(CyberEngineTweaks::AddressHashes::CScript_Log);
         uint8_t* pLocation = func.GetAddr();
 
         if (pLocation)
@@ -358,7 +362,7 @@ void LuaVM::Hook()
     }
 
     {
-        const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_LogError);
+        const RED4ext::UniversalRelocPtr<uint8_t> func(CyberEngineTweaks::AddressHashes::CScript_LogError);
         uint8_t* pLocation = func.GetAddr();
 
         if (pLocation)
@@ -371,7 +375,7 @@ void LuaVM::Hook()
     }
 
     {
-        const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_LogWarning);
+        const RED4ext::UniversalRelocPtr<uint8_t> func(CyberEngineTweaks::AddressHashes::CScript_LogWarning);
         uint8_t* pLocation = func.GetAddr();
 
         if (pLocation)
@@ -384,7 +388,7 @@ void LuaVM::Hook()
     }
 
     {
-        const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_LogChannel);
+        const RED4ext::UniversalRelocPtr<uint8_t> func(CyberEngineTweaks::AddressHashes::CScript_LogChannel);
         uint8_t* pLocation = func.GetAddr();
 
         if (pLocation)
@@ -397,7 +401,7 @@ void LuaVM::Hook()
     }
 
     {
-        const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_LogChannelWarning);
+        const RED4ext::UniversalRelocPtr<uint8_t> func(CyberEngineTweaks::AddressHashes::CScript_LogChannelWarning);
         uint8_t* pLocation = func.GetAddr();
 
         if (pLocation)
@@ -410,7 +414,7 @@ void LuaVM::Hook()
     }
 
     {
-        const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_TDBIDConstructorDerive);
+        const RED4ext::UniversalRelocPtr<uint8_t> func(CyberEngineTweaks::AddressHashes::CScript_TDBIDConstructorDerive);
         uint8_t* pLocation = func.GetAddr();
 
         if (pLocation)
@@ -424,7 +428,7 @@ void LuaVM::Hook()
     }
 
     {
-        const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_ToStringDEBUG);
+        const RED4ext::UniversalRelocPtr<uint8_t> func(CyberEngineTweaks::AddressHashes::CScript_ToStringDEBUG);
         uint8_t* pLocation = func.GetAddr();
 
         if (pLocation)
@@ -440,7 +444,7 @@ void LuaVM::Hook()
     }
 
     {
-        const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_TranslateBytecode);
+        const RED4ext::UniversalRelocPtr<uint8_t> func(CyberEngineTweaks::AddressHashes::CScript_TranslateBytecode);
         uint8_t* pLocation = func.GetAddr();
 
         if (pLocation)
@@ -456,7 +460,7 @@ void LuaVM::Hook()
     }
 
     {
-        const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CScript_TweakDBLoad);
+        const RED4ext::UniversalRelocPtr<uint8_t> func(CyberEngineTweaks::AddressHashes::CScript_TweakDBLoad);
         uint8_t* pLocation = func.GetAddr();
 
         if (pLocation)
@@ -471,7 +475,7 @@ void LuaVM::Hook()
     }
 
     {
-        const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::PlayerSystem_OnPlayerSpawned);
+        const RED4ext::UniversalRelocPtr<uint8_t> func(CyberEngineTweaks::AddressHashes::PlayerSystem_OnPlayerSpawned);
         uint8_t* pLocation = func.GetAddr();
 
         if (pLocation)

@@ -4,7 +4,7 @@ set_languages("cxx20")
 set_arch("x64")
 
 add_rules("mode.debug","mode.releasedbg", "mode.release")
-add_rules("plugin.vsxmake.autoupdate")
+--add_rules("plugin.vsxmake.autoupdate")
 add_rules("c.unity_build")
 
 add_cxflags("/bigobj", "/MP")
@@ -66,10 +66,10 @@ target("RED4ext.SDK")
     on_install(function() end)
 
 target("cyber_engine_tweaks")
-    add_defines("WIN32_LEAN_AND_MEAN", "NOMINMAX", "WINVER=0x0601", "SOL_ALL_SAFETIES_ON", "SOL_LUAJIT=1", "SOL_EXCEPTIONS_SAFE_PROPAGATION", "SPDLOG_WCHAR_TO_UTF8_SUPPORT", "SPDLOG_WCHAR_FILENAMES", "SPDLOG_WCHAR_SUPPORT", "IMGUI_USER_CONFIG=\""..imguiUserConfig.."\"") -- WINVER=0x0601 == Windows 7xmake
+    add_defines("WIN32_LEAN_AND_MEAN", "_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING", "NOMINMAX", "WINVER=0x0601", "SOL_ALL_SAFETIES_ON", "SOL_LUAJIT=1", "SOL_EXCEPTIONS_SAFE_PROPAGATION", "SPDLOG_WCHAR_TO_UTF8_SUPPORT", "SPDLOG_WCHAR_FILENAMES", "SPDLOG_WCHAR_SUPPORT", "IMGUI_USER_CONFIG=\""..imguiUserConfig.."\"") -- WINVER=0x0601 == Windows 7xmake
     set_pcxxheader("src/stdafx.h")
     set_kind("shared")
-    set_filename("cyber_engine_tweaks.asi")
+    set_filename("cyber_engine_tweaks.dll")
     add_files("src/**.cpp")
     add_headerfiles("src/**.h", "build/CETVersion.h")
     add_includedirs("src/", "build/")
@@ -83,7 +83,7 @@ target("cyber_engine_tweaks")
 
         os.rm("package/*")
 
-        os.mkdir("package/bin/x64/plugins/cyber_engine_tweaks/tweakdb")
+        os.mkdir("package/red4ext/plugins/cyber_engine_tweaks/tweakdb")
         http.download("https://github.com/WolvenKit/WolvenKit/raw/main/WolvenKit.Common/Resources/usedhashes.kark", "package/bin/x64/plugins/cyber_engine_tweaks/tweakdb/usedhashes.kark")
         http.download("https://github.com/WolvenKit/WolvenKit/raw/main/WolvenKit.Common/Resources/tweakdbstr.kark", "package/bin/x64/plugins/cyber_engine_tweaks/tweakdb/tweakdbstr.kark")
 
@@ -93,12 +93,10 @@ target("cyber_engine_tweaks")
         os.mkdir("package/bin/x64/plugins/cyber_engine_tweaks/fonts")
         os.cp("fonts/*", "package/bin/x64/plugins/cyber_engine_tweaks/fonts")
 
-        os.cp("vendor/asiloader/*", "package/bin/x64/")
-
         os.cp("LICENSE", "package/bin/x64/")
         os.cp("ThirdParty_LICENSES", "package/bin/x64/plugins/cyber_engine_tweaks/ThirdParty_LICENSES")
 
-        os.cp(target:targetfile(), "package/bin/x64/plugins/")
+        os.cp(target:targetfile(), "package/red4ext/plugins/cyber_engine_tweaks/")
     end)
     on_install(function(target)
         cprint("${green bright}Installing Cyber Engine Tweaks ..")

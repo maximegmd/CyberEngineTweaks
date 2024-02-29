@@ -30,7 +30,7 @@ private:
 
     struct StateTickOverride
     {
-        StateTickOverride(const uintptr_t acOffset, const char* acpRealFunctionName);
+        StateTickOverride(uint32_t aHash, const char* acpRealFunctionName);
         ~StateTickOverride();
 
         bool OnTick(RED4ext::IGameState*, RED4ext::CGameApplication*);
@@ -41,10 +41,10 @@ private:
     };
 
     std::array<StateTickOverride, 4> m_stateTickOverrides{
-        StateTickOverride(CyberEngineTweaks::Addresses::CBaseInitializationState_OnTick, "CBaseInitializationState::OnTick"),
-        StateTickOverride(CyberEngineTweaks::Addresses::CInitializationState_OnTick, "CInitializationState::OnTick"),
-        StateTickOverride(CyberEngineTweaks::Addresses::CRunningState_OnTick, "CRunningState::OnTick"),
-        StateTickOverride(CyberEngineTweaks::Addresses::CShutdownState_OnTick, "CShutdownState::OnTick")};
+        StateTickOverride(CyberEngineTweaks::AddressHashes::CBaseInitializationState_OnTick, "CBaseInitializationState::OnTick"),
+        StateTickOverride(CyberEngineTweaks::AddressHashes::CInitializationState_OnTick, "CInitializationState::OnTick"),
+        StateTickOverride(CyberEngineTweaks::AddressHashes::CRunningState_OnTick, "CRunningState::OnTick"),
+        StateTickOverride(CyberEngineTweaks::AddressHashes::CShutdownState_OnTick, "CShutdownState::OnTick")};
 
     RepeatedTaskQueue m_genericQueue;
 };

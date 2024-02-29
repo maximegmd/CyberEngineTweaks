@@ -5,6 +5,6 @@
 
 RenderContext* RenderContext::GetInstance() noexcept
 {
-    static RED4ext::RelocPtr<RenderContext*> s_instance(CyberEngineTweaks::Addresses::CRenderGlobal_InstanceOffset);
+    static RED4ext::UniversalRelocPtr<RenderContext*> s_instance(CyberEngineTweaks::AddressHashes::CRenderGlobal_InstanceOffset);
     return *s_instance.GetAddr();
 }

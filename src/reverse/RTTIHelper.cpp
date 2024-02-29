@@ -19,8 +19,6 @@ constexpr bool s_cThrowLuaErrors = true;
 std::unique_ptr<RTTIHelper> s_pInstance{nullptr};
 
 using TCallScriptFunction = bool (*)(RED4ext::IFunction* apFunction, RED4ext::IScriptable* apContext, RED4ext::CStackFrame* apFrame, void* apResult, void* apResultType);
-
-RED4ext::RelocFunc<TCallScriptFunction> CallScriptFunction(RED4ext::Addresses::CBaseFunction_InternalExecute);
 } // namespace
 
 void RTTIHelper::Initialize(const LockableState& acLua, LuaSandbox& apSandbox)
@@ -773,6 +771,8 @@ void LuaDummyFunction(RED4ext::IScriptable*, RED4ext::CStackFrame* apFrame, void
 bool RTTIHelper::ExecuteFunction(
     RED4ext::CBaseFunction* apFunc, RED4ext::IScriptable* apContext, TiltedPhoques::Vector<RED4ext::CStackType>& aArgs, RED4ext::CStackType& aResult) const
 {
+    static RED4ext::UniversalRelocFunc<TCallScriptFunction> CallScriptFunction(RED4ext::Detail::AddressHashes::CBaseFunction_InternalExecute);
+
     constexpr auto NopOp = 0;
     constexpr auto ParamOp = 27;
     constexpr auto ParamEndOp = 38;

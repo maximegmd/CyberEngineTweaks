@@ -32,6 +32,8 @@ struct LuaVM
     [[nodiscard]] const TiltedPhoques::Vector<VKBind>* GetBinds(const std::string& acModName) const;
     [[nodiscard]] const TiltedPhoques::Map<std::string, std::reference_wrapper<const TiltedPhoques::Vector<VKBind>>>& GetAllBinds() const;
 
+    void Prepare();
+
     bool ExecuteLua(const std::string& acCommand) const;
 
     void Update(float aDeltaTime);

@@ -250,7 +250,7 @@ BOOL Overlay::ClipToCenter(RED4ext::CGameEngine::UnkD0* apThis)
 
 void Overlay::Hook()
 {
-    const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CWinapi_ClipToCenter);
+    const RED4ext::UniversalRelocPtr<uint8_t> func(CyberEngineTweaks::AddressHashes::CWinapi_ClipToCenter);
 
     if (auto* pLocation = func.GetAddr())
     {
@@ -272,7 +272,7 @@ Overlay::Overlay(VKBindings& aBindings, Options& aOptions, PersistentState& aPer
 {
     Hook();
 
-    GameMainThread::Get().AddBaseInitializationTask(
+    GameMainThread::Get().AddInitializationTask(
         [this]
         {
             PostInitialize();

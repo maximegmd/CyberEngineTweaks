@@ -23,9 +23,9 @@ void GameMainThread::RepeatedTaskQueue::Drain()
             ++taskIt;
     }
 }
-GameMainThread::StateTickOverride::StateTickOverride(const uintptr_t acOffset, const char* acpRealFunctionName)
+GameMainThread::StateTickOverride::StateTickOverride(uint32_t aHash, const char* acpRealFunctionName)
 {
-    const RED4ext::RelocPtr<uint8_t> func(acOffset);
+    const RED4ext::UniversalRelocPtr<uint8_t> func(aHash);
     Location = func.GetAddr();
 
     if (Location)

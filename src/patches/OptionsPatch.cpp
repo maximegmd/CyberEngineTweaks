@@ -40,7 +40,7 @@ void* HookGameOptionInit(GameOption* apThis)
 
 void OptionsInitHook()
 {
-    const RED4ext::RelocPtr<uint8_t> func(CyberEngineTweaks::Addresses::CPatches_OptionsInit);
+    const RED4ext::UniversalRelocPtr<uint8_t> func(CyberEngineTweaks::AddressHashes::CPatches_OptionsInit);
     uint8_t* pLocation = func.GetAddr();
 
     if (pLocation)

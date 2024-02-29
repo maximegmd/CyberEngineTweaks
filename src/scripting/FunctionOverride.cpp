@@ -18,7 +18,7 @@ using TCallScriptFunction = bool (*)(RED4ext::IFunction* apFunction, RED4ext::IS
 
 TRunPureScriptFunction RealRunPureScriptFunction = nullptr;
 TCreateFunction RealCreateFunction = nullptr;
-RED4ext::RelocFunc<TCallScriptFunction> CallScriptFunction(RED4ext::Addresses::CBaseFunction_InternalExecute);
+RED4ext::UniversalRelocFunc<TCallScriptFunction> CallScriptFunction(RED4ext::Detail::AddressHashes::CBaseFunction_InternalExecute);
 
 constexpr size_t s_cMaxFunctionSize = std::max({sizeof(RED4ext::CClassFunction), sizeof(RED4ext::CClassStaticFunction), sizeof(RED4ext::CGlobalFunction)});
 
@@ -524,7 +524,7 @@ sol::function FunctionOverride::WrapNextOverride(
 void FunctionOverride::Hook() const
 {
     {
-        const RED4ext::RelocPtr<void> func(CyberEngineTweaks::Addresses::CScript_RunPureScript);
+        const RED4ext::UniversalRelocPtr<void> func(CyberEngineTweaks::AddressHashes::CScript_RunPureScript);
         RealRunPureScriptFunction = reinterpret_cast<TRunPureScriptFunction>(func.GetAddr());
         if (!RealRunPureScriptFunction)
             Log::Error("Could not find pure run script function!");
@@ -541,7 +541,7 @@ void FunctionOverride::Hook() const
     }
 
     {
-        const RED4ext::RelocPtr<void> func(CyberEngineTweaks::Addresses::CScript_AllocateFunction);
+        const RED4ext::UniversalRelocPtr<void> func(CyberEngineTweaks::AddressHashes::CScript_AllocateFunction);
         RealCreateFunction = reinterpret_cast<TCreateFunction>(func.GetAddr());
         if (!RealCreateFunction)
             Log::Error("Could not find create function!");

@@ -11,6 +11,8 @@ static bool s_isRunning{true};
 void CET::Initialize()
 {
     s_pInstance.reset(new CET);
+
+    s_pInstance->GetVM().Prepare();
 }
 
 void CET::Shutdown()

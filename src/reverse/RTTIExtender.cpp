@@ -11,9 +11,9 @@
 
 template <typename T> struct GameCall
 {
-    GameCall(uintptr_t aAddress, const int32_t acOffset = 0)
+    GameCall(uint32_t aHash, const int32_t acOffset = 0)
     {
-        const RED4ext::RelocPtr<uint8_t> addr(aAddress);
+        static RED4ext::UniversalRelocPtr<uint8_t> addr(aHash);
         auto* pLocation = addr.GetAddr();
         m_address = pLocation ? reinterpret_cast<T>(pLocation + acOffset) : nullptr;
     }
@@ -188,7 +188,7 @@ struct TEMP_SpawnSettings
     {
         // Copied from the function photomode uses to spawn 3rd person puppet
         using TFunc = void (*)(const RED4ext::TweakDBID, RED4ext::Handle<RED4ext::IScriptable>&);
-        static GameCall<TFunc> func(CyberEngineTweaks::Addresses::CPhotoMode_SetRecordID);
+        static GameCall<TFunc> func(CyberEngineTweaks::AddressHashes::CPhotoMode_SetRecordID);
 
         DONOTUSE_recordDBID = acTweakDBID;
         func(acTweakDBID, unkB0);
@@ -223,14 +223,14 @@ struct TEMP_Spawner
     void Initialize(RED4ext::GameInstance* apGameInstance)
     {
         using TFunc = void (*)(TEMP_Spawner*, RED4ext::GameInstance*);
-        static GameCall<TFunc> func(CyberEngineTweaks::Addresses::gameIGameSystem_Initialize);
+        static GameCall<TFunc> func(CyberEngineTweaks::AddressHashes::gameIGameSystem_Initialize);
         func(this, apGameInstance);
     }
 
     void UnInitialize()
     {
         using TFunc = void (*)(TEMP_Spawner*);
-        static GameCall<TFunc> func(CyberEngineTweaks::Addresses::gameIGameSystem_UnInitialize);
+        static GameCall<TFunc> func(CyberEngineTweaks::AddressHashes::gameIGameSystem_UnInitialize);
         func(this);
     }
 
@@ -238,7 +238,7 @@ struct TEMP_Spawner
     {
         // REDSmartPtr<TEMP_PendingEntity::Unk00> TEMP_Spawner::func(this, TEMP_SpawnSettings&, RED4ext::CName&)
         using TFunc = void (*)(TEMP_Spawner*, REDSmartPtr<TEMP_PendingEntity::Unk00>*, TEMP_SpawnSettings&, const RED4ext::CName);
-        static GameCall<TFunc> func(CyberEngineTweaks::Addresses::gameIGameSystem_Spawn);
+        static GameCall<TFunc> func(CyberEngineTweaks::AddressHashes::gameIGameSystem_Spawn);
 
         REDSmartPtr<TEMP_PendingEntity::Unk00> pendingEntity;
         func(this, &pendingEntity, aSettings, acEntityPath);
@@ -278,7 +278,7 @@ struct TEMP_Spawner
     void Despawn(const RED4ext::Handle<RED4ext::IScriptable>& aEntity)
     {
         using TFunc = void (*)(TEMP_Spawner*, RED4ext::IScriptable*);
-        static GameCall<TFunc> func(CyberEngineTweaks::Addresses::gameIGameSystem_Despawn);
+        static GameCall<TFunc> func(CyberEngineTweaks::AddressHashes::gameIGameSystem_Despawn);
         func(this, aEntity.GetPtr());
     }
 };
@@ -423,7 +423,7 @@ private:
     static void SpawnCallback(TEMP_PendingEntity::Unk00& aUnk)
     {
         using TFunc = void (*)(IScriptable*, RED4ext::ent::Entity*);
-        static GameCall<TFunc> func(CyberEngineTweaks::Addresses::gameIGameSystem_SpawnCallback);
+        static GameCall<TFunc> func(CyberEngineTweaks::AddressHashes::gameIGameSystem_SpawnCallback);
 
         struct GameInstance_78_Unk
         {

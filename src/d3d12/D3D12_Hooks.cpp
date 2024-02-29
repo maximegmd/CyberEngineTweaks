@@ -256,9 +256,9 @@ void D3D12::Hook()
 
 void D3D12::HookGame()
 {
-    const RED4ext::RelocPtr<void> presentInternal(CyberEngineTweaks::Addresses::CRenderNode_Present_DoInternal);
-    const RED4ext::RelocPtr<void> resizeInternal(CyberEngineTweaks::Addresses::CRenderGlobal_Resize);
-    const RED4ext::RelocPtr<void> shutdownInternal(CyberEngineTweaks::Addresses::CRenderGlobal_Shutdown);
+    const RED4ext::UniversalRelocPtr<void> presentInternal(CyberEngineTweaks::AddressHashes::CRenderNode_Present_DoInternal);
+    const RED4ext::UniversalRelocPtr<void> resizeInternal(CyberEngineTweaks::AddressHashes::CRenderGlobal_Resize);
+    const RED4ext::UniversalRelocPtr<void> shutdownInternal(CyberEngineTweaks::AddressHashes::CRenderGlobal_Shutdown);
 
     if (MH_CreateHook(presentInternal.GetAddr(), reinterpret_cast<void*>(&CRenderNode_Present_InternalPresent), reinterpret_cast<void**>(&m_realInternalPresent)) != MH_OK ||
         MH_EnableHook(presentInternal.GetAddr()) != MH_OK)

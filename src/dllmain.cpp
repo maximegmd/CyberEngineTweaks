@@ -3,6 +3,11 @@
 #include "CET.h"
 
 #include "Options.h"
+#include "RED4ext/Api/EMainReason.hpp"
+#include "RED4ext/Api/PluginHandle.hpp"
+#include "RED4ext/Api/Runtime.hpp"
+#include "RED4ext/Api/Sdk.hpp"
+#include "RED4ext/Api/Version.hpp"
 
 #include "scripting/GameHooks.h"
 
@@ -16,7 +21,7 @@ static HANDLE s_modInstanceMutex = nullptr;
 
 using namespace std::chrono_literals;
 
-static void Initialize()
+static bool Initialize()
 {
     try
     {
@@ -29,7 +34,7 @@ static void Initialize()
         // single instance check
         s_modInstanceMutex = CreateMutex(nullptr, TRUE, TEXT("Cyber Engine Tweaks Module Instance"));
         if (s_modInstanceMutex == nullptr)
-            return;
+            return false;
 
         // initialize patches
 
@@ -52,7 +57,10 @@ static void Initialize()
     }
     catch (...)
     {
+        return false;
     }
+
+    return true;
 }
 
 static void Shutdown()
@@ -79,16 +87,45 @@ static void Shutdown()
     }
 }
 
-BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID)
+RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::PluginHandle aHandle, RED4ext::EMainReason aReason, const RED4ext::Sdk* aSdk)
 {
-    DisableThreadLibraryCalls(mod);
+    RED4EXT_UNUSED_PARAMETER(aHandle);
+    RED4EXT_UNUSED_PARAMETER(aSdk);
 
-    switch (ul_reason_for_call)
+    switch (aReason)
     {
-    case DLL_PROCESS_ATTACH: Initialize(); break;
-    case DLL_PROCESS_DETACH: Shutdown(); break;
-    default: break;
+    case RED4ext::EMainReason::Load:
+    {
+        return Initialize();
+        break;
+    }
+    case RED4ext::EMainReason::Unload:
+    {
+        Shutdown();
+        break;
+    }
     }
 
-    return TRUE;
+    return true;
+}
+
+RED4EXT_C_EXPORT void RED4EXT_CALL Query(RED4ext::PluginInfo* aInfo)
+{
+    aInfo->name = L"Cyber Engine Tweaks";
+    aInfo->author = L"Yamashi and Friends";
+
+    std::istringstream oss(CET_BUILD_COMMIT);
+
+    char buffer;
+    uint32_t major, minor, patch;
+    oss >> buffer >> major >> buffer >> minor >> buffer >> patch;
+
+    aInfo->version = RED4EXT_SEMVER(major, minor, patch);
+    aInfo->runtime = RED4EXT_RUNTIME_INDEPENDENT;
+    aInfo->sdk = RED4EXT_SDK_LATEST;
+}
+
+RED4EXT_C_EXPORT uint32_t RED4EXT_CALL Supports()
+{
+    return RED4EXT_API_VERSION_LATEST;
 }

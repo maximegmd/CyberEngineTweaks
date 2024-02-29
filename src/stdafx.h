@@ -9,6 +9,7 @@
 #include <nlohmann/json.hpp>
 
 #include <RED4ext/CName.hpp>
+#include <RED4ext/Relocation.hpp>
 #include <RED4ext/CString.hpp>
 #include <RED4ext/DynArray.hpp>
 #include "RED4ext/GameApplication.hpp"
