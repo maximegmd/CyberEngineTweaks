@@ -93,7 +93,7 @@ target("cyber_engine_tweaks")
         os.mkdir("package/bin/x64/plugins/cyber_engine_tweaks/fonts")
         os.cp("fonts/*", "package/bin/x64/plugins/cyber_engine_tweaks/fonts")
 
-        os.cp("LICENSE", "package/bin/x64/")
+        os.cp("LICENSE", "package/red4ext/plugins/cyber_engine_tweaks/")
         os.cp("ThirdParty_LICENSES", "package/bin/x64/plugins/cyber_engine_tweaks/ThirdParty_LICENSES")
 
         os.cp(target:targetfile(), "package/red4ext/plugins/cyber_engine_tweaks/")
