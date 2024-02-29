@@ -42,6 +42,8 @@ The current release of CET is available from the releases page:
 
 ## Usage and configuration
 
+You first need to install [RED4ext](https://github.com/WopsS/RED4ext).
+
 [Read the wiki](https://wiki.redmodding.org/cyber-engine-tweaks/)
 
 [Official mod examples](https://github.com/WolvenKit/cet-examples)
