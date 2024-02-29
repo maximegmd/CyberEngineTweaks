@@ -8,9 +8,9 @@ using namespace std::chrono_literals;
 static std::unique_ptr<CET> s_pInstance{nullptr};
 static bool s_isRunning{true};
 
-void CET::Initialize()
+void CET::Initialize(const RED4ext::Sdk* aSdk)
 {
-    s_pInstance.reset(new CET);
+    s_pInstance.reset(new CET(aSdk));
 
     s_pInstance->GetVM().Prepare();
 }
@@ -67,7 +67,7 @@ bool CET::IsRunning() noexcept
     return s_isRunning;
 }
 
-CET::CET()
+CET::CET(const RED4ext::Sdk* aSdk)
     : m_options(m_paths)
     , m_persistentState(m_paths, m_options)
     , m_bindings(m_paths, m_options)
