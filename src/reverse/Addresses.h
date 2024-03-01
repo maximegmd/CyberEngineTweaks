@@ -5,7 +5,7 @@
 namespace CyberEngineTweaks::AddressHashes
 {
 #pragma region CBaseInitializationState
-constexpr uint32_t CBaseInitializationState_OnTick = 2529693960UL;
+constexpr uint32_t CBaseInitializationState_OnTick = 4233370276UL;
 #pragma endregion
 
 #pragma region CGame

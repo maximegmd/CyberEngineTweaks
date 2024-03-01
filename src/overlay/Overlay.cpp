@@ -272,7 +272,7 @@ Overlay::Overlay(VKBindings& aBindings, Options& aOptions, PersistentState& aPer
 {
     Hook();
 
-    GameMainThread::Get().AddInitializationTask(
+    GameMainThread::Get().AddBaseInitializationTask(
         [this]
         {
             PostInitialize();
