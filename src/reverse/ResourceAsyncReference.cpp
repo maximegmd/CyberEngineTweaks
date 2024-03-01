@@ -13,18 +13,12 @@ ResourceAsyncReference::ResourceAsyncReference(
 
 uint64_t ResourceAsyncReference::Hash(const std::string& aPath)
 {
-    // Should probably be moved to RED4ext.SDK after fixing RED4ext::RaRef
-    // Needs normalization
-    // 1) all lower case
-    // 2) / becomes \
-    // 3) /\/\\ becomes \
-
-    return RED4ext::FNV1a64(aPath.c_str());
+    return RED4ext::ResourcePath(aPath.c_str());
 }
 
 RED4ext::ScriptInstance ResourceAsyncReference::GetHandle() const
 {
-    return const_cast<RED4ext::ResourceAsyncReference<void>*>(&m_reference);
+    return nullptr;
 }
 
 RED4ext::ScriptInstance ResourceAsyncReference::GetValuePtr() const
@@ -46,7 +40,7 @@ sol::object ResourceAsyncReference::GetLuaHash() const
 
     RED4ext::CStackType stackType;
     stackType.type = s_uint64Type;
-    stackType.value = GetHandle();
+    stackType.value = const_cast<RED4ext::ResourceAsyncReference<void>*>(&m_reference);
 
     return Converter::ToLua(stackType, lockedState);
 }
