@@ -220,9 +220,7 @@ void GameOptions::Set(const std::string& category, const std::string& name, cons
         return;
 
     const auto consoleLogger = spdlog::get("scripting");
-    if (option->Set(value))
-        consoleLogger->info(option->GetInfo());
-    else
+    if (!option->Set(value))
     {
         if (option->GetType() == GameOption::kString)
             consoleLogger->error("Failed to set game option '{}/{}', can't set string options right now.", category, name);
@@ -238,9 +236,7 @@ void GameOptions::SetBool(const std::string& category, const std::string& name, 
         return;
 
     const auto consoleLogger = spdlog::get("scripting");
-    if (option->SetBool(value))
-        consoleLogger->info(option->GetInfo());
-    else
+    if (!option->SetBool(value))
     {
         if (option->GetType() != GameOption::kBoolean)
             consoleLogger->error("Failed to set game option '{}/{}', not a boolean.", category, name);
@@ -256,9 +252,7 @@ void GameOptions::SetInt(const std::string& category, const std::string& name, i
         return;
 
     const auto consoleLogger = spdlog::get("scripting");
-    if (option->SetInt(value))
-        consoleLogger->info(option->GetInfo());
-    else
+    if (!option->SetInt(value))
     {
         if (option->GetType() != GameOption::kInteger && option->GetType() != GameOption::kColor)
             consoleLogger->error("Failed to set game option '{}/{}', not an integer.", category, name);
@@ -274,9 +268,7 @@ void GameOptions::SetFloat(const std::string& category, const std::string& name,
         return;
 
     const auto consoleLogger = spdlog::get("scripting");
-    if (option->SetFloat(value))
-        consoleLogger->info(option->GetInfo());
-    else
+    if (!option->SetFloat(value))
     {
         if (option->GetType() != GameOption::kFloat)
             consoleLogger->error("Failed to set game option '{}/{}', not a float.", category, name);
@@ -292,9 +284,7 @@ void GameOptions::Toggle(const std::string& category, const std::string& name)
         return;
 
     const auto consoleLogger = spdlog::get("scripting");
-    if (option->Toggle())
-        consoleLogger->info(option->GetInfo());
-    else
+    if (!option->Toggle())
     {
         if (option->GetType() != GameOption::kBoolean)
             consoleLogger->error("Failed to set game option '{}/{}', not a boolean.", category, name);
