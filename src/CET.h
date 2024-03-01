@@ -6,14 +6,13 @@
 #include "VKBindings.h"
 #include "d3d12/D3D12.h"
 #include "overlay/Overlay.h"
-#include "RED4ext/Api/Sdk.hpp"
 #include "scripting/LuaVM.h"
 
 struct CET
 {
     ~CET();
 
-    static void Initialize(const RED4ext::Sdk* aSdk);
+    static void Initialize();
     static void Shutdown();
     static CET& Get();
 
@@ -28,7 +27,7 @@ struct CET
     static bool IsRunning() noexcept;
 
 private:
-    CET(const RED4ext::Sdk* aSdk);
+    CET();
 
     Paths m_paths;
     Options m_options;

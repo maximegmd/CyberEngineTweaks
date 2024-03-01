@@ -21,15 +21,13 @@ static HANDLE s_modInstanceMutex = nullptr;
 
 using namespace std::chrono_literals;
 
-static bool Initialize(RED4ext::PluginHandle aHandle, const RED4ext::Sdk* aSdk)
+static bool Initialize()
 {
     try
     {
         MH_Initialize();
 
-        GameMainThread::Create(aHandle, aSdk);
-
-        CET::Initialize(aSdk);
+        CET::Initialize();
 
         const auto& options = CET::Get().GetOptions();
 
@@ -92,12 +90,13 @@ static void Shutdown()
 RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::PluginHandle aHandle, RED4ext::EMainReason aReason, const RED4ext::Sdk* aSdk)
 {
     RED4EXT_UNUSED_PARAMETER(aHandle);
+    RED4EXT_UNUSED_PARAMETER(aSdk);
 
     switch (aReason)
     {
     case RED4ext::EMainReason::Load:
     {
-        return Initialize(aHandle, aSdk);
+        return Initialize();
         break;
     }
     case RED4ext::EMainReason::Unload:
