@@ -20,7 +20,7 @@ constexpr uint32_t CInitializationState_OnTick = 2447710505UL;
 constexpr uint32_t CPatches_BoundaryTeleport = 887623293UL;
 constexpr uint32_t CPatches_IntroMovie = 4056423627UL;
 constexpr uint32_t CPatches_Vignette = 1592528795UL;
-constexpr uint32_t CPatches_OptionsInit = 2920158527UL;
+constexpr uint32_t CPatches_OptionsInit = 4089777341UL; // Config::IConfigVar::Register
 #pragma endregion
 
 #pragma region CPhotoMode
