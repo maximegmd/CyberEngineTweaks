@@ -106,16 +106,6 @@ target("cyber_engine_tweaks")
         cprint("Cyber Engine Tweaks installed at: ${underline}%s", "$(installpath)")
     end)
 
-target("fake_cyber_engine_tweaks")
-    set_kind("shared")
-    set_group("yawn")
-    set_filename("cyber_engine_tweaks.dll")
-    add_files("yawn/dllmain.cpp")
-
-    on_package(function(target)
-        os.cp(target:targetfile(), "package/red4ext/plugins/cyber_engine_tweaks/")
-    end)
-
 option("installpath")
     set_default("installpath")
     set_showmenu(true)
