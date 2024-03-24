@@ -78,9 +78,9 @@ void Settings::OnUpdate()
                 UpdateAndDrawSetting(
                     "Disable Boundary Teleport", "Allows players to access out-of-bounds locations (requires restart to take effect).", m_patches.DisableBoundaryTeleport,
                     patchesSettings.DisableBoundaryTeleport);
-                UpdateAndDrawSetting("Disable V-Sync (Windows 7 only)", " (requires restart to take effect).", m_patches.DisableWin7Vsync, patchesSettings.DisableWin7Vsync);
+                UpdateAndDrawSetting("Disable V-Sync (Windows 7 only)", "Disables VSync on Windows 7 to bypass the 60 FPS limit (requires restart to take effect).", m_patches.DisableWin7Vsync, patchesSettings.DisableWin7Vsync);
                 UpdateAndDrawSetting(
-                    "Fix Minimap Flicker", "Disables VSync on Windows 7 to bypass the 60 FPS limit (requires restart to take effect).", m_patches.MinimapFlicker,
+                    "Fix Minimap Flicker", "Fixes the flickering Minimap (requires restart to take effect).", m_patches.MinimapFlicker,
                     patchesSettings.MinimapFlicker);
 
                 ImGui::EndTable();
