@@ -29,6 +29,7 @@ void LogWindow::Draw(const ImVec2& size)
     const auto& style = ImGui::GetStyle();
 
     const auto frameId = ImGui::GetID(("##" + m_loggerName).c_str());
+    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0, 0, 0.5f));
     if (ImGui::BeginChildFrame(frameId, size, ImGuiWindowFlags_HorizontalScrollbar))
     {
         std::lock_guard _{m_lock};
@@ -61,7 +62,7 @@ void LogWindow::Draw(const ImVec2& size)
                 case spdlog::level::level_enum::warn: ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{1.0f, 1.0f, 0.0f, 1.0f}); break;
 
                 case spdlog::level::level_enum::err:
-                case spdlog::level::level_enum::critical: ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{1.0f, 0.0f, 0.0f, 1.0f}); break;
+                case spdlog::level::level_enum::critical: ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{1.0f, 0.1f, 0.2f, 1.0f}); break;
 
                 case spdlog::level::level_enum::info:
                 default: ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_Text));
@@ -95,6 +96,7 @@ void LogWindow::Draw(const ImVec2& size)
         }
     }
     ImGui::EndChildFrame();
+    ImGui::PopStyleColor(1); // pop ImGuiCol_FrameBg
 }
 
 void LogWindow::Log(const std::string& acpText)
