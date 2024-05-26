@@ -7,7 +7,7 @@ add_rules("mode.debug","mode.releasedbg", "mode.release")
 add_rules("c.unity_build")
 
 add_cxflags("/bigobj", "/MP", "/EHsc")
-add_defines("RED4EXT_STATIC_LIB", "UNICODE", "_UNICODE", "_CRT_SECURE_NO_WARNINGS")
+add_defines("UNICODE", "_UNICODE", "_CRT_SECURE_NO_WARNINGS")
 
 local vsRuntime = "MD"
 
@@ -53,13 +53,12 @@ add_requires("stb")
 add_requires("sol2", { configs = { includes_lua = false } })
 add_requires("openrestry-luajit", { configs = { gc64 = true } })
 
-local imguiUserConfig = path.absolute("src/imgui_impl/imgui_user_config.h")
+local imguiUserConfig = string.gsub(path.absolute("src/imgui_impl/imgui_user_config.h"), "\\", "/")
 add_requires("imgui v1.88-docking", { configs = { wchar32 = true, freetype = true, user_config = imguiUserConfig } })
 
 target("RED4ext.SDK")
     set_kind("static")
     set_group("vendor")
-    add_files("vendor/RED4ext.SDK/src/**.cpp")
     add_headerfiles("vendor/RED4ext.SDK/include/**.hpp")
     add_includedirs("vendor/RED4ext.SDK/include/", { public = true })
     on_install(function() end)

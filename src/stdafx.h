@@ -1,5 +1,7 @@
 #pragma once
 
+#include "reverse/Relocation.h"
+
 #include <sol/sol.hpp>
 #include <spdlog/spdlog.h>
 #include <imgui.h>

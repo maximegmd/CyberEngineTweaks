@@ -700,10 +700,11 @@ void FunctionOverride::CopyFunctionDescription(RED4ext::CBaseFunction* aFunc, RE
     }
 
     aFunc->unk20 = aRealFunc->unk20;
-    aFunc->bytecode = aRealFunc->bytecode;
     aFunc->unk48 = aRealFunc->unk48;
     aFunc->unkAC = aRealFunc->unkAC;
 
     aFunc->flags = aRealFunc->flags;
     aFunc->flags.isNative = aForceNative;
+
+    std::memcpy(&aFunc->bytecode, &aRealFunc->bytecode, sizeof(aRealFunc->bytecode));
 }
