@@ -57,7 +57,7 @@ local imguiUserConfig = string.gsub(path.absolute("src/imgui_impl/imgui_user_con
 add_requires("imgui v1.88-docking", { configs = { wchar32 = true, freetype = true, user_config = imguiUserConfig } })
 
 target("RED4ext.SDK")
-    set_kind("static")
+    set_kind("headeronly")
     set_group("vendor")
     add_headerfiles("vendor/RED4ext.SDK/include/**.hpp")
     add_includedirs("vendor/RED4ext.SDK/include/", { public = true })
