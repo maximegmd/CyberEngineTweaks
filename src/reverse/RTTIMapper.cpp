@@ -56,7 +56,7 @@ void RTTIMapper::RegisterSimpleTypes(sol::state& aLuaState, sol::table& aLuaGlob
     aLuaGlobal["ToVariant"] = sol::overload(
         [](const Type& aInstance, sol::this_state aState) -> sol::object
         {
-            const auto* pType = aInstance.GetType();
+            auto* pType = aInstance.GetValueType();
             auto* pValue = aInstance.GetValuePtr();
 
             if (!pType || !pValue)

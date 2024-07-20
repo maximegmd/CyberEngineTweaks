@@ -10,6 +10,7 @@ static RTTILocator s_sIScriptableType{RED4ext::FNV1a64("IScriptable")};
 WeakReference::WeakReference(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::WeakHandle<RED4ext::IScriptable> aWeakHandle)
     : ClassType(aView, nullptr)
     , m_weakHandle(std::move(aWeakHandle))
+    , m_pHandleType(nullptr)
 {
     const auto ref = m_weakHandle.Lock();
     if (ref)
@@ -23,6 +24,7 @@ WeakReference::WeakReference(
     RED4ext::CRTTIWeakHandleType* apWeakHandleType)
     : ClassType(aView, nullptr)
     , m_weakHandle(std::move(aWeakHandle))
+    , m_pHandleType(apWeakHandleType)
 {
     const auto ref = m_weakHandle.Lock();
     if (ref)
@@ -57,4 +59,9 @@ RED4ext::ScriptInstance WeakReference::GetHandle() const
 RED4ext::ScriptInstance WeakReference::GetValuePtr() const
 {
     return const_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(&m_weakHandle);
+}
+
+RED4ext::CBaseRTTIType* WeakReference::GetValueType() const
+{
+    return m_pHandleType;
 }

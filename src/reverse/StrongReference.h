@@ -13,10 +13,12 @@ struct StrongReference : ClassType
 protected:
     RED4ext::ScriptInstance GetHandle() const override;
     RED4ext::ScriptInstance GetValuePtr() const override;
+    RED4ext::CBaseRTTIType* GetValueType() const override;
 
 private:
     friend struct Scripting;
     friend struct TweakDB;
 
     RED4ext::Handle<RED4ext::IScriptable> m_strongHandle;
+    RED4ext::CRTTIHandleType* m_pHandleType;
 };
