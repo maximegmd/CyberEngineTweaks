@@ -100,7 +100,7 @@ bool ResourcesList::IsInitialized() const
 
 const std::string& ResourcesList::Resolve(uint64_t aHash)
 {
-    static std::string defaultName = "ERROR_UNKNOWN_RESOURCE";
+    static std::string defaultName = "UNRESOLVED_RESOURCE_PATH";
 
     const auto it = m_resourcesByHash.find(aHash);
 

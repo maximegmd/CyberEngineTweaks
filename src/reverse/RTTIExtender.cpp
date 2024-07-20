@@ -1,6 +1,5 @@
 #include "RTTIExtender.h"
 
-#include <RED4ext/SharedMutex.hpp>
 #include <RED4ext/Scripting/Natives/Generated/Transform.hpp>
 #include <RED4ext/Scripting/Natives/Generated/WorldTransform.hpp>
 #include <RED4ext/Scripting/Natives/Generated/ent/Entity.hpp>
@@ -204,9 +203,9 @@ struct TEMP_Spawner
     RED4ext::DynArray<RED4ext::Handle<RED4ext::IScriptable>> spawnedEntities;
     RED4ext::DynArray<TEMP_PendingEntity> pendingEntities;
     RED4ext::DynArray<void*> unk30;
-    uint8_t unk40 = 0;                       // most likely a mutex
-    RED4ext::SharedMutex entitiesMtx;        // used in DespawnEntity
-    RED4ext::SharedMutex pendingEntitiesMtx; // used in SpawnEntity
+    uint8_t unk40 = 0;                          // most likely a mutex
+    RED4ext::SharedSpinLock entitiesMtx;        // used in DespawnEntity
+    RED4ext::SharedSpinLock pendingEntitiesMtx; // used in SpawnEntity
     uintptr_t unk48 = 0;
     uintptr_t unk50 = 0;
     uintptr_t unk58 = 0;

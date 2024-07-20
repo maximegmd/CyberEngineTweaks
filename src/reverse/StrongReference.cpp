@@ -10,6 +10,7 @@ static RTTILocator s_sIScriptableType{RED4ext::FNV1a64("IScriptable")};
 StrongReference::StrongReference(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::Handle<RED4ext::IScriptable> aStrongHandle)
     : ClassType(aView, nullptr)
     , m_strongHandle(std::move(aStrongHandle))
+    , m_pHandleType(nullptr)
 {
     if (m_strongHandle)
     {
@@ -21,6 +22,7 @@ StrongReference::StrongReference(
     const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::Handle<RED4ext::IScriptable> aStrongHandle, RED4ext::CRTTIHandleType* apStrongHandleType)
     : ClassType(aView, nullptr)
     , m_strongHandle(std::move(aStrongHandle))
+    , m_pHandleType(apStrongHandleType)
 {
     if (m_strongHandle)
     {
@@ -48,4 +50,9 @@ RED4ext::ScriptInstance StrongReference::GetHandle() const
 RED4ext::ScriptInstance StrongReference::GetValuePtr() const
 {
     return const_cast<RED4ext::Handle<RED4ext::IScriptable>*>(&m_strongHandle);
+}
+
+RED4ext::CBaseRTTIType* StrongReference::GetValueType() const
+{
+    return m_pHandleType;
 }

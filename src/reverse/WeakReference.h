@@ -13,10 +13,12 @@ struct WeakReference : ClassType
 protected:
     RED4ext::ScriptInstance GetHandle() const override;
     RED4ext::ScriptInstance GetValuePtr() const override;
+    RED4ext::CBaseRTTIType* GetValueType() const override;
 
 private:
     friend struct Scripting;
     friend struct TweakDB;
 
     RED4ext::WeakHandle<RED4ext::IScriptable> m_weakHandle;
+    RED4ext::CRTTIWeakHandleType* m_pHandleType;
 };

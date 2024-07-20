@@ -56,7 +56,7 @@ void RTTIMapper::RegisterSimpleTypes(sol::state& aLuaState, sol::table& aLuaGlob
     aLuaGlobal["ToVariant"] = sol::overload(
         [](const Type& aInstance, sol::this_state aState) -> sol::object
         {
-            const auto* pType = aInstance.GetType();
+            auto* pType = aInstance.GetValueType();
             auto* pValue = aInstance.GetValuePtr();
 
             if (!pType || !pValue)
@@ -199,6 +199,14 @@ void RTTIMapper::RegisterDirectGlobals(sol::table& aLuaGlobal, RED4ext::CRTTISys
                 if (!cIsClassFunc && !cIsOperatorFunc)
                 {
                     aLuaGlobal[cShortName] = RTTIHelper::Get().ResolveFunction(cShortName);
+
+                    std::string sanitizedName = cShortName;
+                    SanitizeName(sanitizedName);
+
+                    if (sanitizedName != cShortName)
+                    {
+                        aLuaGlobal[sanitizedName] = aLuaGlobal[cShortName];
+                    }
                 }
             }
         });
