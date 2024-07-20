@@ -199,6 +199,14 @@ void RTTIMapper::RegisterDirectGlobals(sol::table& aLuaGlobal, RED4ext::CRTTISys
                 if (!cIsClassFunc && !cIsOperatorFunc)
                 {
                     aLuaGlobal[cShortName] = RTTIHelper::Get().ResolveFunction(cShortName);
+
+                    std::string sanitizedName = cShortName;
+                    SanitizeName(sanitizedName);
+
+                    if (sanitizedName != cShortName)
+                    {
+                        aLuaGlobal[sanitizedName] = aLuaGlobal[cShortName];
+                    }
                 }
             }
         });
