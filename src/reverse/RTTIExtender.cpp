@@ -501,6 +501,8 @@ public:
         pGameInstance->systemInstances.PushBack(systemInstance);
 
         Singleton = systemInstance.instance;
+
+        exEntitySpawner_Spawner.Initialize(pGameInstance);
     }
 
     static void Spawn(IScriptable*, RED4ext::CStackFrame* apFrame, RED4ext::ent::EntityID* apOut, int64_t)
