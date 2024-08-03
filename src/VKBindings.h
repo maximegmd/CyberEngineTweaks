@@ -19,6 +19,7 @@ struct VKBind
     std::string DisplayName{};
     std::variant<std::string, std::function<void()>> Description{};
     std::variant<std::function<TVKBindHotkeyCallback>, std::function<TVKBindInputCallback>> Handler{};
+    bool m_isOverlayHotkey{false};
 
     [[nodiscard]] std::function<void()> DelayedCall(const bool acIsDown) const;
     void Call(const bool acIsDown) const;

@@ -677,7 +677,7 @@ void VKBindings::ExecuteRecording()
             // binding state! only exception allowed is any CET bind
             const auto& overlayToggleModBind = Bindings::GetOverlayToggleModBind();
             const auto cetModBind = modBind.ModName == overlayToggleModBind.ModName;
-            if (!cetModBind && (!m_cpVm->IsInitialized() || CET::Get().GetOverlay().IsEnabled()))
+            if (!cetModBind && (!m_cpVm->IsInitialized() || CET::Get().GetOverlay().IsEnabled() != vkBind->m_isOverlayHotkey))
                 return;
 
             // this handler is not for inputs! it should be used only on key up event for hotkeys!

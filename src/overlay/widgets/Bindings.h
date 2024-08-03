@@ -37,9 +37,9 @@ protected:
 private:
     void Initialize();
     void UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKBindInfo);
-    void UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoques::Vector<VKBindInfo>& aVKBindInfos, size_t aHotkeyCount, bool aSimplified = false);
+    void UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoques::Vector<VKBindInfo>& aVKBindInfos, std::pair<size_t, size_t> aHotkeyCounts, bool aSimplified = false);
 
-    TiltedPhoques::Map<std::string, std::pair<TiltedPhoques::Vector<VKBindInfo>, size_t>> m_vkBindInfos{};
+    TiltedPhoques::Map<std::string, std::pair<TiltedPhoques::Vector<VKBindInfo>, std::pair<size_t, size_t>>> m_vkBindInfos{};
     VKBindings& m_bindings;
     LuaVM& m_vm;
 

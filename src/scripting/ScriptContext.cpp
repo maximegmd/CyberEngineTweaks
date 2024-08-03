@@ -117,7 +117,7 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
 
     auto registerBinding = [this, &wrapHandler, &wrapDescription](
                                const std::string& acID, const std::string& acDisplayName, const std::variant<std::string, sol::function>& acDescription, sol::function aCallback,
-                               const bool acIsHotkey)
+                               const bool acIsHotkey, const bool acIsOverlayHotkey)
     {
         const auto inputTypeStr = acIsHotkey ? "hotkey" : "input";
 
@@ -146,22 +146,29 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
             return;
         }
 
-        m_vkBinds.emplace_back(acID, acDisplayName, wrapDescription(acDescription), wrapHandler(aCallback, acIsHotkey));
+        m_vkBinds.emplace_back(acID, acDisplayName, wrapDescription(acDescription), wrapHandler(aCallback, acIsHotkey), acIsOverlayHotkey);
     };
 
     env["registerHotkey"] = sol::overload(
         [&registerBinding](const std::string& acID, const std::string& acDisplayName, sol::function acDescriptionCallback, sol::function aCallback)
-        { registerBinding(acID, acDisplayName, acDescriptionCallback, aCallback, true); },
+        { registerBinding(acID, acDisplayName, acDescriptionCallback, aCallback, true, false); },
         [&registerBinding](const std::string& acID, const std::string& acDisplayName, const std::string& acDescription, sol::function aCallback)
-        { registerBinding(acID, acDisplayName, acDescription, aCallback, true); },
-        [&registerBinding](const std::string& acID, const std::string& acDescription, sol::function aCallback) { registerBinding(acID, acDescription, "", aCallback, true); });
+        { registerBinding(acID, acDisplayName, acDescription, aCallback, true, false); },
+        [&registerBinding](const std::string& acID, const std::string& acDescription, sol::function aCallback) { registerBinding(acID, acDescription, "", aCallback, true, false); });
+
+    env["registerOverlayHotkey"] = sol::overload(
+        [&registerBinding](const std::string& acID, const std::string& acDisplayName, sol::function acDescriptionCallback, sol::function aCallback)
+        { registerBinding(acID, acDisplayName, acDescriptionCallback, aCallback, true, true); },
+        [&registerBinding](const std::string& acID, const std::string& acDisplayName, const std::string& acDescription, sol::function aCallback)
+        { registerBinding(acID, acDisplayName, acDescription, aCallback, true, true); },
+        [&registerBinding](const std::string& acID, const std::string& acDescription, sol::function aCallback) { registerBinding(acID, acDescription, "", aCallback, true, true); });
 
     env["registerInput"] = sol::overload(
         [&registerBinding](const std::string& acID, const std::string& acDisplayName, sol::function acDescriptionCallback, sol::function aCallback)
-        { registerBinding(acID, acDisplayName, acDescriptionCallback, aCallback, false); },
+        { registerBinding(acID, acDisplayName, acDescriptionCallback, aCallback, false, false); },
         [&registerBinding](const std::string& acID, const std::string& acDisplayName, const std::string& acDescription, sol::function aCallback)
-        { registerBinding(acID, acDisplayName, acDescription, aCallback, false); },
-        [registerBinding](const std::string& acID, const std::string& acDescription, sol::function aCallback) { registerBinding(acID, acDescription, "", aCallback, false); });
+        { registerBinding(acID, acDisplayName, acDescription, aCallback, false, false); },
+        [registerBinding](const std::string& acID, const std::string& acDescription, sol::function aCallback) { registerBinding(acID, acDescription, "", aCallback, false, false); });
 
     // TODO: proper exception handling!
     try
@@ -193,6 +200,7 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
 
     env["registerForEvent"] = sol::nil;
     env["registerHotkey"] = sol::nil;
+    env["registerOverlayHotkey"] = sol::nil;
     env["registerInput"] = sol::nil;
 }
 
