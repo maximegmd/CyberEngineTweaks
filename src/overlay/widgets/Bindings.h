@@ -12,6 +12,13 @@ struct VKBindInfo
     bool operator==(const std::string& id) const;
 };
 
+struct ModBindCount
+{
+    size_t hotkeyCount{0};
+    size_t overlayHotkeyCount{0};
+    size_t inputCount{0};
+};
+
 struct LuaVM;
 struct Bindings : Widget
 {
@@ -37,9 +44,9 @@ protected:
 private:
     void Initialize();
     void UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKBindInfo);
-    void UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoques::Vector<VKBindInfo>& aVKBindInfos, std::pair<size_t, size_t> aHotkeyCounts, bool aSimplified = false);
+    void UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoques::Vector<VKBindInfo>& aVKBindInfos, ModBindCount acBindCount, bool aSimplified = false);
 
-    TiltedPhoques::Map<std::string, std::pair<TiltedPhoques::Vector<VKBindInfo>, std::pair<size_t, size_t>>> m_vkBindInfos{};
+    TiltedPhoques::Map<std::string, std::pair<TiltedPhoques::Vector<VKBindInfo>, ModBindCount>> m_vkBindInfos{};
     VKBindings& m_bindings;
     LuaVM& m_vm;
 

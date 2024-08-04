@@ -9,11 +9,11 @@ namespace
 {
 VKBind s_overlayToggleBind{
     "overlay_key", "Overlay Key", "Use this hotkey to toggle overlay on and off.",
-    []
+    TVKBindHotkeyCallback([]
     {
         if (!CET::Get().GetBindings().IsRecordingBind())
             CET::Get().GetOverlay().Toggle();
-    }};
+    })};
 VKBindInfo s_overlayToggleBindInfo{s_overlayToggleBind, 0, 0, false};
 VKModBind s_overlayToggleModBind{"cet", s_overlayToggleBind.ID};
 } // namespace
@@ -234,19 +234,15 @@ void Bindings::Initialize()
 
     // emplace CET internal settings
     {
-        auto& [vkBindInfos, hotkeyCounts] = m_vkBindInfos[s_overlayToggleModBind.ModName];
-        auto& [hotkeyCount, overlayHotkeyCount] = hotkeyCounts;
+        auto& [vkBindInfos, modBindCounts] = m_vkBindInfos[s_overlayToggleModBind.ModName];
         vkBindInfos.emplace_back(s_overlayToggleBindInfo);
-        hotkeyCount = 1;
-        overlayHotkeyCount = 0;
+        modBindCounts.hotkeyCount = 1;
     }
 
     // emplace mod bindings
     for (const auto& modBindsIt : allModsBinds)
     {
-        auto& [vkBindInfos, hotkeyCounts] = m_vkBindInfos[modBindsIt.first];
-        auto& [hotkeyCount, overlayHotkeyCount] = hotkeyCounts;
-        hotkeyCount = 0;
+        auto& [vkBindInfos, modBindCounts] = m_vkBindInfos[modBindsIt.first];
         for (const auto& vkBind : modBindsIt.second.get())
         {
             auto& vkBindInfo = vkBindInfos.emplace_back(vkBind);
@@ -254,9 +250,11 @@ void Bindings::Initialize()
             vkBindInfo.CodeBind = vkBindInfo.SavedCodeBind;
 
             if (vkBind.IsHotkey())
-                ++hotkeyCount;
-            if (vkBind.m_isOverlayHotkey)
-                ++overlayHotkeyCount;
+                ++modBindCounts.hotkeyCount;
+            if (vkBind.IsOverlayHotkey())
+                ++modBindCounts.overlayHotkeyCount;
+            if (vkBind.IsInput())
+                ++modBindCounts.inputCount;
         }
     }
 
@@ -438,7 +436,7 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
     m_madeChanges |= aVKBindInfo.IsBinding || aVKBindInfo.CodeBind != aVKBindInfo.SavedCodeBind;
 }
 
-void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoques::Vector<VKBindInfo>& aVKBindInfos, std::pair<size_t, size_t> aHotkeyCounts, bool aSimplified)
+void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoques::Vector<VKBindInfo>& aVKBindInfos, const ModBindCount acBindCount, bool aSimplified)
 {
     if (aVKBindInfos.empty())
         return;
@@ -472,11 +470,11 @@ void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoq
 
     ImGui::TreePush();
 
-    if (aHotkeyCounts.first > 0)
+    if (acBindCount.hotkeyCount > 0 || acBindCount.overlayHotkeyCount > 0)
     {
         if (!aSimplified)
         {
-            if (aHotkeyCounts.first - aHotkeyCounts.second > 0)
+            if (acBindCount.hotkeyCount > 0)
             {
                 ImGui::SetCursorPosX(ImGui::GetCursorPosX() + GetCenteredOffsetForText("Hotkeys"));
                 ImGui::TextUnformatted("Hotkeys");
@@ -489,14 +487,14 @@ void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoq
                 {
                     for (auto& binding : aVKBindInfos)
                     {
-                        if (binding.Bind.IsHotkey() && !binding.Bind.m_isOverlayHotkey)
+                        if (binding.Bind.IsHotkey())
                             UpdateAndDrawBinding({acModName, binding.Bind.ID}, binding);
                     }
 
                     ImGui::EndTable();
                 }
             }
-            if (aHotkeyCounts.second > 0)
+            if (acBindCount.overlayHotkeyCount > 0)
             {
                 ImGui::SetCursorPosX(ImGui::GetCursorPosX() + GetCenteredOffsetForText("Overlay Hotkeys"));
                 ImGui::TextUnformatted("Overlay Hotkeys");
@@ -509,7 +507,7 @@ void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoq
                 {
                     for (auto& binding : aVKBindInfos)
                     {
-                        if (binding.Bind.IsHotkey() && binding.Bind.m_isOverlayHotkey)
+                        if (binding.Bind.IsOverlayHotkey())
                             UpdateAndDrawBinding({acModName, binding.Bind.ID}, binding);
                     }
 
@@ -519,7 +517,7 @@ void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoq
         }
     }
 
-    if (aHotkeyCounts.first < aVKBindInfos.size())
+    if (acBindCount.inputCount > 0)
     {
         if (!aSimplified)
         {

@@ -1,7 +1,57 @@
 #pragma once
 
-using TVKBindHotkeyCallback = void();
-using TVKBindInputCallback = void(bool);
+enum class TVKBindType : int8_t
+{
+    Invalid = -1,
+    Input = 0,
+    Hotkey = 1,
+    OverlayHotkey = 2
+};
+
+class TVKBindInputCallback
+{
+public:
+    TVKBindInputCallback(std::function<void(bool)> functor)
+        : m_functor(std::move(functor))
+    {
+    }
+
+    void operator()(bool isKeyDown) const
+    {
+        if (m_functor)
+            m_functor(isKeyDown);
+    }
+
+private:
+    std::function<void(bool)> m_functor;
+};
+
+class TVKBindHotkeyCallback
+{
+public:
+    TVKBindHotkeyCallback(std::function<void()> functor)
+        : m_functor(std::move(functor))
+    {
+    }
+    virtual ~TVKBindHotkeyCallback() = default;
+
+    void operator()() const
+    {
+        if (m_functor)
+            m_functor();
+    }
+
+private:
+    std::function<void()> m_functor;
+};
+
+class TVKBindOverlayHotkeyCallback final : public TVKBindHotkeyCallback
+{
+public:
+    using TVKBindHotkeyCallback::TVKBindHotkeyCallback;
+};
+
+using TVKBindHandler = std::variant<std::monostate, TVKBindInputCallback, TVKBindHotkeyCallback, TVKBindOverlayHotkeyCallback>;
 
 using VKCodeBindDecoded = std::array<uint16_t, 4>;
 
@@ -18,14 +68,15 @@ struct VKBind
     std::string ID{};
     std::string DisplayName{};
     std::variant<std::string, std::function<void()>> Description{};
-    std::variant<std::function<TVKBindHotkeyCallback>, std::function<TVKBindInputCallback>> Handler{};
-    bool m_isOverlayHotkey{false};
+    TVKBindHandler Handler{};
 
     [[nodiscard]] std::function<void()> DelayedCall(const bool acIsDown) const;
     void Call(const bool acIsDown) const;
 
     [[nodiscard]] bool IsHotkey() const;
+    [[nodiscard]] bool IsOverlayHotkey() const;
     [[nodiscard]] bool IsInput() const;
+    [[nodiscard]] bool IsValid() const;
 
     [[nodiscard]] bool HasSimpleDescription() const;
     [[nodiscard]] bool HasComplexDescription() const;

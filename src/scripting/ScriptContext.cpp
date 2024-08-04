@@ -1,6 +1,7 @@
 #include <stdafx.h>
 
 #include "ScriptContext.h"
+#include "VKBindings.h"
 
 #include <CET.h>
 #include <Utils.h>
@@ -65,25 +66,46 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
             m_logger->error("Tried to register an unknown event '{}'!", acName);
     };
 
-    auto wrapHandler = [&aLuaSandbox, loggerRef = m_logger](
-                           sol::function aCallback, const bool acIsHotkey) -> std::variant<std::function<TVKBindHotkeyCallback>, std::function<TVKBindInputCallback>>
+    auto wrapHandler = [&aLuaSandbox, loggerRef = m_logger](sol::function aCallback, const TVKBindType acBindType) -> TVKBindHandler
     {
-        if (acIsHotkey)
+        switch (acBindType)
         {
-            return [&aLuaSandbox, loggerRef, aCallback]
+            case TVKBindType::Input:
             {
-                auto lockedState = aLuaSandbox.GetLockedState();
+                return TVKBindInputCallback(
+                    [&aLuaSandbox, loggerRef, aCallback](bool isDown)
+                    {
+                        auto lockedState = aLuaSandbox.GetLockedState();
 
-                TryLuaFunction(loggerRef, aCallback);
-            };
+                        TryLuaFunction(loggerRef, aCallback, isDown);
+                    });
+            }
+            case TVKBindType::Hotkey:
+            {
+                return TVKBindHotkeyCallback(
+                    [&aLuaSandbox, loggerRef, aCallback]
+                    {
+                        auto lockedState = aLuaSandbox.GetLockedState();
+
+                        TryLuaFunction(loggerRef, aCallback);
+                    });
+            }
+            case TVKBindType::OverlayHotkey:
+            {
+                return TVKBindOverlayHotkeyCallback(
+                    [&aLuaSandbox, loggerRef, aCallback]
+                    {
+                        auto lockedState = aLuaSandbox.GetLockedState();
+
+                        TryLuaFunction(loggerRef, aCallback);
+                    });
+            }
+            default:
+            {
+                assert(false);
+                return std::monostate{};
+            }
         }
-
-        return [&aLuaSandbox, loggerRef, aCallback](bool isDown)
-        {
-            auto lockedState = aLuaSandbox.GetLockedState();
-
-            TryLuaFunction(loggerRef, aCallback, isDown);
-        };
     };
 
     auto wrapDescription = [&aLuaSandbox, loggerRef = m_logger,
@@ -117,9 +139,21 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
 
     auto registerBinding = [this, &wrapHandler, &wrapDescription](
                                const std::string& acID, const std::string& acDisplayName, const std::variant<std::string, sol::function>& acDescription, sol::function aCallback,
-                               const bool acIsHotkey, const bool acIsOverlayHotkey)
+                               const TVKBindType acBindType)
     {
-        const auto inputTypeStr = acIsHotkey ? "hotkey" : "input";
+        if (acBindType == TVKBindType::Invalid)
+        {
+            assert(false);
+            return;
+        }
+
+        std::string inputTypeStr;
+        switch (acBindType)
+        {
+        case TVKBindType::Input: inputTypeStr = "Input"; break;
+        case TVKBindType::Hotkey: inputTypeStr = "Hotkey"; break;
+        case TVKBindType::OverlayHotkey: inputTypeStr = "Overlay Hotkey"; break;
+        }
 
         if (acID.empty() || std::ranges::find_if(acID, [](char c) { return !(isalnum(c) || c == '_' || c == '.'); }) != acID.cend())
         {
@@ -146,29 +180,29 @@ ScriptContext::ScriptContext(LuaSandbox& aLuaSandbox, const std::filesystem::pat
             return;
         }
 
-        m_vkBinds.emplace_back(acID, acDisplayName, wrapDescription(acDescription), wrapHandler(aCallback, acIsHotkey), acIsOverlayHotkey);
+        m_vkBinds.emplace_back(acID, acDisplayName, wrapDescription(acDescription), wrapHandler(aCallback, acBindType));
     };
 
     env["registerHotkey"] = sol::overload(
         [&registerBinding](const std::string& acID, const std::string& acDisplayName, sol::function acDescriptionCallback, sol::function aCallback)
-        { registerBinding(acID, acDisplayName, acDescriptionCallback, aCallback, true, false); },
+        { registerBinding(acID, acDisplayName, acDescriptionCallback, aCallback, TVKBindType::Hotkey); },
         [&registerBinding](const std::string& acID, const std::string& acDisplayName, const std::string& acDescription, sol::function aCallback)
-        { registerBinding(acID, acDisplayName, acDescription, aCallback, true, false); },
-        [&registerBinding](const std::string& acID, const std::string& acDescription, sol::function aCallback) { registerBinding(acID, acDescription, "", aCallback, true, false); });
+        { registerBinding(acID, acDisplayName, acDescription, aCallback, TVKBindType::Hotkey); },
+        [&registerBinding](const std::string& acID, const std::string& acDescription, sol::function aCallback) { registerBinding(acID, acDescription, "", aCallback, TVKBindType::Hotkey); });
 
     env["registerOverlayHotkey"] = sol::overload(
         [&registerBinding](const std::string& acID, const std::string& acDisplayName, sol::function acDescriptionCallback, sol::function aCallback)
-        { registerBinding(acID, acDisplayName, acDescriptionCallback, aCallback, true, true); },
+        { registerBinding(acID, acDisplayName, acDescriptionCallback, aCallback, TVKBindType::OverlayHotkey); },
         [&registerBinding](const std::string& acID, const std::string& acDisplayName, const std::string& acDescription, sol::function aCallback)
-        { registerBinding(acID, acDisplayName, acDescription, aCallback, true, true); },
-        [&registerBinding](const std::string& acID, const std::string& acDescription, sol::function aCallback) { registerBinding(acID, acDescription, "", aCallback, true, true); });
+        { registerBinding(acID, acDisplayName, acDescription, aCallback, TVKBindType::OverlayHotkey); },
+        [&registerBinding](const std::string& acID, const std::string& acDescription, sol::function aCallback) { registerBinding(acID, acDescription, "", aCallback, TVKBindType::OverlayHotkey); });
 
     env["registerInput"] = sol::overload(
         [&registerBinding](const std::string& acID, const std::string& acDisplayName, sol::function acDescriptionCallback, sol::function aCallback)
-        { registerBinding(acID, acDisplayName, acDescriptionCallback, aCallback, false, false); },
+        { registerBinding(acID, acDisplayName, acDescriptionCallback, aCallback, TVKBindType::Input); },
         [&registerBinding](const std::string& acID, const std::string& acDisplayName, const std::string& acDescription, sol::function aCallback)
-        { registerBinding(acID, acDisplayName, acDescription, aCallback, false, false); },
-        [registerBinding](const std::string& acID, const std::string& acDescription, sol::function aCallback) { registerBinding(acID, acDescription, "", aCallback, false, false); });
+        { registerBinding(acID, acDisplayName, acDescription, aCallback, TVKBindType::Input); },
+        [registerBinding](const std::string& acID, const std::string& acDescription, sol::function aCallback) { registerBinding(acID, acDescription, "", aCallback, TVKBindType::Input); });
 
     // TODO: proper exception handling!
     try
