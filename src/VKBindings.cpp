@@ -154,7 +154,7 @@ void VKBindings::InitializeMods(const TiltedPhoques::Map<std::string, std::refer
                     {
                         // test if bind is hotkey and if not, check if bind is valid for input (which means it has
                         // simple input key, not combo)
-                        found = vkBind.IsHotkey() || (idToBind.second & 0xFFFF000000000000) == idToBind.second;
+                        found = vkBind.IsHotkey() || vkBind.IsOverlayHotkey() || (idToBind.second & 0xFFFF000000000000) == idToBind.second;
                         break; // we just reset found flag accordingly and exit here, we found valid entry, no need to
                                // continue regardless of result
                     }
@@ -285,7 +285,7 @@ bool VKBindings::Bind(const uint64_t acVKCodeBind, const VKModBind& acVKModBind)
                 }
 
                 const auto vkBind = vm->GetBind(vkModBind);
-                return vkBind && vkBind->IsHotkey();
+                return vkBind && (vkBind->IsHotkey() || vkBind->IsOverlayHotkey());
             };
 
             if (!isHotkey(bind->second) || !isHotkey(acVKModBind))
@@ -677,7 +677,7 @@ void VKBindings::ExecuteSingleInput(const USHORT acVKCode, const bool acKeyDown)
                 return;
 
             // this handler is not for hotkeys!
-            if (vkBind->IsHotkey())
+            if (vkBind->IsHotkey() || vkBind->IsOverlayHotkey())
                 return;
 
             // execute CET binds immediately, otherwise cursor will not show on overlay toggle

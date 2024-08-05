@@ -287,7 +287,7 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
                 const auto checkModBind = [this, &aVKBindInfo, codeBind](const VKModBind modBind)
                 {
                     const auto cetBind = modBind == s_overlayToggleModBind;
-                    if (!cetBind || aVKBindInfo.Bind.IsHotkey())
+                    if (!cetBind || aVKBindInfo.Bind.IsHotkey() || aVKBindInfo.Bind.IsOverlayHotkey())
                     {
                         const auto& modName = modBind.ModName;
                         auto& [bindInfos, _] = m_vkBindInfos[modName];
@@ -304,7 +304,7 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
                                     bindIt->CodeBind = 0;
                                 }
 
-                                if (aVKBindInfo.Bind.IsInput() && bindIt->Bind.IsHotkey() && m_bindings.IsFirstKeyUsed(codeBind))
+                                if (aVKBindInfo.Bind.IsInput() && (bindIt->Bind.IsHotkey() || bindIt->Bind.IsOverlayHotkey()) && m_bindings.IsFirstKeyUsed(codeBind))
                                 {
                                     bindIt->CodeBind = bindItCodeBind;
                                     m_bindings.Bind(bindIt->CodeBind, modBind);
