@@ -710,7 +710,6 @@ void VKBindings::ExecuteRecording()
             const auto& overlayToggleModBind = Bindings::GetOverlayToggleModBind();
             const auto cetModBind = modBind.ModName == overlayToggleModBind.ModName;
 
-            // TODO: Crash when using a OverlayHotkey while the overlay is not active
             if (!cetModBind && (!m_cpVm->IsInitialized() || CET::Get().GetOverlay().IsEnabled() != vkBind->IsOverlayHotkey()) || !vkBind->IsValid())
                 return;
 
