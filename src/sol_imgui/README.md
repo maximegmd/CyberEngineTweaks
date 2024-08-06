@@ -1424,13 +1424,75 @@ selected, activated = ImGui.MenuItem("Label", "ALT+F4", selected, true)
   color_u32 = ImGui.ColorConvertFloat4ToU32({0.4, 0.2, 0, 1})
 ```
 
+## Inputs Utilities: Keyboard
+```lua
+  -- ImGui.GetKeyIndex(...)
+  -- Parameters: ImGuiKey (key)
+  -- Returns: int (index)
+  index = ImGui.GetKeyIndex(ImGuiKey.Tab)
+  
+  -- ImGui.IsKeyDown(...)
+  -- Parameters: int (key_index)
+  -- Returns: bool (down)
+  down = ImGui.IsKeyDown(0)
+  
+  -- ImGui.IsKeyPressed(...)
+  -- Parameters: int (key_index), bool (repeat) [O]
+  -- Returns: bool (pressed)
+  -- Overloads
+  pressed = ImGui.IsKeyPressed(0)
+  pressed = ImGui.IsKeyPressed(0, true)
+  
+  -- ImGui.IsKeyReleased(...)
+  -- Parameters: int (key_index)
+  -- Returns: bool (released)
+  released = ImGui.IsKeyReleased(0)
+  
+  -- ImGui.GetKeyPressedAmount(...)
+  -- Parameters: int (key_index), float (repeat_delay), float (rate)
+  -- Returns: int (pressed_amount)  
+  pressed_amount = ImGui.GetKeyPressedAmount(0, 0.5, 5)
+  
+  -- ImGui.CaptureKeyboardFromApp(...)
+  -- Parameters: bool (want_capture_keyboard_value) [O]
+  -- Overloads
+  ImGui.CaptureKeyboardFromApp()
+  ImGui.CaptureKeyboardFromApp(false)
+```
+
 ## Inputs Utilities: Mouse
 ```lua
+  -- ImGui.IsMouseDown(...)
+  -- Parameters: ImGuiMouseButton (button)
+  -- Returns: bool (down)
+  down = ImGui.IsMouseDown(ImGuiMouseButton.Right)
+  
+  -- ImGui.IsMouseClicked(...)
+  -- Parameters: ImGuiMouseButton (button), bool (repeat) [O]
+  -- Returns: bool (clicked)
+  -- Overloads
+  clicked = ImGui.IsMouseClicked(ImGuiMouseButton.Right)
+  clicked = ImGui.IsMouseClicked(ImGuiMouseButton.Right, false)
+  
+  -- ImGui.IsMouseReleased(...)
+  -- Parameters: ImGuiMouseButton (button)
+  -- Returns: bool (released)
+  released = ImGui.IsMouseReleased(ImGuiMouseButton.Right)
+  
+  -- ImGui.IsMouseDoubleClicked(...)
+  -- Parameters: ImGuiMouseButton (button)
+  -- Returns: bool (double_clicked)
+  double_clicked = ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Right)
+
   -- ImGui.IsMouseHoveringRect(...)
   -- Parameters: float (min_x), float (min_y), float(max_x), float(max_y), bool (clip) [O]
   -- Returns: bool (hovered)
   hovered = ImGui.IsMouseHoveringRect(0, 0, 100, 100)
   hovered = ImGui.IsMouseHoveringRect(0, 0, 100, 100, true)
+
+  -- ImGui.IsAnyMouseDown()
+  -- Returns: bool (any_mouse_down)
+  any_mouse_down = ImGui.IsAnyMouseDown()
 
   -- ImGui.GetMousePos()
   -- Returns: float (x), float (y)
@@ -1460,6 +1522,20 @@ selected, activated = ImGui.MenuItem("Label", "ALT+F4", selected, true)
   -- Overloads
   ImGui.ResetMouseDragDelta()
   ImGui.ResetMouseDragDelta(ImGuiMouseButton.Middle)
+
+  -- ImGui.GetMouseCursor()
+  -- Returns: ImGuiMouseCursor (cursor)
+  cursor = ImGui.GetMouseCursor()
+  
+  -- ImGui.SetMouseCursor(...)
+  -- Parameters: ImGuiMouseCursor (cursor_type)
+  ImGui.SetMouseCursor(ImGuiMouseCursor.Hand)
+  
+  -- ImGui.CaptureMouseFromApp()
+  -- Parameters: bool (want_capture_mouse_value) [O]
+  -- Overloads
+  ImGui.CaptureMouseFromApp()
+  ImGui.CaptureMouseFromApp(true)
 ```
 
 ## Clipboard Utilities

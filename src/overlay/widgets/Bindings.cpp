@@ -9,11 +9,11 @@ namespace
 {
 VKBind s_overlayToggleBind{
     "overlay_key", "Overlay Key", "Use this hotkey to toggle overlay on and off.",
-    []
+    TVKBindHotkeyCallback([]
     {
         if (!CET::Get().GetBindings().IsRecordingBind())
             CET::Get().GetOverlay().Toggle();
-    }};
+    })};
 VKBindInfo s_overlayToggleBindInfo{s_overlayToggleBind, 0, 0, false};
 VKModBind s_overlayToggleModBind{"cet", s_overlayToggleBind.ID};
 } // namespace
@@ -234,16 +234,15 @@ void Bindings::Initialize()
 
     // emplace CET internal settings
     {
-        auto& [vkBindInfos, hotkeyCount] = m_vkBindInfos[s_overlayToggleModBind.ModName];
+        auto& [vkBindInfos, modBindCounts] = m_vkBindInfos[s_overlayToggleModBind.ModName];
         vkBindInfos.emplace_back(s_overlayToggleBindInfo);
-        hotkeyCount = 1;
+        modBindCounts.hotkeyCount = 1;
     }
 
     // emplace mod bindings
     for (const auto& modBindsIt : allModsBinds)
     {
-        auto& [vkBindInfos, hotkeyCount] = m_vkBindInfos[modBindsIt.first];
-        hotkeyCount = 0;
+        auto& [vkBindInfos, modBindCounts] = m_vkBindInfos[modBindsIt.first];
         for (const auto& vkBind : modBindsIt.second.get())
         {
             auto& vkBindInfo = vkBindInfos.emplace_back(vkBind);
@@ -251,7 +250,11 @@ void Bindings::Initialize()
             vkBindInfo.CodeBind = vkBindInfo.SavedCodeBind;
 
             if (vkBind.IsHotkey())
-                ++hotkeyCount;
+                ++modBindCounts.hotkeyCount;
+            if (vkBind.IsOverlayHotkey())
+                ++modBindCounts.overlayHotkeyCount;
+            if (vkBind.IsInput())
+                ++modBindCounts.inputCount;
         }
     }
 
@@ -284,7 +287,7 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
                 const auto checkModBind = [this, &aVKBindInfo, codeBind](const VKModBind modBind)
                 {
                     const auto cetBind = modBind == s_overlayToggleModBind;
-                    if (!cetBind || aVKBindInfo.Bind.IsHotkey())
+                    if (!cetBind || aVKBindInfo.Bind.IsHotkey() || aVKBindInfo.Bind.IsOverlayHotkey())
                     {
                         const auto& modName = modBind.ModName;
                         auto& [bindInfos, _] = m_vkBindInfos[modName];
@@ -301,7 +304,7 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
                                     bindIt->CodeBind = 0;
                                 }
 
-                                if (aVKBindInfo.Bind.IsInput() && bindIt->Bind.IsHotkey() && m_bindings.IsFirstKeyUsed(codeBind))
+                                if (aVKBindInfo.Bind.IsInput() && (bindIt->Bind.IsHotkey() || bindIt->Bind.IsOverlayHotkey()) && m_bindings.IsFirstKeyUsed(codeBind))
                                 {
                                     bindIt->CodeBind = bindItCodeBind;
                                     m_bindings.Bind(bindIt->CodeBind, modBind);
@@ -433,7 +436,7 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
     m_madeChanges |= aVKBindInfo.IsBinding || aVKBindInfo.CodeBind != aVKBindInfo.SavedCodeBind;
 }
 
-void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoques::Vector<VKBindInfo>& aVKBindInfos, size_t aHotkeyCount, bool aSimplified)
+void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoques::Vector<VKBindInfo>& aVKBindInfos, const ModBindCount acBindCount, bool aSimplified)
 {
     if (aVKBindInfos.empty())
         return;
@@ -467,31 +470,54 @@ void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoq
 
     ImGui::TreePush();
 
-    if (aHotkeyCount > 0)
+    if (acBindCount.hotkeyCount > 0 || acBindCount.overlayHotkeyCount > 0)
     {
         if (!aSimplified)
         {
-            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + GetCenteredOffsetForText("Hotkeys"));
-            ImGui::TextUnformatted("Hotkeys");
-            if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-                ImGui::SetTooltip("Hotkeys react after assigned key combination has been pressed and subsequently "
-                                  "released. You can bind up to 4 key combination to them.");
-            ImGui::Separator();
-        }
-
-        if (ImGui::BeginTable(("##HOTKEYS_" + activeModName).c_str(), 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
-        {
-            for (auto& binding : aVKBindInfos)
+            if (acBindCount.hotkeyCount > 0)
             {
-                if (binding.Bind.IsHotkey())
-                    UpdateAndDrawBinding({acModName, binding.Bind.ID}, binding);
-            }
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + GetCenteredOffsetForText("Hotkeys"));
+                ImGui::TextUnformatted("Hotkeys");
+                if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+                    ImGui::SetTooltip("Hotkeys react after assigned key combination has been pressed and subsequently "
+                                      "released. You can bind up to 4 key combination to them.");
+                ImGui::Separator();
 
-            ImGui::EndTable();
+                if (ImGui::BeginTable(("##HOTKEYS_" + activeModName).c_str(), 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
+                {
+                    for (auto& binding : aVKBindInfos)
+                    {
+                        if (binding.Bind.IsHotkey())
+                            UpdateAndDrawBinding({acModName, binding.Bind.ID}, binding);
+                    }
+
+                    ImGui::EndTable();
+                }
+            }
+            if (acBindCount.overlayHotkeyCount > 0)
+            {
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + GetCenteredOffsetForText("Overlay Hotkeys"));
+                ImGui::TextUnformatted("Overlay Hotkeys");
+                if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+                    ImGui::SetTooltip("Overlay Hotkeys react after assigned key combination has been pressed and subsequently "
+                                      "released. You can bind up to 4 key combination to them.\n Unlike regular Hotkeys, these only work while the CET Overlay is open");
+                ImGui::Separator();
+
+                if (ImGui::BeginTable(("##OVERLAY_HOTKEYS_" + activeModName).c_str(), 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
+                {
+                    for (auto& binding : aVKBindInfos)
+                    {
+                        if (binding.Bind.IsOverlayHotkey())
+                            UpdateAndDrawBinding({acModName, binding.Bind.ID}, binding);
+                    }
+
+                    ImGui::EndTable();
+                }
+            }
         }
     }
 
-    if (aHotkeyCount < aVKBindInfos.size())
+    if (acBindCount.inputCount > 0)
     {
         if (!aSimplified)
         {

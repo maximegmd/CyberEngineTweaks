@@ -3,22 +3,44 @@
 #include "CET.h"
 #include "Utils.h"
 
-std::function<void()> VKBind::DelayedCall(const bool acIsDown) const
+namespace
 {
-    if (!acIsDown) // hotkeys only on key up
+    std::function<void()> VKBindDelayedCallVisitor(const TVKBindInputCallback& acpCallback, const bool acIsKeyDown)
     {
-        if (const auto* fn = std::get_if<std::function<TVKBindHotkeyCallback>>(&Handler))
-            return *fn;
+        return [acpCallback, acIsKeyDown]
+        {
+            acpCallback(acIsKeyDown);
+        };
     }
 
-    if (const auto* fn = std::get_if<std::function<TVKBindInputCallback>>(&Handler))
-        return [cb = *fn, acIsDown]
-        {
-            cb(acIsDown);
-        };
+    std::function<void()> VKBindDelayedCallVisitor(const TVKBindHotkeyCallback& acpCallback, const bool acIsKeyDown)
+    {
+        if (acIsKeyDown)
+            return {};
 
-    assert(acIsDown); // nullptr should ever return only for key down events, in case binding is a hotkey
-    return nullptr;
+        return [acpCallback]
+        {
+            acpCallback();
+        };
+    }
+}
+
+std::function<void()> VKBind::DelayedCall(const bool acIsKeyDown) const
+{
+    const auto bindVisitor = [acIsKeyDown](const auto& acpCallback) -> std::function<void()>
+    {
+        if constexpr (std::same_as<std::decay_t<decltype(acpCallback)>, std::monostate>)
+        {
+            assert(false);
+            return {};
+        }
+        else
+        {
+            return VKBindDelayedCallVisitor(acpCallback, acIsKeyDown);
+        }
+    };
+
+    return std::visit(bindVisitor, Handler);
 }
 
 void VKBind::Call(const bool acIsDown) const
@@ -29,12 +51,22 @@ void VKBind::Call(const bool acIsDown) const
 
 bool VKBind::IsHotkey() const
 {
-    return std::holds_alternative<std::function<TVKBindHotkeyCallback>>(Handler);
+    return std::holds_alternative<TVKBindHotkeyCallback>(Handler);
+}
+
+bool VKBind::IsOverlayHotkey() const
+{
+    return std::holds_alternative<TVKBindOverlayHotkeyCallback>(Handler);
 }
 
 bool VKBind::IsInput() const
 {
-    return std::holds_alternative<std::function<TVKBindInputCallback>>(Handler);
+    return std::holds_alternative<TVKBindInputCallback>(Handler);
+}
+
+bool VKBind::IsValid() const
+{
+    return !std::holds_alternative<std::monostate>(Handler);
 }
 
 bool VKBind::HasSimpleDescription() const
@@ -122,7 +154,7 @@ void VKBindings::InitializeMods(const TiltedPhoques::Map<std::string, std::refer
                     {
                         // test if bind is hotkey and if not, check if bind is valid for input (which means it has
                         // simple input key, not combo)
-                        found = vkBind.IsHotkey() || (idToBind.second & 0xFFFF000000000000) == idToBind.second;
+                        found = vkBind.IsHotkey() || vkBind.IsOverlayHotkey() || (idToBind.second & 0xFFFF000000000000) == idToBind.second;
                         break; // we just reset found flag accordingly and exit here, we found valid entry, no need to
                                // continue regardless of result
                     }
@@ -253,7 +285,7 @@ bool VKBindings::Bind(const uint64_t acVKCodeBind, const VKModBind& acVKModBind)
                 }
 
                 const auto vkBind = vm->GetBind(vkModBind);
-                return vkBind && vkBind->IsHotkey();
+                return vkBind && (vkBind->IsHotkey() || vkBind->IsOverlayHotkey());
             };
 
             if (!isHotkey(bind->second) || !isHotkey(acVKModBind))
@@ -641,11 +673,11 @@ void VKBindings::ExecuteSingleInput(const USHORT acVKCode, const bool acKeyDown)
             // binding state! only exception allowed is any CET bind
             const auto& overlayToggleModBind = Bindings::GetOverlayToggleModBind();
             const auto cetModBind = modBind.ModName == overlayToggleModBind.ModName;
-            if (!cetModBind && (!m_cpVm->IsInitialized() || CET::Get().GetOverlay().IsEnabled()))
+            if (!cetModBind && (!m_cpVm->IsInitialized() || CET::Get().GetOverlay().IsEnabled()) || !vkBind->IsValid())
                 return;
 
             // this handler is not for hotkeys!
-            if (vkBind->IsHotkey())
+            if (vkBind->IsHotkey() || vkBind->IsOverlayHotkey())
                 return;
 
             // execute CET binds immediately, otherwise cursor will not show on overlay toggle
@@ -677,7 +709,8 @@ void VKBindings::ExecuteRecording()
             // binding state! only exception allowed is any CET bind
             const auto& overlayToggleModBind = Bindings::GetOverlayToggleModBind();
             const auto cetModBind = modBind.ModName == overlayToggleModBind.ModName;
-            if (!cetModBind && (!m_cpVm->IsInitialized() || CET::Get().GetOverlay().IsEnabled()))
+
+            if (!cetModBind && (!m_cpVm->IsInitialized() || CET::Get().GetOverlay().IsEnabled() != vkBind->IsOverlayHotkey()) || !vkBind->IsValid())
                 return;
 
             // this handler is not for inputs! it should be used only on key up event for hotkeys!
