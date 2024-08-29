@@ -92,12 +92,19 @@ bool ImGui_ImplWin32_Init(HWND ahWnd)
     io.KeyMap[ImGuiKey_Enter] = VK_RETURN;
     io.KeyMap[ImGuiKey_Escape] = VK_ESCAPE;
     io.KeyMap[ImGuiKey_KeyPadEnter] = VK_RETURN;
+    io.KeyMap[ImGuiKey_LeftCtrl] = VK_CONTROL;
+    io.KeyMap[ImGuiKey_LeftShift] = VK_SHIFT;
     io.KeyMap[ImGuiKey_A] = 'A';
     io.KeyMap[ImGuiKey_C] = 'C';
     io.KeyMap[ImGuiKey_V] = 'V';
     io.KeyMap[ImGuiKey_X] = 'X';
     io.KeyMap[ImGuiKey_Y] = 'Y';
     io.KeyMap[ImGuiKey_Z] = 'Z';
+    io.KeyMap[ImGuiKey_G] = 'G';
+    io.KeyMap[ImGuiKey_S] = 'S';
+    io.KeyMap[ImGuiKey_D] = 'D';
+    io.KeyMap[ImGuiKey_R] = 'R';
+    io.KeyMap[ImGuiKey_H] = 'H';
 
     return true;
 }
