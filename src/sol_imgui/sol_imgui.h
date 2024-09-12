@@ -2600,7 +2600,63 @@ inline std::tuple<float, float, float> ColorConvertHSVtoRGB(float h, float s, fl
     return std::make_tuple(r, g, b);
 }
 
+// Inputs Utilities: Keyboard
+inline int GetKeyIndex(int imgui_key)
+{
+    return ImGui::GetKeyIndex(static_cast<ImGuiKey>(imgui_key));
+}
+inline bool IsKeyDown(int user_key_index)
+{
+    return ImGui::IsKeyDown(user_key_index);
+}
+inline bool IsKeyPressed(int user_key_index)
+{
+    return ImGui::IsKeyPressed(user_key_index);
+}
+inline bool IsKeyPressed(int user_key_index, bool repeat)
+{
+    return ImGui::IsKeyPressed(user_key_index, repeat);
+}
+inline bool IsKeyReleased(int user_key_index)
+{
+    return ImGui::IsKeyReleased(user_key_index);
+}
+inline int GetKeyPressedAmount(int key_index, float repeat_delay, float rate)
+{
+    return ImGui::GetKeyPressedAmount(key_index, repeat_delay, rate);
+}
+inline void CaptureKeyboardFromApp()
+{
+    ImGui::CaptureKeyboardFromApp();
+}
+inline void CaptureKeyboardFromApp(bool want_capture_keyboard_value)
+{
+    ImGui::CaptureKeyboardFromApp(want_capture_keyboard_value);
+}
+
 // Inputs Utilities: Mouse
+
+inline bool IsMouseDown(int button)
+{
+    return ImGui::IsMouseDown(static_cast<ImGuiMouseButton>(button));
+}
+inline bool IsMouseClicked(int button)
+{
+    return ImGui::IsMouseClicked(static_cast<ImGuiMouseButton>(button));
+}
+inline bool IsMouseClicked(int button, bool repeat)
+{
+    return ImGui::IsMouseClicked(static_cast<ImGuiMouseButton>(button), repeat);
+}
+inline bool IsMouseReleased(int button)
+{
+    return ImGui::IsMouseReleased(static_cast<ImGuiMouseButton>(button));
+}
+inline bool IsMouseDoubleClicked(int button)
+{
+    return ImGui::IsMouseDoubleClicked(static_cast<ImGuiMouseButton>(button));
+}
+
 inline bool IsMouseHoveringRect(float min_x, float min_y, float max_x, float max_y)
 {
     return ImGui::IsMouseHoveringRect({min_x, min_y}, {max_x, max_y});
@@ -2608,6 +2664,10 @@ inline bool IsMouseHoveringRect(float min_x, float min_y, float max_x, float max
 inline bool IsMouseHoveringRect(float min_x, float min_y, float max_x, float max_y, bool clip)
 {
     return ImGui::IsMouseHoveringRect({min_x, min_y}, {max_x, max_y}, clip);
+}
+inline bool IsAnyMouseDown()
+{
+    return ImGui::IsAnyMouseDown();
 }
 inline std::tuple<float, float> GetMousePos()
 {
@@ -2649,6 +2709,22 @@ inline void ResetMouseDragDelta()
 inline void ResetMouseDragDelta(int button)
 {
     ImGui::ResetMouseDragDelta(static_cast<ImGuiMouseButton>(button));
+}
+inline int GetMouseCursor()
+{
+    return ImGui::GetMouseCursor();
+}
+inline void SetMouseCursor(int cursor_type)
+{
+    ImGui::SetMouseCursor(static_cast<ImGuiMouseCursor>(cursor_type));
+}
+inline void CaptureMouseFromApp()
+{
+    ImGui::CaptureMouseFromApp();
+}
+inline void CaptureMouseFromApp(bool want_capture_mouse_value)
+{
+    ImGui::CaptureMouseFromApp(want_capture_mouse_value);
 }
 
 // Clipboard Utilities
@@ -3047,6 +3123,22 @@ inline void InitEnums(sol::table luaGlobals)
 #pragma region MouseButton
     luaGlobals.new_enum("ImGuiMouseButton", "Left", ImGuiMouseButton_Left, "Right", ImGuiMouseButton_Right, "Middle", ImGuiMouseButton_Middle, "COUNT", ImGuiMouseButton_COUNT);
 #pragma endregion MouseButton
+
+#pragma region Key
+    luaGlobals.new_enum(
+        "ImGuiKey", "Tab", ImGuiKey_Tab, "LeftArrow", ImGuiKey_LeftArrow, "RightArrow", ImGuiKey_RightArrow, "UpArrow", ImGuiKey_UpArrow, "DownArrow", ImGuiKey_DownArrow, "PageUp",
+        ImGuiKey_PageUp, "PageDown", ImGuiKey_PageDown, "Home", ImGuiKey_Home, "End", ImGuiKey_End, "Insert", ImGuiKey_Insert, "Delete", ImGuiKey_Delete, "Backspace",
+        ImGuiKey_Backspace, "Space", ImGuiKey_Space, "Enter", ImGuiKey_Enter, "Escape", ImGuiKey_Escape, "KeyPadEnter", ImGuiKey_KeyPadEnter, "A", ImGuiKey_A, "C", ImGuiKey_C, "V",
+        ImGuiKey_V, "X", ImGuiKey_X, "Y", ImGuiKey_Y, "Z", ImGuiKey_Z, "COUNT", ImGuiKey_COUNT, "LeftCtrl", ImGuiKey_LeftCtrl, "LeftShift", ImGuiKey_LeftShift, "G", ImGuiKey_G,
+        "S", ImGuiKey_S, "D", ImGuiKey_D, "R", ImGuiKey_R, "H", ImGuiKey_H);
+#pragma endregion Key
+
+#pragma region MouseCursor
+    luaGlobals.new_enum(
+        "ImGuiMouseCursor", "None", ImGuiMouseCursor_None, "Arrow", ImGuiMouseCursor_Arrow, "TextInput", ImGuiMouseCursor_TextInput, "ResizeAll", ImGuiMouseCursor_ResizeAll,
+        "ResizeNS", ImGuiMouseCursor_ResizeNS, "ResizeEW", ImGuiMouseCursor_ResizeEW, "ResizeNESW", ImGuiMouseCursor_ResizeNESW, "ResizeNWSE", ImGuiMouseCursor_ResizeNWSE, "Hand",
+        ImGuiMouseCursor_Hand, "NotAllowed", ImGuiMouseCursor_NotAllowed, "COUNT", ImGuiMouseCursor_COUNT);
+#pragma endregion MouseCursor
 
 #pragma region ImDrawCorner Flags
     luaGlobals.new_enum(
@@ -3684,10 +3776,23 @@ inline void InitBindings(sol::state& lua, sol::table luaGlobals)
     ImGui.set_function("ColorConvertHSVtoRGB", ColorConvertHSVtoRGB);
 #pragma endregion Color Utilities
 
+#pragma region Inputs Utilities: Keyboard
+    ImGui.set_function("GetKeyIndex", GetKeyIndex);
+    ImGui.set_function("IsKeyDown", IsKeyDown);
+    ImGui.set_function("IsKeyPressed", sol::overload(sol::resolve<bool(int)>(IsKeyPressed), sol::resolve<bool(int, bool)>(IsKeyPressed)));
+    ImGui.set_function("IsKeyReleased", IsKeyReleased);
+    ImGui.set_function("CaptureKeyboardFromApp", sol::overload(sol::resolve<void()>(CaptureKeyboardFromApp), sol::resolve<void(bool)>(CaptureKeyboardFromApp)));
+#pragma endregion Inputs Utilities : Keyboard
+
 #pragma region Inputs Utilities : Mouse
+    ImGui.set_function("IsMouseDown", IsMouseDown);
+    ImGui.set_function("IsMouseClicked", sol::overload(sol::resolve<bool(int)>(IsMouseClicked), sol::resolve<bool(int, bool)>(IsMouseClicked)));
+    ImGui.set_function("IsMouseReleased", IsMouseReleased);
+    ImGui.set_function("IsMouseDoubleClicked", IsMouseDoubleClicked);
     ImGui.set_function(
         "IsMouseHoveringRect",
         sol::overload(sol::resolve<bool(float, float, float, float)>(IsMouseHoveringRect), sol::resolve<bool(float, float, float, float, bool)>(IsMouseHoveringRect)));
+    ImGui.set_function("IsAnyMouseDown", IsAnyMouseDown);
     ImGui.set_function("GetMousePos", GetMousePos);
     ImGui.set_function("GetMousePosOnOpeningCurrentPopup", GetMousePosOnOpeningCurrentPopup);
     ImGui.set_function("IsMouseDragging", sol::overload(sol::resolve<bool(int)>(IsMouseDragging), sol::resolve<bool(int, float)>(IsMouseDragging)));
@@ -3696,6 +3801,9 @@ inline void InitBindings(sol::state& lua, sol::table luaGlobals)
                                  sol::resolve<std::tuple<float, float>()>(GetMouseDragDelta), sol::resolve<std::tuple<float, float>(int)>(GetMouseDragDelta),
                                  sol::resolve<std::tuple<float, float>(int, float)>(GetMouseDragDelta)));
     ImGui.set_function("ResetMouseDragDelta", sol::overload(sol::resolve<void()>(ResetMouseDragDelta), sol::resolve<void(int)>(ResetMouseDragDelta)));
+    ImGui.set_function("GetMouseCursor", GetMouseCursor);
+    ImGui.set_function("SetMouseCursor", SetMouseCursor);
+    ImGui.set_function("CaptureMouseFromApp", sol::overload(sol::resolve<void()>(CaptureMouseFromApp), sol::resolve<void(bool)>(CaptureMouseFromApp)));
 #pragma endregion Inputs Utilities : Mouse
 
 #pragma region Clipboard Utilities
