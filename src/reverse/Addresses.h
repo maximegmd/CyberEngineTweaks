@@ -24,7 +24,7 @@ constexpr uint32_t CPatches_OptionsInit = 4089777341UL; // Config::IConfigVar::R
 #pragma endregion
 
 #pragma region CPhotoMode
-constexpr uint32_t CPhotoMode_SetRecordID = 4241565651UL;
+constexpr uint32_t CPhotoMode_SetRecordID = 4052428712UL;
 #pragma endregion
 
 #pragma region CRenderGlobal
@@ -54,7 +54,7 @@ constexpr uint32_t CScript_LogChannelWarning = 2841780134UL;
 constexpr uint32_t CScript_TDBIDConstructorDerive = 326438016UL;
 constexpr uint32_t CScript_TranslateBytecode = 3442875632UL;
 constexpr uint32_t CScript_TweakDBLoad = 3602585178UL;
-constexpr uint32_t CScript_RegisterMemberFunction = 592450491UL;
+constexpr uint32_t CScript_RegisterMemberFunction = 592450491UL; // Is this even used?
 #pragma endregion
 
 #pragma region CShutdownState

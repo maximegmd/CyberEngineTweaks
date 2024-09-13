@@ -8,7 +8,7 @@ struct Image
 {
     void Initialize();
 
-    static std::tuple<uint32_t, uint16_t> GetSupportedVersion() noexcept { return std::make_tuple(2, 1201); }
+    static std::tuple<uint32_t, uint16_t> GetSupportedVersion() noexcept { return std::make_tuple(2, 13); }
 
     uintptr_t base_address;
     mem::region TextRegion;
