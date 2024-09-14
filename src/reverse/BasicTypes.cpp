@@ -79,7 +79,7 @@ std::string TweakDBID::AsString() const noexcept
 std::string TweakDBID::ToString() const noexcept
 {
     const auto resolved = CET::Get().GetVM().GetTDBIDString(value, true);
-    if (!resolved.empty())
+    if (resolved.empty())
         return fmt::format("ToTweakDBID{{ hash = 0x{:08X}, length = {:d} }}", name_hash, name_length);
     return fmt::format("ToTweakDBID{{ hash = 0x{:08X}, length = {:d} --[[ {} --]] }}", name_hash, name_length, resolved);
 }
