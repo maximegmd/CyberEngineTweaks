@@ -54,7 +54,7 @@ void Settings::OnUpdate()
         m_madeChanges = false;
         if (ImGui::CollapsingHeader("Patches", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            ImGui::TreePush();
+            ImGui::TreePush((void*)nullptr);
             if (ImGui::BeginTable("##SETTINGS_PATCHES", 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
             {
                 const auto& patchesSettings = m_options.Patches;
@@ -89,7 +89,7 @@ void Settings::OnUpdate()
         }
         if (ImGui::CollapsingHeader("CET Development Settings", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            ImGui::TreePush();
+            ImGui::TreePush((void*)nullptr);
             if (ImGui::BeginTable("##SETTINGS_DEV", 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
             {
                 const auto& developerSettings = m_options.Developer;

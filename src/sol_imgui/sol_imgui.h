@@ -2,6 +2,13 @@
 
 namespace sol_ImGui
 {
+
+// Version
+inline std::string GetVersion()
+{
+    return std::string(ImGui::GetVersion());
+}
+
 // Windows
 inline bool Begin(const std::string& name)
 {
@@ -231,9 +238,11 @@ inline std::tuple<float, float> GetWindowContentRegionMax()
     const auto vec2{ImGui::GetWindowContentRegionMax()};
     return std::make_tuple(vec2.x, vec2.y);
 }
+
+// DEPRECATED
 inline float GetWindowContentRegionWidth()
 {
-    return ImGui::GetWindowContentRegionWidth();
+    return (ImGui::GetWindowContentRegionMax().x - ImGui::GetWindowContentRegionMin().x);
 }
 
 // Windows Scrolling
@@ -2607,31 +2616,39 @@ inline int GetKeyIndex(int imgui_key)
 }
 inline bool IsKeyDown(int user_key_index)
 {
-    return ImGui::IsKeyDown(user_key_index);
+    return ImGui::IsKeyDown(static_cast<ImGuiKey>(user_key_index));
 }
 inline bool IsKeyPressed(int user_key_index)
 {
-    return ImGui::IsKeyPressed(user_key_index);
+    return ImGui::IsKeyPressed(static_cast<ImGuiKey>(user_key_index));
 }
 inline bool IsKeyPressed(int user_key_index, bool repeat)
 {
-    return ImGui::IsKeyPressed(user_key_index, repeat);
+    return ImGui::IsKeyPressed(static_cast<ImGuiKey>(user_key_index), repeat);
 }
 inline bool IsKeyReleased(int user_key_index)
 {
-    return ImGui::IsKeyReleased(user_key_index);
+    return ImGui::IsKeyReleased(static_cast<ImGuiKey>(user_key_index));
 }
 inline int GetKeyPressedAmount(int key_index, float repeat_delay, float rate)
 {
-    return ImGui::GetKeyPressedAmount(key_index, repeat_delay, rate);
+    return ImGui::GetKeyPressedAmount(static_cast<ImGuiKey>(key_index), repeat_delay, rate);
 }
+
+// DEPRECATED
 inline void CaptureKeyboardFromApp()
 {
-    ImGui::CaptureKeyboardFromApp();
+    ImGui::SetNextFrameWantCaptureKeyboard(true);
 }
+// DEPRECTED
 inline void CaptureKeyboardFromApp(bool want_capture_keyboard_value)
 {
-    ImGui::CaptureKeyboardFromApp(want_capture_keyboard_value);
+    ImGui::SetNextFrameWantCaptureKeyboard(want_capture_keyboard_value);
+}
+
+inline void SetNextFrameWantCaptureKeyboard(bool want_capture_keyboard_value)
+{
+    ImGui::SetNextFrameWantCaptureKeyboard(want_capture_keyboard_value);
 }
 
 // Inputs Utilities: Mouse
@@ -2718,13 +2735,21 @@ inline void SetMouseCursor(int cursor_type)
 {
     ImGui::SetMouseCursor(static_cast<ImGuiMouseCursor>(cursor_type));
 }
+
+// DEPRECATED
 inline void CaptureMouseFromApp()
 {
-    ImGui::CaptureMouseFromApp();
+   ImGui::SetNextFrameWantCaptureMouse(true);
 }
+// DEPRECATED
 inline void CaptureMouseFromApp(bool want_capture_mouse_value)
 {
-    ImGui::CaptureMouseFromApp(want_capture_mouse_value);
+   ImGui::SetNextFrameWantCaptureMouse(want_capture_mouse_value);
+}
+
+inline void SetNextFrameWantCaptureMouse(bool want_capture_mouse_value)
+{
+    ImGui::SetNextFrameWantCaptureMouse(want_capture_mouse_value);
 }
 
 // Clipboard Utilities
@@ -2993,9 +3018,9 @@ inline void InitEnums(sol::table luaGlobals)
 #pragma endregion InputText Flags
 
 #pragma region Slider Flags
-    luaGlobals.new_enum(
-        "ImGuiSliderFlags", "None", ImGuiSliderFlags_None, "ClampOnInput", ImGuiSliderFlags_ClampOnInput, "Logarithmic", ImGuiSliderFlags_Logarithmic, "NoRoundToFormat",
-        ImGuiSliderFlags_NoRoundToFormat, "NoInput", ImGuiSliderFlags_NoInput);
+     luaGlobals.new_enum(
+        "ImGuiSliderFlags", "None", ImGuiSliderFlags_None, "AlwaysClamp", ImGuiSliderFlags_AlwaysClamp, "Logarithmic", ImGuiSliderFlags_Logarithmic, "NoRoundToFormat",
+         ImGuiSliderFlags_NoRoundToFormat, "NoInput", ImGuiSliderFlags_NoInput);
 #pragma endregion Slider Flags
 
 #pragma region ColorEdit Flags
@@ -3128,7 +3153,7 @@ inline void InitEnums(sol::table luaGlobals)
     luaGlobals.new_enum(
         "ImGuiKey", "Tab", ImGuiKey_Tab, "LeftArrow", ImGuiKey_LeftArrow, "RightArrow", ImGuiKey_RightArrow, "UpArrow", ImGuiKey_UpArrow, "DownArrow", ImGuiKey_DownArrow, "PageUp",
         ImGuiKey_PageUp, "PageDown", ImGuiKey_PageDown, "Home", ImGuiKey_Home, "End", ImGuiKey_End, "Insert", ImGuiKey_Insert, "Delete", ImGuiKey_Delete, "Backspace",
-        ImGuiKey_Backspace, "Space", ImGuiKey_Space, "Enter", ImGuiKey_Enter, "Escape", ImGuiKey_Escape, "KeyPadEnter", ImGuiKey_KeyPadEnter, "A", ImGuiKey_A, "C", ImGuiKey_C, "V",
+        ImGuiKey_Backspace, "Space", ImGuiKey_Space, "Enter", ImGuiKey_Enter, "Escape", ImGuiKey_Escape, "KeypadEnter", ImGuiKey_KeypadEnter, "A", ImGuiKey_A, "C", ImGuiKey_C, "V",
         ImGuiKey_V, "X", ImGuiKey_X, "Y", ImGuiKey_Y, "Z", ImGuiKey_Z, "COUNT", ImGuiKey_COUNT, "LeftCtrl", ImGuiKey_LeftCtrl, "LeftShift", ImGuiKey_LeftShift, "G", ImGuiKey_G,
         "S", ImGuiKey_S, "D", ImGuiKey_D, "R", ImGuiKey_R, "H", ImGuiKey_H);
 #pragma endregion Key
@@ -3140,12 +3165,6 @@ inline void InitEnums(sol::table luaGlobals)
         ImGuiMouseCursor_Hand, "NotAllowed", ImGuiMouseCursor_NotAllowed, "COUNT", ImGuiMouseCursor_COUNT);
 #pragma endregion MouseCursor
 
-#pragma region ImDrawCorner Flags
-    luaGlobals.new_enum(
-        "ImDrawCornerFlags", "None", ImDrawCornerFlags_None, "TopLeft", ImDrawCornerFlags_TopLeft, "TopRight", ImDrawCornerFlags_TopRight, "BotLeft", ImDrawCornerFlags_BotLeft,
-        "BotRight", ImDrawCornerFlags_BotRight, "Top", ImDrawCornerFlags_Top, "Bot", ImDrawCornerFlags_Bot, "Left", ImDrawCornerFlags_Left, "Right", ImDrawCornerFlags_Right, "All",
-        ImDrawCornerFlags_All);
-#pragma endregion ImDrawCorner Flags
 }
 
 inline void InitBindings(sol::state& lua, sol::table luaGlobals)
@@ -3154,6 +3173,10 @@ inline void InitBindings(sol::state& lua, sol::table luaGlobals)
     InitEnums(luaGlobals);
 
     sol::table ImGui(lua, sol::create);
+
+#pragma region Version
+    ImGui.set_function("GetVersion", GetVersion);
+#pragma endregion Version
 
 #pragma region Windows
     ImGui.set_function(
@@ -3215,6 +3238,8 @@ inline void InitBindings(sol::state& lua, sol::table luaGlobals)
     ImGui.set_function("GetContentRegionAvail", GetContentRegionAvail);
     ImGui.set_function("GetWindowContentRegionMin", GetWindowContentRegionMin);
     ImGui.set_function("GetWindowContentRegionMax", GetWindowContentRegionMax);
+
+    // DEPRECATED
     ImGui.set_function("GetWindowContentRegionWidth", GetWindowContentRegionWidth);
 #pragma endregion Content Region
 
@@ -3781,6 +3806,9 @@ inline void InitBindings(sol::state& lua, sol::table luaGlobals)
     ImGui.set_function("IsKeyDown", IsKeyDown);
     ImGui.set_function("IsKeyPressed", sol::overload(sol::resolve<bool(int)>(IsKeyPressed), sol::resolve<bool(int, bool)>(IsKeyPressed)));
     ImGui.set_function("IsKeyReleased", IsKeyReleased);
+    ImGui.set_function("SetNextFrameWantCaptureKeyboard", SetNextFrameWantCaptureKeyboard);
+
+    // DEPRECATED
     ImGui.set_function("CaptureKeyboardFromApp", sol::overload(sol::resolve<void()>(CaptureKeyboardFromApp), sol::resolve<void(bool)>(CaptureKeyboardFromApp)));
 #pragma endregion Inputs Utilities : Keyboard
 
@@ -3803,6 +3831,9 @@ inline void InitBindings(sol::state& lua, sol::table luaGlobals)
     ImGui.set_function("ResetMouseDragDelta", sol::overload(sol::resolve<void()>(ResetMouseDragDelta), sol::resolve<void(int)>(ResetMouseDragDelta)));
     ImGui.set_function("GetMouseCursor", GetMouseCursor);
     ImGui.set_function("SetMouseCursor", SetMouseCursor);
+    ImGui.set_function("SetNextFrameWantCaptureMouse", SetNextFrameWantCaptureMouse);
+
+    // DEPRECATED
     ImGui.set_function("CaptureMouseFromApp", sol::overload(sol::resolve<void()>(CaptureMouseFromApp), sol::resolve<void(bool)>(CaptureMouseFromApp)));
 #pragma endregion Inputs Utilities : Mouse
 

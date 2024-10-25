@@ -19,8 +19,6 @@ bool D3D12::ResetState(const bool acClearDownlevelBackbuffers, const bool acDest
         {
             for (auto i = 0; i < drawData.CmdListsCount; ++i)
                 IM_DELETE(drawData.CmdLists[i]);
-            delete[] drawData.CmdLists;
-            drawData.CmdLists = nullptr;
             drawData.Clear();
         }
 
@@ -466,7 +464,7 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
 
     ReloadFonts();
 
-    if (!ImGui_ImplDX12_CreateDeviceObjects(m_pCommandQueue.Get()))
+    if (!ImGui_ImplDX12_CreateDeviceObjects())
     {
         Log::Error("D3D12::InitializeImGui() - ImGui_ImplDX12_CreateDeviceObjects call failed!");
         ImGui_ImplDX12_Shutdown();
@@ -484,7 +482,7 @@ void D3D12::PrepareUpdate()
 
     std::lock_guard _(m_imguiLock);
 
-    ImGui_ImplWin32_NewFrame(m_outSize);
+    ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
 
     CET::Get().GetOverlay().Update();
@@ -497,13 +495,13 @@ void D3D12::PrepareUpdate()
 
     for (auto i = 0; i < drawData.CmdListsCount; ++i)
         IM_DELETE(drawData.CmdLists[i]);
-    delete[] drawData.CmdLists;
-    drawData.CmdLists = nullptr;
     drawData.Clear();
 
     drawData = *ImGui::GetDrawData();
 
-    auto** copiedDrawLists = new ImDrawList*[drawData.CmdListsCount];
+    ImVector<ImDrawList*> copiedDrawLists;
+    copiedDrawLists.resize(drawData.CmdListsCount);
+
     for (auto i = 0; i < drawData.CmdListsCount; ++i)
         copiedDrawLists[i] = drawData.CmdLists[i]->CloneOutput();
     drawData.CmdLists = copiedDrawLists;
@@ -516,7 +514,7 @@ void D3D12::Update()
     // swap staging ImGui buffer with render ImGui buffer
     {
         std::lock_guard _(m_imguiLock);
-        ImGui_ImplDX12_NewFrame(m_pCommandQueue.Get());
+        ImGui_ImplDX12_NewFrame();
         if (m_imguiDrawDataBuffers[1].Valid)
         {
             std::swap(m_imguiDrawDataBuffers[0], m_imguiDrawDataBuffers[1]);
