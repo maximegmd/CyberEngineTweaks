@@ -80,6 +80,7 @@
 // CET Headers
 #include "CET.h"
 #include "Utils.h"
+static std::string g_LayoutPath = "";
 
 #include "imgui.h"
 #ifndef IMGUI_DISABLE
@@ -182,7 +183,8 @@ static bool ImGui_ImplWin32_InitEx(void* hwnd, bool platform_has_own_dc)
     // CET specific
     // Enable Keyboard Nav and setup INI path
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    io.IniFilename = UTF16ToUTF8(GetAbsolutePath(L"layout.ini", CET::Get().GetPaths().CETRoot(), true).native()).c_str();
+    g_LayoutPath = UTF16ToUTF8(GetAbsolutePath(L"layout.ini", CET::Get().GetPaths().CETRoot(), true).native()).c_str();
+    io.IniFilename = g_LayoutPath.c_str();
 
     bd->hWnd = (HWND)hwnd;
     bd->WantUpdateMonitors = true;
@@ -325,7 +327,7 @@ static void ImGui_ImplWin32_UpdateKeyModifiers()
 
 // This code supports multi-viewports (multiple OS Windows mapped into different Dear ImGui viewports)
 // Because of that, it is a little more complicated than your typical single-viewport binding code!
-static void ImGui_ImplWin32_UpdateMouseData()
+static void ImGui_ImplWin32_UpdateMouseData(SIZE aOutSize)
 {
     ImGui_ImplWin32_Data* bd = ImGui_ImplWin32_GetBackendData();
     ImGuiIO& io = ImGui::GetIO();
@@ -361,7 +363,17 @@ static void ImGui_ImplWin32_UpdateMouseData()
             POINT mouse_pos = mouse_screen_pos;
             if (!(io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable))
                 ::ScreenToClient(bd->hWnd, &mouse_pos);
-            io.AddMousePosEvent((float)mouse_pos.x, (float)mouse_pos.y);
+
+            static float xScale = 1.0;
+            static float yScale = 1.0;
+            if(aOutSize.cx && aOutSize.cy)
+            {
+                RECT clientRect;
+                ::GetClientRect(bd->hWnd, &clientRect);
+                xScale = static_cast<float>(aOutSize.cx) / (clientRect.right - clientRect.left);
+                yScale = static_cast<float>(aOutSize.cy) / (clientRect.bottom - clientRect.top);
+            }
+            io.AddMousePosEvent((float)mouse_pos.x * xScale, (float)mouse_pos.y * yScale);
         }
     }
 
@@ -475,16 +487,16 @@ static void ImGui_ImplWin32_UpdateMonitors()
     bd->WantUpdateMonitors = false;
 }
 
-void ImGui_ImplWin32_NewFrame()
+void ImGui_ImplWin32_NewFrame(SIZE aOutSize)
 {
     ImGui_ImplWin32_Data* bd = ImGui_ImplWin32_GetBackendData();
     IM_ASSERT(bd != nullptr && "Context or backend not initialized? Did you call ImGui_ImplWin32_Init()?");
     ImGuiIO& io = ImGui::GetIO();
 
     // Setup display size (every frame to accommodate for window resizing)
-    RECT rect = {0, 0, 0, 0};
-    ::GetClientRect(bd->hWnd, &rect);
-    io.DisplaySize = ImVec2((float)(rect.right - rect.left), (float)(rect.bottom - rect.top));
+    // RECT rect = {0, 0, 0, 0};
+    // ::GetClientRect(bd->hWnd, &rect);
+    io.DisplaySize = ImVec2(static_cast<float>(aOutSize.cx), static_cast<float>(aOutSize.cy));
     if (bd->WantUpdateMonitors)
         ImGui_ImplWin32_UpdateMonitors();
 
@@ -495,7 +507,7 @@ void ImGui_ImplWin32_NewFrame()
     bd->Time = current_time;
 
     // Update OS mouse position
-    ImGui_ImplWin32_UpdateMouseData();
+    ImGui_ImplWin32_UpdateMouseData(aOutSize);
 
     // Process workarounds for known Windows key handling issues
     ImGui_ImplWin32_ProcessKeyEventsWorkarounds();

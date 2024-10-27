@@ -482,7 +482,7 @@ void D3D12::PrepareUpdate()
 
     std::lock_guard _(m_imguiLock);
 
-    ImGui_ImplWin32_NewFrame();
+    ImGui_ImplWin32_NewFrame(m_outSize);
     ImGui::NewFrame();
 
     CET::Get().GetOverlay().Update();
