@@ -77,6 +77,10 @@
 
 #include <stdafx.h>
 
+// CET Headers
+#include "CET.h"
+#include "Utils.h"
+
 #include "imgui.h"
 #ifndef IMGUI_DISABLE
 #include "win32.h"
@@ -175,6 +179,11 @@ static bool ImGui_ImplWin32_InitEx(void* hwnd, bool platform_has_own_dc)
     io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports;    // We can create multi-viewports on the Platform side (optional)
     io.BackendFlags |= ImGuiBackendFlags_HasMouseHoveredViewport; // We can call io.AddMouseViewportEvent() with correct data (optional)
 
+    // CET specific
+    // Enable Keyboard Nav and setup INI path
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.IniFilename = UTF16ToUTF8(GetAbsolutePath(L"layout.ini", CET::Get().GetPaths().CETRoot(), true).native()).c_str();
+
     bd->hWnd = (HWND)hwnd;
     bd->WantUpdateMonitors = true;
     bd->TicksPerSecond = perf_frequency;
@@ -191,15 +200,15 @@ static bool ImGui_ImplWin32_InitEx(void* hwnd, bool platform_has_own_dc)
         // Dynamically load XInput library
 #ifndef IMGUI_IMPL_WIN32_DISABLE_GAMEPAD
     bd->WantUpdateHasGamepad = true;
-    const char* xinput_dll_names[] = {
-        "xinput1_4.dll",   // Windows 8+
-        "xinput1_3.dll",   // DirectX SDK
-        "xinput9_1_0.dll", // Windows Vista, Windows 7
-        "xinput1_2.dll",   // DirectX SDK
-        "xinput1_1.dll"    // DirectX SDK
+    const TCHAR* xinput_dll_names[] = {
+        _T("xinput1_4.dll"),   // Windows 8+
+        _T("xinput1_3.dll"),   // DirectX SDK
+        _T("xinput9_1_0.dll"), // Windows Vista, Windows 7
+        _T("xinput1_2.dll"),   // DirectX SDK
+        _T("xinput1_1.dll")    // DirectX SDK
     };
     for (int n = 0; n < IM_ARRAYSIZE(xinput_dll_names); n++)
-        if (HMODULE dll = ::LoadLibraryA(xinput_dll_names[n]))
+        if (HMODULE dll = ::LoadLibrary(xinput_dll_names[n]))
         {
             bd->XInputDLL = dll;
             bd->XInputGetCapabilities = (PFN_XInputGetCapabilities)::GetProcAddress(dll, "XInputGetCapabilities");
@@ -903,7 +912,7 @@ static BOOL _IsWindowsVersionOrGreater(WORD major, WORD minor, WORD)
     typedef LONG(WINAPI * PFN_RtlVerifyVersionInfo)(OSVERSIONINFOEXW*, ULONG, ULONGLONG);
     static PFN_RtlVerifyVersionInfo RtlVerifyVersionInfoFn = nullptr;
     if (RtlVerifyVersionInfoFn == nullptr)
-        if (HMODULE ntdllModule = ::GetModuleHandleA("ntdll.dll"))
+        if (HMODULE ntdllModule = ::GetModuleHandle(_T("ntdll.dll")))
             RtlVerifyVersionInfoFn = (PFN_RtlVerifyVersionInfo)GetProcAddress(ntdllModule, "RtlVerifyVersionInfo");
     if (RtlVerifyVersionInfoFn == nullptr)
         return FALSE;
@@ -958,7 +967,7 @@ void ImGui_ImplWin32_EnableDpiAwareness()
 
     if (_IsWindows10OrGreater())
     {
-        static HINSTANCE user32_dll = ::LoadLibraryA("user32.dll"); // Reference counted per-process
+        static HINSTANCE user32_dll = ::LoadLibrary(_T("user32.dll")); // Reference counted per-process
         if (PFN_SetThreadDpiAwarenessContext SetThreadDpiAwarenessContextFn = (PFN_SetThreadDpiAwarenessContext)::GetProcAddress(user32_dll, "SetThreadDpiAwarenessContext"))
         {
             SetThreadDpiAwarenessContextFn(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
@@ -967,7 +976,7 @@ void ImGui_ImplWin32_EnableDpiAwareness()
     }
     if (_IsWindows8Point1OrGreater())
     {
-        static HINSTANCE shcore_dll = ::LoadLibraryA("shcore.dll"); // Reference counted per-process
+        static HINSTANCE shcore_dll = ::LoadLibrary(_T("shcore.dll")); // Reference counted per-process
         if (PFN_SetProcessDpiAwareness SetProcessDpiAwarenessFn = (PFN_SetProcessDpiAwareness)::GetProcAddress(shcore_dll, "SetProcessDpiAwareness"))
         {
             SetProcessDpiAwarenessFn(PROCESS_PER_MONITOR_DPI_AWARE);
@@ -988,7 +997,7 @@ float ImGui_ImplWin32_GetDpiScaleForMonitor(void* monitor)
     UINT xdpi = 96, ydpi = 96;
     if (_IsWindows8Point1OrGreater())
     {
-        static HINSTANCE shcore_dll = ::LoadLibraryA("shcore.dll"); // Reference counted per-process
+        static HINSTANCE shcore_dll = ::LoadLibrary(_T("shcore.dll")); // Reference counted per-process
         static PFN_GetDpiForMonitor GetDpiForMonitorFn = nullptr;
         if (GetDpiForMonitorFn == nullptr && shcore_dll != nullptr)
             GetDpiForMonitorFn = (PFN_GetDpiForMonitor)::GetProcAddress(shcore_dll, "GetDpiForMonitor");
@@ -1124,7 +1133,7 @@ static void ImGui_ImplWin32_CreateWindow(ImGuiViewport* viewport)
     viewport->PlatformHandle = viewport->PlatformHandleRaw = vd->Hwnd;
 
     // Secondary viewports store their imgui context
-    ::SetPropA(vd->Hwnd, "IMGUI_CONTEXT", ImGui::GetCurrentContext());
+    ::SetProp(vd->Hwnd, _T("IMGUI_CONTEXT"), ImGui::GetCurrentContext());
 }
 
 static void ImGui_ImplWin32_DestroyWindow(ImGuiViewport* viewport)
@@ -1328,7 +1337,7 @@ static void ImGui_ImplWin32_OnChangedViewport(ImGuiViewport* viewport)
 static LRESULT CALLBACK ImGui_ImplWin32_WndProcHandler_PlatformWindow(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     // Allow secondary viewport WndProc to be called regardless of current context
-    ImGuiContext* hwnd_ctx = (ImGuiContext*)::GetPropA(hWnd, "IMGUI_CONTEXT");
+    ImGuiContext* hwnd_ctx = (ImGuiContext*)::GetProp(hWnd, _T("IMGUI_CONTEXT"));
     ImGuiContext* prev_ctx = ImGui::GetCurrentContext();
     if (hwnd_ctx != prev_ctx && hwnd_ctx != NULL)
         ImGui::SetCurrentContext(hwnd_ctx);

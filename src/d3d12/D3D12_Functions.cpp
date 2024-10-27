@@ -464,7 +464,7 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
 
     ReloadFonts();
 
-    if (!ImGui_ImplDX12_CreateDeviceObjects())
+    if (!ImGui_ImplDX12_CreateDeviceObjects(m_pCommandQueue.Get()))
     {
         Log::Error("D3D12::InitializeImGui() - ImGui_ImplDX12_CreateDeviceObjects call failed!");
         ImGui_ImplDX12_Shutdown();
@@ -514,7 +514,7 @@ void D3D12::Update()
     // swap staging ImGui buffer with render ImGui buffer
     {
         std::lock_guard _(m_imguiLock);
-        ImGui_ImplDX12_NewFrame();
+        ImGui_ImplDX12_NewFrame(m_pCommandQueue.Get());
         if (m_imguiDrawDataBuffers[1].Valid)
         {
             std::swap(m_imguiDrawDataBuffers[0], m_imguiDrawDataBuffers[1]);

@@ -366,7 +366,7 @@ void ImGui_ImplDX12_RenderDrawData(ImDrawData* draw_data, ID3D12GraphicsCommandL
     }
 }
 
-static void ImGui_ImplDX12_CreateFontsTexture()
+static void ImGui_ImplDX12_CreateFontsTexture(ID3D12CommandQueue* apCommandQueue)
 {
     // Build texture atlas
     ImGuiIO& io = ImGui::GetIO();
@@ -464,9 +464,9 @@ static void ImGui_ImplDX12_CreateFontsTexture()
         queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
         queueDesc.NodeMask = 1;
 
-        ID3D12CommandQueue* cmdQueue = nullptr;
-        hr = bd->pd3dDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&cmdQueue));
-        IM_ASSERT(SUCCEEDED(hr));
+        //ID3D12CommandQueue* cmdQueue = nullptr;
+        //hr = bd->pd3dDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&cmdQueue));
+        //IM_ASSERT(SUCCEEDED(hr));
 
         ID3D12CommandAllocator* cmdAlloc = nullptr;
         hr = bd->pd3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&cmdAlloc));
@@ -482,8 +482,8 @@ static void ImGui_ImplDX12_CreateFontsTexture()
         hr = cmdList->Close();
         IM_ASSERT(SUCCEEDED(hr));
 
-        cmdQueue->ExecuteCommandLists(1, (ID3D12CommandList* const*)&cmdList);
-        hr = cmdQueue->Signal(fence, 1);
+        apCommandQueue->ExecuteCommandLists(1, (ID3D12CommandList* const*)&cmdList);
+        hr = apCommandQueue->Signal(fence, 1);
         IM_ASSERT(SUCCEEDED(hr));
 
         fence->SetEventOnCompletion(1, event);
@@ -491,7 +491,7 @@ static void ImGui_ImplDX12_CreateFontsTexture()
 
         cmdList->Release();
         cmdAlloc->Release();
-        cmdQueue->Release();
+        //cmdQueue->Release();
         CloseHandle(event);
         fence->Release();
         uploadBuffer->Release();
@@ -522,7 +522,7 @@ static void ImGui_ImplDX12_CreateFontsTexture()
     io.Fonts->SetTexID((ImTextureID)bd->hFontSrvGpuDescHandle.ptr);
 }
 
-bool ImGui_ImplDX12_CreateDeviceObjects()
+bool ImGui_ImplDX12_CreateDeviceObjects(ID3D12CommandQueue* apCommandQueue)
 {
     ImGui_ImplDX12_Data* bd = ImGui_ImplDX12_GetBackendData();
     if (!bd || !bd->pd3dDevice)
@@ -579,22 +579,22 @@ bool ImGui_ImplDX12_CreateDeviceObjects()
 
         // Load d3d12.dll and D3D12SerializeRootSignature() function address dynamically to facilitate using with D3D12On7.
         // See if any version of d3d12.dll is already loaded in the process. If so, give preference to that.
-        static HINSTANCE d3d12_dll = ::GetModuleHandleA("d3d12.dll");
+        static HINSTANCE d3d12_dll = ::GetModuleHandle(_T("d3d12.dll"));
         if (d3d12_dll == nullptr)
         {
             // Attempt to load d3d12.dll from local directories. This will only succeed if
             // (1) the current OS is Windows 7, and
             // (2) there exists a version of d3d12.dll for Windows 7 (D3D12On7) in one of the following directories.
             // See https://github.com/ocornut/imgui/pull/3696 for details.
-            const char* localD3d12Paths[] = {
-                ".\\d3d12.dll", ".\\d3d12on7\\d3d12.dll", ".\\12on7\\d3d12.dll"}; // A. current directory, B. used by some games, C. used in Microsoft D3D12On7 sample
+            const TCHAR* localD3d12Paths[] = {
+                _T(".\\d3d12.dll"), _T(".\\d3d12on7\\d3d12.dll"), _T(".\\12on7\\d3d12.dll")}; // A. current directory, B. used by some games, C. used in Microsoft D3D12On7 sample
             for (int i = 0; i < IM_ARRAYSIZE(localD3d12Paths); i++)
-                if ((d3d12_dll = ::LoadLibraryA(localD3d12Paths[i])) != nullptr)
+                if ((d3d12_dll = ::LoadLibrary(localD3d12Paths[i])) != nullptr)
                     break;
 
             // If failed, we are on Windows >= 10.
             if (d3d12_dll == nullptr)
-                d3d12_dll = ::LoadLibraryA("d3d12.dll");
+                d3d12_dll = ::LoadLibrary(_T("d3d12.dll"));
 
             if (d3d12_dll == nullptr)
                 return false;
@@ -747,7 +747,7 @@ bool ImGui_ImplDX12_CreateDeviceObjects()
     if (result_pipeline_state != S_OK)
         return false;
 
-    ImGui_ImplDX12_CreateFontsTexture();
+    ImGui_ImplDX12_CreateFontsTexture(apCommandQueue);
 
     return true;
 }
@@ -831,13 +831,13 @@ void ImGui_ImplDX12_Shutdown()
     IM_DELETE(bd);
 }
 
-void ImGui_ImplDX12_NewFrame()
+void ImGui_ImplDX12_NewFrame(ID3D12CommandQueue* apCommandQueue)
 {
     ImGui_ImplDX12_Data* bd = ImGui_ImplDX12_GetBackendData();
     IM_ASSERT(bd != nullptr && "Context or backend not initialized! Did you call ImGui_ImplDX12_Init()?");
 
-    if (!bd->pPipelineState)
-        ImGui_ImplDX12_CreateDeviceObjects();
+    if (!bd->pPipelineState || !ImGui::GetIO().Fonts->IsBuilt())
+        ImGui_ImplDX12_CreateDeviceObjects(apCommandQueue);
 }
 
 //--------------------------------------------------------------------------------------------------------
