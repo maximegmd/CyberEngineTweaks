@@ -16,8 +16,7 @@ Settings::Settings(Options& aOptions, LuaVM& aVm)
 
 WidgetResult Settings::OnPopup()
 {
-    const auto ret = UnsavedChangesPopup(
-        "Settings", m_openChangesModal, m_madeChanges, [this] { Save(); }, [this] { Load(); });
+    const auto ret = UnsavedChangesPopup("Settings", m_openChangesModal, m_madeChanges, [this] { Save(); }, [this] { Load(); });
     m_madeChanges = ret == TChangedCBResult::CHANGED;
     m_popupResult = ret;
 
@@ -54,7 +53,7 @@ void Settings::OnUpdate()
         m_madeChanges = false;
         if (ImGui::CollapsingHeader("Patches", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            ImGui::TreePush((void*)nullptr);
+            ImGui::TreePush("##PATCHES");
             if (ImGui::BeginTable("##SETTINGS_PATCHES", 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
             {
                 const auto& patchesSettings = m_options.Patches;
@@ -78,7 +77,9 @@ void Settings::OnUpdate()
                 UpdateAndDrawSetting(
                     "Disable Boundary Teleport", "Allows players to access out-of-bounds locations (requires restart to take effect).", m_patches.DisableBoundaryTeleport,
                     patchesSettings.DisableBoundaryTeleport);
-                UpdateAndDrawSetting("Disable V-Sync (Windows 7 only)", "Disables VSync on Windows 7 to bypass the 60 FPS limit (requires restart to take effect).", m_patches.DisableWin7Vsync, patchesSettings.DisableWin7Vsync);
+                UpdateAndDrawSetting(
+                    "Disable V-Sync (Windows 7 only)", "Disables VSync on Windows 7 to bypass the 60 FPS limit (requires restart to take effect).", m_patches.DisableWin7Vsync,
+                    patchesSettings.DisableWin7Vsync);
                 UpdateAndDrawSetting(
                     "Fix Minimap Flicker", "Fixes Minimap flicker caused by some mods (requires restart to take effect).", m_patches.MinimapFlicker,
                     patchesSettings.MinimapFlicker);
@@ -89,7 +90,7 @@ void Settings::OnUpdate()
         }
         if (ImGui::CollapsingHeader("CET Development Settings", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            ImGui::TreePush((void*)nullptr);
+            ImGui::TreePush("##DEV");
             if (ImGui::BeginTable("##SETTINGS_DEV", 2, ImGuiTableFlags_Sortable | ImGuiTableFlags_SizingStretchSame, ImVec2(-ImGui::GetStyle().IndentSpacing, 0)))
             {
                 const auto& developerSettings = m_options.Developer;
@@ -108,8 +109,10 @@ void Settings::OnUpdate()
                     "Dump Game Options", "Dumps all game options into main log file (requires restart to take effect).", m_developer.DumpGameOptions,
                     developerSettings.DumpGameOptions);
                 UpdateAndDrawSetting(
-                    "Enable JIT for Lua", "Enables JIT compiler for Lua VM, which may majorly speed up the mods. Disable it in case you experience issues as a troubleshooting step (requires restart to take effect).", m_developer.EnableJIT,
-                    developerSettings.EnableJIT);
+                    "Enable JIT for Lua",
+                    "Enables JIT compiler for Lua VM, which may majorly speed up the mods. Disable it in case you experience issues as a troubleshooting step (requires restart to "
+                    "take effect).",
+                    m_developer.EnableJIT, developerSettings.EnableJIT);
 
                 ImGui::EndTable();
             }

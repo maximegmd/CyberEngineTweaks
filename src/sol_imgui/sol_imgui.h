@@ -2,13 +2,6 @@
 
 namespace sol_ImGui
 {
-
-// Version
-inline std::string GetVersion()
-{
-    return std::string(ImGui::GetVersion());
-}
-
 // Windows
 inline bool Begin(const std::string& name)
 {
@@ -50,6 +43,15 @@ inline bool BeginChild(const std::string& name, float sizeX, float sizeY)
 {
     return ImGui::BeginChild(name.c_str(), {sizeX, sizeY});
 }
+inline bool BeginChild(const std::string& name, float sizeX, float sizeY, int child_flags)
+{
+    return ImGui::BeginChild(name.c_str(), {sizeX, sizeY}, static_cast<ImGuiChildFlags>(child_flags));
+}
+
+inline bool BeginChild(const std::string& name, float sizeX, float sizeY, int child_flags, int window_flags)
+{
+    return ImGui::BeginChild(name.c_str(), {sizeX, sizeY}, static_cast<ImGuiChildFlags>(child_flags), static_cast<ImGuiWindowFlags>(window_flags));
+}
 
 // DEPRECATED
 inline bool BeginChild(const std::string& name, float sizeX, float sizeY, bool border)
@@ -59,17 +61,6 @@ inline bool BeginChild(const std::string& name, float sizeX, float sizeY, bool b
 inline bool BeginChild(const std::string& name, float sizeX, float sizeY, bool border, int flags)
 {
     return ImGui::BeginChild(name.c_str(), {sizeX, sizeY}, border, flags);
-}
-
-// new
-inline bool BeginChild(const std::string& name, float sizeX, float sizeY, int child_flags)
-{
-    return ImGui::BeginChild(name.c_str(), {sizeX, sizeY}, static_cast<ImGuiChildFlags>(child_flags));
-}
-
-inline bool BeginChild(const std::string& name, float sizeX, float sizeY, int child_flags, int window_flags)
-{
-    return ImGui::BeginChild(name.c_str(), {sizeX, sizeY}, static_cast<ImGuiChildFlags>(child_flags), static_cast<ImGuiWindowFlags>(window_flags));
 }
 
 inline void EndChild()
@@ -2676,26 +2667,21 @@ inline int GetKeyPressedAmount(int key_index, float repeat_delay, float rate)
 {
     return ImGui::GetKeyPressedAmount(static_cast<ImGuiKey>(key_index), repeat_delay, rate);
 }
+inline void SetNextFrameWantCaptureKeyboard(bool want_capture_keyboard_value)
+{
+    ImGui::SetNextFrameWantCaptureKeyboard(want_capture_keyboard_value);
+}
 
 // DEPRECATED
 inline int GetKeyIndex(int imgui_key)
 {
     return ImGui::GetKeyIndex(static_cast<ImGuiKey>(imgui_key));
 }
-
-// DEPRECATED
 inline void CaptureKeyboardFromApp()
 {
     ImGui::SetNextFrameWantCaptureKeyboard(true);
 }
-// DEPRECTED
 inline void CaptureKeyboardFromApp(bool want_capture_keyboard_value)
-{
-    ImGui::SetNextFrameWantCaptureKeyboard(want_capture_keyboard_value);
-}
-
-// new
-inline void SetNextFrameWantCaptureKeyboard(bool want_capture_keyboard_value)
 {
     ImGui::SetNextFrameWantCaptureKeyboard(want_capture_keyboard_value);
 }
@@ -2784,19 +2770,17 @@ inline void SetMouseCursor(int cursor_type)
 {
     ImGui::SetMouseCursor(static_cast<ImGuiMouseCursor>(cursor_type));
 }
+inline void SetNextFrameWantCaptureMouse(bool want_capture_mouse_value)
+{
+    ImGui::SetNextFrameWantCaptureMouse(want_capture_mouse_value);
+}
 
 // DEPRECATED
 inline void CaptureMouseFromApp()
 {
     ImGui::SetNextFrameWantCaptureMouse(true);
 }
-// DEPRECATED
 inline void CaptureMouseFromApp(bool want_capture_mouse_value)
-{
-    ImGui::SetNextFrameWantCaptureMouse(want_capture_mouse_value);
-}
-
-inline void SetNextFrameWantCaptureMouse(bool want_capture_mouse_value)
 {
     ImGui::SetNextFrameWantCaptureMouse(want_capture_mouse_value);
 }
@@ -3128,13 +3112,12 @@ inline void InitEnums(sol::table luaGlobals)
 
 #pragma region Selectable Flags
     luaGlobals.new_enum(
-        "ImGuiSelectableFlags", "None", ImGuiSelectableFlags_None, "NoAutoClosePopups", ImGuiSelectableFlags_NoAutoClosePopups, "SpanAllColumns", ImGuiSelectableFlags_SpanAllColumns,
-        "AllowDoubleClick", ImGuiSelectableFlags_AllowDoubleClick, "Disabled", ImGuiSelectableFlags_Disabled, "AllowOverlap", ImGuiSelectableFlags_AllowOverlap,
+        "ImGuiSelectableFlags", "None", ImGuiSelectableFlags_None, "NoAutoClosePopups", ImGuiSelectableFlags_NoAutoClosePopups, "SpanAllColumns",
+        ImGuiSelectableFlags_SpanAllColumns, "AllowDoubleClick", ImGuiSelectableFlags_AllowDoubleClick, "Disabled", ImGuiSelectableFlags_Disabled, "AllowOverlap",
+        ImGuiSelectableFlags_AllowOverlap,
 
         // DEPRECATED
-        "DontClosePopups", ImGuiSelectableFlags_DontClosePopups,
-        "AllowItemOverlap", ImGuiSelectableFlags_AllowItemOverlap
-    );
+        "DontClosePopups", ImGuiSelectableFlags_DontClosePopups, "AllowItemOverlap", ImGuiSelectableFlags_AllowItemOverlap);
 #pragma endregion Selectable Flags
 
 #pragma region Popup Flags
@@ -3268,10 +3251,6 @@ inline void InitBindings(sol::state& lua, sol::table luaGlobals)
     InitEnums(luaGlobals);
 
     sol::table ImGui(lua, sol::create);
-
-#pragma region Version
-    ImGui.set_function("GetVersion", GetVersion);
-#pragma endregion Version
 
 #pragma region Windows
     ImGui.set_function(

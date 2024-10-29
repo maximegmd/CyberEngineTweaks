@@ -504,7 +504,7 @@ void D3D12::PrepareUpdate()
 
     for (auto i = 0; i < drawData.CmdListsCount; ++i)
         copiedDrawLists[i] = drawData.CmdLists[i]->CloneOutput();
-    drawData.CmdLists = copiedDrawLists;
+    drawData.CmdLists = std::move(copiedDrawLists);
 
     std::swap(m_imguiDrawDataBuffers[1], m_imguiDrawDataBuffers[2]);
 }
