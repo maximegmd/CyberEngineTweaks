@@ -32,12 +32,17 @@ You can find all the supported functions and overloads below.
 ## Child Windows
 ```lua
   -- ImGui.BeginChild(...)
-  -- Parameters: text (name), float (size_x) [O], float (size_y) [O], bool (border) [O], ImGuiWindowFlags (flags) [O]
+  -- Parameters: text (name), float (size_x) [O], float (size_y) [O], ImGuiChildFlags (child_flags) [O], ImGuiWindowFlags (window_flags) [O]
   -- Returns: bool (shouldDraw)
   -- Overloads
   shouldDraw = ImGui.BeginChild("Name")
   shouldDraw = ImGui.BeginChild("Name", 100)
   shouldDraw = ImGui.BeginChild("Name", 100, 200)
+  shouldDraw = ImGui.BeginChild("Name", 100, 200, ImGuiChildFlags.Border)
+  shouldDraw = ImGui.BeginChild("Name", 100, 200, ImGuiChildFlags.Border, ImGuiWindowFlags.NoMove)
+
+  -- The following will still work, but are considered deprecated and the newer overloads above should be used.
+  -- Parameters: text (name), float (size_x) [O], float (size_y) [O], bool (border) [O], ImGuiWindowFlags (flags) [O]
   shouldDraw = ImGui.BeginChild("Name", 100, 200, true)
   shouldDraw = ImGui.BeginChild("Name", 100, 200, true, ImGuiWindowFlags.NoMove)
 
@@ -272,6 +277,13 @@ You can find all the supported functions and overloads below.
   ImGui.PopStyleVar()
   ImGui.PopStyleVar(2)
 
+  -- ImGui.PushItemFlag(...)
+  -- Parameters: int/ImGuiItemFlags (option), bool (enabled)
+  ImGui.PushItemFlag(ImGuiItemFlags.NoTabStop, true)
+
+  -- ImGui.PopItemFlag()
+  ImGui.PopItemFlag()
+
   -- ImGui.GetStyleColorVec4(...)
   -- Parameters: ImGuiCol (idx)
   -- Returns: float (color_r), float (color_g), float (color_b), float (color_a)
@@ -321,12 +333,12 @@ You can find all the supported functions and overloads below.
   -- ImGui.PopTextWrapPos()
   ImGui.PopTextWrapPos()
 
-  -- ImGui.PushAllowKeyboardFocus(...)
-  -- Parameters: bool (allow_keyboard_focus)
-  ImGui.PushAllowKeyboardFocus(true)
+  -- ImGui.PushTabStop(...)
+  -- Parameters: bool (tab_stop)
+  ImGui.PushTabStop(true)
 
-  -- ImGui.PopAllowKeyboardFocus()
-  ImGui.PopAllowKeyboardFocus()
+  -- ImGui.PopTabStop()
+  ImGui.PopTabStop()
 
   -- ImGui.PushButtonRepeat(...)
   -- Parameters: bool (repeat)
@@ -334,6 +346,15 @@ You can find all the supported functions and overloads below.
 
   -- ImGui.PopButtonRepeat()
   ImGui.PopButtonRepeat()
+
+  -- DEPRECATED
+  -- ImGui.PushAllowKeyboardFocus(...)
+  -- Parameters: bool (allow_keyboard_focus)
+  ImGui.PushAllowKeyboardFocus(true)
+
+  -- DEPRECATED
+  -- ImGui.PopAllowKeyboardFocus()
+  ImGui.PopAllowKeyboardFocus()
 ```
 
 ## Cursor / Layout
@@ -1009,6 +1030,7 @@ selected, activated = ImGui.MenuItem("Label", "ALT+F4", selected, true)
 
 ## Tooltips
 ```lua
+  -- returns bool (n/a) [value will always be true in current implementations]
   -- ImGui.BeginTooltip()
   ImGui.BeginTooltip()
 
@@ -1351,6 +1373,10 @@ selected, activated = ImGui.MenuItem("Label", "ALT+F4", selected, true)
   -- Returns: float (x), float (y)
   x, y = ImGui.GetItemRectSize()
 
+  -- ImGuiSetNextItemAllowOverlap()
+  ImGui.ImGuiSetNextItemAllowOverlap()
+
+  -- DEPRECATED
   -- ImGui.SetItemAllowOverlap()
   ImGui.SetItemAllowOverlap()
 ```
@@ -1378,6 +1404,7 @@ selected, activated = ImGui.MenuItem("Label", "ALT+F4", selected, true)
   -- Returns: text (style_color_name)
   style_color_name = ImGui.GetStyleColorName(ImGuiCol.Text)
 
+  -- DEPRECATED (use BeginChild() with ImGuiChildFlags.FrameStyle!)
   -- ImGui.BeginChildFrame(...)
   -- Parameters: unsigned int (id), float (size_x), float (size_y), ImGuiWindowFlags (flags) [O]
   -- Returns: bool (open)
@@ -1426,33 +1453,38 @@ selected, activated = ImGui.MenuItem("Label", "ALT+F4", selected, true)
 
 ## Inputs Utilities: Keyboard
 ```lua
-  -- ImGui.GetKeyIndex(...)
-  -- Parameters: ImGuiKey (key)
-  -- Returns: int (index)
-  index = ImGui.GetKeyIndex(ImGuiKey.Tab)
-  
   -- ImGui.IsKeyDown(...)
-  -- Parameters: int (key_index)
+  -- Parameters: int/ImGuiKey (key_index)
   -- Returns: bool (down)
   down = ImGui.IsKeyDown(0)
+  down = ImGui.IsKeyDown(ImGuiKey.Z)
   
   -- ImGui.IsKeyPressed(...)
-  -- Parameters: int (key_index), bool (repeat) [O]
+  -- Parameters: int/ImGuiKey (key_index), bool (repeat) [O]
   -- Returns: bool (pressed)
   -- Overloads
   pressed = ImGui.IsKeyPressed(0)
+  pressed = ImGui.IsKeyPressed(ImGuiKey.Z)
   pressed = ImGui.IsKeyPressed(0, true)
+  pressed = ImGui.IsKeyPressed(ImGuiKey.Z, true)
   
   -- ImGui.IsKeyReleased(...)
-  -- Parameters: int (key_index)
+  -- Parameters: int/ImGuiKey (key_index)
   -- Returns: bool (released)
   released = ImGui.IsKeyReleased(0)
+  released = ImGui.IsKeyReleased(ImGuiKey.Z)
   
   -- ImGui.GetKeyPressedAmount(...)
-  -- Parameters: int (key_index), float (repeat_delay), float (rate)
+  -- Parameters: int/ImGuiKey (key_index), float (repeat_delay), float (rate)
   -- Returns: int (pressed_amount)  
   pressed_amount = ImGui.GetKeyPressedAmount(0, 0.5, 5)
-  
+  pressed_amount = ImGui.GetKeyPressedAmount(ImGuiKey.Z, 0.5, 5)
+
+  -- ImGui.SetNextFrameWantCaptureKeyboard(...)
+  -- Parameters bool (want_capture_keyboard_valvue)
+  ImGui.SetNextFrameWantCaptureKeyboard(true)
+
+  -- DEPRECATED (use ImGui.SetNextFrameWantCaptureKeyboard())
   -- ImGui.CaptureKeyboardFromApp(...)
   -- Parameters: bool (want_capture_keyboard_value) [O]
   -- Overloads
@@ -1530,7 +1562,12 @@ selected, activated = ImGui.MenuItem("Label", "ALT+F4", selected, true)
   -- ImGui.SetMouseCursor(...)
   -- Parameters: ImGuiMouseCursor (cursor_type)
   ImGui.SetMouseCursor(ImGuiMouseCursor.Hand)
-  
+
+  -- ImGui.SetNextFrameWantCaptureMouse(...)
+  -- Parameters: bool (want_capture_mouse_value)
+  ImGui.SetNextFrameWantCaptureMouse(true)
+
+  -- DEPRECATED (Use ImGui.SetNextFrameWantCaptureMouse())
   -- ImGui.CaptureMouseFromApp()
   -- Parameters: bool (want_capture_mouse_value) [O]
   -- Overloads
