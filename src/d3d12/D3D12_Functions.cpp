@@ -19,8 +19,6 @@ bool D3D12::ResetState(const bool acClearDownlevelBackbuffers, const bool acDest
         {
             for (auto i = 0; i < drawData.CmdListsCount; ++i)
                 IM_DELETE(drawData.CmdLists[i]);
-            delete[] drawData.CmdLists;
-            drawData.CmdLists = nullptr;
             drawData.Clear();
         }
 
@@ -497,16 +495,16 @@ void D3D12::PrepareUpdate()
 
     for (auto i = 0; i < drawData.CmdListsCount; ++i)
         IM_DELETE(drawData.CmdLists[i]);
-    delete[] drawData.CmdLists;
-    drawData.CmdLists = nullptr;
     drawData.Clear();
 
     drawData = *ImGui::GetDrawData();
 
-    auto** copiedDrawLists = new ImDrawList*[drawData.CmdListsCount];
+    ImVector<ImDrawList*> copiedDrawLists;
+    copiedDrawLists.resize(drawData.CmdListsCount);
+
     for (auto i = 0; i < drawData.CmdListsCount; ++i)
         copiedDrawLists[i] = drawData.CmdLists[i]->CloneOutput();
-    drawData.CmdLists = copiedDrawLists;
+    drawData.CmdLists = std::move(copiedDrawLists);
 
     std::swap(m_imguiDrawDataBuffers[1], m_imguiDrawDataBuffers[2]);
 }

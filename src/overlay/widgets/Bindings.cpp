@@ -465,7 +465,7 @@ void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoq
     if (!headerOpen)
         return;
 
-    ImGui::TreePush();
+    ImGui::TreePush((void*)nullptr);
 
     if (aHotkeyCount > 0)
     {

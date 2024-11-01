@@ -43,6 +43,17 @@ inline bool BeginChild(const std::string& name, float sizeX, float sizeY)
 {
     return ImGui::BeginChild(name.c_str(), {sizeX, sizeY});
 }
+inline bool BeginChild(const std::string& name, float sizeX, float sizeY, int child_flags)
+{
+    return ImGui::BeginChild(name.c_str(), {sizeX, sizeY}, static_cast<ImGuiChildFlags>(child_flags));
+}
+
+inline bool BeginChild(const std::string& name, float sizeX, float sizeY, int child_flags, int window_flags)
+{
+    return ImGui::BeginChild(name.c_str(), {sizeX, sizeY}, static_cast<ImGuiChildFlags>(child_flags), static_cast<ImGuiWindowFlags>(window_flags));
+}
+
+// DEPRECATED
 inline bool BeginChild(const std::string& name, float sizeX, float sizeY, bool border)
 {
     return ImGui::BeginChild(name.c_str(), {sizeX, sizeY}, border);
@@ -51,6 +62,7 @@ inline bool BeginChild(const std::string& name, float sizeX, float sizeY, bool b
 {
     return ImGui::BeginChild(name.c_str(), {sizeX, sizeY}, border, flags);
 }
+
 inline void EndChild()
 {
     ImGui::EndChild();
@@ -231,9 +243,11 @@ inline std::tuple<float, float> GetWindowContentRegionMax()
     const auto vec2{ImGui::GetWindowContentRegionMax()};
     return std::make_tuple(vec2.x, vec2.y);
 }
+
+// DEPRECATED AND REMOVED IN IMGUI. KEEPING SO AMM DOESN'T BREAK ._.
 inline float GetWindowContentRegionWidth()
 {
-    return ImGui::GetWindowContentRegionWidth();
+    return (ImGui::GetWindowContentRegionMax().x - ImGui::GetWindowContentRegionMin().x);
 }
 
 // Windows Scrolling
@@ -337,6 +351,16 @@ inline void PopStyleVar(int count)
 {
     ImGui::PopStyleVar(count);
 }
+
+inline void PushItemFlag(int option, bool enabled)
+{
+    ImGui::PushItemFlag(static_cast<ImGuiItemFlags>(option), enabled);
+}
+inline void PopItemFlag()
+{
+    ImGui::PopItemFlag();
+}
+
 inline std::tuple<float, float, float, float> GetStyleColorVec4(int idx)
 {
     const auto col{ImGui::GetStyleColorVec4(idx)};
@@ -399,6 +423,8 @@ inline void PopTextWrapPos()
 {
     ImGui::PopTextWrapPos();
 }
+
+// DEPRECATED in 1.91, but still allowed. Replaced with PushTabStop/PopTabStop
 inline void PushAllowKeyboardFocus(bool allowKeyboardFocus)
 {
     ImGui::PushAllowKeyboardFocus(allowKeyboardFocus);
@@ -407,6 +433,16 @@ inline void PopAllowKeyboardFocus()
 {
     ImGui::PopAllowKeyboardFocus();
 }
+
+inline void PushTabStop(bool tab_stop)
+{
+    ImGui::PushTabStop(tab_stop);
+}
+inline void PopTabStop()
+{
+    ImGui::PopTabStop();
+}
+
 inline void PushButtonRepeat(bool repeat)
 {
     ImGui::PushButtonRepeat(repeat);
@@ -2070,9 +2106,9 @@ inline std::tuple<bool, bool> MenuItem(const std::string& label, const std::stri
 }
 
 // Tooltips
-inline void BeginTooltip()
+inline bool BeginTooltip()
 {
-    ImGui::BeginTooltip();
+    return ImGui::BeginTooltip();
 }
 inline void EndTooltip()
 {
@@ -2501,9 +2537,16 @@ inline std::tuple<float, float> GetItemRectSize()
     const auto vec2{ImGui::GetItemRectSize()};
     return std::make_tuple(vec2.x, vec2.y);
 }
+
+// DEPRECATED
 inline void SetItemAllowOverlap()
 {
     ImGui::SetItemAllowOverlap();
+}
+
+inline void SetNextItemAllowOverlap()
+{
+    ImGui::SetNextItemAllowOverlap();
 }
 
 // Miscellaneous Utilities
@@ -2537,6 +2580,8 @@ inline std::string GetStyleColorName(int idx)
     return std::string(ImGui::GetStyleColorName(idx));
 }
 /* TODO: SetStateStorage(), GetStateStorage(), CalcListClipping() ==> UNSUPPORTED */
+
+// DEPRECATED
 inline bool BeginChildFrame(unsigned int id, float sizeX, float sizeY)
 {
     return ImGui::BeginChildFrame(id, {sizeX, sizeY});
@@ -2545,6 +2590,7 @@ inline bool BeginChildFrame(unsigned int id, float sizeX, float sizeY, int flags
 {
     return ImGui::BeginChildFrame(id, {sizeX, sizeY}, flags);
 }
+
 inline void EndChildFrame()
 {
     return ImGui::EndChildFrame();
@@ -2601,37 +2647,43 @@ inline std::tuple<float, float, float> ColorConvertHSVtoRGB(float h, float s, fl
 }
 
 // Inputs Utilities: Keyboard
+inline bool IsKeyDown(int user_key_index)
+{
+    return ImGui::IsKeyDown(static_cast<ImGuiKey>(user_key_index));
+}
+inline bool IsKeyPressed(int user_key_index)
+{
+    return ImGui::IsKeyPressed(static_cast<ImGuiKey>(user_key_index));
+}
+inline bool IsKeyPressed(int user_key_index, bool repeat)
+{
+    return ImGui::IsKeyPressed(static_cast<ImGuiKey>(user_key_index), repeat);
+}
+inline bool IsKeyReleased(int user_key_index)
+{
+    return ImGui::IsKeyReleased(static_cast<ImGuiKey>(user_key_index));
+}
+inline int GetKeyPressedAmount(int key_index, float repeat_delay, float rate)
+{
+    return ImGui::GetKeyPressedAmount(static_cast<ImGuiKey>(key_index), repeat_delay, rate);
+}
+inline void SetNextFrameWantCaptureKeyboard(bool want_capture_keyboard_value)
+{
+    ImGui::SetNextFrameWantCaptureKeyboard(want_capture_keyboard_value);
+}
+
+// DEPRECATED
 inline int GetKeyIndex(int imgui_key)
 {
     return ImGui::GetKeyIndex(static_cast<ImGuiKey>(imgui_key));
 }
-inline bool IsKeyDown(int user_key_index)
-{
-    return ImGui::IsKeyDown(user_key_index);
-}
-inline bool IsKeyPressed(int user_key_index)
-{
-    return ImGui::IsKeyPressed(user_key_index);
-}
-inline bool IsKeyPressed(int user_key_index, bool repeat)
-{
-    return ImGui::IsKeyPressed(user_key_index, repeat);
-}
-inline bool IsKeyReleased(int user_key_index)
-{
-    return ImGui::IsKeyReleased(user_key_index);
-}
-inline int GetKeyPressedAmount(int key_index, float repeat_delay, float rate)
-{
-    return ImGui::GetKeyPressedAmount(key_index, repeat_delay, rate);
-}
 inline void CaptureKeyboardFromApp()
 {
-    ImGui::CaptureKeyboardFromApp();
+    ImGui::SetNextFrameWantCaptureKeyboard(true);
 }
 inline void CaptureKeyboardFromApp(bool want_capture_keyboard_value)
 {
-    ImGui::CaptureKeyboardFromApp(want_capture_keyboard_value);
+    ImGui::SetNextFrameWantCaptureKeyboard(want_capture_keyboard_value);
 }
 
 // Inputs Utilities: Mouse
@@ -2718,13 +2770,19 @@ inline void SetMouseCursor(int cursor_type)
 {
     ImGui::SetMouseCursor(static_cast<ImGuiMouseCursor>(cursor_type));
 }
+inline void SetNextFrameWantCaptureMouse(bool want_capture_mouse_value)
+{
+    ImGui::SetNextFrameWantCaptureMouse(want_capture_mouse_value);
+}
+
+// DEPRECATED
 inline void CaptureMouseFromApp()
 {
-    ImGui::CaptureMouseFromApp();
+    ImGui::SetNextFrameWantCaptureMouse(true);
 }
 inline void CaptureMouseFromApp(bool want_capture_mouse_value)
 {
-    ImGui::CaptureMouseFromApp(want_capture_mouse_value);
+    ImGui::SetNextFrameWantCaptureMouse(want_capture_mouse_value);
 }
 
 // Clipboard Utilities
@@ -2913,13 +2971,30 @@ inline void InitEnums(sol::table luaGlobals)
         ImGuiWindowFlags_AlwaysAutoResize, "NoBackground", ImGuiWindowFlags_NoBackground, "NoSavedSettings", ImGuiWindowFlags_NoSavedSettings, "NoMouseInputs",
         ImGuiWindowFlags_NoMouseInputs, "MenuBar", ImGuiWindowFlags_MenuBar, "HorizontalScrollbar", ImGuiWindowFlags_HorizontalScrollbar, "NoFocusOnAppearing",
         ImGuiWindowFlags_NoFocusOnAppearing, "NoBringToFrontOnFocus", ImGuiWindowFlags_NoBringToFrontOnFocus, "AlwaysVerticalScrollbar", ImGuiWindowFlags_AlwaysVerticalScrollbar,
-        "AlwaysHorizontalScrollbar", ImGuiWindowFlags_AlwaysHorizontalScrollbar, "AlwaysUseWindowPadding", ImGuiWindowFlags_AlwaysUseWindowPadding, "NoNavInputs",
-        ImGuiWindowFlags_NoNavInputs, "NoNavFocus", ImGuiWindowFlags_NoNavFocus, "UnsavedDocument", ImGuiWindowFlags_UnsavedDocument, "NoNav", ImGuiWindowFlags_NoNav,
-        "NoDecoration", ImGuiWindowFlags_NoDecoration, "NoInputs", ImGuiWindowFlags_NoInputs,
+        "AlwaysHorizontalScrollbar", ImGuiWindowFlags_AlwaysHorizontalScrollbar, "NoNavInputs", ImGuiWindowFlags_NoNavInputs, "NoNavFocus", ImGuiWindowFlags_NoNavFocus,
+        "UnsavedDocument", ImGuiWindowFlags_UnsavedDocument, "NoNav", ImGuiWindowFlags_NoNav, "NoDecoration", ImGuiWindowFlags_NoDecoration, "NoInputs", ImGuiWindowFlags_NoInputs,
         // [Internal]
-        "NavFlattened", ImGuiWindowFlags_NavFlattened, "ChildWindow", ImGuiWindowFlags_ChildWindow, "Tooltip", ImGuiWindowFlags_Tooltip, "Popup", ImGuiWindowFlags_Popup, "Modal",
-        ImGuiWindowFlags_Modal, "ChildMenu", ImGuiWindowFlags_ChildMenu);
+        "ChildWindow", ImGuiWindowFlags_ChildWindow, "Tooltip", ImGuiWindowFlags_Tooltip, "Popup", ImGuiWindowFlags_Popup, "Modal", ImGuiWindowFlags_Modal, "ChildMenu",
+        ImGuiWindowFlags_ChildMenu,
+
+        // DEPRECATED
+        "AlwaysUseWindowPadding", ImGuiWindowFlags_AlwaysUseWindowPadding,
+        // [Internal]
+        "NavFlattened", ImGuiWindowFlags_NavFlattened);
 #pragma endregion Window Flags
+
+#pragma region Child Flags
+    luaGlobals.new_enum(
+        "ImGuiChildFlags", "None", ImGuiChildFlags_None, "Borders", ImGuiChildFlags_Borders, "AlwaysUseWindowPadding", ImGuiChildFlags_AlwaysUseWindowPadding, "ResizeX",
+        ImGuiChildFlags_ResizeX, "ResizeY", ImGuiChildFlags_ResizeY, "AutoResizeX", ImGuiChildFlags_AutoResizeX, "AutoResizeY", ImGuiChildFlags_AutoResizeY, "AlwaysAutoResize",
+        ImGuiChildFlags_AlwaysAutoResize, "FrameStyle", ImGuiChildFlags_FrameStyle, "NavFlattened", ImGuiChildFlags_NavFlattened);
+#pragma endregion Child Flags
+
+#pragma region Item Flags
+    luaGlobals.new_enum(
+        "ImGuiItemFlags", "None", ImGuiItemFlags_None, "NoTabStop", ImGuiItemFlags_NoTabStop, "NoNav", ImGuiItemFlags_NoNav, "NoNavDefaultFocus", ImGuiItemFlags_NoNavDefaultFocus,
+        "ButtonRepeat", ImGuiItemFlags_ButtonRepeat, "AutoClosePopups", ImGuiItemFlags_AutoClosePopups);
+#pragma endregion Item Flags
 
 #pragma region Focused Flags
     luaGlobals.new_enum(
@@ -2932,7 +3007,9 @@ inline void InitEnums(sol::table luaGlobals)
         "ImGuiHoveredFlags", "None", ImGuiHoveredFlags_None, "ChildWindows", ImGuiHoveredFlags_ChildWindows, "RootWindow", ImGuiHoveredFlags_RootWindow, "AnyWindow",
         ImGuiHoveredFlags_AnyWindow, "AllowWhenBlockedByPopup", ImGuiHoveredFlags_AllowWhenBlockedByPopup, "AllowWhenBlockedByActiveItem",
         ImGuiHoveredFlags_AllowWhenBlockedByActiveItem, "AllowWhenOverlapped", ImGuiHoveredFlags_AllowWhenOverlapped, "AllowWhenDisabled", ImGuiHoveredFlags_AllowWhenDisabled,
-        "RectOnly", ImGuiHoveredFlags_RectOnly, "RootAndChildWindows", ImGuiHoveredFlags_RootAndChildWindows);
+        "RectOnly", ImGuiHoveredFlags_RectOnly, "RootAndChildWindows", ImGuiHoveredFlags_RootAndChildWindows, "ForTooltip", ImGuiHoveredFlags_ForTooltip, "Stationary",
+        ImGuiHoveredFlags_Stationary, "DelayNone", ImGuiHoveredFlags_DelayNone, "DelayShort", ImGuiHoveredFlags_DelayShort, "DelayNormal", ImGuiHoveredFlags_DelayNormal,
+        "NoSharedDelay", ImGuiHoveredFlags_NoSharedDelay);
 #pragma endregion Hovered Flags
 
 #pragma region Cond
@@ -2949,12 +3026,17 @@ inline void InitEnums(sol::table luaGlobals)
         "CheckMark", ImGuiCol_CheckMark, "SliderGrab", ImGuiCol_SliderGrab, "SliderGrabActive", ImGuiCol_SliderGrabActive, "Button", ImGuiCol_Button, "ButtonHovered",
         ImGuiCol_ButtonHovered, "ButtonActive", ImGuiCol_ButtonActive, "Header", ImGuiCol_Header, "HeaderHovered", ImGuiCol_HeaderHovered, "HeaderActive", ImGuiCol_HeaderActive,
         "Separator", ImGuiCol_Separator, "SeparatorHovered", ImGuiCol_SeparatorHovered, "SeparatorActive", ImGuiCol_SeparatorActive, "ResizeGrip", ImGuiCol_ResizeGrip,
-        "ResizeGripHovered", ImGuiCol_ResizeGripHovered, "ResizeGripActive", ImGuiCol_ResizeGripActive, "Tab", ImGuiCol_Tab, "TabHovered", ImGuiCol_TabHovered, "TabActive",
-        ImGuiCol_TabActive, "TabUnfocused", ImGuiCol_TabUnfocused, "TabUnfocusedActive", ImGuiCol_TabUnfocusedActive, "PlotLines", ImGuiCol_PlotLines, "PlotLinesHovered",
+        "ResizeGripHovered", ImGuiCol_ResizeGripHovered, "ResizeGripActive", ImGuiCol_ResizeGripActive, "Tab", ImGuiCol_Tab, "TabHovered", ImGuiCol_TabHovered, "TabSelected",
+        ImGuiCol_TabSelected, "TabDimmed", ImGuiCol_TabDimmed, "TabDimmedSelected", ImGuiCol_TabDimmedSelected, "PlotLines", ImGuiCol_PlotLines, "PlotLinesHovered",
         ImGuiCol_PlotLinesHovered, "PlotHistogram", ImGuiCol_PlotHistogram, "PlotHistogramHovered", ImGuiCol_PlotHistogramHovered, "TableHeaderBg", ImGuiCol_TableHeaderBg,
         "TableBorderStrong", ImGuiCol_TableBorderStrong, "TableBorderLight", ImGuiCol_TableBorderLight, "TableRowBg", ImGuiCol_TableRowBg, "TableRowBgAlt", ImGuiCol_TableRowBgAlt,
         "TextSelectedBg", ImGuiCol_TextSelectedBg, "DragDropTarget", ImGuiCol_DragDropTarget, "NavHighlight", ImGuiCol_NavHighlight, "NavWindowingHighlight",
-        ImGuiCol_NavWindowingHighlight, "NavWindowingDimBg", ImGuiCol_NavWindowingDimBg, "ModalWindowDimBg", ImGuiCol_ModalWindowDimBg, "COUNT", ImGuiCol_COUNT);
+        ImGuiCol_NavWindowingHighlight, "NavWindowingDimBg", ImGuiCol_NavWindowingDimBg, "ModalWindowDimBg", ImGuiCol_ModalWindowDimBg,
+
+        // DEPRECATED
+        "TabActive", ImGuiCol_TabActive, "TabUnfocused", ImGuiCol_TabUnfocused, "TabUnfocusedActive", ImGuiCol_TabUnfocusedActive,
+
+        "COUNT", ImGuiCol_COUNT);
 #pragma endregion Col
 
 #pragma region Style
@@ -2994,7 +3076,7 @@ inline void InitEnums(sol::table luaGlobals)
 
 #pragma region Slider Flags
     luaGlobals.new_enum(
-        "ImGuiSliderFlags", "None", ImGuiSliderFlags_None, "ClampOnInput", ImGuiSliderFlags_ClampOnInput, "Logarithmic", ImGuiSliderFlags_Logarithmic, "NoRoundToFormat",
+        "ImGuiSliderFlags", "None", ImGuiSliderFlags_None, "AlwaysClamp", ImGuiSliderFlags_AlwaysClamp, "Logarithmic", ImGuiSliderFlags_Logarithmic, "NoRoundToFormat",
         ImGuiSliderFlags_NoRoundToFormat, "NoInput", ImGuiSliderFlags_NoInput);
 #pragma endregion Slider Flags
 
@@ -3018,25 +3100,32 @@ inline void InitEnums(sol::table luaGlobals)
 
 #pragma region TreeNode Flags
     luaGlobals.new_enum(
-        "ImGuiTreeNodeFlags", "None", ImGuiTreeNodeFlags_None, "Selected", ImGuiTreeNodeFlags_Selected, "Framed", ImGuiTreeNodeFlags_Framed, "AllowItemOverlap",
-        ImGuiTreeNodeFlags_AllowItemOverlap, "NoTreePushOnOpen", ImGuiTreeNodeFlags_NoTreePushOnOpen, "NoAutoOpenOnLog", ImGuiTreeNodeFlags_NoAutoOpenOnLog, "DefaultOpen",
+        "ImGuiTreeNodeFlags", "None", ImGuiTreeNodeFlags_None, "Selected", ImGuiTreeNodeFlags_Selected, "Framed", ImGuiTreeNodeFlags_Framed, "AllowOverlap",
+        ImGuiTreeNodeFlags_AllowOverlap, "NoTreePushOnOpen", ImGuiTreeNodeFlags_NoTreePushOnOpen, "NoAutoOpenOnLog", ImGuiTreeNodeFlags_NoAutoOpenOnLog, "DefaultOpen",
         ImGuiTreeNodeFlags_DefaultOpen, "OpenOnDoubleClick", ImGuiTreeNodeFlags_OpenOnDoubleClick, "OpenOnArrow", ImGuiTreeNodeFlags_OpenOnArrow, "Leaf", ImGuiTreeNodeFlags_Leaf,
         "Bullet", ImGuiTreeNodeFlags_Bullet, "FramePadding", ImGuiTreeNodeFlags_FramePadding, "SpanAvailWidth", ImGuiTreeNodeFlags_SpanAvailWidth, "SpanFullWidth",
-        ImGuiTreeNodeFlags_SpanFullWidth, "NavLeftJumpsBackHere", ImGuiTreeNodeFlags_NavLeftJumpsBackHere, "CollapsingHeader", ImGuiTreeNodeFlags_CollapsingHeader);
+        ImGuiTreeNodeFlags_SpanFullWidth, "NavLeftJumpsBackHere", ImGuiTreeNodeFlags_NavLeftJumpsBackHere, "CollapsingHeader", ImGuiTreeNodeFlags_CollapsingHeader,
+        "AllowItemOverlap", ImGuiTreeNodeFlags_AllowItemOverlap // DEPRECATED
+
+    );
 #pragma endregion TreeNode Flags
 
 #pragma region Selectable Flags
     luaGlobals.new_enum(
-        "ImGuiSelectableFlags", "None", ImGuiSelectableFlags_None, "DontClosePopups", ImGuiSelectableFlags_DontClosePopups, "SpanAllColumns", ImGuiSelectableFlags_SpanAllColumns,
-        "AllowDoubleClick", ImGuiSelectableFlags_AllowDoubleClick, "Disabled", ImGuiSelectableFlags_Disabled, "AllowItemOverlap", ImGuiSelectableFlags_AllowItemOverlap);
+        "ImGuiSelectableFlags", "None", ImGuiSelectableFlags_None, "NoAutoClosePopups", ImGuiSelectableFlags_NoAutoClosePopups, "SpanAllColumns",
+        ImGuiSelectableFlags_SpanAllColumns, "AllowDoubleClick", ImGuiSelectableFlags_AllowDoubleClick, "Disabled", ImGuiSelectableFlags_Disabled, "AllowOverlap",
+        ImGuiSelectableFlags_AllowOverlap,
+
+        // DEPRECATED
+        "DontClosePopups", ImGuiSelectableFlags_DontClosePopups, "AllowItemOverlap", ImGuiSelectableFlags_AllowItemOverlap);
 #pragma endregion Selectable Flags
 
 #pragma region Popup Flags
     luaGlobals.new_enum(
         "ImGuiPopupFlags", "None", ImGuiPopupFlags_None, "MouseButtonLeft", ImGuiPopupFlags_MouseButtonLeft, "MouseButtonRight", ImGuiPopupFlags_MouseButtonRight,
-        "MouseButtonMiddle", ImGuiPopupFlags_MouseButtonMiddle, "MouseButtonMask_", ImGuiPopupFlags_MouseButtonMask_, "MouseButtonDefault_", ImGuiPopupFlags_MouseButtonDefault_,
-        "NoOpenOverExistingPopup", ImGuiPopupFlags_NoOpenOverExistingPopup, "NoOpenOverItems", ImGuiPopupFlags_NoOpenOverItems, "AnyPopupId", ImGuiPopupFlags_AnyPopupId,
-        "AnyPopupLevel", ImGuiPopupFlags_AnyPopupLevel, "AnyPopup", ImGuiPopupFlags_AnyPopup);
+        "MouseButtonMiddle", ImGuiPopupFlags_MouseButtonMiddle, "MouseButtonMask_", ImGuiPopupFlags_MouseButtonMask_, "NoOpenOverExistingPopup",
+        ImGuiPopupFlags_NoOpenOverExistingPopup, "NoOpenOverItems", ImGuiPopupFlags_NoOpenOverItems, "AnyPopupId", ImGuiPopupFlags_AnyPopupId, "AnyPopupLevel",
+        ImGuiPopupFlags_AnyPopupLevel, "AnyPopup", ImGuiPopupFlags_AnyPopup);
 #pragma endregion Popup Flags
 
 #pragma region Table Flags
@@ -3125,12 +3214,27 @@ inline void InitEnums(sol::table luaGlobals)
 #pragma endregion MouseButton
 
 #pragma region Key
+    // TODO: consider adding gamepad options
     luaGlobals.new_enum(
-        "ImGuiKey", "Tab", ImGuiKey_Tab, "LeftArrow", ImGuiKey_LeftArrow, "RightArrow", ImGuiKey_RightArrow, "UpArrow", ImGuiKey_UpArrow, "DownArrow", ImGuiKey_DownArrow, "PageUp",
-        ImGuiKey_PageUp, "PageDown", ImGuiKey_PageDown, "Home", ImGuiKey_Home, "End", ImGuiKey_End, "Insert", ImGuiKey_Insert, "Delete", ImGuiKey_Delete, "Backspace",
-        ImGuiKey_Backspace, "Space", ImGuiKey_Space, "Enter", ImGuiKey_Enter, "Escape", ImGuiKey_Escape, "KeyPadEnter", ImGuiKey_KeyPadEnter, "A", ImGuiKey_A, "C", ImGuiKey_C, "V",
-        ImGuiKey_V, "X", ImGuiKey_X, "Y", ImGuiKey_Y, "Z", ImGuiKey_Z, "COUNT", ImGuiKey_COUNT, "LeftCtrl", ImGuiKey_LeftCtrl, "LeftShift", ImGuiKey_LeftShift, "G", ImGuiKey_G,
-        "S", ImGuiKey_S, "D", ImGuiKey_D, "R", ImGuiKey_R, "H", ImGuiKey_H);
+        "ImGuiKey", "None", ImGuiKey_None, "Tab", ImGuiKey_Tab, "LeftArrow", ImGuiKey_LeftArrow, "RightArrow", ImGuiKey_RightArrow, "UpArrow", ImGuiKey_UpArrow, "DownArrow",
+        ImGuiKey_DownArrow, "PageUp", ImGuiKey_PageUp, "PageDown", ImGuiKey_PageDown, "Home", ImGuiKey_Home, "End", ImGuiKey_End, "Insert", ImGuiKey_Insert, "Delete",
+        ImGuiKey_Delete, "Backspace", ImGuiKey_Backspace, "Space", ImGuiKey_Space, "Enter", ImGuiKey_Enter, "Escape", ImGuiKey_Escape, "LeftCtrl", ImGuiKey_LeftCtrl, "LeftShift",
+        ImGuiKey_LeftShift, "LeftAlt", ImGuiKey_LeftAlt, "LeftSuper", ImGuiKey_LeftSuper, "RightCtrl", ImGuiKey_RightCtrl, "RightShift", ImGuiKey_RightShift, "RightAlt",
+        ImGuiKey_RightAlt, "RightSuper", ImGuiKey_RightSuper, "Menu", ImGuiKey_Menu, "0", ImGuiKey_0, "1", ImGuiKey_1, "2", ImGuiKey_2, "3", ImGuiKey_3, "4", ImGuiKey_4, "5",
+        ImGuiKey_5, "6", ImGuiKey_6, "7", ImGuiKey_7, "8", ImGuiKey_8, "9", ImGuiKey_9, "A", ImGuiKey_A, "B", ImGuiKey_B, "C", ImGuiKey_C, "D", ImGuiKey_D, "E", ImGuiKey_E, "F",
+        ImGuiKey_F, "G", ImGuiKey_G, "H", ImGuiKey_H, "I", ImGuiKey_I, "J", ImGuiKey_J, "K", ImGuiKey_K, "L", ImGuiKey_L, "M", ImGuiKey_M, "N", ImGuiKey_N, "O", ImGuiKey_O, "P",
+        ImGuiKey_P, "Q", ImGuiKey_Q, "R", ImGuiKey_R, "S", ImGuiKey_S, "T", ImGuiKey_T, "U", ImGuiKey_U, "V", ImGuiKey_V, "W", ImGuiKey_W, "X", ImGuiKey_X, "Y", ImGuiKey_Y, "Z",
+        ImGuiKey_Z, "F1", ImGuiKey_F1, "F2", ImGuiKey_F2, "F3", ImGuiKey_F3, "F4", ImGuiKey_F4, "F5", ImGuiKey_F5, "F6", ImGuiKey_F6, "F7", ImGuiKey_F7, "F8", ImGuiKey_F8, "F9",
+        ImGuiKey_F9, "F10", ImGuiKey_F10, "F11", ImGuiKey_F11, "F12", ImGuiKey_F12, "F13", ImGuiKey_F13, "F14", ImGuiKey_F14, "F15", ImGuiKey_F15, "F16", ImGuiKey_F16, "F17",
+        ImGuiKey_F17, "F18", ImGuiKey_F18, "F19", ImGuiKey_F19, "F20", ImGuiKey_F20, "F21", ImGuiKey_F21, "F22", ImGuiKey_F22, "F23", ImGuiKey_F23, "F24", ImGuiKey_F24,
+        "Apostrophe", ImGuiKey_Apostrophe, "Comma", ImGuiKey_Comma, "Minus", ImGuiKey_Minus, "Period", ImGuiKey_Period, "Slash", ImGuiKey_Slash, "Semicolon", ImGuiKey_Semicolon,
+        "Equal", ImGuiKey_Equal, "LeftBracket", ImGuiKey_LeftBracket, "Backslash", ImGuiKey_Backslash, "RightBracket", ImGuiKey_RightBracket, "GraveAccent", ImGuiKey_GraveAccent,
+        "CapsLock", ImGuiKey_CapsLock, "ScrollLock", ImGuiKey_ScrollLock, "NumLock", ImGuiKey_NumLock, "PrintScreen", ImGuiKey_PrintScreen, "Pause", ImGuiKey_Pause, "Keypad0",
+        ImGuiKey_Keypad0, "Keypad1", ImGuiKey_Keypad1, "Keypad2", ImGuiKey_Keypad2, "Keypad3", ImGuiKey_Keypad3, "Keypad4", ImGuiKey_Keypad4, "Keypad5", ImGuiKey_Keypad5,
+        "Keypad6", ImGuiKey_Keypad6, "Keypad7", ImGuiKey_Keypad7, "Keypad8", ImGuiKey_Keypad8, "Keypad9", ImGuiKey_Keypad9, "KeypadDecimal", ImGuiKey_KeypadDecimal, "KeypadDivide",
+        ImGuiKey_KeypadDivide, "KeypadMultiply", ImGuiKey_KeypadMultiply, "KeypadSubtract", ImGuiKey_KeypadSubtract, "KeypadAdd", ImGuiKey_KeypadAdd, "KeypadEnter",
+        ImGuiKey_KeypadEnter, "COUNT", ImGuiKey_COUNT);
+
 #pragma endregion Key
 
 #pragma region MouseCursor
@@ -3139,13 +3243,6 @@ inline void InitEnums(sol::table luaGlobals)
         "ResizeNS", ImGuiMouseCursor_ResizeNS, "ResizeEW", ImGuiMouseCursor_ResizeEW, "ResizeNESW", ImGuiMouseCursor_ResizeNESW, "ResizeNWSE", ImGuiMouseCursor_ResizeNWSE, "Hand",
         ImGuiMouseCursor_Hand, "NotAllowed", ImGuiMouseCursor_NotAllowed, "COUNT", ImGuiMouseCursor_COUNT);
 #pragma endregion MouseCursor
-
-#pragma region ImDrawCorner Flags
-    luaGlobals.new_enum(
-        "ImDrawCornerFlags", "None", ImDrawCornerFlags_None, "TopLeft", ImDrawCornerFlags_TopLeft, "TopRight", ImDrawCornerFlags_TopRight, "BotLeft", ImDrawCornerFlags_BotLeft,
-        "BotRight", ImDrawCornerFlags_BotRight, "Top", ImDrawCornerFlags_Top, "Bot", ImDrawCornerFlags_Bot, "Left", ImDrawCornerFlags_Left, "Right", ImDrawCornerFlags_Right, "All",
-        ImDrawCornerFlags_All);
-#pragma endregion ImDrawCorner Flags
 }
 
 inline void InitBindings(sol::state& lua, sol::table luaGlobals)
@@ -3167,8 +3264,11 @@ inline void InitBindings(sol::state& lua, sol::table luaGlobals)
     ImGui.set_function(
         "BeginChild", sol::overload(
                           sol::resolve<bool(const std::string&)>(BeginChild), sol::resolve<bool(const std::string&, float)>(BeginChild),
-                          sol::resolve<bool(const std::string&, float, float)>(BeginChild), sol::resolve<bool(const std::string&, float, float, bool)>(BeginChild),
-                          sol::resolve<bool(const std::string&, float, float, bool, int)>(BeginChild)));
+                          sol::resolve<bool(const std::string&, float, float)>(BeginChild), sol::resolve<bool(const std::string&, float, float, int)>(BeginChild),
+                          sol::resolve<bool(const std::string&, float, float, int, int)>(BeginChild),
+
+                          // DEPRECATED
+                          sol::resolve<bool(const std::string&, float, float, bool)>(BeginChild), sol::resolve<bool(const std::string&, float, float, bool, int)>(BeginChild)));
     ImGui.set_function("EndChild", EndChild);
 #pragma endregion Child Windows
 
@@ -3215,6 +3315,8 @@ inline void InitBindings(sol::state& lua, sol::table luaGlobals)
     ImGui.set_function("GetContentRegionAvail", GetContentRegionAvail);
     ImGui.set_function("GetWindowContentRegionMin", GetWindowContentRegionMin);
     ImGui.set_function("GetWindowContentRegionMax", GetWindowContentRegionMax);
+
+    // DEPRECATED
     ImGui.set_function("GetWindowContentRegionWidth", GetWindowContentRegionWidth);
 #pragma endregion Content Region
 
@@ -3240,6 +3342,8 @@ inline void InitBindings(sol::state& lua, sol::table luaGlobals)
     ImGui.set_function("PopStyleColor", sol::overload(sol::resolve<void()>(PopStyleColor), sol::resolve<void(int)>(PopStyleColor)));
     ImGui.set_function("PushStyleVar", sol::overload(sol::resolve<void(int, float)>(PushStyleVar), sol::resolve<void(int, float, float)>(PushStyleVar)));
     ImGui.set_function("PopStyleVar", sol::overload(sol::resolve<void()>(PopStyleVar), sol::resolve<void(int)>(PopStyleVar)));
+    ImGui.set_function("PushItemFlag", PushItemFlag);
+    ImGui.set_function("PopItemFlag", PopItemFlag);
     ImGui.set_function("GetStyleColorVec4", GetStyleColorVec4);
 #ifdef SOL_IMGUI_ENABLE_FONT_MANIPULATORS
     ImGui.set_function("GetFont", GetFont);
@@ -3256,11 +3360,15 @@ inline void InitBindings(sol::state& lua, sol::table luaGlobals)
     ImGui.set_function("SetNextItemWidth", SetNextItemWidth);
     ImGui.set_function("CalcItemWidth", CalcItemWidth);
     ImGui.set_function("PushTextWrapPos", sol::overload(sol::resolve<void()>(PushTextWrapPos), sol::resolve<void(float)>(PushTextWrapPos)));
+    ImGui.set_function("PushTabStop", PushTabStop);
+    ImGui.set_function("PopTabStop", PopTabStop);
     ImGui.set_function("PopTextWrapPos", PopTextWrapPos);
-    ImGui.set_function("PushAllowKeyboardFocus", PushAllowKeyboardFocus);
-    ImGui.set_function("PopAllowKeyboardFocus", PopAllowKeyboardFocus);
+
+    // DEPRECATED
     ImGui.set_function("PushButtonRepeat", PushButtonRepeat);
     ImGui.set_function("PopButtonRepeat", PopButtonRepeat);
+    ImGui.set_function("PushAllowKeyboardFocus", PushAllowKeyboardFocus);
+    ImGui.set_function("PopAllowKeyboardFocus", PopAllowKeyboardFocus);
 #pragma endregion Parameters stacks(current window)
 
 #pragma region Cursor / Layout
@@ -3745,6 +3853,9 @@ inline void InitBindings(sol::state& lua, sol::table luaGlobals)
     ImGui.set_function("GetItemRectMin", GetItemRectMin);
     ImGui.set_function("GetItemRectMax", GetItemRectMax);
     ImGui.set_function("GetItemRectSize", GetItemRectSize);
+    ImGui.set_function("SetNextItemAllowOverlap", SetNextItemAllowOverlap);
+
+    // DEPRECATED
     ImGui.set_function("SetItemAllowOverlap", SetItemAllowOverlap);
 #pragma endregion Item / Widgets Utilities
 
@@ -3755,10 +3866,12 @@ inline void InitBindings(sol::state& lua, sol::table luaGlobals)
     ImGui.set_function("GetBackgroundDrawList", GetBackgroundDrawList);
     ImGui.set_function("GetForegroundDrawList", GetForegroundDrawList);
     ImGui.set_function("GetStyleColorName", GetStyleColorName);
+    ImGui.set_function("GetStyle", GetStyle);
+
+    // DEPRECATED
     ImGui.set_function(
         "BeginChildFrame", sol::overload(sol::resolve<bool(unsigned int, float, float)>(BeginChildFrame), sol::resolve<bool(unsigned int, float, float, int)>(BeginChildFrame)));
     ImGui.set_function("EndChildFrame", EndChildFrame);
-    ImGui.set_function("GetStyle", GetStyle);
 #pragma endregion Miscellaneous Utilities
 
 #pragma region Text Utilities
@@ -3781,6 +3894,9 @@ inline void InitBindings(sol::state& lua, sol::table luaGlobals)
     ImGui.set_function("IsKeyDown", IsKeyDown);
     ImGui.set_function("IsKeyPressed", sol::overload(sol::resolve<bool(int)>(IsKeyPressed), sol::resolve<bool(int, bool)>(IsKeyPressed)));
     ImGui.set_function("IsKeyReleased", IsKeyReleased);
+    ImGui.set_function("SetNextFrameWantCaptureKeyboard", SetNextFrameWantCaptureKeyboard);
+
+    // DEPRECATED
     ImGui.set_function("CaptureKeyboardFromApp", sol::overload(sol::resolve<void()>(CaptureKeyboardFromApp), sol::resolve<void(bool)>(CaptureKeyboardFromApp)));
 #pragma endregion Inputs Utilities : Keyboard
 
@@ -3803,6 +3919,9 @@ inline void InitBindings(sol::state& lua, sol::table luaGlobals)
     ImGui.set_function("ResetMouseDragDelta", sol::overload(sol::resolve<void()>(ResetMouseDragDelta), sol::resolve<void(int)>(ResetMouseDragDelta)));
     ImGui.set_function("GetMouseCursor", GetMouseCursor);
     ImGui.set_function("SetMouseCursor", SetMouseCursor);
+    ImGui.set_function("SetNextFrameWantCaptureMouse", SetNextFrameWantCaptureMouse);
+
+    // DEPRECATED
     ImGui.set_function("CaptureMouseFromApp", sol::overload(sol::resolve<void()>(CaptureMouseFromApp), sol::resolve<void(bool)>(CaptureMouseFromApp)));
 #pragma endregion Inputs Utilities : Mouse
 

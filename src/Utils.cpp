@@ -177,7 +177,8 @@ bool IsLuaCData(const sol::object& acpObject)
 
 float GetAlignedItemWidth(const int64_t acItemsCount)
 {
-    return (ImGui::GetWindowContentRegionWidth() - static_cast<float>(acItemsCount - 1) * ImGui::GetStyle().ItemSpacing.x) / static_cast<float>(acItemsCount);
+    return (ImGui::GetContentRegionAvail().x - static_cast<float>(acItemsCount - 1) * ImGui::GetStyle().ItemSpacing.x) /
+           static_cast<float>(acItemsCount);
 }
 
 float GetCenteredOffsetForText(const char* acpText)
