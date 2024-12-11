@@ -29,7 +29,7 @@ constexpr uint32_t CPhotoMode_SetRecordID = 4241565651UL;
 
 #pragma region CRenderGlobal
 constexpr uint32_t CRenderGlobal_InstanceOffset = 1239944840UL;
-//constexpr uint32_t CRenderGlobal__DoNotUse_RenderQueueOffset = 0x1B5F5FCB0;
+// constexpr uint32_t CRenderGlobal__DoNotUse_RenderQueueOffset = 0x1B5F5FCB0;
 constexpr uint32_t CRenderGlobal_Resize = 239671909UL;
 constexpr uint32_t CRenderGlobal_Shutdown = 3192982283UL;
 #pragma endregion
@@ -66,7 +66,8 @@ constexpr uint32_t CWinapi_ClipToCenter = 261693736UL;
 #pragma endregion
 
 #pragma region gameIGameSystem
-constexpr uint32_t gameIGameSystem_Initialize = 385618721UL;
+constexpr uint32_t gameIGameSystem_Initialize =
+    385618721UL; // NOTE: this should be spawn::Set::Initialize hash, but that would require CET changes as that one wants game instance to be passed at a2+80
 constexpr uint32_t gameIGameSystem_UnInitialize = 3313306514UL;
 constexpr uint32_t gameIGameSystem_Spawn = 2509382878UL;
 constexpr uint32_t gameIGameSystem_Despawn = 3168866665UL;
@@ -76,4 +77,4 @@ constexpr uint32_t gameIGameSystem_SpawnCallback = 2840271332UL;
 #pragma region PlayerSystem
 constexpr uint32_t PlayerSystem_OnPlayerSpawned = 2050111212UL;
 #pragma endregion
-} // namespace CyberEngineTweaks::Addresses
+} // namespace CyberEngineTweaks::AddressHashes
