@@ -325,9 +325,24 @@ static void ImGui_ImplWin32_UpdateKeyModifiers()
     io.AddKeyEvent(ImGuiMod_Super, IsVkDown(VK_LWIN) || IsVkDown(VK_RWIN));
 }
 
+// CET: Scale to make sure coords are correct (fixes issues in fullscreen).
+static ImVec2 CET_GetScaleFactor()
+{
+    ImGui_ImplWin32_Data* bd = ImGui_ImplWin32_GetBackendData();
+    ImGuiIO& io = ImGui::GetIO();
+    IM_ASSERT(bd->hWnd != 0);
+
+    if (io.DisplaySize.x == 0.0f || io.DisplaySize.y == 0.0f)
+        return {-1.0f, -1.0f};
+
+    RECT clientRect;
+    ::GetClientRect(bd->hWnd, &clientRect);
+    return {io.DisplaySize.x / (clientRect.right - clientRect.left), io.DisplaySize.y / (clientRect.bottom - clientRect.top)};
+}
+
 // This code supports multi-viewports (multiple OS Windows mapped into different Dear ImGui viewports)
 // Because of that, it is a little more complicated than your typical single-viewport binding code!
-static void ImGui_ImplWin32_UpdateMouseData(SIZE aOutSize)
+static void ImGui_ImplWin32_UpdateMouseData()
 {
     ImGui_ImplWin32_Data* bd = ImGui_ImplWin32_GetBackendData();
     ImGuiIO& io = ImGui::GetIO();
@@ -335,6 +350,14 @@ static void ImGui_ImplWin32_UpdateMouseData(SIZE aOutSize)
 
     POINT mouse_screen_pos;
     bool has_mouse_screen_pos = ::GetCursorPos(&mouse_screen_pos) != 0;
+    
+    // CET: Get and verify scale factor. If any scalar in the scale factor is <= 0, apply -FLT_MAX as mouse position event. Otherwise, process normally.
+    const auto scale = CET_GetScaleFactor();
+    if (scale.x <= 0.0f || scale.y <= 0.0f)
+    {
+        io.AddMousePosEvent(-FLT_MAX, -FLT_MAX);
+        return;
+    }
 
     HWND focused_window = ::GetForegroundWindow();
     const bool is_app_focused =
@@ -345,7 +368,7 @@ static void ImGui_ImplWin32_UpdateMouseData(SIZE aOutSize)
         // When multi-viewports are enabled, all Dear ImGui positions are same as OS positions.
         if (io.WantSetMousePos)
         {
-            POINT pos = {(int)io.MousePos.x, (int)io.MousePos.y};
+            POINT pos = {static_cast<int>(io.MousePos.x / scale.x), static_cast<int>(io.MousePos.y / scale.y)};
             if ((io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) == 0)
                 ::ClientToScreen(focused_window, &pos);
             ::SetCursorPos(pos.x, pos.y);
@@ -363,17 +386,7 @@ static void ImGui_ImplWin32_UpdateMouseData(SIZE aOutSize)
             POINT mouse_pos = mouse_screen_pos;
             if (!(io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable))
                 ::ScreenToClient(bd->hWnd, &mouse_pos);
-
-            static float xScale = 1.0;
-            static float yScale = 1.0;
-            if(aOutSize.cx && aOutSize.cy)
-            {
-                RECT clientRect;
-                ::GetClientRect(bd->hWnd, &clientRect);
-                xScale = static_cast<float>(aOutSize.cx) / (clientRect.right - clientRect.left);
-                yScale = static_cast<float>(aOutSize.cy) / (clientRect.bottom - clientRect.top);
-            }
-            io.AddMousePosEvent((float)mouse_pos.x * xScale, (float)mouse_pos.y * yScale);
+            io.AddMousePosEvent((float)mouse_pos.x * scale.x, (float)mouse_pos.y * scale.y);
         }
     }
 
@@ -494,8 +507,7 @@ void ImGui_ImplWin32_NewFrame(SIZE aOutSize)
     ImGuiIO& io = ImGui::GetIO();
 
     // Setup display size (every frame to accommodate for window resizing)
-    // RECT rect = {0, 0, 0, 0};
-    // ::GetClientRect(bd->hWnd, &rect);
+    // CET: Use size provided by the game to match DLSS and similar.
     io.DisplaySize = ImVec2(static_cast<float>(aOutSize.cx), static_cast<float>(aOutSize.cy));
     if (bd->WantUpdateMonitors)
         ImGui_ImplWin32_UpdateMonitors();
@@ -507,7 +519,7 @@ void ImGui_ImplWin32_NewFrame(SIZE aOutSize)
     bd->Time = current_time;
 
     // Update OS mouse position
-    ImGui_ImplWin32_UpdateMouseData(aOutSize);
+    ImGui_ImplWin32_UpdateMouseData();
 
     // Process workarounds for known Windows key handling issues
     ImGui_ImplWin32_ProcessKeyEventsWorkarounds();
@@ -702,6 +714,14 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARA
     case WM_MOUSEMOVE:
     case WM_NCMOUSEMOVE:
     {
+        // CET: Get and verify scale factor. If any scalar in the scale factor is <= 0, apply -FLT_MAX as mouse position event. Otherwise, process normally.
+        const auto scale = CET_GetScaleFactor();
+        if (scale.x <= 0.0f || scale.y <= 0.0f)
+        {
+            io.AddMousePosEvent(-FLT_MAX, -FLT_MAX);
+            return 0;
+        }
+
         // We need to call TrackMouseEvent in order to receive WM_MOUSELEAVE events
         ImGuiMouseSource mouse_source = GetMouseSourceFromMessageExtraInfo();
         const int area = (msg == WM_MOUSEMOVE) ? 1 : 2;
@@ -722,7 +742,7 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARA
         if (msg == WM_NCMOUSEMOVE && !want_absolute_pos) // WM_NCMOUSEMOVE are absolute coordinates.
             ::ScreenToClient(hwnd, &mouse_pos);
         io.AddMouseSourceEvent(mouse_source);
-        io.AddMousePosEvent((float)mouse_pos.x, (float)mouse_pos.y);
+        io.AddMousePosEvent((float)mouse_pos.x * scale.x, (float)mouse_pos.y * scale.y);
         return 0;
     }
     case WM_MOUSELEAVE:
