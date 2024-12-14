@@ -20,6 +20,11 @@ void Overlay::PostInitialize()
             d3d12.DelayedSetTrapInputInImGui(true);
             ClipToCenter(RED4ext::CGameEngine::Get()->unkD0);
         }
+        else
+        {
+            const auto cOverlayBindCode = CET::Get().GetBindings().GetBindCodeForModBind(Bindings::GetOverlayToggleModBind());
+            ImGui::InsertNotification({ImGuiToastType::Info, NOTIFY_DEFAULT_DISMISS, "CET Overlay Bind: %s", VKBindings::GetBindString(cOverlayBindCode).c_str()});
+        }
 
         m_initialized = true;
     }
@@ -194,6 +199,22 @@ void Overlay::Update()
             m_toggled = false;
         }
     }
+
+    // Notifications style setup
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.f); // Disable round borders
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f); // Disable borders
+
+    // Notifications color setup
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.10f, 0.10f, 0.10f, 1.00f)); // Background color
+
+    // Main rendering function
+    ImGui::RenderNotifications();
+
+    //——————————————————————————————— WARNING ———————————————————————————————
+    // Argument MUST match the amount of ImGui::PushStyleVar() calls 
+    ImGui::PopStyleVar(2);
+    // Argument MUST match the amount of ImGui::PushStyleColor() calls 
+    ImGui::PopStyleColor(1);
 
     if (!m_enabled)
         return;
