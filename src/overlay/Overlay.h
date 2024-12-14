@@ -27,6 +27,9 @@ struct Overlay
 
     void Update();
 
+    void ShowNotification(const std::string& notification);
+    void HideNotification();
+
 protected:
     void Hook();
 
@@ -34,6 +37,7 @@ protected:
 
 private:
     void DrawToolbar();
+    void DrawNotification();
 
     Console m_console;
     Bindings m_bindings;
@@ -47,8 +51,13 @@ private:
     std::atomic_bool m_enabled{false};
     std::atomic_bool m_toggled{false};
     bool m_initialized{false};
+    std::atomic_bool m_drawNotification{false};
+    std::chrono::time_point<std::chrono::steady_clock> m_startTime;
+    bool m_bindHintShown{false};
 
     Options& m_options;
     PersistentState& m_persistentState;
     LuaVM& m_vm;
+
+    std::string m_notificationString;
 };
