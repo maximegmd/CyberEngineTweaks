@@ -22,6 +22,8 @@ void Overlay::PostInitialize()
         }
 
         m_initialized = true;
+
+        m_startTime = std::chrono::steady_clock::now();
     }
 }
 
@@ -195,12 +197,40 @@ void Overlay::Update()
         }
     }
 
+    // Display binding in bottom right corner for 5 seconds
+    if (!Bindings::IsFirstTimeSetup() && !m_bindHintShown)
+    {
+        const auto currentTime = std::chrono::steady_clock::now();
+        if ((currentTime - m_startTime) < std::chrono::seconds(5))
+        {
+            if (m_notificationString.empty())
+            {
+                auto overlayBindCode = CET::Get().GetBindings().GetBindCodeForModBind(Bindings::GetOverlayToggleModBind());
+
+                m_notificationString = "CET Overlay Bind: ";
+                m_notificationString += VKBindings::GetBindString(overlayBindCode);
+            }
+
+            m_drawNotification = true;
+        }
+        else
+        {
+            m_bindHintShown = true;
+            m_drawNotification = false;
+            m_notificationString.clear();
+        }
+    }
+
+    if (m_drawNotification)
+        DrawNotification();
+
     if (!m_enabled)
         return;
 
     const auto [width, height] = CET::Get().GetD3D12().GetResolution();
     const auto heightLimit = 2 * ImGui::GetFrameHeight() + 2 * ImGui::GetStyle().WindowPadding.y;
-    ImGui::SetNextWindowPos({width * 0.25f, height * 0.05f}, ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowBgAlpha(1.0);
+    ImGui::SetNextWindowPos({width * 0.25f, height * 0.05f});
     ImGui::SetNextWindowSizeConstraints({width * 0.5f, heightLimit}, {FLT_MAX, heightLimit});
     if (ImGui::Begin("Cyber Engine Tweaks"))
         DrawToolbar();
@@ -345,4 +375,35 @@ void Overlay::DrawToolbar()
 
     if (ImGui::Button("Reload all mods", ImVec2(itemWidth, 0)))
         m_vm.ReloadAllMods();
+}
+
+// TODO: Multiple notifications?
+void Overlay::DrawNotification()
+{
+    // ID must be unique for different messages, so why not use the FNV1a hash?
+    const auto imGuiID = RED4ext::FNV1a32(m_notificationString.c_str());
+    const auto [width, height] = CET::Get().GetD3D12().GetResolution();
+
+    const auto notificationWidth = ImGui::CalcTextSize(m_notificationString.c_str()).x + 2 * ImGui::GetStyle().WindowPadding.x;
+    const auto notificationHeight = ImGui::CalcTextSize(m_notificationString.c_str()).y + 2 * ImGui::GetStyle().WindowPadding.y;
+
+    ImGui::SetNextWindowBgAlpha(0.5);
+    ImGui::SetNextWindowPos({ImGui::GetStyle().WindowPadding.x, height - (notificationHeight + ImGui::GetStyle().WindowPadding.y)});
+    ImGui::SetNextWindowSize({notificationWidth, notificationHeight});
+    if (ImGui::Begin(std::format("##{}", imGuiID).c_str(), nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoSavedSettings))
+    {
+        ImGui::TextUnformatted(m_notificationString.c_str());
+    }
+    ImGui::End();
+}
+
+void Overlay::ShowNotification(const std::string& notification)
+{
+    m_notificationString = notification;
+    m_drawNotification = true;
+}
+
+void Overlay::HideNotification()
+{
+    m_drawNotification = false;
 }
