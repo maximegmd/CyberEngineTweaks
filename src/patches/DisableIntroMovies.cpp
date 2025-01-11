@@ -16,10 +16,23 @@ void* HookInitScriptMemberVariable(void* a1, void* a2, uint64_t a3, uint64_t nam
     // "PreGameSession" or "MainMenu" instead Unfortunately that causes a black screen on launch though, likely only
     // works properly on non-shipping builds
 
-    if (nameHash == RED4ext::FNV1a64("logoTrainWBBink") || nameHash == RED4ext::FNV1a64("logoTrainNamcoBink") || nameHash == RED4ext::FNV1a64("logoTrainStadiaBink") ||
-        nameHash == RED4ext::FNV1a64("logoTrainNoRTXBink") || nameHash == RED4ext::FNV1a64("logoTrainRTXBink") || nameHash == RED4ext::FNV1a64("introMessageBink"))
+    switch (nameHash)
     {
-        nameHash = ~nameHash;
+        case RED4ext::FNV1a64("logoTrainWBBink"):
+        case RED4ext::FNV1a64("logoTrainNamcoBink"):
+        case RED4ext::FNV1a64("logoTrainStadiaBink"):
+        case RED4ext::FNV1a64("logoTrainNoRTXBink"):
+        case RED4ext::FNV1a64("logoTrainRTXBink"):
+        case RED4ext::FNV1a64("introMessageBink"):
+        case RED4ext::FNV1a64("trailerBink"): // after startup logo
+        {
+            nameHash = ~nameHash;
+            break;
+        }
+        default:
+        {
+            break;
+        }
     }
 
     return RealInitScriptMemberVariable(a1, a2, a3, nameHash, a5, a6, a7);
