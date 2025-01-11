@@ -65,7 +65,7 @@ D3D12::D3D12(Window& aWindow, Paths& aPaths, Options& aOptions)
     , m_window(aWindow)
     , m_options(aOptions)
 {
-    HookGame();
+    Hook();
 
     // add repeated task which prepares next ImGui frame for update
     GameMainThread::Get().AddGenericTask(

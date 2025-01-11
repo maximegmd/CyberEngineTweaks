@@ -9,7 +9,7 @@
 #include <imgui_impl/win32.h>
 #include <window/window.h>
 
-bool D3D12::ResetState(const bool acClearDownlevelBackbuffers, const bool acDestroyContext)
+bool D3D12::ResetState(const bool acDestroyContext)
 {
     if (m_initialized)
     {
@@ -31,10 +31,6 @@ bool D3D12::ResetState(const bool acClearDownlevelBackbuffers, const bool acDest
 
     m_frameContexts.clear();
     m_outSize = {0, 0};
-
-    if (acClearDownlevelBackbuffers)
-        m_downlevelBackbuffers.clear();
-    m_downlevelBufferIndex = 0;
 
     m_pd3d12Device.Reset();
     m_pd3dRtvDescHeap.Reset();
@@ -137,137 +133,6 @@ bool D3D12::Initialize()
     }
 
     Log::Info("D3D12::Initialize() - initialization successful!");
-    m_initialized = true;
-
-    OnInitialized.Emit();
-
-    return true;
-}
-
-bool D3D12::InitializeDownlevel(ID3D12CommandQueue* apCommandQueue, ID3D12Resource* apSourceTex2D, HWND ahWindow)
-{
-    if (!apCommandQueue || !apSourceTex2D)
-        return false;
-
-    const HWND hWnd = m_window.GetWindow();
-    if (!hWnd)
-    {
-        Log::Warn("D3D12::InitializeDownlevel() - window not yet hooked!");
-        return false;
-    }
-
-    if (m_initialized)
-    {
-        if (hWnd != ahWindow)
-            Log::Warn(
-                "D3D12::InitializeDownlevel() - current output window does not match hooked window! Currently hooked "
-                "to {} while current output window is {}.",
-                reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(ahWindow));
-
-        return true;
-    }
-
-    const auto cmdQueueDesc = apCommandQueue->GetDesc();
-    if (cmdQueueDesc.Type != D3D12_COMMAND_LIST_TYPE_DIRECT)
-    {
-        Log::Warn("D3D12::InitializeDownlevel() - ignoring command queue - invalid type of command list!");
-        return false;
-    }
-
-    m_pCommandQueue = apCommandQueue;
-
-    const auto st2DDesc = apSourceTex2D->GetDesc();
-    m_outSize = {static_cast<LONG>(st2DDesc.Width), static_cast<LONG>(st2DDesc.Height)};
-
-    if (hWnd != ahWindow)
-        Log::Warn(
-            "D3D12::InitializeDownlevel() - current output window does not match hooked window! Currently hooked to {} "
-            "while current output window is {}.",
-            reinterpret_cast<void*>(hWnd), reinterpret_cast<void*>(ahWindow));
-
-    if (FAILED(apSourceTex2D->GetDevice(IID_PPV_ARGS(&m_pd3d12Device))))
-    {
-        Log::Error("D3D12::InitializeDownlevel() - failed to get device!");
-        return ResetState();
-    }
-
-    const size_t buffersCounts = m_downlevelBackbuffers.size();
-    m_frameContexts.resize(buffersCounts);
-    if (buffersCounts == 0)
-    {
-        Log::Error("D3D12::InitializeDownlevel() - no backbuffers were found!");
-        return ResetState();
-    }
-    if (buffersCounts < g_numDownlevelBackbuffersRequired)
-    {
-        Log::Info("D3D12::InitializeDownlevel() - backbuffer list is not complete yet; assuming window was resized");
-        return false;
-    }
-
-    D3D12_DESCRIPTOR_HEAP_DESC rtvdesc;
-    rtvdesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-    rtvdesc.NumDescriptors = static_cast<UINT>(buffersCounts);
-    rtvdesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-    rtvdesc.NodeMask = 1;
-    if (FAILED(m_pd3d12Device->CreateDescriptorHeap(&rtvdesc, IID_PPV_ARGS(&m_pd3dRtvDescHeap))))
-    {
-        Log::Error("D3D12::InitializeDownlevel() - failed to create RTV descriptor heap!");
-        return ResetState();
-    }
-
-    const SIZE_T rtvDescriptorSize = m_pd3d12Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_pd3dRtvDescHeap->GetCPUDescriptorHandleForHeapStart();
-    for (auto& context : m_frameContexts)
-    {
-        context.MainRenderTargetDescriptor = rtvHandle;
-        rtvHandle.ptr += rtvDescriptorSize;
-    }
-
-    D3D12_DESCRIPTOR_HEAP_DESC srvdesc = {};
-    srvdesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-    srvdesc.NumDescriptors = 2;
-    srvdesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-    if (FAILED(m_pd3d12Device->CreateDescriptorHeap(&srvdesc, IID_PPV_ARGS(&m_pd3dSrvDescHeap))))
-    {
-        Log::Error("D3D12::InitializeDownlevel() - failed to create SRV descriptor heap!");
-        return ResetState();
-    }
-
-    for (auto& context : m_frameContexts)
-    {
-        if (FAILED(m_pd3d12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&context.CommandAllocator))))
-        {
-            Log::Error("D3D12::InitializeDownlevel() - failed to create command allocator!");
-            return ResetState();
-        }
-    }
-
-    if (FAILED(m_pd3d12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_frameContexts[0].CommandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_pd3dCommandList))))
-    {
-        Log::Error("D3D12::InitializeDownlevel() - failed to create command list!");
-        return ResetState();
-    }
-
-    if (FAILED(m_pd3dCommandList->Close()))
-    {
-        Log::Error("D3D12::InitializeDownlevel() - failed to close command list!");
-        return ResetState();
-    }
-
-    for (size_t i = 0; i < buffersCounts; i++)
-    {
-        auto& context = m_frameContexts[i];
-        context.BackBuffer = m_downlevelBackbuffers[i];
-        m_pd3d12Device->CreateRenderTargetView(context.BackBuffer.Get(), nullptr, context.MainRenderTargetDescriptor);
-    }
-
-    if (!InitializeImGui(buffersCounts))
-    {
-        Log::Error("D3D12::InitializeDownlevel() - failed to initialize ImGui!");
-        return ResetState();
-    }
-
-    Log::Info("D3D12::InitializeDownlevel() - initialization successful!");
     m_initialized = true;
 
     OnInitialized.Emit();
@@ -525,8 +390,8 @@ void D3D12::Update()
     if (!m_imguiDrawDataBuffers[0].Valid)
         return;
 
-    const auto bufferIndex = m_pdxgiSwapChain != nullptr ? m_pdxgiSwapChain->GetCurrentBackBufferIndex() : m_downlevelBufferIndex;
-    auto& frameContext = m_frameContexts[bufferIndex];
+    assert(m_pdxgiSwapChain);
+    auto& frameContext = m_frameContexts[m_pdxgiSwapChain->GetCurrentBackBufferIndex()];
     frameContext.CommandAllocator->Reset();
 
     D3D12_RESOURCE_BARRIER barrier;
