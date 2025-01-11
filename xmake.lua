@@ -61,6 +61,8 @@ target("RED4ext.SDK")
     set_group("vendor")
     add_headerfiles("vendor/RED4ext.SDK/include/**.hpp")
     add_includedirs("vendor/RED4ext.SDK/include/", { public = true })
+    add_headerfiles("vendor/RED4ext.SDK/vendor/D3D12MemAlloc/**.h")
+    add_includedirs("vendor/RED4ext.SDK/vendor/D3D12MemAlloc/", { public = true })
     on_install(function() end)
 
 target("cyber_engine_tweaks")
