@@ -4,7 +4,6 @@
 
 #include "D3D12.h"
 #include "reverse/Addresses.h"
-#include "reverse/RenderContext.h"
 
 #include <VersionHelpers.h>
 
@@ -23,8 +22,6 @@ void* D3D12::CRenderNode_Present_InternalPresent(int32_t* apDeviceIndex, uint8_t
 {
     auto& d3d12 = CET::Get().GetD3D12();
 
-    const auto* pContext = RenderContext::GetInstance();
-    auto* pSwapChain = pContext->devices[*apDeviceIndex - 1].pSwapChain;
     if (d3d12.m_initialized)
         d3d12.Update();
     else
@@ -34,8 +31,9 @@ void* D3D12::CRenderNode_Present_InternalPresent(int32_t* apDeviceIndex, uint8_t
         //       DX12 does not work on Windows 8 and 8.1 so we should be safe with this check
         if (IsWindows8OrGreater())
         {
-            d3d12.m_pCommandQueue = pContext->pDirectQueue;
-            d3d12.m_pdxgiSwapChain = pSwapChain;
+            const auto& deviceData = RED4ext::GpuApi::GetDeviceData();
+            d3d12.m_pCommandQueue = deviceData.directCommandQueue;
+            d3d12.m_pdxgiSwapChain = deviceData.swapChains.GetData(*apDeviceIndex).swapChain;
             d3d12.Initialize();
         }
         else
