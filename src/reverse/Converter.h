@@ -156,7 +156,7 @@ struct EnumConverter : LuaRED<Enum, "Enum">
         else if (aObject.get_type() == sol::type::number) // Enum from number cast
         {
             auto* enumType = static_cast<RED4ext::CEnum*>(apType->type);
-            const Enum en(enumType, aObject.as<uint32_t>());
+            const Enum en(enumType, aObject.as<int32_t>());
             en.Set(*apType);
         }
         else if (aObject.get_type() == sol::type::string) // Enum from string cast
