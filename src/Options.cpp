@@ -6,22 +6,19 @@
 
 void PatchesSettings::Load(const nlohmann::json& aConfig)
 {
-    SkipStartMenu = aConfig.value("skip_start_menu", SkipStartMenu);
     AsyncCompute = aConfig.value("disable_async_compute", AsyncCompute);
     Antialiasing = aConfig.value("disable_antialiasing", Antialiasing);
-    DisableIntroMovies = aConfig.value("disable_intro_movies", DisableIntroMovies);
     DisableVignette = aConfig.value("disable_vignette", DisableVignette);
     DisableBoundaryTeleport = aConfig.value("disable_boundary_teleport", DisableBoundaryTeleport);
     DisableWin7Vsync = aConfig.value("disable_win7_vsync", DisableWin7Vsync);
-    MinimapFlicker = aConfig.value("minimap_flicker", MinimapFlicker);
 }
 
 nlohmann::json PatchesSettings::Save() const
 {
     return {
-        {"disable_async_compute", AsyncCompute},      {"disable_antialiasing", Antialiasing}, {"skip_start_menu", SkipStartMenu},
-        {"disable_intro_movies", DisableIntroMovies}, {"disable_vignette", DisableVignette},  {"disable_boundary_teleport", DisableBoundaryTeleport},
-        {"disable_win7_vsync", DisableWin7Vsync},     {"minimap_flicker", MinimapFlicker},
+        {"disable_async_compute", AsyncCompute},  {"disable_antialiasing", Antialiasing},
+        {"disable_vignette", DisableVignette},    {"disable_boundary_teleport", DisableBoundaryTeleport},
+        {"disable_win7_vsync", DisableWin7Vsync},
     };
 }
 

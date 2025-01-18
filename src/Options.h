@@ -14,12 +14,9 @@ struct PatchesSettings
 
     bool AsyncCompute{false};
     bool Antialiasing{false};
-    bool SkipStartMenu{false};
-    bool DisableIntroMovies{false};
     bool DisableVignette{false};
     bool DisableBoundaryTeleport{false};
     bool DisableWin7Vsync{false};
-    bool MinimapFlicker{false};
 };
 
 struct FontSettings
