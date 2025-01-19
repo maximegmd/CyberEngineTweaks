@@ -28,7 +28,6 @@ constexpr uint32_t CPhotoMode_SetRecordID = 4241565651UL; // <UNKNOWN_SYMBOL>
 #pragma endregion
 
 #pragma region CRenderGlobal
-constexpr uint32_t CRenderGlobal_InstanceOffset = 1239944840UL; // <UNKNOWN_SYMBOL>
 constexpr uint32_t CRenderGlobal_Resize = 239671909UL;          // GpuApi::ResizeBackbuffer
 constexpr uint32_t CRenderGlobal_Shutdown = 3192982283UL;       // <UNKNOWN_SYMBOL>
 #pragma endregion
