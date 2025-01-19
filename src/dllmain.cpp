@@ -4,11 +4,7 @@
 
 #include "Options.h"
 
-#include "scripting/GameHooks.h"
-
-void StartScreenPatch();
 void OptionsInitHook();
-void DisableIntroMoviesPatch();
 void DisableVignettePatch();
 void DisableBoundaryTeleportPatch();
 
@@ -32,12 +28,6 @@ static void Initialize()
             return;
 
         // initialize patches
-
-        // if (options.Patches.SkipStartMenu)
-        //     StartScreenPatch();
-
-        if (options.Patches.DisableIntroMovies)
-            DisableIntroMoviesPatch();
 
         if (options.Patches.DisableVignette)
             DisableVignettePatch();

@@ -65,14 +65,6 @@ void Settings::OnUpdate()
                 UpdateAndDrawSetting(
                     "Disable Anti-aliasing", "Completely disables anti-aliasing (requires restart to take effect).", m_patches.Antialiasing, patchesSettings.Antialiasing);
                 UpdateAndDrawSetting(
-                    "Skip Start Menu",
-                    "Skips the 'Breaching...' menu asking you to press space bar to continue (requires restart to take "
-                    "effect).",
-                    m_patches.SkipStartMenu, patchesSettings.SkipStartMenu);
-                UpdateAndDrawSetting(
-                    "Suppress Intro Movies", "Disables logos played at the beginning (requires restart to take effect).", m_patches.DisableIntroMovies,
-                    patchesSettings.DisableIntroMovies);
-                UpdateAndDrawSetting(
                     "Disable Vignette", "Disables vignetting along screen borders (requires restart to take effect).", m_patches.DisableVignette, patchesSettings.DisableVignette);
                 UpdateAndDrawSetting(
                     "Disable Boundary Teleport", "Allows players to access out-of-bounds locations (requires restart to take effect).", m_patches.DisableBoundaryTeleport,
@@ -80,10 +72,7 @@ void Settings::OnUpdate()
                 UpdateAndDrawSetting(
                     "Disable V-Sync (Windows 7 only)", "Disables VSync on Windows 7 to bypass the 60 FPS limit (requires restart to take effect).", m_patches.DisableWin7Vsync,
                     patchesSettings.DisableWin7Vsync);
-                UpdateAndDrawSetting(
-                    "Fix Minimap Flicker", "Fixes Minimap flicker caused by some mods (requires restart to take effect).", m_patches.MinimapFlicker,
-                    patchesSettings.MinimapFlicker);
-
+                
                 ImGui::EndTable();
             }
             ImGui::TreePop();
