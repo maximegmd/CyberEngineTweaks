@@ -77,6 +77,7 @@ void Scripting::Initialize()
     sol_ImGui::InitBindings(luaVm, globals);
     sol::table imgui = globals["ImGui"];
     Texture::BindTexture(imgui);
+    sol_ToastNotification::BindImNotifyToast(imgui);
     for (auto [key, value] : imgui)
     {
         if (value.get_type() != sol::type::function)
@@ -93,31 +94,6 @@ void Scripting::Initialize()
                 {
                     logger->error("Tried to call ImGui from invalid event!");
                     throw "Tried to call ImGui from invalid event!";
-                }
-
-                return original(as_args(aVariadicArgs));
-            });
-    }
-
-    // load in imgui bindings for notifications
-    sol_ImGuiNotify::InitBindings(luaVm, globals);
-    sol::table imguiNotify = globals["ImGuiNotify"];
-    for (auto [key, value] : imguiNotify)
-    {
-        if (value.get_type() != sol::type::function)
-            continue;
-
-        sol::function original = value;
-        imguiNotify[key] = make_object(
-            luaVm,
-            [this, original](sol::variadic_args aVariadicArgs, sol::this_environment aThisEnv) -> sol::variadic_results
-            {
-                const sol::environment cEnv = aThisEnv;
-                const auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
-                if (!m_sandbox.GetImGuiAvailable())
-                {
-                    logger->error("Tried to call ImGuiNotify from invalid event!");
-                    throw "Tried to call ImGuiNotify from invalid event!";
                 }
 
                 return original(as_args(aVariadicArgs));

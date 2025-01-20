@@ -76,10 +76,7 @@ static constexpr const char* s_cGlobalObjectsWhitelist[] = {
     "ImGuiCol",
     "ImGuiDir",
     "ImVec2",
-    "ImVec4",
-    
-    "ImGuiToastType",
-    "ImGuiToast"
+    "ImVec4"
 };
 
 static constexpr const char* s_cPostInitializeScriptingProtectedList[] = {
@@ -115,7 +112,6 @@ static constexpr const char* s_cPostInitializeModsProtectedList[] = {
 
 static constexpr const char* s_cGlobalExtraLibsWhitelist[] = {
     "ImGui",
-    "ImGuiNotify",
 };
 
 LuaSandbox::LuaSandbox(Scripting* apScripting, const VKBindings& acVKBindings)
