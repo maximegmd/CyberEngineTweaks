@@ -25,16 +25,16 @@
  * CONFIGURATION SECTION Start
  */
 
-#define NOTIFY_MAX_MSG_LENGTH 4096     // Max message content length
-#define NOTIFY_PADDING_X 20.f          // Bottom-left X padding
-#define NOTIFY_PADDING_Y 20.f          // Bottom-left Y padding
-#define NOTIFY_PADDING_MESSAGE_Y 10.f  // Padding Y between each message
-#define NOTIFY_FADE_IN_OUT_TIME 150    // Fade in and out duration
-#define NOTIFY_DEFAULT_DISMISS 5000    // Auto dismiss after X ms (default, applied only of no data provided in constructors)
-#define NOTIFY_OPACITY 0.8f            // 0-1 Toast opacity
-#define NOTIFY_USE_SEPARATOR false     // If true, a separator will be rendered between the title and the content
-#define NOTIFY_USE_DISMISS_BUTTON true // If true, a dismiss button will be rendered in the top right corner of the toast
-#define NOTIFY_RENDER_LIMIT 5          // Max number of toasts rendered at the same time. Set to 0 for unlimited
+#define NOTIFY_MAX_MSG_LENGTH 4096      // Max message content length
+#define NOTIFY_PADDING_X 20.f           // Bottom-left X padding
+#define NOTIFY_PADDING_Y 20.f           // Bottom-left Y padding
+#define NOTIFY_PADDING_MESSAGE_Y 10.f   // Padding Y between each message
+#define NOTIFY_FADE_IN_OUT_TIME 150     // Fade in and out duration
+#define NOTIFY_DEFAULT_DISMISS 5000     // Auto dismiss after X ms (default, applied only of no data provided in constructors)
+#define NOTIFY_OPACITY 0.8f             // 0-1 Toast opacity
+#define NOTIFY_USE_SEPARATOR false      // If true, a separator will be rendered between the title and the content
+#define NOTIFY_USE_DISMISS_BUTTON false // If true, a dismiss button will be rendered in the top right corner of the toast
+#define NOTIFY_RENDER_LIMIT 5           // Max number of toasts rendered at the same time. Set to 0 for unlimited
 
 // Warning: Requires ImGui docking with multi-viewport enabled
 #define NOTIFY_RENDER_OUTSIDE_MAIN_WINDOW false // If true, the notifications will be rendered in the corner of the monitor, otherwise in the corner of the main window
@@ -123,6 +123,8 @@ public:
      */
     inline void setTitle(const char* format, ...) { NOTIFY_FORMAT(this->setTitle, format); }
 
+    inline void setTitle(const std::string& message) { this->setTitle(message.c_str()); }
+
     /**
      * @brief Set the content of the toast notification.
      *
@@ -130,6 +132,8 @@ public:
      * @param ... The arguments for the format string.
      */
     inline void setContent(const char* format, ...) { NOTIFY_FORMAT(this->setContent, format); }
+
+    inline void setContent(const std::string& message) { this->setContent(message.c_str()); }
 
     /**
      * @brief Set the type of the toast notification.
@@ -357,6 +361,16 @@ public:
         NOTIFY_FORMAT(this->setContent, format);
     }
 
+    /* @brief Constructor for creating an ImGuiToast object with a specified type and std::string message.
+     * @param dismissTime The time in milliseconds before the toast message is dismissed.
+     * @param message The message to be displayed in the toast.
+     */
+    ImGuiToast(ImGuiToastType type, const std::string& message)
+        : ImGuiToast(type)
+    {
+        this->setContent(message);
+    }
+
     /**
      * @brief Constructor for creating a new ImGuiToast object with a specified type, dismiss time, and content format.
      *
@@ -369,6 +383,17 @@ public:
         : ImGuiToast(type, dismissTime)
     {
         NOTIFY_FORMAT(this->setContent, format);
+    }
+
+    /* @brief Constructor for creating an ImGuiToast object with a specified type, dismiss time, and std::string message.
+     * @param type The type of the toast message.
+     * @param dismissTime The time in milliseconds before the toast message is dismissed.
+     * @param message The message to be displayed in the toast.
+     */
+    ImGuiToast(ImGuiToastType type, int dismissTime, const std::string& message)
+        : ImGuiToast(type, dismissTime)
+    {
+        this->setContent(message);
     }
 
     /**
@@ -597,5 +622,39 @@ inline void RenderNotifications()
     }
 }
 } // namespace ImGui
+
+namespace sol_ImGuiNotify
+{
+// rename this to be more user friendly
+inline void ShowToast(const ImGuiToast& toast)
+{
+    ImGui::InsertNotification(toast);
+}
+
+inline void InitUserTypeAndEnums(sol::table luaGlobals)
+{
+    luaGlobals.new_usertype<ImGuiToast>(
+        "ImGuiToast",
+        sol::constructors<ImGuiToast(ImGuiToastType),ImGuiToast(ImGuiToastType, int),ImGuiToast(ImGuiToastType,const std::string&),ImGuiToast(ImGuiToastType,int,const std::string&)>(),
+        "SetTitle", sol::resolve<void(const std::string&)>(&ImGuiToast::setTitle),
+        "SetContent", sol::resolve<void(const std::string&)>(&ImGuiToast::setContent),
+        "SetType", &ImGuiToast::setType,
+        "SetWindowFlags", &ImGuiToast::setWindowFlags);
+
+    luaGlobals.new_enum(
+        "ImGuiToastType", "None", ImGuiToastType::None, "Success", ImGuiToastType::Success, "Warning", ImGuiToastType::Warning, "Error", ImGuiToastType::Error, "Info", ImGuiToastType::Info);
+}
+
+inline void InitBindings(sol::state& lua, sol::table luaGlobals)
+{
+    InitUserTypeAndEnums(luaGlobals);
+
+    sol::table ImGuiNotify(lua, sol::create);
+
+    ImGuiNotify.set_function("ShowToast", ShowToast);
+
+    luaGlobals["ImGuiNotify"] = ImGuiNotify;
+}
+} // namespace sol_ImGuiNotify
 
 #endif
