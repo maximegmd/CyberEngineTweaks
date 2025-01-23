@@ -24,7 +24,7 @@ constexpr uint32_t CPatches_OptionsInit = 4089777341UL;     // Config::IConfigVa
 #pragma endregion
 
 #pragma region CPhotoMode
-constexpr uint32_t CPhotoMode_SetRecordID = 4241565651UL; // <UNKNOWN_SYMBOL>
+constexpr uint32_t CPhotoMode_SetRecordID = 4052428712UL; // <UNKNOWN_SYMBOL>
 #pragma endregion
 
 #pragma region CRenderGlobal
@@ -64,9 +64,8 @@ constexpr uint32_t CWinapi_ClipToCenter = 261693736UL; // input::InputSystemWin3
 #pragma endregion
 
 #pragma region gameIGameSystem
-constexpr uint32_t gameIGameSystem_Initialize =
-    385618721UL; // <UNKNOWN_SYMBOL> -> should probably be 3114931869 (spawn::Set::Initialize) but that implies we do something weird overall with this func atm
-                 // The above would require CET changes as that one wants game instance to be passed at a2+80
+constexpr uint32_t gameIGameSystem_Initialize = 385618721UL; // <UNKNOWN_SYMBOL> -> should probably be 3114931869 (spawn::Set::Initialize) but that implies we do something weird
+                                                             // overall with this func atm The above would require CET changes as that one wants game instance to be passed at a2+80
 constexpr uint32_t gameIGameSystem_UnInitialize = 3313306514UL;  // spawn::Set::Deinitialize
 constexpr uint32_t gameIGameSystem_Spawn = 2509382878UL;         // spawn::Set::SpawnObject
 constexpr uint32_t gameIGameSystem_Despawn = 3168866665UL;       // spawn::Set::DespawnObject
