@@ -76,8 +76,7 @@ static constexpr const char* s_cGlobalObjectsWhitelist[] = {
     "ImGuiCol",
     "ImGuiDir",
     "ImVec2",
-    "ImVec4"
-};
+    "ImVec4"};
 
 static constexpr const char* s_cPostInitializeScriptingProtectedList[] = {
     // initialized by Scripting

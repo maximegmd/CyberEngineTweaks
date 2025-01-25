@@ -53,7 +53,7 @@ static const ImGuiWindowFlags NOTIFY_DEFAULT_TOAST_FLAGS =
         va_end(args);                    \
     }
 
-enum class ToastNotificationType : uint8_t
+enum class ToastType : uint8_t
 {
     None,
     Success,
@@ -87,12 +87,12 @@ enum class ImNotifyToastPos : uint8_t
 /**
  * @brief A class for creating toast notifications with ImGui.
  */
-class ToastNotification
+class Toast
 {
 private:
     ImGuiWindowFlags flags = NOTIFY_DEFAULT_TOAST_FLAGS;
 
-    ToastNotificationType type = ToastNotificationType::None;
+    ToastType type = ToastType::None;
     char title[NOTIFY_MAX_MSG_LENGTH];
     char content[NOTIFY_MAX_MSG_LENGTH];
 
@@ -137,9 +137,9 @@ public:
      *
      * @param type The type of the toast notification.
      */
-    inline void setType(const ToastNotificationType& type)
+    inline void setType(const ToastType& type)
     {
-        IM_ASSERT(type < ToastNotificationType::COUNT);
+        IM_ASSERT(type < ToastType::COUNT);
         this->type = type;
     };
 
@@ -186,11 +186,11 @@ public:
         {
             switch (this->type)
             {
-            case ToastNotificationType::None: return nullptr;
-            case ToastNotificationType::Success: return "Success";
-            case ToastNotificationType::Warning: return "Warning";
-            case ToastNotificationType::Error: return "Error";
-            case ToastNotificationType::Info: return "Info";
+            case ToastType::None: return nullptr;
+            case ToastType::Success: return "Success";
+            case ToastType::Warning: return "Warning";
+            case ToastType::Error: return "Error";
+            case ToastType::Info: return "Info";
             default: return nullptr;
             }
         }
@@ -203,7 +203,7 @@ public:
      *
      * @return ImGuiToastType The type of the toast notification.
      */
-    inline ToastNotificationType getType() { return this->type; };
+    inline ToastType getType() { return this->type; };
 
     /**
      * @brief Get the color of the toast notification based on its type.
@@ -214,11 +214,11 @@ public:
     {
         switch (this->type)
         {
-        case ToastNotificationType::None: return {255, 255, 255, 255};  // White
-        case ToastNotificationType::Success: return {0, 255, 0, 255};   // Green
-        case ToastNotificationType::Warning: return {255, 255, 0, 255}; // Yellow
-        case ToastNotificationType::Error: return {255, 0, 0, 255};     // Error
-        case ToastNotificationType::Info: return {0, 157, 255, 255};    // Blue
+        case ToastType::None: return {255, 255, 255, 255};  // White
+        case ToastType::Success: return {0, 255, 0, 255};   // Green
+        case ToastType::Warning: return {255, 255, 0, 255}; // Yellow
+        case ToastType::Error: return {255, 0, 0, 255};     // Error
+        case ToastType::Info: return {0, 157, 255, 255};    // Blue
         default: return {255, 255, 255, 255};                    // White
         }
     }
@@ -232,11 +232,11 @@ public:
     {
         switch (this->type)
         {
-        case ToastNotificationType::None: return nullptr;
-        case ToastNotificationType::Success: return ICON_MD_CHECK_CIRCLE; // Font Awesome 6
-        case ToastNotificationType::Warning: return ICON_MD_ALERT;        // Font Awesome 6
-        case ToastNotificationType::Error: return ICON_MD_ALERT_DECAGRAM; // Font Awesome 6
-        case ToastNotificationType::Info: return ICON_MD_INFORMATION;     // Font Awesome 6
+        case ToastType::None: return nullptr;
+        case ToastType::Success: return ICON_MD_CHECK_CIRCLE; // Font Awesome 6
+        case ToastType::Warning: return ICON_MD_ALERT;        // Font Awesome 6
+        case ToastType::Error: return ICON_MD_ALERT_DECAGRAM; // Font Awesome 6
+        case ToastType::Info: return ICON_MD_INFORMATION;     // Font Awesome 6
         default: return nullptr;
         }
     }
@@ -327,14 +327,14 @@ public:
     // Constructors
 
     /**
-     * @brief Creates a new ToastNotification object with the specified type and dismiss time.
+     * @brief Creates a new Toast object with the specified type and dismiss time.
      *
      * @param type The type of the toast.
      * @param dismissTime The time in milliseconds after which the toast should be dismissed. Default is NOTIFY_DEFAULT_DISMISS.
      */
-    ToastNotification(ToastNotificationType type, int dismissTime = NOTIFY_DEFAULT_DISMISS)
+    Toast(ToastType type, int dismissTime = NOTIFY_DEFAULT_DISMISS)
     {
-        IM_ASSERT(type < ToastNotificationType::COUNT);
+        IM_ASSERT(type < ToastType::COUNT);
 
         this->type = type;
         this->dismissTime = dismissTime;
@@ -346,55 +346,55 @@ public:
     }
 
     /**
-     * @brief Constructor for creating an ToastNotification object with a specified type and message format.
+     * @brief Constructor for creating an Toast object with a specified type and message format.
      *
      * @param type The type of the toast message.
      * @param format The format string for the message.
      * @param ... The variable arguments to be formatted according to the format string.
      */
-    ToastNotification(ToastNotificationType type, const char* format, ...)
-        : ToastNotification(type)
+    Toast(ToastType type, const char* format, ...)
+        : Toast(type)
     {
         NOTIFY_FORMAT(this->setContent, format);
     }
 
-    /* @brief Constructor for creating an ToastNotification object with a specified type and std::string message.
+    /* @brief Constructor for creating an Toast object with a specified type and std::string message.
      * @param dismissTime The time in milliseconds before the toast message is dismissed.
      * @param message The message to be displayed in the toast.
      */
-    ToastNotification(ToastNotificationType type, const std::string& message)
-        : ToastNotification(type)
+    Toast(ToastType type, const std::string& message)
+        : Toast(type)
     {
         this->setContent(message);
     }
 
     /**
-     * @brief Constructor for creating a new ToastNotification object with a specified type, dismiss time, and content format.
+     * @brief Constructor for creating a new Toast object with a specified type, dismiss time, and content format.
      *
      * @param type The type of the toast message.
      * @param dismissTime The time in milliseconds before the toast message is dismissed.
      * @param format The format string for the content of the toast message.
      * @param ... The variable arguments to be formatted according to the format string.
      */
-    ToastNotification(ToastNotificationType type, int dismissTime, const char* format, ...)
-        : ToastNotification(type, dismissTime)
+    Toast(ToastType type, int dismissTime, const char* format, ...)
+        : Toast(type, dismissTime)
     {
         NOTIFY_FORMAT(this->setContent, format);
     }
 
-    /* @brief Constructor for creating an ToastNotification object with a specified type, dismiss time, and std::string message.
+    /* @brief Constructor for creating an Toast object with a specified type, dismiss time, and std::string message.
      * @param type The type of the toast message.
      * @param dismissTime The time in milliseconds before the toast message is dismissed.
      * @param message The message to be displayed in the toast.
      */
-    ToastNotification(ToastNotificationType type, int dismissTime, const std::string& message)
-        : ToastNotification(type, dismissTime)
+    Toast(ToastType type, int dismissTime, const std::string& message)
+        : Toast(type, dismissTime)
     {
         this->setContent(message);
     }
 
     /**
-     * @brief Constructor for creating a new ToastNotification object with a specified type, dismiss time, title format, content format and a button.
+     * @brief Constructor for creating a new Toast object with a specified type, dismiss time, title format, content format and a button.
      *
      * @param type The type of the toast message.
      * @param dismissTime The time in milliseconds before the toast message is dismissed.
@@ -403,8 +403,8 @@ public:
      * @param format The format string for the content of the toast message.
      * @param ... The variable arguments to be formatted according to the format string.
      */
-    ToastNotification(ToastNotificationType type, int dismissTime, const char* buttonLabel, const std::function<void()>& onButtonPress, const char* format, ...)
-        : ToastNotification(type, dismissTime)
+    Toast(ToastType type, int dismissTime, const char* buttonLabel, const std::function<void()>& onButtonPress, const char* format, ...)
+        : Toast(type, dismissTime)
     {
         NOTIFY_FORMAT(this->setContent, format);
 
@@ -415,13 +415,13 @@ public:
 
 namespace ImGui
 {
-inline std::vector<ToastNotification> notifications;
+inline std::vector<Toast> notifications;
 
 /**
  * Inserts a new notification into the notification queue.
  * @param toast The notification to be inserted.
  */
-inline void InsertNotification(const ToastNotification& toast)
+inline void InsertNotification(const Toast& toast)
 {
     notifications.push_back(toast);
 }
@@ -449,7 +449,7 @@ inline void RenderNotifications()
 
     for (size_t i = 0; i < notifications.size(); ++i)
     {
-        ToastNotification* currentToast = &notifications[i];
+        Toast* currentToast = &notifications[i];
 
         // Remove toast if expired
         if (currentToast->getPhase() == ImNotifyToastPhase::Expired)
@@ -623,24 +623,24 @@ inline void RenderNotifications()
 namespace sol_ToastNotification
 {
 // rename this to be more user friendly
-inline void ShowToast(const ToastNotification& toast)
+inline void ShowToast(const Toast& toast)
 {
     ImGui::InsertNotification(toast);
 }
 
 inline void BindImNotifyToast(sol::table aTable)
 {
-    aTable.new_usertype<ToastNotification>(
-        "ToastNotification",
-        sol::constructors<ToastNotification(ToastNotificationType),ToastNotification(ToastNotificationType, int),ToastNotification(ToastNotificationType,const std::string&),ToastNotification(ToastNotificationType,int,const std::string&)>(),
-        "SetTitle", sol::resolve<void(const std::string&)>(&ToastNotification::setTitle),
-        "SetContent", sol::resolve<void(const std::string&)>(&ToastNotification::setContent),
-        "SetType", &ToastNotification::setType,
-        "SetWindowFlags", &ToastNotification::setWindowFlags);
+    aTable.new_usertype<Toast>(
+        "Toast",
+        sol::constructors<Toast(ToastType),Toast(ToastType, int),Toast(ToastType,const std::string&),Toast(ToastType,int,const std::string&)>(),
+        "SetTitle", sol::resolve<void(const std::string&)>(&Toast::setTitle),
+        "SetContent", sol::resolve<void(const std::string&)>(&Toast::setContent),
+        "SetType", &Toast::setType,
+        "SetWindowFlags", &Toast::setWindowFlags);
 
     aTable.new_enum(
-        "ToastNotificationType", "None", ToastNotificationType::None, "Success", ToastNotificationType::Success, "Warning", ToastNotificationType::Warning, "Error", ToastNotificationType::Error, "Info", ToastNotificationType::Info);
+        "ToastType", "None", ToastType::None, "Success", ToastType::Success, "Warning", ToastType::Warning, "Error", ToastType::Error, "Info", ToastType::Info);
 
     aTable.set_function("ShowToast", ShowToast);
 }
-} // namespace sol_ToastNotification
+} // namespace sol_Toast
