@@ -137,7 +137,7 @@ void LuaSandbox::Initialize()
             existingLogger->warn("CET launched with MO2.");
         }
     }
-    
+
     // copy whitelisted things from global table
     for (const auto* cKey : s_cVMGlobalObjectsWhitelist)
     {
@@ -448,6 +448,9 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
         {
             current_path(previousCurrentPath);
 
+            auto logger = cSBEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+            logger->error("Error: Cannot load module '{}': {}", acPath, std::get<1>(res).as<std::string>());
+
             return res;
         }
 
@@ -464,6 +467,9 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
             {
                 current_path(previousCurrentPath);
 
+                auto logger = cSBEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
+                logger->error("Error: Cannot load module '{}': {}", acPath, e.what());
+
                 return std::make_tuple(sol::nil, make_object(stateView, e.what()));
             }
 
@@ -477,11 +483,11 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
                 return std::make_tuple(resultObj, sol::nil);
             }
 
+            current_path(previousCurrentPath);
+
             sol::error err = result;
             auto logger = cSBEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
             logger->error("Error: Cannot load module '{}': {}", acPath, err.what());
-
-            current_path(previousCurrentPath);
 
             return std::make_tuple(sol::nil, make_object(stateView, err.what()));
         }
