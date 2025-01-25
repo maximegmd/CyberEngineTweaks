@@ -70,6 +70,7 @@
 #include "CETVersion.h"
 #include "common/Logging.h"
 #include "common/FontMaterialDesignIcons.h"
+#include "common/ImGuiNotify.h"
 #include "Options.h"
 #include "Paths.h"
 #include "PersistentState.h"

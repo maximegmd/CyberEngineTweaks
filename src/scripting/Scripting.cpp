@@ -77,6 +77,7 @@ void Scripting::Initialize()
     sol_ImGui::InitBindings(luaVm, globals);
     sol::table imgui = globals["ImGui"];
     Texture::BindTexture(imgui);
+    sol_ToastNotification::BindImNotifyToast(imgui);
     for (auto [key, value] : imgui)
     {
         if (value.get_type() != sol::type::function)
