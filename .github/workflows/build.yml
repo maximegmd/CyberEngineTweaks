@@ -50,3 +50,8 @@ jobs:
       with:
         name: ${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.mode }}
         path: package/**
+    
+    - uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.mode }}-pdb
+        path: package_pdb/**

@@ -29,7 +29,7 @@ elseif is_mode("releasedbg") then
     vsRuntime = vsRuntime.."d"
 elseif is_mode("release") then
     add_defines("NDEBUG")
-    set_symbols("hidden")
+    set_symbols("debug")
     set_strip("all")
     set_optimize("fastest")
     set_runtimes("MD")
@@ -80,6 +80,7 @@ target("cyber_engine_tweaks")
         import("net.http")
 
         os.rm("package/*")
+        os.rm("package_pdb/*")
 
         os.mkdir("package/bin/x64/plugins/cyber_engine_tweaks/tweakdb")
         http.download("https://github.com/WolvenKit/WolvenKit/raw/main/WolvenKit.Common/Resources/usedhashes.kark", "package/bin/x64/plugins/cyber_engine_tweaks/tweakdb/usedhashes.kark")
@@ -96,7 +97,16 @@ target("cyber_engine_tweaks")
         os.cp("LICENSE", "package/bin/x64/")
         os.cp("ThirdParty_LICENSES", "package/bin/x64/plugins/cyber_engine_tweaks/ThirdParty_LICENSES")
 
-        os.cp(target:targetfile(), "package/bin/x64/plugins/")
+        local target_file = target:targetfile()
+
+        os.cp(target_file, "package/bin/x64/plugins/")
+
+        os.mkdir("package_pdb/bin/x64")
+
+        os.cp(path.join(
+            path.directory(target_file),
+            path.basename(target_file)..".pdb"
+        ), "package_pdb/bin/x64/plugins/")
     end)
     on_install(function(target)
         cprint("${green bright}Installing Cyber Engine Tweaks ..")
