@@ -80,7 +80,6 @@ target("cyber_engine_tweaks")
         import("net.http")
 
         os.rm("package/*")
-        os.rm("package_pdb/*")
 
         os.mkdir("package/bin/x64/plugins/cyber_engine_tweaks/tweakdb")
         http.download("https://github.com/WolvenKit/WolvenKit/raw/main/WolvenKit.Common/Resources/usedhashes.kark", "package/bin/x64/plugins/cyber_engine_tweaks/tweakdb/usedhashes.kark")
@@ -101,12 +100,10 @@ target("cyber_engine_tweaks")
 
         os.cp(target_file, "package/bin/x64/plugins/")
 
-        os.mkdir("package_pdb/bin/x64")
-
         os.cp(path.join(
             path.directory(target_file),
             path.basename(target_file)..".pdb"
-        ), "package_pdb/bin/x64/plugins/")
+        ), "package/bin/x64/plugins/")
     end)
     on_install(function(target)
         cprint("${green bright}Installing Cyber Engine Tweaks ..")
