@@ -14,7 +14,6 @@ build/*
 *.asi
 src/CETVersion.h
 package/*
-package_pdb/*
 vs2022/*
 vsxmake*/
 *.pyc
