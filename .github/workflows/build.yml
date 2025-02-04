@@ -49,4 +49,11 @@ jobs:
     - uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.mode }}
-        path: package/**
+        path: |
+          package/**
+          !package/**/*.pdb
+    
+    - uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.mode }}-pdb
+        path: package/**/*.pdb
