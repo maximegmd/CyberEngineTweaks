@@ -35,6 +35,7 @@ protected:
     struct FrameContext
     {
         Microsoft::WRL::ComPtr<ID3D12CommandAllocator> CommandAllocator;
+        Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> CommandList{};
         Microsoft::WRL::ComPtr<ID3D12Resource> BackBuffer;
         D3D12_CPU_DESCRIPTOR_HANDLE MainRenderTargetDescriptor{0};
     };
@@ -62,7 +63,6 @@ private:
     Microsoft::WRL::ComPtr<ID3D12Device> m_pd3d12Device{};
     Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_pd3dRtvDescHeap{};
     Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_pd3dSrvDescHeap{};
-    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_pd3dCommandList{};
 
     // borrowed resources from game, do not manipulate reference counts on these!
     Microsoft::WRL::ComPtr<IDXGISwapChain4> m_pdxgiSwapChain{nullptr};

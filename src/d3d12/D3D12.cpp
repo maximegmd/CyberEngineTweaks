@@ -9,17 +9,28 @@
 
 void D3D12::SetTrapInputInImGui(const bool acEnabled)
 {
+    // Must have an out-condition to this otherwise infinite loop
+    static int constexpr maxCursorDepth = 8;
+    int showCursorTries = 0;
     int showCursorState;
     if (acEnabled)
         do
         {
             showCursorState = ShowCursor(TRUE);
-        } while (showCursorState < 0);
+        } while (showCursorState < 0 && showCursorTries++ < maxCursorDepth);
     else
         do
         {
             showCursorState = ShowCursor(FALSE);
-        } while (showCursorState >= 0);
+        } while (showCursorState >= 0 && showCursorTries++ < maxCursorDepth);
+
+    // Turn off software cursor
+    if (showCursorTries < maxCursorDepth || acEnabled == false)
+        ImGui::GetIO().MouseDrawCursor = false;
+
+    // Enable software cursor as fallback if necessary
+    else
+        ImGui::GetIO().MouseDrawCursor = acEnabled;
 
     m_trapInputInImGui = acEnabled;
 }

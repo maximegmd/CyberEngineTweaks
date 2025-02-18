@@ -14,9 +14,9 @@ static BOOL CALLBACK EnumWindowsProcCP77(HWND ahWnd, LPARAM alParam)
     GetWindowThreadProcessId(ahWnd, &lpdwProcessId);
     if (lpdwProcessId == GetCurrentProcessId())
     {
-        TCHAR name[512] = {0};
-        GetWindowText(ahWnd, name, 511);
-        if (_tcscmp(TEXT("Cyberpunk 2077 (C) 2020 by CD Projekt RED"), name) == 0)
+        wchar_t name[512] = {0};
+        RealGetWindowClassW(ahWnd,name,511);
+        if (wcscmp (L"W2ViewportClass", name) == 0)
         {
             *reinterpret_cast<HWND*>(alParam) = ahWnd;
             return FALSE;
@@ -32,8 +32,11 @@ LRESULT APIENTRY Window::WndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM 
         if (auMsg == WM_WINDOWPOSCHANGED)
         {
             const auto* wp = reinterpret_cast<WINDOWPOS*>(alParam);
-            s_pWindow->m_wndPos = {wp->x, wp->y};
-            s_pWindow->m_wndSize = {wp->cx, wp->cy};
+
+            if ((wp->flags & SWP_NOMOVE) == 0)
+                s_pWindow->m_wndPos = {wp->x, wp->y};
+            if ((wp->flags & SWP_NOSIZE) == 0)
+                s_pWindow->m_wndSize = {wp->cx, wp->cy};
 
             RECT cr;
             GetClientRect(ahWnd, &cr);

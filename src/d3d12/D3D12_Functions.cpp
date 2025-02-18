@@ -35,7 +35,6 @@ bool D3D12::ResetState(const bool acDestroyContext)
     m_pd3d12Device.Reset();
     m_pd3dRtvDescHeap.Reset();
     m_pd3dSrvDescHeap.Reset();
-    m_pd3dCommandList.Reset();
 
     m_pCommandQueue.Reset();
     m_pdxgiSwapChain.Reset();
@@ -113,17 +112,19 @@ bool D3D12::Initialize()
     }
 
     for (auto& context : m_frameContexts)
+    {
         if (FAILED(m_pd3d12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&context.CommandAllocator))))
         {
             Log::Error("D3D12::Initialize() - failed to create command allocator!");
             return ResetState();
         }
 
-    if (FAILED(m_pd3d12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_frameContexts[0].CommandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_pd3dCommandList))) ||
-        FAILED(m_pd3dCommandList->Close()))
-    {
-        Log::Error("D3D12::Initialize() - failed to create command list!");
-        return ResetState();
+        if (FAILED(m_pd3d12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, context.CommandAllocator.Get(), nullptr, IID_PPV_ARGS(&context.CommandList))) ||
+            FAILED(context.CommandList->Close()))
+        {
+            Log::Error("D3D12::Initialize() - failed to create command list!");
+            return ResetState();
+        }
     }
 
     if (!InitializeImGui(buffersCounts))
@@ -404,18 +405,18 @@ void D3D12::Update()
 
     ID3D12DescriptorHeap* heaps[] = {m_pd3dSrvDescHeap.Get()};
 
-    m_pd3dCommandList->Reset(frameContext.CommandAllocator.Get(), nullptr);
-    m_pd3dCommandList->ResourceBarrier(1, &barrier);
-    m_pd3dCommandList->SetDescriptorHeaps(1, heaps);
-    m_pd3dCommandList->OMSetRenderTargets(1, &frameContext.MainRenderTargetDescriptor, FALSE, nullptr);
+    frameContext.CommandList->Reset(frameContext.CommandAllocator.Get(), nullptr);
+    frameContext.CommandList->ResourceBarrier(1, &barrier);
+    frameContext.CommandList->SetDescriptorHeaps(1, heaps);
+    frameContext.CommandList->OMSetRenderTargets(1, &frameContext.MainRenderTargetDescriptor, FALSE, nullptr);
 
-    ImGui_ImplDX12_RenderDrawData(&m_imguiDrawDataBuffers[0], m_pd3dCommandList.Get());
+    ImGui_ImplDX12_RenderDrawData(&m_imguiDrawDataBuffers[0], frameContext.CommandList.Get());
 
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
     barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-    m_pd3dCommandList->ResourceBarrier(1, &barrier);
-    m_pd3dCommandList->Close();
+    frameContext.CommandList->ResourceBarrier(1, &barrier);
+    frameContext.CommandList->Close();
 
-    ID3D12CommandList* commandLists[] = {m_pd3dCommandList.Get()};
+    ID3D12CommandList* commandLists[] = {frameContext.CommandList.Get()};
     m_pCommandQueue->ExecuteCommandLists(1, commandLists);
 }

@@ -70,7 +70,8 @@ static void Shutdown()
 
 BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID)
 {
-    DisableThreadLibraryCalls(mod);
+    // Not safe to do this, the DLL uses thread_local storage
+    //DisableThreadLibraryCalls(mod);
 
     switch (ul_reason_for_call)
     {
