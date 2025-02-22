@@ -2,6 +2,8 @@
 
 #include "Scripting.h"
 
+#include "config/CETVersion.h"
+
 #include "FunctionOverride.h"
 #include "GameOptions.h"
 #include "Texture.h"
@@ -125,7 +127,7 @@ void Scripting::Initialize()
 
     globals["GetVersion"] = []() -> std::string
     {
-        return CET_BUILD_COMMIT;
+        return CET_GIT_TAG;
     };
 
     globals["GetDisplayResolution"] = [this]() -> std::tuple<float, float>

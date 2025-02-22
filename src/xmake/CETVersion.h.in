@@ -1,0 +1,21 @@
+#pragma once
+
+${define CET_DEBUG_BUILD}
+${define CET_GIT_TAG}
+${define CET_GIT_TAG_LONG}
+${define CET_GIT_BRANCH}
+${define CET_GIT_COMMIT}
+${define CET_GIT_COMMIT_LONG}
+${define CET_GIT_COMMIT_DATE}
+
+${define CET_VERSION_MAJOR}
+${define CET_VERSION_MINOR}
+${define CET_VERSION_PATCH}
+${define CET_VERSION_SIMPLE}
+${define CET_VERSION_FULL}
+${define CET_VERSION}
+
+${define CET_CURRENT_YEAR}
+${define CET_PRODUCT_NAME}
+${define CET_GROUP_NAME}
+${define CET_FILE_NAME}
