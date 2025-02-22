@@ -1,5 +1,6 @@
 #include <stdafx.h>
 
+#include "config/CETVersion.h"
 #include "Paths.h"
 #include "Utils.h"
 #include "RED4ext/Api/Runtime.hpp"
@@ -177,7 +178,7 @@ Options::Options(Paths& aPaths)
 
     if (GameImage.FileVersion.major != 0)
     {
-        Log::Info("CET version {} [{}]", CET_BUILD_COMMIT, CET_BUILD_BRANCH);
+        Log::Info("CET version {}", CET_VERSION_FULL);
         Log::Info("Game version {}.{}.{}.{}", GameImage.FileVersion.major, GameImage.FileVersion.minor, GameImage.FileVersion.build, GameImage.FileVersion.revision);
         Log::Info("Root path: \"{}\"", UTF16ToUTF8(aPaths.GameRoot().native()));
         Log::Info("Cyber Engine Tweaks path: \"{}\"", UTF16ToUTF8(aPaths.CETRoot().native()));

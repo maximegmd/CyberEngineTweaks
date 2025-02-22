@@ -67,7 +67,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "CETVersion.h"
 #include "common/Logging.h"
 #include "common/FontMaterialDesignIcons.h"
 #include "common/ImGuiNotify.h"
