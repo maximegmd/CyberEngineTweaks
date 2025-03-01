@@ -81,7 +81,7 @@ bool D3D12::Initialize()
 
     D3D12_DESCRIPTOR_HEAP_DESC srvdesc = {};
     srvdesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-    srvdesc.NumDescriptors = buffersCounts;
+    srvdesc.NumDescriptors = 200; // Same number as is used in scripting/Texture
     srvdesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     if (FAILED(m_pd3d12Device->CreateDescriptorHeap(&srvdesc, IID_PPV_ARGS(&m_pd3dSrvDescHeap))))
     {
@@ -312,6 +312,8 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
 
     ImGui::GetStyle() = m_styleReference;
     ImGui::GetStyle().ScaleAllSizes(scaleFromReference);
+
+    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange; // Do not modify cursor from ImGui backend
 
     if (!ImGui_ImplWin32_Init(m_window.GetWindow()))
     {

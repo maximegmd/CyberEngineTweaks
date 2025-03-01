@@ -59,8 +59,8 @@ constexpr uint32_t CScript_TweakDBLoad = 3602585178UL;           // game::data::
 constexpr uint32_t CShutdownState_OnTick = 4069332669UL; // red::GameAppShutdownState::OnTick
 #pragma endregion
 
-#pragma region CWinapi
-constexpr uint32_t CWinapi_ClipToCenter = 261693736UL; // input::InputSystemWin32Base::Update
+#pragma region InputSystemWin32Base
+constexpr uint32_t InputSystemWin32Base_ForceCursor = 2130646213UL; // input::InputSystemWin32Base::ForceCursor
 #pragma endregion
 
 #pragma region gameIGameSystem

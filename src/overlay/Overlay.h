@@ -7,8 +7,6 @@
 #include "widgets/GameLog.h"
 #include "widgets/ImGuiDebug.h"
 
-using TClipToCenter = HWND(RED4ext::CGameEngine::UnkD0*);
-
 struct Overlay
 {
     Overlay(VKBindings& aBindings, Options& aOptions, PersistentState& aPersistentState, LuaVM& aVm);
@@ -27,11 +25,6 @@ struct Overlay
 
     void Update();
 
-protected:
-    void Hook();
-
-    static BOOL ClipToCenter(RED4ext::CGameEngine::UnkD0* apThis);
-
 private:
     void DrawToolbar();
 
@@ -41,8 +34,6 @@ private:
     TweakDBEditor m_tweakDBEditor;
     GameLog m_gameLog;
     ImGuiDebug m_imguiDebug;
-
-    TClipToCenter* m_realClipToCenter{nullptr};
 
     std::atomic_bool m_enabled{false};
     std::atomic_bool m_toggled{false};
