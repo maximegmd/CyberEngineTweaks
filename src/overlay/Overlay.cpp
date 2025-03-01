@@ -18,7 +18,6 @@ void Overlay::PostInitialize()
 
             auto& d3d12 = CET::Get().GetD3D12();
             d3d12.DelayedSetTrapInputInImGui(true);
-            ClipToCenter(RED4ext::CGameEngine::Get()->unkD0);
         }
         else
         {
@@ -194,8 +193,6 @@ void Overlay::Update()
 
             auto& d3d12 = CET::Get().GetD3D12();
             d3d12.DelayedSetTrapInputInImGui(m_enabled);
-            auto* pEngine = RED4ext::CGameEngine::Get();
-            ClipToCenter(pEngine->unkD0);
             m_toggled = false;
         }
     }
@@ -211,9 +208,9 @@ void Overlay::Update()
     ImGui::RenderNotifications();
 
     //——————————————————————————————— WARNING ———————————————————————————————
-    // Argument MUST match the amount of ImGui::PushStyleVar() calls 
+    // Argument MUST match the amount of ImGui::PushStyleVar() calls
     ImGui::PopStyleVar(2);
-    // Argument MUST match the amount of ImGui::PushStyleColor() calls 
+    // Argument MUST match the amount of ImGui::PushStyleColor() calls
     ImGui::PopStyleColor(1);
 
     if (!m_enabled)
@@ -240,48 +237,6 @@ bool Overlay::IsInitialized() const noexcept
     return m_initialized;
 }
 
-BOOL Overlay::ClipToCenter(RED4ext::CGameEngine::UnkD0* apThis)
-{
-    const auto wnd = static_cast<HWND>(apThis->hWnd);
-    const HWND foreground = GetForegroundWindow();
-
-    if (wnd == foreground && apThis->unk174 && !apThis->unk164 && !CET::Get().GetOverlay().IsEnabled())
-    {
-        RECT rect;
-        GetClientRect(wnd, &rect);
-        ClientToScreen(wnd, reinterpret_cast<POINT*>(&rect.left));
-        ClientToScreen(wnd, reinterpret_cast<POINT*>(&rect.right));
-        rect.left = (rect.left + rect.right) / 2;
-        rect.right = rect.left;
-        rect.bottom = (rect.bottom + rect.top) / 2;
-        rect.top = rect.bottom;
-        apThis->isClipped = true;
-        ShowCursor(FALSE);
-        return ClipCursor(&rect);
-    }
-
-    if (apThis->isClipped)
-    {
-        apThis->isClipped = false;
-        return ClipCursor(nullptr);
-    }
-
-    return 1;
-}
-
-void Overlay::Hook()
-{
-    const RED4ext::UniversalRelocPtr<uint8_t> func(CyberEngineTweaks::AddressHashes::CWinapi_ClipToCenter);
-
-    if (auto* pLocation = func.GetAddr())
-    {
-        if (MH_CreateHook(pLocation, reinterpret_cast<void*>(&ClipToCenter), reinterpret_cast<void**>(&m_realClipToCenter)) != MH_OK || MH_EnableHook(pLocation) != MH_OK)
-            Log::Error("Could not hook mouse clip function!");
-        else
-            Log::Info("Hook mouse clip function!");
-    }
-}
-
 Overlay::Overlay(VKBindings& aBindings, Options& aOptions, PersistentState& aPersistentState, LuaVM& aVm)
     : m_console(aOptions, aPersistentState, aVm)
     , m_bindings(aBindings, aVm)
@@ -291,8 +246,6 @@ Overlay::Overlay(VKBindings& aBindings, Options& aOptions, PersistentState& aPer
     , m_persistentState(aPersistentState)
     , m_vm(aVm)
 {
-    Hook();
-
     GameMainThread::Get().AddBaseInitializationTask(
         [this]
         {

@@ -8,17 +8,6 @@
 
 #include <VersionHelpers.h>
 
-void* ApplyHook(void** vtable, size_t index, void* target)
-{
-    DWORD oldProtect;
-    VirtualProtect(vtable + index, 8, PAGE_EXECUTE_READWRITE, &oldProtect);
-    const auto ret = vtable[index];
-    vtable[index] = target;
-    VirtualProtect(vtable + index, 8, oldProtect, nullptr);
-
-    return ret;
-}
-
 void* D3D12::CRenderNode_Present_InternalPresent(int32_t* apDeviceIndex, uint8_t aSomeSync, UINT aSyncInterval)
 {
     auto& d3d12 = CET::Get().GetD3D12();
@@ -80,10 +69,11 @@ ID3D12Device* D3D12::GetDevice() const
 std::tuple<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> D3D12::CreateTextureDescriptor()
 {
     const UINT handle_increment = m_pd3d12Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-    static std::atomic descriptor_index = 1;
+    static std::atomic descriptor_index = 1; // 0 is used for ImGui font texture
 
     const auto index = descriptor_index++;
 
+    // We allocate 200 descriptors
     if (index >= 200)
         return {{}, {}};
 
