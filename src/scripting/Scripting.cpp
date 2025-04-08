@@ -472,6 +472,12 @@ void Scripting::PostInitializeScripting()
         logger->info("Dumped {} types", count);
     };
 
+    globals["TrapInput"] = [](bool bEnabled)
+    {
+        auto& d3d12 = CET::Get().GetD3D12();
+        d3d12.DelayedSetTrapInputInImGui(bEnabled);
+    };
+
 #ifdef CET_DEBUG
     globals["DumpVtables"] = [this]
     {

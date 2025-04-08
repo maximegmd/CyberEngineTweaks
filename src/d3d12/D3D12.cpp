@@ -20,8 +20,31 @@ void D3D12::SetTrapInputInImGui(const bool acEnabled)
 
 void D3D12::DelayedSetTrapInputInImGui(const bool acEnabled)
 {
-    m_delayedTrapInputState = acEnabled;
-    m_delayedTrapInput = true;
+    if (acEnabled)
+    {
+        // Trap input if it's the first request.
+        if (m_trapInputStack == 0)
+        {
+            m_delayedTrapInputState = acEnabled;
+            m_delayedTrapInput = true;
+        }
+
+        ++m_trapInputStack;
+    }
+    else
+    {
+        if (m_trapInputStack > 0)
+        {
+            --m_trapInputStack;
+
+            // Disable when the last request is removed.
+            if (m_trapInputStack == 0)
+            {
+                m_delayedTrapInputState = acEnabled;
+                m_delayedTrapInput = true;
+            }
+        }
+    }
 }
 
 LRESULT D3D12::OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam) const

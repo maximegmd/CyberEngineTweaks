@@ -81,4 +81,5 @@ private:
     std::array<ImDrawData, 3> m_imguiDrawDataBuffers;
     std::atomic_bool m_delayedTrapInput{false};
     std::atomic_bool m_delayedTrapInputState{false};
+    std::atomic_uint32_t m_trapInputStack{0};
 };
