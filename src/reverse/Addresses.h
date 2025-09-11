@@ -24,7 +24,7 @@ constexpr uint32_t CPatches_OptionsInit = 4089777341UL;     // Config::IConfigVa
 #pragma endregion
 
 #pragma region CPhotoMode
-constexpr uint32_t CPhotoMode_SetRecordID = 4069992366UL; // <UNKNOWN_SYMBOL>
+constexpr uint32_t CPhotoMode_SetRecordID = 4052428712UL; // <UNKNOWN_SYMBOL>
 #pragma endregion
 
 #pragma region CRenderGlobal
