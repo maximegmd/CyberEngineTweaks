@@ -56,11 +56,12 @@ struct ClassType : Type
 
 struct UnknownType : Type
 {
-    UnknownType(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::CBaseRTTIType* apClass, RED4ext::ScriptInstance apInstance);
+    UnknownType(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::CBaseRTTIType* apType, RED4ext::ScriptInstance apInstance);
+    ~UnknownType() override;
 
     Descriptor Dump(bool aWithHashes) const override;
-    RED4ext::ScriptInstance GetHandle() const override { return m_pInstance.get(); }
+    RED4ext::ScriptInstance GetHandle() const override { return m_pInstance; }
 
 private:
-    std::unique_ptr<uint8_t[]> m_pInstance;
+    void* m_pInstance;
 };
