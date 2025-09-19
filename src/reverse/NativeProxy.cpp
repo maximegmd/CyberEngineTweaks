@@ -158,14 +158,11 @@ void NativeProxy::Callback(RED4ext::IScriptable* apSelf, RED4ext::CStackFrame* a
     if (functionIt == self->m_functions.end())
         return;
 
-    TiltedPhoques::StackAllocator<1 << 13> allocator;
-    const auto pAllocator = TiltedPhoques::Allocator::Get();
-    TiltedPhoques::Allocator::Set(&allocator);
-    TiltedPhoques::Vector<sol::object> args(0);
-    TiltedPhoques::Allocator::Set(pAllocator);
-
     auto lockedState = self->m_lua.Lock();
     auto& luaState = lockedState.Get();
+
+    TiltedPhoques::Vector<sol::object> args(0);
+    args.reserve(apFrame->func->params.size);
 
     for (const auto& param : apFrame->func->params)
     {
