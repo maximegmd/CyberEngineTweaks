@@ -463,14 +463,14 @@ sol::function FunctionOverride::WrapNextOverride(
     {
         return MakeSolFunction(
             aLuaState,
-            [&](sol::variadic_args aWrapArgs, sol::this_state aState, sol::this_environment aEnv) -> sol::variadic_results
+            [&](sol::variadic_args aWrapArgs, sol::this_state aState) -> sol::variadic_results
             {
                 std::string errorMessage;
                 sol::variadic_results results = RTTIHelper::Get().ExecuteFunction(apRealFunction, apRealContext, aWrapArgs, 0, errorMessage);
 
                 if (!errorMessage.empty())
                 {
-                    const sol::environment cEnv = aEnv;
+                    const sol::environment cEnv = aChain.Overrides.front()->Environment;
                     const auto logger = cEnv["__logger"].get<std::shared_ptr<spdlog::logger>>();
                     logger->error("Error: {}", errorMessage);
 
