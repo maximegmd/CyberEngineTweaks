@@ -12,7 +12,8 @@ auto s_metaVisitor =
 }(LuaRED<int8_t, "Int8">(), LuaRED<int16_t, "Int16">(), LuaRED<int32_t, "Int32">(), LuaRED<int64_t, "Int64">(), LuaRED<uint8_t, "Uint8">(), LuaRED<uint16_t, "Uint16">(),
   LuaRED<uint32_t, "Uint32">(), LuaRED<uint64_t, "Uint64">(), LuaRED<float, "Float">(), LuaRED<double, "Double">(), LuaRED<bool, "Bool">(), LuaRED<Quaternion, "Quaternion">(),
   LuaRED<Vector3, "Vector3">(), LuaRED<Vector4, "Vector4">(), LuaRED<EulerAngles, "EulerAngles">(), LuaRED<ItemID, "gameItemID">(), LuaRED<Variant, "Variant">(),
-  LuaRED<CRUID, "CRUID">(), LuaRED<gamedataLocKeyWrapper, "gamedataLocKeyWrapper">(), CNameConverter(), TweakDBIDConverter(), EnumConverter(), ClassConverter(),
+  LuaRED<CRUID, "CRUID">(), LuaRED<gamedataLocKeyWrapper, "gamedataLocKeyWrapper">(), CNameConverter(), TweakDBIDConverter(), EnumConverter(), BitFieldConverter(),
+  ClassConverter(),
   RawConverter() // Should always be last resort
 );
 
