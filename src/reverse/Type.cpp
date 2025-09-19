@@ -1,8 +1,8 @@
 #include <stdafx.h>
 
 #include "Type.h"
-
 #include "RTTIHelper.h"
+#include "CET.h"
 
 #include <spdlog/fmt/fmt.h>
 
@@ -278,12 +278,21 @@ sol::object ClassType::NewIndex_Impl(const std::string& acName, sol::object aPar
     return Type::NewIndex_Impl(acName, aParam);
 }
 
-UnknownType::UnknownType(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::CBaseRTTIType* apClass, RED4ext::ScriptInstance apInstance)
-    : Type(aView, apClass)
+UnknownType::UnknownType(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::CBaseRTTIType* apType, RED4ext::ScriptInstance apInstance)
+    : Type(aView, apType)
 {
-    // Hack for now until we use their allocators
-    m_pInstance = std::make_unique<uint8_t[]>(apClass->GetSize());
-    memcpy(m_pInstance.get(), apInstance, apClass->GetSize());
+    m_pInstance = m_pType->GetAllocator()->AllocAligned(m_pType->GetSize(), m_pType->GetAlignment()).memory;
+    m_pType->Construct(m_pInstance);
+    m_pType->Assign(m_pInstance, apInstance);
+}
+
+UnknownType::~UnknownType()
+{
+    if (m_pInstance && CET::IsRunning())
+    {
+        m_pType->Destruct(m_pInstance);
+        m_pType->GetAllocator()->Free(m_pInstance);
+    }
 }
 
 Type::Descriptor UnknownType::Dump(bool aWithHashes) const
