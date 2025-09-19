@@ -183,6 +183,75 @@ struct EnumConverter : LuaRED<Enum, "Enum">
     }
 };
 
+// Specialization manages wrapping and converting RT_BitField
+struct BitFieldConverter : LuaRED<uint64_t, "BitField">
+{
+    sol::object ToLua(RED4ext::CStackType& aResult, TiltedPhoques::Locked<sol::state, std::recursive_mutex>& aLua)
+    {
+        uint64_t value;
+
+        switch (m_pRtti->GetSize())
+        {
+        case sizeof(uint8_t): value = *static_cast<uint8_t*>(aResult.value); break;
+        case sizeof(uint16_t): value = *static_cast<uint16_t*>(aResult.value); break;
+        case sizeof(uint32_t): value = *static_cast<uint32_t*>(aResult.value); break;
+        case sizeof(uint64_t): value = *static_cast<uint64_t*>(aResult.value); break;
+        }
+
+        auto res{aLua.Get().script(fmt::format("return {}ull", value))};
+        assert(res.valid());
+        return res.get<sol::object>();
+    }
+
+    RED4ext::CStackType ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator)
+    {
+        RED4ext::CStackType result;
+        result.type = apRtti;
+        result.value = apAllocator->Allocate(apRtti->GetSize());
+
+        ToRED(aObject, &result);
+
+        return result;
+    }
+
+    void ToRED(sol::object aObject, RED4ext::CStackType* apType)
+    {
+        uint64_t value = 0;
+
+        if (aObject.get_type() == sol::type::number)
+        {
+            value = aObject.as<uint32_t>();
+        }
+        else if (IsLuaCData(aObject))
+        {
+            sol::state_view v(aObject.lua_state());
+            std::string str = v["tostring"](aObject);
+            value = std::stoull(str);
+        }
+
+        switch (m_pRtti->GetSize())
+        {
+        case sizeof(uint8_t): *static_cast<uint8_t*>(apType->value) = static_cast<uint8_t>(value); break;
+        case sizeof(uint16_t): *static_cast<uint16_t*>(apType->value) = static_cast<uint16_t>(value); break;
+        case sizeof(uint32_t): *static_cast<uint32_t*>(apType->value) = static_cast<uint32_t>(value); break;
+        case sizeof(uint64_t): *static_cast<uint64_t*>(apType->value) = value; break;
+        }
+    }
+
+    size_t Size() const noexcept { return m_pRtti ? m_pRtti->GetSize() : 0; }
+
+    bool Is(RED4ext::CBaseRTTIType* apRtti) const
+    {
+        if (apRtti->GetType() == RED4ext::ERTTIType::BitField)
+        {
+            m_pRtti = apRtti;
+            return true;
+        }
+
+        return false;
+    }
+};
+
 // Specialization manages wrapping RT_Class
 struct ClassConverter : LuaRED<ClassReference, "ClassReference">
 {
