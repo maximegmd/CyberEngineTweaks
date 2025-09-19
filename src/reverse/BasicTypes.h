@@ -132,14 +132,14 @@ struct TweakDBID
 
     TweakDBID(const std::string_view aName)
     {
-        name_hash = RED4ext::CRC32(aName.data(), 0);
+        name_hash = RED4ext::CRC32(reinterpret_cast<const uint8_t*>(aName.data()), aName.size(), 0);
         name_length = static_cast<uint8_t>(aName.size());
         unk5 = unk7 = 0;
     }
 
     TweakDBID(const TweakDBID& aBase, const std::string_view aName)
     {
-        name_hash = RED4ext::CRC32(aName.data(), aBase.name_hash);
+        name_hash = RED4ext::CRC32(reinterpret_cast<const uint8_t*>(aName.data()), aName.size(), aBase.name_hash);
         name_length = static_cast<uint8_t>(aName.size() + aBase.name_length);
         unk5 = unk7 = 0;
     }
