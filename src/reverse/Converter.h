@@ -15,7 +15,6 @@ namespace Converter
 size_t Size(RED4ext::CBaseRTTIType* apRtti);
 sol::object ToLua(RED4ext::CStackType& aResult, TiltedPhoques::Locked<sol::state, std::recursive_mutex>& aLua);
 RED4ext::CStackType ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator);
-void ToRED(sol::object aObject, RED4ext::CStackType* apType);
 } // namespace Converter
 
 // Specialization manages special case implicit casting
@@ -38,20 +37,6 @@ struct CNameConverter : LuaRED<CName, "CName">
 
         return result;
     }
-
-    void ToRED(sol::object aObject, RED4ext::CStackType* apType)
-    {
-        if (aObject != sol::nil && aObject.get_type() == sol::type::string) // CName from String implicit cast
-        {
-            sol::state_view v(aObject.lua_state());
-            std::string str = v["tostring"](aObject);
-            *static_cast<CName*>(apType->value) = CName(str);
-        }
-        else
-        {
-            return LuaRED<CName, "CName">::ToRED(aObject, apType);
-        }
-    }
 };
 
 // Specialization manages special case implicit casting for TweakDBID
@@ -71,18 +56,6 @@ struct TweakDBIDConverter : LuaRED<TweakDBID, "TweakDBID">
         }
 
         return result;
-    }
-
-    void ToRED(sol::object aObject, RED4ext::CStackType* apType)
-    {
-        if (aObject != sol::nil && aObject.get_type() == sol::type::string)
-        {
-            *static_cast<TweakDBID*>(apType->value) = TweakDBID(aObject.as<std::string>());
-        }
-        else
-        {
-            LuaRED<TweakDBID, "TweakDBID">::ToRED(aObject, apType);
-        }
     }
 };
 
@@ -137,38 +110,6 @@ struct EnumConverter : LuaRED<Enum, "Enum">
         return result;
     }
 
-    void ToRED(sol::object aObject, RED4ext::CStackType* apType)
-    {
-        if (aObject.is<Enum>())
-        {
-            auto* pEnum = aObject.as<Enum*>();
-            if (pEnum->GetType() == apType->type)
-            {
-                pEnum->Set(*apType);
-            }
-        }
-        else if (aObject == sol::nil)
-        {
-            auto* enumType = static_cast<RED4ext::CEnum*>(apType->type);
-            const Enum en(enumType, 0);
-            en.Set(*apType);
-        }
-        else if (aObject.get_type() == sol::type::number) // Enum from number cast
-        {
-            auto* enumType = static_cast<RED4ext::CEnum*>(apType->type);
-            const Enum en(enumType, aObject.as<uint32_t>());
-            en.Set(*apType);
-        }
-        else if (aObject.get_type() == sol::type::string) // Enum from string cast
-        {
-            auto* enumType = static_cast<RED4ext::CEnum*>(apType->type);
-            sol::state_view v(aObject.lua_state());
-            std::string str = v["tostring"](aObject);
-            const Enum en(enumType, str);
-            en.Set(*apType);
-        }
-    }
-
     size_t Size() const noexcept { return m_pRtti ? m_pRtti->GetSize() : 0; }
 
     bool Is(RED4ext::CBaseRTTIType* apRtti) const
@@ -209,13 +150,6 @@ struct BitFieldConverter : LuaRED<uint64_t, "BitField">
         result.type = apRtti;
         result.value = apAllocator->Allocate(apRtti->GetSize());
 
-        ToRED(aObject, &result);
-
-        return result;
-    }
-
-    void ToRED(sol::object aObject, RED4ext::CStackType* apType)
-    {
         uint64_t value = 0;
 
         if (aObject.get_type() == sol::type::number)
@@ -231,11 +165,13 @@ struct BitFieldConverter : LuaRED<uint64_t, "BitField">
 
         switch (m_pRtti->GetSize())
         {
-        case sizeof(uint8_t): *static_cast<uint8_t*>(apType->value) = static_cast<uint8_t>(value); break;
-        case sizeof(uint16_t): *static_cast<uint16_t*>(apType->value) = static_cast<uint16_t>(value); break;
-        case sizeof(uint32_t): *static_cast<uint32_t*>(apType->value) = static_cast<uint32_t>(value); break;
-        case sizeof(uint64_t): *static_cast<uint64_t*>(apType->value) = value; break;
+        case sizeof(uint8_t): *static_cast<uint8_t*>(result.value) = static_cast<uint8_t>(value); break;
+        case sizeof(uint16_t): *static_cast<uint16_t*>(result.value) = static_cast<uint16_t>(value); break;
+        case sizeof(uint32_t): *static_cast<uint32_t*>(result.value) = static_cast<uint32_t>(value); break;
+        case sizeof(uint64_t): *static_cast<uint64_t*>(result.value) = value; break;
         }
+
+        return result;
     }
 
     size_t Size() const noexcept { return m_pRtti ? m_pRtti->GetSize() : 0; }
@@ -297,18 +233,6 @@ struct ClassConverter : LuaRED<ClassReference, "ClassReference">
         return result;
     }
 
-    void ToRED(sol::object aObject, RED4ext::CStackType* apType)
-    {
-        if (aObject.is<ClassReference>())
-        {
-            apType->value = aObject.as<ClassReference*>()->GetHandle();
-        }
-        else
-        {
-            apType->value = nullptr;
-        }
-    }
-
     size_t Size() const noexcept { return m_pRtti ? m_pRtti->GetSize() : 0; }
 
     bool Is(RED4ext::CBaseRTTIType* apRtti) const
@@ -345,18 +269,6 @@ struct RawConverter : LuaRED<UnknownType, "UnknownType">
         }
 
         return result;
-    }
-
-    void ToRED(sol::object aObject, RED4ext::CStackType* apType)
-    {
-        if (aObject.is<UnknownType>())
-        {
-            apType->value = aObject.as<UnknownType*>()->GetHandle();
-        }
-        else
-        {
-            apType->value = nullptr;
-        }
     }
 
     size_t Size() const noexcept { return m_pRtti ? m_pRtti->GetSize() : 0; }

@@ -86,23 +86,3 @@ RED4ext::CStackType Converter::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
 
     return r;
 }
-
-void Converter::ToRED(sol::object aObject, RED4ext::CStackType* apType)
-{
-    auto initStackType = [&](auto& x)
-    {
-        if (x.Is(apType->type))
-        {
-            x.ToRED(aObject, apType);
-            return true;
-        }
-        return false;
-    };
-
-    auto f = [initStackType](auto&&... xs)
-    {
-        (... && !initStackType(xs));
-    };
-
-    s_metaVisitor(f);
-}
