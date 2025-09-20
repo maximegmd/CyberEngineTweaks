@@ -77,54 +77,6 @@ template <class T, FixedString REDName> struct LuaRED
         return result;
     }
 
-    void ToRED(sol::object aObject, RED4ext::CStackType* apType)
-    {
-        if (aObject == sol::nil)
-        {
-            *reinterpret_cast<T*>(apType->value) = T{};
-        }
-        else if constexpr (std::is_integral_v<T> && sizeof(T) == sizeof(uint64_t))
-        {
-            if (aObject.get_type() == sol::type::number)
-            {
-                sol::state_view v(aObject.lua_state());
-                double value = v["tonumber"](aObject);
-                *reinterpret_cast<T*>(apType->value) = static_cast<T>(value);
-            }
-            else if (IsLuaCData(aObject))
-            {
-                sol::state_view v(aObject.lua_state());
-                std::string str = v["tostring"](aObject);
-                if constexpr (std::is_signed_v<T>)
-                    *reinterpret_cast<T*>(apType->value) = std::stoll(str);
-                else
-                    *reinterpret_cast<T*>(apType->value) = std::stoull(str);
-            }
-        }
-        else if constexpr (std::is_same_v<T, bool>)
-        {
-            if (aObject.get_type() == sol::type::boolean)
-                *reinterpret_cast<T*>(apType->value) = aObject.as<T>();
-        }
-        else if constexpr (std::is_arithmetic_v<T>)
-        {
-            if (aObject.get_type() == sol::type::number)
-            {
-                *reinterpret_cast<T*>(apType->value) = aObject.as<T>();
-            }
-            else if (IsLuaCData(aObject))
-            {
-                sol::state_view v(aObject.lua_state());
-                double value = v["tonumber"](aObject);
-                *reinterpret_cast<T*>(apType->value) = static_cast<T>(value);
-            }
-        }
-        else if (aObject.is<T>())
-        {
-            *reinterpret_cast<T*>(apType->value) = aObject.as<T>();
-        }
-    }
-
     size_t Size() const noexcept { return sizeof(T); }
 
     bool Is(RED4ext::CBaseRTTIType* apRtti) const
