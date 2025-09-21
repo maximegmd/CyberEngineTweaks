@@ -630,9 +630,10 @@ sol::variadic_results RTTIHelper::ExecuteFunction(
     TiltedPhoques::Allocator::Set(&s_scratchMemory);
     TiltedPhoques::Vector<RED4ext::CStackType> callArgs(apFunc->params.size);
     TiltedPhoques::Vector<uint32_t> callArgToParam(apFunc->params.size);
-    TiltedPhoques::Vector<bool> argNeedsFree(apFunc->params.size, false);
+    TiltedPhoques::Vector<bool> ownedArgs(apFunc->params.size, false);
     TiltedPhoques::Allocator::Set(pAllocator);
 
+    RED4ext::CStackType result;
     uint32_t callArgOffset = 0u;
 
     ScopeGuard argsGuard(
@@ -640,9 +641,12 @@ sol::variadic_results RTTIHelper::ExecuteFunction(
         {
             for (auto j = 0u; j < callArgOffset; ++j)
             {
-                const bool isNew = argNeedsFree[j];
+                Scripting::DestructRED(callArgs[j], ownedArgs[j]);
+            }
 
-                FreeInstance(callArgs[j], !isNew, isNew, &s_scratchMemory);
+            if (result.value)
+            {
+                Scripting::DestructRED(result, true);
             }
         });
 
@@ -672,7 +676,7 @@ sol::variadic_results RTTIHelper::ExecuteFunction(
             // and memory allocation is enough.
             callArgs[callArgOffset].type = cpParam->type;
             callArgs[callArgOffset].value = NewPlaceholder(cpParam->type, &s_scratchMemory);
-            argNeedsFree[callArgOffset] = true;
+            ownedArgs[callArgOffset] = true;
 
             // But ToRED conversion is necessary for implementing required out params.
             // callArgs[callArgOffset] = Scripting::ToRED(sol::nil, cpParam->type, &s_scratchMemory);
@@ -717,13 +721,11 @@ sol::variadic_results RTTIHelper::ExecuteFunction(
 
     const bool hasReturnType = apFunc->returnType != nullptr && apFunc->returnType->type != nullptr;
 
-    uint8_t buffer[1000]{0};
-    RED4ext::CStackType result;
-
     if (hasReturnType)
     {
-        result.value = &buffer;
+        result.value = s_scratchMemory.Allocate(apFunc->returnType->type->GetSize());
         result.type = apFunc->returnType->type;
+        result.type->Construct(result.value);
     }
 
     const auto success = ExecuteFunction(apFunc, apContext, callArgs, result);
@@ -741,15 +743,7 @@ sol::variadic_results RTTIHelper::ExecuteFunction(
 
     if (hasReturnType)
     {
-        // There is a special case when a non-native function returns a specific class or something that holds that
-        // class, which leads to another memory leak. So far the only known class that is causing the issue is
-        // gameTargetSearchFilter. When it returned by a non-native function it is wrapped in the Variant or similar
-        // structure. To prevent the leak the underlying value must be unwrapped and the wrapper explicitly destroyed.
-        // The workaround has been proven to work, but it seems too much for only one known case, so it is not included
-        // for now.
-
         results.emplace_back(Scripting::ToLua(lockedState, result));
-        FreeInstance(result, false, false, &s_scratchMemory);
     }
 
     for (auto i = 0u; i < callArgOffset; ++i)
@@ -872,7 +866,7 @@ sol::object RTTIHelper::NewInstance(RED4ext::CBaseRTTIType* apType, sol::optiona
     auto lockedState = m_lua.Lock();
     auto instance = Scripting::ToLua(lockedState, result);
 
-    FreeInstance(result, true, true, &allocator);
+    Scripting::DestructRED(result, true);
 
     if (aProps.has_value())
     {
@@ -920,7 +914,7 @@ sol::object RTTIHelper::NewHandle(RED4ext::CBaseRTTIType* apType, sol::optional<
     auto lockedState = m_lua.Lock();
     auto instance = Scripting::ToLua(lockedState, result);
 
-    FreeInstance(result, true, true, &allocator);
+    Scripting::DestructRED(result, true);
 
     if (aProps.has_value())
     {
@@ -975,7 +969,7 @@ void RTTIHelper::SetProperty(RED4ext::CClass* apClass, RED4ext::ScriptInstance a
     {
         pProp->SetValue<RED4ext::ScriptInstance>(apHandle, stackType.value);
 
-        FreeInstance(stackType, true, false, &s_scratchMemory);
+        Scripting::DestructRED(stackType, false);
         aSuccess = true;
     }
 }
@@ -986,65 +980,4 @@ void RTTIHelper::SetProperties(RED4ext::CClass* apClass, RED4ext::ScriptInstance
 
     for (const auto& cProp : aProps.value())
         SetProperty(apClass, apHandle, cProp.first.as<std::string>(), cProp.second, success);
-}
-
-// Check if type is implemented using ClassReference
-bool RTTIHelper::IsClassReferenceType(RED4ext::CClass* apClass) const
-{
-    static constexpr auto s_cHashVector3 = RED4ext::FNV1a64("Vector3");
-    static constexpr auto s_cHashVector4 = RED4ext::FNV1a64("Vector4");
-    static constexpr auto s_cHashEulerAngles = RED4ext::FNV1a64("EulerAngles");
-    static constexpr auto s_cHashQuaternion = RED4ext::FNV1a64("Quaternion");
-    static constexpr auto s_cHashItemID = RED4ext::FNV1a64("gameItemID");
-
-    return apClass->name.hash != s_cHashVector3 && apClass->name.hash != s_cHashVector4 && apClass->name.hash != s_cHashEulerAngles && apClass->name.hash != s_cHashQuaternion &&
-           apClass->name.hash != s_cHashItemID;
-}
-
-void RTTIHelper::FreeInstance(RED4ext::CStackType& aStackType, bool aOwn, bool aNew, TiltedPhoques::Allocator* apAllocator) const
-{
-    FreeInstance(aStackType.type, aStackType.value, aOwn, aNew, apAllocator);
-}
-
-void RTTIHelper::FreeInstance(RED4ext::CBaseRTTIType* apType, void* apValue, bool aOwn, bool aNew, TiltedPhoques::Allocator*) const
-{
-    if (!apValue)
-        return;
-
-    if (aOwn)
-    {
-        if (apType->GetType() == RED4ext::ERTTIType::Class)
-        {
-            // Free instances created with AllocInstance()
-            if (aNew)
-            {
-                auto* pClass = reinterpret_cast<RED4ext::CClass*>(apType);
-
-                // Skip basic types
-                if (IsClassReferenceType(pClass))
-                {
-                    pClass->DestructCls(apValue);
-                    pClass->GetAllocator()->Free(apValue);
-                }
-            }
-        }
-        else
-        {
-            apType->Destruct(apValue);
-        }
-    }
-    else
-    {
-        if (aNew || apType->GetType() != RED4ext::ERTTIType::Class)
-            apType->Destruct(apValue);
-    }
-
-    // Right now it's a workaround that doesn't cover all cases but most.
-    // It also requires explicit calls to FreeInstance().
-    // Should probably be refactored into a custom allocator that
-    // combines ScratchAllocator and managed logic for:
-    // 1. Instances created with AllocInstance()
-    // 2. DynArray
-    // 3. Handle
-    // 4. WeakHandle
 }

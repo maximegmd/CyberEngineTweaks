@@ -204,12 +204,12 @@ struct ClassConverter : LuaRED<ClassReference, "ClassReference">
         {
             result.value = aObject.as<ClassReference*>()->GetHandle();
         }
-        else if (aObject == sol::nil)
-        {
-            result.value = RTTIHelper::Get().NewInstance(apRtti, sol::nullopt, apAllocator);
-        }
         // Disabled until new allocator is implemented
         // Current implementation can leak
+        // else if (aObject == sol::nil)
+        // {
+        //     result.value = RTTIHelper::Get().NewInstance(apRtti, sol::nullopt, apAllocator);
+        // }
         // else if (aObject.get_type() == sol::type::table)
         //{
         //    // The implicit table to instance conversion `Game.FindEntityByID({ hash = 1 })` has potential issue:

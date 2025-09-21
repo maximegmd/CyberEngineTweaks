@@ -56,9 +56,6 @@ private:
     sol::function MakeInvokableOverload(std::map<uint64_t, RED4ext::CBaseFunction*> aOverloadedFuncs) const;
 
     RED4ext::ScriptInstance NewPlaceholder(RED4ext::CBaseRTTIType* apType, TiltedPhoques::Allocator* apAllocator) const;
-    bool IsClassReferenceType(RED4ext::CClass* apClass) const;
-    void FreeInstance(RED4ext::CStackType& aStackType, bool aOwnValue, bool aNewValue, TiltedPhoques::Allocator* apAllocator) const;
-    void FreeInstance(RED4ext::CBaseRTTIType* apType, void* apValue, bool aOwnValue, bool aNewValue, TiltedPhoques::Allocator* apAllocator) const;
 
     bool ExecuteFunction(RED4ext::CBaseFunction* apFunc, RED4ext::IScriptable* apContext, TiltedPhoques::Vector<RED4ext::CStackType>& aArgs, RED4ext::CStackType& aResult) const;
 
