@@ -286,6 +286,13 @@ UnknownType::UnknownType(const TiltedPhoques::Lockable<sol::state, std::recursiv
     m_pType->Assign(m_pInstance, apInstance);
 }
 
+UnknownType::UnknownType(UnknownType&& aOther) noexcept
+    : Type(aOther)
+    , m_pInstance(aOther.m_pInstance)
+{
+    aOther.m_pInstance = nullptr;
+}
+
 UnknownType::~UnknownType()
 {
     if (m_pInstance && CET::IsRunning())
@@ -293,6 +300,11 @@ UnknownType::~UnknownType()
         m_pType->Destruct(m_pInstance);
         m_pType->GetAllocator()->Free(m_pInstance);
     }
+}
+
+RED4ext::ScriptInstance UnknownType::GetHandle() const
+{
+    return m_pInstance;
 }
 
 Type::Descriptor UnknownType::Dump(bool aWithHashes) const
