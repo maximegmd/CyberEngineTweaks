@@ -881,16 +881,15 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
                     if (tbl.size() > 0)
                     {
                         auto* pArrayInnerType = pArrayType->GetInnerType();
-                        const auto shouldDestroy = pArrayInnerType->GetType() != RED4ext::ERTTIType::Class;
 
                         // Copy elements from the table into the array
                         pArrayType->Resize(pMemory, static_cast<uint32_t>(tbl.size()));
                         for (uint32_t i = 1; i <= tbl.size(); ++i)
                         {
-                            const RED4ext::CStackType type = ToRED(tbl.get<sol::object>(i), pArrayInnerType, apAllocator);
+                            RED4ext::CStackType data = ToRED(tbl.get<sol::object>(i), pArrayInnerType, apAllocator);
 
                             // Break on first incompatible element
-                            if (!type.value)
+                            if (!data.value)
                             {
                                 pArrayType->Destruct(pMemory);
                                 pMemory = nullptr;
@@ -898,10 +897,9 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
                             }
 
                             const auto pElement = pArrayType->GetElement(pMemory, i - 1);
-                            pArrayInnerType->Assign(pElement, type.value);
+                            pArrayInnerType->Assign(pElement, data.value);
 
-                            if (shouldDestroy)
-                                pArrayInnerType->Destruct(type.value);
+                            DestructRED(data, false);
                         }
                     }
                 }
@@ -911,16 +909,19 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
         }
         else if (apRttiType->GetType() == RED4ext::ERTTIType::ScriptReference)
         {
-            auto* pInnerType = static_cast<RED4ext::CRTTIScriptReferenceType*>(apRttiType)->innerType;
-            const RED4ext::CStackType innerValue = ToRED(aObject, pInnerType, apAllocator);
-
-            if (innerValue.value)
+            if (hasData)
             {
-                auto* pScriptRef = apAllocator->New<RED4ext::ScriptRef<void>>();
-                pScriptRef->innerType = innerValue.type;
-                pScriptRef->ref = innerValue.value;
-                pScriptRef->hash = apRttiType->GetName();
-                result.value = pScriptRef;
+                auto* pInnerType = static_cast<RED4ext::CRTTIScriptReferenceType*>(apRttiType)->innerType;
+                const RED4ext::CStackType innerValue = ToRED(aObject, pInnerType, apAllocator);
+
+                if (innerValue.value)
+                {
+                    auto* pScriptRef = apAllocator->New<RED4ext::ScriptRef<void>>();
+                    pScriptRef->innerType = innerValue.type;
+                    pScriptRef->ref = innerValue.value;
+                    pScriptRef->hash = apRttiType->GetName();
+                    result.value = pScriptRef;
+                }
             }
         }
         else if (apRttiType->GetType() == RED4ext::ERTTIType::ResourceAsyncReference || apRttiType == s_resRefType)
@@ -989,12 +990,47 @@ void Scripting::ToRED(sol::object aObject, RED4ext::CStackType& aRet)
 {
     static thread_local TiltedPhoques::ScratchAllocator s_scratchMemory(1 << 14);
 
-    const auto result = ToRED(aObject, aRet.type, &s_scratchMemory);
-
+    auto result = ToRED(aObject, aRet.type, &s_scratchMemory);
     aRet.type->Assign(aRet.value, result.value);
-
-    if (aRet.type->GetType() != RED4ext::ERTTIType::Class && result.value)
-        aRet.type->Destruct(result.value);
+    DestructRED(result, false);
 
     s_scratchMemory.Reset();
+}
+
+void Scripting::DestructRED(const RED4ext::CStackType& aStackType, bool aOwned)
+{
+    if (!aStackType.value)
+        return;
+
+    if (aStackType.type->GetType() == RED4ext::ERTTIType::ScriptReference)
+    {
+        auto pRef = reinterpret_cast<RED4ext::ScriptRef<void>*>(aStackType.value);
+        DestructRED({pRef->innerType, pRef->ref}, aOwned);
+        return;
+    }
+
+    // Destroy only data created and owned by the caller,
+    // and types that always produce a copy when converted from lua to RED.
+    if (aOwned || IsConvertedByCopying(aStackType.type))
+    {
+        aStackType.type->Destruct(aStackType.value);
+    }
+}
+
+bool Scripting::IsConvertedByCopying(RED4ext::CBaseRTTIType* aType)
+{
+    if (aType == s_stringType)
+    {
+        return true;
+    }
+
+    switch (aType->GetType())
+    {
+    case RED4ext::ERTTIType::Array:
+    case RED4ext::ERTTIType::Handle:
+    case RED4ext::ERTTIType::WeakHandle:
+        return true;
+    }
+
+    return false;
 }

@@ -45,6 +45,8 @@ struct Scripting
     static sol::object ToLua(LockedState& aState, RED4ext::CStackType& aResult);
     static RED4ext::CStackType ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRttiType, TiltedPhoques::Allocator* apAllocator);
     static void ToRED(sol::object aObject, RED4ext::CStackType& apType);
+    static void DestructRED(const RED4ext::CStackType& aStackType, bool aOwned);
+    static bool IsConvertedByCopying(RED4ext::CBaseRTTIType* aType);
 
 protected:
     void RegisterOverrides();
