@@ -461,6 +461,7 @@ void LuaSandbox::InitializeIOForSandbox(Sandbox& aSandbox, const sol::state& acp
             sol::protected_function_result result{};
             try
             {
+                m_modules[cKey] = make_object(stateView, sol::nil);
                 result = func();
             }
             catch (std::exception& e)
