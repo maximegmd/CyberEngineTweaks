@@ -516,6 +516,11 @@ void Scripting::PostInitializeTweakDB()
 
     m_sandbox.PostInitializeTweakDB();
 
+    // Due to how TweakDB modifications are implemented in CET, some REDengine functions may attempt to allocate
+    // new data in the buffer. But these functions don't resize the buffer, so they can get out of bounds and crash.
+    // This edge case can be fixed by resizing TweakDB flat buffer to max capacity beforehand.
+    RED4ext::TweakDB::Get()->UpsizeFlatDataBufferToMax();
+
     TriggerOnTweak();
 }
 
