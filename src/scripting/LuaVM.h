@@ -35,6 +35,7 @@ struct LuaVM
     void Prepare();
 
     bool ExecuteLua(const std::string& acCommand) const;
+    int ThrowLuaError(const std::string& acMessage) const;
 
     void Update(float aDeltaTime);
     void Draw() const;
