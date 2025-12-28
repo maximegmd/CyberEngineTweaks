@@ -61,6 +61,8 @@ void Overlay::Update()
     if (!m_initialized)
         return;
 
+    ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
+    
     if (m_toggled)
     {
         if (m_bindings.FirstTimeSetup())
@@ -215,8 +217,6 @@ void Overlay::Update()
 
     if (!m_enabled)
         return;
-
-    ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 
     const auto [width, height] = CET::Get().GetD3D12().GetResolution();
     const auto heightLimit = 2 * ImGui::GetFrameHeight() + 2 * ImGui::GetStyle().WindowPadding.y;
