@@ -2,6 +2,8 @@
 
 #include "Overlay.h"
 
+#include "config/CETVersion.h"
+
 #include <CET.h>
 
 #include <d3d12/D3D12.h>
@@ -216,13 +218,7 @@ void Overlay::Update()
     if (!m_enabled)
         return;
 
-    const auto [width, height] = CET::Get().GetD3D12().GetResolution();
-    const auto heightLimit = 2 * ImGui::GetFrameHeight() + 2 * ImGui::GetStyle().WindowPadding.y;
-    ImGui::SetNextWindowPos({width * 0.25f, height * 0.05f}, ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSizeConstraints({width * 0.5f, heightLimit}, {FLT_MAX, heightLimit});
-    if (ImGui::Begin("Cyber Engine Tweaks"))
-        DrawToolbar();
-    ImGui::End();
+    DrawToolbar();
 
     m_console.Draw();
     m_bindings.Draw();
@@ -258,65 +254,75 @@ Overlay::~Overlay()
 {
 }
 
+#define EYE_ON_ICON "\xF3\xB0\x9B\x90"
+#define EYE_OFF_ICON "\xF3\xB0\x9B\x91"
+
+
 void Overlay::DrawToolbar()
 {
-    const auto itemWidth = GetAlignedItemWidth(7);
     auto& persistentState = m_persistentState.Overlay;
 
-    ImGui::PushStyleColor(ImGuiCol_Button, persistentState.ConsoleToggled ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive) : ImGui::GetStyleColorVec4(ImGuiCol_Button));
-    if (ImGui::Button("Console", ImVec2(itemWidth, 0)))
-        m_console.Toggle();
-    if (!m_toggled)
-        persistentState.ConsoleToggled = m_console.IsEnabled();
-    ImGui::PopStyleColor();
+    ImGui::PushStyleColor(ImGuiCol_MenuBarBg, ImVec4(0.2f, 0.2f, 0.15f, 0.4f));
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, 15);
 
-    ImGui::SameLine();
+    if (ImGui::BeginMainMenuBar())
+    {
 
-    ImGui::PushStyleColor(ImGuiCol_Button, persistentState.BindingsToggled ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive) : ImGui::GetStyleColorVec4(ImGuiCol_Button));
-    if (ImGui::Button("Bindings", ImVec2(itemWidth, 0)))
-        m_bindings.Toggle();
-    if (!m_toggled)
-        persistentState.BindingsToggled = m_bindings.IsEnabled();
-    ImGui::PopStyleColor();
+        ImGui::Text(std::format("CyberEngineTweaks v{}", CET_GIT_TAG).c_str());
 
-    ImGui::SameLine();
+        ImGui::Separator();
 
-    ImGui::PushStyleColor(ImGuiCol_Button, persistentState.SettingsToggled ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive) : ImGui::GetStyleColorVec4(ImGuiCol_Button));
-    if (ImGui::Button("Settings", ImVec2(itemWidth, 0)))
-        m_settings.Toggle();
-    if (!m_toggled)
-        persistentState.SettingsToggled = m_settings.IsEnabled();
-    ImGui::PopStyleColor();
+        ImGui::PushItemFlag(ImGuiItemFlags_AutoClosePopups, false);
 
-    ImGui::SameLine();
+        if (ImGui::BeginMenu("Widgets"))
+        {
+            if (ImGui::MenuItem(std::format("{} Console", m_console.IsEnabled() ? EYE_ON_ICON : EYE_OFF_ICON).c_str()))
+                m_console.Toggle();
+            if (!m_toggled)
+                persistentState.ConsoleToggled = m_console.IsEnabled();
 
-    ImGui::PushStyleColor(ImGuiCol_Button, persistentState.TweakDBEditorToggled ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive) : ImGui::GetStyleColorVec4(ImGuiCol_Button));
-    if (ImGui::Button("TweakDB Editor", ImVec2(itemWidth, 0)))
-        m_tweakDBEditor.Toggle();
-    if (!m_toggled)
-        persistentState.TweakDBEditorToggled = m_tweakDBEditor.IsEnabled();
-    ImGui::PopStyleColor();
+            if (ImGui::MenuItem(std::format("{} Bindings", m_bindings.IsEnabled() ? EYE_ON_ICON : EYE_OFF_ICON).c_str()))
+                m_bindings.Toggle();
+            if (!m_toggled)
+                persistentState.BindingsToggled = m_bindings.IsEnabled();
 
-    ImGui::SameLine();
+            if (ImGui::MenuItem(std::format("{} Settings", m_settings.IsEnabled() ? EYE_ON_ICON : EYE_OFF_ICON).c_str()))
+                m_settings.Toggle();
+            if (!m_toggled)
+                persistentState.SettingsToggled = m_settings.IsEnabled();
 
-    ImGui::PushStyleColor(ImGuiCol_Button, persistentState.GameLogToggled ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive) : ImGui::GetStyleColorVec4(ImGuiCol_Button));
-    if (ImGui::Button("Game Log", ImVec2(itemWidth, 0)))
-        m_gameLog.Toggle();
-    if (!m_toggled)
-        persistentState.GameLogToggled = m_gameLog.IsEnabled();
-    ImGui::PopStyleColor();
+            if (ImGui::MenuItem(std::format("{} TweakDB Editor", m_tweakDBEditor.IsEnabled() ? EYE_ON_ICON : EYE_OFF_ICON).c_str()))
+                m_tweakDBEditor.Toggle();
+            if (!m_toggled)
+                persistentState.TweakDBEditorToggled = m_tweakDBEditor.IsEnabled();
 
-    ImGui::SameLine();
+            if (ImGui::MenuItem(std::format("{} Game Log", m_gameLog.IsEnabled() ? EYE_ON_ICON : EYE_OFF_ICON).c_str()))
+                m_gameLog.Toggle();
+            if (!m_toggled)
+                persistentState.GameLogToggled = m_gameLog.IsEnabled();
 
-    ImGui::PushStyleColor(ImGuiCol_Button, persistentState.ImGuiDebugToggled ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive) : ImGui::GetStyleColorVec4(ImGuiCol_Button));
-    if (ImGui::Button("ImGui Debug", ImVec2(itemWidth, 0)))
-        m_imguiDebug.Toggle();
-    if (!m_toggled)
-        persistentState.ImGuiDebugToggled = m_imguiDebug.IsEnabled();
-    ImGui::PopStyleColor();
+            if (ImGui::MenuItem(std::format("{} ImGui Debug", m_imguiDebug.IsEnabled() ? EYE_ON_ICON : EYE_OFF_ICON).c_str()))
+                m_imguiDebug.Toggle();
+            if (!m_toggled)
+                persistentState.ImGuiDebugToggled = m_imguiDebug.IsEnabled();
 
-    ImGui::SameLine();
+            ImGui::EndMenu();
+        }
 
-    if (ImGui::Button("Reload all mods", ImVec2(itemWidth, 0)))
-        m_vm.ReloadAllMods();
+        ImGui::PopItemFlag();
+
+        if (ImGui::BeginMenu("Reload Mods"))
+        {
+            ImGui::CloseCurrentPopup();
+            m_vm.ReloadAllMods();
+            ImGui::EndMenu();
+        }
+
+        ImGui::EndMainMenuBar();
+
+        ImGui::PopStyleColor();
+        ImGui::PopStyleVar();
+    }
+
+    ImGui::PopStyleVar();
 }
