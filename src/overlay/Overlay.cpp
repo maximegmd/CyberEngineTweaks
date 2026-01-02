@@ -257,14 +257,12 @@ Overlay::~Overlay()
 #define EYE_ON_ICON "\xF3\xB0\x9B\x90"
 #define EYE_OFF_ICON "\xF3\xB0\x9B\x91"
 
-
 void Overlay::DrawToolbar()
 {
     auto& persistentState = m_persistentState.Overlay;
 
     ImGui::PushStyleColor(ImGuiCol_MenuBarBg, ImVec4(0.2f, 0.2f, 0.15f, 0.4f));
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, 15);
-
     if (ImGui::BeginMainMenuBar())
     {
 
@@ -272,10 +270,10 @@ void Overlay::DrawToolbar()
 
         ImGui::Separator();
 
-        ImGui::PushItemFlag(ImGuiItemFlags_AutoClosePopups, false);
-
         if (ImGui::BeginMenu("Widgets"))
         {
+            ImGui::PushItemFlag(ImGuiItemFlags_AutoClosePopups, false);
+
             if (ImGui::MenuItem(std::format("{} Console", m_console.IsEnabled() ? EYE_ON_ICON : EYE_OFF_ICON).c_str()))
                 m_console.Toggle();
             if (!m_toggled)
@@ -306,10 +304,10 @@ void Overlay::DrawToolbar()
             if (!m_toggled)
                 persistentState.ImGuiDebugToggled = m_imguiDebug.IsEnabled();
 
+            ImGui::PopItemFlag();
+
             ImGui::EndMenu();
         }
-
-        ImGui::PopItemFlag();
 
         if (ImGui::BeginMenu("Reload Mods"))
         {
