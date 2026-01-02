@@ -2973,6 +2973,7 @@ inline void InitEnums(sol::table luaGlobals)
         ImGuiWindowFlags_NoFocusOnAppearing, "NoBringToFrontOnFocus", ImGuiWindowFlags_NoBringToFrontOnFocus, "AlwaysVerticalScrollbar", ImGuiWindowFlags_AlwaysVerticalScrollbar,
         "AlwaysHorizontalScrollbar", ImGuiWindowFlags_AlwaysHorizontalScrollbar, "NoNavInputs", ImGuiWindowFlags_NoNavInputs, "NoNavFocus", ImGuiWindowFlags_NoNavFocus,
         "UnsavedDocument", ImGuiWindowFlags_UnsavedDocument, "NoNav", ImGuiWindowFlags_NoNav, "NoDecoration", ImGuiWindowFlags_NoDecoration, "NoInputs", ImGuiWindowFlags_NoInputs,
+        "NoDocking", ImGuiWindowFlags_NoDocking,
         // [Internal]
         "ChildWindow", ImGuiWindowFlags_ChildWindow, "Tooltip", ImGuiWindowFlags_Tooltip, "Popup", ImGuiWindowFlags_Popup, "Modal", ImGuiWindowFlags_Modal, "ChildMenu",
         ImGuiWindowFlags_ChildMenu,
