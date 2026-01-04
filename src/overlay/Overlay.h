@@ -42,4 +42,8 @@ private:
     Options& m_options;
     PersistentState& m_persistentState;
     LuaVM& m_vm;
+
+    bool m_blockWidgetPopupFromBeingClosed{false};
+    ImGuiID m_widgetPopupID{0};
+    ImGuiWindow* m_widgetPopupWindow{nullptr};
 };

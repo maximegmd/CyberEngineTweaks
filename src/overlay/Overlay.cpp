@@ -220,12 +220,40 @@ void Overlay::Update()
 
     DrawToolbar();
 
+    // temporarily remove reference to Widget popup window to prevent it from being closed
+    // when a new window draws and takes focus
+    if (m_blockWidgetPopupFromBeingClosed)
+    {
+        auto ctx = ImGui::GetCurrentContext();
+        for (auto& popup : ctx->OpenPopupStack) {
+            if (popup.PopupId != m_widgetPopupID)
+                continue;
+
+            m_widgetPopupWindow = popup.Window;
+            popup.Window = nullptr;
+            break;
+        }
+    }
+
     m_console.Draw();
     m_bindings.Draw();
     m_settings.Draw();
     m_tweakDBEditor.Draw();
     m_gameLog.Draw();
     m_imguiDebug.Draw();
+
+    if (m_blockWidgetPopupFromBeingClosed) {
+        auto ctx = ImGui::GetCurrentContext();
+        for (auto& popup : ctx->OpenPopupStack) {
+            if (popup.PopupId != m_widgetPopupID)
+                continue;
+
+            popup.Window = m_widgetPopupWindow;
+            break;
+        }
+        m_widgetPopupWindow = nullptr;
+        m_blockWidgetPopupFromBeingClosed = false;
+    }
 }
 
 bool Overlay::IsInitialized() const noexcept
@@ -270,39 +298,67 @@ void Overlay::DrawToolbar()
 
         ImGui::Separator();
 
+        if (m_widgetPopupID == 0)
+            m_widgetPopupID = ImGui::GetCurrentWindow()->GetID("Widgets");
+
         if (ImGui::BeginMenu("Widgets"))
         {
             ImGui::PushItemFlag(ImGuiItemFlags_AutoClosePopups, false);
 
             if (ImGui::MenuItem(std::format("{} Console", m_console.IsEnabled() ? EYE_ON_ICON : EYE_OFF_ICON).c_str()))
+            {
+                if (!m_console.IsEnabled())
+                    m_blockWidgetPopupFromBeingClosed = true;
                 m_console.Toggle();
+            }
             if (!m_toggled)
                 persistentState.ConsoleToggled = m_console.IsEnabled();
 
             if (ImGui::MenuItem(std::format("{} Bindings", m_bindings.IsEnabled() ? EYE_ON_ICON : EYE_OFF_ICON).c_str()))
+            {
+                if (!m_bindings.IsEnabled())
+                    m_blockWidgetPopupFromBeingClosed = true;
                 m_bindings.Toggle();
+            }
             if (!m_toggled)
                 persistentState.BindingsToggled = m_bindings.IsEnabled();
 
             if (ImGui::MenuItem(std::format("{} Settings", m_settings.IsEnabled() ? EYE_ON_ICON : EYE_OFF_ICON).c_str()))
+            {
+                if (!m_settings.IsEnabled())
+                    m_blockWidgetPopupFromBeingClosed = true;
                 m_settings.Toggle();
+            }
             if (!m_toggled)
                 persistentState.SettingsToggled = m_settings.IsEnabled();
 
             if (ImGui::MenuItem(std::format("{} TweakDB Editor", m_tweakDBEditor.IsEnabled() ? EYE_ON_ICON : EYE_OFF_ICON).c_str()))
+            {
+                if (!m_tweakDBEditor.IsEnabled())
+                    m_blockWidgetPopupFromBeingClosed = true;
                 m_tweakDBEditor.Toggle();
+            }
             if (!m_toggled)
                 persistentState.TweakDBEditorToggled = m_tweakDBEditor.IsEnabled();
 
             if (ImGui::MenuItem(std::format("{} Game Log", m_gameLog.IsEnabled() ? EYE_ON_ICON : EYE_OFF_ICON).c_str()))
+            {
+                if (!m_gameLog.IsEnabled())
+                    m_blockWidgetPopupFromBeingClosed = true;
                 m_gameLog.Toggle();
+            }
             if (!m_toggled)
                 persistentState.GameLogToggled = m_gameLog.IsEnabled();
 
             if (ImGui::MenuItem(std::format("{} ImGui Debug", m_imguiDebug.IsEnabled() ? EYE_ON_ICON : EYE_OFF_ICON).c_str()))
+            {
+                if (!m_imguiDebug.IsEnabled())
+                    m_blockWidgetPopupFromBeingClosed = true;
                 m_imguiDebug.Toggle();
+            }
             if (!m_toggled)
                 persistentState.ImGuiDebugToggled = m_imguiDebug.IsEnabled();
+
 
             ImGui::PopItemFlag();
 
