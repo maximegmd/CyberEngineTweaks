@@ -282,6 +282,41 @@ Overlay::~Overlay()
 {
 }
 
+bool MenuBarButton(const char* label)
+{
+    ImGuiWindow* window = ImGui::GetCurrentWindow();
+    if (window->SkipItems)
+        return false;
+
+    ImGuiContext& g = *GImGui;
+    const ImGuiStyle& style = g.Style;
+
+    ImVec2 label_size = ImGui::CalcTextSize(label, nullptr, true);
+    ImVec2 pos = window->DC.CursorPos;
+
+    ImVec2 text_pos(
+        window->DC.CursorPos.x,
+        pos.y + window->DC.CurrLineTextBaseOffset
+    );
+
+
+
+    bool pressed = ImGui::Selectable(
+        std::format("##{}", label).c_str(),
+        false,
+        ImGuiSelectableFlags_NoHoldingActiveID |
+        ImGuiSelectableFlags_NoSetKeyOwner |
+        ImGuiSelectableFlags_SelectOnClick,
+        ImVec2(label_size.x, label_size.y)
+    );
+
+    ImGui::RenderText(text_pos, label);
+
+    window->DC.CursorPos.x += IM_TRUNC(style.ItemSpacing.x * (-1.0f + 0.5f));
+
+    return pressed;
+}
+
 #define EYE_ON_ICON "\xF3\xB0\x9B\x90"
 #define EYE_OFF_ICON "\xF3\xB0\x9B\x91"
 
@@ -365,12 +400,8 @@ void Overlay::DrawToolbar()
             ImGui::EndMenu();
         }
 
-        if (ImGui::BeginMenu("Reload Mods"))
-        {
-            ImGui::CloseCurrentPopup();
+        if (MenuBarButton("Reload Mods"))
             m_vm.ReloadAllMods();
-            ImGui::EndMenu();
-        }
 
         ImGui::EndMainMenuBar();
 
