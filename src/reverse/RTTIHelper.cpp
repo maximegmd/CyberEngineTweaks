@@ -894,7 +894,7 @@ sol::object RTTIHelper::NewHandle(RED4ext::CBaseRTTIType* apType, sol::optional<
     result.value = NewInstance(apType, sol::nullopt, &allocator);
 
     // Wrap ISerializable descendants in Handle
-    if (result.value && apType->GetType() == RED4ext::ERTTIType::Class)
+    if (apType->GetType() == RED4ext::ERTTIType::Class)
     {
         static auto* s_pHandleType = m_pRtti->GetType(RED4ext::FNV1a64("handle:Activator"));
         static auto* s_pISerializableType = m_pRtti->GetType(RED4ext::FNV1a64("ISerializable"));
@@ -903,11 +903,13 @@ sol::object RTTIHelper::NewHandle(RED4ext::CBaseRTTIType* apType, sol::optional<
 
         if (pClass->IsA(s_pISerializableType))
         {
-            auto* pInstance = static_cast<RED4ext::ISerializable*>(result.value);
-            auto* pHandle = allocator.New<RED4ext::Handle<RED4ext::ISerializable>>(pInstance);
-
+            if (result.value)
+            {
+                auto* pInstance = static_cast<RED4ext::ISerializable*>(result.value);
+                auto* pHandle = allocator.New<RED4ext::Handle<RED4ext::ISerializable>>(pInstance);
+                result.value = pHandle;
+            }
             result.type = s_pHandleType; // To trick converter and deallocator
-            result.value = pHandle;
         }
     }
 
