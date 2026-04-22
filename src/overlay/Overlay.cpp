@@ -61,6 +61,8 @@ void Overlay::Update()
     if (!m_initialized)
         return;
 
+    ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
+    
     if (m_toggled)
     {
         if (m_bindings.FirstTimeSetup())

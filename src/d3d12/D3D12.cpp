@@ -30,9 +30,6 @@ LRESULT D3D12::OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam)
 
     if (d3d12.IsInitialized())
     {
-        if (const auto res = ImGui_ImplWin32_WndProcHandler(ahWnd, auMsg, awParam, alParam))
-            return res;
-
         if (d3d12.m_delayedTrapInput)
         {
             d3d12.SetTrapInputInImGui(m_delayedTrapInputState);
@@ -41,6 +38,9 @@ LRESULT D3D12::OnWndProc(HWND ahWnd, UINT auMsg, WPARAM awParam, LPARAM alParam)
 
         if (d3d12.m_trapInputInImGui) // TODO: look into io.WantCaptureMouse and io.WantCaptureKeyboard
         {
+            if (const LRESULT res = ImGui_ImplWin32_WndProcHandler(ahWnd, auMsg, awParam, alParam))
+                return res;
+
             // ignore mouse & keyboard events
             if ((auMsg >= WM_MOUSEFIRST && auMsg <= WM_MOUSELAST) || (auMsg >= WM_KEYFIRST && auMsg <= WM_KEYLAST))
                 return 1;
