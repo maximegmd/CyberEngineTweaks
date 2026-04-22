@@ -2,6 +2,8 @@
 
 #include "Overlay.h"
 
+#include "config/CETVersion.h"
+
 #include <CET.h>
 
 #include <d3d12/D3D12.h>
@@ -216,13 +218,7 @@ void Overlay::Update()
     if (!m_enabled)
         return;
 
-    const auto [width, height] = CET::Get().GetD3D12().GetResolution();
-    const auto heightLimit = 2 * ImGui::GetFrameHeight() + 2 * ImGui::GetStyle().WindowPadding.y;
-    ImGui::SetNextWindowPos({width * 0.25f, height * 0.05f}, ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSizeConstraints({width * 0.5f, heightLimit}, {FLT_MAX, heightLimit});
-    if (ImGui::Begin("Cyber Engine Tweaks"))
-        DrawToolbar();
-    ImGui::End();
+    DrawToolbar();
 
     m_console.Draw();
     m_bindings.Draw();
@@ -258,65 +254,135 @@ Overlay::~Overlay()
 {
 }
 
+bool MenuBarButton(const char* label)
+{
+    ImGuiWindow* window = ImGui::GetCurrentWindow();
+    if (window->SkipItems)
+        return false;
+
+    ImGuiContext& g = *GImGui;
+    const ImGuiStyle& style = g.Style;
+
+    ImVec2 label_size = ImGui::CalcTextSize(label, nullptr, true);
+    ImVec2 pos = window->DC.CursorPos;
+
+    ImVec2 text_pos(
+        window->DC.CursorPos.x,
+        pos.y + window->DC.CurrLineTextBaseOffset
+    );
+
+
+
+    bool pressed = ImGui::Selectable(
+        std::format("##{}", label).c_str(),
+        false,
+        ImGuiSelectableFlags_NoHoldingActiveID |
+        ImGuiSelectableFlags_NoSetKeyOwner |
+        ImGuiSelectableFlags_SelectOnClick,
+        ImVec2(label_size.x, label_size.y)
+    );
+
+    ImGui::RenderText(text_pos, label);
+
+    window->DC.CursorPos.x += IM_TRUNC(style.ItemSpacing.x * (-1.0f + 0.5f));
+
+    return pressed;
+}
+
+bool MenuBarToggle(const char* label, bool toggled)
+{
+    ImGuiWindow* window = ImGui::GetCurrentWindow();
+    if (window->SkipItems)
+        return false;
+
+    ImGuiContext& g = *GImGui;
+    const ImGuiStyle& style = g.Style;
+
+    ImVec2 label_size = ImGui::CalcTextSize(label, nullptr, true);
+    ImVec2 pos = window->DC.CursorPos;
+
+    ImVec2 text_pos(
+        window->DC.CursorPos.x,
+        pos.y + window->DC.CurrLineTextBaseOffset
+    );
+
+    bool pressed = ImGui::Selectable(
+        std::format("##{}", label).c_str(),
+        toggled,                               // pass toggle state as 'selected'
+        ImGuiSelectableFlags_NoHoldingActiveID |
+        ImGuiSelectableFlags_NoSetKeyOwner |
+        ImGuiSelectableFlags_SelectOnClick,
+        ImVec2(label_size.x, label_size.y)
+    );
+
+    ImGui::RenderText(text_pos, label);
+
+    window->DC.CursorPos.x += IM_TRUNC(style.ItemSpacing.x * (-1.0f + 0.5f));
+
+    return pressed;
+}
+
 void Overlay::DrawToolbar()
 {
-    const auto itemWidth = GetAlignedItemWidth(7);
     auto& persistentState = m_persistentState.Overlay;
 
-    ImGui::PushStyleColor(ImGuiCol_Button, persistentState.ConsoleToggled ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive) : ImGui::GetStyleColorVec4(ImGuiCol_Button));
-    if (ImGui::Button("Console", ImVec2(itemWidth, 0)))
-        m_console.Toggle();
-    if (!m_toggled)
-        persistentState.ConsoleToggled = m_console.IsEnabled();
-    ImGui::PopStyleColor();
+    ImGui::PushStyleColor(ImGuiCol_MenuBarBg, ImVec4(0.2f, 0.2f, 0.15f, 0.4f));
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, 15);
+    if (ImGui::BeginMainMenuBar())
+    {
 
-    ImGui::SameLine();
+        ImGui::Text(std::format("CyberEngineTweaks v{}", CET_GIT_TAG).c_str());
 
-    ImGui::PushStyleColor(ImGuiCol_Button, persistentState.BindingsToggled ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive) : ImGui::GetStyleColorVec4(ImGuiCol_Button));
-    if (ImGui::Button("Bindings", ImVec2(itemWidth, 0)))
-        m_bindings.Toggle();
-    if (!m_toggled)
-        persistentState.BindingsToggled = m_bindings.IsEnabled();
-    ImGui::PopStyleColor();
+        ImGui::Separator();
 
-    ImGui::SameLine();
+        if (MenuBarToggle("Console", m_console.IsEnabled()))
+            m_console.Toggle();
 
-    ImGui::PushStyleColor(ImGuiCol_Button, persistentState.SettingsToggled ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive) : ImGui::GetStyleColorVec4(ImGuiCol_Button));
-    if (ImGui::Button("Settings", ImVec2(itemWidth, 0)))
-        m_settings.Toggle();
-    if (!m_toggled)
-        persistentState.SettingsToggled = m_settings.IsEnabled();
-    ImGui::PopStyleColor();
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 5);
 
-    ImGui::SameLine();
+        if (MenuBarToggle("Bindings", m_bindings.IsEnabled()))
+            m_bindings.Toggle();
 
-    ImGui::PushStyleColor(ImGuiCol_Button, persistentState.TweakDBEditorToggled ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive) : ImGui::GetStyleColorVec4(ImGuiCol_Button));
-    if (ImGui::Button("TweakDB Editor", ImVec2(itemWidth, 0)))
-        m_tweakDBEditor.Toggle();
-    if (!m_toggled)
-        persistentState.TweakDBEditorToggled = m_tweakDBEditor.IsEnabled();
-    ImGui::PopStyleColor();
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 5);
 
-    ImGui::SameLine();
+        if (MenuBarToggle("Settings", m_settings.IsEnabled()))
+            m_settings.Toggle();
 
-    ImGui::PushStyleColor(ImGuiCol_Button, persistentState.GameLogToggled ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive) : ImGui::GetStyleColorVec4(ImGuiCol_Button));
-    if (ImGui::Button("Game Log", ImVec2(itemWidth, 0)))
-        m_gameLog.Toggle();
-    if (!m_toggled)
-        persistentState.GameLogToggled = m_gameLog.IsEnabled();
-    ImGui::PopStyleColor();
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 5);
 
-    ImGui::SameLine();
+        if (MenuBarToggle("TweakDB Editor", m_tweakDBEditor.IsEnabled()))
+            m_tweakDBEditor.Toggle();
 
-    ImGui::PushStyleColor(ImGuiCol_Button, persistentState.ImGuiDebugToggled ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive) : ImGui::GetStyleColorVec4(ImGuiCol_Button));
-    if (ImGui::Button("ImGui Debug", ImVec2(itemWidth, 0)))
-        m_imguiDebug.Toggle();
-    if (!m_toggled)
-        persistentState.ImGuiDebugToggled = m_imguiDebug.IsEnabled();
-    ImGui::PopStyleColor();
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 5);
 
-    ImGui::SameLine();
+        if (MenuBarToggle("Game Log", m_gameLog.IsEnabled()))
+            m_gameLog.Toggle();
 
-    if (ImGui::Button("Reload all mods", ImVec2(itemWidth, 0)))
-        m_vm.ReloadAllMods();
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 5);
+
+        if (MenuBarToggle("ImGui Debug", m_imguiDebug.IsEnabled()))
+            m_imguiDebug.Toggle();
+
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 5);
+
+        if (!m_toggled)
+        {
+            persistentState.ConsoleToggled = m_console.IsEnabled();
+            persistentState.BindingsToggled = m_bindings.IsEnabled();
+            persistentState.SettingsToggled = m_settings.IsEnabled();
+            persistentState.TweakDBEditorToggled = m_tweakDBEditor.IsEnabled();
+            persistentState.GameLogToggled = m_gameLog.IsEnabled();
+            persistentState.ImGuiDebugToggled = m_imguiDebug.IsEnabled();
+        }
+
+        if (MenuBarButton("Reload Mods"))
+            m_vm.ReloadAllMods();
+
+        ImGui::EndMainMenuBar();
+
+        ImGui::PopStyleColor();
+        ImGui::PopStyleVar();
+    }
+
+    ImGui::PopStyleVar();
 }
