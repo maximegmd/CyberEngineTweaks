@@ -313,7 +313,7 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
     ImGui::GetStyle() = m_styleReference;
     ImGui::GetStyle().ScaleAllSizes(scaleFromReference);
 
-    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange; // Do not modify cursor from ImGui backend
+    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
     if (!ImGui_ImplWin32_Init(m_window.GetWindow()))
     {
