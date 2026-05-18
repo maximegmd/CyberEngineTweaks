@@ -234,8 +234,26 @@ void Scripting::PostInitializeScripting()
     };
 
     luaVm.new_usertype<Vector3>(
-        "Vector3", sol::constructors<Vector3(float, float, float), Vector3(float, float), Vector3(float), Vector3(const Vector3&), Vector3()>(), sol::meta_function::to_string,
-        &Vector3::ToString, sol::meta_function::equal_to, &Vector3::operator==, "x", &Vector3::x, "y", &Vector3::y, "z", &Vector3::z);
+        "Vector3",
+        sol::constructors<
+            Vector3(float, float, float),
+            Vector3(float, float),
+            Vector3(float),
+            Vector3(const Vector3&),
+            Vector3()
+        >(),
+        sol::meta_function::to_string, &Vector3::ToString,
+        sol::meta_function::equal_to, &Vector3::operator==,
+        sol::meta_function::less_than, &Vector3::operator<,
+        sol::meta_function::less_than_or_equal_to, &Vector3::operator<=,
+        sol::meta_function::addition, &Vector3::operator+,
+        sol::meta_function::subtraction, &Vector3::operator-,
+        sol::meta_function::multiplication, &Vector3::operator*,
+        sol::meta_function::division, &Vector3::operator/,
+        "x", &Vector3::x,
+        "y", &Vector3::y,
+        "z", &Vector3::z
+    );
     globals["Vector3"] = luaVm["Vector3"];
 
     globals["ToVector3"] = [](sol::table table) -> Vector3
@@ -245,9 +263,27 @@ void Scripting::PostInitializeScripting()
 
     luaVm.new_usertype<Vector4>(
         "Vector4",
-        sol::constructors<Vector4(float, float, float, float), Vector4(float, float, float), Vector4(float, float), Vector4(float), Vector4(const Vector4&), Vector4()>(),
-        sol::meta_function::to_string, &Vector4::ToString, sol::meta_function::equal_to, &Vector4::operator==, "x", &Vector4::x, "y", &Vector4::y, "z", &Vector4::z, "w",
-        &Vector4::w);
+        sol::constructors<
+            Vector4(float, float, float, float),
+            Vector4(float, float, float),
+            Vector4(float, float),
+            Vector4(float),
+            Vector4(const Vector4&),
+            Vector4()
+        >(),
+        sol::meta_function::to_string, &Vector4::ToString,
+        sol::meta_function::equal_to, &Vector4::operator==,
+        sol::meta_function::less_than, &Vector4::operator<,
+        sol::meta_function::less_than_or_equal_to, &Vector4::operator<=,
+        sol::meta_function::addition, &Vector4::operator+,
+        sol::meta_function::subtraction, &Vector4::operator-,
+        sol::meta_function::multiplication, &Vector4::operator*,
+        sol::meta_function::division, &Vector4::operator/,
+        "x", &Vector4::x,
+        "y", &Vector4::y,
+        "z", &Vector4::z,
+        "w", &Vector4::w
+    );
     globals["Vector4"] = luaVm["Vector4"];
 
     globals["ToVector4"] = [](sol::table table) -> Vector4
