@@ -7,10 +7,14 @@ namespace sol_ImGui
 
 inline const char* Arabic(const std::string& text)
 {
-    thread_local std::string buffer;
-    buffer = ArabicText::Process(text);
-    return buffer.c_str();
+    thread_local std::string buffers[4];
+    thread_local size_t index = 0;
+
+    index = (index + 1) % 4;
+    buffers[index] = ArabicText::Process(text);
+    return buffers[index].c_str();
 }
+
 
 // Windows
 inline bool Begin(const std::string& name)
@@ -20,7 +24,7 @@ inline bool Begin(const std::string& name)
 
 inline bool Begin(const std::string& name, int flags)
 {
-    return ImGui::Begin(name.c_str(), nullptr, flags);
+    return ImGui::Begin(Arabic(name), nullptr, flags);
 }
 inline std::tuple<bool, bool> Begin(const std::string& name, bool open)
 {
