@@ -30,14 +30,14 @@ inline std::tuple<bool, bool> Begin(const std::string& name, bool open)
 {
     if (!open)
         return std::make_tuple(false, false);
-    const bool shouldDraw = ImGui::Begin(name.c_str(), &open);
+    const bool shouldDraw = ImGui::Begin(Arabic(name), &open);
     return std::make_tuple(open, open && shouldDraw);
 }
 inline std::tuple<bool, bool> Begin(const std::string& name, bool open, int flags)
 {
     if (!open)
         return std::make_tuple(false, false);
-    const bool shouldDraw = ImGui::Begin(name.c_str(), &open, flags);
+    const bool shouldDraw = ImGui::Begin(Arabic(name), &open, flags);
     return std::make_tuple(open, open && shouldDraw);
 }
 inline void End()
@@ -48,34 +48,34 @@ inline void End()
 // Child Windows
 inline bool BeginChild(const std::string& name)
 {
-    return ImGui::BeginChild(name.c_str());
+    return ImGui::BeginChild(Arabic(name));
 }
 inline bool BeginChild(const std::string& name, float sizeX)
 {
-    return ImGui::BeginChild(name.c_str(), {sizeX, 0});
+    return ImGui::BeginChild(Arabic(name), {sizeX, 0});
 }
 inline bool BeginChild(const std::string& name, float sizeX, float sizeY)
 {
-    return ImGui::BeginChild(name.c_str(), {sizeX, sizeY});
+    return ImGui::BeginChild(Arabic(name), {sizeX, sizeY});
 }
 inline bool BeginChild(const std::string& name, float sizeX, float sizeY, int child_flags)
 {
-    return ImGui::BeginChild(name.c_str(), {sizeX, sizeY}, static_cast<ImGuiChildFlags>(child_flags));
+    return ImGui::BeginChild(Arabic(name), {sizeX, sizeY}, static_cast<ImGuiChildFlags>(child_flags));
 }
 
 inline bool BeginChild(const std::string& name, float sizeX, float sizeY, int child_flags, int window_flags)
 {
-    return ImGui::BeginChild(name.c_str(), {sizeX, sizeY}, static_cast<ImGuiChildFlags>(child_flags), static_cast<ImGuiWindowFlags>(window_flags));
+    return ImGui::BeginChild(Arabic(name), {sizeX, sizeY}, static_cast<ImGuiChildFlags>(child_flags), static_cast<ImGuiWindowFlags>(window_flags));
 }
 
 // DEPRECATED
 inline bool BeginChild(const std::string& name, float sizeX, float sizeY, bool border)
 {
-    return ImGui::BeginChild(name.c_str(), {sizeX, sizeY}, border);
+    return ImGui::BeginChild(Arabic(name), {sizeX, sizeY}, border);
 }
 inline bool BeginChild(const std::string& name, float sizeX, float sizeY, bool border, int flags)
 {
-    return ImGui::BeginChild(name.c_str(), {sizeX, sizeY}, border, flags);
+    return ImGui::BeginChild(Arabic(name), {sizeX, sizeY}, border, flags);
 }
 
 inline void EndChild()
@@ -2148,19 +2148,19 @@ inline bool BeginPopup(const std::string& str_id, int flags)
 }
 inline bool BeginPopupModal(const std::string& name)
 {
-    return ImGui::BeginPopupModal(name.c_str());
+    return ImGui::BeginPopupModal(Arabic(name));
 }
 inline bool BeginPopupModal(const std::string& name, int flags)
 {
-    return ImGui::BeginPopupModal(name.c_str(), nullptr, flags);
+    return ImGui::BeginPopupModal(Arabic(name), nullptr, flags);
 }
 inline bool BeginPopupModal(const std::string& name, bool open)
 {
-    return ImGui::BeginPopupModal(name.c_str(), &open);
+    return ImGui::BeginPopupModal(Arabic(name), &open);
 }
 inline bool BeginPopupModal(const std::string& name, bool open, int flags)
 {
-    return ImGui::BeginPopupModal(name.c_str(), &open, flags);
+    return ImGui::BeginPopupModal(Arabic(name), &open, flags);
 }
 inline void EndPopup()
 {
