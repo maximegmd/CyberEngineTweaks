@@ -8,7 +8,10 @@
 #include <imgui_impl/dx12.h>
 #include <imgui_impl/win32.h>
 #include <window/window.h>
-
+// Arabic glyph ranges
+static const ImWchar ArabicGlyphRanges[] = {
+    0x0020, 0x00FF, 0x0600, 0x06FF, 0x0750, 0x077F, 0x08A0, 0x08FF, 0xFB50, 0xFDFF, 0xFE70, 0xFEFF, 0,
+};
 bool D3D12::ResetState(const bool acDestroyContext)
 {
     if (m_initialized)
@@ -164,7 +167,16 @@ void D3D12::ReloadFonts()
     // add default font
     const auto customFontPath = fontSettings.Path.empty() ? std::filesystem::path{} : GetAbsolutePath(UTF8ToUTF16(fontSettings.Path), m_paths.Fonts(), false);
     auto cetFontPath = GetAbsolutePath(L"NotoSans-Regular.ttf", m_paths.Fonts(), false);
-    const auto* cpGlyphRanges = io.Fonts->GetGlyphRangesDefault();
+    ImFontGlyphRangesBuilder builder;
+
+    builder.AddRanges(io.Fonts->GetGlyphRangesDefault()); // English + Latin
+    builder.AddRanges(ArabicGlyphRanges);                 // Arabic
+
+    static ImVector<ImWchar> mergedRanges;
+    mergedRanges.clear();
+    builder.BuildRanges(&mergedRanges);
+
+    const ImWchar* cpGlyphRanges = mergedRanges.Data;
     if (customFontPath.empty())
     {
         if (!fontSettings.Path.empty())
@@ -181,7 +193,13 @@ void D3D12::ReloadFonts()
     else
         io.Fonts->AddFontFromFileTTF(UTF16ToUTF8(customFontPath.native()).c_str(), config.SizePixels, &config, cpGlyphRanges);
 
-    if (fontSettings.Language == "ChineseFull")
+    if (fontSettings.Language == "Arabic")
+    {
+        cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansArabic-Regular.ttf", m_paths.Fonts(), false);
+
+        cpGlyphRanges = mergedRanges.Data;
+    }
+    else if (fontSettings.Language == "ChineseFull")
     {
         cetFontPath = GetAbsolutePath(m_paths.Fonts() / L"NotoSansTC-Regular.otf", m_paths.Fonts(), false);
         cpGlyphRanges = io.Fonts->GetGlyphRangesChineseFull();
