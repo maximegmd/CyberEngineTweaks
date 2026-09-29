@@ -26,7 +26,7 @@ struct Scripting
     void TriggerOnHook() const;
     void TriggerOnTweak() const;
     void TriggerOnInit() const;
-    void TriggerOnUpdate(float aDeltaTime) const;
+    void TriggerOnUpdate(float aDeltaTime);
     void TriggerOnDraw() const;
     void TriggerOnOverlayOpen() const;
     void TriggerOnOverlayClose() const;
