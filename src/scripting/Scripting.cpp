@@ -587,8 +587,13 @@ void Scripting::TriggerOnInit() const
     m_store.TriggerOnInit();
 }
 
-void Scripting::TriggerOnUpdate(float aDeltaTime) const
+void Scripting::TriggerOnUpdate(float aDeltaTime)
 {
+    {
+        auto lockedState = GetLockedState();
+        m_override.ApplyPendingOverrides();
+    }
+
     m_store.TriggerOnUpdate(aDeltaTime);
 }
 

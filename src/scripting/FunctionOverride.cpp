@@ -91,6 +91,11 @@ void FunctionOverride::Refresh()
 
 void FunctionOverride::Clear()
 {
+    {
+        std::lock_guard pendingLock(m_pendingLock);
+        m_pending.clear();
+    }
+
     std::lock_guard lock(s_pOverride->m_lock);
 
     // Reverse order as we want to swap from most recent to oldest change
@@ -591,8 +596,42 @@ void FunctionOverride::Override(
         }
     }
 
-    std::lock_guard lock(m_lock);
+    // Hooked functions can run on worker threads. They hold m_lock (shared) while they wait for the Lua state lock.
+    // Override() is called from Lua, i.e. with the Lua state locked, so blocking on m_lock here can deadlock (lock order
+    // inversion), e.g. when a mod registers an Observe from onUpdate while a hooked function runs on a job thread.
+    // Only try the lock: if it is busy, queue the registration; ApplyPendingOverrides() applies it on the next update.
+    std::unique_lock lock(m_lock, std::try_to_lock);
+    std::lock_guard pendingLock(m_pendingLock);
+    if (lock.owns_lock() && m_pending.empty())
+    {
+        ApplyOverride(pClassType, pRealFunction, acFullName, std::move(aFunction), aEnvironment, aAbsolute, aAfter, aCollectGarbage);
+        return;
+    }
 
+    m_pending.push_back({pClassType, pRealFunction, acFullName, std::move(aFunction), aEnvironment, aAbsolute, aAfter, aCollectGarbage});
+    spdlog::get("scripting")->debug("Deferred override of {}::{} (function lock busy)", acTypeName, acFullName);
+}
+
+void FunctionOverride::ApplyPendingOverrides()
+{
+    // Called with the Lua state locked, so never block on m_lock here either: retry on the next update instead.
+    std::unique_lock lock(m_lock, std::try_to_lock);
+    if (!lock.owns_lock())
+        return;
+
+    std::lock_guard pendingLock(m_pendingLock);
+    for (auto& pending : m_pending)
+    {
+        ApplyOverride(
+            pending.pClassType, pending.pRealFunction, pending.FullName, std::move(pending.Function), pending.Environment, pending.Absolute, pending.After, pending.CollectGarbage);
+    }
+    m_pending.clear();
+}
+
+void FunctionOverride::ApplyOverride(
+    RED4ext::CClass* pClassType, RED4ext::CClassFunction* pRealFunction, const std::string& acFullName, sol::protected_function aFunction, sol::environment aEnvironment,
+    bool aAbsolute, bool aAfter, bool aCollectGarbage)
+{
     CallChain* pEntry = nullptr;
     const auto itor = m_functions.find(pRealFunction);
 

@@ -32,6 +32,7 @@ struct FunctionOverride
     void Override(
         const std::string& acTypeName, const std::string& acFullName, sol::protected_function aFunction, sol::environment aEnvironment, bool aAbsolute, bool aAfter = false,
         bool aCollectGarbage = false);
+    void ApplyPendingOverrides();
 
 protected:
     static void CopyFunctionDescription(RED4ext::CBaseFunction* aFunc, RED4ext::CBaseFunction* aRealFunc, bool aForceNative);
@@ -54,6 +55,22 @@ private:
 
     void Hook() const;
 
+    struct PendingOverride
+    {
+        RED4ext::CClass* pClassType;
+        RED4ext::CClassFunction* pRealFunction;
+        std::string FullName;
+        sol::protected_function Function;
+        sol::environment Environment;
+        bool Absolute;
+        bool After;
+        bool CollectGarbage;
+    };
+
+    void ApplyOverride(
+        RED4ext::CClass* apClassType, RED4ext::CClassFunction* apRealFunction, const std::string& acFullName, sol::protected_function aFunction, sol::environment aEnvironment,
+        bool aAbsolute, bool aAfter, bool aCollectGarbage);
+
     void* m_pBufferStart;
     void* m_pBuffer;
     size_t m_size{kExecutableSize};
@@ -61,4 +78,6 @@ private:
     TiltedPhoques::Map<RED4ext::CBaseFunction*, RED4ext::CBaseFunction*> m_trampolines;
     Scripting* m_pScripting;
     std::shared_mutex m_lock;
+    std::mutex m_pendingLock;
+    TiltedPhoques::Vector<PendingOverride> m_pending;
 };
