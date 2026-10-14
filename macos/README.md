@@ -1,11 +1,13 @@
 # Cyber Engine Tweaks on native macOS
 
-This folder builds Cyber Engine Tweaks 1.37.1 for the native macOS version of Cyberpunk 2077 (game 2.3.1, Apple silicon). CET runs
+This folder builds Cyber Engine Tweaks for the native macOS version of Cyberpunk 2077 (game 2.3.1, Apple silicon). CET runs
 as a RED4ext plugin, so Lua mods (`init.lua`) run on the Mac game the same way they do on Windows.
 
 Port by codeman101 (skyman3215). Cyber Engine Tweaks is by the Cyber Engine Tweaks team, MIT license (`../LICENSE`).
 
-## Status (2026-10-13)
+## Status (2026-10-14)
+
+First ported from 1.37.1, now on master after 1.37.1 (`bcbe457`), where the same automated test with Hotscenes passed again.
 
 Tested on game 2.3.1 with the macOS ports of Codeware, ArchiveXL and TweakXL, by an automated in-game test (`cet_world`, five
 passing runs) and one Lua mod of real size (Hotscenes, 49 files, about 650 TweakDB uses and 119 script hooks), which also passed a hand
