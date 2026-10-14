@@ -194,7 +194,16 @@ void RTTIHelper::AddResolvedFunction(const uint64_t acClassHash, const uint64_t 
 // Find global function matching full name
 RED4ext::CBaseFunction* RTTIHelper::FindFunction(const uint64_t acFullNameHash) const
 {
+#ifdef __APPLE__
+    // Mac swaps IRTTISystem slots +0x28 and +0x30 against the SDK and Windows.
+    // Virtual GetFunction reads funcsByHash (+0xD0), keyed by a mix of shortName and
+    // parameter script names, so "GetMountedVehicle;GameObject" misses. Windows
+    // GetFunction reads funcs (+0xA0), keyed by fullName. Same map, same offset, here.
+    auto* pSlot = m_pRtti->funcs.Get(acFullNameHash);
+    RED4ext::CBaseFunction* pFunc = pSlot ? *pSlot : nullptr;
+#else
     RED4ext::CBaseFunction* pFunc = m_pRtti->GetFunction(acFullNameHash);
+#endif
 
     if (!pFunc && m_extendedFunctions.contains(kGlobalHash))
     {
