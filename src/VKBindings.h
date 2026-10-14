@@ -84,7 +84,18 @@ struct VKBindings
     void SetVM(const LuaVM* acpVm);
 
 private:
+#ifdef __APPLE__
+public:
+    // CET macOS: the input bridge (src/metal/MetalRenderer.mm) passes each key and mouse button as a Windows virtual-key code, the
+    // same codes HandleRAWInput reads from raw input on Windows. aWheel: +1/-1 vertical, +2/-2 horizontal (one notch each).
+    void OnMacKey(USHORT aVKCode, bool aDown);
+    void OnMacWheel(int aWheel);
+    void OnMacFocusLost();
+
+private:
+#else
     [[nodiscard]] LRESULT HandleRAWInput(HRAWINPUT achRAWInput);
+#endif
 
     LRESULT RecordKeyDown(const USHORT acVKCode);
     LRESULT RecordKeyUp(const USHORT acVKCode);

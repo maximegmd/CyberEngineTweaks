@@ -20,6 +20,82 @@ void trim(std::string& s)
     rtrim(s);
 }
 
+#ifdef __APPLE__
+// CET macOS: wchar_t is 32 bits here (UTF-32); the Windows build converts with WideCharToMultiByte. Invalid input becomes U+FFFD.
+std::string UTF16ToUTF8(std::wstring_view utf16)
+{
+    std::string utf8;
+    utf8.reserve(utf16.size());
+    for (const wchar_t wc : utf16)
+    {
+        auto cp = static_cast<uint32_t>(wc);
+        if (cp > 0x10FFFF || (cp >= 0xD800 && cp <= 0xDFFF))
+            cp = 0xFFFD;
+        if (cp < 0x80)
+            utf8.push_back(static_cast<char>(cp));
+        else if (cp < 0x800)
+        {
+            utf8.push_back(static_cast<char>(0xC0 | (cp >> 6)));
+            utf8.push_back(static_cast<char>(0x80 | (cp & 0x3F)));
+        }
+        else if (cp < 0x10000)
+        {
+            utf8.push_back(static_cast<char>(0xE0 | (cp >> 12)));
+            utf8.push_back(static_cast<char>(0x80 | ((cp >> 6) & 0x3F)));
+            utf8.push_back(static_cast<char>(0x80 | (cp & 0x3F)));
+        }
+        else
+        {
+            utf8.push_back(static_cast<char>(0xF0 | (cp >> 18)));
+            utf8.push_back(static_cast<char>(0x80 | ((cp >> 12) & 0x3F)));
+            utf8.push_back(static_cast<char>(0x80 | ((cp >> 6) & 0x3F)));
+            utf8.push_back(static_cast<char>(0x80 | (cp & 0x3F)));
+        }
+    }
+    return utf8;
+}
+
+std::wstring UTF8ToUTF16(std::string_view utf8)
+{
+    std::wstring wide;
+    wide.reserve(utf8.size());
+    for (size_t i = 0; i < utf8.size();)
+    {
+        const auto c = static_cast<uint8_t>(utf8[i]);
+        uint32_t cp = 0xFFFD;
+        size_t extra = 0;
+        if (c < 0x80)
+            cp = c;
+        else if ((c & 0xE0) == 0xC0)
+        {
+            cp = c & 0x1F;
+            extra = 1;
+        }
+        else if ((c & 0xF0) == 0xE0)
+        {
+            cp = c & 0x0F;
+            extra = 2;
+        }
+        else if ((c & 0xF8) == 0xF0)
+        {
+            cp = c & 0x07;
+            extra = 3;
+        }
+        ++i;
+        for (size_t k = 0; k < extra; ++k, ++i)
+        {
+            if (i >= utf8.size() || (static_cast<uint8_t>(utf8[i]) & 0xC0) != 0x80)
+            {
+                cp = 0xFFFD;
+                break;
+            }
+            cp = (cp << 6) | (static_cast<uint8_t>(utf8[i]) & 0x3F);
+        }
+        wide.push_back(static_cast<wchar_t>(cp));
+    }
+    return wide;
+}
+#else
 std::string UTF16ToUTF8(std::wstring_view utf16)
 {
     const auto utf16Length = static_cast<int>(utf16.length());
@@ -47,6 +123,7 @@ std::wstring UTF8ToUTF16(std::string_view utf8)
 
     return utf16;
 }
+#endif
 
 template <typename Mutex> class CustomSink final : public spdlog::sinks::base_sink<Mutex>
 {
@@ -113,6 +190,9 @@ std::shared_ptr<spdlog::logger> CreateLogger(
 
 #ifdef CET_DEBUG
     logger->flush_on(spdlog::level::trace);
+#elif defined(__APPLE__)
+    // macOS port in testing: info lines reach the file even when the game is stopped by the test driver
+    logger->flush_on(spdlog::level::info);
 #else
     logger->flush_on(spdlog::level::warn);
 #endif

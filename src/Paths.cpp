@@ -50,8 +50,22 @@ const std::filesystem::path& Paths::TweakDB() const
     return m_tweakdb;
 }
 
+#ifdef __APPLE__
+#include "MacShims.hpp"
+#endif
+
 Paths::Paths()
 {
+#ifdef __APPLE__
+    // CET macOS: the game executable is Cyberpunk2077.app/Contents/MacOS/Cyberpunk2077 and CET is a RED4ext plugin, so its root is
+    // the plugin folder (red4ext/plugins/cyber_engine_tweaks, found through dladdr) and the game root is the folder that holds r6/.
+    m_exe = CetMac::ExePath();
+
+    m_gameRoot = CetMac::RootDir();
+
+    m_cetRoot = CetMac::PluginDir();
+    create_directories(m_cetRoot);
+#else
     TCHAR exePathBuf[MAX_PATH] = {0};
     GetModuleFileName(GetModuleHandle(nullptr), exePathBuf, static_cast<DWORD>(std::size(exePathBuf)));
     m_exe = exePathBuf;
@@ -62,6 +76,7 @@ Paths::Paths()
     m_cetRoot /= L"plugins";
     m_cetRoot /= L"cyber_engine_tweaks";
     create_directories(m_cetRoot);
+#endif
 
     m_config = m_cetRoot / L"config.json";
     // remove empty config.json
@@ -82,8 +97,10 @@ Paths::Paths()
     create_directories(m_modsRoot);
 
     m_r6CacheModdedRoot = m_gameRoot;
+#ifndef __APPLE__
     m_r6CacheModdedRoot /= L"..";
     m_r6CacheModdedRoot /= L"..";
+#endif
     m_r6CacheModdedRoot /= L"r6";
     m_r6CacheModdedRoot /= L"cache";
     m_r6CacheModdedRoot /= L"modded";

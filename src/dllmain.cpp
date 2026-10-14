@@ -8,6 +8,51 @@ void OptionsInitHook();
 void DisableVignettePatch();
 void DisableBoundaryTeleportPatch();
 
+#ifdef __APPLE__
+#include "MacShims.hpp"
+
+// CET macOS: RED4ext calls these from Main (macos/MacEntry.cpp). Same order as Initialize / Shutdown below, without the byte patches
+// (vignette, boundary teleport, options: not on macOS, macos/NOT_YET.md) and without the single-instance mutex (one game process per
+// session, and RED4ext loads a plugin once).
+void CetMacInitialize()
+{
+    try
+    {
+        MH_Initialize();
+
+        CET::Initialize();
+
+        MH_EnableHook(nullptr);
+
+        CetMac::SetCetReady(true);
+    }
+    catch (const std::exception& e)
+    {
+        spdlog::error("CET macOS initialization failed: {}", e.what());
+    }
+    catch (...)
+    {
+        spdlog::error("CET macOS initialization failed (unknown exception)");
+    }
+}
+
+void CetMacShutdown()
+{
+    const bool inGameProcess = CET::Get().GetOptions().ExeValid;
+
+    MH_DisableHook(nullptr);
+    MH_Uninitialize();
+
+    CET::Shutdown();
+
+    if (inGameProcess)
+    {
+        spdlog::default_logger()->flush();
+        if (auto scripting = spdlog::get("scripting"))
+            scripting->flush();
+    }
+}
+#else
 static HANDLE s_modInstanceMutex = nullptr;
 
 using namespace std::chrono_literals;
@@ -82,3 +127,4 @@ BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID)
 
     return TRUE;
 }
+#endif

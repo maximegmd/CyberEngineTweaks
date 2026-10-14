@@ -1,5 +1,12 @@
 #include <stdafx.h>
 
+#ifdef __APPLE__
+#include <dlfcn.h>
+
+#include "MacAddresses.hpp"
+#include "MacShims.hpp"
+#endif
+
 #include "LuaVM.h"
 
 #include <CET.h>
@@ -70,6 +77,10 @@ void ReadTDBIDNameArray(std::istream& aFile, uint32_t aCount, TiltedPhoques::Map
 
 bool InitializeTweakDBMetadata(TiltedPhoques::Map<uint64_t, TDBIDLookupEntry>& lookup)
 {
+#ifdef __APPLE__
+    // CET macOS: no Oodle DLL; use the decompressor only if the game process exports it by name (otherwise this feature is off).
+    auto OodleLZ_Decompress = reinterpret_cast<TOodleLZ_Decompress>(dlsym(RTLD_DEFAULT, "OodleLZ_Decompress"));
+#else
     auto hOodleHandle = GetModuleHandle(TEXT("oo2ext_7_win64.dll"));
     if (hOodleHandle == nullptr)
     {
@@ -78,6 +89,7 @@ bool InitializeTweakDBMetadata(TiltedPhoques::Map<uint64_t, TDBIDLookupEntry>& l
     }
 
     auto OodleLZ_Decompress = reinterpret_cast<TOodleLZ_Decompress>(GetProcAddress(hOodleHandle, "OodleLZ_Decompress"));
+#endif
     if (OodleLZ_Decompress == nullptr)
     {
         Log::Error("CDPRTweakDBMetadata::Initalize() - Could not get OodleLZ_Decompress");
@@ -122,7 +134,13 @@ bool InitializeTweakDBMetadata(TiltedPhoques::Map<uint64_t, TDBIDLookupEntry>& l
             std::string decodedBytes;
             decodedBytes.resize(reinterpret_cast<uint32_t*>(encodedBytes.data())[1]);
 
+#ifdef __APPLE__
+            // CET macOS: 512 KiB is the whole stack of a secondary thread on macOS (Windows gives 1 MiB); keep it on the heap.
+            std::vector<char> workingMemoryBuffer(0x80000);
+            auto& workingMemory = *reinterpret_cast<char(*)[0x80000]>(workingMemoryBuffer.data());
+#else
             char workingMemory[0x80000];
+#endif
             auto size = OodleLZ_Decompress(
                 encodedBytes.data() + headerSize, static_cast<int>(encodedBytes.size() - headerSize), decodedBytes.data(), static_cast<int>(decodedBytes.size()), 1, 1, 0, nullptr,
                 nullptr, nullptr, nullptr, workingMemory, std::size(workingMemory), 3);
@@ -313,6 +331,53 @@ void LuaVM::HookTDBIDToStringDEBUG(RED4ext::IScriptable*, RED4ext::CStackFrame* 
     }
 }
 
+#ifdef __APPLE__
+uint64_t LuaVM::HookTDBIDCtorDeriveMac(const TDBID* apBase, const char* acpName)
+{
+    const auto result = s_vm->m_realTDBIDCtorDeriveMac(apBase, acpName);
+    s_vm->RegisterTDBIDString(result, apBase->value, std::string(acpName));
+    return result;
+}
+
+bool LuaVM::HookScriptBinderLoadMac(uintptr_t aBinder, uintptr_t aSource, uintptr_t aArg2, uintptr_t aArg3)
+{
+    // Windows runs Initialize before LoadOpcodes and PostInitializeScripting after it; LoadOpcodes is inlined in this function on
+    // macOS, so both run once it returns (the scripts' types and opcodes are then in place).
+    const bool result = s_vm->m_realScriptBinderLoadMac(aBinder, aSource, aArg2, aArg3);
+    Log::Info("[cet] script binder loaded (result {}): Lua VM start-up", result);
+    CET::Get().GetVM().Initialize();
+    s_vm->PostInitializeScripting();
+    s_vm->m_macScriptingReady = true;
+    if (s_vm->m_macTweakDBPending)
+        s_vm->MacRunTweakDBStartup();
+    return result;
+}
+
+void LuaVM::MacRunTweakDBStartup()
+{
+    m_macTweakDBPending = false;
+    if (m_macTweakDBDone)
+        return;
+    m_macTweakDBDone = true;
+    Log::Info("[cet] TweakDB start-up (onTweak), caught up after the hook was chained");
+    PostInitializeTweakDB(); // the generation byte (unk160) is left as the game set it, see HookTweakDBLoad
+}
+
+void LuaVM::OnMacSharedHooksReady()
+{
+    auto* tweakDB = RED4ext::TweakDB::Get();
+    if (m_macTweakDBDone || !tweakDB || tweakDB->flats.size == 0)
+        return;
+
+    Log::Warn("TweakDB was loaded before CET's TweakDB hook was chained; CET's TweakDB start-up runs {}",
+              m_macScriptingReady ? "now" : "after the Lua start-up");
+    if (m_macScriptingReady)
+        MacRunTweakDBStartup();
+    else
+        m_macTweakDBPending = true;
+}
+#endif
+
 void LuaVM::HookTranslateBytecode(uintptr_t aBinder, uintptr_t aData)
 {
     // Delay our lua hook until later, to ensure that Mod Organizer's VFS is hooked up.
@@ -326,6 +391,10 @@ uint64_t LuaVM::HookPlayerSpawned(uint64_t a1, uint64_t a2, uint64_t a3, uint64_
 {
     const auto ret = s_vm->m_realPlayerSpawned(a1, a2, a3, a4);
 
+#ifdef __APPLE__
+    static int s_spawns = 0;
+    Log::Info("[cet] PlayerSystem::OnPlayerSpawned #{}{}", ++s_spawns, s_vm->m_initialized ? "" : ": mods start-up (onInit)");
+#endif
     if (!s_vm->m_initialized)
         s_vm->PostInitializeMods();
 
@@ -336,9 +405,21 @@ uint64_t LuaVM::HookTweakDBLoad(uintptr_t aThis, uintptr_t aParam)
 {
     const auto ret = s_vm->m_realTweakDBLoad(aThis, aParam);
 
+#ifdef __APPLE__
+    // macOS: the byte is left as the game set it. The load increments it after a successful load (0x2B75650), and cached record
+    // handles re-resolve when their stamp (+9) differs from it (0x9C8520); set back to 0, handles made during the load were never
+    // refreshed and the world load never finished (it loads with this hook off).
+#else
     // Disable changes tracking added to TweakDB in patch 2.0 and causing instability.
     RED4ext::TweakDB::Get()->unk160 = 0;
+#endif
 
+#ifdef __APPLE__
+    if (s_vm->m_macTweakDBDone)
+        return ret;
+    s_vm->m_macTweakDBDone = true;
+    Log::Info("[cet] TweakDB loaded: CET's TweakDB start-up (onTweak)");
+#endif
     s_vm->PostInitializeTweakDB();
 
     return ret;
@@ -419,7 +500,11 @@ void LuaVM::Hook()
 
         if (pLocation)
         {
+#ifdef __APPLE__
+            if (MH_CreateHook(pLocation, reinterpret_cast<void*>(&HookTDBIDCtorDeriveMac), reinterpret_cast<void**>(&m_realTDBIDCtorDeriveMac)) != MH_OK ||
+#else
             if (MH_CreateHook(pLocation, reinterpret_cast<void*>(&HookTDBIDCtorDerive), reinterpret_cast<void**>(&m_realTDBIDCtorDerive)) != MH_OK ||
+#endif
                 MH_EnableHook(pLocation) != MH_OK)
                 Log::Error("Could not hook CScript::TDBIDConstructorDerive function!");
             else
@@ -444,12 +529,21 @@ void LuaVM::Hook()
     }
 
     {
+#ifdef __APPLE__
+        auto* pLocation = reinterpret_cast<uint8_t*>(CetMac::VerifiedAddress(
+            CetMac::Rva::ScriptBinderLoad, CetMac::Rva::ScriptBinderLoadPrologue, std::size(CetMac::Rva::ScriptBinderLoadPrologue), "script binder load"));
+
+        if (pLocation)
+        {
+            if (MH_CreateHook(pLocation, reinterpret_cast<LPVOID>(HookScriptBinderLoadMac), reinterpret_cast<void**>(&m_realScriptBinderLoadMac)) != MH_OK ||
+#else
         const RED4ext::UniversalRelocPtr<uint8_t> func(CyberEngineTweaks::AddressHashes::CScript_TranslateBytecode);
         uint8_t* pLocation = func.GetAddr();
 
         if (pLocation)
         {
             if (MH_CreateHook(pLocation, reinterpret_cast<LPVOID>(HookTranslateBytecode), reinterpret_cast<void**>(&m_realTranslateBytecode)) != MH_OK ||
+#endif
                 MH_EnableHook(pLocation) != MH_OK)
                 Log::Error("Could not hook CScript::TranslateBytecode function!");
             else

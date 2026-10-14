@@ -1,5 +1,10 @@
 #include "RTTIExtender.h"
 
+#ifdef __APPLE__
+#include "MacShims.hpp"
+#endif
+
+
 #include <RED4ext/Scripting/Natives/Generated/Transform.hpp>
 #include <RED4ext/Scripting/Natives/Generated/WorldTransform.hpp>
 #include <RED4ext/Scripting/Natives/Generated/ent/Entity.hpp>
@@ -290,7 +295,11 @@ void CreateSingleton(const RED4ext::Handle<RED4ext::IScriptable>& apClassInstanc
 {
     auto* pRTTI = RED4ext::CRTTISystem::Get();
     auto* pType = apClassInstance->GetNativeType();
+#ifdef __APPLE__
+    auto* pGameInstance = CetMac::GameInstance();
+#else
     auto* pGameInstance = RED4ext::CGameEngine::Get()->framework->gameInstance;
+#endif
     if (pGameInstance->GetSystem(pType) != nullptr)
         return; // already init
 
@@ -328,7 +337,11 @@ void CreateSingleton(const RED4ext::CName acTypeName)
 {
     auto* pRTTI = RED4ext::CRTTISystem::Get();
     auto* pType = pRTTI->GetClass(acTypeName);
+#ifdef __APPLE__
+    auto* pGameInstance = CetMac::GameInstance();
+#else
     auto* pGameInstance = RED4ext::CGameEngine::Get()->framework->gameInstance;
+#endif
     if (pGameInstance->GetSystem(pType) != nullptr)
         return; // already init
 
@@ -361,7 +374,11 @@ void WorldFunctionalTests_SpawnEntity(RED4ext::IScriptable*, RED4ext::CStackFram
     apFrame->code++; // skip ParamEnd
 
     auto* pRTTI = RED4ext::CRTTISystem::Get();
+#ifdef __APPLE__
+    auto* pGameInstance = CetMac::GameInstance();
+#else
     auto* pGameInstance = RED4ext::CGameEngine::Get()->framework->gameInstance;
+#endif
     auto* pFunctionalType = pRTTI->GetType("FunctionalTestsGameSystem");
     auto* pFunctionalSystem = reinterpret_cast<FunctionalTestsGameSystem*>(pGameInstance->GetSystem(pFunctionalType));
     uint32_t oldSize = pFunctionalSystem->spawner.pendingEntities.size;
@@ -489,7 +506,11 @@ public:
     {
         auto* pRTTI = RED4ext::CRTTISystem::Get();
         auto* pSystemType = pRTTI->GetClass(NATIVE_TYPE);
+#ifdef __APPLE__
+        auto* pGameInstance = CetMac::GameInstance();
+#else
         auto* pGameInstance = RED4ext::CGameEngine::Get()->framework->gameInstance;
+#endif
 
         if (pGameInstance->GetSystem(pSystemType))
             return; // already init
@@ -632,7 +653,11 @@ static void AddToInventory(RED4ext::IScriptable*, RED4ext::CStackFrame* apFrame,
     RED4ext::GetParameter(apFrame, &quantity);
     apFrame->code++; // skip ParamEnd
 
+#ifdef __APPLE__
+    RED4ext::ScriptGameInstance gameInstance(CetMac::GameInstance());
+#else
     RED4ext::ScriptGameInstance gameInstance;
+#endif
     RED4ext::Handle<RED4ext::IScriptable> player;
     RED4ext::ExecuteGlobalFunction("GetPlayer;GameInstance", &player, gameInstance);
 
@@ -661,6 +686,19 @@ void RTTIExtender::InitializeTypes()
 
 void RTTIExtender::InitializeSingletons()
 {
+#ifdef __APPLE__
+    // macOS: no CET-made system objects go into the game instance yet. exEntitySpawner's spawner functions have no Mac addresses
+    // (its Spawn/SpawnRecord return an empty entity ID through the trap stubs), and the two FunctionalTests systems plus the
+    // WorldFunctionalTests +0x40 write are unverified on macOS. Mods that spawn use Codeware's DynamicEntitySystem first (Hotscenes does).
+    // The exEntitySpawner type stays registered, so scripts and mods that name it still resolve.
+    static bool s_logged = false;
+    if (!s_logged)
+    {
+        s_logged = true;
+        Log::Info("[cet] RTTIExtender: exEntitySpawner and the FunctionalTests systems are not added to the game instance on macOS (macos/NOT_YET.md)");
+    }
+    return;
+#endif
     exEntitySpawnerSystem::InitializeSingleton();
 
     CreateSingleton("WorldFunctionalTests");
@@ -677,7 +715,11 @@ void RTTIExtender::InitializeSingletons()
         };
         RED4EXT_ASSERT_OFFSET(WorldFunctionalTests, unk40, 0x40);
 
+#ifdef __APPLE__
+        auto* pGameInstance = CetMac::GameInstance();
+#else
         auto* pGameInstance = RED4ext::CGameEngine::Get()->framework->gameInstance;
+#endif
         auto* pWorld = reinterpret_cast<WorldFunctionalTests*>(pGameInstance->GetSystem(pClass));
 
         // whatever this is, it's only used to get gameInstance

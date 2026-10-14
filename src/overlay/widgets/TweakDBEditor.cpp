@@ -359,7 +359,11 @@ void TweakDBEditor::FilterRecords(bool aFilterTab, bool aFilterDropdown)
     {
         bool anyRecordsVisible = false;
         std::for_each(
+#ifdef __APPLE__
+            group.m_records.begin(), group.m_records.end(), // CET macOS: libc++ has no parallel algorithms
+#else
             std::execution::par_unseq, group.m_records.begin(), group.m_records.end(),
+#endif
             [&](CachedRecord& record)
             {
                 if (aFilterTab)
@@ -1140,7 +1144,11 @@ bool TweakDBEditor::DrawFlatResourceAsyncRef(RED4ext::TweakDBID aDBID, RED4ext::
                 {
                     auto& resources = ResourcesList::Get()->GetResources();
                     resourcesCount = static_cast<int>(std::count_if(
+#ifdef __APPLE__
+                        resources.begin(), resources.end(), // CET macOS: libc++ has no parallel algorithms
+#else
                         std::execution::par_unseq, resources.begin(), resources.end(),
+#endif
                         [](ResourcesList::Resource& resource)
                         {
                             if (comboSearchStr[0] == '\0' || StringContains(resource.m_name, comboSearchStr))

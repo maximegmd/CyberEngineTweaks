@@ -10,6 +10,13 @@ void trim(std::string& s);
 
 std::string UTF16ToUTF8(std::wstring_view utf16);
 std::wstring UTF8ToUTF16(std::string_view utf8);
+#ifdef __APPLE__
+// CET macOS: std::filesystem::path::native() is already UTF-8 here, so the many UTF16ToUTF8(path.native()) calls pass it through.
+inline std::string UTF16ToUTF8(std::string_view utf8)
+{
+    return std::string(utf8);
+}
+#endif
 
 spdlog::sink_ptr CreateCustomSinkST(const std::function<void(const std::string&)>& acpSinkItHandler, const std::function<void()>& acpFlushHandler = nullptr);
 spdlog::sink_ptr CreateCustomSinkMT(const std::function<void(const std::string&)>& acpSinkItHandler, const std::function<void()>& acpFlushHandler = nullptr);

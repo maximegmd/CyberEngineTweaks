@@ -36,7 +36,11 @@ void ScriptStore::LoadAll()
         const auto name = UTF16ToUTF8(file.path().filename().native());
         const auto pathStr = UTF16ToUTF8((cModsRoot / file.path()).native());
 
+#ifdef __APPLE__
+        if (file.path().native().starts_with("cet/") || file.path().native() == "cet")
+#else
         if (file.path().native().starts_with(L"cet\\"))
+#endif
         {
             consoleLogger->warn("Ignoring mod using reserved name! ('{}')", pathStr);
             continue;

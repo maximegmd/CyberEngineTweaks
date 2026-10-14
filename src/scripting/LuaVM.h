@@ -14,6 +14,12 @@ using TShutdownStateRun = bool(uintptr_t, uintptr_t);
 using TSetLoadingState = uintptr_t(uintptr_t, int);
 using TTweakDBLoad = uint64_t(uintptr_t, uintptr_t);
 using TTranslateBytecode = void(uintptr_t, uintptr_t);
+#ifdef __APPLE__
+// CET macOS: the derive constructor returns the TweakDBID by value (base, name), and LoadOpcodes is inlined into the binder's load
+// function bool(binder, source, x2, x3) (macos/ADDRESS_SURVEY.md, notes 6 and 11).
+using TTDBIDCtorDeriveMac = uint64_t(const TDBID*, const char*);
+using TScriptBinderLoadMac = bool(uintptr_t, uintptr_t, uintptr_t, uintptr_t);
+#endif
 using TPlayerSpawned = uint64_t(uint64_t, uint64_t, uint64_t, uint64_t);
 
 struct TDBIDLookupEntry
@@ -62,6 +68,11 @@ struct LuaVM
     void PostInitializeScripting();
     void PostInitializeTweakDB();
     void PostInitializeMods();
+#ifdef __APPLE__
+    // CET macOS: called once the hooks shared with ArchiveXL and Codeware are chained (GameHooks.cpp). If TweakDB loaded before
+    // that, CET's TweakDB start-up (HookTweakDBLoad's work) runs now, or right after the Lua start-up if that has not run yet.
+    void OnMacSharedHooksReady();
+#endif
 
 protected:
     void Hook();
@@ -73,6 +84,10 @@ protected:
     static uintptr_t HookSetLoadingState(uintptr_t aThis, int aState);
     static uint64_t HookTweakDBLoad(uintptr_t aThis, uintptr_t aParam);
     static void HookTranslateBytecode(uintptr_t aBinder, uintptr_t aData);
+#ifdef __APPLE__
+    static uint64_t HookTDBIDCtorDeriveMac(const TDBID* apBase, const char* acpName);
+    static bool HookScriptBinderLoadMac(uintptr_t aBinder, uintptr_t aSource, uintptr_t aArg2, uintptr_t aArg3);
+#endif
     static uint64_t HookPlayerSpawned(uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4);
 
 private:
@@ -91,6 +106,14 @@ private:
     TSetLoadingState* m_realSetLoadingState{nullptr};
     TTweakDBLoad* m_realTweakDBLoad{nullptr};
     TTranslateBytecode* m_realTranslateBytecode{nullptr};
+#ifdef __APPLE__
+    void MacRunTweakDBStartup();
+    bool m_macScriptingReady{false};
+    bool m_macTweakDBDone{false};
+    bool m_macTweakDBPending{false};
+    TTDBIDCtorDeriveMac* m_realTDBIDCtorDeriveMac{nullptr};
+    TScriptBinderLoadMac* m_realScriptBinderLoadMac{nullptr};
+#endif
     TPlayerSpawned* m_realPlayerSpawned{nullptr};
 
     Scripting m_scripting;

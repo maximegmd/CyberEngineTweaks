@@ -1,5 +1,9 @@
 #include <stdafx.h>
 
+#ifdef __APPLE__
+#include "MacShims.hpp"
+#endif
+
 #include "RTTIHelper.h"
 
 #include "ClassReference.h"
@@ -656,6 +660,18 @@ sol::variadic_results RTTIHelper::ExecuteFunction(
 
         if (cpParam->type == m_pGameInstanceType)
         {
+#ifdef __APPLE__
+            auto* pMacGameInstance = CetMac::GameInstance();
+            if (!pMacGameInstance)
+            {
+                aErrorMessage = fmt::format("Function '{}' can't be used yet because game instance is not ready.", apFunc->shortName.ToString());
+
+                return {};
+            }
+
+            static RED4ext::ScriptGameInstance s_gameInstance(pMacGameInstance);
+            s_gameInstance.instance = pMacGameInstance;
+#else
             const auto* cpEngine = RED4ext::CGameEngine::Get();
 
             if (!cpEngine || !cpEngine->framework)
@@ -666,6 +682,7 @@ sol::variadic_results RTTIHelper::ExecuteFunction(
             }
 
             static RED4ext::ScriptGameInstance s_gameInstance;
+#endif
 
             callArgs[callArgOffset].type = m_pGameInstanceType;
             callArgs[callArgOffset].value = &s_gameInstance;
