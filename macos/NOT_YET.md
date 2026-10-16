@@ -8,11 +8,15 @@ What the macOS build of Cyber Engine Tweaks leaves out or has not verified in ga
    the cursor through AppKit (`src/metal/MetalRenderer.mm`, `CursorFallback`). `GameView` manages its own cursor (hide, clip, centre); in a
    hand test the cursor showed while the overlay was open and CET's and a large mod's windows worked with the mouse. The
    automated test covers keys and the overlay, not the cursor.
-3. **`exEntitySpawner`** (`src/reverse/RTTIExtender.cpp`) needs five `gameIGameSystem` functions and `CPhotoMode_SetRecordID`, which have no
-   macOS rows yet; its calls resolve to the logged fail-safe stub and return nothing. Mods that try Codeware's `DynamicEntitySystem` first
-   (Hotscenes does) are not affected. The type is registered but no system object is added to the game instance, and the two
-   FunctionalTests systems (kept upstream for old mods, with a write at `WorldFunctionalTests+0x40`) are not created either: a test build
-   that added them at the main menu never finished the following world load.
+3. **`exEntitySpawner`** (`src/reverse/RTTIExtender.cpp`) has rows for the spawner functions (`CetSdkRows.inc`: Initialize
+   0x1407CA8, UnInitialize 0x1407EEC, Spawn 0x14084B0, Despawn 0x140974C, RegisterEntity 0xD13C5C), the libc++ settings layout (0xD0
+   bytes, `std::function` 0x20) and the Mac `Spawn` ABI (smart pointer result through x8). Spawn and despawn work in game (a template entity spawned, found by ID and removed, no crash). The
+   rest is untested. What is still missing: `CPhotoMode_SetRecordID` has no Mac row, so a record ID is
+   ignored (logged once) and `SpawnRecord` spawns from the record's template path without the record handle (fine for props and
+   lights, unknown for puppets and vehicles; Codeware's `DynamicEntitySystem` covers those). The type is registered but no system
+   object is added to the game instance; the spawner is initialised lazily before each spawn instead of on `OnWorldAttached`. The two
+   FunctionalTests systems (kept upstream for old mods, with a write at `WorldFunctionalTests+0x40`) are not created: a test build that
+   added them at the main menu never finished the following world load.
 4. **Game log window.** Done: the five script `Log` hooks have macOS rows and install; `gamelog.log` fills in game.
 5. **TweakDB names** (`tweakdb.str`) and the resource list need the Oodle decompressor, which the macOS game does not export. TweakDBIDs show
    as hashes where CET would show names (as on a Windows install without the `tweakdb/` folder).

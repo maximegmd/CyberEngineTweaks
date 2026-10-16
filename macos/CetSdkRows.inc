@@ -12,3 +12,9 @@
         { 3222609133, 0x22113B8 },  // CScript_LogWarning (native handler)
         { 1663049434, 0x2211498 },  // CScript_LogChannel (native handler)
         { 2841780134, 0x22116C8 },  // CScript_LogChannelWarning (native handler)
+        // exEntitySpawner (verified against the Windows bodies; macos/ADDRESS_SURVEY.md note 15). Plain calls, no hooks.
+        { 385618721, 0x1407CA8 },   // gameIGameSystem_Initialize (spawn::Set::Initialize; void(spawner, GameInstance*); Win 0xAC7ED4)
+        { 3313306514, 0x1407EEC },  // gameIGameSystem_UnInitialize (void(spawner); Win 0x204D490)
+        { 2509382878, 0x14084B0 },  // gameIGameSystem_Spawn (Mac ABI: x0 spawner, x1 settings, x2 CName, result smart pointer via x8; Win 0x661538)
+        { 3168866665, 0x140974C },  // gameIGameSystem_Despawn (void(spawner, IScriptable*); Win 0x65CEFC)
+        { 2840271332, 0xD13C5C },   // gameIGameSystem_SpawnCallback (RuntimeEntityRegistry::RegisterEntity, bool(registry, Entity*); Win 0x8B57F4)

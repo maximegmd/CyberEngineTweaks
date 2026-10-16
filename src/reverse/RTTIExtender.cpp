@@ -2,6 +2,10 @@
 
 #ifdef __APPLE__
 #include "MacShims.hpp"
+
+#include <atomic>
+#include <dlfcn.h>
+#include <mach/mach.h>
 #endif
 
 
@@ -115,7 +119,14 @@ struct TEMP_PendingEntity
     struct Unk00
     {
         // TEMP_SpawnSettings without the first 8 bytes???
+#ifdef __APPLE__
+        // macOS: the settings copy is 0x20 smaller (libc++ std::function is 0x20 bytes, MSVC's 0x40), so the fields after it sit 0x20
+        // lower: entityPath 0xE8, entityID 0xF0, entity 0xF8 (verification: ctor 0x1FD1274 stores the CName at +0xE8,
+        // Spawn 0x14084B0 stores the entity ID at +0xF0). The Itanium vtable has the extra slot after the destructor by itself.
+        uint8_t unk08[0xE0];
+#else
         uint8_t unk08[0x100];
+#endif
         RED4ext::CName entityPath;
         RED4ext::ent::EntityID entityID;
         RED4ext::ent::Entity* entity;
@@ -129,8 +140,16 @@ struct TEMP_PendingEntity
         virtual void DecRef() = 0;
         virtual void AddRef() = 0;
     };
+#ifdef __APPLE__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Winvalid-offsetof"
+    static_assert(offsetof(Unk00, entityPath) == 0xE8 && offsetof(Unk00, entityID) == 0xF0 && offsetof(Unk00, entity) == 0xF8,
+                  "macOS TEMP_PendingEntity::Unk00 layout");
+#pragma clang diagnostic pop
+#else
     RED4EXT_ASSERT_OFFSET(Unk00, entityID, 0x110);
     RED4EXT_ASSERT_OFFSET(Unk00, entity, 0x118);
+#endif
 
     Unk00* unk00;
     uint64_t unk08;
@@ -160,6 +179,11 @@ struct TEMP_SpawnSettings
     uintptr_t unkD8 = 0;
     RED4ext::TweakDBID DONOTUSE_recordDBID{};
     uint32_t unkE8 = 0x10101FF;
+#ifdef __APPLE__
+    // macOS: the game's Spawn also reads the bytes at 0xCC and 0xCE (Windows 0xEC and 0xEE, which are uninitialised tail padding in CET's
+    // struct). Give them a defined value so the stack garbage does not reach the game.
+    uint32_t unkCC = 0;
+#endif
 
     void SetTransform(const RED4ext::WorldTransform& acWorldTransform)
     {
@@ -190,6 +214,20 @@ struct TEMP_SpawnSettings
 
     void SetRecordID(const RED4ext::TweakDBID acTweakDBID)
     {
+#ifdef __APPLE__
+        // macOS: CPhotoMode_SetRecordID (Windows 0x661900) has no Mac row (no standalone twin found; the survey thinks it is inlined at its
+        // callers). Without it the record handle at 0x90 cannot be built, and a record ID with a null handle is untested, so a real
+        // record is skipped: the entity is spawned from its template path alone. An empty ID (props, lights, what AMM passes) needs nothing.
+        if (acTweakDBID.value != 0)
+        {
+            static std::atomic<bool> s_logged{false};
+            if (!s_logged.exchange(true))
+            {
+                CetMac::Log("[cet] exEntitySpawner: CPhotoMode_SetRecordID is not available on macOS, record IDs are ignored (spawned from the template path only)");
+            }
+        }
+        return;
+#endif
         // Copied from the function photomode uses to spawn 3rd person puppet
         using TFunc = void (*)(const RED4ext::TweakDBID, RED4ext::Handle<RED4ext::IScriptable>&);
         static GameCall<TFunc> func(CyberEngineTweaks::AddressHashes::CPhotoMode_SetRecordID);
@@ -198,9 +236,24 @@ struct TEMP_SpawnSettings
         func(acTweakDBID, unkB0);
     }
 };
+#ifdef __APPLE__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Winvalid-offsetof"
+// macOS layout (verified against Spawn 0x14084B0 and its settings reads): std::function 0x30..0x50, unk70 at 0x50, the empty array at 0x68,
+// handles at 0x80 and 0x90, appearance 0xA0, record ID 0xC0, flags 0xC8..0xCB, tail 0xCC..0xCF, total 0xD0.
+static_assert(sizeof(std::function<void()>) == 0x20, "the game reads the callback as a libc++ std::function (0x20 bytes)");
+static_assert(offsetof(TEMP_SpawnSettings, unk70) == 0x50 && offsetof(TEMP_SpawnSettings, unk88) == 0x68 &&
+                  offsetof(TEMP_SpawnSettings, unkA0) == 0x80 && offsetof(TEMP_SpawnSettings, unkB0) == 0x90 &&
+                  offsetof(TEMP_SpawnSettings, appearance) == 0xA0 && offsetof(TEMP_SpawnSettings, DONOTUSE_recordDBID) == 0xC0 &&
+                  offsetof(TEMP_SpawnSettings, unkE8) == 0xC8 && offsetof(TEMP_SpawnSettings, unkCC) == 0xCC,
+              "macOS TEMP_SpawnSettings field offsets");
+static_assert(sizeof(TEMP_SpawnSettings) == 0xD0, "macOS TEMP_SpawnSettings size");
+#pragma clang diagnostic pop
+#else
 RED4EXT_ASSERT_OFFSET(TEMP_SpawnSettings, unk70, 0x70);
 RED4EXT_ASSERT_OFFSET(TEMP_SpawnSettings, DONOTUSE_recordDBID, 0xE0);
 RED4EXT_ASSERT_SIZE(TEMP_SpawnSettings, 0xF0); // Guessed. ctor is inlined
+#endif
 
 struct TEMP_Spawner
 {
@@ -240,12 +293,21 @@ struct TEMP_Spawner
 
     RED4ext::ent::EntityID Spawn(const RED4ext::CName acEntityPath, TEMP_SpawnSettings& aSettings)
     {
+#ifdef __APPLE__
+        // macOS ABI (Spawn 0x14084B0): this x0, settings x1, CName x2, and the smart pointer comes back through x8 (the hidden result
+        // pointer of a non-trivial return type, which the compiler passes in x8 on arm64). Windows takes the result pointer as argument 2.
+        using TFunc = REDSmartPtr<TEMP_PendingEntity::Unk00> (*)(TEMP_Spawner*, TEMP_SpawnSettings&, const RED4ext::CName);
+        static GameCall<TFunc> func(CyberEngineTweaks::AddressHashes::gameIGameSystem_Spawn);
+
+        REDSmartPtr<TEMP_PendingEntity::Unk00> pendingEntity = func(this, aSettings, acEntityPath);
+#else
         // REDSmartPtr<TEMP_PendingEntity::Unk00> TEMP_Spawner::func(this, TEMP_SpawnSettings&, RED4ext::CName&)
         using TFunc = void (*)(TEMP_Spawner*, REDSmartPtr<TEMP_PendingEntity::Unk00>*, TEMP_SpawnSettings&, const RED4ext::CName);
         static GameCall<TFunc> func(CyberEngineTweaks::AddressHashes::gameIGameSystem_Spawn);
 
         REDSmartPtr<TEMP_PendingEntity::Unk00> pendingEntity;
         func(this, &pendingEntity, aSettings, acEntityPath);
+#endif
 
         RED4ext::ent::EntityID entityID{};
         entityID.hash = pendingEntity ? pendingEntity->entityID.hash : 0;
@@ -436,6 +498,85 @@ struct exEntitySpawnerSystem : RED4ext::gameIGameSystem
     }
 
 private:
+#ifdef __APPLE__
+    // macOS: the registry is Codeware's runtime scene slot 13 (worldRuntimeEntityRegistry, checked by Codeware's own self-test), not the
+    // Windows gameInstance->unk78->unk00->+0xD0 chain, which is unverified here. The RegisterEntity row is 0xD13C5C (bool(registry, Entity*)).
+    static IScriptable* EntityRegistry()
+    {
+        using Fn = void* (*)(uint32_t);
+        static Fn s_fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "codeware_mac_runtime_system_at"));
+        return s_fn ? static_cast<IScriptable*>(s_fn(13)) : nullptr;
+    }
+
+    static bool SafeRead64(uintptr_t aAddress, uintptr_t* apOut)
+    {
+        vm_size_t read = 0;
+        return vm_read_overwrite(mach_task_self(), aAddress, sizeof(uintptr_t), reinterpret_cast<vm_address_t>(apOut), &read) == KERN_SUCCESS &&
+               read == sizeof(uintptr_t);
+    }
+
+    static void LogOnce(std::atomic<bool>& aFlag, const char* aMessage)
+    {
+        if (!aFlag.exchange(true))
+            CetMac::Log("%s", aMessage);
+    }
+
+    // The registration as a game system is skipped on macOS (see InitializeSingletons), so nothing calls OnWorldAttached. Instead every
+    // spawn re-runs the game's Initialize (it re-derives its +0x50/+0x58/+0x60 fields from the current world and only caches +0x48) and
+    // a change of the world root clears the cached +0x48 first, what UnInitialize does at the end.
+    static bool s_ready;
+    static uintptr_t s_worldKey[2];
+
+    static bool EnsureReady()
+    {
+        static std::atomic<bool> s_noInstance{false}, s_noWorld{false}, s_noRegistry{false};
+        auto* gi = CetMac::GameInstance();
+        if (!gi)
+        {
+            LogOnce(s_noInstance, "[cet] exEntitySpawner: no game instance yet (Codeware for macOS provides it), spawn skipped");
+            return false;
+        }
+        uintptr_t w78 = 0, a0 = 0;
+        if (!SafeRead64(reinterpret_cast<uintptr_t>(gi) + 0x78, &w78) || !w78 || !SafeRead64(w78 + 0xA0, &a0) || !a0)
+        {
+            LogOnce(s_noWorld, "[cet] exEntitySpawner: the game instance has no world runtime yet (gi+0x78 / +0xA0 empty), spawn skipped");
+            return false;
+        }
+        if (!EntityRegistry())
+        {
+            LogOnce(s_noRegistry, "[cet] exEntitySpawner: the runtime entity registry is not available (Codeware runtime scene slot 13), spawn skipped");
+            return false;
+        }
+
+        if (s_ready && (s_worldKey[0] != w78 || s_worldKey[1] != a0))
+        {
+            CetMac::Log("[cet] exEntitySpawner: the world root changed, re-initialising the spawner");
+            exEntitySpawner_Spawner.unk48 = exEntitySpawner_Spawner.unk50 = exEntitySpawner_Spawner.unk58 = exEntitySpawner_Spawner.unk60 = 0;
+        }
+        exEntitySpawner_Spawner.Initialize(gi);
+        if (!s_ready || s_worldKey[0] != w78 || s_worldKey[1] != a0)
+        {
+            CetMac::Log("[cet] exEntitySpawner: spawner initialised (gi=%p world=0x%llx +0x48=0x%llx +0x50=0x%llx +0x58=0x%llx +0x60=0x%llx)",
+                        static_cast<void*>(gi), static_cast<unsigned long long>(w78), static_cast<unsigned long long>(exEntitySpawner_Spawner.unk48),
+                        static_cast<unsigned long long>(exEntitySpawner_Spawner.unk50), static_cast<unsigned long long>(exEntitySpawner_Spawner.unk58),
+                        static_cast<unsigned long long>(exEntitySpawner_Spawner.unk60));
+        }
+        s_ready = true;
+        s_worldKey[0] = w78;
+        s_worldKey[1] = a0;
+        return exEntitySpawner_Spawner.unk50 != 0;
+    }
+
+    static void SpawnCallback(TEMP_PendingEntity::Unk00& aUnk)
+    {
+        using TFunc = bool (*)(IScriptable*, RED4ext::ent::Entity*);
+        static GameCall<TFunc> func(CyberEngineTweaks::AddressHashes::gameIGameSystem_SpawnCallback);
+
+        auto* registry = EntityRegistry();
+        if (aUnk.entity && registry)
+            func(registry, aUnk.entity);
+    }
+#else
     static void SpawnCallback(TEMP_PendingEntity::Unk00& aUnk)
     {
         using TFunc = void (*)(IScriptable*, RED4ext::ent::Entity*);
@@ -457,6 +598,7 @@ private:
         if (aUnk.entity)
             func(reinterpret_cast<GameInstance_78*>(pGameInstance->unk78)->unk00->worldRuntimeEntityRegistry, aUnk.entity);
     }
+#endif
 
 public:
     static void InitializeType()
@@ -545,6 +687,14 @@ public:
             appearance = "default";
         }
 
+#ifdef __APPLE__
+        if (!EnsureReady())
+        {
+            if (apOut != nullptr)
+                *apOut = RED4ext::ent::EntityID{};
+            return;
+        }
+#endif
         TEMP_SpawnSettings settings;
         settings.appearance = appearance;
         settings.callback = SpawnCallback;
@@ -575,6 +725,14 @@ public:
             appearance = "default";
         }
 
+#ifdef __APPLE__
+        if (!EnsureReady())
+        {
+            if (apOut != nullptr)
+                *apOut = RED4ext::ent::EntityID{};
+            return;
+        }
+#endif
         TEMP_SpawnSettings settings;
         settings.appearance = appearance;
         settings.callback = SpawnCallback;
@@ -595,10 +753,18 @@ public:
         GetParameter(apFrame, &entity);
         apFrame->code++; // skip ParamEnd
 
+#ifdef __APPLE__
+        if (!s_ready)
+            return; // nothing was spawned through this spawner in this session
+#endif
         exEntitySpawner_Spawner.Despawn(entity);
     }
 };
 exEntitySpawnerSystem* exEntitySpawnerSystem::Singleton = nullptr;
+#ifdef __APPLE__
+bool exEntitySpawnerSystem::s_ready = false;
+uintptr_t exEntitySpawnerSystem::s_worldKey[2] = {0, 0};
+#endif
 TEMP_Spawner exEntitySpawnerSystem::exEntitySpawner_Spawner;
 
 #pragma endregion
@@ -687,15 +853,15 @@ void RTTIExtender::InitializeTypes()
 void RTTIExtender::InitializeSingletons()
 {
 #ifdef __APPLE__
-    // macOS: no CET-made system objects go into the game instance yet. exEntitySpawner's spawner functions have no Mac addresses
-    // (its Spawn/SpawnRecord return an empty entity ID through the trap stubs), and the two FunctionalTests systems plus the
-    // WorldFunctionalTests +0x40 write are unverified on macOS. Mods that spawn use Codeware's DynamicEntitySystem first (Hotscenes does).
-    // The exEntitySpawner type stays registered, so scripts and mods that name it still resolve.
+    // macOS: no CET-made system objects go into the game instance. The two FunctionalTests systems plus the WorldFunctionalTests +0x40
+    // write are unverified on macOS (a test build that added them at the main menu never finished the following world load), and
+    // exEntitySpawner is not registered as a game system either: its spawner object is driven lazily (EnsureReady), which re-runs the
+    // game's Initialize before each spawn instead of relying on OnWorldAttached / OnBeforeWorldDetach.
     static bool s_logged = false;
     if (!s_logged)
     {
         s_logged = true;
-        Log::Info("[cet] RTTIExtender: exEntitySpawner and the FunctionalTests systems are not added to the game instance on macOS (macos/NOT_YET.md)");
+        Log::Info("[cet] RTTIExtender: the FunctionalTests systems are not added to the game instance on macOS; exEntitySpawner is driven without a system object (macos/NOT_YET.md)");
     }
     return;
 #endif

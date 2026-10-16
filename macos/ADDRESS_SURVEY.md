@@ -18,7 +18,8 @@ layouts CET reads and writes directly.
 | CScript_TDBIDConstructorDerive | MAPPED 0x3453B14, ABI `uint64_t(const TDBID* base, const char* name)` | macOS hook with that signature (`LuaVM_Hooks.cpp`) |
 | CScript_ToStringDEBUG, the 5 Log handlers | MAPPED | rows, hooked |
 | InputSystemWin32Base_ForceCursor | no twin (the cursor is ObjC state on `GameView`) | `-[GameView ShowCursor]` / `HideCursor` while the overlay is open |
-| 5 gameIGameSystem functions, CPhotoMode_SetRecordID | not found | `exEntitySpawner` off (NOT_YET.md) |
+| 5 gameIGameSystem functions | MAPPED (rows 68 to 72 below; spawn and despawn run in game) | `exEntitySpawner` works (spawn and despawn checked in game) |
+| CPhotoMode_SetRecordID | not found | record IDs ignored, logged once (NOT_YET.md) |
 | CGameEngine (SDK data global) | not mapped; framework at engine +0x338 on macOS | game instance from Codeware (`codeware_mac_game_instance`) |
 | Function object sizes | CClassFunction / CClassStaticFunction 0xC0, CGlobalFunction 0xB8, scripted 0xB8 | the swap size fix above |
 
@@ -65,11 +66,11 @@ Vtable rule used below: an Itanium virtual destructor takes two slots, so every 
 | CScript_LogWarning | 3222609133 | 0x11ebd08 | 0x22113b8 | MAPPED | same; size 0xe0 | same as Log | registrar string `LogWarning`. Note 14. |
 | CScript_LogChannel | 1663049434 | 0xd279d8 | 0x2211498 | MAPPED | same; size 0x118 | same. Two string opcodes (channel, then text). | two `blr`, two `strb #0x62`, two `stp #0x30`. Note 14. |
 | CScript_LogChannelWarning | 2841780134 | 0x205573c | 0x22116c8 | MAPPED | same; size 0x118 | same as LogChannel | registrar string `LogChannelWarning`. Note 14. |
-| gameIGameSystem_Initialize | 385618721 | 0xac7ed4 | not found | UNSURE | — | CET calls `void(TEMP_Spawner*, GameInstance*)` | Windows head loads `[rax+0x229ef0]`. The Mac `add #0x229,lsl#12` cluster at `0xcf4bcc` is a different object. Note 15. |
-| gameIGameSystem_UnInitialize | 3313306514 | 0x204d490 | not found | UNSURE | — | CET calls `void(TEMP_Spawner*)` | win-addr name `spawn::Set::Deinitialize`. Not compared. Note 15. |
-| gameIGameSystem_Spawn | 2509382878 | 0x661538 | not found | UNSURE | — | CET: `void(spawner, REDSmartPtr* sret, SpawnSettings&, CName)`. sret is arg2. | win-addr name `spawn::Set::SpawnObject`. Not compared. Note 15. |
-| gameIGameSystem_Despawn | 3168866665 | 0x65cefc | not found | UNSURE | — | CET calls `void(TEMP_Spawner*, IScriptable*)` | win-addr name `spawn::Set::DespawnObject`. Not compared. Note 15. |
-| gameIGameSystem_SpawnCallback | 2840271332 | 0x8b57f4 | not found | UNSURE | — | CET calls `void(IScriptable*, ent::Entity*)` | win-addr name `world::RuntimeEntityRegistry::RegisterEntity`. Not compared. Note 15. |
+| gameIGameSystem_Initialize | 385618721 | 0xac7ed4 | 0x1407ca8 (body twin) | MAPPED | — | CET calls `void(TEMP_Spawner*, GameInstance*)` | Windows head loads `[rax+0x229ef0]`. The Mac `add #0x229,lsl#12` cluster at `0xcf4bcc` is a different object. Note 15. |
+| gameIGameSystem_UnInitialize | 3313306514 | 0x204d490 | 0x1407eec (body twin) | MAPPED | — | CET calls `void(TEMP_Spawner*)` | win-addr name `spawn::Set::Deinitialize`. Not compared. Note 15. |
+| gameIGameSystem_Spawn | 2509382878 | 0x661538 | 0x14084b0(ABI: x0 spawner, x1 settings, x2 CName, result via x8) | MAPPED | — | CET: `void(spawner, REDSmartPtr* sret, SpawnSettings&, CName)`. sret is arg2. | win-addr name `spawn::Set::SpawnObject`. Not compared. Note 15. |
+| gameIGameSystem_Despawn | 3168866665 | 0x65cefc | 0x140974c (body twin) | MAPPED | — | CET calls `void(TEMP_Spawner*, IScriptable*)` | win-addr name `spawn::Set::DespawnObject`. Not compared. Note 15. |
+| gameIGameSystem_SpawnCallback | 2840271332 | 0x8b57f4 | 0xd13c5c(Codeware's RegisterEntity row) | MAPPED | — | CET calls `void(IScriptable*, ent::Entity*)` | win-addr name `world::RuntimeEntityRegistry::RegisterEntity`. Not compared. Note 15. |
 | CPhotoMode_SetRecordID | 4052428712 | 0x661900 | not found | UNSURE | — | CET calls `void(TweakDBID by value, Handle<IScriptable>&)` | Windows `0x661900`–`0x661963` saves rcx and rdx, calls `0x660258`, `0x660168`, `0x100c10`. Mac twin not identified. Note 15. |
 
 ## Notes
@@ -343,7 +344,7 @@ Windows `Initialize` `0xac7ed4` (through `0xac7f5a`) starts by writing `[rdx+0x7
 
 Windows `SetRecordID` `0x661900`–`0x661963` saves rcx (the TDBID by value) and rdx (the Handle*), calls `0x660258`, asserts through `0x1ecc5e8` if `[rbx]!=0`, calls `0x660168`, calls `0x100c10` (handle assign), and runs two cleanups through `0x102080`.
 
-UnInitialize, Spawn, Despawn, and SpawnCallback were not re-disassembled in the last pass. Do not invent Mac entries for any of the six.
+Update: the first five now have Mac rows, found by the framework gaps survey (2026-10-15) and re-read from both sides (Initialize: [gi+0x78] -> +0xA0, writes this+0x60/+0x58/+0x48/+0x50; UnInitialize: lock byte +0x42, the 0x28 byte pending entries at +0x20, zeroes +0x50/+0x48/+0x60; Spawn: checks [this+0x50] and the path, copies the settings, allocates the 0x110 byte pending entity and stores the entity ID at +0xF0; Despawn: lock +0x41, array +0x10, listeners +0x30, then Entity_Dispose 0xC999E0; RegisterEntity: lock +0x43, map +0x48). `CPhotoMode_SetRecordID` is still not found. 
 
 ## DB and SDK
 
