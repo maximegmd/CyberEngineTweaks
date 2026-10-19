@@ -1,4 +1,4 @@
-set_xmakever("2.7.2")
+set_xmakever("3")
 
 set_languages("cxx20")
 set_arch("x64")
