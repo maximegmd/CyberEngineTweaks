@@ -1,4 +1,4 @@
-set_xmakever("2.7.2")
+set_xmakever("3.1")
 
 set_languages("cxx20")
 set_arch("x64")
@@ -44,6 +44,7 @@ add_requires("xbyak")
 add_requires("stb")
 add_requires("sol2", { configs = { includes_lua = false } })
 add_requires("openrestry-luajit", { configs = { gc64 = true } })
+add_requireconfs("tiltedcore.mimalloc", {version = "2.2.4", override = true, configs = {rltgenrandom = true}})
 
 local imguiUserConfig = string.gsub(path.absolute("src/imgui_impl/imgui_user_config.h"), "\\", "/")
 add_requires("imgui v1.91.1-docking", { configs = { wchar32 = true, freetype = true, user_config = imguiUserConfig } })
