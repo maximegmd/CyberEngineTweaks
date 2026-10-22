@@ -151,7 +151,7 @@ void RTTIMapper::RegisterDirectTypes(sol::state& aLuaState, sol::table& aLuaGlob
     }
 
     apRtti->types.for_each(
-        [&](RED4ext::CName aTypeName, RED4ext::CBaseRTTIType* apType)
+        [&](RED4ext::CName aTypeName, RED4ext::rtti::IType* apType)
         {
             std::string typeName = aTypeName.ToString();
             SanitizeName(typeName);
@@ -161,7 +161,7 @@ void RTTIMapper::RegisterDirectTypes(sol::state& aLuaState, sol::table& aLuaGlob
 
             switch (apType->GetType())
             {
-            case RED4ext::ERTTIType::Enum:
+            case RED4ext::rtti::ERTTIType::Enum:
             {
                 auto luaEnum = make_object(aLuaState, EnumStatic(m_lua, apType));
 
@@ -170,7 +170,7 @@ void RTTIMapper::RegisterDirectTypes(sol::state& aLuaState, sol::table& aLuaGlob
                 aLuaGlobal[typeName] = luaEnum;
                 break;
             }
-            case RED4ext::ERTTIType::Class:
+            case RED4ext::rtti::ERTTIType::Class:
             {
                 auto luaClass = make_object(aLuaState, ClassStatic(m_lua, apType));
 

@@ -12,15 +12,15 @@ struct Allocator;
 
 namespace Converter
 {
-size_t Size(RED4ext::CBaseRTTIType* apRtti);
+size_t Size(RED4ext::rtti::IType* apRtti);
 sol::object ToLua(RED4ext::CStackType& aResult, TiltedPhoques::Locked<sol::state, std::recursive_mutex>& aLua);
-RED4ext::CStackType ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator);
+RED4ext::CStackType ToRED(sol::object aObject, RED4ext::rtti::IType* apRtti, TiltedPhoques::Allocator* apAllocator);
 } // namespace Converter
 
 // Specialization manages special case implicit casting
 struct CNameConverter : LuaRED<CName, "CName">
 {
-    RED4ext::CStackType ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator)
+    RED4ext::CStackType ToRED(sol::object aObject, RED4ext::rtti::IType* apRtti, TiltedPhoques::Allocator* apAllocator)
     {
         RED4ext::CStackType result;
         if (aObject != sol::nil && aObject.get_type() == sol::type::string) // CName from String implicit cast
@@ -42,7 +42,7 @@ struct CNameConverter : LuaRED<CName, "CName">
 // Specialization manages special case implicit casting for TweakDBID
 struct TweakDBIDConverter : LuaRED<TweakDBID, "TweakDBID">
 {
-    RED4ext::CStackType ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator)
+    RED4ext::CStackType ToRED(sol::object aObject, RED4ext::rtti::IType* apRtti, TiltedPhoques::Allocator* apAllocator)
     {
         RED4ext::CStackType result;
         if (aObject != sol::nil && aObject.get_type() == sol::type::string)
@@ -64,7 +64,7 @@ struct EnumConverter : LuaRED<Enum, "Enum">
 {
     sol::object ToLua(RED4ext::CStackType& aResult, TiltedPhoques::Locked<sol::state, std::recursive_mutex>& aLua) { return make_object(aLua.Get(), Enum(aResult)); }
 
-    RED4ext::CStackType ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator)
+    RED4ext::CStackType ToRED(sol::object aObject, RED4ext::rtti::IType* apRtti, TiltedPhoques::Allocator* apAllocator)
     {
         RED4ext::CStackType result;
         if (aObject.is<Enum>())
@@ -112,9 +112,9 @@ struct EnumConverter : LuaRED<Enum, "Enum">
 
     size_t Size() const noexcept { return m_pRtti ? m_pRtti->GetSize() : 0; }
 
-    bool Is(RED4ext::CBaseRTTIType* apRtti) const
+    bool Is(RED4ext::rtti::IType* apRtti) const
     {
-        if (apRtti->GetType() == RED4ext::ERTTIType::Enum)
+        if (apRtti->GetType() == RED4ext::rtti::ERTTIType::Enum)
         {
             m_pRtti = apRtti;
             return true;
@@ -144,7 +144,7 @@ struct BitFieldConverter : LuaRED<uint64_t, "BitField">
         return res.get<sol::object>();
     }
 
-    RED4ext::CStackType ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator)
+    RED4ext::CStackType ToRED(sol::object aObject, RED4ext::rtti::IType* apRtti, TiltedPhoques::Allocator* apAllocator)
     {
         RED4ext::CStackType result;
         result.type = apRtti;
@@ -176,9 +176,9 @@ struct BitFieldConverter : LuaRED<uint64_t, "BitField">
 
     size_t Size() const noexcept { return m_pRtti ? m_pRtti->GetSize() : 0; }
 
-    bool Is(RED4ext::CBaseRTTIType* apRtti) const
+    bool Is(RED4ext::rtti::IType* apRtti) const
     {
-        if (apRtti->GetType() == RED4ext::ERTTIType::BitField)
+        if (apRtti->GetType() == RED4ext::rtti::ERTTIType::BitField)
         {
             m_pRtti = apRtti;
             return true;
@@ -196,7 +196,7 @@ struct ClassConverter : LuaRED<ClassReference, "ClassReference">
         return make_object(aLua.Get(), ClassReference(aLua, aResult.type, aResult.value));
     }
 
-    RED4ext::CStackType ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRtti, TiltedPhoques::Allocator* apAllocator)
+    RED4ext::CStackType ToRED(sol::object aObject, RED4ext::rtti::IType* apRtti, TiltedPhoques::Allocator* apAllocator)
     {
         RED4ext::CStackType result;
         result.type = apRtti;
@@ -235,9 +235,9 @@ struct ClassConverter : LuaRED<ClassReference, "ClassReference">
 
     size_t Size() const noexcept { return m_pRtti ? m_pRtti->GetSize() : 0; }
 
-    bool Is(RED4ext::CBaseRTTIType* apRtti) const
+    bool Is(RED4ext::rtti::IType* apRtti) const
     {
-        if (apRtti->GetType() == RED4ext::ERTTIType::Class)
+        if (apRtti->GetType() == RED4ext::rtti::ERTTIType::Class)
         {
             m_pRtti = apRtti;
             return true;
@@ -255,7 +255,7 @@ struct RawConverter : LuaRED<UnknownType, "UnknownType">
         return make_object(aLua.Get(), UnknownType(aLua, aResult.type, aResult.value));
     }
 
-    RED4ext::CStackType ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRtti, TiltedPhoques::Allocator*)
+    RED4ext::CStackType ToRED(sol::object aObject, RED4ext::rtti::IType* apRtti, TiltedPhoques::Allocator*)
     {
         RED4ext::CStackType result;
         result.type = apRtti;
@@ -273,7 +273,7 @@ struct RawConverter : LuaRED<UnknownType, "UnknownType">
 
     size_t Size() const noexcept { return m_pRtti ? m_pRtti->GetSize() : 0; }
 
-    bool Is(RED4ext::CBaseRTTIType* apRtti) const
+    bool Is(RED4ext::rtti::IType* apRtti) const
     {
         m_pRtti = apRtti;
         return true;

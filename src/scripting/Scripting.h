@@ -41,12 +41,12 @@ struct Scripting
     LockedState GetLockedState() const noexcept;
     const std::filesystem::path& GameRoot() const { return m_paths.GameRoot(); }
 
-    static size_t Size(RED4ext::CBaseRTTIType* apRttiType);
+    static size_t Size(RED4ext::rtti::IType* apRttiType);
     static sol::object ToLua(LockedState& aState, RED4ext::CStackType& aResult);
-    static RED4ext::CStackType ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRttiType, TiltedPhoques::Allocator* apAllocator);
+    static RED4ext::CStackType ToRED(sol::object aObject, RED4ext::rtti::IType* apRttiType, TiltedPhoques::Allocator* apAllocator);
     static void ToRED(sol::object aObject, RED4ext::CStackType& apType);
     static void DestructRED(const RED4ext::CStackType& aStackType, bool aOwned);
-    static bool IsConvertedByCopying(RED4ext::CBaseRTTIType* aType);
+    static bool IsConvertedByCopying(RED4ext::rtti::IType* aType);
 
 protected:
     void RegisterOverrides();

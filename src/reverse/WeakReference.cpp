@@ -45,7 +45,7 @@ WeakReference::~WeakReference()
     }
 }
 
-RED4ext::ScriptInstance WeakReference::GetHandle() const
+void* WeakReference::GetHandle() const
 {
     const auto ref = m_weakHandle.Lock();
     if (ref)
@@ -56,12 +56,12 @@ RED4ext::ScriptInstance WeakReference::GetHandle() const
     return nullptr;
 }
 
-RED4ext::ScriptInstance WeakReference::GetValuePtr() const
+void* WeakReference::GetValuePtr() const
 {
     return const_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(&m_weakHandle);
 }
 
-RED4ext::CBaseRTTIType* WeakReference::GetValueType() const
+RED4ext::rtti::IType* WeakReference::GetValueType() const
 {
     return m_pHandleType;
 }

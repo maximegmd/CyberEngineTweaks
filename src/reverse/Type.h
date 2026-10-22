@@ -12,13 +12,13 @@ struct Type
         std::string ToString() const;
     };
 
-    Type(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::CBaseRTTIType* apClass);
+    Type(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::rtti::IType* apClass);
     virtual ~Type() = default;
 
-    RED4ext::CBaseRTTIType* GetType() const { return m_pType; }
-    virtual RED4ext::ScriptInstance GetHandle() const { return nullptr; }
-    virtual RED4ext::CBaseRTTIType* GetValueType() const { return m_pType; }
-    virtual RED4ext::ScriptInstance GetValuePtr() const { return nullptr; }
+    RED4ext::rtti::IType* GetType() const { return m_pType; }
+    virtual void* GetHandle() const { return nullptr; }
+    virtual RED4ext::rtti::IType* GetValueType() const { return m_pType; }
+    virtual void* GetValuePtr() const { return nullptr; }
 
     sol::object Index(const std::string& acName, sol::this_environment aThisEnv);
     sol::object NewIndex(const std::string& acName, sol::optional<sol::object> aParam);
@@ -33,7 +33,7 @@ struct Type
     std::string FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithHashes) const;
 
 protected:
-    RED4ext::CBaseRTTIType* m_pType{nullptr};
+    RED4ext::rtti::IType* m_pType{nullptr};
 
     friend struct Scripting;
 
@@ -44,7 +44,7 @@ protected:
 
 struct ClassType : Type
 {
-    ClassType(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::CBaseRTTIType* apClass);
+    ClassType(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::rtti::IType* apClass);
     ~ClassType() override = default;
 
     Descriptor Dump(bool aWithHashes) const override;
@@ -56,12 +56,12 @@ struct ClassType : Type
 
 struct UnknownType : Type
 {
-    UnknownType(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::CBaseRTTIType* apType, RED4ext::ScriptInstance apInstance);
+    UnknownType(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::rtti::IType* apType, void* apInstance);
     UnknownType(UnknownType&& aOther) noexcept;
     ~UnknownType() override;
 
     Descriptor Dump(bool aWithHashes) const override;
-    RED4ext::ScriptInstance GetHandle() const override;
+    void* GetHandle() const override;
 
 private:
     void* m_pInstance;

@@ -22,7 +22,7 @@ template <class T, FixedString REDName> struct LuaRED
         }
     }
 
-    RED4ext::CStackType ToRED(sol::object aObject, RED4ext::CBaseRTTIType*, TiltedPhoques::Allocator* apAllocator)
+    RED4ext::CStackType ToRED(sol::object aObject, RED4ext::rtti::IType*, TiltedPhoques::Allocator* apAllocator)
     {
         RED4ext::CStackType result;
         result.type = m_pRtti;
@@ -79,7 +79,7 @@ template <class T, FixedString REDName> struct LuaRED
 
     size_t Size() const noexcept { return sizeof(T); }
 
-    bool Is(RED4ext::CBaseRTTIType* apRtti) const
+    bool Is(RED4ext::rtti::IType* apRtti) const
     {
         if (!Resolve())
             return false;
@@ -99,5 +99,5 @@ protected:
         return m_pRtti != nullptr;
     }
 
-    mutable RED4ext::CBaseRTTIType* m_pRtti{nullptr};
+    mutable RED4ext::rtti::IType* m_pRtti{nullptr};
 };

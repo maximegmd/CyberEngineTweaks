@@ -4,7 +4,8 @@
 
 #include "Image.h"
 
-#include "RED4ext/Api/FileVer.hpp"
+#include "RED4ext/Api/v1/FileVer.hpp"
+#include "RED4ext/Api/v1/SemVer.hpp"
 
 
 struct PdbInfo
@@ -98,7 +99,7 @@ void Image::Initialize()
             uint16_t build = (fileInfo->dwFileVersionLS >> 16) & 0xFFFF;
             uint16_t revision = fileInfo->dwFileVersionLS & 0xFFFF;
 
-            FileVersion = RED4EXT_FILEVER(major, minor, build, revision);
+            FileVersion = RED4EXT_V1_FILEVER(major, minor, build, revision);
         }
 
         {
@@ -106,7 +107,7 @@ void Image::Initialize()
             uint16_t minor = fileInfo->dwProductVersionMS & 0xFFFF;
             uint32_t patch = (fileInfo->dwProductVersionLS >> 16) & 0xFFFF;
 
-            SemVersion = RED4EXT_SEMVER(major, minor, patch);
+            SemVersion = RED4EXT_V1_SEMVER(major, minor, patch);
         }
     }
 }

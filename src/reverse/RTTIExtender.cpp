@@ -364,12 +364,12 @@ void WorldFunctionalTests_SpawnEntity(RED4ext::IScriptable*, RED4ext::CStackFram
     auto* pGameInstance = RED4ext::CGameEngine::Get()->framework->gameInstance;
     auto* pFunctionalType = pRTTI->GetType("FunctionalTestsGameSystem");
     auto* pFunctionalSystem = reinterpret_cast<FunctionalTestsGameSystem*>(pGameInstance->GetSystem(pFunctionalType));
-    uint32_t oldSize = pFunctionalSystem->spawner.pendingEntities.size;
+    uint32_t oldSize = pFunctionalSystem->spawner.pendingEntities.Size();
 
     ExecuteFunction("WorldFunctionalTests", "Internal_SpawnEntity", nullptr, entityPath, worldTransform, unknown);
 
     // if any entity was spawned
-    uint32_t newSize = pFunctionalSystem->spawner.pendingEntities.size;
+    uint32_t newSize = pFunctionalSystem->spawner.pendingEntities.Size();
     if (oldSize != newSize)
     {
         auto& pending = pFunctionalSystem->spawner.pendingEntities[newSize - 1];
@@ -589,7 +589,7 @@ void RTTIExtender::AddFunctionalTests()
     if (pClass != nullptr)
     {
         auto* pFunction = pClass->GetFunction("SpawnEntity");
-        if (pFunction != nullptr && pFunction->params.size == 0)
+        if (pFunction != nullptr && pFunction->params.Size() == 0)
         {
             RED4ext::CNamePool::Add("Internal_SpawnEntity");
             pFunction->fullName = pFunction->shortName = "Internal_SpawnEntity";
@@ -608,7 +608,7 @@ void RTTIExtender::AddFunctionalTests()
         }
 
         pFunction = pClass->GetFunction("DespawnEntity");
-        if (pFunction != nullptr && pFunction->params.size == 0)
+        if (pFunction != nullptr && pFunction->params.Size() == 0)
         {
             RED4ext::CNamePool::Add("Internal_DespawnEntity");
             pFunction->fullName = pFunction->shortName = "Internal_DespawnEntity";

@@ -52,7 +52,7 @@ constexpr uint32_t CScript_LogChannel = 1663049434UL;            // <UNKNOWN_SYM
 constexpr uint32_t CScript_LogChannelWarning = 2841780134UL;     // <UNKNOWN_SYMBOL>
 constexpr uint32_t CScript_TDBIDConstructorDerive = 326438016UL; // <UNKNOWN_SYMBOL>
 constexpr uint32_t CScript_TranslateBytecode = 3442875632UL;     // CScriptDataBinder::LoadOpcodes
-constexpr uint32_t CScript_TweakDBLoad = 3602585178UL;           // game::data::TweakDB::LoadOptimized
+constexpr uint32_t CScript_TweakDBLoad = 63182599UL;             // game::data::TweakDB::LoadOptimized
 #pragma endregion
 
 #pragma region CShutdownState

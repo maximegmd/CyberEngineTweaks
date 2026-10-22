@@ -332,9 +332,9 @@ uint64_t LuaVM::HookPlayerSpawned(uint64_t a1, uint64_t a2, uint64_t a3, uint64_
     return ret;
 }
 
-uint64_t LuaVM::HookTweakDBLoad(uintptr_t aThis, uintptr_t aParam)
+uint64_t LuaVM::HookTweakDBLoad(uintptr_t aThis, bool aUnk, uintptr_t aPath)
 {
-    const auto ret = s_vm->m_realTweakDBLoad(aThis, aParam);
+    const auto ret = s_vm->m_realTweakDBLoad(aThis, aUnk, aPath);
 
     // Disable changes tracking added to TweakDB in patch 2.0 and causing instability.
     RED4ext::TweakDB::Get()->unk160 = 0;

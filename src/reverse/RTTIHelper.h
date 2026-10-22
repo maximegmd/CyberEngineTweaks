@@ -22,13 +22,13 @@ struct RTTIHelper
         RED4ext::CBaseFunction* apFunc, RED4ext::IScriptable* apContext, sol::variadic_args aLuaArgs, uint64_t aLuaArgOffset, std::string& aErrorMessage,
         bool aAllowNull = false) const;
 
-    RED4ext::ScriptInstance NewInstance(RED4ext::CBaseRTTIType* apType, sol::optional<sol::table> aProps, TiltedPhoques::Allocator* apAllocator) const;
-    sol::object NewInstance(RED4ext::CBaseRTTIType* apType, sol::optional<sol::table> aProps) const;
-    sol::object NewHandle(RED4ext::CBaseRTTIType* apType, sol::optional<sol::table> aProps) const;
+    void* NewInstance(RED4ext::rtti::IType* apType, sol::optional<sol::table> aProps, TiltedPhoques::Allocator* apAllocator) const;
+    sol::object NewInstance(RED4ext::rtti::IType* apType, sol::optional<sol::table> aProps) const;
+    sol::object NewHandle(RED4ext::rtti::IType* apType, sol::optional<sol::table> aProps) const;
 
-    sol::object GetProperty(RED4ext::CClass* apClass, RED4ext::ScriptInstance apHandle, const std::string& acPropName, bool& aSuccess) const;
-    void SetProperty(RED4ext::CClass* apClass, RED4ext::ScriptInstance apHandle, const std::string& acPropName, sol::object aPropValue, bool& aSuccess) const;
-    void SetProperties(RED4ext::CClass* apClass, RED4ext::ScriptInstance apHandle, sol::optional<sol::table> aProps) const;
+    sol::object GetProperty(RED4ext::CClass* apClass, void* apHandle, const std::string& acPropName, bool& aSuccess) const;
+    void SetProperty(RED4ext::CClass* apClass, void* apHandle, const std::string& acPropName, sol::object aPropValue, bool& aSuccess) const;
+    void SetProperties(RED4ext::CClass* apClass, void* apHandle, sol::optional<sol::table> aProps) const;
 
     RED4ext::CBaseFunction* FindFunction(const uint64_t acFullNameHash) const;
     RED4ext::CBaseFunction* FindFunction(RED4ext::CClass* apClass, const uint64_t acFullNameHash) const;
@@ -55,7 +55,7 @@ private:
     sol::function MakeInvokableFunction(RED4ext::CBaseFunction* apFunc);
     sol::function MakeInvokableOverload(std::map<uint64_t, RED4ext::CBaseFunction*> aOverloadedFuncs) const;
 
-    RED4ext::ScriptInstance NewPlaceholder(RED4ext::CBaseRTTIType* apType, TiltedPhoques::Allocator* apAllocator) const;
+    void* NewPlaceholder(RED4ext::rtti::IType* apType, TiltedPhoques::Allocator* apAllocator) const;
 
     bool ExecuteFunction(RED4ext::CBaseFunction* apFunc, RED4ext::IScriptable* apContext, TiltedPhoques::Vector<RED4ext::CStackType>& aArgs, RED4ext::CStackType& aResult) const;
 
