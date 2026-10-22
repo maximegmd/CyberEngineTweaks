@@ -29,7 +29,7 @@ std::string Type::Descriptor::ToString() const
     return result;
 }
 
-Type::Type(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::CBaseRTTIType* apClass)
+Type::Type(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::rtti::IType* apClass)
     : m_pType(apClass)
     , m_lua(aView)
 {
@@ -89,7 +89,7 @@ std::string Type::FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithH
 
     ret << funcName2 << "(";
 
-    for (auto i = 0u; i < apFunc->params.size; ++i)
+    for (auto i = 0u; i < apFunc->params.Size(); ++i)
     {
         const auto* param = apFunc->params[i];
 
@@ -125,7 +125,7 @@ std::string Type::FunctionDescriptor(RED4ext::CBaseFunction* apFunc, bool aWithH
 
     if (hasOutParams)
     {
-        for (auto i = 0u; i < apFunc->params.size; ++i)
+        for (auto i = 0u; i < apFunc->params.Size(); ++i)
         {
             const auto* param = apFunc->params[i];
 
@@ -189,7 +189,7 @@ std::string Type::GameDump() const
     return str.c_str();
 }
 
-ClassType::ClassType(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::CBaseRTTIType* apClass)
+ClassType::ClassType(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::rtti::IType* apClass)
     : Type(aView, apClass)
 {
 }
@@ -202,17 +202,17 @@ Type::Descriptor ClassType::Dump(bool aWithHashes) const
     while (type)
     {
         std::string name = type->name.ToString();
-        for (auto i = 0u; i < type->funcs.size; ++i)
+        for (auto i = 0u; i < type->funcs.Size(); ++i)
         {
             descriptor.functions.emplace_back(FunctionDescriptor(type->funcs[i], aWithHashes));
         }
 
-        for (auto i = 0u; i < type->staticFuncs.size; ++i)
+        for (auto i = 0u; i < type->staticFuncs.Size(); ++i)
         {
             descriptor.staticFunctions.emplace_back(FunctionDescriptor(type->staticFuncs[i], aWithHashes));
         }
 
-        for (auto i = 0u; i < type->props.size; ++i)
+        for (auto i = 0u; i < type->props.Size(); ++i)
         {
             const auto* cpProperty = type->props[i];
             const auto cName = cpProperty->type->GetName();
@@ -220,7 +220,7 @@ Type::Descriptor ClassType::Dump(bool aWithHashes) const
             descriptor.properties.emplace_back(fmt::format("{}: {}", cpProperty->name.ToString(), cName.ToString()));
         }
 
-        type = type->parent && type->parent->GetType() == RED4ext::ERTTIType::Class ? type->parent : nullptr;
+        type = type->parent && type->parent->GetType() == RED4ext::rtti::ERTTIType::Class ? type->parent : nullptr;
     }
 
     return descriptor;
@@ -278,7 +278,7 @@ sol::object ClassType::NewIndex_Impl(const std::string& acName, sol::object aPar
     return Type::NewIndex_Impl(acName, aParam);
 }
 
-UnknownType::UnknownType(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::CBaseRTTIType* apType, RED4ext::ScriptInstance apInstance)
+UnknownType::UnknownType(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::rtti::IType* apType, void* apInstance)
     : Type(aView, apType)
 {
     m_pInstance = m_pType->GetAllocator()->AllocAligned(m_pType->GetSize(), m_pType->GetAlignment()).memory;
@@ -302,7 +302,7 @@ UnknownType::~UnknownType()
     }
 }
 
-RED4ext::ScriptInstance UnknownType::GetHandle() const
+void* UnknownType::GetHandle() const
 {
     return m_pInstance;
 }

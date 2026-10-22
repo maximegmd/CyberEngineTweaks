@@ -227,12 +227,12 @@ void TweakDBEditor::RefreshRecords()
     m_cachedRecords.reserve(pTDB->recordsByType.size);
 
     pTDB->recordsByType.for_each(
-        [this](const RED4ext::CBaseRTTIType* acpRTTIType, const RED4ext::DynArray<RED4ext::Handle<RED4ext::IScriptable>>& aRecords)
+        [this](const RED4ext::rtti::IType* acpRTTIType, const RED4ext::DynArray<RED4ext::Handle<RED4ext::IScriptable>>& aRecords)
         {
             const auto typeName = acpRTTIType->GetName();
             auto& groupRecords = m_cachedRecords.emplace_back(typeName).m_records;
 
-            groupRecords.reserve(groupRecords.size() + aRecords.size);
+            groupRecords.reserve(groupRecords.size() + aRecords.Size());
             for (auto& handle : aRecords)
             {
                 const auto* record = reinterpret_cast<RED4ext::gamedataTweakDBRecord*>(handle.GetPtr());
@@ -603,7 +603,7 @@ bool TweakDBEditor::DrawFlat(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aSta
     static auto* pFloatType = pRTTI->GetType("Float");
     static auto* pInt32Type = pRTTI->GetType("Int32");
 
-    if (aStackType.type->GetType() == RED4ext::ERTTIType::Array)
+    if (aStackType.type->GetType() == RED4ext::rtti::ERTTIType::Array)
         return DrawFlatArray(aDBID, aStackType, aReadOnly);
     if (aStackType.type == pTweakDBIDType)
         return DrawFlatTweakDBID(aDBID, aStackType, aReadOnly);
@@ -640,7 +640,7 @@ bool TweakDBEditor::DrawFlat(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aSta
 // Needs a refactor
 bool TweakDBEditor::DrawFlatArray(RED4ext::TweakDBID aDBID, RED4ext::CStackType& aStackType, bool aReadOnly, bool aCollapsable)
 {
-    static TiltedPhoques::Map<uint64_t, RED4ext::ScriptInstance> editedArrays;
+    static TiltedPhoques::Map<uint64_t, void*> editedArrays;
 
     auto* pArrayType = reinterpret_cast<RED4ext::CRTTIArrayType*>(aStackType.type);
     auto* pArrayInnerType = pArrayType->GetInnerType();
@@ -650,7 +650,7 @@ bool TweakDBEditor::DrawFlatArray(RED4ext::TweakDBID aDBID, RED4ext::CStackType&
     const bool isCachable = !aReadOnly && aDBID.IsValid();
     bool isCached = false; // if it's currently in 'editedArrays'
 
-    RED4ext::ScriptInstance arrayInstance = aStackType.value;
+    void* arrayInstance = aStackType.value;
     if (isCachable)
     {
         const auto it = editedArrays.find(aDBID.value & 0xFFFFFFFFFF);

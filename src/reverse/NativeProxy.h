@@ -12,15 +12,15 @@ struct NativeProxyType : RED4ext::CClass
 
     RED4ext::Handle<RED4ext::IScriptable> CreateHandle();
 
-    const bool IsEqual(const RED4ext::ScriptInstance aLhs, const RED4ext::ScriptInstance aRhs, uint32_t a3) final; // 48
-    void Assign(RED4ext::ScriptInstance aLhs, const RED4ext::ScriptInstance aRhs) const final; // 50
-    void ConstructCls(RED4ext::ScriptInstance aMemory) const final; // D8
-    void DestructCls(RED4ext::ScriptInstance aMemory) const final; // E0
+    const bool IsEqual(const void* aLhs, const void* aRhs, uint32_t a3) final; // 48
+    void Assign(void* aLhs, const void* aRhs) const final; // 50
+    void ConstructCls(void* aMemory) const final; // D8
+    void DestructCls(void* aMemory) const final; // E0
     void* AllocMemory() const final; // E8
 
     static NativeProxyType* ResolveProxy(const std::string& aName);
     static RED4ext::CName AddSignature(NativeProxyType* apProxy, const std::string& aName, const sol::table& aArgs);
-    static std::string FormatTypeName(RED4ext::CRTTISystem* apRtti, RED4ext::CBaseRTTIType* apType);
+    static std::string FormatTypeName(RED4ext::CRTTISystem* apRtti, RED4ext::rtti::IType* apType);
 };
 
 struct NativeProxy

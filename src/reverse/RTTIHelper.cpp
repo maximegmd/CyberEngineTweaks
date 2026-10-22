@@ -216,16 +216,16 @@ RED4ext::CBaseFunction* RTTIHelper::FindFunction(RED4ext::CClass* apClass, const
                 return extendedFuncs.at(acFullNameHash);
         }
 
-        for (uint32_t i = 0; i < apClass->funcs.size; ++i)
+        for (uint32_t i = 0; i < apClass->funcs.Size(); ++i)
         {
-            if (apClass->funcs.entries[i]->fullName.hash == acFullNameHash)
-                return apClass->funcs.entries[i];
+            if (apClass->funcs[i]->fullName.hash == acFullNameHash)
+                return apClass->funcs[i];
         }
 
-        for (uint32_t i = 0; i < apClass->staticFuncs.size; ++i)
+        for (uint32_t i = 0; i < apClass->staticFuncs.Size(); ++i)
         {
-            if (apClass->staticFuncs.entries[i]->fullName.hash == acFullNameHash)
-                return apClass->staticFuncs.entries[i];
+            if (apClass->staticFuncs[i]->fullName.hash == acFullNameHash)
+                return apClass->staticFuncs[i];
         }
 
         apClass = apClass->parent;
@@ -269,18 +269,18 @@ std::map<uint64_t, RED4ext::CBaseFunction*> RTTIHelper::FindFunctions(RED4ext::C
     {
         if (aIsMember)
         {
-            for (uint32_t i = 0; i < apClass->funcs.size; ++i)
+            for (uint32_t i = 0; i < apClass->funcs.Size(); ++i)
             {
-                if (apClass->funcs.entries[i]->shortName.hash == acShortNameHash)
-                    results.emplace(apClass->funcs.entries[i]->fullName.hash, apClass->funcs.entries[i]);
+                if (apClass->funcs[i]->shortName.hash == acShortNameHash)
+                    results.emplace(apClass->funcs[i]->fullName.hash, apClass->funcs[i]);
             }
         }
         else
         {
-            for (uint32_t i = 0; i < apClass->staticFuncs.size; ++i)
+            for (uint32_t i = 0; i < apClass->staticFuncs.Size(); ++i)
             {
-                if (apClass->staticFuncs.entries[i]->shortName.hash == acShortNameHash)
-                    results.emplace(apClass->staticFuncs.entries[i]->fullName.hash, apClass->staticFuncs.entries[i]);
+                if (apClass->staticFuncs[i]->shortName.hash == acShortNameHash)
+                    results.emplace(apClass->staticFuncs[i]->fullName.hash, apClass->staticFuncs[i]);
             }
 
             if (m_extendedFunctions.contains(apClass->name.hash))
@@ -591,7 +591,7 @@ sol::variadic_results RTTIHelper::ExecuteFunction(
     auto minArgs = 0u;
     auto maxArgs = 0u;
 
-    for (auto i = 0u; i < apFunc->params.size; ++i)
+    for (auto i = 0u; i < apFunc->params.Size(); ++i)
     {
         const auto cpParam = apFunc->params[i];
 
@@ -628,9 +628,9 @@ sol::variadic_results RTTIHelper::ExecuteFunction(
 
     auto pAllocator = TiltedPhoques::Allocator::Get();
     TiltedPhoques::Allocator::Set(&s_scratchMemory);
-    TiltedPhoques::Vector<RED4ext::CStackType> callArgs(apFunc->params.size);
-    TiltedPhoques::Vector<uint32_t> callArgToParam(apFunc->params.size);
-    TiltedPhoques::Vector<bool> ownedArgs(apFunc->params.size, false);
+    TiltedPhoques::Vector<RED4ext::CStackType> callArgs(apFunc->params.Size());
+    TiltedPhoques::Vector<uint32_t> callArgToParam(apFunc->params.Size());
+    TiltedPhoques::Vector<bool> ownedArgs(apFunc->params.Size(), false);
     TiltedPhoques::Allocator::Set(pAllocator);
 
     RED4ext::CStackType result;
@@ -650,7 +650,7 @@ sol::variadic_results RTTIHelper::ExecuteFunction(
             }
         });
 
-    for (auto i = 0u; i < apFunc->params.size; ++i)
+    for (auto i = 0u; i < apFunc->params.Size(); ++i)
     {
         const auto cpParam = apFunc->params[i];
 
@@ -776,7 +776,7 @@ bool RTTIHelper::ExecuteFunction(
     char code[MaxCodeSize];
     RED4ext::CStackFrame frame(nullptr, code);
 
-    for (uint32_t i = 0; i < apFunc->params.size; ++i)
+    for (uint32_t i = 0; i < apFunc->params.Size(); ++i)
     {
         const auto& param = apFunc->params[i];
         const auto& arg = aArgs[i];
@@ -811,7 +811,7 @@ bool RTTIHelper::ExecuteFunction(
     return CallScriptFunction(apFunc, apContext ? apContext : s_dummyContext, &frame, aResult.value, aResult.type);
 }
 
-RED4ext::ScriptInstance RTTIHelper::NewPlaceholder(RED4ext::CBaseRTTIType* apType, TiltedPhoques::Allocator* apAllocator) const
+void* RTTIHelper::NewPlaceholder(RED4ext::rtti::IType* apType, TiltedPhoques::Allocator* apAllocator) const
 {
     auto* pMemory = apAllocator->Allocate(apType->GetSize());
     memset(pMemory, 0, apType->GetSize());
@@ -820,22 +820,22 @@ RED4ext::ScriptInstance RTTIHelper::NewPlaceholder(RED4ext::CBaseRTTIType* apTyp
     return pMemory;
 }
 
-RED4ext::ScriptInstance RTTIHelper::NewInstance(RED4ext::CBaseRTTIType* apType, sol::optional<sol::table> aProps, TiltedPhoques::Allocator* apAllocator) const
+void* RTTIHelper::NewInstance(RED4ext::rtti::IType* apType, sol::optional<sol::table> aProps, TiltedPhoques::Allocator* apAllocator) const
 {
     if (!m_pRtti)
         return nullptr;
 
     RED4ext::CClass* pClass = nullptr;
 
-    if (apType->GetType() == RED4ext::ERTTIType::Class)
+    if (apType->GetType() == RED4ext::rtti::ERTTIType::Class)
     {
         pClass = reinterpret_cast<RED4ext::CClass*>(apType);
     }
-    else if (apType->GetType() == RED4ext::ERTTIType::Handle)
+    else if (apType->GetType() == RED4ext::rtti::ERTTIType::Handle)
     {
         auto* pInnerType = reinterpret_cast<RED4ext::CRTTIHandleType*>(apType)->GetInnerType();
 
-        if (pInnerType->GetType() == RED4ext::ERTTIType::Class)
+        if (pInnerType->GetType() == RED4ext::rtti::ERTTIType::Class)
             pClass = reinterpret_cast<RED4ext::CClass*>(pInnerType);
     }
 
@@ -849,10 +849,10 @@ RED4ext::ScriptInstance RTTIHelper::NewInstance(RED4ext::CBaseRTTIType* apType, 
     if (aProps.has_value())
         SetProperties(pClass, pInstance, aProps.value());
 
-    return (apType->GetType() == RED4ext::ERTTIType::Handle) ? apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>(static_cast<RED4ext::IScriptable*>(pInstance)) : pInstance;
+    return (apType->GetType() == RED4ext::rtti::ERTTIType::Handle) ? apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>(static_cast<RED4ext::IScriptable*>(pInstance)) : pInstance;
 }
 
-sol::object RTTIHelper::NewInstance(RED4ext::CBaseRTTIType* apType, sol::optional<sol::table> aProps) const
+sol::object RTTIHelper::NewInstance(RED4ext::rtti::IType* apType, sol::optional<sol::table> aProps) const
 {
     if (!m_pRtti)
         return sol::nil;
@@ -878,7 +878,7 @@ sol::object RTTIHelper::NewInstance(RED4ext::CBaseRTTIType* apType, sol::optiona
 }
 
 // Create new instance and wrap it in Handle<> if possible
-sol::object RTTIHelper::NewHandle(RED4ext::CBaseRTTIType* apType, sol::optional<sol::table> aProps) const
+sol::object RTTIHelper::NewHandle(RED4ext::rtti::IType* apType, sol::optional<sol::table> aProps) const
 {
     // This method should be preferred over NewInstance() for creating objects in Lua userland.
     // The behavior is similar to what can be seen in scripts, where variables of IScriptable
@@ -894,7 +894,7 @@ sol::object RTTIHelper::NewHandle(RED4ext::CBaseRTTIType* apType, sol::optional<
     result.value = NewInstance(apType, sol::nullopt, &allocator);
 
     // Wrap ISerializable descendants in Handle
-    if (apType->GetType() == RED4ext::ERTTIType::Class)
+    if (apType->GetType() == RED4ext::rtti::ERTTIType::Class)
     {
         static auto* s_pHandleType = m_pRtti->GetType(RED4ext::FNV1a64("handle:Activator"));
         static auto* s_pISerializableType = m_pRtti->GetType(RED4ext::FNV1a64("ISerializable"));
@@ -927,7 +927,7 @@ sol::object RTTIHelper::NewHandle(RED4ext::CBaseRTTIType* apType, sol::optional<
     return instance;
 }
 
-sol::object RTTIHelper::GetProperty(RED4ext::CClass* apClass, RED4ext::ScriptInstance apHandle, const std::string& acPropName, bool& aSuccess) const
+sol::object RTTIHelper::GetProperty(RED4ext::CClass* apClass, void* apHandle, const std::string& acPropName, bool& aSuccess) const
 {
     aSuccess = false;
 
@@ -946,7 +946,7 @@ sol::object RTTIHelper::GetProperty(RED4ext::CClass* apClass, RED4ext::ScriptIns
     return Scripting::ToLua(lockedState, stackType);
 }
 
-void RTTIHelper::SetProperty(RED4ext::CClass* apClass, RED4ext::ScriptInstance apHandle, const std::string& acPropName, sol::object aPropValue, bool& aSuccess) const
+void RTTIHelper::SetProperty(RED4ext::CClass* apClass, void* apHandle, const std::string& acPropName, sol::object aPropValue, bool& aSuccess) const
 {
     aSuccess = false;
 
@@ -969,14 +969,14 @@ void RTTIHelper::SetProperty(RED4ext::CClass* apClass, RED4ext::ScriptInstance a
 
     if (stackType.value)
     {
-        pProp->SetValue<RED4ext::ScriptInstance>(apHandle, stackType.value);
+        pProp->SetValue<void*>(apHandle, stackType.value);
 
         Scripting::DestructRED(stackType, false);
         aSuccess = true;
     }
 }
 
-void RTTIHelper::SetProperties(RED4ext::CClass* apClass, RED4ext::ScriptInstance apHandle, sol::optional<sol::table> aProps) const
+void RTTIHelper::SetProperties(RED4ext::CClass* apClass, void* apHandle, sol::optional<sol::table> aProps) const
 {
     bool success;
 

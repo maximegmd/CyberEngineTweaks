@@ -193,9 +193,9 @@ static_assert(sizeof(ItemID) == 0x10);
 struct Variant
 {
     Variant() noexcept = default;
-    Variant(const RED4ext::CBaseRTTIType* aType);
-    Variant(const RED4ext::CBaseRTTIType* aType, const RED4ext::ScriptInstance aData);
-    Variant(const RED4ext::CName& aTypeName, const RED4ext::ScriptInstance aData);
+    Variant(const RED4ext::rtti::IType* aType);
+    Variant(const RED4ext::rtti::IType* aType, const void* aData);
+    Variant(const RED4ext::CName& aTypeName, const void* aData);
     Variant(const RED4ext::CStackType& aStack);
     Variant(const Variant& aOther);
     ~Variant();
@@ -203,15 +203,15 @@ struct Variant
     bool IsEmpty() const noexcept;
     bool IsInlined() const noexcept;
 
-    RED4ext::CBaseRTTIType* GetType() const noexcept;
-    RED4ext::ScriptInstance GetDataPtr() const noexcept;
+    RED4ext::rtti::IType* GetType() const noexcept;
+    void* GetDataPtr() const noexcept;
 
-    bool Init(const RED4ext::CBaseRTTIType* aType);
-    bool Fill(const RED4ext::CBaseRTTIType* aType, const RED4ext::ScriptInstance aData);
-    bool Extract(RED4ext::ScriptInstance aBuffer) const;
+    bool Init(const RED4ext::rtti::IType* aType);
+    bool Fill(const RED4ext::rtti::IType* aType, const void* aData);
+    bool Extract(void* aBuffer) const;
     void Free();
 
-    inline static bool CanBeInlined(const RED4ext::CBaseRTTIType* aType) noexcept;
+    inline static bool CanBeInlined(const RED4ext::rtti::IType* aType) noexcept;
 
     enum
     {
@@ -225,11 +225,11 @@ struct Variant
         kTypeMask = ~kInlineFlag,
     };
 
-    const RED4ext::CBaseRTTIType* type{nullptr};
+    const RED4ext::rtti::IType* type{nullptr};
     union
     {
         mutable uint8_t inlined[kInlineSize]{0};
-        RED4ext::ScriptInstance instance;
+        void* instance;
     };
 };
 

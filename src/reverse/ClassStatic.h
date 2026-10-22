@@ -4,7 +4,7 @@
 
 struct ClassStatic : ClassType
 {
-    ClassStatic(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::CBaseRTTIType* apClass);
+    ClassStatic(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::rtti::IType* apClass);
     ~ClassStatic() override;
 
     sol::function GetFactory();

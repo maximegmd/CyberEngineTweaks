@@ -4,13 +4,13 @@
 
 struct ClassReference : ClassType
 {
-    ClassReference(const TiltedPhoques::Locked<sol::state, std::recursive_mutex>& aView, RED4ext::CBaseRTTIType* apClass, RED4ext::ScriptInstance apInstance);
+    ClassReference(const TiltedPhoques::Locked<sol::state, std::recursive_mutex>& aView, RED4ext::rtti::IType* apClass, void* apInstance);
     ClassReference(ClassReference&& aOther) noexcept;
     ~ClassReference() override;
 
-    RED4ext::ScriptInstance GetHandle() const override;
-    RED4ext::ScriptInstance GetValuePtr() const override;
+    void* GetHandle() const override;
+    void* GetValuePtr() const override;
 
 private:
-    RED4ext::ScriptInstance m_pInstance;
+    void* m_pInstance;
 };

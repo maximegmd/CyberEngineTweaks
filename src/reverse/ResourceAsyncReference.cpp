@@ -5,7 +5,7 @@
 #include "Converter.h"
 
 ResourceAsyncReference::ResourceAsyncReference(
-    const TiltedPhoques::Locked<sol::state, std::recursive_mutex>& aView, RED4ext::CBaseRTTIType* apType, RED4ext::ResourceAsyncReference<void>* apReference)
+    const TiltedPhoques::Locked<sol::state, std::recursive_mutex>& aView, RED4ext::rtti::IType* apType, RED4ext::ResourceAsyncReference<void>* apReference)
     : ClassType(aView, reinterpret_cast<RED4ext::CRTTIResourceAsyncReferenceType*>(apType)->innerType)
     , m_reference(*apReference)
 {
@@ -16,12 +16,12 @@ uint64_t ResourceAsyncReference::Hash(const std::string& aPath)
     return RED4ext::ResourcePath(aPath.c_str());
 }
 
-RED4ext::ScriptInstance ResourceAsyncReference::GetHandle() const
+void* ResourceAsyncReference::GetHandle() const
 {
     return nullptr;
 }
 
-RED4ext::ScriptInstance ResourceAsyncReference::GetValuePtr() const
+void* ResourceAsyncReference::GetValuePtr() const
 {
     return GetHandle();
 }
