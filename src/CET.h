@@ -14,6 +14,7 @@ struct CET
 
     static void Initialize();
     static void Shutdown();
+    static void OnProcessTermination() noexcept;
     static CET& Get();
 
     const Paths& GetPaths() const noexcept;

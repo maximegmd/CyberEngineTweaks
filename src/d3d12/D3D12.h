@@ -15,6 +15,9 @@ struct D3D12
     ~D3D12();
 
     void ReloadFonts();
+    // Experimental terminal cleanup before the game's Shutdown tick proceeds.
+    enum class ShutdownOrigin { AfterLuaUnload, RendererFallback };
+    void BeginShutdown(ShutdownOrigin aOrigin);
 
     void SetTrapInputInImGui(const bool acEnabled);
     void DelayedSetTrapInputInImGui(const bool acEnabled);
@@ -56,7 +59,10 @@ private:
     TCRenderGlobal_Resize* m_realInternalResize{nullptr};
     TCRenderGlobal_Shutdown* m_realInternalShutdown{nullptr};
 
-    bool m_initialized{false};
+    std::atomic_bool m_initialized{false};
+    bool m_shutdownStarted{false}; // guarded by m_imguiLock
+    bool m_shutdownCleanupCompleted{false}; // guarded by m_imguiLock
+    Microsoft::WRL::ComPtr<ID3D12Fence> m_shutdownFence{};
 
     TiltedPhoques::Vector<FrameContext> m_frameContexts;
 
@@ -64,7 +70,9 @@ private:
     Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_pd3dRtvDescHeap{};
     Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_pd3dSrvDescHeap{};
 
-    // borrowed resources from game, do not manipulate reference counts on these!
+    // Game-provided interfaces held by ComPtr: raw-pointer assignment acquires
+    // references; ResetState releases them while their provider is still valid.
+    // Do not Detach them or manually add/release another reference here.
     Microsoft::WRL::ComPtr<IDXGISwapChain4> m_pdxgiSwapChain{nullptr};
     Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_pCommandQueue{nullptr};
 
