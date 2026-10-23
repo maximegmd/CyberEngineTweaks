@@ -102,9 +102,9 @@ PoolOps g_pools[] = {
     // ReallocateAligned 0x344E05C, Free 0x344E144.
     {"10PoolScript", kTagScript, {0x4E33A00, 0x4E33B1C, 0x4E33C48, 0x4E33D80, 0x4E33E64}, nullptr, nullptr, nullptr, nullptr, nullptr},
     // R42c (ArchiveXL R22 rows). Exports checked with nm: PoolEngine 0x1F8F8.., PoolRefCount 0x20040.., PoolDefault 0x2263C..
-    {"10PoolEngine", kTagEngine, {0x1F8F8, 0x1FA1C, 0x1FB5C, 0x1FCA8, 0x1FD90}, nullptr, nullptr, nullptr, nullptr, nullptr},
-    {"12PoolRefCount", kTagRefCount, {0x20040, 0x20164, 0x202A4, 0x203F0, 0x204D8}, nullptr, nullptr, nullptr, nullptr, nullptr},
-    {"11PoolDefault", kTagDefault, {0x2263C, 0x22808, 0x229DC, 0x22BC8, 0x22CB0}, nullptr, nullptr, nullptr, nullptr, nullptr},
+    {"10PoolEngine", kTagEngine, {0x1F7D4, 0x1F8F0, 0x1FA1C, 0x1FB54, 0x1FC38}, nullptr, nullptr, nullptr, nullptr, nullptr},
+    {"12PoolRefCount", kTagRefCount, {0x1FEBC, 0x1FFD8, 0x20104, 0x2023C, 0x20320}, nullptr, nullptr, nullptr, nullptr, nullptr},
+    {"11PoolDefault", kTagDefault, {0x222DC, 0x224A4, 0x22674, 0x22848, 0x2292C}, nullptr, nullptr, nullptr, nullptr, nullptr},
 };
 
 const char* kPoolSuffixes[5] = {
