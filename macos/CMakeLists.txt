@@ -152,6 +152,7 @@ set(TILTED_SOURCES
     "${TILTED_DIR}/ViewBuffer.cpp"
 )
 set(CET_MAC_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/HvfStubs.c"
     MacShims.cpp
     MacEntry.cpp
     MacVault.cpp
@@ -201,6 +202,8 @@ target_link_libraries(cyber_engine_tweaks PRIVATE
     "${HOMEBREW_PREFIX}/lib/libfmt.a"
     "${HOMEBREW_PREFIX}/lib/libfreetype.a"
     "${HOMEBREW_PREFIX}/lib/libpng16.a"
+    "${HOMEBREW_PREFIX}/lib/libbrotlidec.a"
+    "${HOMEBREW_PREFIX}/lib/libbrotlicommon.a"
     sqlite3 z bz2
     "-framework Foundation" "-framework AppKit" "-framework QuartzCore" "-framework Metal" "-framework CoreGraphics"
 )
