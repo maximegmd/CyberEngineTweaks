@@ -41,7 +41,7 @@ std::filesystem::path ExePath();
 
 // The GameInstance, from Codeware's codeware_mac_game_instance (null until the game has one, or without Codeware). The SDK path
 // CGameEngine::Get()->framework->gameInstance does not hold on macOS: the engine global is not mapped (Codeware captures the engine in
-// a hook) and the framework sits at engine +0x338, not the SDK's +0x308 (cp2077-codeware/macos/MacEngine.cpp).
+// a hook) and the framework sits at engine +0x338 (2.5: +0x378), not the SDK's +0x308 (2.5: +0x348) (cp2077-codeware/macos/MacEngine.cpp).
 RED4ext::GameInstance* GameInstance();
 
 // Writes a line to stderr (the launcher log) and, once CET's logger exists, to cyber_engine_tweaks.log.

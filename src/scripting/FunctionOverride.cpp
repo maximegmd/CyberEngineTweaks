@@ -42,7 +42,7 @@ size_t GetFunctionSize(RED4ext::CBaseFunction* apFunction)
     // inline size, macos/LAYOUT.md); a native one is a 0xC0-byte CClassFunction. Windows makes every such allocation 0xC0 through the
     // CScript_AllocateFunction hook, which has no single macOS function to hook, so the swap copies only what the object owns.
     if (!apFunction->flags.isNative)
-        return 0xB8;
+        return 0xF8; // 2.5 (2.3.1: 0xB8): CBaseFunction grew by 0x40
 #endif
 
     return sizeof(RED4ext::CClassFunction);
@@ -64,14 +64,14 @@ void* AllocateOverrideThunk(RED4ext::CBaseFunction* apRealFunc)
     return cet_override_thunks + index * s_cThunkSize;
 }
 
-// macOS keeps a native function's handler in a game table, not in the function: CClassFunction stores its index at +0xB8 (regIndex)
-// and returns it from vtable slot +0x20 (ldr w0, [x0, #0xb8]), which the game's native call (0x2172F90) uses for the lookup. A scripted
+// macOS keeps a native function's handler in a game table, not in the function: CClassFunction stores its index at +0xF8 in 2.5 (+0xB8 in 2.3.1) (regIndex)
+// and returns it from vtable slot +0x20 (ldr w0, [x0, #0xf8] in 2.5), which the game's native call (0x2172F90) uses for the lookup. A scripted
 // member function is a 0xB8-byte object (CScriptedFunction), so once it holds the override's CClassFunction that read lands past its
 // end. Such an object gets its own copy of the CClassFunction vtable (6 slots at 0x6FFAC88: allocator, two destructors, GetParent,
 // GetRegIndex, one more) whose slot +0x20 returns the index kept one word past the copied slots.
 constexpr size_t s_cMacFunctionVtableSlots = 6;
 constexpr size_t s_cMacRegIndexSlot = 4;
-constexpr uint32_t s_cMacRegIndexGetterCode[] = {0xB940B800, 0xD65F03C0}; // ldr w0, [x0, #0xb8]; ret
+constexpr uint32_t s_cMacRegIndexGetterCode[] = {0xB940F800, 0xD65F03C0}; // ldr w0, [x0, #0xf8]; ret (2.5: regIndex +0xF8, was +0xB8)
 
 uint32_t MacOverrideRegIndex(RED4ext::CBaseFunction* apThis)
 {
