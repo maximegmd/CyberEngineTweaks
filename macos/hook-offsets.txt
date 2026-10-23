@@ -1,15 +1,15 @@
 # CET macOS hook targets for the RED4ext GUM allowlist (macos/ADDRESS_SURVEY.md). TweakDB_Load 0x2B75570 (ArchiveXL) and
 # PlayerSystem_OnPlayerSpawned 0x3FD4D70 (Codeware) are chained through their owners and are on their lists.
-0x3d8d820  # CRunningState_OnTick
-0x3d8d710  # CInitializationState_OnTick
-0x3d8c0cc  # CBaseInitializationState_OnTick
-0x3d8d94c  # CShutdownState_OnTick
-0x2172bf4  # CScript_RunPureScript (FunctionOverride)
-0x21e897c  # script binder load (contains the inlined LoadOpcodes; CET's TranslateBytecode hook on macOS)
-0x3453b14  # CScript_TDBIDConstructorDerive
-0x2b79d10  # CScript_ToStringDEBUG
-0x22111f8  # CScript_Log
-0x22112d8  # CScript_LogError
-0x22113b8  # CScript_LogWarning
-0x2211498  # CScript_LogChannel
-0x22116c8  # CScript_LogChannelWarning
+0x4d6ccac  # CRunningState_OnTick
+0x4d6cb1c  # CInitializationState_OnTick
+0x4d6b460  # CBaseInitializationState_OnTick
+0x4d6ce40  # CShutdownState_OnTick
+0x1098fc0  # CScript_RunPureScript (FunctionOverride)
+0x1113e44  # script binder load (contains the inlined LoadOpcodes; CET's TranslateBytecode hook on macOS)
+0x4e39574  # CScript_TDBIDConstructorDerive
+0x37d2af8  # CScript_ToStringDEBUG
+0x11bae18  # CScript_Log
+0x11baef8  # CScript_LogError
+0x11bafd8  # CScript_LogWarning
+0x11bb358  # CScript_LogChannel
+0x11bb588  # CScript_LogChannelWarning

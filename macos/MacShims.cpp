@@ -92,8 +92,8 @@ const char* SharedTargetOwner(unsigned long aRva)
 {
     switch (aRva)
     {
-    case 0x2B75570: return "archivexl_mac_hook_chain_attach"; // TweakDB::LoadOptimized
-    case 0x3FD4D70: return "codeware_mac_hook_chain_attach";  // PlayerSystem::OnPlayerMainObjectSpawned
+    case 0x37CE05C: return "archivexl_mac_hook_chain_attach"; // TweakDB::LoadOptimized
+    case 0xFFFCB8: return "codeware_mac_hook_chain_attach";  // PlayerSystem::OnPlayerMainObjectSpawned
     default: return nullptr;
     }
 }

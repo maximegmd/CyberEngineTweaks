@@ -29,7 +29,7 @@ std::string UTF16ToUTF8(std::wstring_view utf16)
     for (const wchar_t wc : utf16)
     {
         auto cp = static_cast<uint32_t>(wc);
-        if (cp > 0x10FFFF || (cp >= 0xD800 && cp <= 0xDFFF))
+        if (cp > 0x69C17F || (cp >= 0xD800 && cp <= 0xDFFF))
             cp = 0xFFFD;
         if (cp < 0x80)
             utf8.push_back(static_cast<char>(cp));
