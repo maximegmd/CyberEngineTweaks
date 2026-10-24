@@ -27,9 +27,9 @@ struct ImageVersion
 #include <CoreFoundation/CoreFoundation.h>
 #include <RED4ext/Api/Runtime.hpp>
 
-// CET macOS: the macOS game has no PE version resource. The bundle's CFBundleShortVersionString is the product version (2.3.1 for
-// game 2.31); CET's address table and RED4ext's address library are made for that build, so it is reported as the Windows file
-// version of the same build (RED4EXT_RUNTIME_LATEST) and anything else is left unknown (CET then refuses to start, as on Windows).
+// CET macOS: the macOS game has no PE version resource. The bundle's CFBundleShortVersionString is the product version (2.5.0 for
+// game 2.5; 2.3.1 before); CET's address table is made for that build, so it is reported as the Windows file version of the latest
+// build (RED4EXT_RUNTIME_LATEST) and anything else is left unknown (CET then refuses to start, as on Windows).
 void Image::Initialize()
 {
     base_address = CetMac::ImageBase();
@@ -49,7 +49,7 @@ void Image::Initialize()
     if (std::sscanf(shortVersion.c_str(), "%u.%u.%u", &major, &minor, &patch) >= 2)
         SemVersion = RED4EXT_SEMVER(static_cast<uint8_t>(major), static_cast<uint16_t>(minor * 10 + patch), 0);
 
-    if (shortVersion == "2.3.1")
+    if (shortVersion == "2.5.0")
         FileVersion = RED4EXT_RUNTIME_LATEST;
 
     CetMac::Log("[cet] game bundle version '%s' (%s)", shortVersion.c_str(),

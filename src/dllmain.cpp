@@ -38,6 +38,10 @@ void CetMacInitialize()
 
 void CetMacShutdown()
 {
+    // CET did not start (for example an unsupported game version): there is no instance to shut down.
+    if (!CetMac::CetReady())
+        return;
+
     const bool inGameProcess = CET::Get().GetOptions().ExeValid;
 
     MH_DisableHook(nullptr);
