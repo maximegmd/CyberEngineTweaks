@@ -1,5 +1,5 @@
-# CET macOS hook targets for the RED4ext GUM allowlist (macos/ADDRESS_SURVEY.md). TweakDB_Load 0x2B75570 (ArchiveXL) and
-# PlayerSystem_OnPlayerSpawned 0x3FD4D70 (Codeware) are chained through their owners and are on their lists.
+# CET macOS hook targets for the RED4ext GUM allowlist (macos/ADDRESS_SURVEY.md). TweakDB_Load 0x37CE05C (ArchiveXL) and
+# PlayerSystem_OnPlayerSpawned 0xFFFCB8 (Codeware) are chained through their owners and are on their lists.
 0x4d6ccac  # CRunningState_OnTick
 0x4d6cb1c  # CInitializationState_OnTick
 0x4d6b460  # CBaseInitializationState_OnTick
