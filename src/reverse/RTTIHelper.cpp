@@ -1,5 +1,9 @@
 #include <stdafx.h>
 
+#ifdef __APPLE__
+#include "MacShims.hpp"
+#endif
+
 #include "RTTIHelper.h"
 
 #include "ClassReference.h"
@@ -190,7 +194,16 @@ void RTTIHelper::AddResolvedFunction(const uint64_t acClassHash, const uint64_t 
 // Find global function matching full name
 RED4ext::CBaseFunction* RTTIHelper::FindFunction(const uint64_t acFullNameHash) const
 {
+#ifdef __APPLE__
+    // Mac swaps IRTTISystem slots +0x28 and +0x30 against the SDK and Windows.
+    // Virtual GetFunction reads funcsByHash (+0xD0), keyed by a mix of shortName and
+    // parameter script names, so "GetMountedVehicle;GameObject" misses. Windows
+    // GetFunction reads funcs (+0xA0), keyed by fullName. Same map, same offset, here.
+    auto* pSlot = m_pRtti->funcs.Get(acFullNameHash);
+    RED4ext::CBaseFunction* pFunc = pSlot ? *pSlot : nullptr;
+#else
     RED4ext::CBaseFunction* pFunc = m_pRtti->GetFunction(acFullNameHash);
+#endif
 
     if (!pFunc && m_extendedFunctions.contains(kGlobalHash))
     {
@@ -656,6 +669,18 @@ sol::variadic_results RTTIHelper::ExecuteFunction(
 
         if (cpParam->type == m_pGameInstanceType)
         {
+#ifdef __APPLE__
+            auto* pMacGameInstance = CetMac::GameInstance();
+            if (!pMacGameInstance)
+            {
+                aErrorMessage = fmt::format("Function '{}' can't be used yet because game instance is not ready.", apFunc->shortName.ToString());
+
+                return {};
+            }
+
+            static RED4ext::ScriptGameInstance s_gameInstance(pMacGameInstance);
+            s_gameInstance.instance = pMacGameInstance;
+#else
             const auto* cpEngine = RED4ext::CGameEngine::Get();
 
             if (!cpEngine || !cpEngine->framework)
@@ -666,6 +691,7 @@ sol::variadic_results RTTIHelper::ExecuteFunction(
             }
 
             static RED4ext::ScriptGameInstance s_gameInstance;
+#endif
 
             callArgs[callArgOffset].type = m_pGameInstanceType;
             callArgs[callArgOffset].value = &s_gameInstance;

@@ -5,7 +5,15 @@
 #include "Utils.h"
 #include <reverse/WeakReference.h>
 #include <reverse/RTTIHelper.h>
+#ifdef __APPLE__
+// CET macOS: the arm64 thunk pool (macos/OverrideThunks.S) replaces the xbyak thunk.
+extern "C" char cet_override_thunks[];
+extern "C" char cet_override_thunks_end[];
+extern "C" void* cet_override_dispatch;
+extern "C" uintptr_t cet_override_slots[];
+#else
 #include <xbyak/xbyak.h>
+#endif
 
 namespace
 {
@@ -29,9 +37,69 @@ size_t GetFunctionSize(RED4ext::CBaseFunction* apFunction)
         return apFunction->flags.isNative ? sizeof(RED4ext::CClassStaticFunction) : sizeof(RED4ext::CGlobalFunction);
     }
 
+#ifdef __APPLE__
+    // CET macOS: a scripted (non-native) member function is a 0xB8-byte heap object on macOS (the script loader allocates it with an
+    // inline size, macos/LAYOUT.md); a native one is a 0xC0-byte CClassFunction. Windows makes every such allocation 0xC0 through the
+    // CScript_AllocateFunction hook, which has no single macOS function to hook, so the swap copies only what the object owns.
+    if (!apFunction->flags.isNative)
+        return 0xF8; // 2.5 (2.3.1: 0xB8): CBaseFunction grew by 0x40
+#endif
+
     return sizeof(RED4ext::CClassFunction);
 }
 
+#ifdef __APPLE__
+constexpr size_t s_cThunkSize = 24; // 6 arm64 instructions per stub (macos/OverrideThunks.S)
+size_t s_nextThunk = 0;              // guarded by FunctionOverride::m_lock (Override takes it)
+
+// The stub that calls HandleOverridenFunction with apRealFunc as the 5th argument (x4), or nullptr when the pool is used up.
+void* AllocateOverrideThunk(RED4ext::CBaseFunction* apRealFunc)
+{
+    const size_t count = static_cast<size_t>(cet_override_thunks_end - cet_override_thunks) / s_cThunkSize;
+    if (s_nextThunk >= count)
+        return nullptr;
+
+    const size_t index = s_nextThunk++;
+    cet_override_slots[index] = reinterpret_cast<uintptr_t>(apRealFunc);
+    return cet_override_thunks + index * s_cThunkSize;
+}
+
+// macOS keeps a native function's handler in a game table, not in the function: CClassFunction stores its index at +0xF8 in 2.5 (+0xB8 in 2.3.1) (regIndex)
+// and returns it from vtable slot +0x20 (ldr w0, [x0, #0xf8] in 2.5), which the game's native call (0x2172F90) uses for the lookup. A scripted
+// member function is a 0xB8-byte object (CScriptedFunction), so once it holds the override's CClassFunction that read lands past its
+// end. Such an object gets its own copy of the CClassFunction vtable (6 slots at 0x6FFAC88: allocator, two destructors, GetParent,
+// GetRegIndex, one more) whose slot +0x20 returns the index kept one word past the copied slots.
+constexpr size_t s_cMacFunctionVtableSlots = 6;
+constexpr size_t s_cMacRegIndexSlot = 4;
+constexpr uint32_t s_cMacRegIndexGetterCode[] = {0xB940F800, 0xD65F03C0}; // ldr w0, [x0, #0xf8]; ret (2.5: regIndex +0xF8, was +0xB8)
+
+uint32_t MacOverrideRegIndex(RED4ext::CBaseFunction* apThis)
+{
+    const auto* pVtable = *reinterpret_cast<const uintptr_t* const*>(apThis);
+    return static_cast<uint32_t>(pVtable[s_cMacFunctionVtableSlots]);
+}
+
+// False when the object's vtable is not the CClassFunction one this was written for; the caller then undoes the override.
+bool InstallMacRegIndexVtable(RED4ext::CBaseFunction* apSwapped, uint32_t aRegIndex)
+{
+    auto** ppVtable = reinterpret_cast<uintptr_t**>(apSwapped);
+    const uintptr_t* pVtable = *ppVtable;
+    if (pVtable[s_cMacRegIndexSlot] == reinterpret_cast<uintptr_t>(&MacOverrideRegIndex))
+        return pVtable[s_cMacFunctionVtableSlots] == aRegIndex; // the copy moves with the swapped contents (Clear, then Override)
+
+    const auto* pGetter = reinterpret_cast<const uint32_t*>(pVtable[s_cMacRegIndexSlot]);
+    if (pGetter[0] != s_cMacRegIndexGetterCode[0] || pGetter[1] != s_cMacRegIndexGetterCode[1])
+        return false;
+
+    // Itanium layout: offset-to-top and RTTI come before the address point; copied too. Never freed, like the trampolines.
+    auto* pCopy = new uintptr_t[2 + s_cMacFunctionVtableSlots + 1];
+    std::memcpy(pCopy, pVtable - 2, (2 + s_cMacFunctionVtableSlots) * sizeof(uintptr_t));
+    pCopy[2 + s_cMacRegIndexSlot] = reinterpret_cast<uintptr_t>(&MacOverrideRegIndex);
+    pCopy[2 + s_cMacFunctionVtableSlots] = aRegIndex;
+    *ppVtable = pCopy + 2;
+    return true;
+}
+#else
 struct OverrideCodegen : Xbyak::CodeGenerator
 {
     OverrideCodegen(uintptr_t apRealFunc, uintptr_t apTrampoline)
@@ -45,6 +113,7 @@ struct OverrideCodegen : Xbyak::CodeGenerator
         ret();
     }
 };
+#endif
 
 } // namespace
 
@@ -53,14 +122,21 @@ FunctionOverride::FunctionOverride(Scripting* apScripting)
 {
     s_pOverride = this;
 
+#ifdef __APPLE__
+    m_pBuffer = m_pBufferStart = nullptr;
+    cet_override_dispatch = reinterpret_cast<void*>(&FunctionOverride::HandleOverridenFunction);
+#else
     m_pBuffer = m_pBufferStart = VirtualAlloc(nullptr, m_size, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+#endif
 
     Hook();
 }
 
 FunctionOverride::~FunctionOverride()
 {
+#ifndef __APPLE__
     VirtualFree(m_pBufferStart, 0, MEM_RELEASE);
+#endif
 
     s_pOverride = nullptr;
 }
@@ -468,7 +544,13 @@ sol::function FunctionOverride::WrapNextOverride(
     {
         return MakeSolFunction(
             aLuaState,
+#ifdef __APPLE__
+            // The lambdas outlive this call: its by-value pointer parameters are captured by value (clang reuses their stack slots,
+            // so a reference to them read garbage when the mod called wrapped()).
+            [&, apRealFunction, apRealContext](sol::variadic_args aWrapArgs, sol::this_state aState) -> sol::variadic_results
+#else
             [&](sol::variadic_args aWrapArgs, sol::this_state aState) -> sol::variadic_results
+#endif
             {
                 std::string errorMessage;
                 sol::variadic_results results = RTTIHelper::Get().ExecuteFunction(apRealFunction, apRealContext, aWrapArgs, 0, errorMessage);
@@ -491,7 +573,11 @@ sol::function FunctionOverride::WrapNextOverride(
 
     return MakeSolFunction(
         aLuaState,
+#ifdef __APPLE__
+        [&, aStep, apRealFunction, apRealContext](sol::variadic_args aWrapArgs, sol::this_state aState) -> sol::variadic_results
+#else
         [&, aStep](sol::variadic_args aWrapArgs, sol::this_state aState) -> sol::variadic_results
+#endif
         {
             const auto call = (aChain.Overrides.rbegin() + aStep)->get();
 
@@ -545,6 +631,10 @@ void FunctionOverride::Hook() const
         }
     }
 
+#ifdef __APPLE__
+    // AllocateFunction is inlined on macOS (no function to hook); GetFunctionSize's macOS branch stands in for the larger allocation.
+    Log::Info("RealCreateFunction: not hooked on macOS (AllocateFunction is inlined; the override swap copies only what each object owns)");
+#else
     {
         const RED4ext::UniversalRelocPtr<void> func(CyberEngineTweaks::AddressHashes::CScript_AllocateFunction);
         RealCreateFunction = reinterpret_cast<TCreateFunction>(func.GetAddr());
@@ -560,6 +650,7 @@ void FunctionOverride::Hook() const
                 Log::Info("RealCreateFunction function hook complete!");
         }
     }
+#endif
 }
 
 void FunctionOverride::Override(
@@ -645,12 +736,23 @@ void FunctionOverride::ApplyOverride(
 
         if (!m_trampolines.contains(pRealFunction))
         {
+#ifdef __APPLE__
+            using TNativeScriptFunction = void (*)(RED4ext::IScriptable*, RED4ext::CStackFrame*, void*, int64_t);
+            auto* pExecutablePayload = reinterpret_cast<TNativeScriptFunction>(AllocateOverrideThunk(pRealFunction));
+            if (!pExecutablePayload)
+            {
+                m_functions.erase(pRealFunction);
+                spdlog::get("scripting")->error("Override of {} failed: all macOS override thunks are in use", acFullName);
+                return;
+            }
+#else
             const auto funcAddr = reinterpret_cast<uintptr_t>(&FunctionOverride::HandleOverridenFunction);
 
             const OverrideCodegen codegen(reinterpret_cast<uintptr_t>(pRealFunction), funcAddr);
 
             using TNativeScriptFunction = void (*)(RED4ext::IScriptable*, RED4ext::CStackFrame*, void*, int64_t);
             auto* pExecutablePayload = reinterpret_cast<TNativeScriptFunction>(MakeExecutable(codegen.getCode(), codegen.getSize()));
+#endif
 
             if (pRealFunction->flags.isStatic)
             {
@@ -688,12 +790,27 @@ void FunctionOverride::ApplyOverride(
 
         // Swap the content of the real function with the one we just created
         const size_t funcSize = GetFunctionSize(pRealFunction);
+#ifdef __APPLE__
+        const bool cMacScriptedMember = !pRealFunction->flags.isNative && !pRealFunction->flags.isStatic;
+#endif
 
         // TODO - undefined behaviour!
         std::array<char, s_cMaxFunctionSize> tmpBuffer{};
         std::memcpy(&tmpBuffer, pRealFunction, funcSize);
         std::memcpy(pRealFunction, pFunc, funcSize);
         std::memcpy(pFunc, &tmpBuffer, funcSize);
+
+#ifdef __APPLE__
+        if (cMacScriptedMember && !InstallMacRegIndexVtable(pRealFunction, static_cast<RED4ext::CClassFunction*>(pFunc)->regIndex))
+        {
+            std::memcpy(&tmpBuffer, pRealFunction, funcSize);
+            std::memcpy(pRealFunction, pFunc, funcSize);
+            std::memcpy(pFunc, &tmpBuffer, funcSize);
+            m_functions.erase(pRealFunction);
+            spdlog::get("scripting")->error("Override of {} failed: unexpected function vtable on macOS (CClassFunction index getter)", acFullName);
+            return;
+        }
+#endif
     }
     else
     {
