@@ -171,11 +171,18 @@ target_compile_definitions(cyber_engine_tweaks PRIVATE
     SPDLOG_FMT_EXTERNAL
 )
 
+# Codeware's macOS SDK header fixes (gameIGameSystem: IsSavingLocked returns its SaveLock through x8 on arm64), ahead of the SDK.
+# An SDK on the current upstream API (Containers/DynArray.hpp) already has them, and the copies would shadow its headers.
+if(EXISTS "${SDK_INCLUDE}/RED4ext/Containers/DynArray.hpp")
+    set(CET_CODEWARE_SDK_FIXES "")
+else()
+    set(CET_CODEWARE_SDK_FIXES "${CODEWARE_DIR}/macos/inc")
+endif()
+
 target_include_directories(cyber_engine_tweaks PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/inc"
     "${CMAKE_CURRENT_SOURCE_DIR}"
-    # Codeware's macOS SDK header fixes (gameIGameSystem: IsSavingLocked returns its SaveLock through x8 on arm64), ahead of the SDK
-    "${CODEWARE_DIR}/macos/inc"
+    ${CET_CODEWARE_SDK_FIXES}
     "${SDK_OVERLAY}"
     "${SDK_INCLUDE}"
     "${CET_SRC}"

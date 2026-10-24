@@ -6,9 +6,9 @@
 #include <cstdint>
 #include <filesystem>
 
-#include <RED4ext/Api/PluginHandle.hpp>
+#include <RED4ext/Api/v1/PluginHandle.hpp>
 #include <RED4ext/GameEngine.hpp>
-#include <RED4ext/Api/Sdk.hpp>
+#include <RED4ext/Api/v1/Sdk.hpp>
 
 extern "C"
 {
@@ -48,9 +48,9 @@ RED4ext::GameInstance* GameInstance();
 void Log(const char* aFormat, ...) __attribute__((format(printf, 1, 2)));
 
 // The plugin's RED4ext handle and SDK, saved by Main(Load).
-void SetPlugin(const RED4ext::Sdk* aSdk, RED4ext::PluginHandle aHandle);
-const RED4ext::Sdk* PluginSdk();
-RED4ext::PluginHandle PluginHandleValue();
+void SetPlugin(const RED4ext::v1::Sdk* aSdk, RED4ext::v1::PluginHandle aHandle);
+const RED4ext::v1::Sdk* PluginSdk();
+RED4ext::v1::PluginHandle PluginHandleValue();
 // The game version RED4ext reports (Query/Main), e.g. "2.3.1".
 void SetRuntimeVersion(uint8_t aMajor, uint16_t aMinor, uint32_t aPatch);
 const char* RuntimeVersionString();

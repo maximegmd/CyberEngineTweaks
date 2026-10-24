@@ -238,14 +238,14 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
 
                 if (!apFunction->flags.isStatic && pContext)
                 {
-                    args.reserve(apFunction->params.size + 1);
+                    args.reserve(apFunction->params.Size() + 1);
 
                     const auto weak = RED4ext::WeakHandle(*reinterpret_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(&pContext->ref));
                     args.emplace_back(make_object(luaState, WeakReference(lockedState, weak)));
                 }
                 else
                 {
-                    args.reserve(apFunction->params.size);
+                    args.reserve(apFunction->params.Size());
                 }
 
                 // There are at least two different implementations of CScriptStack.
@@ -255,7 +255,7 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
                 // This simple check allows us to avoid copying and read the args directly.
                 const bool isArrayArgs = apStack->value != ret.value;
 
-                for (uint32_t i = 0; i < apFunction->params.size; ++i)
+                for (uint32_t i = 0; i < apFunction->params.Size(); ++i)
                 {
                     const auto& pParam = apFunction->params[i];
 
@@ -327,7 +327,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
 
             if (!apFunction->flags.isStatic)
             {
-                args.reserve(apFunction->params.size + 1);
+                args.reserve(apFunction->params.Size() + 1);
 
                 const auto pContext = apContext ? apContext : apFrame->context;
                 if (pContext)
@@ -343,7 +343,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
             }
             else
             {
-                args.reserve(apFunction->params.size);
+                args.reserve(apFunction->params.Size());
             }
 
             // Nasty way of popping all args
@@ -356,7 +356,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
                 std::memset(pInstance, 0, pType->GetSize());
                 pType->Construct(pInstance);
 
-                const bool isScriptRef = pArg->type->GetType() == RED4ext::ERTTIType::ScriptReference;
+                const bool isScriptRef = pArg->type->GetType() == RED4ext::rtti::ERTTIType::ScriptReference;
 
                 // Determines if script ref was created from rvalue and other side expects us to copy it.
                 // If true, we must allocate the memory for the value and initialize our own script ref.
@@ -581,7 +581,7 @@ sol::function FunctionOverride::WrapNextOverride(
         {
             const auto call = (aChain.Overrides.rbegin() + aStep)->get();
 
-            for (uint32_t i = 0; i < apRealFunction->params.size; ++i)
+            for (uint32_t i = 0; i < apRealFunction->params.Size(); ++i)
             {
                 if (static_cast<int>(i) < aWrapArgs.leftover_count())
                     aLuaArgs[i] = aWrapArgs[i];

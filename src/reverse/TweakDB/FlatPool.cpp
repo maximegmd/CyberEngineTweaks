@@ -39,7 +39,7 @@ FlatPool::FlatPool(RED4ext::TweakDB* aTweakDb)
     m_pools.emplace("array:Color", 0);
 }
 
-bool FlatPool::IsFlatType(RED4ext::CBaseRTTIType* aType) const
+bool FlatPool::IsFlatType(RED4ext::rtti::IType* aType) const
 {
     return m_pools.contains(aType->GetName());
 }
@@ -49,7 +49,7 @@ bool FlatPool::IsFlatType(RED4ext::CName aTypeName) const
     return m_pools.contains(aTypeName);
 }
 
-int32_t FlatPool::AllocateValue(const RED4ext::CBaseRTTIType* aType, RED4ext::ScriptInstance aValue)
+int32_t FlatPool::AllocateValue(const RED4ext::rtti::IType* aType, void* aValue)
 {
     if (m_bufferEnd != m_tweakDb->flatDataBufferEnd)
         Initialize();
@@ -69,7 +69,7 @@ int32_t FlatPool::AllocateValue(const RED4ext::CBaseRTTIType* aType, RED4ext::Sc
 
     if (offsetIt == pool.end())
     {
-        offset = m_tweakDb->CreateFlatValue({const_cast<RED4ext::CBaseRTTIType*>(aType), aValue});
+        offset = m_tweakDb->CreateFlatValue({const_cast<RED4ext::rtti::IType*>(aType), aValue});
 
         if (offset != InvalidOffset)
             pool.emplace(hash, offset);
@@ -89,7 +89,7 @@ int32_t FlatPool::AllocateData(const RED4ext::CStackType& aData)
     return AllocateValue(aData.type, aData.value);
 }
 
-int32_t FlatPool::AllocateDefault(const RED4ext::CBaseRTTIType* aType)
+int32_t FlatPool::AllocateDefault(const RED4ext::rtti::IType* aType)
 {
     if (m_bufferEnd != m_tweakDb->flatDataBufferEnd)
         Initialize();
@@ -132,7 +132,7 @@ RED4ext::CStackType FlatPool::GetData(int32_t aOffset)
     return GetFlatData(aOffset);
 }
 
-RED4ext::ScriptInstance FlatPool::GetValuePtr(int32_t aOffset)
+void* FlatPool::GetValuePtr(int32_t aOffset)
 {
     if (m_bufferEnd != m_tweakDb->flatDataBufferEnd)
         Initialize();
@@ -213,7 +213,7 @@ RED4ext::CStackType FlatPool::GetFlatData(int32_t aOffset)
     return data;
 }
 
-uint64_t FlatPool::Hash(const RED4ext::CBaseRTTIType* aType, RED4ext::ScriptInstance aValue)
+uint64_t FlatPool::Hash(const RED4ext::rtti::IType* aType, void* aValue)
 {
     // Case 1: Everything is processed as a sequence of bytes and passed to the hash function,
     //         except for an array of strings.
@@ -225,7 +225,7 @@ uint64_t FlatPool::Hash(const RED4ext::CBaseRTTIType* aType, RED4ext::ScriptInst
 
     uint64_t hash;
 
-    if (aType->GetType() == RED4ext::ERTTIType::Array)
+    if (aType->GetType() == RED4ext::rtti::ERTTIType::Array)
     {
         auto* arrayType = reinterpret_cast<const RED4ext::CRTTIArrayType*>(aType);
         const auto* innerType = arrayType->GetInnerType();
@@ -234,9 +234,9 @@ uint64_t FlatPool::Hash(const RED4ext::CBaseRTTIType* aType, RED4ext::ScriptInst
         {
             const auto* array = static_cast<RED4ext::DynArray<RED4ext::CString>*>(aValue);
             hash = RED4ext::FNV1a64(reinterpret_cast<uint8_t*>(0), 0); // Initial seed
-            for (uint32_t i = 0; i != array->size; ++i)
+            for (uint32_t i = 0; i != array->Size(); ++i)
             {
-                const auto* str = array->entries + i;
+                const auto* str = array->Data() + i;
                 const auto length = str->Length();
                 hash = RED4ext::FNV1a64(reinterpret_cast<const uint8_t*>(&length), sizeof(length), hash);
                 hash = RED4ext::FNV1a64(reinterpret_cast<const uint8_t*>(str->c_str()), length, hash);
@@ -245,7 +245,7 @@ uint64_t FlatPool::Hash(const RED4ext::CBaseRTTIType* aType, RED4ext::ScriptInst
         else
         {
             const auto* array = static_cast<RED4ext::DynArray<uint8_t>*>(aValue);
-            hash = RED4ext::FNV1a64(array->entries, array->size * innerType->GetSize());
+            hash = RED4ext::FNV1a64(array->Data(), array->Size() * innerType->GetSize());
         }
     }
     else if (aType->GetName() == "String")

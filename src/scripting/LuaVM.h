@@ -12,7 +12,7 @@ using TTDBIDCtorDerive = TDBID*(const TDBID*, TDBID*, const char*);
 using TRunningStateRun = bool(uintptr_t, uintptr_t);
 using TShutdownStateRun = bool(uintptr_t, uintptr_t);
 using TSetLoadingState = uintptr_t(uintptr_t, int);
-using TTweakDBLoad = uint64_t(uintptr_t, uintptr_t);
+using TTweakDBLoad = uint64_t(uintptr_t, bool, uintptr_t);
 using TTranslateBytecode = void(uintptr_t, uintptr_t);
 #ifdef __APPLE__
 // CET macOS: the derive constructor returns the TweakDBID by value (base, name), and LoadOpcodes is inlined into the binder's load
@@ -82,7 +82,7 @@ protected:
     static void HookTDBIDToStringDEBUG(RED4ext::IScriptable*, RED4ext::CStackFrame* apStack, void* apResult, void*);
     static TDBID* HookTDBIDCtorDerive(TDBID* apBase, TDBID* apThis, const char* acpName);
     static uintptr_t HookSetLoadingState(uintptr_t aThis, int aState);
-    static uint64_t HookTweakDBLoad(uintptr_t aThis, uintptr_t aParam);
+    static uint64_t HookTweakDBLoad(uintptr_t aThis, bool aUnk, uintptr_t aPath);
     static void HookTranslateBytecode(uintptr_t aBinder, uintptr_t aData);
 #ifdef __APPLE__
     static uint64_t HookTDBIDCtorDeriveMac(const TDBID* apBase, const char* acpName);

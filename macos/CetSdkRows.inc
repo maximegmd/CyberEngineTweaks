@@ -6,6 +6,7 @@
         { 4069332669, 0x4D6CE40 },  // CShutdownState_OnTick (vtable 0x726F1A8 slot +0x28)
         { 2050111212, 0xFFFCB8 },  // PlayerSystem_OnPlayerSpawned (the body; Codeware hooks it too, CET chains)
         { 326438016, 0x4E39574 },   // CScript_TDBIDConstructorDerive: macOS ABI uint64_t(const TDBID* base, const char* name)
+        { 63182599, 0x37CE05C },    // CScript_TweakDBLoad (game::data::TweakDB::LoadOptimized; CET 1.38 hash, the SDK row 3602585178 is the same function)
         { 3515162577, 0x37D2AF8 },  // CScript_ToStringDEBUG (native handler of TweakDBID.ToStringDEBUG)
         { 3455393801, 0x11BAE18 },  // CScript_Log (native handler)
         { 2135235617, 0x11BAEF8 },  // CScript_LogError (native handler)

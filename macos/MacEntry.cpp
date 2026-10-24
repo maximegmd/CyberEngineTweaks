@@ -9,11 +9,11 @@
 void CetMacInitialize();
 void CetMacShutdown();
 
-RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::PluginHandle aHandle, RED4ext::EMainReason aReason, const RED4ext::Sdk* aSdk)
+RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::v1::PluginHandle aHandle, RED4ext::v1::EMainReason aReason, const RED4ext::v1::Sdk* aSdk)
 {
     switch (aReason)
     {
-    case RED4ext::EMainReason::Load:
+    case RED4ext::v1::EMainReason::Load:
     {
         CetMac::SetPlugin(aSdk, aHandle);
         if (aSdk && aSdk->runtime)
@@ -25,7 +25,7 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::PluginHandle aHandle, RED4ext::
         CetMacInitialize();
         break;
     }
-    case RED4ext::EMainReason::Unload:
+    case RED4ext::v1::EMainReason::Unload:
     {
         CetMacShutdown();
         break;
@@ -34,16 +34,16 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::PluginHandle aHandle, RED4ext::
     return true;
 }
 
-RED4EXT_C_EXPORT void RED4EXT_CALL Query(RED4ext::PluginInfo* aInfo)
+RED4EXT_C_EXPORT void RED4EXT_CALL Query(RED4ext::v1::PluginInfo* aInfo)
 {
     aInfo->name = L"Cyber Engine Tweaks";
     aInfo->author = L"Cyber Engine Tweaks Team (macOS port: codeman101)";
-    aInfo->version = RED4EXT_SEMVER(1, 37, 1);
-    aInfo->runtime = RED4EXT_RUNTIME_INDEPENDENT;
-    aInfo->sdk = RED4EXT_SDK_LATEST;
+    aInfo->version = RED4EXT_V1_SEMVER(1, 38, 0);
+    aInfo->runtime = RED4EXT_V1_RUNTIME_VERSION_INDEPENDENT;
+    aInfo->sdk = RED4EXT_V1_SDK_VERSION_1_0_0_COMPAT_0_5_0; // loadable by v0 loaders too
 }
 
 RED4EXT_C_EXPORT uint32_t RED4EXT_CALL Supports()
 {
-    return RED4EXT_API_VERSION_LATEST;
+    return RED4EXT_API_VERSION_1_COMPAT_0; // the API v0 number: older loaders load it, v1 loaders treat it as v1
 }

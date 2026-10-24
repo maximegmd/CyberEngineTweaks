@@ -60,8 +60,8 @@ const char* PluginPathC()
     return nullptr;
 }
 
-const RED4ext::Sdk* g_sdk = nullptr;
-RED4ext::PluginHandle g_handle = nullptr;
+const RED4ext::v1::Sdk* g_sdk = nullptr;
+RED4ext::v1::PluginHandle g_handle = nullptr;
 char g_runtimeVersion[32] = "unknown";
 
 struct DeferredHook
@@ -238,18 +238,18 @@ RED4ext::GameInstance* GameInstance()
     return fn();
 }
 
-void SetPlugin(const RED4ext::Sdk* aSdk, RED4ext::PluginHandle aHandle)
+void SetPlugin(const RED4ext::v1::Sdk* aSdk, RED4ext::v1::PluginHandle aHandle)
 {
     g_sdk = aSdk;
     g_handle = aHandle;
 }
 
-const RED4ext::Sdk* PluginSdk()
+const RED4ext::v1::Sdk* PluginSdk()
 {
     return g_sdk;
 }
 
-RED4ext::PluginHandle PluginHandleValue()
+RED4ext::v1::PluginHandle PluginHandleValue()
 {
     return g_handle;
 }

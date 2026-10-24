@@ -11,9 +11,9 @@ struct WeakReference : ClassType
     ~WeakReference() override;
 
 protected:
-    RED4ext::ScriptInstance GetHandle() const override;
-    RED4ext::ScriptInstance GetValuePtr() const override;
-    RED4ext::CBaseRTTIType* GetValueType() const override;
+    void* GetHandle() const override;
+    void* GetValuePtr() const override;
+    RED4ext::rtti::IType* GetValueType() const override;
 
 private:
     friend struct Scripting;

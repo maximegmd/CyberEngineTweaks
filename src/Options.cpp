@@ -3,7 +3,7 @@
 #include "config/CETVersion.h"
 #include "Paths.h"
 #include "Utils.h"
-#include "RED4ext/Api/Runtime.hpp"
+#include "RED4ext/Api/v1/Runtime.hpp"
 
 void PatchesSettings::Load(const nlohmann::json& aConfig)
 {
@@ -189,7 +189,7 @@ Options::Options(Paths& aPaths)
         Log::Info("Cyber Engine Tweaks path: \"{}\"", UTF16ToUTF8(aPaths.CETRoot().native()));
         Log::Info("Lua scripts search path: \"{}\"", UTF16ToUTF8(aPaths.ModsRoot().native()));
 
-        if (GameImage.FileVersion != RED4EXT_RUNTIME_LATEST)
+        if (GameImage.FileVersion != RED4EXT_V1_RUNTIME_VERSION_LATEST)
         {
             const auto [smajor, sminor] = Image::GetSupportedVersion();
             Log::Error("Unsupported game version! Only {}.{:02d} is supported.", smajor, sminor);

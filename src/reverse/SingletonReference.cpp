@@ -6,14 +6,14 @@
 
 #include "SingletonReference.h"
 
-SingletonReference::SingletonReference(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::CBaseRTTIType* apClass)
+SingletonReference::SingletonReference(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::rtti::IType* apClass)
     : ClassType(aView, apClass)
 {
 }
 
 SingletonReference::~SingletonReference() = default;
 
-RED4ext::ScriptInstance SingletonReference::GetHandle() const
+void* SingletonReference::GetHandle() const
 {
 #ifdef __APPLE__
     auto* pGameInstance = CetMac::GameInstance();

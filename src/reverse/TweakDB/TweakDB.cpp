@@ -482,7 +482,7 @@ bool TweakDB::InternalCreateRecord(const std::string& acRecordName, const std::s
         std::shared_lock _(pTDB->mutex01);
 
         RED4ext::DynArray<RED4ext::Handle<RED4ext::IScriptable>> recordsOfSameType;
-        if (!pTDB->TryGetRecordsByType(pType, recordsOfSameType) || recordsOfSameType.size == 0)
+        if (!pTDB->TryGetRecordsByType(pType, recordsOfSameType) || recordsOfSameType.Size() == 0)
         {
             if (acpLogger)
                 acpLogger->info("Failed to create record '{}'. reason: Unknown type '{}'", acRecordName, acRecordTypeName);
@@ -506,7 +506,7 @@ bool TweakDB::InternalCreateRecord(TweakDBID aDBID, const std::string& acRecordT
         std::shared_lock _(pTDB->mutex01);
 
         RED4ext::DynArray<RED4ext::Handle<RED4ext::IScriptable>> recordsOfSameType;
-        if (!pTDB->TryGetRecordsByType(pType, recordsOfSameType) || recordsOfSameType.size == 0)
+        if (!pTDB->TryGetRecordsByType(pType, recordsOfSameType) || recordsOfSameType.Size() == 0)
         {
             if (acpLogger)
                 acpLogger->info("Failed to create record '{}'. reason: Unknown type '{}'", aDBID.ToString(), acRecordTypeName);

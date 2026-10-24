@@ -26,7 +26,7 @@ bool DumpVTablesTask::Run()
 
     const auto* pRttiSystem = RED4ext::CRTTISystem::Get();
 
-    auto dumpClass = [begin, end](auto& aVtableMap, RED4ext::CBaseRTTIType* apType)
+    auto dumpClass = [begin, end](auto& aVtableMap, RED4ext::rtti::IType* apType)
     {
         uintptr_t vtable = *reinterpret_cast<uintptr_t*>(apType);
         const RED4ext::CName typeName = apType->GetName();
@@ -37,7 +37,7 @@ bool DumpVTablesTask::Run()
         }
 
         // Construct an empty instance of this class and dump that
-        if (apType->GetType() == RED4ext::ERTTIType::Class)
+        if (apType->GetType() == RED4ext::rtti::ERTTIType::Class)
         {
             const uint32_t size = apType->GetSize();
 
@@ -66,13 +66,13 @@ bool DumpVTablesTask::Run()
     };
 
     pRttiSystem->types.for_each(
-        [&dumpClass, &vtableMap](RED4ext::CName aName, RED4ext::CBaseRTTIType*& apType)
+        [&dumpClass, &vtableMap](RED4ext::CName aName, RED4ext::rtti::IType*& apType)
         {
             TP_UNUSED(aName);
 
             dumpClass(vtableMap, apType);
 
-            if (apType->GetType() == RED4ext::ERTTIType::Class)
+            if (apType->GetType() == RED4ext::rtti::ERTTIType::Class)
             {
                 auto* pParent = static_cast<RED4ext::CClass*>(apType)->parent;
                 while (pParent)
@@ -80,7 +80,7 @@ bool DumpVTablesTask::Run()
                     dumpClass(vtableMap, pParent);
 
                     pParent = pParent->parent;
-                    if (!pParent || pParent->GetType() != RED4ext::ERTTIType::Class)
+                    if (!pParent || pParent->GetType() != RED4ext::rtti::ERTTIType::Class)
                     {
                         break;
                     }

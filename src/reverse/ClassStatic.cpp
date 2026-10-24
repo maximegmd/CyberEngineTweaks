@@ -6,7 +6,7 @@
 #include "StrongReference.h"
 #include "Utils.h"
 
-ClassStatic::ClassStatic(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::CBaseRTTIType* apClass)
+ClassStatic::ClassStatic(const TiltedPhoques::Lockable<sol::state, std::recursive_mutex>::Ref& aView, RED4ext::rtti::IType* apClass)
     : ClassType(aView, apClass)
 {
 }

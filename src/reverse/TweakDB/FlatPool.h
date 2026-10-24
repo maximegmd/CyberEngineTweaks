@@ -11,19 +11,19 @@ public:
     explicit FlatPool(RED4ext::TweakDB* aTweakDb);
 
     int32_t AllocateData(const RED4ext::CStackType& aData);
-    int32_t AllocateValue(const RED4ext::CBaseRTTIType* aType, RED4ext::ScriptInstance aValue);
-    int32_t AllocateDefault(const RED4ext::CBaseRTTIType* aType);
+    int32_t AllocateValue(const RED4ext::rtti::IType* aType, void* aValue);
+    int32_t AllocateDefault(const RED4ext::rtti::IType* aType);
 
     RED4ext::CStackType GetData(int32_t aOffset);
-    RED4ext::ScriptInstance GetValuePtr(int32_t aOffset);
+    void* GetValuePtr(int32_t aOffset);
 
-    [[nodiscard]] bool IsFlatType(RED4ext::CBaseRTTIType* aType) const;
+    [[nodiscard]] bool IsFlatType(RED4ext::rtti::IType* aType) const;
     [[nodiscard]] bool IsFlatType(RED4ext::CName aTypeName) const;
 
 private:
     struct FlatTypeInfo
     {
-        RED4ext::CBaseRTTIType* type;
+        RED4ext::rtti::IType* type;
         uintptr_t offset;
     };
 
@@ -36,7 +36,7 @@ private:
     void SyncBuffer();
 
     inline RED4ext::CStackType GetFlatData(int32_t aOffset);
-    inline static uint64_t Hash(const RED4ext::CBaseRTTIType* aType, RED4ext::ScriptInstance aValue);
+    inline static uint64_t Hash(const RED4ext::rtti::IType* aType, void* aValue);
 
     RED4ext::TweakDB* m_tweakDb;
     uintptr_t m_bufferEnd;

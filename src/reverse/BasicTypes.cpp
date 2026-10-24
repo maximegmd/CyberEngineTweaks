@@ -104,7 +104,7 @@ bool ItemID::operator==(const ItemID& acRhs) const noexcept
     return id == acRhs.id && rng_seed == acRhs.rng_seed;
 }
 
-Variant::Variant(const RED4ext::CBaseRTTIType* aType)
+Variant::Variant(const RED4ext::rtti::IType* aType)
     : Variant()
 {
     if (aType)
@@ -113,7 +113,7 @@ Variant::Variant(const RED4ext::CBaseRTTIType* aType)
     }
 }
 
-Variant::Variant(const RED4ext::CBaseRTTIType* aType, const RED4ext::ScriptInstance aData)
+Variant::Variant(const RED4ext::rtti::IType* aType, const void* aData)
     : Variant()
 {
     if (aType)
@@ -122,7 +122,7 @@ Variant::Variant(const RED4ext::CBaseRTTIType* aType, const RED4ext::ScriptInsta
     }
 }
 
-Variant::Variant(const RED4ext::CName& aTypeName, const RED4ext::ScriptInstance aData)
+Variant::Variant(const RED4ext::CName& aTypeName, const void* aData)
     : Variant(RED4ext::CRTTISystem::Get()->GetType(aTypeName), aData)
 {
 }
@@ -152,17 +152,17 @@ bool Variant::IsInlined() const noexcept
     return reinterpret_cast<uintptr_t>(type) & kInlineFlag;
 }
 
-RED4ext::CBaseRTTIType* Variant::GetType() const noexcept
+RED4ext::rtti::IType* Variant::GetType() const noexcept
 {
-    return reinterpret_cast<RED4ext::CBaseRTTIType*>(reinterpret_cast<uintptr_t>(type) & kTypeMask);
+    return reinterpret_cast<RED4ext::rtti::IType*>(reinterpret_cast<uintptr_t>(type) & kTypeMask);
 }
 
-RED4ext::ScriptInstance Variant::GetDataPtr() const noexcept
+void* Variant::GetDataPtr() const noexcept
 {
     return IsInlined() ? inlined : instance;
 }
 
-bool Variant::Init(const RED4ext::CBaseRTTIType* aType)
+bool Variant::Init(const RED4ext::rtti::IType* aType)
 {
     if (!aType)
     {
@@ -170,8 +170,8 @@ bool Variant::Init(const RED4ext::CBaseRTTIType* aType)
         return false;
     }
 
-    const RED4ext::CBaseRTTIType* ownType = GetType();
-    RED4ext::ScriptInstance ownData = GetDataPtr();
+    const RED4ext::rtti::IType* ownType = GetType();
+    void* ownData = GetDataPtr();
 
     if (ownType)
     {
@@ -191,7 +191,7 @@ bool Variant::Init(const RED4ext::CBaseRTTIType* aType)
 
     if (CanBeInlined(aType))
     {
-        type = reinterpret_cast<const RED4ext::CBaseRTTIType*>(reinterpret_cast<uintptr_t>(type) | kInlineFlag);
+        type = reinterpret_cast<const RED4ext::rtti::IType*>(reinterpret_cast<uintptr_t>(type) | kInlineFlag);
         ownData = inlined;
     }
     else
@@ -205,7 +205,7 @@ bool Variant::Init(const RED4ext::CBaseRTTIType* aType)
     return true;
 }
 
-bool Variant::Fill(const RED4ext::CBaseRTTIType* aType, const RED4ext::ScriptInstance aData)
+bool Variant::Fill(const RED4ext::rtti::IType* aType, const void* aData)
 {
     if (!Init(aType))
         return false;
@@ -218,7 +218,7 @@ bool Variant::Fill(const RED4ext::CBaseRTTIType* aType, const RED4ext::ScriptIns
     return true;
 }
 
-bool Variant::Extract(RED4ext::ScriptInstance aBuffer) const
+bool Variant::Extract(void* aBuffer) const
 {
     if (IsEmpty())
         return false;
@@ -233,8 +233,8 @@ void Variant::Free()
     if (IsEmpty())
         return;
 
-    const RED4ext::CBaseRTTIType* ownType = GetType();
-    const RED4ext::ScriptInstance ownData = GetDataPtr();
+    const RED4ext::rtti::IType* ownType = GetType();
+    void* ownData = GetDataPtr();
 
     if (ownData)
     {
@@ -248,7 +248,7 @@ void Variant::Free()
     type = nullptr;
 }
 
-bool Variant::CanBeInlined(const RED4ext::CBaseRTTIType* aType) noexcept
+bool Variant::CanBeInlined(const RED4ext::rtti::IType* aType) noexcept
 {
     return aType->GetSize() <= kInlineSize && aType->GetAlignment() <= kInlineAlignment;
 }

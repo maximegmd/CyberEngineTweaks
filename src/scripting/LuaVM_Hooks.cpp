@@ -401,9 +401,9 @@ uint64_t LuaVM::HookPlayerSpawned(uint64_t a1, uint64_t a2, uint64_t a3, uint64_
     return ret;
 }
 
-uint64_t LuaVM::HookTweakDBLoad(uintptr_t aThis, uintptr_t aParam)
+uint64_t LuaVM::HookTweakDBLoad(uintptr_t aThis, bool aUnk, uintptr_t aPath)
 {
-    const auto ret = s_vm->m_realTweakDBLoad(aThis, aParam);
+    const auto ret = s_vm->m_realTweakDBLoad(aThis, aUnk, aPath);
 
 #ifdef __APPLE__
     // macOS: the byte is left as the game set it. The load increments it after a successful load (0x2B75650), and cached record

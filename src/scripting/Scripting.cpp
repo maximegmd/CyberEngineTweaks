@@ -467,7 +467,7 @@ void Scripting::PostInitializeScripting()
     {
         auto* pRtti = RED4ext::CRTTISystem::Get();
         auto* pType = pRtti->GetClass(RED4ext::FNV1a64(acName.c_str()));
-        if (!pType || pType->GetType() == RED4ext::ERTTIType::Simple)
+        if (!pType || pType->GetType() == RED4ext::rtti::ERTTIType::Simple)
             return Type::Descriptor();
 
         const ClassType type(m_lua.AsRef(), pType);
@@ -480,7 +480,7 @@ void Scripting::PostInitializeScripting()
 
         uint32_t count = 0;
         pRtti->types.for_each(
-            [&count](RED4ext::CName name, RED4ext::CBaseRTTIType*&)
+            [&count](RED4ext::CName name, RED4ext::rtti::IType*&)
             {
                 Log::Info(name.ToString());
                 count++;
@@ -750,13 +750,13 @@ sol::object Scripting::GetSingletonHandle(const std::string& acName, sol::this_e
     return make_object(luaState, result.first->second);
 }
 
-size_t Scripting::Size(RED4ext::CBaseRTTIType* apRttiType)
+size_t Scripting::Size(RED4ext::rtti::IType* apRttiType)
 {
     if (apRttiType == s_stringType)
         return sizeof(RED4ext::CString);
-    if (apRttiType->GetType() == RED4ext::ERTTIType::Handle)
+    if (apRttiType->GetType() == RED4ext::rtti::ERTTIType::Handle)
         return sizeof(RED4ext::Handle<RED4ext::IScriptable>);
-    if (apRttiType->GetType() == RED4ext::ERTTIType::WeakHandle)
+    if (apRttiType->GetType() == RED4ext::rtti::ERTTIType::WeakHandle)
         return sizeof(RED4ext::WeakHandle<RED4ext::IScriptable>);
 
     return Converter::Size(apRttiType);
@@ -772,7 +772,7 @@ sol::object Scripting::ToLua(LockedState& aState, RED4ext::CStackType& aResult)
         return sol::nil;
     if (pType == s_stringType)
         return make_object(state, std::string(static_cast<RED4ext::CString*>(aResult.value)->c_str()));
-    if (pType->GetType() == RED4ext::ERTTIType::Handle)
+    if (pType->GetType() == RED4ext::rtti::ERTTIType::Handle)
     {
         if (aResult.value == nullptr)
             return sol::nil;
@@ -781,13 +781,13 @@ sol::object Scripting::ToLua(LockedState& aState, RED4ext::CStackType& aResult)
         if (handle)
             return make_object(state, StrongReference(aState, handle, static_cast<RED4ext::CRTTIHandleType*>(pType)));
     }
-    else if (pType->GetType() == RED4ext::ERTTIType::WeakHandle)
+    else if (pType->GetType() == RED4ext::rtti::ERTTIType::WeakHandle)
     {
         const auto handle = *static_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(aResult.value);
         if (!handle.Expired())
             return make_object(state, WeakReference(aState, handle, static_cast<RED4ext::CRTTIWeakHandleType*>(pType)));
     }
-    else if (pType->GetType() == RED4ext::ERTTIType::Array)
+    else if (pType->GetType() == RED4ext::rtti::ERTTIType::Array)
     {
         const auto* pArrayType = static_cast<RED4ext::CRTTIArrayType*>(pType);
         const uint32_t cLength = pArrayType->GetLength(aResult.value);
@@ -803,13 +803,13 @@ sol::object Scripting::ToLua(LockedState& aState, RED4ext::CStackType& aResult)
 
         return result;
     }
-    else if (pType->GetType() == RED4ext::ERTTIType::ResourceAsyncReference)
+    else if (pType->GetType() == RED4ext::rtti::ERTTIType::ResourceAsyncReference)
     {
         auto* pInstance = static_cast<RED4ext::ResourceAsyncReference<void>*>(aResult.value);
         if (pInstance)
             return make_object(state, ResourceAsyncReference(aState, aResult.type, pInstance));
     }
-    else if (pType->GetType() == RED4ext::ERTTIType::ScriptReference)
+    else if (pType->GetType() == RED4ext::rtti::ERTTIType::ScriptReference)
     {
         const auto* pInstance = static_cast<RED4ext::ScriptRef<void>*>(aResult.value);
         RED4ext::CStackType innerStack;
@@ -827,7 +827,7 @@ sol::object Scripting::ToLua(LockedState& aState, RED4ext::CStackType& aResult)
     return sol::nil;
 }
 
-RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType* apRttiType, TiltedPhoques::Allocator* apAllocator)
+RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::rtti::IType* apRttiType, TiltedPhoques::Allocator* apAllocator)
 {
     RED4ext::CStackType result;
 
@@ -847,7 +847,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
             }
             result.value = apAllocator->New<RED4ext::CString>(str.c_str());
         }
-        else if (apRttiType->GetType() == RED4ext::ERTTIType::Handle)
+        else if (apRttiType->GetType() == RED4ext::rtti::ERTTIType::Handle)
         {
             if (aObject.is<StrongReference>())
             {
@@ -872,7 +872,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
                 result.value = apAllocator->New<RED4ext::Handle<RED4ext::IScriptable>>();
             }
         }
-        else if (apRttiType->GetType() == RED4ext::ERTTIType::WeakHandle)
+        else if (apRttiType->GetType() == RED4ext::rtti::ERTTIType::WeakHandle)
         {
             if (aObject.is<WeakReference>())
             {
@@ -897,7 +897,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
                 result.value = apAllocator->New<RED4ext::WeakHandle<RED4ext::IScriptable>>();
             }
         }
-        else if (apRttiType->GetType() == RED4ext::ERTTIType::Array)
+        else if (apRttiType->GetType() == RED4ext::rtti::ERTTIType::Array)
         {
             if (!hasData || aObject.get_type() == sol::type::table)
             {
@@ -938,7 +938,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
                 result.value = pMemory;
             }
         }
-        else if (apRttiType->GetType() == RED4ext::ERTTIType::ScriptReference)
+        else if (apRttiType->GetType() == RED4ext::rtti::ERTTIType::ScriptReference)
         {
             if (hasData)
             {
@@ -955,7 +955,7 @@ RED4ext::CStackType Scripting::ToRED(sol::object aObject, RED4ext::CBaseRTTIType
                 }
             }
         }
-        else if (apRttiType->GetType() == RED4ext::ERTTIType::ResourceAsyncReference || apRttiType == s_resRefType)
+        else if (apRttiType->GetType() == RED4ext::rtti::ERTTIType::ResourceAsyncReference || apRttiType == s_resRefType)
         {
             if (hasData)
             {
@@ -1033,7 +1033,7 @@ void Scripting::DestructRED(const RED4ext::CStackType& aStackType, bool aOwned)
     if (!aStackType.value)
         return;
 
-    if (aStackType.type->GetType() == RED4ext::ERTTIType::ScriptReference)
+    if (aStackType.type->GetType() == RED4ext::rtti::ERTTIType::ScriptReference)
     {
         auto pRef = reinterpret_cast<RED4ext::ScriptRef<void>*>(aStackType.value);
         DestructRED({pRef->innerType, pRef->ref}, aOwned);
@@ -1048,7 +1048,7 @@ void Scripting::DestructRED(const RED4ext::CStackType& aStackType, bool aOwned)
     }
 }
 
-bool Scripting::IsConvertedByCopying(RED4ext::CBaseRTTIType* aType)
+bool Scripting::IsConvertedByCopying(RED4ext::rtti::IType* aType)
 {
     if (aType == s_stringType)
     {
@@ -1057,9 +1057,9 @@ bool Scripting::IsConvertedByCopying(RED4ext::CBaseRTTIType* aType)
 
     switch (aType->GetType())
     {
-    case RED4ext::ERTTIType::Array:
-    case RED4ext::ERTTIType::Handle:
-    case RED4ext::ERTTIType::WeakHandle:
+    case RED4ext::rtti::ERTTIType::Array:
+    case RED4ext::rtti::ERTTIType::Handle:
+    case RED4ext::rtti::ERTTIType::WeakHandle:
         return true;
     }
 
