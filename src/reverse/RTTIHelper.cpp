@@ -660,15 +660,23 @@ sol::variadic_results RTTIHelper::ExecuteFunction(
 
             if (!cpEngine || !cpEngine->framework)
             {
-                aErrorMessage = fmt::format("Function '{}' can't be used yet because game instance is not ready.", apFunc->shortName.ToString());
+                if (!cpParam->flags.isOptional)
+                {
+                    aErrorMessage = fmt::format("Function '{}' can't be used yet because game instance is not ready.", apFunc->shortName.ToString());
 
-                return {};
+                    return {};
+                }
+
+                callArgs[callArgOffset].type = m_pGameInstanceType;
+                callArgs[callArgOffset].value = nullptr;
             }
+            else
+            {
+                static RED4ext::ScriptGameInstance s_gameInstance;
 
-            static RED4ext::ScriptGameInstance s_gameInstance;
-
-            callArgs[callArgOffset].type = m_pGameInstanceType;
-            callArgs[callArgOffset].value = &s_gameInstance;
+                callArgs[callArgOffset].type = m_pGameInstanceType;
+                callArgs[callArgOffset].value = &s_gameInstance;
+            }
         }
         else if (cpParam->flags.isOut)
         {
