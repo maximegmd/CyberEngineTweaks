@@ -446,43 +446,41 @@ public:
     {
         auto* pRTTI = RED4ext::CRTTISystem::Get();
 
-        RED4ext::CClass::Flags classFlags{};
-        classFlags.isNative = 1;
+        // Register a typed native class so the game has an allocator for it when it reloads scripts after a mod.io change.
         RED4ext::CNamePool::Add(NATIVE_TYPE_STR);
-        pRTTI->CreateScriptedClass(NATIVE_TYPE, classFlags, pRTTI->GetClass(PARENT_TYPE));
+        auto* pClass = new RED4ext::TTypedClass<exEntitySpawnerSystem>(NATIVE_TYPE);
+        pClass->parent = pRTTI->GetClass(PARENT_TYPE);
+        pClass->alignment = alignof(exEntitySpawnerSystem);
+        pRTTI->RegisterType(pClass);
 
-        auto* pClass = pRTTI->GetClass(NATIVE_TYPE);
-        if (pClass)
-        {
-            RED4ext::CBaseFunction::Flags flags{};
-            flags.isNative = true;
-            RED4ext::CClassStaticFunction* pFunction;
+        RED4ext::CBaseFunction::Flags flags{};
+        flags.isNative = true;
+        RED4ext::CClassStaticFunction* pFunction;
 
-            // -------------
+        // -------------
 
-            pFunction = RED4ext::CClassStaticFunction::Create(pClass, "Spawn", "Spawn", exEntitySpawnerSystem::Spawn, flags);
-            pFunction->AddParam("raRef:CResource", "entityPath");
-            pFunction->AddParam("WorldTransform", "worldTransform");
-            pFunction->AddParam("CName", "appearance", false, true);
-            pFunction->AddParam("TweakDBID", "recordID", false, true);
-            pFunction->SetReturnType("entEntityID");
-            pClass->RegisterFunction(pFunction);
+        pFunction = RED4ext::CClassStaticFunction::Create(pClass, "Spawn", "Spawn", exEntitySpawnerSystem::Spawn, flags);
+        pFunction->AddParam("raRef:CResource", "entityPath");
+        pFunction->AddParam("WorldTransform", "worldTransform");
+        pFunction->AddParam("CName", "appearance", false, true);
+        pFunction->AddParam("TweakDBID", "recordID", false, true);
+        pFunction->SetReturnType("entEntityID");
+        pClass->RegisterFunction(pFunction);
 
-            // -------------
+        // -------------
 
-            pFunction = RED4ext::CClassStaticFunction::Create(pClass, "SpawnRecord", "SpawnRecord", exEntitySpawnerSystem::SpawnRecord, flags);
-            pFunction->AddParam("TweakDBID", "recordID");
-            pFunction->AddParam("WorldTransform", "worldTransform");
-            pFunction->AddParam("CName", "appearance", false, true);
-            pFunction->SetReturnType("entEntityID");
-            pClass->RegisterFunction(pFunction);
+        pFunction = RED4ext::CClassStaticFunction::Create(pClass, "SpawnRecord", "SpawnRecord", exEntitySpawnerSystem::SpawnRecord, flags);
+        pFunction->AddParam("TweakDBID", "recordID");
+        pFunction->AddParam("WorldTransform", "worldTransform");
+        pFunction->AddParam("CName", "appearance", false, true);
+        pFunction->SetReturnType("entEntityID");
+        pClass->RegisterFunction(pFunction);
 
-            // -------------
+        // -------------
 
-            pFunction = RED4ext::CClassStaticFunction::Create(pClass, "Despawn", "Despawn", exEntitySpawnerSystem::Despawn, flags);
-            pFunction->AddParam("handle:entEntity", "entity");
-            pClass->RegisterFunction(pFunction);
-        }
+        pFunction = RED4ext::CClassStaticFunction::Create(pClass, "Despawn", "Despawn", exEntitySpawnerSystem::Despawn, flags);
+        pFunction->AddParam("handle:entEntity", "entity");
+        pClass->RegisterFunction(pFunction);
     }
 
     static void InitializeSingleton()
