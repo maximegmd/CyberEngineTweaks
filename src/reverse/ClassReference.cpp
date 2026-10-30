@@ -3,7 +3,7 @@
 #include "ClassReference.h"
 #include "CET.h"
 
-ClassReference::ClassReference(const TiltedPhoques::Locked<sol::state, std::recursive_mutex>& aView, RED4ext::CBaseRTTIType* apClass, RED4ext::ScriptInstance apInstance)
+ClassReference::ClassReference(const TiltedPhoques::Locked<sol::state, std::recursive_mutex>& aView, RED4ext::rtti::IType* apClass, void* apInstance)
     : ClassType(aView, apClass)
 {
     m_pInstance = apClass->GetAllocator()->AllocAligned(apClass->GetSize(), apClass->GetAlignment()).memory;
@@ -27,12 +27,12 @@ ClassReference::~ClassReference()
     }
 }
 
-RED4ext::ScriptInstance ClassReference::GetHandle() const
+void* ClassReference::GetHandle() const
 {
     return m_pInstance;
 }
 
-RED4ext::ScriptInstance ClassReference::GetValuePtr() const
+void* ClassReference::GetValuePtr() const
 {
     return GetHandle();
 }

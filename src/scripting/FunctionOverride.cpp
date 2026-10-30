@@ -91,6 +91,11 @@ void FunctionOverride::Refresh()
 
 void FunctionOverride::Clear()
 {
+    {
+        std::lock_guard pendingLock(m_pendingLock);
+        m_pending.clear();
+    }
+
     std::lock_guard lock(s_pOverride->m_lock);
 
     // Reverse order as we want to swap from most recent to oldest change
@@ -157,14 +162,14 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
 
                 if (!apFunction->flags.isStatic && pContext)
                 {
-                    args.reserve(apFunction->params.size + 1);
+                    args.reserve(apFunction->params.Size() + 1);
 
                     const auto weak = RED4ext::WeakHandle(*reinterpret_cast<RED4ext::WeakHandle<RED4ext::IScriptable>*>(&pContext->ref));
                     args.emplace_back(make_object(luaState, WeakReference(lockedState, weak)));
                 }
                 else
                 {
-                    args.reserve(apFunction->params.size);
+                    args.reserve(apFunction->params.Size());
                 }
 
                 // There are at least two different implementations of CScriptStack.
@@ -174,7 +179,7 @@ bool FunctionOverride::HookRunPureScriptFunction(RED4ext::CClassFunction* apFunc
                 // This simple check allows us to avoid copying and read the args directly.
                 const bool isArrayArgs = apStack->value != ret.value;
 
-                for (uint32_t i = 0; i < apFunction->params.size; ++i)
+                for (uint32_t i = 0; i < apFunction->params.Size(); ++i)
                 {
                     const auto& pParam = apFunction->params[i];
 
@@ -246,7 +251,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
 
             if (!apFunction->flags.isStatic)
             {
-                args.reserve(apFunction->params.size + 1);
+                args.reserve(apFunction->params.Size() + 1);
 
                 const auto pContext = apContext ? apContext : apFrame->context;
                 if (pContext)
@@ -262,7 +267,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
             }
             else
             {
-                args.reserve(apFunction->params.size);
+                args.reserve(apFunction->params.Size());
             }
 
             // Nasty way of popping all args
@@ -275,7 +280,7 @@ void FunctionOverride::HandleOverridenFunction(RED4ext::IScriptable* apContext, 
                 std::memset(pInstance, 0, pType->GetSize());
                 pType->Construct(pInstance);
 
-                const bool isScriptRef = pArg->type->GetType() == RED4ext::ERTTIType::ScriptReference;
+                const bool isScriptRef = pArg->type->GetType() == RED4ext::rtti::ERTTIType::ScriptReference;
 
                 // Determines if script ref was created from rvalue and other side expects us to copy it.
                 // If true, we must allocate the memory for the value and initialize our own script ref.
@@ -490,7 +495,7 @@ sol::function FunctionOverride::WrapNextOverride(
         {
             const auto call = (aChain.Overrides.rbegin() + aStep)->get();
 
-            for (uint32_t i = 0; i < apRealFunction->params.size; ++i)
+            for (uint32_t i = 0; i < apRealFunction->params.Size(); ++i)
             {
                 if (static_cast<int>(i) < aWrapArgs.leftover_count())
                     aLuaArgs[i] = aWrapArgs[i];
@@ -591,8 +596,42 @@ void FunctionOverride::Override(
         }
     }
 
-    std::lock_guard lock(m_lock);
+    // Hooked functions can run on worker threads. They hold m_lock (shared) while they wait for the Lua state lock.
+    // Override() is called from Lua, i.e. with the Lua state locked, so blocking on m_lock here can deadlock (lock order
+    // inversion), e.g. when a mod registers an Observe from onUpdate while a hooked function runs on a job thread.
+    // Only try the lock: if it is busy, queue the registration; ApplyPendingOverrides() applies it on the next update.
+    std::unique_lock lock(m_lock, std::try_to_lock);
+    std::lock_guard pendingLock(m_pendingLock);
+    if (lock.owns_lock() && m_pending.empty())
+    {
+        ApplyOverride(pClassType, pRealFunction, acFullName, std::move(aFunction), aEnvironment, aAbsolute, aAfter, aCollectGarbage);
+        return;
+    }
 
+    m_pending.push_back({pClassType, pRealFunction, acFullName, std::move(aFunction), aEnvironment, aAbsolute, aAfter, aCollectGarbage});
+    spdlog::get("scripting")->debug("Deferred override of {}::{} (function lock busy)", acTypeName, acFullName);
+}
+
+void FunctionOverride::ApplyPendingOverrides()
+{
+    // Called with the Lua state locked, so never block on m_lock here either: retry on the next update instead.
+    std::unique_lock lock(m_lock, std::try_to_lock);
+    if (!lock.owns_lock())
+        return;
+
+    std::lock_guard pendingLock(m_pendingLock);
+    for (auto& pending : m_pending)
+    {
+        ApplyOverride(
+            pending.pClassType, pending.pRealFunction, pending.FullName, std::move(pending.Function), pending.Environment, pending.Absolute, pending.After, pending.CollectGarbage);
+    }
+    m_pending.clear();
+}
+
+void FunctionOverride::ApplyOverride(
+    RED4ext::CClass* pClassType, RED4ext::CClassFunction* pRealFunction, const std::string& acFullName, sol::protected_function aFunction, sol::environment aEnvironment,
+    bool aAbsolute, bool aAfter, bool aCollectGarbage)
+{
     CallChain* pEntry = nullptr;
     const auto itor = m_functions.find(pRealFunction);
 

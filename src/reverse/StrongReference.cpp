@@ -42,17 +42,17 @@ StrongReference::~StrongReference()
     }
 }
 
-RED4ext::ScriptInstance StrongReference::GetHandle() const
+void* StrongReference::GetHandle() const
 {
     return m_strongHandle.instance;
 }
 
-RED4ext::ScriptInstance StrongReference::GetValuePtr() const
+void* StrongReference::GetValuePtr() const
 {
     return const_cast<RED4ext::Handle<RED4ext::IScriptable>*>(&m_strongHandle);
 }
 
-RED4ext::CBaseRTTIType* StrongReference::GetValueType() const
+RED4ext::rtti::IType* StrongReference::GetValueType() const
 {
     return m_pHandleType;
 }

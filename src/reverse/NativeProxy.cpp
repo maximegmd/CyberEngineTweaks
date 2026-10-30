@@ -162,7 +162,7 @@ void NativeProxy::Callback(RED4ext::IScriptable* apSelf, RED4ext::CStackFrame* a
     auto& luaState = lockedState.Get();
 
     TiltedPhoques::Vector<sol::object> args(0);
-    args.reserve(apFrame->func->params.size);
+    args.reserve(apFrame->func->params.Size());
 
     for (const auto& param : apFrame->func->params)
     {
@@ -318,26 +318,26 @@ RED4ext::CName NativeProxyType::AddSignature(NativeProxyType* apProxy, const std
     return pFunc->fullName;
 }
 
-std::string NativeProxyType::FormatTypeName(RED4ext::CRTTISystem* apRtti, RED4ext::CBaseRTTIType* apType)
+std::string NativeProxyType::FormatTypeName(RED4ext::CRTTISystem* apRtti, RED4ext::rtti::IType* apType)
 {
     switch (apType->GetType())
     {
-    case RED4ext::ERTTIType::Class:
+    case RED4ext::rtti::ERTTIType::Class:
     {
         return apRtti->ConvertNativeToScriptName(apType->GetName()).ToString();
     }
-    case RED4ext::ERTTIType::Handle:
-    case RED4ext::ERTTIType::WeakHandle:
+    case RED4ext::rtti::ERTTIType::Handle:
+    case RED4ext::rtti::ERTTIType::WeakHandle:
     {
         auto pInnerType = reinterpret_cast<RED4ext::CRTTIHandleType*>(apType)->innerType;
         return FormatTypeName(apRtti, pInnerType);
     }
-    case RED4ext::ERTTIType::Array:
+    case RED4ext::rtti::ERTTIType::Array:
     {
         auto pInnerType = reinterpret_cast<RED4ext::CRTTIArrayType*>(apType)->innerType;
         return "array<" + FormatTypeName(apRtti, pInnerType) + ">";
     }
-    case RED4ext::ERTTIType::ScriptReference:
+    case RED4ext::rtti::ERTTIType::ScriptReference:
     {
         auto pInnerType = reinterpret_cast<RED4ext::CRTTIScriptReferenceType*>(apType)->innerType;
         return "script_ref<" + FormatTypeName(apRtti, pInnerType) + ">";
@@ -354,12 +354,12 @@ RED4ext::Handle<RED4ext::IScriptable> NativeProxyType::CreateHandle()
     return RED4ext::Handle<RED4ext::IScriptable>(pScriptable);
 }
 
-const bool NativeProxyType::IsEqual(const RED4ext::ScriptInstance aLhs, const RED4ext::ScriptInstance aRhs, uint32_t a3)
+const bool NativeProxyType::IsEqual(const void* aLhs, const void* aRhs, uint32_t a3)
 {
     return !parent->flags.isAbstract && parent->IsEqual(aLhs, aRhs);
 }
 
-void NativeProxyType::Assign(RED4ext::ScriptInstance aLhs, const RED4ext::ScriptInstance aRhs) const
+void NativeProxyType::Assign(void* aLhs, const void* aRhs) const
 {
     if (!parent->flags.isAbstract)
     {
@@ -367,7 +367,7 @@ void NativeProxyType::Assign(RED4ext::ScriptInstance aLhs, const RED4ext::Script
     }
 }
 
-void NativeProxyType::ConstructCls(RED4ext::ScriptInstance aMemory) const
+void NativeProxyType::ConstructCls(void* aMemory) const
 {
     if (!parent->flags.isAbstract)
     {
@@ -375,7 +375,7 @@ void NativeProxyType::ConstructCls(RED4ext::ScriptInstance aMemory) const
     }
 }
 
-void NativeProxyType::DestructCls(RED4ext::ScriptInstance aMemory) const
+void NativeProxyType::DestructCls(void* aMemory) const
 {
     if (!parent->flags.isAbstract)
     {
