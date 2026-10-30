@@ -16,6 +16,12 @@ struct Vector3
     std::string ToString() const noexcept;
 
     bool operator==(const Vector3& acRhs) const noexcept;
+    bool operator<(const Vector3& acRhs) const noexcept;
+    bool operator<=(const Vector3& acRhs) const noexcept;
+    Vector3 operator+(const Vector3& acRhs) const noexcept;
+    Vector3 operator-(const Vector3& acRhs) const noexcept;
+    Vector3 operator*(const Vector3& acRhs) const noexcept;
+    Vector3 operator/(const Vector3& acRhs) const noexcept;
 };
 
 struct Vector4
@@ -36,6 +42,12 @@ struct Vector4
     std::string ToString() const noexcept;
 
     bool operator==(const Vector4& acRhs) const noexcept;
+    bool operator<(const Vector4& acRhs) const noexcept;
+    bool operator<=(const Vector4& acRhs) const noexcept;
+    Vector4 operator+(const Vector4& acRhs) const noexcept;
+    Vector4 operator-(const Vector4& acRhs) const noexcept;
+    Vector4 operator*(const Vector4& acRhs) const noexcept;
+    Vector4 operator/(const Vector4& acRhs) const noexcept;
 };
 
 struct EulerAngles
