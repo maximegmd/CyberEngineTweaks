@@ -1,6 +1,6 @@
 # Cyber Engine Tweaks
 
-[![Patreon](https://img.shields.io/badge/Patreon-donate-purple.svg)](https://www.patreon.com/tiltedphoques) [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://lbesson.mit-license.org/) [![Discord](https://img.shields.io/discord/717692382849663036.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/Epkq79kd96)
+[![Patreon](https://img.shields.io/badge/Patreon-donate-purple.svg)](https://www.patreon.com/tiltedphoques) [![GPLv3 license](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [![Discord](https://img.shields.io/discord/717692382849663036.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/Epkq79kd96)
 
 * Bitcoin: bc1q0neujk5e8v8sc3934ajn8z8zav7hl6557fjj54
 * Bitcoin Cash: qps5ze9p8fxmu4rszyxwy3g0ctlmrhvc3uqq0fzsnl
@@ -52,6 +52,12 @@ You first need to install [RED4ext](https://github.com/WopsS/RED4ext).
 
 ## Contributing
 
-If you wish to contribute to the main repo, try to follow the coding style in the code, otherwise not much to say, don't use code that is not yours unless the license is compatible with MIT.
+If you wish to contribute to the main repo, try to follow the coding style in the code, otherwise not much to say, don't use code that is not yours unless the license is compatible with the GPLv3.
 
 As for the wiki, please ask on discord for write permissions.
+
+## License
+
+Cyber Engine Tweaks is free software: you can redistribute it and/or modify it under the terms of the [GNU General Public License v3.0](LICENSE) as published by the Free Software Foundation, with an [additional permission](LICENSE-EXCEPTION) under section 7 that allows it to be combined with Cyberpunk 2077.
+
+Code contributed up to and including commit `213151f` was released under the MIT License; that notice is kept in [LICENSE-MIT](LICENSE-MIT). Third-party components keep their own licenses, listed in [ThirdParty_LICENSES](ThirdParty_LICENSES).
