@@ -58,6 +58,8 @@ As for the wiki, please ask on discord for write permissions.
 
 ## License
 
-Cyber Engine Tweaks is free software: you can redistribute it and/or modify it under the terms of the [GNU General Public License v3.0](LICENSE) as published by the Free Software Foundation, with an [additional permission](LICENSE-EXCEPTION) under section 7 that allows it to be combined with Cyberpunk 2077.
+Cyber Engine Tweaks is free software: you can redistribute it and/or modify it under the terms of the [GNU General Public License v3.0](LICENSE) as published by the Free Software Foundation, with [additional permissions](LICENSE-EXCEPTION) under section 7 that allow it to be combined with Cyberpunk 2077.
+
+Mods that run on Cyber Engine Tweaks are not affected by the GPL: if your mod only uses CET's scripting API and does not copy CET's source code, you can release it under any license you choose. See [LICENSE-EXCEPTION](LICENSE-EXCEPTION) for the exact terms.
 
 Code contributed up to and including commit `213151f` was released under the MIT License; that notice is kept in [LICENSE-MIT](LICENSE-MIT). Third-party components keep their own licenses, listed in [ThirdParty_LICENSES](ThirdParty_LICENSES).
