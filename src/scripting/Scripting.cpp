@@ -22,7 +22,7 @@
 #include <reverse/TweakDB/TweakDB.h>
 #include <sol_imgui/sol_imgui.h>
 #include <Utils.h>
-
+#include <common/ArabicText.h>
 #ifdef CET_DEBUG
 #include "GameHooks.h"
 #include "GameDump.h"
@@ -128,6 +128,11 @@ void Scripting::Initialize()
     globals["GetVersion"] = []() -> std::string
     {
         return CET_GIT_TAG;
+    };
+
+    globals["Arabic"] = [](const std::string& text)
+    {
+        return ArabicText::Process(text);
     };
 
     globals["GetDisplayResolution"] = [this]() -> std::tuple<float, float>
