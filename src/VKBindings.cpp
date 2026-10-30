@@ -165,7 +165,13 @@ void VKBindings::Load()
     const auto path = GetAbsolutePath(m_paths.VKBindings(), "", false);
     if (std::ifstream ifs{path})
     {
+#ifdef __APPLE__
+        // CET macOS: with braces clang list-initializes a json from the parsed value, which wraps it in a one-element array (MSVC
+        // copies it); every binding then failed to load with "type must be number, but is object".
+        auto config = nlohmann::json::parse(ifs, nullptr, false);
+#else
         auto config{nlohmann::json::parse(ifs, nullptr, false)};
+#endif
         if (!config.is_discarded())
         {
             for (auto& mod : config.items())
@@ -337,7 +343,11 @@ std::string VKBindings::GetBindString(const uint64_t acVKCodeBind)
             bindStr += specialName;
         else
         {
+#ifdef __APPLE__
+            const char vkChar{MacVKToChar(vkCode)};
+#else
             const char vkChar{static_cast<char>(MapVirtualKey(vkCode, MAPVK_VK_TO_CHAR))};
+#endif
             if (vkChar != 0)
                 bindStr += vkChar;
             else
@@ -541,7 +551,9 @@ LRESULT VKBindings::OnWndProc(HWND, UINT auMsg, WPARAM, LPARAM alParam)
 
     switch (auMsg)
     {
+#ifndef __APPLE__
     case WM_INPUT: return HandleRAWInput(reinterpret_cast<HRAWINPUT>(alParam));
+#endif
     case WM_KILLFOCUS:
         // reset key states on focus loss, as otherwise, we end up with broken recording state
         m_keyStates.reset();
@@ -693,6 +705,49 @@ void VKBindings::ExecuteRecording()
     }
 }
 
+#ifdef __APPLE__
+void VKBindings::OnMacKey(const USHORT aVKCode, const bool aDown)
+{
+    if (!m_initialized)
+        return;
+
+    // same rule as HandleRAWInput: mouse buttons are not recorded for the overlay toggle bind
+    const bool isMouseButton = aVKCode == VK_LBUTTON || aVKCode == VK_RBUTTON || aVKCode == VK_MBUTTON || aVKCode == VK_XBUTTON1 ||
+                               aVKCode == VK_XBUTTON2;
+    if (isMouseButton && m_isBindRecording && m_recordingModBind == Bindings::GetOverlayToggleModBind())
+        return;
+
+    if (aDown)
+        RecordKeyDown(aVKCode);
+    else
+        RecordKeyUp(aVKCode);
+}
+
+void VKBindings::OnMacWheel(const int aWheel)
+{
+    if (!m_initialized || aWheel == 0)
+        return;
+
+    if (m_isBindRecording && m_recordingModBind == Bindings::GetOverlayToggleModBind())
+        return;
+
+    // the pseudo key codes HandleRAWInput builds: RI_MOUSE_WHEEL | 1 (up) / | 0 (down), RI_MOUSE_HWHEEL likewise
+    const bool horizontal = aWheel == 2 || aWheel == -2;
+    const USHORT key{static_cast<USHORT>((horizontal ? RI_MOUSE_HWHEEL : RI_MOUSE_WHEEL) | (aWheel > 0 ? 1 : 0))};
+    RecordKeyDown(key);
+    RecordKeyUp(key);
+}
+
+void VKBindings::OnMacFocusLost()
+{
+    if (!m_initialized)
+        return;
+
+    // as WM_KILLFOCUS: reset key states, otherwise the recording state breaks
+    m_keyStates.reset();
+    ClearRecording(false);
+}
+#else
 LRESULT VKBindings::HandleRAWInput(const HRAWINPUT achRAWInput)
 {
     UINT dwSize{0};
@@ -749,6 +804,8 @@ LRESULT VKBindings::HandleRAWInput(const HRAWINPUT achRAWInput)
 
     return 0;
 }
+
+#endif
 
 void VKBindings::ClearRecording(const bool acClearBind)
 {

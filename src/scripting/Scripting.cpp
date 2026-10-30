@@ -4,6 +4,11 @@
 
 #include "config/CETVersion.h"
 
+#ifdef __APPLE__
+// src/window/window_mac.mm (test only)
+void CetMacPostTestKey(uint16_t aKeyCode, int aHoldMs);
+#endif
+
 #include "FunctionOverride.h"
 #include "GameOptions.h"
 #include "Texture.h"
@@ -135,6 +140,19 @@ void Scripting::Initialize()
         const auto resolution = m_d3d12.GetResolution();
         return {static_cast<float>(resolution.cx), static_cast<float>(resolution.cy)};
     };
+
+#ifdef __APPLE__
+    // CET macOS, TEST ONLY: exists only when CP2077_AUTOTEST=1 is set (the port's automated in-game test).
+    // Posts one key (macOS virtual key code, held aHoldMs) through AppKit's event queue, the path a real key takes, so the self-test mod
+    // can drive the overlay (src/window/window_mac.mm).
+    if (const char* autotest = std::getenv("CP2077_AUTOTEST"); autotest && std::string_view(autotest) == "1")
+    {
+        globals["CetMacTestPostKey"] = [](int aKeyCode, int aHoldMs)
+        {
+            CetMacPostTestKey(static_cast<uint16_t>(aKeyCode), aHoldMs);
+        };
+    }
+#endif
 
     globals["ModArchiveExists"] = [this](const std::string& acArchiveName) -> bool
     {

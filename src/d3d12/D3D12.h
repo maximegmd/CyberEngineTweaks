@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef __APPLE__
+// CET macOS: the Metal renderer keeps this class name (src/metal/MetalRenderer.h).
+#include "metal/MetalRenderer.h"
+#else
 #include "common/D3D12Downlevel.h"
 #include "window/Window.h"
 
@@ -82,3 +86,4 @@ private:
     std::atomic_bool m_delayedTrapInput{false};
     std::atomic_bool m_delayedTrapInputState{false};
 };
+#endif
