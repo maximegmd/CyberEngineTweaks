@@ -1297,37 +1297,8 @@ static int db_create_collation(lua_State* L)
     return 0;
 }
 
-/* Thanks to Wolfgang Oertl...
- */
-static int db_load_extension(lua_State* L)
-{
-    const sdb* db = lsqlite_checkdb(L, 1);
-    const char* extname = luaL_optstring(L, 2, NULL);
-    const char* entrypoint = luaL_optstring(L, 3, NULL);
-    int result;
-    char* errmsg = nullptr;
-
-    if (extname == nullptr)
-    {
-        result = sqlite3_enable_load_extension(db->db, 0); /* disable extension loading */
-    }
-    else
-    {
-        sqlite3_enable_load_extension(db->db, 1); /* enable extension loading */
-        result = sqlite3_load_extension(db->db, extname, entrypoint, &errmsg);
-    }
-
-    if (result == SQLITE_OK)
-    {
-        lua_pushboolean(L, 1);
-        return 1;
-    }
-
-    lua_pushboolean(L, 0); /* so, assert(load_extension(...)) works */
-    lua_pushstring(L, errmsg);
-    sqlite3_free(errmsg);
-    return 2;
-}
+/* load_extension is not provided: it would let any mod load and run a native library (.dll/.dylib). Extension
+** loading also stays disabled in SQLite itself (sqlite3_enable_load_extension is never called). */
 
 /*
 ** trace callback:
@@ -2202,7 +2173,7 @@ static int lsqlite_complete(lua_State* L)
     return 1;
 }
 
-#ifndef _WIN32
+#if 0 /* sqlite3.temp_directory changes a process-wide setting; it is not exposed to mods. */
 static int lsqlite_temp_directory(lua_State* L)
 {
     const char* oldtemp = sqlite3_temp_directory;
@@ -2228,12 +2199,16 @@ static int lsqlite_temp_directory(lua_State* L)
 }
 #endif
 
+#include "authorizer.h"
+
 static int lsqlite_do_open(lua_State* L, const char* filename, int flags)
 {
     sdb* db = newdb(L); /* create and leave in stack */
 
     if (SQLITE3_OPEN(filename, &db->db, flags) == SQLITE_OK)
     {
+        sqlite3_set_authorizer(db->db, lsqlite_authorizer, nullptr);
+
         /* database handle already in the stack - return it */
         return 1;
     }
@@ -2359,7 +2334,6 @@ static constexpr luaL_Reg dblib[] = {
     {"create_function", db_create_function},
     {"create_aggregate", db_create_aggregate},
     {"create_collation", db_create_collation},
-    {"load_extension", db_load_extension},
 
     {"trace", db_trace},
     {"progress_handler", db_progress_handler},
@@ -2468,9 +2442,6 @@ static constexpr luaL_Reg sqlitelib[] = {
     {"lversion", lsqlite_lversion},
     {"version", lsqlite_version},
     {"complete", lsqlite_complete},
-#ifndef _WIN32
-    {"temp_directory", lsqlite_temp_directory},
-#endif
     {"open", lsqlite_open},
     {"open_memory", lsqlite_open_memory},
     {"open_ptr", lsqlite_open_ptr},
