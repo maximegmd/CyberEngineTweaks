@@ -165,13 +165,7 @@ void VKBindings::Load()
     const auto path = GetAbsolutePath(m_paths.VKBindings(), "", false);
     if (std::ifstream ifs{path})
     {
-#ifdef __APPLE__
-        // CET macOS: with braces clang list-initializes a json from the parsed value, which wraps it in a one-element array (MSVC
-        // copies it); every binding then failed to load with "type must be number, but is object".
         auto config = nlohmann::json::parse(ifs, nullptr, false);
-#else
-        auto config{nlohmann::json::parse(ifs, nullptr, false)};
-#endif
         if (!config.is_discarded())
         {
             for (auto& mod : config.items())

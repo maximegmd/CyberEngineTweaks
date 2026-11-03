@@ -544,13 +544,7 @@ sol::function FunctionOverride::WrapNextOverride(
     {
         return MakeSolFunction(
             aLuaState,
-#ifdef __APPLE__
-            // The lambdas outlive this call: its by-value pointer parameters are captured by value (clang reuses their stack slots,
-            // so a reference to them read garbage when the mod called wrapped()).
             [&, apRealFunction, apRealContext](sol::variadic_args aWrapArgs, sol::this_state aState) -> sol::variadic_results
-#else
-            [&](sol::variadic_args aWrapArgs, sol::this_state aState) -> sol::variadic_results
-#endif
             {
                 std::string errorMessage;
                 sol::variadic_results results = RTTIHelper::Get().ExecuteFunction(apRealFunction, apRealContext, aWrapArgs, 0, errorMessage);
@@ -573,11 +567,7 @@ sol::function FunctionOverride::WrapNextOverride(
 
     return MakeSolFunction(
         aLuaState,
-#ifdef __APPLE__
         [&, aStep, apRealFunction, apRealContext](sol::variadic_args aWrapArgs, sol::this_state aState) -> sol::variadic_results
-#else
-        [&, aStep](sol::variadic_args aWrapArgs, sol::this_state aState) -> sol::variadic_results
-#endif
         {
             const auto call = (aChain.Overrides.rbegin() + aStep)->get();
 

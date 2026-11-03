@@ -6,13 +6,13 @@ The macOS port must not change the Windows build. Every change to a file Windows
 ## How it is checked
 
 For every file this branch modifies, the Windows view (the file with the Apple branches removed) is compared with the base,
-`master` at `bcbe457`:
+`master` at `20b42c6`:
 
 ```bash
-git show bcbe457:<file> | diff -B - <(unifdef -U__APPLE__ <file>)
+git show 20b42c6:<file> | diff -B - <(unifdef -U__APPLE__ <file>)
 ```
 
-`-B` ignores blank lines only. Result (2026-10-14):
+`-B` ignores blank lines only. Result (2026-11-03):
 
 | file | lines that differ in the Windows view |
 |---|---|
