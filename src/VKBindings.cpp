@@ -165,7 +165,7 @@ void VKBindings::Load()
     const auto path = GetAbsolutePath(m_paths.VKBindings(), "", false);
     if (std::ifstream ifs{path})
     {
-        auto config{nlohmann::json::parse(ifs, nullptr, false)};
+        auto config = nlohmann::json::parse(ifs, nullptr, false);
         if (!config.is_discarded())
         {
             for (auto& mod : config.items())
