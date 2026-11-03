@@ -468,7 +468,7 @@ sol::function FunctionOverride::WrapNextOverride(
     {
         return MakeSolFunction(
             aLuaState,
-            [&](sol::variadic_args aWrapArgs, sol::this_state aState) -> sol::variadic_results
+            [&, apRealFunction, apRealContext](sol::variadic_args aWrapArgs, sol::this_state aState) -> sol::variadic_results
             {
                 std::string errorMessage;
                 sol::variadic_results results = RTTIHelper::Get().ExecuteFunction(apRealFunction, apRealContext, aWrapArgs, 0, errorMessage);
@@ -491,7 +491,7 @@ sol::function FunctionOverride::WrapNextOverride(
 
     return MakeSolFunction(
         aLuaState,
-        [&, aStep](sol::variadic_args aWrapArgs, sol::this_state aState) -> sol::variadic_results
+        [&, aStep, apRealFunction, apRealContext](sol::variadic_args aWrapArgs, sol::this_state aState) -> sol::variadic_results
         {
             const auto call = (aChain.Overrides.rbegin() + aStep)->get();
 
