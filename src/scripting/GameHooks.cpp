@@ -4,6 +4,11 @@
 
 #include "RED4ext/GameStates.hpp"
 
+#ifdef __APPLE__
+#include "CET.h"
+#include "MacShims.hpp"
+#endif
+
 static std::unique_ptr<GameMainThread> s_pGameMainThread;
 
 void GameMainThread::RepeatedTaskQueue::AddTask(const std::function<bool()>& aFunction)
@@ -93,6 +98,17 @@ void GameMainThread::AddGenericTask(const std::function<bool()>& aFunction)
 bool GameMainThread::HookStateTick(RED4ext::IGameState* apThisState, RED4ext::CGameApplication* apGameApplication)
 {
     auto& gmt = Get();
+
+#ifdef __APPLE__
+    // CET macOS: hooks on targets ArchiveXL and Codeware own are chained once every plugin is loaded (macos/MacShims.hpp).
+    static bool s_sharedHooksReady = false;
+    if (!s_sharedHooksReady && CetMac::FlushDeferredHooks())
+    {
+        s_sharedHooksReady = true;
+        if (CetMac::CetReady())
+            CET::Get().GetVM().OnMacSharedHooksReady();
+    }
+#endif
 
     // drain generic tasks
     gmt.m_genericQueue.Drain();

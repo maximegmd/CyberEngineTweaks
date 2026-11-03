@@ -1307,6 +1307,17 @@ static int db_load_extension(lua_State* L)
     int result;
     char* errmsg = nullptr;
 
+#ifdef __APPLE__
+    /* CET macOS: the system SQLite is built without extension loading (SQLITE_OMIT_LOAD_EXTENSION). */
+    (void)entrypoint;
+    if (extname == nullptr)
+        result = SQLITE_OK;
+    else
+    {
+        result = SQLITE_ERROR;
+        errmsg = sqlite3_mprintf("extension loading is not available on macOS");
+    }
+#else
     if (extname == nullptr)
     {
         result = sqlite3_enable_load_extension(db->db, 0); /* disable extension loading */
@@ -1316,6 +1327,7 @@ static int db_load_extension(lua_State* L)
         sqlite3_enable_load_extension(db->db, 1); /* enable extension loading */
         result = sqlite3_load_extension(db->db, extname, entrypoint, &errmsg);
     }
+#endif
 
     if (result == SQLITE_OK)
     {

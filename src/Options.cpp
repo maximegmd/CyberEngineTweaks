@@ -132,6 +132,10 @@ void Options::ResetToDefaults()
 Options::Options(Paths& aPaths)
     : m_paths(aPaths)
 {
+#ifdef __APPLE__
+    // CET macOS: no version resource; the executable inside the game's app bundle is named Cyberpunk2077.
+    ExeValid = aPaths.Executable().filename() == "Cyberpunk2077";
+#else
     const auto* exePathStr = aPaths.Executable().native().c_str();
     const auto verInfoSz = GetFileVersionInfoSize(exePathStr, nullptr);
     if (verInfoSz)
@@ -166,6 +170,7 @@ Options::Options(Paths& aPaths)
     }
     // check if exe name matches in case previous check fails
     ExeValid = ExeValid || aPaths.Executable().filename() == "Cyberpunk2077.exe";
+#endif
 
     if (!ExeValid)
         throw std::runtime_error("Not Cyberpunk2077.exe");

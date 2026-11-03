@@ -1,0 +1,21 @@
+        // CET macOS rows (address survey, macos/ADDRESS_SURVEY.md). Format: { hash, Mac RVA },  // name. Only MAPPED rows (body
+        // compared with the Windows function) go here; anything else resolves to the logged trap stub (macos/MacShims.cpp).
+        { 3592689218, 0x4D6CCAC },  // CRunningState_OnTick (red::GameAppRunningState::OnTick; vtable 0x726F160 slot +0x28)
+        { 2447710505, 0x4D6CB1C },  // CInitializationState_OnTick (vtable 0x726F118 slot +0x28)
+        { 4233370276, 0x4D6B460 },  // CBaseInitializationState_OnTick (vtable 0x726F0C0 slot +0x28)
+        { 4069332669, 0x4D6CE40 },  // CShutdownState_OnTick (vtable 0x726F1A8 slot +0x28)
+        { 2050111212, 0xFFFCB8 },  // PlayerSystem_OnPlayerSpawned (the body; Codeware hooks it too, CET chains)
+        { 326438016, 0x4E39574 },   // CScript_TDBIDConstructorDerive: macOS ABI uint64_t(const TDBID* base, const char* name)
+        { 63182599, 0x37CE05C },    // CScript_TweakDBLoad (game::data::TweakDB::LoadOptimized; CET 1.38 hash, the SDK row 3602585178 is the same function)
+        { 3515162577, 0x37D2AF8 },  // CScript_ToStringDEBUG (native handler of TweakDBID.ToStringDEBUG)
+        { 3455393801, 0x11BAE18 },  // CScript_Log (native handler)
+        { 2135235617, 0x11BAEF8 },  // CScript_LogError (native handler)
+        { 3222609133, 0x11BAFD8 },  // CScript_LogWarning (native handler)
+        { 1663049434, 0x11bb358 },  // CScript_LogChannel (native handler)
+        { 2841780134, 0x11BB588 },  // CScript_LogChannelWarning (native handler)
+        // exEntitySpawner (verified against the Windows bodies; macos/ADDRESS_SURVEY.md note 15). Plain calls, no hooks.
+        { 385618721, 0x46DFBB8 },   // gameIGameSystem_Initialize (spawn::Set::Initialize; void(spawner, GameInstance*); Win 0xAC7ED4)
+        { 3313306514, 0x46DFDFC },  // gameIGameSystem_UnInitialize (void(spawner); Win 0x204D490)
+        { 2509382878, 0x46E03B8 },  // gameIGameSystem_Spawn (Mac ABI: x0 spawner, x1 settings, x2 CName, result smart pointer via x8; Win 0x661538)
+        { 3168866665, 0x46E1530 },  // gameIGameSystem_Despawn (void(spawner, IScriptable*); Win 0x65CEFC)
+        { 2840271332, 0x1A2BB60 },   // gameIGameSystem_SpawnCallback (RuntimeEntityRegistry::RegisterEntity, bool(registry, Entity*); Win 0x8B57F4)

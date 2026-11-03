@@ -2,17 +2,27 @@
 
 #include "GameDump.h"
 
+#ifdef __APPLE__
+#include "MacShims.hpp"
+#endif
+
 namespace GameDump
 {
 bool DumpVTablesTask::Run()
 {
     TiltedPhoques::Map<uintptr_t, std::string> vtableMap;
 
+#ifdef __APPLE__
+    // CET macOS: the game image from its Mach-O header to the end of its last mapped segment.
+    const auto begin = CetMac::ImageBase();
+    const uintptr_t end = begin + CetMac::ImageSize();
+#else
     auto ModuleBase = GetModuleHandle(nullptr);
     auto begin = reinterpret_cast<uintptr_t>(ModuleBase);
     const auto* dosHeader = reinterpret_cast<const IMAGE_DOS_HEADER*>(ModuleBase);
     const auto* ntHeader = reinterpret_cast<const IMAGE_NT_HEADERS*>(reinterpret_cast<const std::uint8_t*>(dosHeader) + dosHeader->e_lfanew);
     uintptr_t end = begin + ntHeader->OptionalHeader.SizeOfCode + ntHeader->OptionalHeader.SizeOfInitializedData;
+#endif
 
     const auto* pRttiSystem = RED4ext::CRTTISystem::Get();
 

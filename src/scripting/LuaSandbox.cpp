@@ -47,6 +47,9 @@ static constexpr const char* s_cGlobalObjectsWhitelist[] = {
     "GetVersion",
     "GetDisplayResolution",
     "ModArchiveExists",
+#ifdef __APPLE__
+    "CetMacTestPostKey", // CET macOS: test only, registered only under CP2077_AUTOTEST=1 (Scripting.cpp)
+#endif
 
     "ImGuiListClipper",
     "ImGuiCond",
@@ -129,7 +132,11 @@ void LuaSandbox::Initialize()
     m_globals = {luaState, sol::create};
 
     // log mo2 usage
+#ifdef __APPLE__
+    m_isLaunchedThroughMO2 = false; // no Mod Organizer 2 on macOS
+#else
     m_isLaunchedThroughMO2 = GetModuleHandle(TEXT("usvfs_x64.dll")) != nullptr;
+#endif
     if (m_isLaunchedThroughMO2)
     {
         if (auto existingLogger = spdlog::get("scripting"))
@@ -702,15 +709,25 @@ std::filesystem::path LuaSandbox::GetLuaPath(std::filesystem::path aFilePath, co
 
     aFilePath.make_preferred();
 
+#ifdef __APPLE__
+    if (aFilePath.native().starts_with("../") || aFilePath.native() == "..")
+        return {};
+#else
     if (aFilePath.native().starts_with(L"..\\"))
         return {};
+#endif
 
     aFilePath = GetAbsolutePath(aFilePath, acRootPath, acAllowNonExisting, false);
     if (aFilePath.empty())
         return {};
 
     const auto relativeFilePathToRoot = Relative(aFilePath, acRootPath);
+#ifdef __APPLE__
+    if (relativeFilePathToRoot.native().starts_with("../") || relativeFilePathToRoot.native() == ".." ||
+        relativeFilePathToRoot.native().find("/../") != std::string::npos)
+#else
     if (relativeFilePathToRoot.native().starts_with(L"..\\") || relativeFilePathToRoot.native().find(L"\\..\\") != std::wstring::npos)
+#endif
     {
         return {};
     }

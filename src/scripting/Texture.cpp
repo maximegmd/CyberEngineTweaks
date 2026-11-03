@@ -20,6 +20,49 @@ void Texture::BindTexture(sol::table& aTable)
             [](const Texture& acTexture, ImVec2 aSize) { ImGuiImage(acTexture, aSize); }, [](const Texture& acTexture) { ImGuiImage(acTexture); }));
 }
 
+#ifdef __APPLE__
+// src/metal/MetalRenderer.mm
+void* CetMacCreateRGBA8Texture(void* apDevice, const unsigned char* apPixels, int aWidth, int aHeight);
+void CetMacReleaseTexture(void* apTexture);
+
+std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
+{
+    auto* device = CET::Get().GetD3D12().GetDevice();
+    if (device == nullptr)
+        return {};
+
+    // Load from disk into a raw RGBA buffer
+    int image_width = 0;
+    int image_height = 0;
+    unsigned char* image_data = stbi_load(acPath.c_str(), &image_width, &image_height, nullptr, 4);
+    if (image_data == nullptr)
+        return {};
+
+    void* metalTexture = CetMacCreateRGBA8Texture(device, image_data, image_width, image_height);
+    stbi_image_free(image_data);
+    if (metalTexture == nullptr)
+        return {};
+
+    auto texture = std::make_shared<Texture>();
+    texture->m_size = ImVec2(static_cast<float>(image_width), static_cast<float>(image_height));
+    texture->m_texture = metalTexture;
+    return texture;
+}
+
+void Texture::ImGuiImage(const Texture& acTexture, ImVec2 aSize, const ImVec2& aUv0, const ImVec2& aUv1, const ImVec4& aTintCol, const ImVec4& aBorderCol)
+{
+    if (aSize.x == 0 && aSize.y == 0)
+        aSize = acTexture.m_size;
+
+    ImGui::Image(reinterpret_cast<ImTextureID>(acTexture.m_texture), aSize, aUv0, aUv1, aTintCol, aBorderCol);
+}
+
+Texture::~Texture()
+{
+    Release();
+}
+
+#else
 std::shared_ptr<Texture> Texture::Load(const std::string& acPath)
 {
     auto d3d_device = CET::Get().GetD3D12().GetDevice();
@@ -197,6 +240,8 @@ void Texture::ImGuiImage(const Texture& acTexture, ImVec2 aSize, const ImVec2& a
     ImGui::Image(reinterpret_cast<ImTextureID>(acTexture.m_handle.ptr), aSize, aUv0, aUv1, aTintCol, aBorderCol);
 }
 
+#endif
+
 ImVec2 Texture::GetSize() const
 {
     return m_size;
@@ -204,5 +249,9 @@ ImVec2 Texture::GetSize() const
 
 void Texture::Release()
 {
+#ifdef __APPLE__
+    if (m_texture)
+        CetMacReleaseTexture(m_texture);
+#endif
     m_texture = nullptr;
 }

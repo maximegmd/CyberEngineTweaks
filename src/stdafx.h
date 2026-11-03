@@ -1,13 +1,20 @@
 #pragma once
 
+#ifdef __APPLE__
+// CET macOS: Win32 type and key-code names for the shared code (macos/Win32Compat.h).
+#include <Win32Compat.h>
+#endif
+
 #include "reverse/Relocation.h"
 
 #include <sol/sol.hpp>
 #include <spdlog/spdlog.h>
 #include <imgui.h>
 #include <MinHook.h>
+#ifndef __APPLE__
 #include <mem/module.h>
 #include <mem/pattern.h>
+#endif
 #include <nlohmann/json.hpp>
 
 #include <RED4ext/CName.hpp>
@@ -37,6 +44,7 @@
 #include <TiltedCore/StackAllocator.hpp>
 #include <TiltedCore/TaskQueue.hpp>
 
+#ifndef __APPLE__
 #include <tchar.h>
 #include <d3d12.h>
 #include <d3d11.h>
@@ -47,6 +55,7 @@
 #include <SDKDDKVer.h>
 #include <Windows.h>
 #include <wrl.h>
+#endif
 
 #include <algorithm>
 #include <array>

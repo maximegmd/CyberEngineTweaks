@@ -1,5 +1,9 @@
 #include <stdafx.h>
 
+#ifdef __APPLE__
+#include <dlfcn.h>
+#endif
+
 #include "ResourcesList.h"
 
 #include <CET.h>
@@ -27,6 +31,10 @@ bool ResourcesList::Initialize()
 
     // TODO - share decompression routine with TweakDBMetadata
 
+#ifdef __APPLE__
+    // CET macOS: no Oodle DLL; use the decompressor only if the game process exports it by name (otherwise this feature is off).
+    auto OodleLZ_Decompress = reinterpret_cast<TOodleLZ_Decompress>(dlsym(RTLD_DEFAULT, "OodleLZ_Decompress"));
+#else
     auto hOodleHandle = GetModuleHandle(TEXT("oo2ext_7_win64.dll"));
     if (hOodleHandle == nullptr)
     {
@@ -35,6 +43,7 @@ bool ResourcesList::Initialize()
     }
 
     auto OodleLZ_Decompress = reinterpret_cast<TOodleLZ_Decompress>(GetProcAddress(hOodleHandle, "OodleLZ_Decompress"));
+#endif
     if (OodleLZ_Decompress == nullptr)
     {
         spdlog::error("Could not get OodleLZ_Decompress");
@@ -58,7 +67,13 @@ bool ResourcesList::Initialize()
         std::string buffer;
         buffer.resize(*reinterpret_cast<uint32_t*>(content.data() + 4));
 
+#ifdef __APPLE__
+        // CET macOS: 512 KiB is the whole stack of a secondary thread on macOS (Windows gives 1 MiB); keep it on the heap.
+        std::vector<char> workingMemoryBuffer(0x80000);
+        auto& workingMemory = *reinterpret_cast<char(*)[0x80000]>(workingMemoryBuffer.data());
+#else
         char workingMemory[0x80000];
+#endif
         auto size = OodleLZ_Decompress(
             content.data() + headerSize, static_cast<int>(content.size() - headerSize), buffer.data(), static_cast<int>(buffer.size()), 1, 1, 0, nullptr, nullptr, nullptr, nullptr,
             workingMemory, std::size(workingMemory), 3);

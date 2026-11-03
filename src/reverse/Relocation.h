@@ -4,11 +4,17 @@
 #include <mutex>
 #include <sstream>
 
+#ifndef __APPLE__
 #include <Windows.h>
+#endif
 
 #include <RED4ext/Common.hpp>
 #include <RED4ext/Detail/Memory.hpp>
 
+#ifdef __APPLE__
+// On macOS the hashes resolve through the generated Relocation-inl.hpp (macos/CMakeLists.txt): the Mac SDK table, Codeware's
+// rows and macos/CetSdkRows.inc, with a logged trap for an unknown hash.
+#else
 template<>
 struct RED4ext::Detail::AddressResolverOverride<uint32_t> : std::true_type
 {
@@ -66,3 +72,4 @@ struct RED4ext::Detail::AddressResolverOverride<uint32_t> : std::true_type
         return reinterpret_cast<uintptr_t>(address);
     }
 };
+#endif
