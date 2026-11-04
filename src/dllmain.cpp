@@ -3,6 +3,7 @@
 #include "CET.h"
 
 #include "Options.h"
+#include "common/ProcessExit.h"
 
 void OptionsInitHook();
 void DisableVignettePatch();
@@ -68,7 +69,7 @@ static void Shutdown()
     }
 }
 
-BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID)
+BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID aReserved)
 {
     // Not safe to do this, the DLL uses thread_local storage
     //DisableThreadLibraryCalls(mod);
@@ -76,7 +77,12 @@ BOOL APIENTRY DllMain(HMODULE mod, DWORD ul_reason_for_call, LPVOID)
     switch (ul_reason_for_call)
     {
     case DLL_PROCESS_ATTACH: Initialize(); break;
-    case DLL_PROCESS_DETACH: Shutdown(); break;
+    case DLL_PROCESS_DETACH:
+        if (ProcessExit::SelectAction(aReserved != nullptr) == ProcessExit::DetachAction::ProcessTermination)
+            CET::OnProcessTermination();
+        else
+            Shutdown(); // Existing dynamic-unload behavior; not certified by this candidate.
+        break;
     default: break;
     }
 

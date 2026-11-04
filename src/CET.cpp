@@ -2,6 +2,7 @@
 
 #include "CET.h"
 #include "Options.h"
+#include "common/ProcessExit.h"
 
 using namespace std::chrono_literals;
 
@@ -18,6 +19,16 @@ void CET::Initialize()
 void CET::Shutdown()
 {
     s_pInstance.reset(nullptr);
+}
+
+void CET::OnProcessTermination() noexcept
+{
+    // DllMain's non-null reserved argument means the process is terminating.
+    // Do not destruct CET, release stale COM proxies, log, or acquire locks here.
+    // Normal game-state shutdown handles persistence and graphics cleanup first;
+    // after a failed fence check, remaining memory/handles are reclaimed by Windows.
+    s_isRunning = false;
+    ProcessExit::LeaveForOperatingSystem(s_pInstance);
 }
 
 CET& CET::Get()

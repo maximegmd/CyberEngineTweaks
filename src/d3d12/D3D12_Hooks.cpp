@@ -12,27 +12,32 @@ void* D3D12::CRenderNode_Present_InternalPresent(int32_t* apDeviceIndex, uint8_t
 {
     auto& d3d12 = CET::Get().GetD3D12();
 
-    const auto* pContext = RenderContext::GetInstance();
-    auto* pSwapChain = pContext->devices[*apDeviceIndex - 1].pSwapChain;
-    if (d3d12.m_initialized)
-        d3d12.Update();
-    else
     {
-        // NOTE: checking against Windows 8 as Windows 10 requires specific compatibility manifest to be detected by
-        // these
-        //       DX12 does not work on Windows 8 and 8.1 so we should be safe with this check
-        if (IsWindows8OrGreater())
+        std::lock_guard lifecycleLock(d3d12.m_imguiLock);
+        if (!d3d12.m_shutdownStarted)
         {
-            d3d12.m_pCommandQueue = pContext->pDirectQueue;
-            d3d12.m_pdxgiSwapChain = pSwapChain;
-            d3d12.Initialize();
-        }
-        else
-        {
-            Log::Error("Unsupported OS!");
+            const auto* pContext = RenderContext::GetInstance();
+            auto* pSwapChain = pContext->devices[*apDeviceIndex - 1].pSwapChain;
+            if (d3d12.m_initialized)
+                d3d12.Update();
+            else
+            {
+                // Windows 10 detection requires a compatibility manifest. DX12
+                // does not work on Windows 8/8.1, so preserve the existing check.
+                if (IsWindows8OrGreater())
+                {
+                    d3d12.m_pCommandQueue = pContext->pDirectQueue;
+                    d3d12.m_pdxgiSwapChain = pSwapChain;
+                    d3d12.Initialize();
+                }
+                else
+                {
+                    Log::Error("Unsupported OS!");
+                }
+            }
         }
     }
-
+    // Never hold CET's graphics lock while calling the original game Present.
     return d3d12.m_realInternalPresent(apDeviceIndex, aSomeSync, aSyncInterval);
 }
 
@@ -42,12 +47,14 @@ void* D3D12::CRenderGlobal_Resize(uint32_t aWidth, uint32_t aHeight, uint32_t a3
 
     // TODO - ideally find a way to not call this on each minimize/maximize/etc. which causes this to be called
     //        it can get called multiple times even when there was no resolution change or swapchain invalidation
-    if (d3d12.m_initialized)
     {
-        Log::Info("CRenderGlobal::Resize() called with initialized D3D12, triggering D3D12::ResetState.");
-        d3d12.ResetState();
+        std::lock_guard lifecycleLock(d3d12.m_imguiLock);
+        if (!d3d12.m_shutdownStarted && d3d12.m_initialized)
+        {
+            Log::Info("CRenderGlobal::Resize() called with initialized D3D12, triggering D3D12::ResetState.");
+            d3d12.ResetState();
+        }
     }
-
     return d3d12.m_realInternalResize(aWidth, aHeight, a3, a4, apDeviceIndex);
 }
 
@@ -56,7 +63,7 @@ void* D3D12::CRenderGlobal_Shutdown(uint64_t a1, uint64_t a2, uint64_t a3, uint6
 {
     auto& d3d12 = CET::Get().GetD3D12();
 
-    d3d12.ResetState(true);
+    d3d12.BeginShutdown(ShutdownOrigin::RendererFallback);
 
     return d3d12.m_realInternalShutdown(a1, a2, a3, a4);
 }
