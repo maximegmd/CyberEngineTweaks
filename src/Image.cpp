@@ -5,6 +5,7 @@
 #include "Image.h"
 
 #include "RED4ext/Api/v1/FileVer.hpp"
+#include "RED4ext/Api/v1/Runtime.hpp"
 #include "RED4ext/Api/v1/SemVer.hpp"
 
 
@@ -110,4 +111,22 @@ void Image::Initialize()
             SemVersion = RED4EXT_V1_SEMVER(major, minor, patch);
         }
     }
+}
+
+bool Image::IsVettedBuild(const RED4ext::v1::FileVer& acFileVersion) noexcept
+{
+    // every 2.5 exe we know CET runs clean on, the fixer only lets these through,
+    // if another storefront ships its own build just add a line for it here
+    const RED4ext::v1::FileVer cVettedBuilds[] = {
+        RED4EXT_V1_RUNTIME_VERSION_LATEST,   // Steam / GOG, 3.0.88.46235
+        RED4EXT_V1_FILEVER(3, 0, 88, 53184), // Battle.net, same patch rebuilt 2 Nov 2026
+    };
+
+    for (const auto& cBuild : cVettedBuilds)
+    {
+        if (acFileVersion == cBuild)
+            return true;
+    }
+
+    return false;
 }

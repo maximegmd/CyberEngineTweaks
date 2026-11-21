@@ -184,7 +184,9 @@ Options::Options(Paths& aPaths)
         Log::Info("Cyber Engine Tweaks path: \"{}\"", UTF16ToUTF8(aPaths.CETRoot().native()));
         Log::Info("Lua scripts search path: \"{}\"", UTF16ToUTF8(aPaths.ModsRoot().native()));
 
-        if (GameImage.FileVersion != RED4EXT_V1_RUNTIME_VERSION_LATEST)
+        // only builds on the vetted list get in, an exe we've never checked could have different addresses
+        // and flatline the game the second CET hooks into it
+        if (!Image::IsVettedBuild(GameImage.FileVersion))
         {
             const auto [smajor, sminor] = Image::GetSupportedVersion();
             Log::Error("Unsupported game version! Only {}.{:02d} is supported.", smajor, sminor);
