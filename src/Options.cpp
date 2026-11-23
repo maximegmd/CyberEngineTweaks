@@ -184,8 +184,6 @@ Options::Options(Paths& aPaths)
         Log::Info("Cyber Engine Tweaks path: \"{}\"", UTF16ToUTF8(aPaths.CETRoot().native()));
         Log::Info("Lua scripts search path: \"{}\"", UTF16ToUTF8(aPaths.ModsRoot().native()));
 
-        // only builds on the vetted list get in, an exe we've never checked could have different addresses
-        // and flatline the game the second CET hooks into it
         if (!Image::IsVettedBuild(GameImage.FileVersion))
         {
             const auto [smajor, sminor] = Image::GetSupportedVersion();
