@@ -9,6 +9,8 @@ struct Image
 
     static std::tuple<uint32_t, uint16_t> GetSupportedVersion() noexcept { return std::make_tuple(2, 50); }
 
+    static bool IsVettedBuild(const RED4ext::v1::FileVer& acFileVersion) noexcept;
+
     uintptr_t base_address;
     mem::region TextRegion;
     RED4ext::v1::FileVer FileVersion{0, 0, 0, 0};
