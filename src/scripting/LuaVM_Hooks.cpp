@@ -507,6 +507,10 @@ void LuaVM::Hook()
         [this]
         {
             s_vm->m_scripting.UnloadAllMods();
+            // Preserve onShutdown callbacks, then release graphics before the
+            // original game Shutdown tick can invalidate an FSR swap-chain proxy.
+            // This ordering is experimental until verified in a supervised test.
+            s_vm->m_d3d12.BeginShutdown(D3D12::ShutdownOrigin::AfterLuaUnload);
 
             return true;
         });

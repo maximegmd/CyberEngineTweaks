@@ -11,10 +11,9 @@
 
 bool D3D12::ResetState(const bool acDestroyContext)
 {
+    std::lock_guard lifecycleLock(m_imguiLock);
     if (m_initialized)
     {
-        std::lock_guard _(m_imguiLock);
-
         for (auto& drawData : m_imguiDrawDataBuffers)
         {
             for (auto i = 0; i < drawData.CmdListsCount; ++i)
@@ -32,12 +31,22 @@ bool D3D12::ResetState(const bool acDestroyContext)
     m_frameContexts.clear();
     m_outSize = {0, 0};
 
+    // Diagnostic candidate: record release boundaries without dereferencing
+    // graphics objects or changing their reference-counting behavior.
+    Log::Info("D3D12 cleanup: releasing device; destroyContext={}", acDestroyContext);
     m_pd3d12Device.Reset();
+    Log::Info("D3D12 cleanup: releasing RTV heap");
     m_pd3dRtvDescHeap.Reset();
+    Log::Info("D3D12 cleanup: releasing SRV heap");
     m_pd3dSrvDescHeap.Reset();
 
+    Log::Info("D3D12 cleanup: releasing command queue");
+    spdlog::default_logger()->flush();
     m_pCommandQueue.Reset();
+    Log::Info("D3D12 cleanup: releasing swap chain");
+    spdlog::default_logger()->flush();
     m_pdxgiSwapChain.Reset();
+    Log::Info("D3D12 cleanup: graphics releases completed");
 
     m_initialized = false;
 
@@ -46,6 +55,9 @@ bool D3D12::ResetState(const bool acDestroyContext)
 
 bool D3D12::Initialize()
 {
+    std::lock_guard lifecycleLock(m_imguiLock);
+    if (m_shutdownStarted)
+        return false;
     if (m_initialized)
         return true;
 
@@ -345,10 +357,9 @@ bool D3D12::InitializeImGui(size_t aBuffersCounts)
 
 void D3D12::PrepareUpdate()
 {
-    if (!m_initialized)
-        return;
-
     std::lock_guard _(m_imguiLock);
+    if (m_shutdownStarted || !m_initialized)
+        return;
 
     ImGui_ImplWin32_NewFrame(m_outSize);
     ImGui::NewFrame();
@@ -379,9 +390,11 @@ void D3D12::PrepareUpdate()
 
 void D3D12::Update()
 {
+    std::lock_guard lifecycleLock(m_imguiLock);
+    if (m_shutdownStarted || !m_initialized)
+        return;
     // swap staging ImGui buffer with render ImGui buffer
     {
-        std::lock_guard _(m_imguiLock);
         ImGui_ImplDX12_NewFrame(m_pCommandQueue.Get());
         if (m_imguiDrawDataBuffers[1].Valid)
         {
