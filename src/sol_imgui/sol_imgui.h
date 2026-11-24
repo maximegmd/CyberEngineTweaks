@@ -23,6 +23,77 @@ inline const char* ProcessTextImpl(std::string_view view, const char* fallback)
 
     return fallback;
 }
+
+inline const char* ProcessZeroSeparatedItems(const std::string& input, std::string& out)
+{
+    const char* p = input.data();
+    const char* end = p + input.size();
+
+    bool anyChanged = false;
+    std::string processed;
+
+    const char* curr = p;
+    while (curr < end && *curr != '\0')
+    {
+        size_t len = 0;
+        while (curr + len < end && curr[len] != '\0')
+            ++len;
+
+        std::string_view item(curr, len);
+        if (TextProcessor::Process(item, processed))
+        {
+            anyChanged = true;
+            break;
+        }
+
+        curr += len + 1;
+    }
+
+    if (!anyChanged)
+        return input.c_str();
+
+    out.clear();
+    out.reserve(input.size() + 16);
+    curr = p;
+    while (curr < end && *curr != '\0')
+    {
+        size_t len = 0;
+        while (curr + len < end && curr[len] != '\0')
+            ++len;
+
+        std::string_view item(curr, len);
+        if (TextProcessor::Process(item, processed))
+            out.append(processed);
+        else
+            out.append(item);
+
+        out.push_back('\0');
+
+        curr += len + 1;
+    }
+
+    out.push_back('\0');
+    return out.c_str();
+}
+
+inline void PopulateItems(const sol::table& items, int count, TiltedPhoques::Vector<std::string>& strings, TiltedPhoques::Vector<const char*>& cstrings)
+{
+    strings.reserve(count);
+    for (int i = 1; i <= count; ++i)
+    {
+        const auto& stringItem = items.get<sol::optional<std::string>>(i);
+        std::string item = stringItem.value_or("Missing");
+        std::string processed;
+        if (TextProcessor::Process(item, processed))
+            strings.emplace_back(std::move(processed));
+        else
+            strings.emplace_back(std::move(item));
+    }
+
+    cstrings.reserve(count);
+    for (const auto& s : strings)
+        cstrings.emplace_back(s.c_str());
+}
 } // namespace detail
 
 inline const char* ProcessText(const char* text)
@@ -718,11 +789,11 @@ inline void Bullet()
 // Widgets: Combo Box
 inline bool BeginCombo(const std::string& label, const std::string& previewValue)
 {
-    return ImGui::BeginCombo(ProcessText(label), previewValue.c_str());
+    return ImGui::BeginCombo(ProcessText(label), ProcessText(previewValue));
 }
 inline bool BeginCombo(const std::string& label, const std::string& previewValue, int flags)
 {
-    return ImGui::BeginCombo(ProcessText(label), previewValue.c_str(), flags);
+    return ImGui::BeginCombo(ProcessText(label), ProcessText(previewValue), flags);
 }
 inline void EndCombo()
 {
@@ -731,14 +802,8 @@ inline void EndCombo()
 inline std::tuple<int, bool> Combo(const std::string& label, int currentItem, const sol::table& items, int itemsCount)
 {
     TiltedPhoques::Vector<std::string> strings;
-    strings.reserve(itemsCount);
     TiltedPhoques::Vector<const char*> cstrings;
-    cstrings.reserve(itemsCount);
-    for (int i{1}; i <= itemsCount; i++)
-    {
-        const auto& stringItem = items.get<sol::optional<std::string>>(i);
-        cstrings.emplace_back(strings.emplace_back(std::move(stringItem.value_or("Missing"))).c_str());
-    }
+    detail::PopulateItems(items, itemsCount, strings, cstrings);
 
     bool clicked = ImGui::Combo(ProcessText(label), &currentItem, cstrings.data(), itemsCount);
     return std::make_tuple(currentItem, clicked);
@@ -746,26 +811,24 @@ inline std::tuple<int, bool> Combo(const std::string& label, int currentItem, co
 inline std::tuple<int, bool> Combo(const std::string& label, int currentItem, const sol::table& items, int itemsCount, int popupMaxHeightInItems)
 {
     TiltedPhoques::Vector<std::string> strings;
-    strings.reserve(itemsCount);
     TiltedPhoques::Vector<const char*> cstrings;
-    cstrings.reserve(itemsCount);
-    for (int i{1}; i <= itemsCount; i++)
-    {
-        const auto& stringItem = items.get<sol::optional<std::string>>(i);
-        cstrings.emplace_back(strings.emplace_back(std::move(stringItem.value_or("Missing"))).c_str());
-    }
+    detail::PopulateItems(items, itemsCount, strings, cstrings);
 
     bool clicked = ImGui::Combo(ProcessText(label), &currentItem, cstrings.data(), itemsCount, popupMaxHeightInItems);
     return std::make_tuple(currentItem, clicked);
 }
 inline std::tuple<int, bool> Combo(const std::string& label, int currentItem, const std::string& itemsSeparatedByZeros)
 {
-    bool clicked = ImGui::Combo(ProcessText(label), &currentItem, itemsSeparatedByZeros.c_str());
+    std::string processedItems;
+    const char* items = detail::ProcessZeroSeparatedItems(itemsSeparatedByZeros, processedItems);
+    bool clicked = ImGui::Combo(ProcessText(label), &currentItem, items);
     return std::make_tuple(currentItem, clicked);
 }
 inline std::tuple<int, bool> Combo(const std::string& label, int currentItem, const std::string& itemsSeparatedByZeros, int popupMaxHeightInItems)
 {
-    bool clicked = ImGui::Combo(ProcessText(label), &currentItem, itemsSeparatedByZeros.c_str(), popupMaxHeightInItems);
+    std::string processedItems;
+    const char* items = detail::ProcessZeroSeparatedItems(itemsSeparatedByZeros, processedItems);
+    bool clicked = ImGui::Combo(ProcessText(label), &currentItem, items, popupMaxHeightInItems);
     return std::make_tuple(currentItem, clicked);
 }
 // TODO: 3rd Combo from ImGui not Supported
@@ -1571,13 +1634,13 @@ inline std::tuple<std::string, bool> InputTextMultiline(const std::string& label
 inline std::tuple<std::string, bool> InputTextWithHint(const std::string& label, const std::string& hint, std::string text, unsigned int buf_size)
 {
     text.resize(buf_size);
-    bool selected = ImGui::InputTextWithHint(ProcessText(label), hint.c_str(), text.data(), buf_size);
+    bool selected = ImGui::InputTextWithHint(ProcessText(label), ProcessText(hint), text.data(), buf_size);
     return std::make_tuple(text.c_str(), selected);
 }
 inline std::tuple<std::string, bool> InputTextWithHint(const std::string& label, const std::string& hint, std::string text, unsigned int buf_size, int flags)
 {
     text.resize(buf_size);
-    bool selected = ImGui::InputTextWithHint(ProcessText(label), hint.c_str(), text.data(), buf_size, flags);
+    bool selected = ImGui::InputTextWithHint(ProcessText(label), ProcessText(hint), text.data(), buf_size, flags);
     return std::make_tuple(text.c_str(), selected);
 }
 inline std::tuple<float, bool> InputFloat(const std::string& label, float v)
@@ -1946,7 +2009,7 @@ inline bool TreeNode(const std::string& label)
 }
 inline bool TreeNode(const std::string& label, const std::string& fmt)
 {
-    return ImGui::TreeNode(ProcessText(label), "%s", fmt.c_str());
+    return ImGui::TreeNode(ProcessText(label), "%s", ProcessText(fmt));
 }
 /* TODO: TreeNodeV(...) (2) ==> UNSUPPORTED */
 inline bool TreeNodeEx(const std::string& label)
@@ -1959,7 +2022,7 @@ inline bool TreeNodeEx(const std::string& label, int flags)
 }
 inline bool TreeNodeEx(const std::string& label, int flags, const std::string& fmt)
 {
-    return ImGui::TreeNodeEx(ProcessText(label), flags, "%s", fmt.c_str());
+    return ImGui::TreeNodeEx(ProcessText(label), flags, "%s", ProcessText(fmt));
 }
 /* TODO: TreeNodeExV(...) (2) ==> UNSUPPORTED */
 inline void TreePush(const std::string& str_id)
@@ -2028,15 +2091,8 @@ inline bool Selectable(const std::string& label, bool selected, int flags, float
 inline std::tuple<int, bool> ListBox(const std::string& label, int current_item, const sol::table& items, int items_count)
 {
     TiltedPhoques::Vector<std::string> strings;
-    for (int i{1}; i <= items_count; i++)
-    {
-        const auto& stringItem = items.get<sol::optional<std::string>>(i);
-        strings.emplace_back(stringItem.value_or("Missing"));
-    }
-
     TiltedPhoques::Vector<const char*> cstrings;
-    for (auto& string : strings)
-        cstrings.emplace_back(string.c_str());
+    detail::PopulateItems(items, items_count, strings, cstrings);
 
     bool clicked = ImGui::ListBox(ProcessText(label), &current_item, cstrings.data(), items_count);
     return std::make_tuple(current_item, clicked);
@@ -2044,15 +2100,8 @@ inline std::tuple<int, bool> ListBox(const std::string& label, int current_item,
 inline std::tuple<int, bool> ListBox(const std::string& label, int current_item, const sol::table& items, int items_count, int height_in_items)
 {
     TiltedPhoques::Vector<std::string> strings;
-    for (int i{1}; i <= items_count; i++)
-    {
-        const auto& stringItem = items.get<sol::optional<std::string>>(i);
-        strings.emplace_back(stringItem.value_or("Missing"));
-    }
-
     TiltedPhoques::Vector<const char*> cstrings;
-    for (auto& string : strings)
-        cstrings.emplace_back(string.c_str());
+    detail::PopulateItems(items, items_count, strings, cstrings);
 
     bool clicked = ImGui::ListBox(ProcessText(label), &current_item, cstrings.data(), items_count, height_in_items);
     return std::make_tuple(current_item, clicked);
