@@ -5,6 +5,8 @@
 #include <CET.h>
 #include <Utils.h>
 
+#include "common/TextProcessor.h"
+
 namespace
 {
 VKBind s_overlayToggleBind{
@@ -261,6 +263,8 @@ void Bindings::Initialize()
 
 void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKBindInfo)
 {
+    std::string processed;
+
     ImGui::TableNextRow();
     ImGui::TableNextColumn();
 
@@ -344,8 +348,12 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
 
     ImGui::AlignTextToFramePadding();
 
+    const char* displayName = bind.DisplayName.c_str();
+    if (TextProcessor::Process(bind.DisplayName, processed))
+        displayName = processed.c_str();
+
     ImGui::PushID(&aVKBindInfo.Bind.ID);
-    ImGui::TextUnformatted(bind.DisplayName.c_str());
+    ImGui::TextUnformatted(displayName);
     ImGui::PopID();
 
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
@@ -365,7 +373,12 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
         {
             const auto& description = std::get<std::string>(bind.Description);
             if (!description.empty())
-                ImGui::SetTooltip("%s", description.c_str());
+            {
+                const char* descText = description.c_str();
+                if (TextProcessor::Process(description, processed))
+                    descText = processed.c_str();
+                ImGui::SetTooltip("%s", descText);
+            }
         }
     }
 
@@ -402,7 +415,12 @@ void Bindings::UpdateAndDrawBinding(const VKModBind& acModBind, VKBindInfo& aVKB
         {
             const auto& description = std::get<std::string>(bind.Description);
             if (!description.empty())
-                ImGui::SetTooltip("%s", description.c_str());
+            {
+                const char* descText = description.c_str();
+                if (TextProcessor::Process(description, processed))
+                    descText = processed.c_str();
+                ImGui::SetTooltip("%s", descText);
+            }
         }
     }
 
@@ -445,7 +463,9 @@ void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoq
         std::as_const(activeModName), activeModName.begin(),
         [&capitalize](char c)
         {
-            if (!std::isalnum(c))
+            if (static_cast<unsigned char>(c) >= 0x80)
+                return c;
+            if (!std::isalnum(static_cast<unsigned char>(c)))
             {
                 capitalize = true;
                 return ' ';
@@ -453,14 +473,19 @@ void Bindings::UpdateAndDrawModBindings(const std::string& acModName, TiltedPhoq
             if (capitalize)
             {
                 capitalize = false;
-                return static_cast<char>(std::toupper(c));
+                return static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
             }
             return c;
         });
 
+    std::string processed;
+    const char* headerText = activeModName.c_str();
+    if (TextProcessor::Process(activeModName, processed))
+        headerText = processed.c_str();
+
     auto headerOpen = aSimplified;
     if (!headerOpen)
-        headerOpen = ImGui::CollapsingHeader(activeModName.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
+        headerOpen = ImGui::CollapsingHeader(headerText, ImGuiTreeNodeFlags_DefaultOpen);
 
     if (!headerOpen)
         return;

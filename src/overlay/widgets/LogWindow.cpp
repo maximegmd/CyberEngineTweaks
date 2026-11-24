@@ -3,6 +3,7 @@
 #include "LogWindow.h"
 
 #include <Utils.h>
+#include "common/TextProcessor.h"
 
 LogWindow::LogWindow(const std::string& acpLoggerName)
     : m_loggerName(acpLoggerName)
@@ -34,12 +35,17 @@ void LogWindow::Draw(const ImVec2& size)
     {
         std::lock_guard _{m_lock};
 
+        std::string processed;
+
         if (!m_lines.empty() && (m_normalizedWidth < 0.0f || m_nextIndexToCheck < m_lines.size()))
         {
             for (size_t i = m_nextIndexToCheck; i < m_lines.size(); ++i)
             {
-                auto& line = m_lines[i].second;
-                m_normalizedWidth = std::max(m_normalizedWidth, ImGui::CalcTextSize(line.c_str()).x);
+                const auto& line = m_lines[i].second;
+                const char* textToMeasure = line.c_str();
+                if (TextProcessor::Process(line, processed))
+                    textToMeasure = processed.c_str();
+                m_normalizedWidth = std::max(m_normalizedWidth, ImGui::CalcTextSize(textToMeasure).x);
             }
             m_nextIndexToCheck = m_lines.size();
         }
@@ -51,7 +57,7 @@ void LogWindow::Draw(const ImVec2& size)
         {
             for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i)
             {
-                auto [level, item] = m_lines[i];
+                const auto& [level, item] = m_lines[i];
 
                 switch (level)
                 {
@@ -76,8 +82,16 @@ void LogWindow::Draw(const ImVec2& size)
 
                 ImGui::SetNextItemWidth(listItemWidth);
 
+                const char* textData = item.data();
+                size_t textSize = item.size();
+                if (TextProcessor::Process(item, processed))
+                {
+                    textData = processed.data();
+                    textSize = processed.size();
+                }
+
                 ImGui::PushID(i);
-                ImGui::InputText(("##" + item).c_str(), item.data(), item.size(), ImGuiInputTextFlags_ReadOnly);
+                ImGui::InputText(("##" + item).c_str(), const_cast<char*>(textData), textSize, ImGuiInputTextFlags_ReadOnly);
                 ImGui::PopID();
 
                 ImGui::PopStyleVar(2);
