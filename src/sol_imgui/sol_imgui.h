@@ -1,43 +1,66 @@
 #pragma once
 
-#include "common/ArabicText.h"
+#include <array>
+
+#include "common/TextProcessor.h"
 
 namespace sol_ImGui
 {
 
-inline const char* Arabic(const std::string& text)
+namespace detail
 {
-    thread_local std::string buffers[4];
-    thread_local size_t index = 0;
+inline const char* ProcessTextImpl(std::string_view view, const char* fallback)
+{
+    thread_local std::array<std::string, 16> buffers;
+    thread_local size_t bufferIndex = 0;
 
-    index = (index + 1) % 4;
-    buffers[index] = ArabicText::Process(text);
-    return buffers[index].c_str();
+    if (TextProcessor::Process(view, buffers[bufferIndex]))
+    {
+        const char* result = buffers[bufferIndex].c_str();
+        bufferIndex = (bufferIndex + 1) % buffers.size();
+        return result;
+    }
+
+    return fallback;
+}
+} // namespace detail
+
+inline const char* ProcessText(const char* text)
+{
+    if (!text)
+        return nullptr;
+
+    return detail::ProcessTextImpl(text, text);
+}
+
+inline const char* ProcessText(const std::string& text)
+{
+    return detail::ProcessTextImpl(text, text.c_str());
 }
 
 
 // Windows
 inline bool Begin(const std::string& name)
 {
-    return ImGui::Begin(Arabic(name));
+    return ImGui::Begin(ProcessText(name));
 }
 
 inline bool Begin(const std::string& name, int flags)
 {
-    return ImGui::Begin(Arabic(name), nullptr, flags);
+    return ImGui::Begin(ProcessText(name), nullptr, flags);
 }
 inline std::tuple<bool, bool> Begin(const std::string& name, bool open)
 {
     if (!open)
         return std::make_tuple(false, false);
-    const bool shouldDraw = ImGui::Begin(Arabic(name), &open);
+    const bool shouldDraw = ImGui::Begin(ProcessText(name), &open);
     return std::make_tuple(open, open && shouldDraw);
 }
 inline std::tuple<bool, bool> Begin(const std::string& name, bool open, int flags)
 {
     if (!open)
         return std::make_tuple(false, false);
-    const bool shouldDraw = ImGui::Begin(Arabic(name), &open, flags);
+    const bool shouldDraw = ImGui::Begin(ProcessText(name), &open, flags);
     return std::make_tuple(open, open && shouldDraw);
 }
 inline void End()
@@ -48,34 +71,34 @@ inline void End()
 // Child Windows
 inline bool BeginChild(const std::string& name)
 {
-    return ImGui::BeginChild(Arabic(name));
+    return ImGui::BeginChild(ProcessText(name));
 }
 inline bool BeginChild(const std::string& name, float sizeX)
 {
-    return ImGui::BeginChild(Arabic(name), {sizeX, 0});
+    return ImGui::BeginChild(ProcessText(name), {sizeX, 0});
 }
 inline bool BeginChild(const std::string& name, float sizeX, float sizeY)
 {
-    return ImGui::BeginChild(Arabic(name), {sizeX, sizeY});
+    return ImGui::BeginChild(ProcessText(name), {sizeX, sizeY});
 }
 inline bool BeginChild(const std::string& name, float sizeX, float sizeY, int child_flags)
 {
-    return ImGui::BeginChild(Arabic(name), {sizeX, sizeY}, static_cast<ImGuiChildFlags>(child_flags));
+    return ImGui::BeginChild(ProcessText(name), {sizeX, sizeY}, static_cast<ImGuiChildFlags>(child_flags));
 }
 
 inline bool BeginChild(const std::string& name, float sizeX, float sizeY, int child_flags, int window_flags)
 {
-    return ImGui::BeginChild(Arabic(name), {sizeX, sizeY}, static_cast<ImGuiChildFlags>(child_flags), static_cast<ImGuiWindowFlags>(window_flags));
+    return ImGui::BeginChild(ProcessText(name), {sizeX, sizeY}, static_cast<ImGuiChildFlags>(child_flags), static_cast<ImGuiWindowFlags>(window_flags));
 }
 
 // DEPRECATED
 inline bool BeginChild(const std::string& name, float sizeX, float sizeY, bool border)
 {
-    return ImGui::BeginChild(Arabic(name), {sizeX, sizeY}, border);
+    return ImGui::BeginChild(ProcessText(name), {sizeX, sizeY}, border);
 }
 inline bool BeginChild(const std::string& name, float sizeX, float sizeY, bool border, int flags)
 {
-    return ImGui::BeginChild(Arabic(name), {sizeX, sizeY}, border, flags);
+    return ImGui::BeginChild(ProcessText(name), {sizeX, sizeY}, border, flags);
 }
 
 inline void EndChild()
@@ -601,45 +624,45 @@ inline int GetID(const std::string& stringID)
 // Widgets: Text
 inline void TextUnformatted(const std::string& text)
 {
-    ImGui::TextUnformatted(Arabic(text));
+    ImGui::TextUnformatted(ProcessText(text));
 }
 inline void Text(const std::string& text)
 {
-    ImGui::TextUnformatted(Arabic(text));
+    ImGui::TextUnformatted(ProcessText(text));
 } // TODO - make this proper call to ImGui::Text, allowing real formatting!
 inline void TextColored(float colR, float colG, float colB, float colA, const std::string& text)
 {
-    ImGui::TextColored({colR, colG, colB, colA}, "%s", Arabic(text));
+    ImGui::TextColored({colR, colG, colB, colA}, "%s", ProcessText(text));
 }
 inline void TextDisabled(const std::string& text)
 {
-    ImGui::TextDisabled("%s", Arabic(text));
+    ImGui::TextDisabled("%s", ProcessText(text));
 }
 inline void TextWrapped(const std::string& text)
 {
-    ImGui::TextWrapped("%s", Arabic(text));
+    ImGui::TextWrapped("%s", ProcessText(text));
 }
 inline void LabelText(const std::string& label, const std::string& text)
 {
-    ImGui::LabelText(Arabic(label), "%s", Arabic(text));
+    ImGui::LabelText(ProcessText(label), "%s", ProcessText(text));
 }
 inline void BulletText(const std::string& text)
 {
-    ImGui::BulletText("%s", Arabic(text));
+    ImGui::BulletText("%s", ProcessText(text));
 }
 
 // Widgets: Main
 inline bool Button(const std::string& label)
 {
-    return ImGui::Button(Arabic(label));
+    return ImGui::Button(ProcessText(label));
 }
 inline bool Button(const std::string& label, float sizeX, float sizeY)
 {
-    return ImGui::Button(Arabic(label), {sizeX, sizeY});
+    return ImGui::Button(ProcessText(label), {sizeX, sizeY});
 }
 inline bool SmallButton(const std::string& label)
 {
-    return ImGui::SmallButton(Arabic(label));
+    return ImGui::SmallButton(ProcessText(label));
 }
 inline bool InvisibleButton(const std::string& stringID, float sizeX, float sizeY)
 {
@@ -658,7 +681,7 @@ inline void ImageButton()
 inline std::tuple<bool, bool> Checkbox(const std::string& label, bool v)
 {
     bool value{v};
-    bool pressed = ImGui::Checkbox(Arabic(label), &value);
+    bool pressed = ImGui::Checkbox(ProcessText(label), &value);
 
     return std::make_tuple(value, pressed);
 }
@@ -668,11 +691,11 @@ inline bool CheckboxFlags()
 }
 inline bool RadioButton(const std::string& label, bool active)
 {
-    return ImGui::RadioButton(Arabic(label), active);
+    return ImGui::RadioButton(ProcessText(label), active);
 }
 inline std::tuple<int, bool> RadioButton(const std::string& label, int v, int vButton)
 {
-    bool ret{ImGui::RadioButton(Arabic(label), &v, vButton)};
+    bool ret{ImGui::RadioButton(ProcessText(label), &v, vButton)};
     return std::make_tuple(v, ret);
 }
 inline void ProgressBar(float fraction)
@@ -695,11 +718,11 @@ inline void Bullet()
 // Widgets: Combo Box
 inline bool BeginCombo(const std::string& label, const std::string& previewValue)
 {
-    return ImGui::BeginCombo(Arabic(label), previewValue.c_str());
+    return ImGui::BeginCombo(ProcessText(label), previewValue.c_str());
 }
 inline bool BeginCombo(const std::string& label, const std::string& previewValue, int flags)
 {
-    return ImGui::BeginCombo(Arabic(label), previewValue.c_str(), flags);
+    return ImGui::BeginCombo(ProcessText(label), previewValue.c_str(), flags);
 }
 inline void EndCombo()
 {
@@ -717,7 +740,7 @@ inline std::tuple<int, bool> Combo(const std::string& label, int currentItem, co
         cstrings.emplace_back(strings.emplace_back(std::move(stringItem.value_or("Missing"))).c_str());
     }
 
-    bool clicked = ImGui::Combo(Arabic(label), &currentItem, cstrings.data(), itemsCount);
+    bool clicked = ImGui::Combo(ProcessText(label), &currentItem, cstrings.data(), itemsCount);
     return std::make_tuple(currentItem, clicked);
 }
 inline std::tuple<int, bool> Combo(const std::string& label, int currentItem, const sol::table& items, int itemsCount, int popupMaxHeightInItems)
@@ -732,17 +755,17 @@ inline std::tuple<int, bool> Combo(const std::string& label, int currentItem, co
         cstrings.emplace_back(strings.emplace_back(std::move(stringItem.value_or("Missing"))).c_str());
     }
 
-    bool clicked = ImGui::Combo(Arabic(label), &currentItem, cstrings.data(), itemsCount, popupMaxHeightInItems);
+    bool clicked = ImGui::Combo(ProcessText(label), &currentItem, cstrings.data(), itemsCount, popupMaxHeightInItems);
     return std::make_tuple(currentItem, clicked);
 }
 inline std::tuple<int, bool> Combo(const std::string& label, int currentItem, const std::string& itemsSeparatedByZeros)
 {
-    bool clicked = ImGui::Combo(Arabic(label), &currentItem, itemsSeparatedByZeros.c_str());
+    bool clicked = ImGui::Combo(ProcessText(label), &currentItem, itemsSeparatedByZeros.c_str());
     return std::make_tuple(currentItem, clicked);
 }
 inline std::tuple<int, bool> Combo(const std::string& label, int currentItem, const std::string& itemsSeparatedByZeros, int popupMaxHeightInItems)
 {
-    bool clicked = ImGui::Combo(Arabic(label), &currentItem, itemsSeparatedByZeros.c_str(), popupMaxHeightInItems);
+    bool clicked = ImGui::Combo(ProcessText(label), &currentItem, itemsSeparatedByZeros.c_str(), popupMaxHeightInItems);
     return std::make_tuple(currentItem, clicked);
 }
 // TODO: 3rd Combo from ImGui not Supported
@@ -750,39 +773,39 @@ inline std::tuple<int, bool> Combo(const std::string& label, int currentItem, co
 // Widgets: Drags
 inline std::tuple<float, bool> DragFloat(const std::string& label, float v)
 {
-    bool used = ImGui::DragFloat(Arabic(label), &v);
+    bool used = ImGui::DragFloat(ProcessText(label), &v);
     return std::make_tuple(v, used);
 }
 inline std::tuple<float, bool> DragFloat(const std::string& label, float v, float v_speed)
 {
-    bool used = ImGui::DragFloat(Arabic(label), &v, v_speed);
+    bool used = ImGui::DragFloat(ProcessText(label), &v, v_speed);
     return std::make_tuple(v, used);
 }
 inline std::tuple<float, bool> DragFloat(const std::string& label, float v, float v_speed, float v_min)
 {
-    bool used = ImGui::DragFloat(Arabic(label), &v, v_speed, v_min);
+    bool used = ImGui::DragFloat(ProcessText(label), &v, v_speed, v_min);
     return std::make_tuple(v, used);
 }
 inline std::tuple<float, bool> DragFloat(const std::string& label, float v, float v_speed, float v_min, float v_max)
 {
-    bool used = ImGui::DragFloat(Arabic(label), &v, v_speed, v_min, v_max);
+    bool used = ImGui::DragFloat(ProcessText(label), &v, v_speed, v_min, v_max);
     return std::make_tuple(v, used);
 }
 inline std::tuple<float, bool> DragFloat(const std::string& label, float v, float v_speed, float v_min, float v_max, const std::string& format)
 {
-    bool used = ImGui::DragFloat(Arabic(label), &v, v_speed, v_min, v_max, format.c_str());
+    bool used = ImGui::DragFloat(ProcessText(label), &v, v_speed, v_min, v_max, format.c_str());
     return std::make_tuple(v, used);
 }
 inline std::tuple<float, bool> DragFloat(const std::string& label, float v, float v_speed, float v_min, float v_max, const std::string& format, int flags)
 {
-    bool used = ImGui::DragFloat(Arabic(label), &v, v_speed, v_min, v_max, format.c_str(), flags);
+    bool used = ImGui::DragFloat(ProcessText(label), &v, v_speed, v_min, v_max, format.c_str(), flags);
     return std::make_tuple(v, used);
 }
 inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat2(const std::string& label, const sol::table& v)
 {
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[2] = {static_cast<float>(v1), static_cast<float>(v2)};
-    bool used = ImGui::DragFloat2(Arabic(label), value);
+    bool used = ImGui::DragFloat2(ProcessText(label), value);
 
     sol::as_table_t float2 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1]});
 
@@ -792,7 +815,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat
 {
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[2] = {static_cast<float>(v1), static_cast<float>(v2)};
-    bool used = ImGui::DragFloat2(Arabic(label), value, v_speed);
+    bool used = ImGui::DragFloat2(ProcessText(label), value, v_speed);
 
     sol::as_table_t float2 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1]});
 
@@ -802,7 +825,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat
 {
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[2] = {static_cast<float>(v1), static_cast<float>(v2)};
-    bool used = ImGui::DragFloat2(Arabic(label), value, v_speed, v_min);
+    bool used = ImGui::DragFloat2(ProcessText(label), value, v_speed, v_min);
 
     sol::as_table_t float2 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1]});
 
@@ -812,7 +835,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat
 {
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[2] = {static_cast<float>(v1), static_cast<float>(v2)};
-    bool used = ImGui::DragFloat2(Arabic(label), value, v_speed, v_min, v_max);
+    bool used = ImGui::DragFloat2(ProcessText(label), value, v_speed, v_min, v_max);
 
     sol::as_table_t float2 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1]});
 
@@ -823,7 +846,7 @@ DragFloat2(const std::string& label, const sol::table& v, float v_speed, float v
 {
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[2] = {static_cast<float>(v1), static_cast<float>(v2)};
-    bool used = ImGui::DragFloat2(Arabic(label), value, v_speed, v_min, v_max, format.c_str());
+    bool used = ImGui::DragFloat2(ProcessText(label), value, v_speed, v_min, v_max, format.c_str());
 
     sol::as_table_t float2 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1]});
 
@@ -834,7 +857,7 @@ DragFloat2(const std::string& label, const sol::table& v, float v_speed, float v
 {
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[2] = {static_cast<float>(v1), static_cast<float>(v2)};
-    bool used = ImGui::DragFloat2(Arabic(label), value, v_speed, v_min, v_max, format.c_str(), flags);
+    bool used = ImGui::DragFloat2(ProcessText(label), value, v_speed, v_min, v_max, format.c_str(), flags);
 
     sol::as_table_t float2 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1]});
 
@@ -845,7 +868,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[3] = {static_cast<float>(v1), static_cast<float>(v2), static_cast<float>(v3)};
-    bool used = ImGui::DragFloat3(Arabic(label), value);
+    bool used = ImGui::DragFloat3(ProcessText(label), value);
 
     sol::as_table_t float3 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1], value[2]});
 
@@ -856,7 +879,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[3] = {static_cast<float>(v1), static_cast<float>(v2), static_cast<float>(v3)};
-    bool used = ImGui::DragFloat3(Arabic(label), value, v_speed);
+    bool used = ImGui::DragFloat3(ProcessText(label), value, v_speed);
 
     sol::as_table_t float3 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1], value[2]});
 
@@ -867,7 +890,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[3] = {static_cast<float>(v1), static_cast<float>(v2), static_cast<float>(v3)};
-    bool used = ImGui::DragFloat3(Arabic(label), value, v_speed, v_min);
+    bool used = ImGui::DragFloat3(ProcessText(label), value, v_speed, v_min);
 
     sol::as_table_t float3 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1], value[2]});
 
@@ -878,7 +901,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[3] = {static_cast<float>(v1), static_cast<float>(v2), static_cast<float>(v3)};
-    bool used = ImGui::DragFloat3(Arabic(label), value, v_speed, v_min, v_max);
+    bool used = ImGui::DragFloat3(ProcessText(label), value, v_speed, v_min, v_max);
 
     sol::as_table_t float3 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1], value[2]});
 
@@ -890,7 +913,7 @@ DragFloat3(const std::string& label, const sol::table& v, float v_speed, float v
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[3] = {static_cast<float>(v1), static_cast<float>(v2), static_cast<float>(v3)};
-    bool used = ImGui::DragFloat3(Arabic(label), value, v_speed, v_min, v_max, format.c_str());
+    bool used = ImGui::DragFloat3(ProcessText(label), value, v_speed, v_min, v_max, format.c_str());
 
     sol::as_table_t float3 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1], value[2]});
 
@@ -902,7 +925,7 @@ DragFloat3(const std::string& label, const sol::table& v, float v_speed, float v
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[3] = {static_cast<float>(v1), static_cast<float>(v2), static_cast<float>(v3)};
-    bool used = ImGui::DragFloat3(Arabic(label), value, v_speed, v_min, v_max, format.c_str(), flags);
+    bool used = ImGui::DragFloat3(ProcessText(label), value, v_speed, v_min, v_max, format.c_str(), flags);
 
     sol::as_table_t float3 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1], value[2]});
 
@@ -913,7 +936,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v4{v[4].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[4] = {static_cast<float>(v1), static_cast<float>(v2), static_cast<float>(v3), static_cast<float>(v4)};
-    bool used = ImGui::DragFloat4(Arabic(label), value);
+    bool used = ImGui::DragFloat4(ProcessText(label), value);
 
     sol::as_table_t float4 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1], value[2], value[3]});
 
@@ -924,7 +947,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v4{v[4].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[4] = {static_cast<float>(v1), static_cast<float>(v2), static_cast<float>(v3), static_cast<float>(v4)};
-    bool used = ImGui::DragFloat4(Arabic(label), value, v_speed);
+    bool used = ImGui::DragFloat4(ProcessText(label), value, v_speed);
 
     sol::as_table_t float4 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1], value[2], value[3]});
 
@@ -935,7 +958,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v4{v[4].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[4] = {static_cast<float>(v1), static_cast<float>(v2), static_cast<float>(v3), static_cast<float>(v4)};
-    bool used = ImGui::DragFloat4(Arabic(label), value, v_speed, v_min);
+    bool used = ImGui::DragFloat4(ProcessText(label), value, v_speed, v_min);
 
     sol::as_table_t float4 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1], value[2], value[3]});
 
@@ -946,7 +969,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> DragFloat
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v4{v[4].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[4] = {static_cast<float>(v1), static_cast<float>(v2), static_cast<float>(v3), static_cast<float>(v4)};
-    bool used = ImGui::DragFloat4(Arabic(label), value, v_speed, v_min, v_max);
+    bool used = ImGui::DragFloat4(ProcessText(label), value, v_speed, v_min, v_max);
 
     sol::as_table_t float4 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1], value[2], value[3]});
 
@@ -958,7 +981,7 @@ DragFloat4(const std::string& label, const sol::table& v, float v_speed, float v
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v4{v[4].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[4] = {static_cast<float>(v1), static_cast<float>(v2), static_cast<float>(v3), static_cast<float>(v4)};
-    bool used = ImGui::DragFloat4(Arabic(label), value, v_speed, v_min, v_max, format.c_str());
+    bool used = ImGui::DragFloat4(ProcessText(label), value, v_speed, v_min, v_max, format.c_str());
 
     sol::as_table_t float4 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1], value[2], value[3]});
 
@@ -970,7 +993,7 @@ DragFloat4(const std::string& label, const sol::table& v, float v_speed, float v
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v4{v[4].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[4] = {static_cast<float>(v1), static_cast<float>(v2), static_cast<float>(v3), static_cast<float>(v4)};
-    bool used = ImGui::DragFloat4(Arabic(label), value, v_speed, v_min, v_max, format.c_str(), flags);
+    bool used = ImGui::DragFloat4(ProcessText(label), value, v_speed, v_min, v_max, format.c_str(), flags);
 
     sol::as_table_t float4 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1], value[2], value[3]});
 
@@ -981,39 +1004,39 @@ inline void DragFloatRange2()
 }
 inline std::tuple<int, bool> DragInt(const std::string& label, int v)
 {
-    bool used = ImGui::DragInt(Arabic(label), &v);
+    bool used = ImGui::DragInt(ProcessText(label), &v);
     return std::make_tuple(v, used);
 }
 inline std::tuple<int, bool> DragInt(const std::string& label, int v, float v_speed)
 {
-    bool used = ImGui::DragInt(Arabic(label), &v, v_speed);
+    bool used = ImGui::DragInt(ProcessText(label), &v, v_speed);
     return std::make_tuple(v, used);
 }
 inline std::tuple<int, bool> DragInt(const std::string& label, int v, float v_speed, int v_min)
 {
-    bool used = ImGui::DragInt(Arabic(label), &v, v_speed, v_min);
+    bool used = ImGui::DragInt(ProcessText(label), &v, v_speed, v_min);
     return std::make_tuple(v, used);
 }
 inline std::tuple<int, bool> DragInt(const std::string& label, int v, float v_speed, int v_min, int v_max)
 {
-    bool used = ImGui::DragInt(Arabic(label), &v, v_speed, v_min, v_max);
+    bool used = ImGui::DragInt(ProcessText(label), &v, v_speed, v_min, v_max);
     return std::make_tuple(v, used);
 }
 inline std::tuple<int, bool> DragInt(const std::string& label, int v, float v_speed, int v_min, int v_max, const std::string& format)
 {
-    bool used = ImGui::DragInt(Arabic(label), &v, v_speed, v_min, v_max, format.c_str());
+    bool used = ImGui::DragInt(ProcessText(label), &v, v_speed, v_min, v_max, format.c_str());
     return std::make_tuple(v, used);
 }
 inline std::tuple<int, bool> DragInt(const std::string& label, int v, float v_speed, int v_min, int v_max, const std::string& format, int flags)
 {
-    bool used = ImGui::DragInt(Arabic(label), &v, v_speed, v_min, v_max, format.c_str(), flags);
+    bool used = ImGui::DragInt(ProcessText(label), &v, v_speed, v_min, v_max, format.c_str(), flags);
     return std::make_tuple(v, used);
 }
 inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt2(const std::string& label, const sol::table& v)
 {
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[2] = {static_cast<int>(v1), static_cast<int>(v2)};
-    bool used = ImGui::DragInt2(Arabic(label), value);
+    bool used = ImGui::DragInt2(ProcessText(label), value);
 
     sol::as_table_t int2 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1]});
 
@@ -1023,7 +1046,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt2(co
 {
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[2] = {static_cast<int>(v1), static_cast<int>(v2)};
-    bool used = ImGui::DragInt2(Arabic(label), value, v_speed);
+    bool used = ImGui::DragInt2(ProcessText(label), value, v_speed);
 
     sol::as_table_t int2 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1]});
 
@@ -1033,7 +1056,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt2(co
 {
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[2] = {static_cast<int>(v1), static_cast<int>(v2)};
-    bool used = ImGui::DragInt2(Arabic(label), value, v_speed, v_min);
+    bool used = ImGui::DragInt2(ProcessText(label), value, v_speed, v_min);
 
     sol::as_table_t int2 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1]});
 
@@ -1043,7 +1066,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt2(co
 {
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[2] = {static_cast<int>(v1), static_cast<int>(v2)};
-    bool used = ImGui::DragInt2(Arabic(label), value, v_speed, v_min, v_max);
+    bool used = ImGui::DragInt2(ProcessText(label), value, v_speed, v_min, v_max);
 
     sol::as_table_t int2 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1]});
 
@@ -1054,7 +1077,7 @@ DragInt2(const std::string& label, const sol::table& v, float v_speed, int v_min
 {
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[2] = {static_cast<int>(v1), static_cast<int>(v2)};
-    bool used = ImGui::DragInt2(Arabic(label), value, v_speed, v_min, v_max, format.c_str());
+    bool used = ImGui::DragInt2(ProcessText(label), value, v_speed, v_min, v_max, format.c_str());
 
     sol::as_table_t int2 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1]});
 
@@ -1065,7 +1088,7 @@ DragInt2(const std::string& label, const sol::table& v, float v_speed, int v_min
 {
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[2] = {static_cast<int>(v1), static_cast<int>(v2)};
-    bool used = ImGui::DragInt2(Arabic(label), value, v_speed, v_min, v_max, format.c_str(), flags);
+    bool used = ImGui::DragInt2(ProcessText(label), value, v_speed, v_min, v_max, format.c_str(), flags);
 
     sol::as_table_t int2 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1]});
 
@@ -1076,7 +1099,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt3(co
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[3] = {static_cast<int>(v1), static_cast<int>(v2), static_cast<int>(v3)};
-    bool used = ImGui::DragInt3(Arabic(label), value);
+    bool used = ImGui::DragInt3(ProcessText(label), value);
 
     sol::as_table_t int3 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1], value[2]});
 
@@ -1087,7 +1110,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt3(co
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[3] = {static_cast<int>(v1), static_cast<int>(v2), static_cast<int>(v3)};
-    bool used = ImGui::DragInt3(Arabic(label), value, v_speed);
+    bool used = ImGui::DragInt3(ProcessText(label), value, v_speed);
 
     sol::as_table_t int3 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1], value[2]});
 
@@ -1098,7 +1121,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt3(co
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[3] = {static_cast<int>(v1), static_cast<int>(v2), static_cast<int>(v3)};
-    bool used = ImGui::DragInt3(Arabic(label), value, v_speed, v_min);
+    bool used = ImGui::DragInt3(ProcessText(label), value, v_speed, v_min);
 
     sol::as_table_t int3 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1], value[2]});
 
@@ -1109,7 +1132,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt3(co
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[3] = {static_cast<int>(v1), static_cast<int>(v2), static_cast<int>(v3)};
-    bool used = ImGui::DragInt3(Arabic(label), value, v_speed, v_min, v_max);
+    bool used = ImGui::DragInt3(ProcessText(label), value, v_speed, v_min, v_max);
 
     sol::as_table_t int3 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1], value[2]});
 
@@ -1121,7 +1144,7 @@ DragInt3(const std::string& label, const sol::table& v, float v_speed, int v_min
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[3] = {static_cast<int>(v1), static_cast<int>(v2), static_cast<int>(v3)};
-    bool used = ImGui::DragInt3(Arabic(label), value, v_speed, v_min, v_max, format.c_str());
+    bool used = ImGui::DragInt3(ProcessText(label), value, v_speed, v_min, v_max, format.c_str());
 
     sol::as_table_t int3 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1], value[2]});
 
@@ -1133,7 +1156,7 @@ DragInt3(const std::string& label, const sol::table& v, float v_speed, int v_min
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[3] = {static_cast<int>(v1), static_cast<int>(v2), static_cast<int>(v3)};
-    bool used = ImGui::DragInt3(Arabic(label), value, v_speed, v_min, v_max, format.c_str(), flags);
+    bool used = ImGui::DragInt3(ProcessText(label), value, v_speed, v_min, v_max, format.c_str(), flags);
 
     sol::as_table_t int3 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1], value[2]});
 
@@ -1144,7 +1167,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt4(co
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v4{v[4].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[4] = {static_cast<int>(v1), static_cast<int>(v2), static_cast<int>(v3), static_cast<int>(v4)};
-    bool used = ImGui::DragInt4(Arabic(label), value);
+    bool used = ImGui::DragInt4(ProcessText(label), value);
 
     sol::as_table_t int4 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1], value[2], value[3]});
 
@@ -1155,7 +1178,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt4(co
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v4{v[4].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[4] = {static_cast<int>(v1), static_cast<int>(v2), static_cast<int>(v3), static_cast<int>(v4)};
-    bool used = ImGui::DragInt4(Arabic(label), value, v_speed);
+    bool used = ImGui::DragInt4(ProcessText(label), value, v_speed);
 
     sol::as_table_t int4 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1], value[2], value[3]});
 
@@ -1166,7 +1189,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt4(co
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v4{v[4].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[4] = {static_cast<int>(v1), static_cast<int>(v2), static_cast<int>(v3), static_cast<int>(v4)};
-    bool used = ImGui::DragInt4(Arabic(label), value, v_speed, v_min);
+    bool used = ImGui::DragInt4(ProcessText(label), value, v_speed, v_min);
 
     sol::as_table_t int4 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1], value[2], value[3]});
 
@@ -1177,7 +1200,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> DragInt4(co
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v4{v[4].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[4] = {static_cast<int>(v1), static_cast<int>(v2), static_cast<int>(v3), static_cast<int>(v4)};
-    bool used = ImGui::DragInt4(Arabic(label), value, v_speed, v_min, v_max);
+    bool used = ImGui::DragInt4(ProcessText(label), value, v_speed, v_min, v_max);
 
     sol::as_table_t int4 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1], value[2], value[3]});
 
@@ -1189,7 +1212,7 @@ DragInt4(const std::string& label, const sol::table& v, float v_speed, int v_min
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v4{v[4].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[4] = {static_cast<int>(v1), static_cast<int>(v2), static_cast<int>(v3), static_cast<int>(v4)};
-    bool used = ImGui::DragInt4(Arabic(label), value, v_speed, v_min, v_max, format.c_str());
+    bool used = ImGui::DragInt4(ProcessText(label), value, v_speed, v_min, v_max, format.c_str());
 
     sol::as_table_t int4 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1], value[2], value[3]});
 
@@ -1201,7 +1224,7 @@ DragInt4(const std::string& label, const sol::table& v, float v_speed, int v_min
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v4{v[4].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[4] = {static_cast<int>(v1), static_cast<int>(v2), static_cast<int>(v3), static_cast<int>(v4)};
-    bool used = ImGui::DragInt4(Arabic(label), value, v_speed, v_min, v_max, format.c_str(), flags);
+    bool used = ImGui::DragInt4(ProcessText(label), value, v_speed, v_min, v_max, format.c_str(), flags);
 
     sol::as_table_t int4 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1], value[2], value[3]});
 
@@ -1220,24 +1243,24 @@ inline void DragScalarN()
 // Widgets: Sliders
 inline std::tuple<float, bool> SliderFloat(const std::string& label, float v, float v_min, float v_max)
 {
-    bool used = ImGui::SliderFloat(Arabic(label), &v, v_min, v_max);
+    bool used = ImGui::SliderFloat(ProcessText(label), &v, v_min, v_max);
     return std::make_tuple(v, used);
 }
 inline std::tuple<float, bool> SliderFloat(const std::string& label, float v, float v_min, float v_max, const std::string& format)
 {
-    bool used = ImGui::SliderFloat(Arabic(label), &v, v_min, v_max, format.c_str());
+    bool used = ImGui::SliderFloat(ProcessText(label), &v, v_min, v_max, format.c_str());
     return std::make_tuple(v, used);
 }
 inline std::tuple<float, bool> SliderFloat(const std::string& label, float v, float v_min, float v_max, const std::string& format, int flags)
 {
-    bool used = ImGui::SliderFloat(Arabic(label), &v, v_min, v_max, format.c_str(), flags);
+    bool used = ImGui::SliderFloat(ProcessText(label), &v, v_min, v_max, format.c_str(), flags);
     return std::make_tuple(v, used);
 }
 inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> SliderFloat2(const std::string& label, const sol::table& v, float v_min, float v_max)
 {
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[2] = {static_cast<float>(v1), static_cast<float>(v2)};
-    bool used = ImGui::SliderFloat2(Arabic(label), value, v_min, v_max);
+    bool used = ImGui::SliderFloat2(ProcessText(label), value, v_min, v_max);
 
     sol::as_table_t float2 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1]});
 
@@ -1248,7 +1271,7 @@ SliderFloat2(const std::string& label, const sol::table& v, float v_min, float v
 {
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[2] = {static_cast<float>(v1), static_cast<float>(v2)};
-    bool used = ImGui::SliderFloat2(Arabic(label), value, v_min, v_max, format.c_str());
+    bool used = ImGui::SliderFloat2(ProcessText(label), value, v_min, v_max, format.c_str());
 
     sol::as_table_t float2 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1]});
 
@@ -1259,7 +1282,7 @@ SliderFloat2(const std::string& label, const sol::table& v, float v_min, float v
 {
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[2] = {static_cast<float>(v1), static_cast<float>(v2)};
-    bool used = ImGui::SliderFloat2(Arabic(label), value, v_min, v_max, format.c_str(), flags);
+    bool used = ImGui::SliderFloat2(ProcessText(label), value, v_min, v_max, format.c_str(), flags);
 
     sol::as_table_t float2 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1]});
 
@@ -1270,7 +1293,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> SliderFlo
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[3] = {static_cast<float>(v1), static_cast<float>(v2), static_cast<float>(v3)};
-    bool used = ImGui::SliderFloat3(Arabic(label), value, v_min, v_max);
+    bool used = ImGui::SliderFloat3(ProcessText(label), value, v_min, v_max);
 
     sol::as_table_t float3 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1], value[3]});
 
@@ -1282,7 +1305,7 @@ SliderFloat3(const std::string& label, const sol::table& v, float v_min, float v
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[3] = {static_cast<float>(v1), static_cast<float>(v2), static_cast<float>(v3)};
-    bool used = ImGui::SliderFloat3(Arabic(label), value, v_min, v_max, format.c_str());
+    bool used = ImGui::SliderFloat3(ProcessText(label), value, v_min, v_max, format.c_str());
 
     sol::as_table_t float3 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1], value[3]});
 
@@ -1294,7 +1317,7 @@ SliderFloat3(const std::string& label, const sol::table& v, float v_min, float v
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[3] = {static_cast<float>(v1), static_cast<float>(v2), static_cast<float>(v3)};
-    bool used = ImGui::SliderFloat3(Arabic(label), value, v_min, v_max, format.c_str(), flags);
+    bool used = ImGui::SliderFloat3(ProcessText(label), value, v_min, v_max, format.c_str(), flags);
 
     sol::as_table_t float3 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1], value[3]});
 
@@ -1305,7 +1328,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> SliderFlo
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v4{v[4].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[4] = {static_cast<float>(v1), static_cast<float>(v2), static_cast<float>(v3), static_cast<float>(v4)};
-    bool used = ImGui::SliderFloat4(Arabic(label), value, v_min, v_max);
+    bool used = ImGui::SliderFloat4(ProcessText(label), value, v_min, v_max);
 
     sol::as_table_t float4 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1], value[2], value[3]});
 
@@ -1317,7 +1340,7 @@ SliderFloat4(const std::string& label, const sol::table& v, float v_min, float v
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v4{v[4].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[4] = {static_cast<float>(v1), static_cast<float>(v2), static_cast<float>(v3), static_cast<float>(v4)};
-    bool used = ImGui::SliderFloat4(Arabic(label), value, v_min, v_max, format.c_str());
+    bool used = ImGui::SliderFloat4(ProcessText(label), value, v_min, v_max, format.c_str());
 
     sol::as_table_t float4 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1], value[2], value[3]});
 
@@ -1329,7 +1352,7 @@ SliderFloat4(const std::string& label, const sol::table& v, float v_min, float v
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v4{v[4].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[4] = {static_cast<float>(v1), static_cast<float>(v2), static_cast<float>(v3), static_cast<float>(v4)};
-    bool used = ImGui::SliderFloat4(Arabic(label), value, v_min, v_max, format.c_str(), flags);
+    bool used = ImGui::SliderFloat4(ProcessText(label), value, v_min, v_max, format.c_str(), flags);
 
     sol::as_table_t float4 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1], value[2], value[3]});
 
@@ -1337,49 +1360,49 @@ SliderFloat4(const std::string& label, const sol::table& v, float v_min, float v
 }
 inline std::tuple<float, bool> SliderAngle(const std::string& label, float v_rad)
 {
-    bool used = ImGui::SliderAngle(Arabic(label), &v_rad);
+    bool used = ImGui::SliderAngle(ProcessText(label), &v_rad);
     return std::make_tuple(v_rad, used);
 }
 inline std::tuple<float, bool> SliderAngle(const std::string& label, float v_rad, float v_degrees_min)
 {
-    bool used = ImGui::SliderAngle(Arabic(label), &v_rad, v_degrees_min);
+    bool used = ImGui::SliderAngle(ProcessText(label), &v_rad, v_degrees_min);
     return std::make_tuple(v_rad, used);
 }
 inline std::tuple<float, bool> SliderAngle(const std::string& label, float v_rad, float v_degrees_min, float v_degrees_max)
 {
-    bool used = ImGui::SliderAngle(Arabic(label), &v_rad, v_degrees_min, v_degrees_max);
+    bool used = ImGui::SliderAngle(ProcessText(label), &v_rad, v_degrees_min, v_degrees_max);
     return std::make_tuple(v_rad, used);
 }
 inline std::tuple<float, bool> SliderAngle(const std::string& label, float v_rad, float v_degrees_min, float v_degrees_max, const std::string& format)
 {
-    bool used = ImGui::SliderAngle(Arabic(label), &v_rad, v_degrees_min, v_degrees_max, format.c_str());
+    bool used = ImGui::SliderAngle(ProcessText(label), &v_rad, v_degrees_min, v_degrees_max, format.c_str());
     return std::make_tuple(v_rad, used);
 }
 inline std::tuple<float, bool> SliderAngle(const std::string& label, float v_rad, float v_degrees_min, float v_degrees_max, const std::string& format, int flags)
 {
-    bool used = ImGui::SliderAngle(Arabic(label), &v_rad, v_degrees_min, v_degrees_max, format.c_str(), flags);
+    bool used = ImGui::SliderAngle(ProcessText(label), &v_rad, v_degrees_min, v_degrees_max, format.c_str(), flags);
     return std::make_tuple(v_rad, used);
 }
 inline std::tuple<int, bool> SliderInt(const std::string& label, int v, int v_min, int v_max)
 {
-    bool used = ImGui::SliderInt(Arabic(label), &v, v_min, v_max);
+    bool used = ImGui::SliderInt(ProcessText(label), &v, v_min, v_max);
     return std::make_tuple(v, used);
 }
 inline std::tuple<int, bool> SliderInt(const std::string& label, int v, int v_min, int v_max, const std::string& format)
 {
-    bool used = ImGui::SliderInt(Arabic(label), &v, v_min, v_max, format.c_str());
+    bool used = ImGui::SliderInt(ProcessText(label), &v, v_min, v_max, format.c_str());
     return std::make_tuple(v, used);
 }
 inline std::tuple<int, bool> SliderInt(const std::string& label, int v, int v_min, int v_max, const std::string& format, int flags)
 {
-    bool used = ImGui::SliderInt(Arabic(label), &v, v_min, v_max, format.c_str(), flags);
+    bool used = ImGui::SliderInt(ProcessText(label), &v, v_min, v_max, format.c_str(), flags);
     return std::make_tuple(v, used);
 }
 inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> SliderInt2(const std::string& label, const sol::table& v, int v_min, int v_max)
 {
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[2] = {static_cast<int>(v1), static_cast<int>(v2)};
-    bool used = ImGui::SliderInt2(Arabic(label), value, v_min, v_max);
+    bool used = ImGui::SliderInt2(ProcessText(label), value, v_min, v_max);
 
     sol::as_table_t int2 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1]});
 
@@ -1389,7 +1412,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> SliderInt2(
 {
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[2] = {static_cast<int>(v1), static_cast<int>(v2)};
-    bool used = ImGui::SliderInt2(Arabic(label), value, v_min, v_max, format.c_str());
+    bool used = ImGui::SliderInt2(ProcessText(label), value, v_min, v_max, format.c_str());
 
     sol::as_table_t int2 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1]});
 
@@ -1400,7 +1423,7 @@ SliderInt2(const std::string& label, const sol::table& v, int v_min, int v_max, 
 {
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[2] = {static_cast<int>(v1), static_cast<int>(v2)};
-    bool used = ImGui::SliderInt2(Arabic(label), value, v_min, v_max, format.c_str(), flags);
+    bool used = ImGui::SliderInt2(ProcessText(label), value, v_min, v_max, format.c_str(), flags);
 
     sol::as_table_t int2 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1]});
 
@@ -1411,7 +1434,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> SliderInt3(
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[3] = {static_cast<int>(v1), static_cast<int>(v2), static_cast<int>(v3)};
-    bool used = ImGui::SliderInt3(Arabic(label), value, v_min, v_max);
+    bool used = ImGui::SliderInt3(ProcessText(label), value, v_min, v_max);
 
     sol::as_table_t int3 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1], value[2]});
 
@@ -1422,7 +1445,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> SliderInt3(
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[3] = {static_cast<int>(v1), static_cast<int>(v2), static_cast<int>(v3)};
-    bool used = ImGui::SliderInt3(Arabic(label), value, v_min, v_max, format.c_str());
+    bool used = ImGui::SliderInt3(ProcessText(label), value, v_min, v_max, format.c_str());
 
     sol::as_table_t int3 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1], value[2]});
 
@@ -1434,7 +1457,7 @@ SliderInt3(const std::string& label, const sol::table& v, int v_min, int v_max, 
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[3] = {static_cast<int>(v1), static_cast<int>(v2), static_cast<int>(v3)};
-    bool used = ImGui::SliderInt3(Arabic(label), value, v_min, v_max, format.c_str(), flags);
+    bool used = ImGui::SliderInt3(ProcessText(label), value, v_min, v_max, format.c_str(), flags);
 
     sol::as_table_t int3 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1], value[2]});
 
@@ -1445,7 +1468,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> SliderInt4(
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v4{v[4].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[4] = {static_cast<int>(v1), static_cast<int>(v2), static_cast<int>(v3), static_cast<int>(v4)};
-    bool used = ImGui::SliderInt4(Arabic(label), value, v_min, v_max);
+    bool used = ImGui::SliderInt4(ProcessText(label), value, v_min, v_max);
 
     sol::as_table_t int4 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1], value[2], value[3]});
 
@@ -1456,7 +1479,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> SliderInt4(
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v4{v[4].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[4] = {static_cast<int>(v1), static_cast<int>(v2), static_cast<int>(v3), static_cast<int>(v4)};
-    bool used = ImGui::SliderInt4(Arabic(label), value, v_min, v_max, format.c_str());
+    bool used = ImGui::SliderInt4(ProcessText(label), value, v_min, v_max, format.c_str());
 
     sol::as_table_t int4 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1], value[2], value[3]});
 
@@ -1468,7 +1491,7 @@ SliderInt4(const std::string& label, const sol::table& v, int v_min, int v_max, 
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v4{v[4].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[4] = {static_cast<int>(v1), static_cast<int>(v2), static_cast<int>(v3), static_cast<int>(v4)};
-    bool used = ImGui::SliderInt4(Arabic(label), value, v_min, v_max, format.c_str(), flags);
+    bool used = ImGui::SliderInt4(ProcessText(label), value, v_min, v_max, format.c_str(), flags);
 
     sol::as_table_t int4 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1], value[2], value[3]});
 
@@ -1482,32 +1505,32 @@ inline void SliderScalarN()
 }
 inline std::tuple<float, bool> VSliderFloat(const std::string& label, float sizeX, float sizeY, float v, float v_min, float v_max)
 {
-    bool used = ImGui::VSliderFloat(Arabic(label), {sizeX, sizeY}, &v, v_min, v_max);
+    bool used = ImGui::VSliderFloat(ProcessText(label), {sizeX, sizeY}, &v, v_min, v_max);
     return std::make_tuple(v, used);
 }
 inline std::tuple<float, bool> VSliderFloat(const std::string& label, float sizeX, float sizeY, float v, float v_min, float v_max, const std::string& format)
 {
-    bool used = ImGui::VSliderFloat(Arabic(label), {sizeX, sizeY}, &v, v_min, v_max, format.c_str());
+    bool used = ImGui::VSliderFloat(ProcessText(label), {sizeX, sizeY}, &v, v_min, v_max, format.c_str());
     return std::make_tuple(v, used);
 }
 inline std::tuple<float, bool> VSliderFloat(const std::string& label, float sizeX, float sizeY, float v, float v_min, float v_max, const std::string& format, int flags)
 {
-    bool used = ImGui::VSliderFloat(Arabic(label), {sizeX, sizeY}, &v, v_min, v_max, format.c_str(), flags);
+    bool used = ImGui::VSliderFloat(ProcessText(label), {sizeX, sizeY}, &v, v_min, v_max, format.c_str(), flags);
     return std::make_tuple(v, used);
 }
 inline std::tuple<int, bool> VSliderInt(const std::string& label, float sizeX, float sizeY, int v, int v_min, int v_max)
 {
-    bool used = ImGui::VSliderInt(Arabic(label), {sizeX, sizeY}, &v, v_min, v_max);
+    bool used = ImGui::VSliderInt(ProcessText(label), {sizeX, sizeY}, &v, v_min, v_max);
     return std::make_tuple(v, used);
 }
 inline std::tuple<int, bool> VSliderInt(const std::string& label, float sizeX, float sizeY, int v, int v_min, int v_max, const std::string& format)
 {
-    bool used = ImGui::VSliderInt(Arabic(label), {sizeX, sizeY}, &v, v_min, v_max, format.c_str());
+    bool used = ImGui::VSliderInt(ProcessText(label), {sizeX, sizeY}, &v, v_min, v_max, format.c_str());
     return std::make_tuple(v, used);
 }
 inline std::tuple<int, bool> VSliderInt(const std::string& label, float sizeX, float sizeY, int v, int v_min, int v_max, const std::string& format, int flags)
 {
-    bool used = ImGui::VSliderInt(Arabic(label), {sizeX, sizeY}, &v, v_min, v_max, format.c_str(), flags);
+    bool used = ImGui::VSliderInt(ProcessText(label), {sizeX, sizeY}, &v, v_min, v_max, format.c_str(), flags);
     return std::make_tuple(v, used);
 }
 inline void VSliderScalar()
@@ -1518,75 +1541,75 @@ inline void VSliderScalar()
 inline std::tuple<std::string, bool> InputText(const std::string& label, std::string text, unsigned int buf_size)
 {
     text.resize(buf_size);
-    bool selected = ImGui::InputText(Arabic(label), text.data(), buf_size);
-    return std::make_tuple(Arabic(text), selected);
+    bool selected = ImGui::InputText(ProcessText(label), text.data(), buf_size);
+    return std::make_tuple(text.c_str(), selected);
 }
 inline std::tuple<std::string, bool> InputText(const std::string& label, std::string text, unsigned int buf_size, int flags)
 {
     text.resize(buf_size);
-    bool selected = ImGui::InputText(Arabic(label), text.data(), buf_size, flags);
-    return std::make_tuple(Arabic(text), selected);
+    bool selected = ImGui::InputText(ProcessText(label), text.data(), buf_size, flags);
+    return std::make_tuple(text.c_str(), selected);
 }
 inline std::tuple<std::string, bool> InputTextMultiline(const std::string& label, std::string text, unsigned int buf_size)
 {
     text.resize(buf_size);
-    bool selected = ImGui::InputTextMultiline(Arabic(label), text.data(), buf_size);
-    return std::make_tuple(Arabic(text), selected);
+    bool selected = ImGui::InputTextMultiline(ProcessText(label), text.data(), buf_size);
+    return std::make_tuple(text.c_str(), selected);
 }
 inline std::tuple<std::string, bool> InputTextMultiline(const std::string& label, std::string text, unsigned int buf_size, float sizeX, float sizeY)
 {
     text.resize(buf_size);
-    bool selected = ImGui::InputTextMultiline(Arabic(label), text.data(), buf_size, {sizeX, sizeY});
-    return std::make_tuple(Arabic(text), selected);
+    bool selected = ImGui::InputTextMultiline(ProcessText(label), text.data(), buf_size, {sizeX, sizeY});
+    return std::make_tuple(text.c_str(), selected);
 }
 inline std::tuple<std::string, bool> InputTextMultiline(const std::string& label, std::string text, unsigned int buf_size, float sizeX, float sizeY, int flags)
 {
     text.resize(buf_size);
-    bool selected = ImGui::InputTextMultiline(Arabic(label), text.data(), buf_size, {sizeX, sizeY}, flags);
-    return std::make_tuple(Arabic(text), selected);
+    bool selected = ImGui::InputTextMultiline(ProcessText(label), text.data(), buf_size, {sizeX, sizeY}, flags);
+    return std::make_tuple(text.c_str(), selected);
 }
 inline std::tuple<std::string, bool> InputTextWithHint(const std::string& label, const std::string& hint, std::string text, unsigned int buf_size)
 {
     text.resize(buf_size);
-    bool selected = ImGui::InputTextWithHint(Arabic(label), hint.c_str(), text.data(), buf_size);
-    return std::make_tuple(Arabic(text), selected);
+    bool selected = ImGui::InputTextWithHint(ProcessText(label), hint.c_str(), text.data(), buf_size);
+    return std::make_tuple(text.c_str(), selected);
 }
 inline std::tuple<std::string, bool> InputTextWithHint(const std::string& label, const std::string& hint, std::string text, unsigned int buf_size, int flags)
 {
     text.resize(buf_size);
-    bool selected = ImGui::InputTextWithHint(Arabic(label), hint.c_str(), text.data(), buf_size, flags);
-    return std::make_tuple(Arabic(text), selected);
+    bool selected = ImGui::InputTextWithHint(ProcessText(label), hint.c_str(), text.data(), buf_size, flags);
+    return std::make_tuple(text.c_str(), selected);
 }
 inline std::tuple<float, bool> InputFloat(const std::string& label, float v)
 {
-    bool selected = ImGui::InputFloat(Arabic(label), &v);
+    bool selected = ImGui::InputFloat(ProcessText(label), &v);
     return std::make_tuple(v, selected);
 }
 inline std::tuple<float, bool> InputFloat(const std::string& label, float v, float step)
 {
-    bool selected = ImGui::InputFloat(Arabic(label), &v, step);
+    bool selected = ImGui::InputFloat(ProcessText(label), &v, step);
     return std::make_tuple(v, selected);
 }
 inline std::tuple<float, bool> InputFloat(const std::string& label, float v, float step, float step_fast)
 {
-    bool selected = ImGui::InputFloat(Arabic(label), &v, step, step_fast);
+    bool selected = ImGui::InputFloat(ProcessText(label), &v, step, step_fast);
     return std::make_tuple(v, selected);
 }
 inline std::tuple<float, bool> InputFloat(const std::string& label, float v, float step, float step_fast, const std::string& format)
 {
-    bool selected = ImGui::InputFloat(Arabic(label), &v, step, step_fast, format.c_str());
+    bool selected = ImGui::InputFloat(ProcessText(label), &v, step, step_fast, format.c_str());
     return std::make_tuple(v, selected);
 }
 inline std::tuple<float, bool> InputFloat(const std::string& label, float v, float step, float step_fast, const std::string& format, int flags)
 {
-    bool selected = ImGui::InputFloat(Arabic(label), &v, step, step_fast, format.c_str(), flags);
+    bool selected = ImGui::InputFloat(ProcessText(label), &v, step, step_fast, format.c_str(), flags);
     return std::make_tuple(v, selected);
 }
 inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> InputFloat2(const std::string& label, const sol::table& v)
 {
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[2] = {static_cast<float>(v1), static_cast<float>(v2)};
-    bool used = ImGui::InputFloat2(Arabic(label), value);
+    bool used = ImGui::InputFloat2(ProcessText(label), value);
 
     sol::as_table_t float2 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1]});
 
@@ -1596,7 +1619,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> InputFloa
 {
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[2] = {static_cast<float>(v1), static_cast<float>(v2)};
-    bool used = ImGui::InputFloat2(Arabic(label), value, format.c_str());
+    bool used = ImGui::InputFloat2(ProcessText(label), value, format.c_str());
 
     sol::as_table_t float2 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1]});
 
@@ -1606,7 +1629,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> InputFloa
 {
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[2] = {static_cast<float>(v1), static_cast<float>(v2)};
-    bool used = ImGui::InputFloat2(Arabic(label), value, format.c_str(), flags);
+    bool used = ImGui::InputFloat2(ProcessText(label), value, format.c_str(), flags);
 
     sol::as_table_t float2 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1]});
 
@@ -1617,7 +1640,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> InputFloa
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[3] = {static_cast<float>(v1), static_cast<float>(v2), static_cast<float>(v3)};
-    bool used = ImGui::InputFloat3(Arabic(label), value);
+    bool used = ImGui::InputFloat3(ProcessText(label), value);
 
     sol::as_table_t float3 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1], value[2]});
 
@@ -1628,7 +1651,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> InputFloa
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[3] = {static_cast<float>(v1), static_cast<float>(v2), static_cast<float>(v3)};
-    bool used = ImGui::InputFloat3(Arabic(label), value, format.c_str());
+    bool used = ImGui::InputFloat3(ProcessText(label), value, format.c_str());
 
     sol::as_table_t float3 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1], value[2]});
 
@@ -1639,7 +1662,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> InputFloa
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[3] = {static_cast<float>(v1), static_cast<float>(v2), static_cast<float>(v3)};
-    bool used = ImGui::InputFloat3(Arabic(label), value, format.c_str(), flags);
+    bool used = ImGui::InputFloat3(ProcessText(label), value, format.c_str(), flags);
 
     sol::as_table_t float3 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1], value[2]});
 
@@ -1650,7 +1673,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> InputFloa
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v4{v[4].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[4] = {static_cast<float>(v1), static_cast<float>(v2), static_cast<float>(v3), static_cast<float>(v4)};
-    bool used = ImGui::InputFloat4(Arabic(label), value);
+    bool used = ImGui::InputFloat4(ProcessText(label), value);
 
     sol::as_table_t float4 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1], value[2], value[3]});
 
@@ -1661,7 +1684,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> InputFloa
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v4{v[4].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[4] = {static_cast<float>(v1), static_cast<float>(v2), static_cast<float>(v3), static_cast<float>(v4)};
-    bool used = ImGui::InputFloat4(Arabic(label), value, format.c_str());
+    bool used = ImGui::InputFloat4(ProcessText(label), value, format.c_str());
 
     sol::as_table_t float4 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1], value[2], value[3]});
 
@@ -1672,7 +1695,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> InputFloa
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v4{v[4].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float value[4] = {static_cast<float>(v1), static_cast<float>(v2), static_cast<float>(v3), static_cast<float>(v4)};
-    bool used = ImGui::InputFloat4(Arabic(label), value, format.c_str(), flags);
+    bool used = ImGui::InputFloat4(ProcessText(label), value, format.c_str(), flags);
 
     sol::as_table_t float4 = sol::as_table(TiltedPhoques::Vector<float>{value[0], value[1], value[2], value[3]});
 
@@ -1680,29 +1703,29 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> InputFloa
 }
 inline std::tuple<int, bool> InputInt(const std::string& label, int v)
 {
-    bool selected = ImGui::InputInt(Arabic(label), &v);
+    bool selected = ImGui::InputInt(ProcessText(label), &v);
     return std::make_tuple(v, selected);
 }
 inline std::tuple<int, bool> InputInt(const std::string& label, int v, int step)
 {
-    bool selected = ImGui::InputInt(Arabic(label), &v, step);
+    bool selected = ImGui::InputInt(ProcessText(label), &v, step);
     return std::make_tuple(v, selected);
 }
 inline std::tuple<int, bool> InputInt(const std::string& label, int v, int step, int step_fast)
 {
-    bool selected = ImGui::InputInt(Arabic(label), &v, step, step_fast);
+    bool selected = ImGui::InputInt(ProcessText(label), &v, step, step_fast);
     return std::make_tuple(v, selected);
 }
 inline std::tuple<int, bool> InputInt(const std::string& label, int v, int step, int step_fast, int flags)
 {
-    bool selected = ImGui::InputInt(Arabic(label), &v, step, step_fast, flags);
+    bool selected = ImGui::InputInt(ProcessText(label), &v, step, step_fast, flags);
     return std::make_tuple(v, selected);
 }
 inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> InputInt2(const std::string& label, const sol::table& v)
 {
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[2] = {static_cast<int>(v1), static_cast<int>(v2)};
-    bool used = ImGui::InputInt2(Arabic(label), value);
+    bool used = ImGui::InputInt2(ProcessText(label), value);
 
     sol::as_table_t int2 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1]});
 
@@ -1712,7 +1735,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> InputInt2(c
 {
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[2] = {static_cast<int>(v1), static_cast<int>(v2)};
-    bool used = ImGui::InputInt2(Arabic(label), value, flags);
+    bool used = ImGui::InputInt2(ProcessText(label), value, flags);
 
     sol::as_table_t int2 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1]});
 
@@ -1723,7 +1746,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> InputInt3(c
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[3] = {static_cast<int>(v1), static_cast<int>(v2), static_cast<int>(v3)};
-    bool used = ImGui::InputInt3(Arabic(label), value);
+    bool used = ImGui::InputInt3(ProcessText(label), value);
 
     sol::as_table_t int3 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1], value[2]});
 
@@ -1734,7 +1757,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> InputInt3(c
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[3] = {static_cast<int>(v1), static_cast<int>(v2), static_cast<int>(v3)};
-    bool used = ImGui::InputInt3(Arabic(label), value, flags);
+    bool used = ImGui::InputInt3(ProcessText(label), value, flags);
 
     sol::as_table_t int3 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1], value[2]});
 
@@ -1745,7 +1768,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> InputInt4(c
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v4{v[4].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[4] = {static_cast<int>(v1), static_cast<int>(v2), static_cast<int>(v3), static_cast<int>(v4)};
-    bool used = ImGui::InputInt4(Arabic(label), value);
+    bool used = ImGui::InputInt4(ProcessText(label), value);
 
     sol::as_table_t int4 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1], value[2], value[3]});
 
@@ -1756,7 +1779,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> InputInt4(c
     const lua_Number v1{v[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v2{v[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         v3{v[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, v4{v[4].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     int value[4] = {static_cast<int>(v1), static_cast<int>(v2), static_cast<int>(v3), static_cast<int>(v4)};
-    bool used = ImGui::InputInt4(Arabic(label), value, flags);
+    bool used = ImGui::InputInt4(ProcessText(label), value, flags);
 
     sol::as_table_t int4 = sol::as_table(TiltedPhoques::Vector<int>{value[0], value[1], value[2], value[3]});
 
@@ -1764,27 +1787,27 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<int>>, bool> InputInt4(c
 }
 inline std::tuple<double, bool> InputDouble(const std::string& label, double v)
 {
-    bool selected = ImGui::InputDouble(Arabic(label), &v);
+    bool selected = ImGui::InputDouble(ProcessText(label), &v);
     return std::make_tuple(v, selected);
 }
 inline std::tuple<double, bool> InputDouble(const std::string& label, double v, double step)
 {
-    bool selected = ImGui::InputDouble(Arabic(label), &v, step);
+    bool selected = ImGui::InputDouble(ProcessText(label), &v, step);
     return std::make_tuple(v, selected);
 }
 inline std::tuple<double, bool> InputDouble(const std::string& label, double v, double step, double step_fast)
 {
-    bool selected = ImGui::InputDouble(Arabic(label), &v, step, step_fast);
+    bool selected = ImGui::InputDouble(ProcessText(label), &v, step, step_fast);
     return std::make_tuple(v, selected);
 }
 inline std::tuple<double, bool> InputDouble(const std::string& label, double v, double step, double step_fast, const std::string& format)
 {
-    bool selected = ImGui::InputDouble(Arabic(label), &v, step, step_fast, format.c_str());
+    bool selected = ImGui::InputDouble(ProcessText(label), &v, step, step_fast, format.c_str());
     return std::make_tuple(v, selected);
 }
 inline std::tuple<double, bool> InputDouble(const std::string& label, double v, double step, double step_fast, const std::string& format, int flags)
 {
-    bool selected = ImGui::InputDouble(Arabic(label), &v, step, step_fast, format.c_str(), flags);
+    bool selected = ImGui::InputDouble(ProcessText(label), &v, step, step_fast, format.c_str(), flags);
     return std::make_tuple(v, selected);
 }
 inline void InputScalar()
@@ -1800,7 +1823,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> ColorEdit
     const lua_Number r{col[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         g{col[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, b{col[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float color[3] = {static_cast<float>(r), static_cast<float>(g), static_cast<float>(b)};
-    bool used = ImGui::ColorEdit3(Arabic(label), color);
+    bool used = ImGui::ColorEdit3(ProcessText(label), color);
 
     sol::as_table_t rgb = sol::as_table(TiltedPhoques::Vector<float>{color[0], color[1], color[2]});
 
@@ -1811,7 +1834,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> ColorEdit
     const lua_Number r{col[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         g{col[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, b{col[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float color[3] = {static_cast<float>(r), static_cast<float>(g), static_cast<float>(b)};
-    bool used = ImGui::ColorEdit3(Arabic(label), color, flags);
+    bool used = ImGui::ColorEdit3(ProcessText(label), color, flags);
 
     sol::as_table_t rgb = sol::as_table(TiltedPhoques::Vector<float>{color[0], color[1], color[2]});
 
@@ -1823,7 +1846,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> ColorEdit
         g{col[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, b{col[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         a{col[4].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float color[4] = {static_cast<float>(r), static_cast<float>(g), static_cast<float>(b), static_cast<float>(a)};
-    bool used = ImGui::ColorEdit4(Arabic(label), color);
+    bool used = ImGui::ColorEdit4(ProcessText(label), color);
 
     sol::as_table_t rgba = sol::as_table(TiltedPhoques::Vector<float>{color[0], color[1], color[2], color[3]});
 
@@ -1835,7 +1858,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> ColorEdit
         g{col[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, b{col[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         a{col[4].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float color[4] = {static_cast<float>(r), static_cast<float>(g), static_cast<float>(b), static_cast<float>(a)};
-    bool used = ImGui::ColorEdit4(Arabic(label), color, flags);
+    bool used = ImGui::ColorEdit4(ProcessText(label), color, flags);
 
     sol::as_table_t rgba = sol::as_table(TiltedPhoques::Vector<float>{color[0], color[1], color[2], color[3]});
 
@@ -1846,7 +1869,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> ColorPick
     const lua_Number r{col[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         g{col[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, b{col[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float color[3] = {static_cast<float>(r), static_cast<float>(g), static_cast<float>(b)};
-    bool used = ImGui::ColorPicker3(Arabic(label), color);
+    bool used = ImGui::ColorPicker3(ProcessText(label), color);
 
     sol::as_table_t rgb = sol::as_table(TiltedPhoques::Vector<float>{color[0], color[1], color[2]});
 
@@ -1857,7 +1880,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> ColorPick
     const lua_Number r{col[1].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         g{col[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, b{col[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float color[3] = {static_cast<float>(r), static_cast<float>(g), static_cast<float>(b)};
-    bool used = ImGui::ColorPicker3(Arabic(label), color, flags);
+    bool used = ImGui::ColorPicker3(ProcessText(label), color, flags);
 
     sol::as_table_t rgb = sol::as_table(TiltedPhoques::Vector<float>{color[0], color[1], color[2]});
 
@@ -1869,7 +1892,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> ColorPick
         g{col[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, b{col[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         a{col[4].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float color[4] = {static_cast<float>(r), static_cast<float>(g), static_cast<float>(b), static_cast<float>(a)};
-    bool used = ImGui::ColorPicker4(Arabic(label), color);
+    bool used = ImGui::ColorPicker4(ProcessText(label), color);
 
     sol::as_table_t rgba = sol::as_table(TiltedPhoques::Vector<float>{color[0], color[1], color[2], color[3]});
 
@@ -1881,7 +1904,7 @@ inline std::tuple<sol::as_table_t<TiltedPhoques::Vector<float>>, bool> ColorPick
         g{col[2].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))}, b{col[3].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))},
         a{col[4].get<std::optional<lua_Number>>().value_or(static_cast<lua_Number>(0))};
     float color[4] = {static_cast<float>(r), static_cast<float>(g), static_cast<float>(b), static_cast<float>(a)};
-    bool used = ImGui::ColorPicker4(Arabic(label), color, flags);
+    bool used = ImGui::ColorPicker4(ProcessText(label), color, flags);
 
     sol::as_table_t rgba = sol::as_table(TiltedPhoques::Vector<float>{color[0], color[1], color[2], color[3]});
 
@@ -1919,24 +1942,24 @@ inline void SetColorEditOptions(int flags)
 // Widgets: Trees
 inline bool TreeNode(const std::string& label)
 {
-    return ImGui::TreeNode(Arabic(label));
+    return ImGui::TreeNode(ProcessText(label));
 }
 inline bool TreeNode(const std::string& label, const std::string& fmt)
 {
-    return ImGui::TreeNode(Arabic(label), "%s", fmt.c_str());
+    return ImGui::TreeNode(ProcessText(label), "%s", fmt.c_str());
 }
 /* TODO: TreeNodeV(...) (2) ==> UNSUPPORTED */
 inline bool TreeNodeEx(const std::string& label)
 {
-    return ImGui::TreeNodeEx(Arabic(label));
+    return ImGui::TreeNodeEx(ProcessText(label));
 }
 inline bool TreeNodeEx(const std::string& label, int flags)
 {
-    return ImGui::TreeNodeEx(Arabic(label), flags);
+    return ImGui::TreeNodeEx(ProcessText(label), flags);
 }
 inline bool TreeNodeEx(const std::string& label, int flags, const std::string& fmt)
 {
-    return ImGui::TreeNodeEx(Arabic(label), flags, "%s", fmt.c_str());
+    return ImGui::TreeNodeEx(ProcessText(label), flags, "%s", fmt.c_str());
 }
 /* TODO: TreeNodeExV(...) (2) ==> UNSUPPORTED */
 inline void TreePush(const std::string& str_id)
@@ -1954,20 +1977,20 @@ inline float GetTreeNodeToLabelSpacing()
 }
 inline bool CollapsingHeader(const std::string& label)
 {
-    return ImGui::CollapsingHeader(Arabic(label));
+    return ImGui::CollapsingHeader(ProcessText(label));
 }
 inline bool CollapsingHeader(const std::string& label, int flags)
 {
-    return ImGui::CollapsingHeader(Arabic(label), flags);
+    return ImGui::CollapsingHeader(ProcessText(label), flags);
 }
 inline std::tuple<bool, bool> CollapsingHeader(const std::string& label, bool open)
 {
-    bool notCollapsed = ImGui::CollapsingHeader(Arabic(label), &open);
+    bool notCollapsed = ImGui::CollapsingHeader(ProcessText(label), &open);
     return std::make_tuple(open, notCollapsed);
 }
 inline std::tuple<bool, bool> CollapsingHeader(const std::string& label, bool open, int flags)
 {
-    bool notCollapsed = ImGui::CollapsingHeader(Arabic(label), &open, flags);
+    bool notCollapsed = ImGui::CollapsingHeader(ProcessText(label), &open, flags);
     return std::make_tuple(open, notCollapsed);
 }
 inline void SetNextItemOpen(bool is_open)
@@ -1983,21 +2006,21 @@ inline void SetNextItemOpen(bool is_open, int cond)
 // TODO: Only one of Selectable variations is possible due to same parameters for Lua
 inline bool Selectable(const std::string& label)
 {
-    return ImGui::Selectable(Arabic(label));
+    return ImGui::Selectable(ProcessText(label));
 }
 inline bool Selectable(const std::string& label, bool selected)
 {
-    ImGui::Selectable(Arabic(label), &selected);
+    ImGui::Selectable(ProcessText(label), &selected);
     return selected;
 }
 inline bool Selectable(const std::string& label, bool selected, int flags)
 {
-    ImGui::Selectable(Arabic(label), &selected, flags);
+    ImGui::Selectable(ProcessText(label), &selected, flags);
     return selected;
 }
 inline bool Selectable(const std::string& label, bool selected, int flags, float sizeX, float sizeY)
 {
-    ImGui::Selectable(Arabic(label), &selected, flags, {sizeX, sizeY});
+    ImGui::Selectable(ProcessText(label), &selected, flags, {sizeX, sizeY});
     return selected;
 }
 
@@ -2015,7 +2038,7 @@ inline std::tuple<int, bool> ListBox(const std::string& label, int current_item,
     for (auto& string : strings)
         cstrings.emplace_back(string.c_str());
 
-    bool clicked = ImGui::ListBox(Arabic(label), &current_item, cstrings.data(), items_count);
+    bool clicked = ImGui::ListBox(ProcessText(label), &current_item, cstrings.data(), items_count);
     return std::make_tuple(current_item, clicked);
 }
 inline std::tuple<int, bool> ListBox(const std::string& label, int current_item, const sol::table& items, int items_count, int height_in_items)
@@ -2031,16 +2054,16 @@ inline std::tuple<int, bool> ListBox(const std::string& label, int current_item,
     for (auto& string : strings)
         cstrings.emplace_back(string.c_str());
 
-    bool clicked = ImGui::ListBox(Arabic(label), &current_item, cstrings.data(), items_count, height_in_items);
+    bool clicked = ImGui::ListBox(ProcessText(label), &current_item, cstrings.data(), items_count, height_in_items);
     return std::make_tuple(current_item, clicked);
 }
 inline bool BeginListBox(const std::string& label)
 {
-    return ImGui::BeginListBox(Arabic(label));
+    return ImGui::BeginListBox(ProcessText(label));
 }
 inline bool BeginListBox(const std::string& label, float sizeX, float sizeY)
 {
-    return ImGui::BeginListBox(Arabic(label), {sizeX, sizeY});
+    return ImGui::BeginListBox(ProcessText(label), {sizeX, sizeY});
 }
 inline void EndListBox()
 {
@@ -2091,11 +2114,11 @@ inline void EndMainMenuBar()
 }
 inline bool BeginMenu(const std::string& label)
 {
-    return ImGui::BeginMenu(Arabic(label));
+    return ImGui::BeginMenu(ProcessText(label));
 }
 inline bool BeginMenu(const std::string& label, bool enabled)
 {
-    return ImGui::BeginMenu(Arabic(label), enabled);
+    return ImGui::BeginMenu(ProcessText(label), enabled);
 }
 inline void EndMenu()
 {
@@ -2103,20 +2126,20 @@ inline void EndMenu()
 }
 inline bool MenuItem(const std::string& label)
 {
-    return ImGui::MenuItem(Arabic(label));
+    return ImGui::MenuItem(ProcessText(label));
 }
 inline bool MenuItem(const std::string& label, const std::string& shortcut)
 {
-    return ImGui::MenuItem(Arabic(label), shortcut.c_str());
+    return ImGui::MenuItem(ProcessText(label), shortcut.c_str());
 }
 inline std::tuple<bool, bool> MenuItem(const std::string& label, const std::string& shortcut, bool selected)
 {
-    bool activated = ImGui::MenuItem(Arabic(label), shortcut.c_str(), &selected);
+    bool activated = ImGui::MenuItem(ProcessText(label), shortcut.c_str(), &selected);
     return std::make_tuple(selected, activated);
 }
 inline std::tuple<bool, bool> MenuItem(const std::string& label, const std::string& shortcut, bool selected, bool enabled)
 {
-    bool activated = ImGui::MenuItem(Arabic(label), shortcut.c_str(), &selected, enabled);
+    bool activated = ImGui::MenuItem(ProcessText(label), shortcut.c_str(), &selected, enabled);
     return std::make_tuple(selected, activated);
 }
 
@@ -2148,19 +2171,19 @@ inline bool BeginPopup(const std::string& str_id, int flags)
 }
 inline bool BeginPopupModal(const std::string& name)
 {
-    return ImGui::BeginPopupModal(Arabic(name));
+    return ImGui::BeginPopupModal(ProcessText(name));
 }
 inline bool BeginPopupModal(const std::string& name, int flags)
 {
-    return ImGui::BeginPopupModal(Arabic(name), nullptr, flags);
+    return ImGui::BeginPopupModal(ProcessText(name), nullptr, flags);
 }
 inline bool BeginPopupModal(const std::string& name, bool open)
 {
-    return ImGui::BeginPopupModal(Arabic(name), &open);
+    return ImGui::BeginPopupModal(ProcessText(name), &open);
 }
 inline bool BeginPopupModal(const std::string& name, bool open, int flags)
 {
-    return ImGui::BeginPopupModal(Arabic(name), &open, flags);
+    return ImGui::BeginPopupModal(ProcessText(name), &open, flags);
 }
 inline void EndPopup()
 {
@@ -2266,19 +2289,19 @@ inline bool TableSetColumnIndex(int column_n)
 }
 inline void TableSetupColumn(const std::string& label)
 {
-    ImGui::TableSetupColumn(Arabic(label));
+    ImGui::TableSetupColumn(ProcessText(label));
 }
 inline void TableSetupColumn(const std::string& label, int flags)
 {
-    ImGui::TableSetupColumn(Arabic(label), ImGuiTableColumnFlags(flags));
+    ImGui::TableSetupColumn(ProcessText(label), ImGuiTableColumnFlags(flags));
 }
 inline void TableSetupColumn(const std::string& label, int flags, float init_width_or_weight)
 {
-    ImGui::TableSetupColumn(Arabic(label), ImGuiTableColumnFlags(flags), init_width_or_weight);
+    ImGui::TableSetupColumn(ProcessText(label), ImGuiTableColumnFlags(flags), init_width_or_weight);
 }
 inline void TableSetupColumn(const std::string& label, int flags, float init_width_or_weight, int user_id)
 {
-    ImGui::TableSetupColumn(Arabic(label), ImGuiTableColumnFlags(flags), init_width_or_weight, static_cast<ImU32>(user_id));
+    ImGui::TableSetupColumn(ProcessText(label), ImGuiTableColumnFlags(flags), init_width_or_weight, static_cast<ImU32>(user_id));
 }
 inline void TableSetupScrollFreeze(int cols, int rows)
 {
@@ -2290,7 +2313,7 @@ inline void TableHeadersRow()
 }
 inline void TableHeader(const std::string& label)
 {
-    ImGui::TableHeader(Arabic(label));
+    ImGui::TableHeader(ProcessText(label));
 }
 inline ImGuiTableSortSpecs* TableGetSortSpecs()
 {
@@ -2410,20 +2433,20 @@ inline void EndTabBar()
 }
 inline bool BeginTabItem(const std::string& label)
 {
-    return ImGui::BeginTabItem(Arabic(label));
+    return ImGui::BeginTabItem(ProcessText(label));
 }
 inline bool BeginTabItem(const std::string& label, int flags)
 {
-    return ImGui::BeginTabItem(Arabic(label), nullptr, flags);
+    return ImGui::BeginTabItem(ProcessText(label), nullptr, flags);
 }
 inline std::tuple<bool, bool> BeginTabItem(const std::string& label, bool open)
 {
-    bool selected = ImGui::BeginTabItem(Arabic(label), &open);
+    bool selected = ImGui::BeginTabItem(ProcessText(label), &open);
     return std::make_tuple(open, selected);
 }
 inline std::tuple<bool, bool> BeginTabItem(const std::string& label, bool open, int flags)
 {
-    bool selected = ImGui::BeginTabItem(Arabic(label), &open, flags);
+    bool selected = ImGui::BeginTabItem(ProcessText(label), &open, flags);
     return std::make_tuple(open, selected);
 }
 inline void EndTabItem()
@@ -2432,7 +2455,7 @@ inline void EndTabItem()
 }
 inline void SetTabItemClosed(const std::string& tab_or_docked_window_label)
 {
-    ImGui::SetTabItemClosed(Arabic(tab_or_docked_window_label));
+    ImGui::SetTabItemClosed(ProcessText(tab_or_docked_window_label));
 }
 
 // Drag and Drop
@@ -2618,17 +2641,17 @@ inline ImGuiStyle& GetStyle()
 // Text Utilities
 inline std::tuple<float, float> CalcTextSize(const std::string& text)
 {
-    const auto vec2{ImGui::CalcTextSize(Arabic(text))};
+    const auto vec2{ImGui::CalcTextSize(ProcessText(text))};
     return std::make_tuple(vec2.x, vec2.y);
 }
 inline std::tuple<float, float> CalcTextSize(const std::string& text, bool hide_text_after_double_hash)
 {
-    const auto vec2{ImGui::CalcTextSize(Arabic(text), nullptr, hide_text_after_double_hash)};
+    const auto vec2{ImGui::CalcTextSize(ProcessText(text), nullptr, hide_text_after_double_hash)};
     return std::make_tuple(vec2.x, vec2.y);
 }
 inline std::tuple<float, float> CalcTextSize(const std::string& text, bool hide_text_after_double_hash, float wrap_width)
 {
-    const auto vec2{ImGui::CalcTextSize(Arabic(text), nullptr, hide_text_after_double_hash, wrap_width)};
+    const auto vec2{ImGui::CalcTextSize(ProcessText(text), nullptr, hide_text_after_double_hash, wrap_width)};
     return std::make_tuple(vec2.x, vec2.y);
 }
 
@@ -2807,7 +2830,7 @@ inline std::string GetClipboardText()
 }
 inline void SetClipboardText(const std::string& text)
 {
-    ImGui::SetClipboardText(Arabic(text));
+    ImGui::SetClipboardText(text.c_str());
 }
 
 // Drawing APIs
@@ -2913,23 +2936,17 @@ inline void ImDrawListAddNgonFilled(ImDrawList* drawlist, float centerX, float c
 }
 inline void ImDrawListAddText(ImDrawList* drawlist, float posX, float posY, int col, const std::string& text_begin)
 {
-    auto processed = ArabicText::Process(text_begin);
-
-    drawlist->AddText({posX, posY}, static_cast<ImU32>(col), processed.c_str());
+    drawlist->AddText({posX, posY}, static_cast<ImU32>(col), ProcessText(text_begin));
 }
 
 inline void ImDrawListAddText(ImDrawList* drawlist, float font_size, float posX, float posY, int col, const std::string& text_begin)
 {
-    auto processed = ArabicText::Process(text_begin);
-
-    drawlist->AddText(ImGui::GetFont(), font_size, {posX, posY}, static_cast<ImU32>(col), processed.c_str());
+    drawlist->AddText(ImGui::GetFont(), font_size, {posX, posY}, static_cast<ImU32>(col), ProcessText(text_begin));
 }
 
 inline void ImDrawListAddText(ImDrawList* drawlist, float font_size, float posX, float posY, int col, const std::string& text_begin, float wrap_width)
 {
-    auto processed = ArabicText::Process(text_begin);
-
-    drawlist->AddText(ImGui::GetFont(), font_size, {posX, posY}, static_cast<ImU32>(col), processed.c_str(), nullptr, wrap_width);
+    drawlist->AddText(ImGui::GetFont(), font_size, {posX, posY}, static_cast<ImU32>(col), ProcessText(text_begin), nullptr, wrap_width);
 }
 // TODO
 // inline void ImDrawListAddText(ImDrawList* drawlist, float font_size, float posX, float posY, int col, const
