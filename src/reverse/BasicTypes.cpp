@@ -16,6 +16,41 @@ bool Vector3::operator==(const Vector3& acRhs) const noexcept
     return x == acRhs.x && y == acRhs.y && z == acRhs.z;
 }
 
+bool Vector3::operator<(const Vector3& acRhs) const noexcept
+{
+    return x < acRhs.x && y < acRhs.y && z < acRhs.z;
+}
+
+bool Vector3::operator<=(const Vector3& acRhs) const noexcept
+{
+    return x <= acRhs.x && y <= acRhs.y && z <= acRhs.z;
+}
+
+Vector3 Vector3::operator+(const Vector3& acRhs) const noexcept
+{
+    return Vector3(x + acRhs.x, y + acRhs.y, z + acRhs.z);
+}
+
+Vector3 Vector3::operator-(const Vector3& acRhs) const noexcept
+{
+    return Vector3(x - acRhs.x, y - acRhs.y, z - acRhs.z);
+}
+
+Vector3 Vector3::operator*(const Vector3& acRhs) const noexcept
+{
+    return Vector3(x * acRhs.x, y * acRhs.y, z * acRhs.z);
+}
+
+Vector3 Vector3::operator/(const Vector3& acRhs) const noexcept
+{
+    if (acRhs.x == 0 || acRhs.y == 0 || acRhs.z == 0)
+    {
+        CET::Get().GetVM().ThrowLuaError("Divide by zero exception");
+        return acRhs;
+    }
+    return Vector3(x / acRhs.x, y / acRhs.y, z / acRhs.z);
+}
+
 std::string Vector4::ToString() const noexcept
 {
     return fmt::format("ToVector4{{ x = {}, y = {}, z = {}, w = {} }}", x, y, z, w);
@@ -24,6 +59,41 @@ std::string Vector4::ToString() const noexcept
 bool Vector4::operator==(const Vector4& acRhs) const noexcept
 {
     return x == acRhs.x && y == acRhs.y && z == acRhs.z && w == acRhs.w;
+}
+
+bool Vector4::operator<(const Vector4& acRhs) const noexcept
+{
+    return x < acRhs.x && y < acRhs.y && z < acRhs.z && w < acRhs.w;
+}
+
+bool Vector4::operator<=(const Vector4& acRhs) const noexcept
+{
+    return x <= acRhs.x && y <= acRhs.y && z <= acRhs.z && w <= acRhs.w;
+}
+
+Vector4 Vector4::operator+(const Vector4& acRhs) const noexcept
+{
+    return Vector4(x + acRhs.x, y + acRhs.y, z + acRhs.z, w + acRhs.w);
+}
+
+Vector4 Vector4::operator-(const Vector4& acRhs) const noexcept
+{
+    return Vector4(x - acRhs.x, y - acRhs.y, z - acRhs.z, w - acRhs.w);
+}
+
+Vector4 Vector4::operator*(const Vector4& acRhs) const noexcept
+{
+    return Vector4(x * acRhs.x, y * acRhs.y, z * acRhs.z, w * acRhs.w);
+}
+
+Vector4 Vector4::operator/(const Vector4& acRhs) const noexcept
+{
+    if (acRhs.x == 0 || acRhs.y == 0 || acRhs.z == 0 || acRhs.w == 0)
+    {
+        CET::Get().GetVM().ThrowLuaError("Divide by zero exception");
+        return acRhs;
+    }
+    return Vector4(x / acRhs.x, y / acRhs.y, z / acRhs.z, w / acRhs.w);
 }
 
 std::string EulerAngles::ToString() const noexcept
